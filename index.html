@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#070706" />
+  <title>Taxi Germersheim 2.0</title>
+  <style>
+    :root{--bg:#070706;--panel:#11110f;--card:#171715;--card2:#202019;--gold:#f6c34d;--gold2:#d99820;--txt:#fff8e8;--muted:#9d9588;--line:rgba(246,195,77,.18);--green:#34d27a;--blue:#4b7cff;--red:#ff5d5d;--purple:#a36bff}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent} html,body{margin:0;min-height:100%;background:#000;color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif} body{overscroll-behavior:none}.app{max-width:430px;margin:0 auto;min-height:100vh;background:radial-gradient(circle at 50% 0%,#15110a 0,#070706 42%,#000 100%);position:relative;overflow:hidden;padding:env(safe-area-inset-top) 18px calc(86px + env(safe-area-inset-bottom));}.grain:before{content:"";position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.06) .7px,transparent .7px);background-size:9px 9px;opacity:.08}.topbar{height:64px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:3}.mini-logo{width:32px;height:32px;object-fit:contain}.round{border:1px solid var(--line);background:rgba(255,255,255,.06);width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--gold);font-size:20px;box-shadow:0 8px 35px rgba(0,0,0,.28)}.screen{display:none;position:relative;z-index:2;animation:fade .22s ease}.screen.active{display:block}@keyframes fade{from{opacity:.2;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.splash{min-height:calc(100vh - 86px);display:flex!important;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding-bottom:80px}.hero-logo{width:170px;height:170px;object-fit:contain;filter:drop-shadow(0 0 35px rgba(246,195,77,.32));animation:float 3.2s ease-in-out infinite}.stars{letter-spacing:22px;color:var(--gold);font-size:22px;margin:26px 0 46px 20px}.sub{color:var(--muted);font-size:18px;line-height:1.4}.btn{width:100%;border:0;border-radius:22px;padding:18px 20px;background:linear-gradient(135deg,#ffd867,#d99b24);color:#111;font-weight:800;font-size:18px;box-shadow:0 18px 44px rgba(246,195,77,.22)}.btn.dark{background:rgba(255,255,255,.08);color:var(--txt);border:1px solid var(--line);box-shadow:none}.btn.small{padding:12px 15px;border-radius:15px;font-size:14px;width:auto}.particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}.particle{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--gold);opacity:0;filter:blur(.1px)}.explode .particle{animation:explode 1.35s ease forwards}@keyframes explode{0%{opacity:0;transform:translate(0,0) scale(.2)}15%{opacity:.95}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(1.6)}}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}.map-bg{position:absolute;inset:0;background:radial-gradient(circle at 70% 10%,rgba(47,84,112,.35),transparent 35%),linear-gradient(135deg,transparent 0 48%,rgba(246,195,77,.12) 49% 50%,transparent 51% 100%);opacity:.5}.map-bg:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(28deg,transparent 0 38px,rgba(246,195,77,.08) 39px 40px),repeating-linear-gradient(112deg,transparent 0 48px,rgba(246,195,77,.06) 49px 50px);mask-image:radial-gradient(circle at 54% 38%,#000,transparent 72%)}.title{font-size:30px;line-height:1.05;margin:22px 0 12px;font-weight:900}.title span{color:var(--gold)}.input{height:56px;border:1px solid var(--line);background:rgba(17,17,15,.88);border-radius:18px;display:flex;align-items:center;padding:0 14px;gap:12px;color:#cfc7b6;box-shadow:0 15px 44px rgba(0,0,0,.26)}.input strong{color:var(--gold)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px}.tile{min-height:104px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.035));border-radius:18px;padding:15px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}.tile:after{content:'›';position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#d6cdbb;font-size:25px}.ico{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;font-size:23px;background:rgba(246,195,77,.12)}.tile h3{margin:0 0 4px;font-size:15px}.tile p{margin:0;color:#aaa195;font-size:12px;line-height:1.22}.banner{margin:14px 0;border:1px solid rgba(246,195,77,.35);border-radius:18px;padding:14px 15px;background:linear-gradient(90deg,rgba(246,195,77,.16),rgba(255,255,255,.04));display:flex;gap:12px;align-items:center}.section-title{font-size:24px;margin:14px 0 12px;font-weight:900}.card{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:18px;margin:12px 0;box-shadow:0 16px 45px rgba(0,0,0,.2)}.muted{color:var(--muted);line-height:1.45}.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.pill{display:inline-flex;align-items:center;gap:7px;border-radius:999px;border:1px solid var(--line);background:rgba(246,195,77,.1);padding:8px 11px;color:var(--gold);font-weight:800;font-size:12px}.ride{display:flex;align-items:center;gap:13px}.ride .r-ico{width:48px;height:48px;border-radius:16px;background:rgba(246,195,77,.13);display:grid;place-items:center;font-size:25px}.ride h3{margin:0 0 4px;font-size:16px}.ride p{margin:0;color:var(--muted);font-size:13px}.yumak{width:92px;height:92px;border-radius:28px;object-fit:cover;box-shadow:0 0 30px rgba(246,195,77,.18)}.nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(430px,100%);height:78px;padding-bottom:env(safe-area-inset-bottom);background:rgba(6,6,5,.92);border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;align-items:center;z-index:20;backdrop-filter:blur(18px)}.nav button{border:0;background:transparent;color:#8f887e;font-weight:800;font-size:11px;display:flex;flex-direction:column;gap:5px;align-items:center}.nav button span{font-size:22px}.nav button.active{color:var(--gold)}.phone-float{position:fixed;right:max(18px,calc((100vw - 430px)/2 + 18px));top:calc(env(safe-area-inset-top) + 22px);z-index:25}.menu{position:fixed;left:max(18px,calc((100vw - 430px)/2 + 18px));top:calc(env(safe-area-inset-top) + 22px);z-index:25}.hide{display:none!important}.page-top{padding-top:72px}.big-number{font-size:42px;font-weight:950;color:var(--gold);margin:0}.list-link{width:100%;text-align:left;border:0;background:transparent;color:var(--txt);padding:0}.toast{position:fixed;left:50%;bottom:95px;transform:translateX(-50%) translateY(20px);opacity:0;background:#191814;border:1px solid var(--line);color:var(--txt);padding:12px 16px;border-radius:16px;z-index:30;transition:.25s}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  </style>
+</head>
+<body>
+  <div class="app grain">
+    <div class="particles" id="particles"></div>
+    <button class="round menu hide" id="menuBtn" onclick="toast('Menü kommt in Version 0.3')">☰</button>
+    <a class="round phone-float" href="tel:072743567" aria-label="Taxi Germersheim anrufen">☎️</a>
+
+    <section id="splash" class="screen active splash">
+      <img class="hero-logo" src="logo.png" alt="Taxi Germersheim Logo">
+      <div class="stars">✦ ✦ ✦</div>
+      <p class="sub">Logo · Vibration · Sterne</p>
+      <button class="btn" style="margin-top:44px" onclick="startApp()">Starten</button>
+    </section>
+
+    <section id="home" class="screen page-top">
+      <div class="map-bg"></div>
+      <div class="topbar"><img class="mini-logo" src="logo.png" alt=""><button class="round" onclick="toast('Direktanruf oben rechts nutzen')">📞</button></div>
+      <h1 class="title">Wo möchten<br><span>Sie hin?</span></h1>
+      <button class="input list-link" onclick="toast('Zieleingabe wird in Version 0.3 aktiviert')"><span>📍</span><span>Ziel eingeben</span><strong style="margin-left:auto">◎</strong></button>
+      <div style="height:58px;display:grid;place-items:center;color:#b9ac95;font-size:13px">Germersheim</div>
+      <div class="grid">
+        <button class="tile list-link" onclick="openService('Taxi','🚕','Schnell & zuverlässig','Standardfahrt in Germersheim und Umgebung.')"><div class="ico">🚕</div><div><h3>Taxi</h3><p>Schnell & zuverlässig</p></div></button>
+        <button class="tile list-link" onclick="openService('Krankenfahrt','🏥','Sicher & komfortabel','Dialyse, Chemo, Bestrahlung und Arzttermine.')"><div class="ico">🏥</div><div><h3>Krankenfahrt</h3><p>Sicher & komfortabel</p></div></button>
+        <button class="tile list-link" onclick="openService('Rollstuhlfahrt','♿','Barrierefrei unterwegs','Transport mit Rollstuhl-Fahrzeug und Rampe.')"><div class="ico">♿</div><div><h3>Rollstuhlfahrt</h3><p>Barrierefrei unterwegs</p></div></button>
+        <button class="tile list-link" onclick="openService('Flughafen Transfer','✈️','Pünktlich zum Ziel','Festpreise und große Fahrzeuge für Gepäck.')"><div class="ico">✈️</div><div><h3>Flughafen Transfer</h3><p>Pünktlich zum Ziel</p></div></button>
+      </div>
+      <button class="banner list-link" onclick="showScreen('rewards')"><div class="ico">🎁</div><div><b>Fahren und belohnt!</b><br><span class="muted">Sammeln Sie Punkte und schalten Sie Abzeichen frei.</span></div></button>
+    </section>
+
+    <section id="service" class="screen page-top">
+      <div class="topbar"><button class="round" onclick="showScreen('home')">‹</button><img class="mini-logo" src="logo.png" alt=""></div>
+      <div class="card" style="text-align:center;padding:28px 18px"><div id="svcIcon" style="font-size:58px">🚕</div><h1 id="svcTitle" class="section-title">Taxi</h1><p id="svcSub" class="muted">Schnell & zuverlässig</p></div>
+      <div class="card"><b>Ihre Fahrt planen</b><p id="svcText" class="muted">Standardfahrt in Germersheim und Umgebung.</p><button class="btn" onclick="toast('Bestellformular kommt in Version 0.3')">Fahrt anfragen</button><button class="btn dark" style="margin-top:10px" onclick="location.href='tel:072743567'">Jetzt anrufen</button></div>
+      <div class="card"><div class="row"><span class="pill">⚡ 24/7 erreichbar</span><span class="pill">⭐ 5,0 Google</span></div></div>
+    </section>
+
+    <section id="rides" class="screen page-top">
+      <h1 class="section-title">Fahrten</h1><p class="muted">Hier siehst du später laufende, geplante und vergangene Fahrten.</p>
+      <div class="card ride"><div class="r-ico">🟢</div><div><h3>Aktuelle Fahrt</h3><p>Noch keine aktive Fahrt.</p></div></div>
+      <div class="card ride"><div class="r-ico">📅</div><div><h3>Geplante Fahrten</h3><p>Krankenfahrten, Flughafentransfer und Vorbestellungen.</p></div></div>
+      <button class="btn" onclick="toast('Neue Fahrt wird in Version 0.3 gespeichert')">Neue Fahrt planen</button>
+    </section>
+
+    <section id="rewards" class="screen page-top">
+      <h1 class="section-title">Rewards</h1>
+      <div class="card"><p class="big-number">230</p><p class="muted">Punkte gesammelt</p><div class="row"><span class="pill">🎂 Geburtstag +200</span><span class="pill">🏅 Geheime Abzeichen</span></div></div>
+      <div class="card ride"><div class="r-ico">⭐</div><div><h3>5,0 auf Google</h3><p>Bewertungen und Vertrauen sichtbar machen.</p></div></div>
+      <div class="card ride"><div class="r-ico">🎁</div><div><h3>Gutschein-System</h3><p>Später aktivierbar und wieder abschaltbar.</p></div></div>
+    </section>
+
+    <section id="yumak" class="screen page-top">
+      <div class="row"><div><h1 class="section-title">Yumak</h1><p class="muted">KI-Assistent für Fahrten, Fragen und Status.</p></div><img class="yumak" src="yumak.png" alt="Yumak"></div>
+      <div class="card"><b>Hallo, ich bin Yumak 🐾</b><p class="muted">Ich helfe später beim Bestellen, Dokumenten, Krankenfahrten und Fragen zu Preisen.</p></div>
+      <button class="btn" onclick="toast('Yumak Chat kommt als nächster Schritt')">Yumak öffnen</button>
+    </section>
+
+    <section id="messages" class="screen page-top">
+      <h1 class="section-title">Nachrichten</h1><div class="card ride"><div class="r-ico">💬</div><div><h3>Taxi Germersheim</h3><p>Willkommen in der App. Nachrichten folgen in Version 0.3.</p></div></div><div class="card ride"><div class="r-ico">📄</div><div><h3>Dokumente</h3><p>Transportscheine und Unterlagen später hier.</p></div></div>
+    </section>
+
+    <section id="profile" class="screen page-top">
+      <h1 class="section-title">Profil</h1><div class="card"><div class="row"><div><b>Gastprofil</b><p class="muted">Login folgt später.</p></div><span class="pill">TG Status</span></div></div><div class="card ride"><div class="r-ico">👛</div><div><h3>TG Wallet</h3><p>Punkte, Gutscheine und Zahlungsstatus.</p></div></div><div class="card ride"><div class="r-ico">⚙️</div><div><h3>Einstellungen</h3><p>Sprache, Benachrichtigungen und Datenschutz.</p></div></div>
+    </section>
+  </div>
+
+  <nav class="nav" id="nav">
+    <button class="active" data-target="home" onclick="navTo('home',this)"><span>🏠</span>Start</button>
+    <button data-target="rides" onclick="navTo('rides',this)"><span>🚖</span>Fahrten</button>
+    <button data-target="rewards" onclick="navTo('rewards',this)"><span>⭐</span>Rewards</button>
+    <button data-target="messages" onclick="navTo('messages',this)"><span>💬</span>Nachrichten</button>
+    <button data-target="profile" onclick="navTo('profile',this)"><span>👤</span>Profil</button>
+  </nav>
+  <div id="toast" class="toast">Kommt bald</div>
+
+  <script>
+    const screens=[...document.querySelectorAll('.screen')];
+    const nav=document.getElementById('nav');
+    const menuBtn=document.getElementById('menuBtn');
+    function showScreen(id){screens.forEach(s=>s.classList.toggle('active',s.id===id));nav.classList.toggle('hide',id==='splash');menuBtn.classList.toggle('hide',id==='splash');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.target===id));window.scrollTo(0,0)}
+    function navTo(id,btn){showScreen(id)}
+    function startApp(){document.body.classList.add('explode'); if(navigator.vibrate) navigator.vibrate([35,25,35]); setTimeout(()=>showScreen('home'),900)}
+    function openService(t,i,s,txt){document.getElementById('svcTitle').textContent=t;document.getElementById('svcIcon').textContent=i;document.getElementById('svcSub').textContent=s;document.getElementById('svcText').textContent=txt;showScreen('service')}
+    function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),1800)}
+    const p=document.getElementById('particles'); for(let n=0;n<70;n++){const d=document.createElement('i');d.className='particle';d.style.left=(50+Math.random()*18-9)+'%';d.style.top=(39+Math.random()*10-5)+'%';d.style.setProperty('--x',(Math.random()*340-60)+'px');d.style.setProperty('--y',(Math.random()*240-120)+'px');d.style.animationDelay=(Math.random()*0.25)+'s';p.appendChild(d)}
+  </script>
+</body>
+</html>
