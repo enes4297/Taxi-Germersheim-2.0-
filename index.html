@@ -1,0 +1,184 @@
+
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Taxi Germersheim Prototyp</title>
+<style>
+:root{
+  --bg:#070707; --card:#111; --card2:#181818; --gold:#d8aa43; --gold2:#ffd66b;
+  --text:#f5f5f5; --muted:#aaa; --green:#36d47b; --red:#ff5d5d; --blue:#4da3ff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--text)}
+.phone{max-width:430px;margin:0 auto;min-height:100vh;background:radial-gradient(circle at top,#1b160b 0,#080808 45%,#000 100%);position:relative;overflow:hidden}
+.screen{display:none;min-height:100vh;padding:54px 18px 92px}
+.screen.active{display:block}
+.splash{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px}
+.logo{max-width:180px;filter:drop-shadow(0 0 26px rgba(216,170,67,.35))}
+.logo.small{width:42px}
+.stars{color:var(--gold2);font-size:22px;letter-spacing:8px;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.45;transform:scale(1.05)}}
+h1{font-size:32px;line-height:1.05;margin:0 0 10px}
+h2{font-size:24px;margin:0 0 14px}
+p{color:var(--muted);line-height:1.45}
+.card{background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid rgba(216,170,67,.16);border-radius:24px;padding:18px;margin:12px 0;box-shadow:0 14px 30px rgba(0,0,0,.28)}
+.search{background:#fff;color:#111;border-radius:22px;padding:18px;font-size:20px;font-weight:700;margin:18px 0;display:flex;align-items:center;gap:10px}
+.badge{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(216,170,67,.35);background:rgba(216,170,67,.1);color:var(--gold2);padding:8px 12px;border-radius:999px;font-size:14px;margin:4px 4px 4px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{border:0;border-radius:18px;padding:16px 18px;font-size:16px;font-weight:700;color:#111;background:linear-gradient(135deg,var(--gold2),var(--gold));width:100%;margin:8px 0}
+.btn.dark{background:#1d1d1d;color:var(--text);border:1px solid rgba(255,255,255,.08)}
+.btn.red{background:var(--red);color:#fff}
+.input{background:#151515;border:1px solid rgba(255,255,255,.09);color:#fff;border-radius:16px;padding:15px;width:100%;font-size:16px;margin:7px 0}
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;background:rgba(5,5,5,.92);backdrop-filter:blur(16px);display:grid;grid-template-columns:repeat(5,1fr);padding:10px 6px 24px;border-top:1px solid rgba(255,255,255,.08)}
+.nav button{background:transparent;border:0;color:#888;font-size:11px;font-weight:700}
+.nav .on{color:var(--gold2)}
+.top{position:absolute;top:14px;left:18px;right:18px;display:flex;justify-content:space-between;align-items:center;z-index:2}
+.call{width:42px;height:42px;border-radius:50%;background:#161616;border:1px solid rgba(216,170,67,.25);color:var(--gold2);font-size:18px}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.muted{color:var(--muted);font-size:14px}
+.status{height:10px;background:#222;border-radius:999px;overflow:hidden;margin-top:10px}
+.status div{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));width:58%}
+.yumak{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}
+.chatbubble{background:#151515;border-radius:20px;padding:14px;margin:10px 0;color:#eee}
+.me{background:rgba(216,170,67,.18);margin-left:38px}
+.wheel{width:240px;height:240px;margin:18px auto;border-radius:50%;background:conic-gradient(#d8aa43 0 45deg,#111 45deg 90deg,#f4c75c 90deg 135deg,#191919 135deg 180deg,#d8aa43 180deg 225deg,#111 225deg 270deg,#f4c75c 270deg 315deg,#191919 315deg);border:10px solid #262016;box-shadow:0 0 40px rgba(216,170,67,.3);display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;text-align:center}
+.admin-card{border-left:5px solid var(--gold)}
+.green{color:var(--green)} .redtxt{color:var(--red)} .blue{color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="top">
+    <img src="logo.png" class="logo small" onerror="this.style.display='none'">
+    <button class="call" onclick="alert('Taxi Germersheim anrufen: 07274 3567')">☎</button>
+  </div>
+
+  <section id="splash" class="screen active splash">
+    <img src="logo.png" class="logo" onerror="this.style.display='none'">
+    <div class="stars">✦ ✦ ✦</div>
+    <p>Logo • Vibration • Sterne</p>
+    <button class="btn" onclick="go('onboarding')">Starten</button>
+  </section>
+
+  <section id="onboarding" class="screen">
+    <h1>Willkommen bei Taxi Germersheim</h1>
+    <p>Schnell. Persönlich. Zuverlässig.</p>
+    <div class="card"><b>🚕 Fahrten buchen</b><p>Taxi, Vorbestellung, Flughafen und medizinische Fahrten.</p></div>
+    <div class="card"><b>⭐ TG Status sammeln</b><p>Punkte, Wallet, Rewards und geheime Abzeichen.</p></div>
+    <div class="card row"><img src="yumak.png" class="yumak" onerror="this.style.display='none'"><div><b>🐾 Yumak</b><p>KI-Assistent von Taxi Germersheim.</p></div></div>
+    <button class="btn" onclick="go('home')">Zur App</button>
+  </section>
+
+  <section id="home" class="screen">
+    <h1>Wo möchtest du hin?</h1>
+    <div class="search" onclick="go('booking')">📍 Ziel eingeben</div>
+    <span class="badge">⭐⭐⭐⭐⭐ 5,0 Google</span><span class="badge">230+ Bewertungen</span>
+    <div class="card">
+      <div class="row"><b>⭐ TG Status 12</b><b>1.240 Punkte</b></div>
+      <div class="status"><div></div></div>
+      <p>Noch 260 Punkte bis zum nächsten Rewards-Dreh.</p>
+    </div>
+    <div class="grid">
+      <button class="btn dark" onclick="go('booking')">🚕 Jetzt fahren</button>
+      <button class="btn dark" onclick="go('medical')">🏥 Medizinisch</button>
+      <button class="btn dark" onclick="go('airport')">✈️ Flughafen</button>
+      <button class="btn dark" onclick="alert('Anruf startet')">📞 Anrufen</button>
+    </div>
+    <div class="card"><b>⭐ Favoriten</b><p>🏠 Zuhause · 💼 Arbeit · ✈️ Frankfurt Flughafen · 🏥 Arzt/Klinik</p></div>
+  </section>
+
+  <section id="booking" class="screen">
+    <h2>🚕 Fahrt anfragen</h2>
+    <input class="input" placeholder="Abholort automatisch erkannt">
+    <input class="input" placeholder="Zieladresse">
+    <div class="grid"><button class="btn dark">Jetzt</button><button class="btn dark">Vorbestellen</button></div>
+    <input class="input" placeholder="Hinweis optional: Hintereingang, Koffer...">
+    <select class="input"><option>Zahlungsart: Noch nicht entschieden</option><option>Bar</option><option>Karte / Apple Pay</option><option>PayPal</option></select>
+    <div class="card"><b>💰 ca. Fahrpreis</b><p>Wird aus Tarif berechnet. Endpreis kann abweichen.</p></div>
+    <button class="btn" onclick="go('rideStatus')">Anfrage senden</button>
+  </section>
+
+  <section id="rideStatus" class="screen">
+    <h2>🟡 Anfrage eingegangen</h2>
+    <div class="card">
+      <b>Taxi Germersheim prüft die Verfügbarkeit.</b>
+      <p>Nach Bestätigung bekommst du eine Push-Nachricht.</p>
+    </div>
+    <button class="btn dark" onclick="alert('Hinweis ergänzt')">📝 Hinweis ergänzen</button>
+    <button class="btn red" onclick="alert('Fahrt storniert. Dispo wurde informiert.')">Fahrt stornieren</button>
+  </section>
+
+  <section id="medical" class="screen">
+    <h2>🏥 Medizinische Fahrt</h2>
+    <select class="input"><option>Terminart auswählen</option><option>Dialyse</option><option>Chemotherapie</option><option>Strahlentherapie</option><option>Arzttermin</option><option>Sonstiger Termin</option></select>
+    <select class="input"><option>Befreiungsausweis?</option><option>Ja</option><option>Nein</option><option>Weiß ich nicht</option></select>
+    <select class="input"><option>Verordnung vorhanden?</option><option>Ja</option><option>Nein</option><option>Wird nachgereicht</option></select>
+    <div class="card"><b>📎 Dokumente</b><p>Foto oder PDF später hochladen erlaubt.</p><button class="btn dark">Dokument hochladen</button></div>
+    <button class="btn" onclick="go('rideStatus')">Medizinische Fahrt anfragen</button>
+  </section>
+
+  <section id="airport" class="screen">
+    <h2>✈️ Flughafentransfer</h2>
+    <input class="input" placeholder="Abholort">
+    <select class="input"><option>Frankfurt Flughafen (FRA)</option><option>Stuttgart (STR)</option><option>Baden-Baden (FKB)</option><option>Anderen Flughafen suchen</option></select>
+    <div class="card"><b>💰 Festpreis</b><p>Preis wird je Abholort aus Admin-Tabelle geladen.</p></div>
+    <button class="btn" onclick="go('rideStatus')">Flughafenfahrt anfragen</button>
+  </section>
+
+  <section id="rewards" class="screen">
+    <h2>🎡 TG Rewards</h2>
+    <div class="card row"><img src="yumak.png" class="yumak" onerror="this.style.display='none'"><div><b>Yumak wacht über das Rad.</b><p>750 Punkte = 1 Dreh</p></div></div>
+    <div class="wheel">TG<br>Rewards<br>Wheel</div>
+    <button class="btn" onclick="alert('🎁 5 € TG Guthaben gewonnen!')">Jetzt drehen</button>
+  </section>
+
+  <section id="yumak" class="screen">
+    <h2>🐾 Yumak</h2>
+    <p>KI-Assistent von Taxi Germersheim</p>
+    <div class="chatbubble"><b>Yumak:</b><br>Hallo 👋 Wie kann ich dir helfen?</div>
+    <button class="btn dark">🚕 Fahrt buchen</button>
+    <button class="btn dark">✈️ Flughafentransfer</button>
+    <button class="btn dark">📄 Dokument nachreichen</button>
+    <div class="chatbubble me">Ich wohne im Hintereingang.</div>
+    <div class="chatbubble"><b>Yumak:</b><br>Danke. Der Hinweis wurde gespeichert und an Taxi Germersheim übermittelt.</div>
+  </section>
+
+  <section id="trips" class="screen">
+    <h2>📋 Fahrten</h2>
+    <div class="card"><b>✈️ Germersheim → Frankfurt Flughafen</b><p>Bezahlt mit Karte · +25 Punkte · Kein Guthaben verwendet</p></div>
+    <div class="card"><b>🏥 Dialysefahrt</b><p>Über Krankenkasse · +5 Punkte · Dokument geprüft</p></div>
+  </section>
+
+  <section id="profile" class="screen">
+    <h2>👤 Profil</h2>
+    <div class="card"><b>Max Mustermann</b><p>⭐ TG Status 12<br>💰 TG Guthaben 20,00 €<br>🏅 4 geheime Abzeichen</p></div>
+    <button class="btn dark">👨‍👩‍👧‍👦 Familienprofile</button>
+    <button class="btn dark">📥 Meine Daten herunterladen</button>
+    <button class="btn dark" onclick="go('admin')">🖥️ Dispo Demo</button>
+  </section>
+
+  <section id="admin" class="screen">
+    <h2>🖥️ Dispo-Center</h2>
+    <div class="card admin-card"><b>🟡 Neue Anfrage</b><p>Max Mustermann<br>Germersheim → Frankfurt Flughafen<br>Heute 15:30 · ✈️ Flughafen</p><button class="btn">Bestätigen</button></div>
+    <div class="card admin-card"><b>💰 Wallet-Hinweis</b><p>Kunde möchte 20,00 € Guthaben verwenden.</p><button class="btn dark">Nach Fahrt verrechnen</button></div>
+    <div class="card"><b>👑 Super Admins</b><p>Enes Carman & Fatih Duman haben gleiche Rechte.</p></div>
+  </section>
+
+  <nav class="nav">
+    <button class="on" onclick="go('home')">🏠<br>Start</button>
+    <button onclick="go('rewards')">🎁<br>Rewards</button>
+    <button onclick="go('yumak')">🐾<br>Yumak</button>
+    <button onclick="go('trips')">📋<br>Fahrten</button>
+    <button onclick="go('profile')">👤<br>Profil</button>
+  </nav>
+</div>
+<script>
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
