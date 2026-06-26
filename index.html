@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Taxi Germersheim GmbH</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+
+    <div id="simpleSplash" class="simple-splash">
+      <div class="splash-aura"></div>
+      <img class="simple-logo" src="tg-icon-original.png" alt="Taxi Germersheim Icon">
+      <div class="splash-light"></div>
+    </div>
+
+    <section id="home" class="screen home-screen active">
+      <div class="premium-bg"></div>
+
+      <header class="premium-header">
+        <button class="header-btn premium-menu" aria-label="Menü"><img src="menu.svg" alt=""></button>
+
+        <div class="premium-brand">
+          <img id="targetLogo" src="tg-icon-original.png" alt="Taxi Germersheim Icon">
+          <span>Taxi Germersheim GmbH</span>
+        </div>
+
+        <a class="header-btn premium-call" href="tel:072743567" aria-label="07274 3567"><img src="phone.svg" alt=""></a>
+      </header>
+
+      <div class="premium-content">
+        <div class="availability">
+          <span></span>
+          <b>24/7 erreichbar</b>
+        </div>
+
+        <h1>Wo möchten<br><span>Sie hin?</span></h1>
+
+        <button class="destination-card" data-go="booking"><img class="asset-nav-icon" src="booking.svg" alt=""><span>Buchen</span></button>
+
+        <button class="rating-card" data-go="reviews">
+          <span>★★★★★</span>
+          <strong>5,0 Google</strong>
+          <small>230+ Bewertungen</small>
+          <em>›</em>
+        </button>
+
+        <div class="premium-services">
+          <button data-go="booking"><img class="asset-nav-icon" src="booking.svg" alt=""><span>Buchen</span></button>
+
+          <button data-go="medical">
+            <img class="asset-service-icon" src="medical.svg" alt="">
+            <div><b>Krankenfahrt</b><small>Arzt, Dialyse & mehr</small></div>
+            <em>›</em>
+          </button>
+
+          <button data-go="wheelchair">
+            <img class="asset-service-icon" src="wheelchair.svg" alt="">
+            <div><b>Rollstuhlfahrt</b><small>Privat & medizinisch</small></div>
+            <em>›</em>
+          </button>
+
+          <button data-go="airport">
+            <img class="asset-service-icon" src="airport.svg" alt="">
+            <div><b>Flughafen</b><small>FRA · FKB · STR</small></div>
+            <em>›</em>
+          </button>
+        </div>
+
+        <button class="live-card">
+          <div class="live-left">
+            <span class="status-dot"></span>
+            <div>
+              <b>Jetzt verfügbar</b>
+              <small>Mehrere Fahrzeuge<br>in Ihrer Nähe</small>
+              <strong>ONLINE</strong>
+            </div>
+          </div>
+          <div class="live-right">
+            <span class="mini-fleet-icon"></span>
+            <div>
+              <b><span class="num">7</span> Fahrzeuge<br>im Einsatz</b>
+              <small>24/7 erreichbar</small>
+            </div>
+          </div>
+        </button>
+
+        <button class="member-card" data-go="rewards">
+          <span class="member-medal asset-medal"><img src="rewards.svg" alt=""></span>
+          <div>
+            <b>Gold-Mitglied</b>
+            <strong><span class="num">230</span> Punkte</strong>
+          </div>
+          <div class="member-progress"><i></i></div>
+          <small>Nächstes Abzeichen<br><b>in 70 Punkten</b></small>
+          <em>›</em>
+        </button>
+
+        <button class="yumak-card" data-go="yumak">
+          <span class="yumak-avatar"><img src="yumak.png" alt=""></span>
+          <div>
+            <b>Yumak</b>
+            <small>Ihr digitaler<br>Assistent.</small>
+          </div>
+          <strong>Frage Yumak</strong>
+          <em>›</em>
+        </button>
+      </div>
+    </section>
+
+    <section id="booking" class="screen page-screen">
+      <header class="page-head"><button data-go="home"><img class="asset-nav-icon" src="home.svg" alt=""><span>Start</span></button><h2>Buchen</h2><a href="tel:072743567">☎</a></header>
+      <div class="phone-card"><b>Taxi Germersheim GmbH</b><span>07274 3567</span></div>
+      <div class="big-action-grid">
+        <button class="big-action"><span>📍</span><b>Jetzt abholen</b><small>Taxi sofort anfragen</small></button>
+        <button class="big-action"><span>📅</span><b>Für später</b><small>Termin reservieren</small></button>
+        <button class="big-action"><span>⭐</span><b>Lieblingsadresse</b><small>Zuhause, Arbeit, Bahnhof</small></button>
+      </div>
+    </section>
+
+    <section id="medical" class="screen page-screen">
+      <header class="page-head"><button data-go="home"><img class="asset-nav-icon" src="home.svg" alt=""><span>Start</span></button><h2>Krankenfahrt</h2><a href="tel:072743567">☎</a></header>
+      <div class="option-list">
+        <button>🏥 Arzttermin <em>›</em></button><button>🩸 Dialyse <em>›</em></button><button>💉 Chemotherapie <em>›</em></button>
+        <button>☢️ Strahlentherapie <em>›</em></button><button>🏥 Krankenhaus <em>›</em></button><button>🏋️ Reha <em>›</em></button><button>➕ Sonstige Krankenfahrt <em>›</em></button>
+      </div>
+    </section>
+
+    <section id="wheelchair" class="screen page-screen">
+      <header class="page-head"><button data-go="home"><img class="asset-nav-icon" src="home.svg" alt=""><span>Start</span></button><h2>Rollstuhlfahrt</h2><a href="tel:072743567">☎</a></header>
+      <div class="hero-card"><h3>Barrierefrei unterwegs</h3><p>Für private Fahrten, Arzttermine, Krankenhaus, Bahnhof, Flughafen oder Freizeit.</p><button>Rollstuhlfahrt anfragen</button></div>
+    </section>
+
+    <section id="airport" class="screen page-screen">
+      <header class="page-head"><button data-go="home"><img class="asset-nav-icon" src="home.svg" alt=""><span>Start</span></button><h2>Flughafen</h2><a href="tel:072743567">☎</a></header>
+      <div class="option-list"><button>✈️ Frankfurt FRA <em>ab 250 €</em></button><button>✈️ Baden-Baden FKB <em>ab 150 €</em></button><button>✈️ Stuttgart STR <em>Anfragen</em></button></div>
+    </section>
+
+    <section id="yumak" class="screen page-screen yumak-screen">
+      <header class="page-head"><button data-go="home"><img class="asset-nav-icon" src="home.svg" alt=""><span>Start</span></button><h2>Yumak</h2><button>🐾</button></header>
+      <div class="yumak-hero"><img src="yumak.png" alt="Yumak"><div><h3>Hallo, ich bin Yumak.</h3><p>Ich helfe Ihnen beim Buchen, bei Krankenfahrten, Rewards und Support.</p></div></div>
+      <div class="quick-actions"><button>🚕 Taxi bestellen</button><button>🏥 Krankenfahrt</button><button>♿ Rollstuhlfahrt</button><button>✈️ Flughafen</button><button>📦 Fundsachen</button><button>📄 Dokumente</button></div>
+      <div class="chat-preview"><p><b>Yumak:</b> Wohin möchten Sie heute fahren?</p><div class="chat-input">Nachricht schreiben… <span>➤</span></div></div>
+    </section>
+
+    <section id="rewards" class="screen page-screen">
+      <header class="page-head"><button data-go="home"><img class="asset-nav-icon" src="home.svg" alt=""><span>Start</span></button><h2>Rewards</h2><button>★</button></header>
+      <div class="level-card"><small>Ihr Status</small><h3>Gold · 230 Punkte</h3><div class="progress"><span></span></div><p>Geheime Abzeichen und Gutscheine kommen später.</p></div>
+    </section>
+
+    <section id="profile" class="screen page-screen">
+      <header class="page-head"><button data-go="home"><img class="asset-nav-icon" src="home.svg" alt=""><span>Start</span></button><h2>Profil</h2><button>⚙</button></header>
+      <div class="profile-card"><div class="avatar">TG</div><h3>Gastprofil</h3><p>Wallet, Dokumente, Favoriten und Rechnungen werden hier ergänzt.</p></div>
+    </section>
+
+    <section id="rides" class="screen page-screen">
+      <header class="page-head"><button data-go="home"><img class="asset-nav-icon" src="home.svg" alt=""><span>Start</span></button><h2>Meine Fahrten</h2><button>+</button></header>
+      <div class="ride-card"><b>Keine aktive Fahrt</b><p>Hier erscheint später die Live-Fahrt mit Fahrer, Fahrzeug und Ankunftszeit.</p></div>
+    </section>
+
+    <section id="reviews" class="screen page-screen reviews-screen">
+      <header class="review-head">
+        <button data-go="home" aria-label="Zurück"><img class="asset-nav-icon" src="home.svg" alt=""><span>Start</span></button>
+        <h2>Google Bewertungen</h2>
+        <a href="https://maps.app.goo.gl/6u1KZVioa5227yXGA?g_st=ic" target="_blank" rel="noopener" aria-label="Google Bewertungen öffnen">↗</a>
+      </header>
+
+      <div class="review-hero-card">
+        <div class="review-car-bg"></div>
+        <img src="tg-icon-original.png" alt="Taxi Germersheim Icon">
+        <h3>Taxi Germersheim GmbH</h3>
+        <div class="review-score"><strong>5,0</strong><span>★★★★★</span><small>230 Bewertungen</small></div>
+        <p><i></i> Verifizierter Google-Eintrag</p>
+      </div>
+
+      <div class="review-stats">
+        <div><span class="stat-star"></span><b>5,0</b><small>Gesamtbewertung</small></div>
+        <div><span class="stat-chat"></span><b>230+</b><small>Bewertungen</small></div>
+        <div><span class="stat-clock"></span><b>24/7</b><small>Erreichbar</small></div>
+        <div><span class="stat-pin"></span><b>GER</b><small>Lokal & regional</small></div>
+      </div>
+
+      <h3 class="review-title">Was unsere Fahrgäste sagen</h3>
+
+      <div class="review-list">
+        <article>
+          <div class="review-avatar"><img src="yumak.png" alt=""></div>
+          <div>
+            <b>Michael S.</b>
+            <span>★★★★★ <small>vor 3 Tagen</small></span>
+            <p>Pünktlich, freundlich und immer zuverlässig. Besser geht es nicht!</p>
+          </div>
+        </article>
+
+        <article>
+          <div class="review-avatar"><img src="yumak.png" alt=""></div>
+          <div>
+            <b>Sandra H.</b>
+            <span>★★★★★ <small>vor 1 Woche</small></span>
+            <p>Sehr angenehme Fahrer und top Service. Jederzeit wieder!</p>
+          </div>
+        </article>
+
+        <article>
+          <div class="review-avatar"><img src="yumak.png" alt=""></div>
+          <div>
+            <b>Thomas M.</b>
+            <span>★★★★★ <small>vor 2 Wochen</small></span>
+            <p>Die beste Taxi-Zentrale in der Umgebung. Klare Empfehlung!</p>
+          </div>
+        </article>
+      </div>
+
+      <a class="google-open-card" href="https://maps.app.goo.gl/6u1KZVioa5227yXGA?g_st=ic" target="_blank" rel="noopener">
+        <span class="stat-pin"></span>
+        <div>
+          <b>Alle Bewertungen auf Google ansehen</b>
+          <small>Sie werden direkt zu Google Maps weitergeleitet.</small>
+        </div>
+        <em>↗</em>
+      </a>
+    </section>
+
+    <nav class="bottom-nav">
+      <button class="active" data-go="home"><img class="asset-nav-icon" src="home.svg" alt=""><span>Start</span></button>
+      <button data-go="booking"><img class="asset-nav-icon" src="booking.svg" alt=""><span>Buchen</span></button>
+      <button data-go="yumak"><img class="asset-nav-icon" src="yumak.svg" alt=""><span>Yumak</span></button>
+      <button data-go="rewards"><img class="asset-nav-icon" src="rewards.svg" alt=""><span>Rewards</span></button>
+      <button data-go="profile"><img class="asset-nav-icon" src="profile.svg" alt=""><span>Profil</span></button>
+    </nav>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
