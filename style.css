@@ -106,3 +106,60 @@ label{display:block;color:var(--gold);font-weight:950;letter-spacing:.14em;font-
   .reward small{font-size:11px!important}
   .panel h1,.selected h2{font-size:30px!important}
 }
+
+
+/* V4.0.2 – Detail Chips + 2s Splash */
+.splash{
+  transition:opacity .35s ease, visibility .35s ease!important;
+}
+
+/* Fahrdetails wirklich sichtbar klickbar */
+.details button,
+.chips button,
+.small-toggle button{
+  cursor:pointer!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+  transition:transform .12s ease, border-color .12s ease, background .12s ease, color .12s ease, box-shadow .12s ease!important;
+}
+
+.details button:active,
+.chips button:active,
+.small-toggle button:active{
+  transform:scale(.97)!important;
+}
+
+.details button.active,
+.chips button.active,
+.small-toggle button.active{
+  color:#111!important;
+  background:linear-gradient(135deg,#ffe47d,#d5a437)!important;
+  border-color:rgba(255,217,106,.75)!important;
+  box-shadow:0 0 0 1px rgba(255,217,106,.18),0 12px 22px rgba(0,0,0,.24)!important;
+}
+
+.details button.active i,
+.chips button.active i,
+.small-toggle button.active i{
+  color:#111!important;
+}
+
+/* Detailchips etwas mehr Touchfläche */
+.details button{
+  min-height:46px!important;
+  padding:0 16px!important;
+}
+
+.details button i{
+  pointer-events:none!important;
+}
+
+.details button *{
+  pointer-events:none!important;
+}
+
+/* Button-Text nicht versehentlich markieren */
+.details button,
+.chips button{
+  -webkit-tap-highlight-color:transparent!important;
+}
