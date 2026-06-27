@@ -5850,18 +5850,11 @@ html, body{
 }
 
 
-/* =========================================================
-   V2.9.1 – Bottom Nav Restore + Back Fix Support
-   ========================================================= */
-
-body.tg-ready .splash,
-body.tg-ready #splash,
-body.tg-ready .splash-screen,
-body.tg-ready .intro,
-body.tg-ready .intro-screen,
-body.tg-ready .loader,
-body.tg-ready .loading,
-body.tg-ready .loading-screen {
+/* V2.9.2 – True Navigation + Splash Restore */
+body.splash-finished #simpleSplash,
+body.app-started #simpleSplash,
+body.splash-finished .splash,
+body.app-started .splash{
   display:none!important;
   opacity:0!important;
   visibility:hidden!important;
@@ -5879,65 +5872,22 @@ body.tg-ready .loading-screen {
   opacity:1!important;
 }
 
-/* Bottom-Leiste darf nie verschwinden */
-.bottom-nav,
-.tabbar,
-.bottom-tabs{
-  display:flex!important;
+body.app-started .bottom-nav,
+body.splash-finished .bottom-nav{
+  display:grid!important;
   visibility:visible!important;
   opacity:1!important;
   pointer-events:auto!important;
-  z-index:9999!important;
 }
 
-/* Aktiver Tab */
-.bottom-nav a.active,
 .bottom-nav button.active,
-.bottom-nav a.is-active,
-.bottom-nav button.is-active,
-.tabbar a.active,
-.tabbar button.active,
-.nav-item.active,
-.bottom-tab.active{
-  color:#ffdf6e!important;
+.bottom-nav button.is-active{
+  color:var(--gold-2)!important;
   opacity:1!important;
 }
 
-.bottom-nav a.active svg,
-.bottom-nav button.active svg,
-.bottom-nav a.is-active svg,
-.bottom-nav button.is-active svg,
-.tabbar a.active svg,
-.tabbar button.active svg{
-  stroke:#ffdf6e!important;
-  color:#ffdf6e!important;
-  filter:drop-shadow(0 0 8px rgba(255,217,106,.32))!important;
+.bottom-nav button.active img,
+.bottom-nav button.is-active img{
+  opacity:1!important;
+  filter:brightness(0) saturate(100%) invert(86%) sepia(53%) saturate(620%) hue-rotate(355deg) brightness(112%) contrast(106%) drop-shadow(0 0 11px rgba(255,217,106,.46))!important;
 }
-
-.ride-direction-v291{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin:0 0 12px;
-}
-.ride-direction-v291 button{
-  min-height:58px;
-  border-radius:21px;
-  border:1px solid rgba(255,255,255,.10);
-  background:radial-gradient(circle at 14% 50%,rgba(255,217,106,.055),transparent 30%),linear-gradient(145deg,#111217,#090a0d);
-  color:rgba(255,255,255,.72);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:9px;
-  padding:0 10px;
-}
-.ride-direction-v291 button span{
-  width:25px;height:25px;border-radius:10px;display:grid;place-items:center;color:#ffd96a;background:rgba(255,217,106,.07);border:1px solid rgba(255,217,106,.18);font-size:15px;font-weight:950;
-}
-.ride-direction-v291 button b{font-size:12.7px;line-height:1.1;font-weight:950}
-.ride-direction-v291 button.active{
-  color:#111;border-color:rgba(255,217,106,.62);background:linear-gradient(135deg,#ffe27b,#d8a83d);box-shadow:0 14px 28px rgba(0,0,0,.28),0 0 18px rgba(255,217,106,.13);
-}
-.ride-direction-v291 button.active span{color:#111;border-color:rgba(0,0,0,.12);background:rgba(0,0,0,.08)}
-@media(max-width:390px){.ride-direction-v291{grid-template-columns:1fr}}

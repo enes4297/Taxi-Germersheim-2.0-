@@ -66,7 +66,7 @@
             <span class="service-card__arrow">›</span>
           </button>
 
-          <button class="service-card" data-go="medical" type="button">
+          <button class="service-card" data-go="medical-select" type="button">
             <span class="service-card__icon"><img src="medical.svg" alt=""></span>
             <span class="service-card__text">
               <b>Krankenfahrt</b>
@@ -75,7 +75,7 @@
             <span class="service-card__arrow">›</span>
           </button>
 
-          <button class="service-card" data-go="wheelchair" type="button">
+          <button class="service-card" data-go="wheelchair-select" type="button">
             <span class="service-card__icon"><img src="wheelchair.svg" alt=""></span>
             <span class="service-card__text">
               <b>Rollstuhl</b>
@@ -84,7 +84,7 @@
             <span class="service-card__arrow">›</span>
           </button>
 
-          <button class="service-card" data-go="airport" type="button">
+          <button class="service-card" data-go="airport-select" type="button">
             <span class="service-card__icon"><img src="airport.svg" alt=""></span>
             <span class="service-card__text">
               <b>Flughafen</b>
@@ -858,7 +858,7 @@
 
     <section id="reviews" class="screen page reviews-screen" data-screen="reviews">
       <header class="page-header reviews-header">
-        <button data-go="why" type="button">‹</button>
+        <button data-back type="button">‹</button>
         <h2>Google Bewertungen</h2>
         <span class="page-header__spacer"></span>
       </header>
@@ -1285,6 +1285,163 @@
       });
     }
     document.addEventListener("DOMContentLoaded", initRideDirectionV280);
+  </script>
+
+
+  <script>
+  /* FINAL TG NAV FIX V2.9.2 – must stay last */
+  (function(){
+    "use strict";
+
+    const stack = [];
+    const $ = (s,r=document)=>r.querySelector(s);
+    const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+
+    function screens(){ return $$(".screen"); }
+    function active(){ return $(".screen.active") || $("#home") || screens()[0]; }
+    function activeId(){ const a = active(); return a ? a.id : "home"; }
+    function y(){ return window.scrollY || document.documentElement.scrollTop || 0; }
+
+    function finishSplash(){
+      document.body.classList.add("splash-finished","app-started");
+      const splash = $("#simpleSplash") || $(".splash");
+      if(splash){
+        splash.style.display="none";
+        splash.style.visibility="hidden";
+        splash.style.opacity="0";
+        splash.style.pointerEvents="none";
+      }
+    }
+
+    function tabFor(id){
+      const map = {
+        home:"home",
+        booking:"booking",
+        yumak:"yumak",
+        rewards:"rewards",
+        profile:"profile"
+      };
+      return map[id] || null;
+    }
+
+    function updateTabs(id){
+      const wanted = tabFor(id);
+      $$(".bottom-nav button,.bottom-nav a,[data-tab]").forEach(el=>{
+        const raw = (el.dataset.tab || el.dataset.go || el.getAttribute("href") || "").replace("#","");
+        const on = wanted && raw === wanted;
+        el.classList.toggle("active", !!on);
+        el.classList.toggle("is-active", !!on);
+      });
+    }
+
+    function show(id, scrollY=0){
+      const target = document.getElementById(id);
+      if(!target) return false;
+
+      screens().forEach(s=>{
+        s.classList.remove("active","is-active-screen");
+        s.style.display = "none";
+      });
+
+      target.classList.add("active","is-active-screen");
+      target.style.display = "block";
+      target.style.visibility = "visible";
+      target.style.opacity = "1";
+
+      document.body.dataset.screen = id;
+      updateTabs(id);
+      finishSplash();
+
+      requestAnimationFrame(()=>window.scrollTo({top:scrollY || 0, behavior:"auto"}));
+      return true;
+    }
+
+    function pushCurrent(nextId){
+      const id = activeId();
+      if(!id || id === nextId) return;
+
+      const item = {id:id, y:y()};
+      const last = stack[stack.length - 1];
+
+      if(last && last.id === item.id){
+        last.y = item.y;
+      } else {
+        stack.push(item);
+      }
+
+      // remove direct duplicates
+      for(let i = stack.length - 1; i > 0; i--){
+        if(stack[i].id === stack[i-1].id) stack.splice(i,1);
+      }
+
+      if(stack.length > 40) stack.splice(0, stack.length - 40);
+    }
+
+    function go(id){
+      if(!id || !document.getElementById(id)) return false;
+      pushCurrent(id);
+      return show(id, 0);
+    }
+
+    function back(){
+      const current = activeId();
+      let prev = stack.pop();
+
+      while(prev && (!prev.id || prev.id === current || !document.getElementById(prev.id))){
+        prev = stack.pop();
+      }
+
+      if(prev) return show(prev.id, prev.y || 0);
+      return show("home", 0);
+    }
+
+    window.showScreen = function(id){ return go(id); };
+    window.tgGoTo = go;
+    window.tgGoBack = back;
+
+    document.addEventListener("click", function(e){
+      const backBtn = e.target.closest("[data-back],.js-back,.back-button");
+      if(backBtn){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        back();
+        return false;
+      }
+
+      const goBtn = e.target.closest("[data-go]");
+      if(goBtn){
+        const id = goBtn.dataset.go;
+        if(id && document.getElementById(id)){
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          go(id);
+          return false;
+        }
+      }
+
+      const link = e.target.closest('a[href^="#"]');
+      if(link){
+        const id = link.getAttribute("href").replace("#","");
+        if(id && document.getElementById(id)){
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          go(id);
+          return false;
+        }
+      }
+    }, true);
+
+    document.addEventListener("DOMContentLoaded", function(){
+      setTimeout(finishSplash, 2850);
+      setTimeout(finishSplash, 4200);
+      updateTabs(activeId());
+    });
+
+    setTimeout(()=>updateTabs(activeId()), 300);
+  })();
   </script>
 
 </body>
