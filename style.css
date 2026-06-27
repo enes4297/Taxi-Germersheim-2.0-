@@ -6175,3 +6175,193 @@ body.splash-finished .splash{
     min-height:78px!important;
   }
 }
+
+
+/* =========================================================
+   V3.0.2 – Booking Icon Precision
+   Goldene Fahrttyp-Icons + symmetrische Fahrtbuttons
+   ========================================================= */
+
+.booking-type-grid{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:12px!important;
+  align-items:stretch!important;
+}
+
+.booking-type-grid .type-card-v302{
+  height:98px!important;
+  min-height:98px!important;
+  max-height:98px!important;
+  display:grid!important;
+  grid-template-columns:58px 1fr!important;
+  align-items:center!important;
+  justify-items:start!important;
+  gap:14px!important;
+  padding:16px!important;
+  overflow:hidden!important;
+  white-space:nowrap!important;
+  text-align:left!important;
+  box-sizing:border-box!important;
+}
+
+.booking-type-grid .type-card-v302 > img,
+.booking-type-grid .type-card-v302 > svg,
+.booking-type-grid .type-card-v302 > span:not(.tg-svg-icon):not(.type-label-v302){
+  display:none!important;
+}
+
+.type-label-v302{
+  display:block!important;
+  min-width:0!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  color:#fff!important;
+  font-size:21px!important;
+  font-weight:950!important;
+  line-height:1!important;
+}
+
+.tg-svg-icon{
+  width:50px!important;
+  height:50px!important;
+  border-radius:18px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:rgba(255,217,106,.07)!important;
+  border:1px solid rgba(255,217,106,.28)!important;
+  box-shadow:0 0 18px rgba(255,217,106,.09), inset 0 1px 0 rgba(255,255,255,.035)!important;
+  color:#ffd96a!important;
+  position:relative!important;
+  flex:0 0 50px!important;
+}
+
+.tg-svg-icon:before,
+.tg-svg-icon:after{
+  content:""!important;
+  position:absolute!important;
+  display:block!important;
+  box-sizing:border-box!important;
+}
+
+/* Taxi */
+.tg-svg-taxi:before{
+  width:30px!important;height:16px!important;left:10px!important;top:20px!important;
+  border:3px solid #ffd96a!important;border-radius:8px 8px 5px 5px!important;
+}
+.tg-svg-taxi:after{
+  width:24px!important;height:10px!important;left:13px!important;top:12px!important;
+  border:3px solid #ffd96a!important;border-bottom:0!important;border-radius:8px 8px 0 0!important;
+  box-shadow:-6px 22px 0 -3px #ffd96a,20px 22px 0 -3px #ffd96a!important;
+}
+
+/* Medical */
+.tg-svg-medical:before{
+  width:34px!important;height:8px!important;left:8px!important;top:21px!important;background:#ffd96a!important;border-radius:6px!important;
+}
+.tg-svg-medical:after{
+  width:8px!important;height:34px!important;left:21px!important;top:8px!important;background:#ffd96a!important;border-radius:6px!important;
+}
+
+/* Wheelchair pure CSS */
+.tg-svg-wheelchair:before{
+  width:20px!important;height:20px!important;left:12px!important;top:22px!important;
+  border:4px solid #ffd96a!important;border-radius:50%!important;
+}
+.tg-svg-wheelchair:after{
+  width:23px!important;height:28px!important;left:19px!important;top:8px!important;
+  border-left:4px solid #ffd96a!important;border-bottom:4px solid #ffd96a!important;
+  transform:skew(-6deg)!important;border-radius:0 0 0 8px!important;
+  box-shadow:-1px -8px 0 -1px #ffd96a,13px 19px 0 -2px #ffd96a!important;
+}
+
+/* Airport */
+.tg-svg-airport:before{
+  width:36px!important;height:4px!important;left:7px!important;top:24px!important;
+  background:#ffd96a!important;border-radius:5px!important;transform:rotate(-28deg)!important;
+}
+.tg-svg-airport:after{
+  width:20px!important;height:20px!important;left:18px!important;top:15px!important;
+  border-top:4px solid #ffd96a!important;border-left:4px solid #ffd96a!important;
+  transform:rotate(17deg)!important;border-radius:5px 0 0 0!important;
+  box-shadow:12px 15px 0 -7px #ffd96a!important;
+}
+
+/* Symmetrische Fahrtart Buttons */
+.ride-direction-v280 button,
+.ride-direction-v290 button,
+.ride-direction-v291 button,
+.direction-options button,
+.trip-type-grid button,
+.trip-card-v302{
+  display:grid!important;
+  grid-template-columns:46px 1fr 46px!important;
+  align-items:center!important;
+  justify-items:center!important;
+  gap:0!important;
+  text-align:center!important;
+  min-height:82px!important;
+  height:82px!important;
+  padding:0 14px!important;
+  box-sizing:border-box!important;
+}
+
+.ride-direction-v280 button > span:first-child,
+.ride-direction-v290 button > span:first-child,
+.ride-direction-v291 button > span:first-child,
+.direction-options button > span:first-child,
+.trip-type-grid button > span:first-child,
+.trip-card-v302 > span:first-child{
+  grid-column:1!important;
+  justify-self:center!important;
+  margin:0!important;
+}
+
+.ride-direction-v280 button > b,
+.ride-direction-v290 button > b,
+.ride-direction-v291 button > b,
+.direction-options button > b,
+.trip-type-grid button > b,
+.trip-card-v302 > b{
+  grid-column:2!important;
+  justify-self:center!important;
+  text-align:center!important;
+  margin:0!important;
+  width:100%!important;
+  white-space:nowrap!important;
+}
+
+.trip-card-v302:after{
+  content:""!important;
+  grid-column:3!important;
+  width:46px!important;
+}
+
+@media(max-width:390px){
+  .booking-type-grid .type-card-v302{
+    height:92px!important;min-height:92px!important;max-height:92px!important;
+    grid-template-columns:52px 1fr!important;gap:12px!important;padding:14px!important;
+  }
+
+  .tg-svg-icon{
+    width:46px!important;height:46px!important;flex-basis:46px!important;
+  }
+
+  .type-label-v302{
+    font-size:19px!important;
+  }
+
+  .ride-direction-v280 button,
+  .ride-direction-v290 button,
+  .ride-direction-v291 button,
+  .direction-options button,
+  .trip-type-grid button,
+  .trip-card-v302{
+    grid-template-columns:42px 1fr 42px!important;
+    min-height:78px!important;height:78px!important;
+  }
+
+  .trip-card-v302:after{width:42px!important;}
+}
