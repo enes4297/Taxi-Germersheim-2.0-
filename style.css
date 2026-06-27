@@ -7200,3 +7200,377 @@ html,body,#home,#booking{
     font-size:30px!important;
   }
 }
+
+
+
+/* =========================================================
+   V3.4.0 – Clean Home + Booking UI Rebuild
+   Final owner styles
+   ========================================================= */
+
+html.tg340-no-x,
+html,
+body{
+  max-width:100%!important;
+  overflow-x:hidden!important;
+}
+
+body.tg340-ready #home,
+body.tg340-ready #booking{
+  max-width:100vw!important;
+  overflow-x:hidden!important;
+}
+
+/* SVG rendering */
+.tg340-svg svg,
+.tg340-card-icon svg,
+.tg340-trip-icon svg,
+.tg340-chip-icon svg,
+.tg340-nav-icon svg{
+  width:100%!important;
+  height:100%!important;
+  fill:none!important;
+  stroke:#ffd96a!important;
+  stroke-width:3.2!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  display:block!important;
+  filter:drop-shadow(0 0 8px rgba(255,217,106,.20))!important;
+}
+
+/* HOME CARDS */
+#home .tg340-home-card{
+  display:grid!important;
+  grid-template-columns:52px minmax(0,1fr) 22px!important;
+  align-items:center!important;
+  gap:12px!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:118px!important;
+  min-height:118px!important;
+  overflow:hidden!important;
+  padding:18px!important;
+  text-align:left!important;
+  box-sizing:border-box!important;
+}
+
+#home .tg340-home-card *{
+  box-sizing:border-box!important;
+  min-width:0!important;
+}
+
+.tg340-card-icon{
+  width:48px!important;
+  height:48px!important;
+  min-width:48px!important;
+  border-radius:17px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:11px!important;
+  background:rgba(255,217,106,.065)!important;
+  border:1px solid rgba(255,217,106,.30)!important;
+  box-shadow:0 0 18px rgba(255,217,106,.11), inset 0 1px 0 rgba(255,255,255,.04)!important;
+}
+
+.tg340-card-copy{
+  display:block!important;
+  overflow:hidden!important;
+  min-width:0!important;
+}
+
+.tg340-card-copy b{
+  display:block!important;
+  color:#fff!important;
+  font-family:var(--serif)!important;
+  font-size:22px!important;
+  font-weight:950!important;
+  line-height:1.02!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+}
+
+.tg340-card-copy small{
+  display:block!important;
+  margin-top:6px!important;
+  color:rgba(255,255,255,.64)!important;
+  font-size:13px!important;
+  font-weight:760!important;
+  line-height:1.16!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+}
+
+.tg340-chevron{
+  justify-self:end!important;
+  color:#ffd96a!important;
+  font-size:34px!important;
+  line-height:1!important;
+  font-weight:850!important;
+  text-shadow:0 0 10px rgba(255,217,106,.22)!important;
+}
+
+/* Remove old icon systems inside home cards */
+#home .tg340-home-card img,
+#home .tg340-home-card > svg,
+#home .tg340-home-card .tg331-home-iconbox,
+#home .tg340-home-card .tg332-card-iconbox,
+#home .tg340-home-card .tg-premium-icon-box,
+#home .tg340-home-card .tg-v330-iconbox,
+#home .tg340-home-card .tg-inline-icon-box,
+#home .tg340-home-card .tg-svg-icon,
+#home .tg340-home-card .booking-type-polish-icon{
+  display:none!important;
+}
+
+#home .tg340-home-card .tg340-card-icon{
+  display:grid!important;
+}
+
+/* BOOKING TYPES */
+#booking .tg340-type-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:10px!important;
+  width:100%!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+}
+
+#booking .tg340-type-card{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:92px!important;
+  min-height:92px!important;
+  display:grid!important;
+  grid-template-columns:48px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:10px!important;
+  padding:12px!important;
+  border-radius:23px!important;
+  overflow:hidden!important;
+  text-align:left!important;
+  box-sizing:border-box!important;
+  white-space:normal!important;
+}
+
+#booking .tg340-type-card.active{
+  border-color:rgba(255,217,106,.62)!important;
+  box-shadow:0 0 0 1px rgba(255,217,106,.20),0 16px 32px rgba(0,0,0,.30)!important;
+}
+
+#booking .tg340-type-card .tg340-card-icon{
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  padding:9px!important;
+  border-radius:15px!important;
+}
+
+#booking .tg340-type-card .tg340-card-copy b{
+  font-family:inherit!important;
+  font-size:16px!important;
+  line-height:1.05!important;
+  text-overflow:ellipsis!important;
+}
+
+#booking .tg340-type-card .tg340-card-copy small{
+  font-size:9.8px!important;
+  line-height:1.14!important;
+  margin-top:5px!important;
+}
+
+/* TRIP CARDS */
+#booking .tg340-trip-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:10px!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:12px 0 18px!important;
+  overflow:hidden!important;
+}
+
+#booking .tg340-trip-card{
+  height:72px!important;
+  min-height:72px!important;
+  border-radius:23px!important;
+  display:grid!important;
+  grid-template-columns:34px minmax(0,1fr) 10px!important;
+  align-items:center!important;
+  gap:8px!important;
+  padding:0 12px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+  text-align:left!important;
+}
+
+#booking .tg340-trip-card.active{
+  background:linear-gradient(135deg,#ffe47d,#d5a437)!important;
+  color:#111!important;
+}
+
+#booking .tg340-trip-card.active .tg340-trip-icon svg{
+  stroke:#111!important;
+  filter:none!important;
+}
+
+.tg340-trip-icon{
+  width:30px!important;
+  height:30px!important;
+  border-radius:12px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:6px!important;
+  background:rgba(255,217,106,.075)!important;
+  border:1px solid rgba(255,217,106,.22)!important;
+}
+
+#booking .tg340-trip-card b{
+  font-size:14px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  color:inherit!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* DETAILS */
+#booking .tg340-chip{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+
+.tg340-chip-icon{
+  width:18px!important;
+  height:18px!important;
+  flex:0 0 18px!important;
+  display:block!important;
+}
+
+#booking .tg340-chip span{
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* NAV */
+.bottom-nav .tg340-nav-btn{
+  display:grid!important;
+  place-items:center!important;
+  gap:4px!important;
+}
+
+.tg340-nav-icon{
+  width:28px!important;
+  height:28px!important;
+  display:block!important;
+  opacity:.42!important;
+}
+
+.bottom-nav button.active .tg340-nav-icon,
+.bottom-nav button.is-active .tg340-nav-icon{
+  opacity:1!important;
+}
+
+.bottom-nav button.active .tg340-nav-icon svg,
+.bottom-nav button.is-active .tg340-nav-icon svg{
+  stroke:#ffd96a!important;
+  filter:drop-shadow(0 0 11px rgba(255,217,106,.45))!important;
+}
+
+.bottom-nav button:not(.active):not(.is-active) .tg340-nav-icon svg{
+  stroke:rgba(255,255,255,.35)!important;
+  filter:none!important;
+}
+
+.bottom-nav .tg340-yumak-nav .tg340-nav-icon{
+  width:32px!important;
+  height:32px!important;
+  border-radius:13px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:4px!important;
+  background:rgba(255,217,106,.045)!important;
+  border:1px solid rgba(255,217,106,.16)!important;
+}
+
+.bottom-nav button.active.tg340-yumak-nav .tg340-nav-icon,
+.bottom-nav button.is-active.tg340-yumak-nav .tg340-nav-icon{
+  background:rgba(255,217,106,.11)!important;
+  border-color:rgba(255,217,106,.34)!important;
+}
+
+/* Remove all blank old circles */
+#booking .tg-v330-trip span:empty,
+#booking .trip-grid-v310 button span:empty,
+#booking .tg-inline-trip-card span:empty,
+#booking .trip-card-v302:after{
+  display:none!important;
+  content:none!important;
+}
+
+/* iPhone tuning */
+@media(max-width:390px){
+  #home .tg340-home-card{
+    grid-template-columns:48px minmax(0,1fr) 18px!important;
+    gap:10px!important;
+    height:106px!important;
+    min-height:106px!important;
+    padding:14px!important;
+  }
+
+  .tg340-card-icon{
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+    padding:9px!important;
+    border-radius:15px!important;
+  }
+
+  .tg340-card-copy b{
+    font-size:18px!important;
+  }
+
+  .tg340-card-copy small{
+    font-size:11.5px!important;
+  }
+
+  .tg340-chevron{
+    font-size:29px!important;
+  }
+
+  #booking .tg340-type-card{
+    height:86px!important;
+    min-height:86px!important;
+    grid-template-columns:40px minmax(0,1fr)!important;
+    gap:8px!important;
+    padding:10px!important;
+  }
+
+  #booking .tg340-type-card .tg340-card-icon{
+    width:38px!important;
+    height:38px!important;
+    min-width:38px!important;
+    padding:8px!important;
+  }
+
+  #booking .tg340-type-card .tg340-card-copy b{
+    font-size:15px!important;
+  }
+
+  #booking .tg340-type-card .tg340-card-copy small{
+    font-size:9px!important;
+  }
+}
