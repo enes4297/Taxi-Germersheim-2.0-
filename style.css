@@ -5851,11 +5851,11 @@ html, body{
 
 
 /* =========================================================
-   V2.9.7 Click + Splash Safety Fix
+   V2.9.8 Stable Navigation + Splash Fix
    ========================================================= */
 
-/* Während Logo/Splash: keine Bottom-Leiste sichtbar */
-body:not(.app-ready) .bottom-nav,
+/* Bottom-Leiste während Logo ausblenden */
+body:not(.app-started) .bottom-nav,
 body:not(.splash-finished) .bottom-nav{
   display:none!important;
   opacity:0!important;
@@ -5863,38 +5863,45 @@ body:not(.splash-finished) .bottom-nav{
   pointer-events:none!important;
 }
 
-/* Nach Start: Bottom-Leiste sichtbar */
-body.app-ready .bottom-nav,
+/* Nach Splash sofort sichtbar, ohne Animation/Hochklappen */
+body.app-started .bottom-nav,
 body.splash-finished .bottom-nav{
   display:grid!important;
   opacity:1!important;
   visibility:visible!important;
   pointer-events:auto!important;
+  transition:none!important;
+  transform:translateX(-50%)!important;
 }
 
-/* Splash/Intro darf nach Ende keine Klicks blockieren */
-body.app-ready #simpleSplash,
-body.app-ready .splash,
-body.app-ready .splash-screen,
-body.app-ready .intro,
-body.app-ready .intro-screen,
-body.app-ready .loader,
-body.app-ready .loading,
-body.app-ready .loading-screen{
+body.splash-finished #simpleSplash,
+body.splash-finished .splash{
   display:none!important;
   opacity:0!important;
   visibility:hidden!important;
   pointer-events:none!important;
 }
 
-/* Screens stabil */
-.screen:not(.active):not(.is-active-screen){
-  display:none;
-}
+.screen:not(.active):not(.is-active-screen){display:none!important;}
+.screen.active,.screen.is-active-screen{display:block!important;opacity:1!important;visibility:visible!important;}
 
-.screen.active,
-.screen.is-active-screen{
-  display:block!important;
-  opacity:1!important;
-  visibility:visible!important;
+/* Aktiver Tab: Icon UND Schrift */
+.bottom-nav button{color:rgba(255,255,255,.42)!important;}
+.bottom-nav button img{opacity:.58!important;filter:brightness(0) saturate(100%) invert(55%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(92%) contrast(86%)!important;}
+.bottom-nav button.active,
+.bottom-nav button.is-active{color:var(--gold-2)!important;opacity:1!important;}
+.bottom-nav button.active span,
+.bottom-nav button.is-active span{color:var(--gold-2)!important;text-shadow:0 0 12px rgba(255,217,106,.28)!important;}
+.bottom-nav button.active img,
+.bottom-nav button.is-active img{opacity:1!important;filter:brightness(0) saturate(100%) invert(86%) sepia(53%) saturate(620%) hue-rotate(355deg) brightness(112%) contrast(106%) drop-shadow(0 0 11px rgba(255,217,106,.46))!important;}
+
+/* Auswahlseiten klickbar */
+.service-select-screen,
+.service-select-list,
+.service-select-list button{
+  pointer-events:auto!important;
+}
+.service-select-list button{
+  position:relative!important;
+  z-index:5!important;
 }

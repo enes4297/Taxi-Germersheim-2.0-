@@ -66,7 +66,7 @@
             <span class="service-card__arrow">›</span>
           </button>
 
-          <button class="service-card" data-go="medical" type="button">
+          <button class="service-card" data-go="medical-select" type="button">
             <span class="service-card__icon"><img src="medical.svg" alt=""></span>
             <span class="service-card__text">
               <b>Krankenfahrt</b>
@@ -75,7 +75,7 @@
             <span class="service-card__arrow">›</span>
           </button>
 
-          <button class="service-card" data-go="wheelchair" type="button">
+          <button class="service-card" data-go="wheelchair-select" type="button">
             <span class="service-card__icon"><img src="wheelchair.svg" alt=""></span>
             <span class="service-card__text">
               <b>Rollstuhl</b>
@@ -84,7 +84,7 @@
             <span class="service-card__arrow">›</span>
           </button>
 
-          <button class="service-card" data-go="airport" type="button">
+          <button class="service-card" data-go="airport-select" type="button">
             <span class="service-card__icon"><img src="airport.svg" alt=""></span>
             <span class="service-card__text">
               <b>Flughafen</b>
@@ -858,7 +858,7 @@
 
     <section id="reviews" class="screen page reviews-screen" data-screen="reviews">
       <header class="page-header reviews-header">
-        <button data-go="why" type="button">‹</button>
+        <button data-back type="button">‹</button>
         <h2>Google Bewertungen</h2>
         <span class="page-header__spacer"></span>
       </header>
@@ -935,11 +935,61 @@
     let bookingCameFromService = false;
     let currentBookingType = "taxi";
 
-    function showScreen(id){
-      document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+    const tgNavStack = [];
+    const tgAlias = { medical:"medical-select", wheelchair:"wheelchair-select", airport:"airport-select", start:"home", buchen:"booking", profil:"profile" };
+
+    function tgTabFor(id){
+      if(id === "home") return "home";
+      if(id === "booking") return "booking";
+      if(id === "yumak") return "yumak";
+      if(id === "rewards") return "rewards";
+      if(id === "profile") return "profile";
+      return null;
+    }
+
+    function updateBottomNav(id){
+      const tab = tgTabFor(id);
+      document.querySelectorAll(".bottom-nav button").forEach(btn=>{
+        const active = !!tab && btn.dataset.go === tab;
+        btn.classList.toggle("active", active);
+        btn.classList.toggle("is-active", active);
+      });
+      document.body.dataset.screen = id;
+    }
+
+    function showScreen(id, push=true, restoreY=0){
+      id = tgAlias[id] || id;
       const target = document.getElementById(id);
-      if(target) target.classList.add("active");
-      window.scrollTo({top:0, behavior:"smooth"});
+      if(!target) return false;
+
+      const current = document.querySelector(".screen.active");
+      if(push && current && current.id && current.id !== id){
+        tgNavStack.push({id:current.id, y:window.scrollY || 0});
+      }
+
+      document.querySelectorAll(".screen").forEach(s=>{
+        s.classList.remove("active","is-active-screen");
+        s.style.display = "none";
+      });
+
+      target.classList.add("active","is-active-screen");
+      target.style.display = "block";
+      target.style.visibility = "visible";
+      target.style.opacity = "1";
+
+      updateBottomNav(id);
+      window.scrollTo({top:restoreY || 0, behavior:"auto"});
+      return true;
+    }
+
+    function tgBack(){
+      const current = document.querySelector(".screen.active")?.id;
+      let prev = tgNavStack.pop();
+      while(prev && (!prev.id || prev.id === current || !document.getElementById(prev.id))){
+        prev = tgNavStack.pop();
+      }
+      if(prev) showScreen(prev.id, false, prev.y || 0);
+      else showScreen("home", false, 0);
     }
 
     function updateSteps(step){
@@ -1047,8 +1097,16 @@
     }
 
     document.addEventListener("click", function(e){
+      const backBtn = e.target.closest("[data-back]");
+      if(backBtn){
+        e.preventDefault();
+        tgBack();
+        return;
+      }
+
       const go = e.target.closest("[data-go]");
       if(go){
+        e.preventDefault();
         showScreen(go.dataset.go === "home" ? "home" : go.dataset.go);
       }
 
@@ -1285,100 +1343,6 @@
       });
     }
     document.addEventListener("DOMContentLoaded", initRideDirectionV280);
-  </script>
-
-
-  <script>
-  /* V2.9.7 Click + Splash Safety Fix */
-  (function(){
-    function finishIntro(){
-      document.body.classList.add("app-ready");
-      document.body.classList.add("splash-finished");
-
-      var blockers = document.querySelectorAll("#simpleSplash,.splash,.splash-screen,.intro,.intro-screen,.loader,.loading,.loading-screen");
-      blockers.forEach(function(el){
-        el.style.opacity = "0";
-        el.style.visibility = "hidden";
-        el.style.pointerEvents = "none";
-        el.style.display = "none";
-        el.setAttribute("aria-hidden","true");
-      });
-
-      var active = document.querySelector(".screen.active") || document.getElementById("home") || document.querySelector(".screen");
-      if(active){
-        document.querySelectorAll(".screen").forEach(function(s){
-          if(s !== active){
-            s.classList.remove("active","is-active-screen");
-            s.style.display = "none";
-          }
-        });
-        active.classList.add("active","is-active-screen");
-        active.style.display = "block";
-        active.style.visibility = "visible";
-        active.style.opacity = "1";
-      }
-    }
-
-    function showScreen(id){
-      var target = document.getElementById(id);
-      if(!target) return false;
-
-      finishIntro();
-
-      document.querySelectorAll(".screen").forEach(function(s){
-        s.classList.remove("active","is-active-screen");
-        s.style.display = "none";
-      });
-
-      target.classList.add("active","is-active-screen");
-      target.style.display = "block";
-      target.style.visibility = "visible";
-      target.style.opacity = "1";
-
-      document.body.dataset.screen = id;
-      window.scrollTo({top:0, behavior:"auto"});
-      return true;
-    }
-
-    window.tgGoTo = showScreen;
-    window.showScreen = showScreen;
-
-    document.addEventListener("click", function(e){
-      var go = e.target.closest("[data-go]");
-      if(go){
-        var id = go.dataset.go;
-        if(id && document.getElementById(id)){
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          showScreen(id);
-          return false;
-        }
-      }
-
-      var link = e.target.closest('a[href^="#"]');
-      if(link){
-        var id2 = link.getAttribute("href").replace("#","");
-        if(id2 && document.getElementById(id2)){
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          showScreen(id2);
-          return false;
-        }
-      }
-    }, true);
-
-    if(document.readyState === "loading"){
-      document.addEventListener("DOMContentLoaded", function(){
-        setTimeout(finishIntro, 2800);
-        setTimeout(finishIntro, 4200);
-      });
-    } else {
-      setTimeout(finishIntro, 2800);
-      setTimeout(finishIntro, 4200);
-    }
-  })();
   </script>
 
 </body>
