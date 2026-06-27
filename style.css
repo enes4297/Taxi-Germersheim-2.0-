@@ -5654,3 +5654,144 @@ button, a{
 .booking-review-card{border-radius:32px!important}.booking-review-card h3{font-size:28px!important}.booking-summary-lines p{min-height:44px;align-items:center!important}.booking-summary-lines b{font-size:13px;color:#ffd96a!important}.booking-summary-lines small{color:rgba(255,255,255,.76)!important}
 .booking-steps span{white-space:nowrap}.booking-steps span.current{transform:translateY(-1px) scale(1.02)!important}.ride-options button span{font-size:14px!important}.map-preview.active{border-color:rgba(255,217,106,.32)!important;box-shadow:0 16px 32px rgba(0,0,0,.28),0 0 18px rgba(255,217,106,.07)!important}
 @media(max-width:390px){.booking-yumak-strip-v270{grid-template-columns:48px 1fr;padding:11px}.booking-yumak-strip-v270 picture{width:48px;height:48px;border-radius:16px}.booking-review-card h3{font-size:24px!important}}
+
+/* =========================================================
+   V2.8.0 – Fahrtart + Icon Fix + Back Loop Fix
+   ========================================================= */
+
+/* Neue Fahrtart-Auswahl */
+.ride-direction-v280{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:0 0 12px;
+}
+
+.ride-direction-v280 button{
+  min-height:58px;
+  border-radius:21px;
+  border:1px solid rgba(255,255,255,.10);
+  background:
+    radial-gradient(circle at 14% 50%,rgba(255,217,106,.055),transparent 30%),
+    linear-gradient(145deg,#111217,#090a0d);
+  color:rgba(255,255,255,.72);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  padding:0 10px;
+  box-shadow:0 11px 22px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.035);
+  transition:transform .18s cubic-bezier(.2,.8,.2,1), border-color .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
+}
+
+.ride-direction-v280 button span{
+  width:25px;
+  height:25px;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  color:#ffd96a;
+  background:rgba(255,217,106,.07);
+  border:1px solid rgba(255,217,106,.18);
+  font-size:15px;
+  font-weight:950;
+}
+
+.ride-direction-v280 button b{
+  font-size:12.7px;
+  line-height:1.1;
+  font-weight:950;
+}
+
+.ride-direction-v280 button.active{
+  color:#111;
+  border-color:rgba(255,217,106,.62);
+  background:linear-gradient(135deg,#ffe27b,#d8a83d);
+  box-shadow:0 14px 28px rgba(0,0,0,.28),0 0 18px rgba(255,217,106,.13);
+}
+
+.ride-direction-v280 button.active span{
+  color:#111;
+  border-color:rgba(0,0,0,.12);
+  background:rgba(0,0,0,.08);
+}
+
+.ride-direction-v280 button:active{
+  transform:scale(.985);
+}
+
+/* Alte Hin/Rückfahrt-Buttons weniger dominant, weil neue Auswahl oben übernimmt */
+.schedule-panel .roundtrip-toggle,
+.schedule-panel .repeat-toggle{
+  opacity:.72;
+}
+
+/* Rollstuhl-Fahrttyp optisch wie andere */
+.booking-type-grid button[data-type="wheelchair"]{
+  font-size:13px!important;
+  letter-spacing:0!important;
+}
+
+.booking-type-grid button[data-type="wheelchair"]::before{
+  content:"♿";
+  display:block;
+  font-size:19px;
+  line-height:1;
+  margin-bottom:5px;
+  color:#ffd96a;
+  filter:drop-shadow(0 0 7px rgba(255,217,106,.22));
+}
+
+/* Name / Telefon Icons seriöser */
+.booking-field:has(.js-name) .field-icon,
+.booking-field:has(input[type="text"]) .field-icon.name-icon{
+  font-size:0!important;
+}
+
+.booking-field:has(.js-name) .field-icon:before,
+.booking-field:has(input[placeholder*="Name"]) .field-icon:before{
+  content:"ID";
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.08em;
+  color:#ffd96a;
+}
+
+.booking-field:has(.js-phone) .field-icon,
+.booking-field:has(input[type="tel"]) .field-icon{
+  font-size:0!important;
+}
+
+.booking-field:has(.js-phone) .field-icon:before,
+.booking-field:has(input[type="tel"]) .field-icon:before{
+  content:"☎";
+  font-size:17px;
+  color:#ffd96a;
+}
+
+/* Jetzt anrufen Button/Icon ruhiger */
+.call-button,
+.phone-button,
+a[href^="tel"],
+button[data-call]{
+  text-decoration:none!important;
+}
+
+.call-button:before,
+.phone-button:before,
+button[data-call]:before{
+  content:"☎";
+  margin-right:8px;
+  font-weight:950;
+}
+
+/* Back button fixed state */
+[data-back]{
+  touch-action:manipulation;
+}
+
+@media(max-width:390px){
+  .ride-direction-v280{
+    grid-template-columns:1fr;
+  }
+}

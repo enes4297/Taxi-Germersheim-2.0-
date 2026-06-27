@@ -225,6 +225,22 @@
       <div class="booking-service-context">Normale Taxifahrt</div>
 
       <form class="booking-form" onsubmit="return false;">
+
+        <div class="ride-direction-v280" data-direction="oneway">
+          <button type="button" class="active" data-direction-choice="oneway">
+            <span>→</span><b>Hinfahrt</b>
+          </button>
+          <button type="button" data-direction-choice="returnonly">
+            <span>←</span><b>Rückfahrt</b>
+          </button>
+          <button type="button" data-direction-choice="roundtrip">
+            <span>⇄</span><b>Hin- & Rückfahrt</b>
+          </button>
+          <button type="button" data-direction-choice="repeat">
+            <span>↻</span><b>Regelmäßig</b>
+          </button>
+        </div>
+
         <div class="booking-yumak-strip-v270">
           <picture><source srcset="assets/yumak/yumak-neutral.png" type="image/png"><img src="assets/yumak/yumak-neutral.svg" alt="Yumak"></picture>
           <div><b>Yumak prüft mit.</b><small>Start, Ziel und Telefonnummer reichen für die erste Anfrage.</small></div>
@@ -1208,9 +1224,45 @@
 
 
   <script>
+    function initBookingV270(){
+      function updateBookingFieldStates(){
+        document.querySelectorAll(".booking-field input, .profile-form-v260 input").forEach(function(input){
+          const wrap = input.closest(".booking-field") || input.closest("label");
+          if(wrap) wrap.classList.toggle("has-value", !!input.value.trim());
+        });
+      }
+      function collectExtras(){
+        const extras = [];
+        document.querySelectorAll(".ride-options button.active, .mini-options button.active, .roundtrip-toggle.active, .repeat-toggle.active").forEach(function(btn){
+          const text = (btn.textContent || "").replace("✓","").trim();
+          if(text && !/keine/i.test(text)) extras.push(text);
+        });
+        return extras.length ? extras.join(", ") : "Keine Extras";
+      }
+      function enhanceSummary(){
+        const extras = document.querySelector(".summary-extras");
+        if(extras) extras.textContent = collectExtras();
+        const sd = document.querySelector(".summary-date");
+        const st = document.querySelector(".summary-time");
+        if(sd) sd.textContent = document.querySelector(".js-date")?.value || "Jetzt";
+        if(st) st.textContent = document.querySelector(".js-time")?.value || "Sofort";
+      }
+      document.addEventListener("input", updateBookingFieldStates);
+      document.addEventListener("click", function(e){
+        if(e.target.closest(".booking-submit, .ride-options button, .mini-options button, .roundtrip-toggle, .repeat-toggle")){
+          setTimeout(enhanceSummary, 50);
+        }
+      });
+      updateBookingFieldStates();
+    }
+    document.addEventListener("DOMContentLoaded", initBookingV270);
+  </script>
+
+
+  <script>
     (function(){
-      const SCROLL_KEY="tg_scroll_positions_v241";
-      const STACK_KEY="tg_nav_stack_v241";
+      const SCROLL_KEY="tg_scroll_positions_v280";
+      const STACK_KEY="tg_nav_stack_v280";
       const DEFAULT_SCREEN="home";
 
       function read(key, fallback){ try{return JSON.parse(sessionStorage.getItem(key)||"");}catch(e){return fallback;} }
@@ -1256,26 +1308,53 @@
         return true;
       }
 
+      function pushState(from){
+        if(!from) return;
+        let stack = read(STACK_KEY,[]);
+        const y = window.scrollY || 0;
+        const last = stack[stack.length-1];
+
+        // Prevent A-B-A loop: if going back into previous screen, don't duplicate
+        if(last && last.id === from){
+          last.y = y;
+        } else {
+          stack.push({id:from, y:y});
+        }
+
+        // Remove immediate ping-pong pattern A,B,A keeping latest A only
+        if(stack.length >= 3){
+          const a = stack[stack.length-3], b = stack[stack.length-2], c = stack[stack.length-1];
+          if(a.id === c.id && a.id !== b.id){
+            stack.splice(stack.length-3, 2);
+          }
+        }
+
+        write(STACK_KEY, stack.slice(-40));
+      }
+
       function goTo(id, push){
         if(!id) return;
         if(id==="home") id=DEFAULT_SCREEN;
         const from = activeId();
         saveScroll(from);
-        if(push!==false && from && from!==id){
-          const stack = read(STACK_KEY,[]);
-          stack.push({id:from, y:window.scrollY||0});
-          write(STACK_KEY, stack.slice(-40));
-        }
+        if(push!==false && from && from!==id) pushState(from);
         activate(id,{y:0, smooth:true});
       }
 
       function goBack(){
         const from = activeId();
         saveScroll(from);
-        const stack = read(STACK_KEY,[]);
-        const prev = stack.pop();
-        write(STACK_KEY,stack);
-        if(prev && prev.id && document.getElementById(prev.id)){
+        let stack = read(STACK_KEY,[]);
+        let prev = stack.pop();
+
+        // Skip invalid or same-screen entries
+        while(prev && (!prev.id || prev.id === from || !document.getElementById(prev.id))){
+          prev = stack.pop();
+        }
+
+        write(STACK_KEY, stack);
+
+        if(prev && prev.id){
           activate(prev.id,{y:prev.y||0, smooth:false});
         } else {
           activate(DEFAULT_SCREEN,{y:0, smooth:false});
@@ -1306,40 +1385,33 @@
     })();
   </script>
 
-
   <script>
-    function initBookingV270(){
-      function updateBookingFieldStates(){
-        document.querySelectorAll(".booking-field input, .profile-form-v260 input").forEach(function(input){
-          const wrap = input.closest(".booking-field") || input.closest("label");
-          if(wrap) wrap.classList.toggle("has-value", !!input.value.trim());
-        });
-      }
-      function collectExtras(){
-        const extras = [];
-        document.querySelectorAll(".ride-options button.active, .mini-options button.active, .roundtrip-toggle.active, .repeat-toggle.active").forEach(function(btn){
-          const text = (btn.textContent || "").replace("✓","").trim();
-          if(text && !/keine/i.test(text)) extras.push(text);
-        });
-        return extras.length ? extras.join(", ") : "Keine Extras";
-      }
-      function enhanceSummary(){
-        const extras = document.querySelector(".summary-extras");
-        if(extras) extras.textContent = collectExtras();
-        const sd = document.querySelector(".summary-date");
-        const st = document.querySelector(".summary-time");
-        if(sd) sd.textContent = document.querySelector(".js-date")?.value || "Jetzt";
-        if(st) st.textContent = document.querySelector(".js-time")?.value || "Sofort";
-      }
-      document.addEventListener("input", updateBookingFieldStates);
+    function initRideDirectionV280(){
       document.addEventListener("click", function(e){
-        if(e.target.closest(".booking-submit, .ride-options button, .mini-options button, .roundtrip-toggle, .repeat-toggle")){
-          setTimeout(enhanceSummary, 50);
+        const btn = e.target.closest("[data-direction-choice]");
+        if(!btn) return;
+
+        const wrap = btn.closest(".ride-direction-v280");
+        if(!wrap) return;
+
+        wrap.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        wrap.dataset.direction = btn.dataset.directionChoice;
+
+        // Sync old controls without showing them as main UX
+        const round = document.querySelector(".roundtrip-toggle");
+        const repeat = document.querySelector(".repeat-toggle");
+        if(round) round.classList.toggle("active", btn.dataset.directionChoice === "roundtrip");
+        if(repeat) repeat.classList.toggle("active", btn.dataset.directionChoice === "repeat");
+
+        const extras = document.querySelector(".summary-extras");
+        if(extras){
+          const label = btn.textContent.trim();
+          extras.dataset.direction = label;
         }
       });
-      updateBookingFieldStates();
     }
-    document.addEventListener("DOMContentLoaded", initBookingV270);
+    document.addEventListener("DOMContentLoaded", initRideDirectionV280);
   </script>
 
 </body>
