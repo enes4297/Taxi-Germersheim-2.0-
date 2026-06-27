@@ -5894,172 +5894,39 @@ body.splash-finished .bottom-nav{
 
 
 /* =========================================================
-   V2.9.3 – Booking Cleanup
-   Einheitliche Fahrttypen, Rollstuhl-Doppelicons weg, Bottom sofort da
+   V2.9.5 SAFE ROLLBACK FIX
+   Restore Startseite + Bottom Nav. Keine aggressive Karten-Logik.
    ========================================================= */
 
-/* Bottom-Leiste sofort stabil: kein spätes Hochklappen */
-.bottom-nav{
+#home,
+#home.screen.active,
+#home.screen.is-active-screen{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+
+.service-grid,
+.services-grid,
+.home-services,
+.quick-services{
   display:grid!important;
   visibility:visible!important;
   opacity:1!important;
-  transform:none!important;
-  transition:none!important;
-  pointer-events:auto!important;
 }
 
-/* gewählter Fahrttyp Badge */
-.selected-ride-type-v293{
-  margin:12px 0;
-  border:1px solid rgba(255,217,106,.22);
-  border-radius:24px;
-  background:radial-gradient(circle at 10% 50%,rgba(255,217,106,.10),transparent 34%),linear-gradient(145deg,#111217,#07080a);
-  padding:13px 16px;
-  box-shadow:0 12px 24px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.035);
+.service-card{
+  display:grid!important;
+  visibility:visible!important;
+  opacity:1!important;
+  overflow:hidden!important;
 }
 
-.selected-ride-type-v293 small{
-  display:block;
-  color:#ffd96a;
-  text-transform:uppercase;
-  letter-spacing:.12em;
-  font-size:10px;
-  font-weight:950;
-  margin-bottom:4px;
+.service-card > *{
+  visibility:visible!important;
+  opacity:1!important;
 }
 
-.selected-ride-type-v293 strong{
-  color:#fff;
-  font-family:var(--serif);
-  font-size:22px;
-  line-height:1.05;
-}
-
-/* Wechselmöglichkeit */
-.booking-change-type-v293{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin:12px 0;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:22px;
-  background:rgba(255,255,255,.035);
-  padding:11px 12px;
-}
-
-.booking-change-type-v293 span{
-  color:rgba(255,255,255,.58);
-  font-size:12px;
-  font-weight:900;
-}
-
-.booking-change-type-v293 button{
-  border:1px solid rgba(255,217,106,.28);
-  background:rgba(255,217,106,.075);
-  color:#ffd96a;
-  border-radius:16px;
-  padding:9px 12px;
-  font-size:12px;
-  font-weight:950;
-}
-
-/* Fahrttyp Karten einheitlich */
-.booking-type-grid button,
-.ride-type-grid button,
-.fahrt-type-grid button{
-  position:relative;
-  overflow:hidden;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:flex-start!important;
-  gap:14px!important;
-  text-align:left!important;
-}
-
-/* alte/doppelte Emoji-Icons im Rollstuhl-Feld ausblenden, wenn Browser Emoji als Bild rendert */
-.booking-type-grid button.type-wheelchair-clean img,
-.ride-type-grid button.type-wheelchair-clean img,
-.booking-type-grid button.type-wheelchair-clean > :not(.tg-type-icon):not(b),
-.ride-type-grid button.type-wheelchair-clean > :not(.tg-type-icon):not(b){
-  display:none!important;
-}
-
-/* eigene saubere Icons */
-.tg-type-icon{
-  width:46px;
-  height:46px;
-  flex:0 0 46px;
-  border-radius:18px;
-  display:grid;
-  place-items:center;
-  border:1px solid rgba(255,217,106,.26);
-  background:rgba(255,217,106,.07);
-  box-shadow:0 0 14px rgba(255,217,106,.08);
-}
-
-.tg-type-icon:before{
-  color:#ffd96a;
-  font-size:24px;
-  line-height:1;
-  filter:drop-shadow(0 0 6px rgba(255,217,106,.22));
-}
-
-.tg-type-taxi:before{content:"🚕";}
-.tg-type-medical:before{content:"+";font-size:34px;font-weight:300;}
-.tg-type-wheelchair:before{content:"♿";}
-.tg-type-airport:before{content:"✈";font-size:27px;}
-
-.booking-type-grid button b,
-.ride-type-grid button b,
-.fahrt-type-grid button b{
-  color:#fff;
-  font-size:20px;
-  font-weight:950;
-}
-
-/* Fahrtdetail-Chips einheitlicher */
-.ride-options button,
-.fahrt-details button,
-.detail-chips button{
-  gap:9px!important;
-}
-
-.ride-options button img{
-  display:none!important;
-}
-
-.ride-options button::before{
-  display:inline-grid;
-  place-items:center;
-  width:24px;
-  height:24px;
-  flex:0 0 24px;
-  color:#ffd96a;
-  font-size:17px;
-  line-height:1;
-  filter:drop-shadow(0 0 6px rgba(255,217,106,.16));
-}
-
-.ride-options button:nth-child(1)::before{content:"▣";}
-.ride-options button:nth-child(2)::before{content:"◔";}
-.ride-options button:nth-child(3)::before{content:"♿";}
-.ride-options button:nth-child(4)::before{content:"●";}
-.ride-options button:nth-child(5)::before{content:"👥";}
-
-@media(max-width:390px){
-  .booking-change-type-v293{
-    align-items:flex-start;
-    flex-direction:column;
-  }
-}
-
-
-/* =========================================================
-   V2.9.4 – Booking Hardfix CSS
-   ========================================================= */
-
-/* Bottombar volle Breite, kein Abschneiden */
 .bottom-nav{
   position:fixed!important;
   left:0!important;
@@ -6067,135 +5934,27 @@ body.splash-finished .bottom-nav{
   bottom:0!important;
   width:100%!important;
   max-width:100%!important;
-  min-width:100%!important;
   margin:0!important;
-  transform:none!important;
   display:grid!important;
   grid-template-columns:repeat(5,1fr)!important;
   visibility:visible!important;
   opacity:1!important;
   pointer-events:auto!important;
+  transform:none!important;
   z-index:99999!important;
-  box-sizing:border-box!important;
 }
 
-/* Fahrttyp Button Layout */
-.tg-type-clean-btn{
-  min-width:0!important;
+/* Rollstuhl-Doppel-Emoji nur optisch reduzieren, ohne HTML umzubauen */
+.booking-type-grid button,
+.ride-type-grid button{
   overflow:hidden!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:flex-start!important;
-  gap:14px!important;
-  padding:14px 16px!important;
-  white-space:nowrap!important;
 }
 
-.tg-type-clean-btn b{
-  display:block!important;
-  min-width:0!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-  color:#fff!important;
-  font-size:20px!important;
-  line-height:1.05!important;
-  font-weight:950!important;
-}
-
-/* Generische saubere Icons */
-.tg-clean-icon{
-  width:46px!important;
-  height:46px!important;
-  flex:0 0 46px!important;
-  border-radius:18px!important;
-  display:grid!important;
-  place-items:center!important;
-  border:1px solid rgba(255,217,106,.28)!important;
-  background:rgba(255,217,106,.075)!important;
-  box-shadow:0 0 14px rgba(255,217,106,.09)!important;
-}
-
-.tg-clean-icon:before{
-  color:#ffd96a!important;
-  line-height:1!important;
-  font-weight:900!important;
-  filter:drop-shadow(0 0 7px rgba(255,217,106,.22))!important;
-}
-
-.tg-clean-taxi:before{content:"🚕";font-size:23px!important;}
-.tg-clean-medical:before{content:"+";font-size:38px!important;font-weight:300!important;}
-.tg-clean-wheelchair:before{content:"♿";font-size:25px!important;}
-.tg-clean-airport:before{content:"✈";font-size:27px!important;}
-.tg-clean-luggage:before{content:"▣";font-size:20px!important;}
-.tg-clean-child:before{content:"◔";font-size:20px!important;}
-.tg-clean-pet:before{content:"●";font-size:20px!important;}
-.tg-clean-people:before{content:"👥";font-size:19px!important;}
-
-/* Alte Bilder/Emojis in bereinigten Buttons konsequent weg */
-.tg-type-clean-btn > img,
-.tg-type-clean-btn > svg,
-.tg-type-clean-btn > span:not(.tg-clean-icon),
-.tg-detail-clean-btn > img,
-.tg-detail-clean-btn > svg,
-.tg-detail-clean-btn > span:not(.tg-clean-icon){
-  display:none!important;
-}
-
-/* Detailchips */
-.tg-detail-clean-btn{
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:9px!important;
-  white-space:nowrap!important;
-  overflow:hidden!important;
-  min-width:0!important;
-}
-
-.tg-detail-clean-btn .tg-clean-icon{
-  width:28px!important;
-  height:28px!important;
-  flex:0 0 28px!important;
-  border-radius:10px!important;
-  background:transparent!important;
-  border:0!important;
-  box-shadow:none!important;
-}
-
-.tg-detail-clean-btn b{
-  display:block!important;
-  min-width:0!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-}
-
-/* Anderen Fahrttyp wählen: sicher klickbar */
-.booking-change-type-v293,
-.booking-change-type-v294{
-  position:relative!important;
-  z-index:20!important;
-  pointer-events:auto!important;
-}
-
-.booking-change-type-v293 button,
-.booking-change-type-v294 button,
-[data-reset-ride-type]{
+/* Fahrttyp Wechselbutton klickbar machen, aber ohne Layout zu zerstören */
+[data-reset-ride-type],
+.booking-change-type-v293 button{
   pointer-events:auto!important;
   touch-action:manipulation!important;
-  cursor:pointer!important;
-}
-
-/* Type Grids nie verstecken */
-.booking-type-grid,
-.ride-type-grid,
-.fahrt-type-grid{
-  display:grid!important;
-  visibility:visible!important;
-  opacity:1!important;
-  pointer-events:auto!important;
-}
-
-@media(max-width:390px){
-  .tg-type-clean-btn b{font-size:18px!important;}
-  .tg-clean-icon{width:42px!important;height:42px!important;flex-basis:42px!important;}
+  position:relative!important;
+  z-index:20!important;
 }
