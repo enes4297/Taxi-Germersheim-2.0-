@@ -1,37 +1,25 @@
 
+
+
+
 /* =========================================================
-   V2.9.0 – Taxi Germersheim App Controller
-   Single Source: visibility, navigation, back stack, active tab
+   V2.9.1 – Non-destructive Router Fix
+   Bottom nav stays visible + Google Bewertungen back-loop fix
    ========================================================= */
 (function(){
   "use strict";
 
-  const TG = {
-    stack: [],
-    booted: false
-  };
+  const TG_NAV = { stack: [], ready:false };
 
   const $ = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
-  function screens(){
+  function allScreens(){
     return $$(".screen");
   }
 
-  function appScreens(){
-    return screens().filter(s => !/splash|loader|loading|intro/i.test((s.id || "") + " " + (s.className || "")));
-  }
-
-  function firstScreen(){
-    return document.getElementById("home")
-      || document.getElementById("start")
-      || appScreens()[0]
-      || screens()[0]
-      || null;
-  }
-
   function activeScreen(){
-    return $(".screen.active") || $(".screen.is-active-screen") || firstScreen();
+    return $(".screen.active") || $(".screen.is-active-screen") || $("#home") || $("#start") || allScreens()[0];
   }
 
   function activeId(){
@@ -39,51 +27,57 @@
     return s ? s.id : "home";
   }
 
-  function currentY(){
+  function scrollNow(){
     return window.scrollY || document.documentElement.scrollTop || 0;
   }
 
-  function hideSplash(){
-    document.body.classList.add("tg-app-ready");
-    $$(".splash,#splash,.splash-screen,.intro,.intro-screen,.loader,.loading,.loading-screen").forEach(el => {
-      el.style.display = "none";
-      el.style.visibility = "hidden";
-      el.style.opacity = "0";
-      el.style.pointerEvents = "none";
-    });
+  function screenExists(id){
+    return !!document.getElementById(id);
   }
 
   function tabFor(id){
-    const map = {
-      home: "home",
-      start: "home",
-      booking: "booking",
-      buchen: "booking",
-      yumak: "yumak",
-      rewards: "rewards",
-      profile: "profile",
-      profil: "profile"
-    };
+    const map = {home:"home",start:"home",booking:"booking",buchen:"booking",yumak:"yumak",rewards:"rewards",profile:"profile",profil:"profile"};
     return map[id] || null;
   }
 
-  function updateTabs(id){
+  function updateBottomNav(id){
     const wanted = tabFor(id);
     $$(".bottom-nav a,.bottom-nav button,.tabbar a,.tabbar button,.nav-item,.bottom-tab,[data-tab],[data-go]").forEach(el => {
       const raw = (el.dataset.tab || el.dataset.go || el.getAttribute("href") || "").replace("#","");
-      const on = wanted && (raw === wanted || raw === id || tabFor(raw) === wanted);
-      el.classList.toggle("active", !!on);
-      el.classList.toggle("is-active", !!on);
-      if(on) el.setAttribute("aria-current","page");
-      else el.removeAttribute("aria-current");
+      const active = wanted && (raw === wanted || raw === id || tabFor(raw) === wanted);
+      el.classList.toggle("active", !!active);
+      el.classList.toggle("is-active", !!active);
+      if(active) el.setAttribute("aria-current","page"); else el.removeAttribute("aria-current");
     });
   }
 
-  function show(id, y=0){
+  function hideSplashOnly(){
+    document.body.classList.add("tg-ready");
+    $$(".splash,#splash,.splash-screen,.intro,.intro-screen,.loader,.loading-screen,.loading").forEach(el => {
+      el.style.opacity = "0";
+      el.style.visibility = "hidden";
+      el.style.pointerEvents = "none";
+      el.style.display = "none";
+    });
+  }
+
+  function ensureBottomNav(){
+    const nav = $(".bottom-nav") || $(".tabbar") || $(".bottom-tabs");
+    if(nav){
+      nav.style.display = "";
+      nav.style.visibility = "visible";
+      nav.style.opacity = "1";
+      nav.style.pointerEvents = "auto";
+      nav.style.position = nav.style.position || "fixed";
+      nav.style.zIndex = "9999";
+    }
+  }
+
+  function show(id, y){
     const target = document.getElementById(id);
     if(!target) return false;
 
-    appScreens().forEach(s => {
+    allScreens().forEach(s => {
       s.classList.remove("active","is-active-screen");
       s.style.display = "none";
     });
@@ -94,111 +88,82 @@
     target.style.opacity = "1";
 
     document.body.dataset.screen = id;
-    updateTabs(id);
-    hideSplash();
+    updateBottomNav(id);
+    hideSplashOnly();
+    ensureBottomNav();
 
-    requestAnimationFrame(() => {
-      window.scrollTo({top: y || 0, behavior: "auto"});
-    });
-
+    requestAnimationFrame(() => window.scrollTo({top: y || 0, behavior:"auto"}));
     return true;
+  }
+
+  function cleanStack(){
+    // remove consecutive duplicates
+    TG_NAV.stack = TG_NAV.stack.filter((item, i, arr) => i === 0 || item.id !== arr[i-1].id);
+
+    // remove A-B-A loop
+    for(let i = TG_NAV.stack.length - 3; i >= 0; i--){
+      const a = TG_NAV.stack[i], b = TG_NAV.stack[i+1], c = TG_NAV.stack[i+2];
+      if(a && b && c && a.id === c.id && a.id !== b.id){
+        TG_NAV.stack.splice(i+1, 2);
+      }
+    }
   }
 
   function pushCurrent(nextId){
     const id = activeId();
     if(!id || id === nextId) return;
 
-    const item = { id, y: currentY() };
-    const last = TG.stack[TG.stack.length - 1];
+    const item = {id:id, y:scrollNow()};
+    const last = TG_NAV.stack[TG_NAV.stack.length - 1];
 
-    if(last && last.id === item.id){
-      last.y = item.y;
-    } else {
-      TG.stack.push(item);
-    }
+    if(last && last.id === item.id) last.y = item.y;
+    else TG_NAV.stack.push(item);
 
-    // remove direct duplicates
-    TG.stack = TG.stack.filter((item, i, arr) => i === 0 || item.id !== arr[i-1].id);
-
-    // remove ping-pong loops A>B>A
-    for(let i = TG.stack.length - 3; i >= 0; i--){
-      const a = TG.stack[i], b = TG.stack[i+1], c = TG.stack[i+2];
-      if(a && b && c && a.id === c.id && a.id !== b.id){
-        TG.stack.splice(i + 1, 2);
-      }
-    }
-
-    if(TG.stack.length > 50) TG.stack = TG.stack.slice(-50);
+    cleanStack();
+    if(TG_NAV.stack.length > 50) TG_NAV.stack = TG_NAV.stack.slice(-50);
   }
 
   function goTo(id){
-    if(!id || !document.getElementById(id)) return false;
+    if(!id || !screenExists(id)) return false;
     pushCurrent(id);
     return show(id, 0);
   }
 
   function goBack(){
     const current = activeId();
-    let prev = TG.stack.pop();
+    let prev = TG_NAV.stack.pop();
 
-    while(prev && (!prev.id || prev.id === current || !document.getElementById(prev.id))){
-      prev = TG.stack.pop();
+    while(prev && (!prev.id || prev.id === current || !screenExists(prev.id))){
+      prev = TG_NAV.stack.pop();
     }
 
-    if(prev){
-      return show(prev.id, prev.y || 0);
-    }
+    if(prev) return show(prev.id, prev.y || 0);
 
-    const first = firstScreen();
-    return first ? show(first.id, 0) : false;
+    const fallback = $("#home") || $("#start") || allScreens()[0];
+    if(fallback && fallback.id) return show(fallback.id, 0);
+    return false;
   }
 
-  function ensureVisible(){
-    hideSplash();
+  // override old handlers
+  window.showScreen = function(id){ return goTo(id); };
+  window.tgGoTo = goTo;
+  window.tgGoBack = goBack;
 
-    const active = activeScreen();
-    if(active && active.id){
-      show(active.id, currentY());
-      return;
-    }
-
-    const first = firstScreen();
-    if(first && first.id){
-      show(first.id, 0);
-    }
-  }
-
-  function initRideDirection(){
+  function initRideDirections(){
     document.addEventListener("click", function(e){
       const btn = e.target.closest("[data-direction-choice]");
       if(!btn) return;
 
-      const wrap = btn.closest(".ride-direction-v290,.ride-direction-v280");
+      const wrap = btn.closest(".ride-direction-v291,.ride-direction-v290,.ride-direction-v280");
       if(!wrap) return;
 
       wrap.querySelectorAll("button").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       wrap.dataset.direction = btn.dataset.directionChoice;
-
-      const round = $(".roundtrip-toggle");
-      const repeat = $(".repeat-toggle");
-      if(round) round.classList.toggle("active", btn.dataset.directionChoice === "roundtrip");
-      if(repeat) repeat.classList.toggle("active", btn.dataset.directionChoice === "repeat");
     }, true);
   }
 
-  function initFieldStates(){
-    function update(){
-      $$(".booking-field input, .profile-form-v260 input").forEach(input => {
-        const wrap = input.closest(".booking-field") || input.closest("label");
-        if(wrap) wrap.classList.toggle("has-value", !!input.value.trim());
-      });
-    }
-    document.addEventListener("input", update);
-    update();
-  }
-
-  function initRouter(){
+  function captureRouter(){
     document.addEventListener("click", function(e){
       const back = e.target.closest("[data-back],.js-back,.back-button");
       if(back){
@@ -212,7 +177,7 @@
       const go = e.target.closest("[data-go]");
       if(go){
         const id = go.dataset.go;
-        if(id && document.getElementById(id)){
+        if(id && screenExists(id)){
           e.preventDefault();
           e.stopPropagation();
           e.stopImmediatePropagation();
@@ -221,10 +186,10 @@
         }
       }
 
-      const link = e.target.closest('a[href^="#"]');
-      if(link){
-        const id = link.getAttribute("href").replace("#","");
-        if(id && document.getElementById(id)){
+      const href = e.target.closest('a[href^="#"]');
+      if(href){
+        const id = href.getAttribute("href").replace("#","");
+        if(id && screenExists(id)){
           e.preventDefault();
           e.stopPropagation();
           e.stopImmediatePropagation();
@@ -236,26 +201,26 @@
   }
 
   function boot(){
-    if(TG.booted) return;
-    TG.booted = true;
+    if(TG_NAV.ready) return;
+    TG_NAV.ready = true;
 
-    initRouter();
-    initRideDirection();
-    initFieldStates();
+    hideSplashOnly();
+    ensureBottomNav();
 
-    ensureVisible();
-    setTimeout(ensureVisible, 300);
-    setTimeout(ensureVisible, 900);
-    setTimeout(ensureVisible, 1800);
+    const current = activeScreen();
+    if(current && current.id) show(current.id, scrollNow());
+    else {
+      const home = $("#home") || $("#start") || allScreens()[0];
+      if(home && home.id) show(home.id, 0);
+    }
+
+    captureRouter();
+    initRideDirections();
+
+    setTimeout(ensureBottomNav, 300);
+    setTimeout(() => { hideSplashOnly(); ensureBottomNav(); updateBottomNav(activeId()); }, 900);
   }
 
-  window.tgGoTo = goTo;
-  window.tgGoBack = goBack;
-  window.showScreen = function(id){ return goTo(id); };
-
-  if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
-  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
 })();

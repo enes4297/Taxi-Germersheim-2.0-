@@ -5851,44 +5851,46 @@ html, body{
 
 
 /* =========================================================
-   V2.9.0 – REAL PROJECT STABILITY FIX
-   Fix: schwarzer Bildschirm nach Logo, Navigation, Back-Stack
+   V2.9.1 – Bottom Nav Restore + Back Fix Support
    ========================================================= */
 
-/* Splash darf niemals dauerhaft über der App hängen bleiben */
-body.tg-app-ready .splash,
-body.tg-app-ready #splash,
-body.tg-app-ready .splash-screen,
-body.tg-app-ready .intro,
-body.tg-app-ready .intro-screen,
-body.tg-app-ready .loader,
-body.tg-app-ready .loading,
-body.tg-app-ready .loading-screen {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-  display: none !important;
+body.tg-ready .splash,
+body.tg-ready #splash,
+body.tg-ready .splash-screen,
+body.tg-ready .intro,
+body.tg-ready .intro-screen,
+body.tg-ready .loader,
+body.tg-ready .loading,
+body.tg-ready .loading-screen {
+  display:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
 }
 
-/* Screens werden über active gesteuert */
-.screen {
-  display: none;
+.screen:not(.active):not(.is-active-screen){
+  display:none;
 }
 
 .screen.active,
-.screen.is-active-screen {
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+.screen.is-active-screen{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
 }
 
-/* Notfall: wenn JS geladen ist, muss body sichtbar bleiben */
-html, body {
-  min-height: 100%;
-  background: #050505;
+/* Bottom-Leiste darf nie verschwinden */
+.bottom-nav,
+.tabbar,
+.bottom-tabs{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  z-index:9999!important;
 }
 
-/* Bottom Nav Active State */
+/* Aktiver Tab */
 .bottom-nav a.active,
 .bottom-nav button.active,
 .bottom-nav a.is-active,
@@ -5896,9 +5898,9 @@ html, body {
 .tabbar a.active,
 .tabbar button.active,
 .nav-item.active,
-.bottom-tab.active {
-  color: #ffdf6e !important;
-  opacity: 1 !important;
+.bottom-tab.active{
+  color:#ffdf6e!important;
+  opacity:1!important;
 }
 
 .bottom-nav a.active svg,
@@ -5906,66 +5908,36 @@ html, body {
 .bottom-nav a.is-active svg,
 .bottom-nav button.is-active svg,
 .tabbar a.active svg,
-.tabbar button.active svg {
-  stroke: #ffdf6e !important;
-  color: #ffdf6e !important;
-  filter: drop-shadow(0 0 8px rgba(255,217,106,.32)) !important;
+.tabbar button.active svg{
+  stroke:#ffdf6e!important;
+  color:#ffdf6e!important;
+  filter:drop-shadow(0 0 8px rgba(255,217,106,.32))!important;
 }
 
-/* Fahrtart Auswahl aus V2.8 sauber */
-.ride-direction-v290 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 0 0 12px;
+.ride-direction-v291{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:0 0 12px;
 }
-
-.ride-direction-v290 button {
-  min-height: 58px;
-  border-radius: 21px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: radial-gradient(circle at 14% 50%,rgba(255,217,106,.055),transparent 30%), linear-gradient(145deg,#111217,#090a0d);
-  color: rgba(255,255,255,.72);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  padding: 0 10px;
-  box-shadow: 0 11px 22px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.035);
+.ride-direction-v291 button{
+  min-height:58px;
+  border-radius:21px;
+  border:1px solid rgba(255,255,255,.10);
+  background:radial-gradient(circle at 14% 50%,rgba(255,217,106,.055),transparent 30%),linear-gradient(145deg,#111217,#090a0d);
+  color:rgba(255,255,255,.72);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  padding:0 10px;
 }
-
-.ride-direction-v290 button span {
-  width: 25px;
-  height: 25px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  color: #ffd96a;
-  background: rgba(255,217,106,.07);
-  border: 1px solid rgba(255,217,106,.18);
-  font-size: 15px;
-  font-weight: 950;
+.ride-direction-v291 button span{
+  width:25px;height:25px;border-radius:10px;display:grid;place-items:center;color:#ffd96a;background:rgba(255,217,106,.07);border:1px solid rgba(255,217,106,.18);font-size:15px;font-weight:950;
 }
-
-.ride-direction-v290 button b {
-  font-size: 12.7px;
-  line-height: 1.1;
-  font-weight: 950;
+.ride-direction-v291 button b{font-size:12.7px;line-height:1.1;font-weight:950}
+.ride-direction-v291 button.active{
+  color:#111;border-color:rgba(255,217,106,.62);background:linear-gradient(135deg,#ffe27b,#d8a83d);box-shadow:0 14px 28px rgba(0,0,0,.28),0 0 18px rgba(255,217,106,.13);
 }
-
-.ride-direction-v290 button.active {
-  color: #111;
-  border-color: rgba(255,217,106,.62);
-  background: linear-gradient(135deg,#ffe27b,#d8a83d);
-  box-shadow: 0 14px 28px rgba(0,0,0,.28), 0 0 18px rgba(255,217,106,.13);
-}
-
-.ride-direction-v290 button.active span {
-  color: #111;
-  border-color: rgba(0,0,0,.12);
-  background: rgba(0,0,0,.08);
-}
-
-@media(max-width:390px){
-  .ride-direction-v290 { grid-template-columns: 1fr; }
-}
+.ride-direction-v291 button.active span{color:#111;border-color:rgba(0,0,0,.12);background:rgba(0,0,0,.08)}
+@media(max-width:390px){.ride-direction-v291{grid-template-columns:1fr}}
