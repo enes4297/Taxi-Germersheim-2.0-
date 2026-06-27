@@ -675,18 +675,71 @@
       </div>
     </section>
 
-    <section id="profile" class="screen page" data-screen="profile">
-      <header class="page-header">
+    <section id="profile" class="screen page profile-screen profile-v260" data-screen="profile">
+      <header class="page-header profile-header-v260">
         <button data-back type="button">‹</button>
-        <h2>Profil</h2>
-        <button type="button">⚙</button>
+        <div><h2>Profil</h2><p>Persönliche Einstellungen</p></div>
+        <span class="profile-status-dot"></span>
       </header>
-      <div class="content-card profile-card">
-        <div class="avatar">TG</div>
-        <h3>Gastprofil</h3>
-        <p>Wallet, Dokumente, Favoriten und Rechnungen werden hier ergänzt.</p>
+
+      <div class="profile-hero-v260">
+        <div class="profile-avatar-v260">TG</div>
+        <div>
+          <span>Kundenprofil</span>
+          <h3>Willkommen zurück.</h3>
+          <p>Später kann Yumak deine Fahrten schneller vorbereiten, wenn dein Profil ausgefüllt ist.</p>
+        </div>
+      </div>
+
+      <div class="profile-form-v260">
+        <label><span>Name</span><input type="text" placeholder="Ihr Name"></label>
+        <label><span>Telefonnummer</span><input type="tel" inputmode="tel" placeholder="Für Rückfragen"></label>
+        <label><span>E-Mail optional</span><input type="email" placeholder="name@example.de"></label>
+      </div>
+
+      <div class="profile-card-v260">
+        <span>Lieblingsadressen</span>
+        <h3>Schneller buchen</h3>
+        <div class="favorite-addresses-v260">
+          <button type="button"><b>Zuhause</b><small>Noch nicht hinterlegt</small></button>
+          <button type="button"><b>Arbeit</b><small>Noch nicht hinterlegt</small></button>
+          <button type="button"><b>Arzt / Klinik</b><small>Noch nicht hinterlegt</small></button>
+          <button type="button"><b>Flughafen</b><small>Frankfurt später merken</small></button>
+        </div>
+      </div>
+
+      <div class="profile-card-v260">
+        <span>Häufige Fahrten</span>
+        <h3>Yumak bereitet später vor</h3>
+        <div class="frequent-rides-v260">
+          <article><b>Germersheim → Frankfurt Flughafen</b><small>Vorschlag nach wiederholten Fahrten</small></article>
+          <article><b>Hin- & Rückfahrt</b><small>Rückfahrten können später erinnert werden</small></article>
+          <article><b>Großraum / Kindersitz</b><small>Vorlieben können gespeichert werden</small></article>
+        </div>
+      </div>
+
+      <div class="yumak-memory-consent-v260">
+        <div class="yumak-memory-icon-v260">
+          <picture><source srcset="assets/yumak/yumak-neutral.png" type="image/png"><img src="assets/yumak/yumak-neutral.svg" alt="Yumak"></picture>
+        </div>
+        <div>
+          <span>Yumak merkt sich später</span>
+          <h3>Nur mit deiner Zustimmung.</h3>
+          <p>Persönliche Empfehlungen brauchen später Login, Kundendaten und eine klare Datenschutz-Freigabe. Ohne Zustimmung bleibt Yumak neutral.</p>
+        </div>
+      </div>
+
+      <div class="profile-privacy-v260">
+        <b>Datenschutz</b>
+        <p>Favoriten, häufige Fahrten und persönliche Vorschläge werden später nur verwendet, wenn der Kunde es ausdrücklich erlaubt.</p>
+      </div>
+
+      <div class="profile-actions-v260">
+        <button type="button" data-go="booking">Fahrt buchen</button>
+        <button type="button" data-go="yumak">Yumak öffnen</button>
       </div>
     </section>
+
 
     <section id="why" class="screen page why-screen" data-screen="why">
       <header class="page-header why-header">
