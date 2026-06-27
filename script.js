@@ -212,3 +212,98 @@
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
 })();
+
+
+/* =========================================================
+   V3.2.0 – Premium Icon System
+   Replaces booking emojis/CSS icons with real SVG files
+   ========================================================= */
+(function(){
+  "use strict";
+
+  function qsa(s,r=document){return Array.from(r.querySelectorAll(s));}
+
+  const map = {
+    taxi: {label:"Taxi", sub:"Jetzt oder später", icon:"taxi"},
+    medical: {label:"Krankenfahrt", sub:"Dialyse · Chemo · Arzt", icon:"medical"},
+    wheelchair: {label:"Rollstuhl", sub:"Barrierefrei fahren", icon:"wheelchair"},
+    airport: {label:"Flughafen", sub:"FRA · FKB · STR", icon:"airport"}
+  };
+
+  function norm(btn){
+    const raw = ((btn.dataset.type || btn.dataset.rideType || btn.dataset.go || "") + " " + btn.textContent).toLowerCase();
+    if(raw.includes("kranken") || raw.includes("medical")) return "medical";
+    if(raw.includes("rollstuhl") || raw.includes("wheel")) return "wheelchair";
+    if(raw.includes("flug") || raw.includes("airport")) return "airport";
+    if(raw.includes("taxi")) return "taxi";
+    return null;
+  }
+
+  function buildTypeCards(){
+    qsa(".booking-type-grid button").forEach(function(btn){
+      const type = norm(btn);
+      if(!type || !map[type]) return;
+
+      btn.classList.add("tg-premium-type-card");
+      btn.dataset.iconType = type;
+      btn.innerHTML =
+        '<span class="tg-premium-icon-box">' +
+          '<img class="tg-premium-icon" src="assets/icons/' + map[type].icon + '.svg" alt="">' +
+        '</span>' +
+        '<span class="tg-premium-type-copy">' +
+          '<b>' + map[type].label + '</b>' +
+          '<small>' + map[type].sub + '</small>' +
+        '</span>';
+    });
+  }
+
+  const detailMap = [
+    {match:/gepäck|koffer/i, label:"Gepäck", icon:"luggage"},
+    {match:/kindersitz/i, label:"Kindersitz", icon:"child-seat"},
+    {match:/rollstuhl/i, label:"Rollstuhl", icon:"wheelchair"},
+    {match:/haustier|tier/i, label:"Haustier", icon:"pet"},
+    {match:/mehr als 4|fahrgäste|personen/i, label:"Mehr als 4", icon:"passengers"}
+  ];
+
+  function buildDetailChips(){
+    qsa(".ride-options button,.mini-options button,.detail-chips button,.fahrt-details button").forEach(function(btn){
+      const found = detailMap.find(function(item){ return item.match.test(btn.textContent || ""); });
+      if(!found) return;
+      btn.classList.add("tg-premium-detail-chip");
+      btn.innerHTML =
+        '<img class="tg-premium-chip-icon" src="assets/icons/' + found.icon + '.svg" alt="">' +
+        '<span>' + found.label + '</span>';
+    });
+  }
+
+  function buildTripButtons(){
+    const tripMap = [
+      {match:/Hinfahrt/i, icon:"arrow-right"},
+      {match:/Rückfahrt/i, icon:"arrow-left"},
+      {match:/Hin-.*Rückfahrt/i, icon:"roundtrip"},
+      {match:/Regelmäßig/i, icon:"repeat"}
+    ];
+
+    qsa(".trip-grid-v310 button,.ride-direction-v280 button,.ride-direction-v290 button,.ride-direction-v291 button").forEach(function(btn){
+      const text = btn.textContent || "";
+      const found = tripMap.find(function(item){ return item.match.test(text); });
+      if(!found) return;
+      const label = text.replace(/[→←⇄↻]/g,"").trim();
+      btn.classList.add("tg-premium-trip-card");
+      btn.innerHTML =
+        '<span class="tg-premium-trip-icon-box"><img class="tg-premium-icon" src="assets/icons/' + found.icon + '.svg" alt=""></span>' +
+        '<b>' + label + '</b>' +
+        '<span class="tg-premium-trip-spacer"></span>';
+    });
+  }
+
+  function boot(){
+    buildTypeCards();
+    buildDetailChips();
+    buildTripButtons();
+    setTimeout(function(){ buildTypeCards(); buildDetailChips(); buildTripButtons(); }, 500);
+  }
+
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();

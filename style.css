@@ -6592,3 +6592,192 @@ body{
     font-size:9px!important;
   }
 }
+
+
+/* =========================================================
+   V3.2.0 – Premium SVG Icon System
+   Echte SVGs statt Emojis/CSS-Icons
+   ========================================================= */
+
+.tg-premium-icon{
+  width:26px!important;
+  height:26px!important;
+  display:block!important;
+  color:#ffd96a!important;
+  filter:drop-shadow(0 0 8px rgba(255,217,106,.22))!important;
+}
+
+/* Type cards */
+#booking .booking-type-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:10px!important;
+  width:100%!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+}
+
+#booking .tg-premium-type-card{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:92px!important;
+  min-height:92px!important;
+  max-height:92px!important;
+  display:grid!important;
+  grid-template-columns:44px minmax(0,1fr)!important;
+  gap:10px!important;
+  align-items:center!important;
+  padding:12px!important;
+  border-radius:23px!important;
+  overflow:hidden!important;
+  white-space:normal!important;
+  text-align:left!important;
+  box-sizing:border-box!important;
+}
+
+#booking .tg-premium-type-card > img,
+#booking .tg-premium-type-card > svg,
+#booking .tg-premium-type-card > span:not(.tg-premium-icon-box):not(.tg-premium-type-copy){
+  display:none!important;
+}
+
+.tg-premium-icon-box{
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  border-radius:15px!important;
+  display:grid!important;
+  place-items:center!important;
+  color:#ffd96a!important;
+  background:rgba(255,217,106,.075)!important;
+  border:1px solid rgba(255,217,106,.28)!important;
+  box-shadow:0 0 17px rgba(255,217,106,.10), inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+
+.tg-premium-type-copy{
+  min-width:0!important;
+  max-width:100%!important;
+  display:block!important;
+}
+
+.tg-premium-type-copy b{
+  display:block!important;
+  color:#fff!important;
+  font-size:16px!important;
+  font-weight:950!important;
+  line-height:1.05!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+.tg-premium-type-copy small{
+  display:block!important;
+  color:rgba(255,255,255,.55)!important;
+  margin-top:5px!important;
+  font-size:9.8px!important;
+  font-weight:850!important;
+  line-height:1.15!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+}
+
+/* Trip cards */
+#booking .tg-premium-trip-card{
+  display:grid!important;
+  grid-template-columns:38px minmax(0,1fr) 38px!important;
+  align-items:center!important;
+  justify-items:center!important;
+  gap:0!important;
+  height:72px!important;
+  min-height:72px!important;
+  padding:0 9px!important;
+  overflow:hidden!important;
+}
+
+.tg-premium-trip-icon-box{
+  width:30px!important;
+  height:30px!important;
+  border-radius:12px!important;
+  display:grid!important;
+  place-items:center!important;
+  color:#ffd96a!important;
+  background:rgba(255,217,106,.075)!important;
+  border:1px solid rgba(255,217,106,.22)!important;
+}
+
+.tg-premium-trip-icon-box .tg-premium-icon{
+  width:18px!important;
+  height:18px!important;
+}
+
+#booking .tg-premium-trip-card b{
+  color:inherit!important;
+  font-size:14px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  max-width:100%!important;
+}
+
+.tg-premium-trip-spacer{
+  width:38px!important;
+  height:1px!important;
+  display:block!important;
+}
+
+/* Detail chips */
+#booking .tg-premium-detail-chip{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  min-width:0!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  white-space:nowrap!important;
+}
+
+#booking .tg-premium-detail-chip > img:not(.tg-premium-chip-icon),
+#booking .tg-premium-detail-chip > svg{
+  display:none!important;
+}
+
+.tg-premium-chip-icon{
+  width:18px!important;
+  height:18px!important;
+  color:#ffd96a!important;
+  flex:0 0 18px!important;
+  display:block!important;
+  filter:drop-shadow(0 0 7px rgba(255,217,106,.18))!important;
+}
+
+#booking .tg-premium-detail-chip span{
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* Remove old pseudo-icons */
+#booking .ride-options button::before,
+#booking .mini-options button::before,
+#booking .detail-chips button::before,
+#booking .fahrt-details button::before,
+#booking .booking-type-grid button::before,
+#booking .booking-type-grid button::after{
+  content:none!important;
+  display:none!important;
+}
+
+/* Bottom nav icon active state compatible */
+.bottom-nav button.active img,
+.bottom-nav button.is-active img{
+  opacity:1!important;
+  filter:brightness(0) saturate(100%) invert(86%) sepia(53%) saturate(620%) hue-rotate(355deg) brightness(112%) contrast(106%) drop-shadow(0 0 11px rgba(255,217,106,.46))!important;
+}
