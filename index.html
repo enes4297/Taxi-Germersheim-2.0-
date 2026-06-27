@@ -225,6 +225,11 @@
       <div class="booking-service-context">Normale Taxifahrt</div>
 
       <form class="booking-form" onsubmit="return false;">
+        <div class="booking-yumak-strip-v270">
+          <picture><source srcset="assets/yumak/yumak-neutral.png" type="image/png"><img src="assets/yumak/yumak-neutral.svg" alt="Yumak"></picture>
+          <div><b>Yumak prüft mit.</b><small>Start, Ziel und Telefonnummer reichen für die erste Anfrage.</small></div>
+        </div>
+
         <label class="booking-field booking-field--map">
           <span>Startadresse</span>
           <div>
@@ -494,7 +499,7 @@
 
       <div class="booking-review-card">
         <span>Zusammenfassung</span>
-        <h3>Bitte prüfen Sie Ihre Anfrage</h3>
+        <h3>Ihre Fahrtanfrage</h3>
         <div class="booking-summary-lines">
           <p><b>Fahrttyp</b><small class="summary-type">Taxi</small></p>
           <p><b>Start</b><small class="summary-start">–</small></p>
@@ -506,7 +511,7 @@
         </div>
         <div class="booking-review-actions">
           <button class="booking-edit" type="button">Bearbeiten</button>
-          <button class="booking-confirm" type="button">Jetzt verbindlich anfragen</button>
+          <button class="booking-confirm" type="button">Anfrage absenden</button>
         </div>
       </div>
 
@@ -1299,6 +1304,42 @@
       window.addEventListener("pagehide", ()=>saveScroll(activeId()), {passive:true});
       document.addEventListener("DOMContentLoaded", ()=>{ setActiveTab(activeId()); document.body.dataset.screen=activeId(); });
     })();
+  </script>
+
+
+  <script>
+    function initBookingV270(){
+      function updateBookingFieldStates(){
+        document.querySelectorAll(".booking-field input, .profile-form-v260 input").forEach(function(input){
+          const wrap = input.closest(".booking-field") || input.closest("label");
+          if(wrap) wrap.classList.toggle("has-value", !!input.value.trim());
+        });
+      }
+      function collectExtras(){
+        const extras = [];
+        document.querySelectorAll(".ride-options button.active, .mini-options button.active, .roundtrip-toggle.active, .repeat-toggle.active").forEach(function(btn){
+          const text = (btn.textContent || "").replace("✓","").trim();
+          if(text && !/keine/i.test(text)) extras.push(text);
+        });
+        return extras.length ? extras.join(", ") : "Keine Extras";
+      }
+      function enhanceSummary(){
+        const extras = document.querySelector(".summary-extras");
+        if(extras) extras.textContent = collectExtras();
+        const sd = document.querySelector(".summary-date");
+        const st = document.querySelector(".summary-time");
+        if(sd) sd.textContent = document.querySelector(".js-date")?.value || "Jetzt";
+        if(st) st.textContent = document.querySelector(".js-time")?.value || "Sofort";
+      }
+      document.addEventListener("input", updateBookingFieldStates);
+      document.addEventListener("click", function(e){
+        if(e.target.closest(".booking-submit, .ride-options button, .mini-options button, .roundtrip-toggle, .repeat-toggle")){
+          setTimeout(enhanceSummary, 50);
+        }
+      });
+      updateBookingFieldStates();
+    }
+    document.addEventListener("DOMContentLoaded", initBookingV270);
   </script>
 
 </body>
