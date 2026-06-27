@@ -214,96 +214,46 @@
 })();
 
 
-/* =========================================================
-   V3.2.0 – Premium Icon System
-   Replaces booking emojis/CSS icons with real SVG files
-   ========================================================= */
+
+
+
+
+/* V3.3.0 Stable Inline Icons */
 (function(){
-  "use strict";
-
-  function qsa(s,r=document){return Array.from(r.querySelectorAll(s));}
-
-  const map = {
-    taxi: {label:"Taxi", sub:"Jetzt oder später", icon:"taxi"},
-    medical: {label:"Krankenfahrt", sub:"Dialyse · Chemo · Arzt", icon:"medical"},
-    wheelchair: {label:"Rollstuhl", sub:"Barrierefrei fahren", icon:"wheelchair"},
-    airport: {label:"Flughafen", sub:"FRA · FKB · STR", icon:"airport"}
+  function $(s,r=document){return r.querySelector(s)}
+  function $$(s,r=document){return Array.from(r.querySelectorAll(s))}
+  const icons={
+    taxi:'<svg viewBox="0 0 48 48"><path d="M11 31h26"/><path d="M9 31l2.5-12h25L39 31"/><path d="M16 19l3-7h10l3 7"/><path d="M16 31v4"/><path d="M32 31v4"/><circle cx="15" cy="31" r="2.2"/><circle cx="33" cy="31" r="2.2"/><path d="M20 10h8"/></svg>',
+    medical:'<svg viewBox="0 0 48 48"><path d="M24 10v28"/><path d="M10 24h28"/></svg>',
+    wheelchair:'<svg viewBox="0 0 48 48"><circle cx="18" cy="35" r="7"/><path d="M18 28V14"/><path d="M18 14h10"/><path d="M18 22h11"/><path d="M29 22l6 13h6"/><circle cx="18" cy="9" r="2"/></svg>',
+    airport:'<svg viewBox="0 0 48 48"><path d="M20 42l4-17L7 16l3-4l17 5l4-13l4 2l-2 15l9 6l-2 4l-10-4l-6 15z"/></svg>',
+    luggage:'<svg viewBox="0 0 48 48"><rect x="12" y="15" width="24" height="26" rx="4"/><path d="M18 15v-4a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v4"/><path d="M18 24h12"/><path d="M18 32h12"/></svg>',
+    child:'<svg viewBox="0 0 48 48"><circle cx="24" cy="13" r="6"/><path d="M14 42v-7a10 10 0 0 1 20 0v7"/><path d="M18 34h12"/><path d="M17 42h14"/></svg>',
+    pet:'<svg viewBox="0 0 48 48"><circle cx="10" cy="21" r="4"/><circle cx="18" cy="12" r="4"/><circle cx="30" cy="12" r="4"/><circle cx="38" cy="21" r="4"/><path d="M16 36c0-7 4-11 8-11s8 4 8 11c0 4-4 6-8 6s-8-2-8-6z"/></svg>',
+    passengers:'<svg viewBox="0 0 48 48"><circle cx="17" cy="16" r="6"/><path d="M7 42v-3a10 10 0 0 1 20 0v3"/><circle cx="33" cy="18" r="5"/><path d="M29 42v-2a8 8 0 0 1 13 0v2"/></svg>',
+    home:'<svg viewBox="0 0 48 48"><path d="M7 22l17-15l17 15"/><path d="M11 20v21h26V20"/><path d="M19 41V29h10v12"/></svg>',
+    booking:'<svg viewBox="0 0 48 48"><rect x="8" y="10" width="32" height="30" rx="4"/><path d="M16 6v8"/><path d="M32 6v8"/><path d="M8 19h32"/><path d="M16 27h.1"/><path d="M24 27h.1"/><path d="M32 27h.1"/></svg>',
+    yumak:'<svg viewBox="0 0 48 48"><path d="M10 18L8 8l9 6"/><path d="M38 18l2-10l-9 6"/><circle cx="24" cy="26" r="14"/><path d="M18 24h.1"/><path d="M30 24h.1"/><path d="M22 30h4"/><path d="M16 32l-8 2"/><path d="M32 32l8 2"/></svg>',
+    rewards:'<svg viewBox="0 0 48 48"><path d="M40 24v16H8V24"/><path d="M5 14h38v10H5z"/><path d="M24 14v26"/><path d="M24 14h-7a5 5 0 1 1 5-5c0 3 2 5 2 5z"/><path d="M24 14h7a5 5 0 1 0-5-5c0 3-2 5-2 5z"/></svg>',
+    profile:'<svg viewBox="0 0 48 48"><circle cx="24" cy="16" r="8"/><path d="M9 42a15 15 0 0 1 30 0"/></svg>',
+    right:'<svg viewBox="0 0 48 48"><path d="M10 24h28"/><path d="M27 13l11 11l-11 11"/></svg>',
+    left:'<svg viewBox="0 0 48 48"><path d="M38 24H10"/><path d="M21 13L10 24l11 11"/></svg>',
+    round:'<svg viewBox="0 0 48 48"><path d="M12 14h24"/><path d="M28 7l8 7l-8 7"/><path d="M36 34H12"/><path d="M20 27l-8 7l8 7"/></svg>',
+    repeat:'<svg viewBox="0 0 48 48"><path d="M33 5l8 8l-8 8"/><path d="M7 23v-4a8 8 0 0 1 8-8h26"/><path d="M15 43l-8-8l8-8"/><path d="M41 25v4a8 8 0 0 1-8 8H7"/></svg>'
   };
-
-  function norm(btn){
-    const raw = ((btn.dataset.type || btn.dataset.rideType || btn.dataset.go || "") + " " + btn.textContent).toLowerCase();
-    if(raw.includes("kranken") || raw.includes("medical")) return "medical";
-    if(raw.includes("rollstuhl") || raw.includes("wheel")) return "wheelchair";
-    if(raw.includes("flug") || raw.includes("airport")) return "airport";
-    if(raw.includes("taxi")) return "taxi";
-    return null;
-  }
-
-  function buildTypeCards(){
-    qsa(".booking-type-grid button").forEach(function(btn){
-      const type = norm(btn);
-      if(!type || !map[type]) return;
-
-      btn.classList.add("tg-premium-type-card");
-      btn.dataset.iconType = type;
-      btn.innerHTML =
-        '<span class="tg-premium-icon-box">' +
-          '<img class="tg-premium-icon" src="assets/icons/' + map[type].icon + '.svg" alt="">' +
-        '</span>' +
-        '<span class="tg-premium-type-copy">' +
-          '<b>' + map[type].label + '</b>' +
-          '<small>' + map[type].sub + '</small>' +
-        '</span>';
-    });
-  }
-
-  const detailMap = [
-    {match:/gepäck|koffer/i, label:"Gepäck", icon:"luggage"},
-    {match:/kindersitz/i, label:"Kindersitz", icon:"child-seat"},
-    {match:/rollstuhl/i, label:"Rollstuhl", icon:"wheelchair"},
-    {match:/haustier|tier/i, label:"Haustier", icon:"pet"},
-    {match:/mehr als 4|fahrgäste|personen/i, label:"Mehr als 4", icon:"passengers"}
-  ];
-
-  function buildDetailChips(){
-    qsa(".ride-options button,.mini-options button,.detail-chips button,.fahrt-details button").forEach(function(btn){
-      const found = detailMap.find(function(item){ return item.match.test(btn.textContent || ""); });
-      if(!found) return;
-      btn.classList.add("tg-premium-detail-chip");
-      btn.innerHTML =
-        '<img class="tg-premium-chip-icon" src="assets/icons/' + found.icon + '.svg" alt="">' +
-        '<span>' + found.label + '</span>';
-    });
-  }
-
-  function buildTripButtons(){
-    const tripMap = [
-      {match:/Hinfahrt/i, icon:"arrow-right"},
-      {match:/Rückfahrt/i, icon:"arrow-left"},
-      {match:/Hin-.*Rückfahrt/i, icon:"roundtrip"},
-      {match:/Regelmäßig/i, icon:"repeat"}
-    ];
-
-    qsa(".trip-grid-v310 button,.ride-direction-v280 button,.ride-direction-v290 button,.ride-direction-v291 button").forEach(function(btn){
-      const text = btn.textContent || "";
-      const found = tripMap.find(function(item){ return item.match.test(text); });
-      if(!found) return;
-      const label = text.replace(/[→←⇄↻]/g,"").trim();
-      btn.classList.add("tg-premium-trip-card");
-      btn.innerHTML =
-        '<span class="tg-premium-trip-icon-box"><img class="tg-premium-icon" src="assets/icons/' + found.icon + '.svg" alt=""></span>' +
-        '<b>' + label + '</b>' +
-        '<span class="tg-premium-trip-spacer"></span>';
-    });
-  }
-
-  function boot(){
-    buildTypeCards();
-    buildDetailChips();
-    buildTripButtons();
-    setTimeout(function(){ buildTypeCards(); buildDetailChips(); buildTripButtons(); }, 500);
-  }
-
-  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
-  else boot();
+  const types={
+    taxi:['Taxi','Jetzt oder später','taxi','Normale Taxifahrt'],
+    medical:['Krankenfahrt','Dialyse · Chemo · Arzt','medical','Krankenfahrt'],
+    wheelchair:['Rollstuhl','Barrierefrei fahren','wheelchair','Rollstuhlfahrt'],
+    airport:['Flughafen','FRA · FKB · STR','airport','Flughafentransfer']
+  };
+  function typeOf(v){v=(v||'').toLowerCase();if(v.includes('kranken')||v.includes('medical'))return'medical';if(v.includes('rollstuhl')||v.includes('wheel'))return'wheelchair';if(v.includes('flug')||v.includes('airport'))return'airport';if(v.includes('taxi'))return'taxi';return null}
+  function ib(name){return '<span class="tg-v330-iconbox"><span class="tg-v330-icon">'+(icons[name]||'')+'</span></span>'}
+  function buildTypes(){let g=$('#booking .booking-type-grid'); if(!g)return; g.classList.add('tg-v330-typegrid'); g.innerHTML=Object.keys(types).map(k=>'<button type="button" class="tg-v330-typecard" data-type="'+k+'">'+ib(types[k][2])+'<span class="tg-v330-copy"><b>'+types[k][0]+'</b><small>'+types[k][1]+'</small></span></button>').join('')}
+  function setType(t){t=typeOf(t)||'taxi';document.body.dataset.rideType=t;try{sessionStorage.setItem('tg_ride_type_v330',t)}catch(e){}; $$('#booking .tg-v330-typecard').forEach(b=>b.classList.toggle('active',b.dataset.type===t)); let b=$('#booking .selected-type-v310 strong,#booking .selected-ride-type-v293 strong'); if(b)b.textContent=types[t][3]; let c=$('#booking .booking-service-context'); if(c)c.textContent=types[t][3]; $$('#booking .conditional-panel').forEach(p=>p.classList.remove('show')); if(t==='medical')$('#booking .medical-panel')?.classList.add('show'); if(t==='airport')$('#booking .airport-panel')?.classList.add('show'); if(t==='wheelchair')$('#booking .wheelchair-panel')?.classList.add('show'); try{window.updateBookingState&&window.updateBookingState()}catch(e){}}
+  function buildChips(){let map=[[/gepäck|koffer/i,'Gepäck','luggage'],[/kindersitz/i,'Kindersitz','child'],[/rollstuhl/i,'Rollstuhl','wheelchair'],[/haustier|tier/i,'Haustier','pet'],[/mehr als 4|fahrgäste|personen/i,'Mehr als 4','passengers']]; $$('#booking .ride-options button,#booking .mini-options button,#booking .detail-chips button,#booking .fahrt-details button').forEach(btn=>{let m=map.find(x=>x[0].test(btn.textContent||'')); if(!m)return; btn.classList.add('tg-v330-chip'); btn.innerHTML='<span class="tg-v330-chipicon">'+icons[m[2]]+'</span><span>'+m[1]+'</span>'})}
+  function buildTrips(){let map=[[/Hin-.*Rückfahrt/i,'Hin- & Rückfahrt','round'],[/Hinfahrt/i,'Hinfahrt','right'],[/Rückfahrt/i,'Rückfahrt','left'],[/Regelmäßig/i,'Regelmäßig','repeat']]; $$('#booking .trip-grid-v310 button,#booking .ride-direction-v280 button,#booking .ride-direction-v290 button,#booking .ride-direction-v291 button,#booking .direction-options button').forEach(btn=>{let m=map.find(x=>x[0].test(btn.textContent||'')); if(!m)return; btn.classList.add('tg-v330-trip'); btn.innerHTML='<span class="tg-v330-tripicon">'+icons[m[2]]+'</span><b>'+m[1]+'</b><span></span>'})}
+  function buildNav(){let map={home:'home',booking:'booking',yumak:'yumak',rewards:'rewards',profile:'profile'}; $$('.bottom-nav button[data-go]').forEach(btn=>{let k=map[btn.dataset.go]; if(!k||btn.dataset.v330nav)return; btn.dataset.v330nav=1; let txt=(btn.textContent||'').trim()||({home:'Start',booking:'Buchen',yumak:'Yumak',rewards:'Rewards',profile:'Profil'}[btn.dataset.go]); btn.innerHTML='<span class="tg-v330-navicon">'+icons[k]+'</span><span>'+txt+'</span>'})}
+  function boot(){document.documentElement.classList.add('tg-v330-nox');document.body.classList.add('tg-v330-nox');$('#booking')?.classList.add('tg-v330-booking');buildTypes();buildChips();buildTrips();buildNav();let saved='taxi';try{saved=sessionStorage.getItem('tg_ride_type_v330')||'taxi'}catch(e){}setType(saved);document.addEventListener('click',e=>{let tc=e.target.closest('#booking .tg-v330-typecard'); if(tc){e.preventDefault();setType(tc.dataset.type);return}let go=e.target.closest('[data-go]'); if(go){let t=typeOf(go.dataset.go+' '+go.textContent); if(t)setType(t)} setTimeout(buildNav,50)},true); setTimeout(()=>{buildChips();buildTrips();buildNav();setType(document.body.dataset.rideType||saved)},700)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
