@@ -5850,17 +5850,44 @@ html, body{
 }
 
 
-/* V2.9.2 – True Navigation + Splash Restore */
-body.splash-finished #simpleSplash,
-body.app-started #simpleSplash,
-body.splash-finished .splash,
-body.app-started .splash{
+/* =========================================================
+   V2.9.7 Click + Splash Safety Fix
+   ========================================================= */
+
+/* Während Logo/Splash: keine Bottom-Leiste sichtbar */
+body:not(.app-ready) .bottom-nav,
+body:not(.splash-finished) .bottom-nav{
   display:none!important;
   opacity:0!important;
   visibility:hidden!important;
   pointer-events:none!important;
 }
 
+/* Nach Start: Bottom-Leiste sichtbar */
+body.app-ready .bottom-nav,
+body.splash-finished .bottom-nav{
+  display:grid!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+
+/* Splash/Intro darf nach Ende keine Klicks blockieren */
+body.app-ready #simpleSplash,
+body.app-ready .splash,
+body.app-ready .splash-screen,
+body.app-ready .intro,
+body.app-ready .intro-screen,
+body.app-ready .loader,
+body.app-ready .loading,
+body.app-ready .loading-screen{
+  display:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* Screens stabil */
 .screen:not(.active):not(.is-active-screen){
   display:none;
 }
@@ -5868,93 +5895,6 @@ body.app-started .splash{
 .screen.active,
 .screen.is-active-screen{
   display:block!important;
+  opacity:1!important;
   visibility:visible!important;
-  opacity:1!important;
-}
-
-body.app-started .bottom-nav,
-body.splash-finished .bottom-nav{
-  display:grid!important;
-  visibility:visible!important;
-  opacity:1!important;
-  pointer-events:auto!important;
-}
-
-.bottom-nav button.active,
-.bottom-nav button.is-active{
-  color:var(--gold-2)!important;
-  opacity:1!important;
-}
-
-.bottom-nav button.active img,
-.bottom-nav button.is-active img{
-  opacity:1!important;
-  filter:brightness(0) saturate(100%) invert(86%) sepia(53%) saturate(620%) hue-rotate(355deg) brightness(112%) contrast(106%) drop-shadow(0 0 11px rgba(255,217,106,.46))!important;
-}
-
-
-/* =========================================================
-   V2.9.5 SAFE ROLLBACK FIX
-   Restore Startseite + Bottom Nav. Keine aggressive Karten-Logik.
-   ========================================================= */
-
-#home,
-#home.screen.active,
-#home.screen.is-active-screen{
-  display:block!important;
-  visibility:visible!important;
-  opacity:1!important;
-}
-
-.service-grid,
-.services-grid,
-.home-services,
-.quick-services{
-  display:grid!important;
-  visibility:visible!important;
-  opacity:1!important;
-}
-
-.service-card{
-  display:grid!important;
-  visibility:visible!important;
-  opacity:1!important;
-  overflow:hidden!important;
-}
-
-.service-card > *{
-  visibility:visible!important;
-  opacity:1!important;
-}
-
-.bottom-nav{
-  position:fixed!important;
-  left:0!important;
-  right:0!important;
-  bottom:0!important;
-  width:100%!important;
-  max-width:100%!important;
-  margin:0!important;
-  display:grid!important;
-  grid-template-columns:repeat(5,1fr)!important;
-  visibility:visible!important;
-  opacity:1!important;
-  pointer-events:auto!important;
-  transform:none!important;
-  z-index:99999!important;
-}
-
-/* Rollstuhl-Doppel-Emoji nur optisch reduzieren, ohne HTML umzubauen */
-.booking-type-grid button,
-.ride-type-grid button{
-  overflow:hidden!important;
-}
-
-/* Fahrttyp Wechselbutton klickbar machen, aber ohne Layout zu zerstören */
-[data-reset-ride-type],
-.booking-change-type-v293 button{
-  pointer-events:auto!important;
-  touch-action:manipulation!important;
-  position:relative!important;
-  z-index:20!important;
 }
