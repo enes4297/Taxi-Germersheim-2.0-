@@ -5795,3 +5795,8 @@ button[data-call]:before{
     grid-template-columns:1fr;
   }
 }
+
+/* V2.8.1 – Hard Navigation Fix */
+[data-back]{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
+.bottom-nav a.active,.bottom-nav button.active,.bottom-nav a.is-active,.bottom-nav button.is-active,.tabbar a.active,.tabbar button.active,.nav-item.active,.bottom-tab.active{color:#ffdf6e!important;opacity:1!important}
+.bottom-nav a.active svg,.bottom-nav button.active svg,.bottom-nav a.is-active svg,.bottom-nav button.is-active svg,.tabbar a.active svg,.tabbar button.active svg{stroke:#ffdf6e!important;color:#ffdf6e!important;filter:drop-shadow(0 0 8px rgba(255,217,106,.32))!important}

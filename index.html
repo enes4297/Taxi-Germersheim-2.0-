@@ -1258,133 +1258,6 @@
     document.addEventListener("DOMContentLoaded", initBookingV270);
   </script>
 
-
-  <script>
-    (function(){
-      const SCROLL_KEY="tg_scroll_positions_v280";
-      const STACK_KEY="tg_nav_stack_v280";
-      const DEFAULT_SCREEN="home";
-
-      function read(key, fallback){ try{return JSON.parse(sessionStorage.getItem(key)||"");}catch(e){return fallback;} }
-      function write(key, value){ try{sessionStorage.setItem(key, JSON.stringify(value));}catch(e){} }
-      function allScreens(){ return Array.from(document.querySelectorAll(".screen")); }
-      function active(){ return document.querySelector(".screen.active") || document.getElementById(DEFAULT_SCREEN) || allScreens()[0]; }
-      function activeId(){ const s=active(); return s ? s.id : DEFAULT_SCREEN; }
-
-      function saveScroll(id){
-        id = id || activeId();
-        const pos = read(SCROLL_KEY,{});
-        pos[id] = window.scrollY || document.documentElement.scrollTop || 0;
-        write(SCROLL_KEY,pos);
-      }
-
-      function tabName(screenId){
-        const map={home:"home",start:"home",booking:"booking",buchen:"booking",yumak:"yumak",rewards:"rewards",profile:"profile",profil:"profile"};
-        return map[screenId] || null;
-      }
-
-      function setActiveTab(screenId){
-        const wanted = tabName(screenId);
-        const selector = ".bottom-nav a,.bottom-nav button,.tabbar a,.tabbar button,.nav-item,.bottom-tab,[data-tab],[data-go]";
-        document.querySelectorAll(selector).forEach(function(el){
-          const raw = (el.dataset.tab || el.dataset.go || el.getAttribute("href") || "").replace("#","");
-          const isActive = wanted && (raw===wanted || raw===screenId || tabName(raw)===wanted);
-          el.classList.toggle("active", !!isActive);
-          el.classList.toggle("is-active", !!isActive);
-          if(isActive){ el.setAttribute("aria-current","page"); } else { el.removeAttribute("aria-current"); }
-        });
-      }
-
-      function activate(id, options){
-        options = options || {};
-        const target = document.getElementById(id);
-        if(!target) return false;
-        allScreens().forEach(s=>s.classList.remove("active","is-active-screen"));
-        target.classList.add("active","is-active-screen");
-        document.body.dataset.screen = id;
-        setActiveTab(id);
-        const y = typeof options.y === "number" ? options.y : 0;
-        requestAnimationFrame(()=>window.scrollTo({top:y, behavior:options.smooth ? "smooth" : "auto"}));
-        return true;
-      }
-
-      function pushState(from){
-        if(!from) return;
-        let stack = read(STACK_KEY,[]);
-        const y = window.scrollY || 0;
-        const last = stack[stack.length-1];
-
-        // Prevent A-B-A loop: if going back into previous screen, don't duplicate
-        if(last && last.id === from){
-          last.y = y;
-        } else {
-          stack.push({id:from, y:y});
-        }
-
-        // Remove immediate ping-pong pattern A,B,A keeping latest A only
-        if(stack.length >= 3){
-          const a = stack[stack.length-3], b = stack[stack.length-2], c = stack[stack.length-1];
-          if(a.id === c.id && a.id !== b.id){
-            stack.splice(stack.length-3, 2);
-          }
-        }
-
-        write(STACK_KEY, stack.slice(-40));
-      }
-
-      function goTo(id, push){
-        if(!id) return;
-        if(id==="home") id=DEFAULT_SCREEN;
-        const from = activeId();
-        saveScroll(from);
-        if(push!==false && from && from!==id) pushState(from);
-        activate(id,{y:0, smooth:true});
-      }
-
-      function goBack(){
-        const from = activeId();
-        saveScroll(from);
-        let stack = read(STACK_KEY,[]);
-        let prev = stack.pop();
-
-        // Skip invalid or same-screen entries
-        while(prev && (!prev.id || prev.id === from || !document.getElementById(prev.id))){
-          prev = stack.pop();
-        }
-
-        write(STACK_KEY, stack);
-
-        if(prev && prev.id){
-          activate(prev.id,{y:prev.y||0, smooth:false});
-        } else {
-          activate(DEFAULT_SCREEN,{y:0, smooth:false});
-        }
-      }
-
-      window.tgGoTo = goTo;
-      window.tgGoBack = goBack;
-      window.tgSetActiveTab = setActiveTab;
-      window.showScreen = function(id){ goTo(id,true); };
-
-      document.addEventListener("click", function(e){
-        const back = e.target.closest("[data-back],.js-back,.back-button");
-        if(back){ e.preventDefault(); e.stopImmediatePropagation(); goBack(); return; }
-
-        const go = e.target.closest("[data-go]");
-        if(go){
-          const id = go.dataset.go;
-          if(id && document.getElementById(id)){
-            e.preventDefault(); e.stopImmediatePropagation(); goTo(id,true);
-          }
-        }
-      }, true);
-
-      window.addEventListener("beforeunload", ()=>saveScroll(activeId()), {passive:true});
-      window.addEventListener("pagehide", ()=>saveScroll(activeId()), {passive:true});
-      document.addEventListener("DOMContentLoaded", ()=>{ setActiveTab(activeId()); document.body.dataset.screen=activeId(); });
-    })();
-  </script>
-
   <script>
     function initRideDirectionV280(){
       document.addEventListener("click", function(e){
@@ -1412,6 +1285,114 @@
       });
     }
     document.addEventListener("DOMContentLoaded", initRideDirectionV280);
+  </script>
+
+
+  <script>
+    (function(){
+      let stack = [];
+      let restoring = false;
+
+      function screens(){ return Array.from(document.querySelectorAll(".screen")); }
+      function active(){ return document.querySelector(".screen.active") || document.getElementById("home") || screens()[0]; }
+      function activeId(){ const s = active(); return s ? s.id : "home"; }
+      function y(){ return window.scrollY || document.documentElement.scrollTop || 0; }
+
+      function tabFor(id){
+        const map = {home:"home",start:"home",booking:"booking",buchen:"booking",yumak:"yumak",rewards:"rewards",profile:"profile",profil:"profile"};
+        return map[id] || null;
+      }
+
+      function tabs(id){
+        const wanted = tabFor(id);
+        document.querySelectorAll(".bottom-nav a,.bottom-nav button,.tabbar a,.tabbar button,.nav-item,.bottom-tab,[data-tab],[data-go]").forEach(function(el){
+          const raw = (el.dataset.tab || el.dataset.go || el.getAttribute("href") || "").replace("#","");
+          const on = wanted && (raw === wanted || raw === id || tabFor(raw) === wanted);
+          el.classList.toggle("active", !!on);
+          el.classList.toggle("is-active", !!on);
+          if(on) el.setAttribute("aria-current","page"); else el.removeAttribute("aria-current");
+        });
+      }
+
+      function show(id, scrollY){
+        const target = document.getElementById(id);
+        if(!target) return false;
+        screens().forEach(function(s){ s.classList.remove("active","is-active-screen"); });
+        target.classList.add("active","is-active-screen");
+        document.body.dataset.screen = id;
+        tabs(id);
+        requestAnimationFrame(function(){ window.scrollTo({top: scrollY || 0, behavior:"auto"}); });
+        return true;
+      }
+
+      function pushCurrent(nextId){
+        const id = activeId();
+        if(!id || id === nextId) return;
+        const item = {id:id, y:y()};
+        const last = stack[stack.length - 1];
+        if(last && last.id === item.id) last.y = item.y;
+        else stack.push(item);
+
+        if(stack.length >= 3){
+          const a = stack[stack.length-3], b = stack[stack.length-2], c = stack[stack.length-1];
+          if(a.id === c.id && a.id !== b.id) stack.splice(stack.length-2, 2);
+        }
+        if(stack.length > 40) stack = stack.slice(-40);
+      }
+
+      function goTo(id){
+        if(!id || !document.getElementById(id)) return;
+        if(!restoring) pushCurrent(id);
+        show(id, 0);
+      }
+
+      function goBack(){
+        const current = activeId();
+        let prev = stack.pop();
+        while(prev && (!prev.id || prev.id === current || !document.getElementById(prev.id))){
+          prev = stack.pop();
+        }
+        restoring = true;
+        if(prev) show(prev.id, prev.y || 0);
+        else show("home", 0);
+        setTimeout(function(){ restoring = false; }, 120);
+      }
+
+      window.tgGoTo = goTo;
+      window.tgGoBack = goBack;
+      window.showScreen = function(id){ goTo(id); };
+
+      document.addEventListener("click", function(e){
+        const back = e.target.closest("[data-back],.js-back,.back-button");
+        if(back){
+          e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+          goBack(); return false;
+        }
+
+        const go = e.target.closest("[data-go]");
+        if(go){
+          const id = go.dataset.go;
+          if(id && document.getElementById(id)){
+            e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+            goTo(id); return false;
+          }
+        }
+
+        const link = e.target.closest('a[href^="#"]');
+        if(link){
+          const id = link.getAttribute("href").replace("#","");
+          if(id && document.getElementById(id)){
+            e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+            goTo(id); return false;
+          }
+        }
+      }, true);
+
+      document.addEventListener("DOMContentLoaded", function(){
+        tabs(activeId());
+        document.body.dataset.screen = activeId();
+      });
+    })();
   </script>
 
 </body>
