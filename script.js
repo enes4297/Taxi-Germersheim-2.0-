@@ -1,25 +1,27 @@
 
-/* Taxi Germersheim App – V2.8.2
-   Single Navigation Source of Truth
-   Fixes: Why Taxi -> Google Reviews -> Back loop
+/* Taxi Germersheim App – V2.8.3 Emergency Visible Fix
+   Makes app visible after splash and fixes back/navigation without killing existing app logic.
 */
-
 (function(){
   "use strict";
 
-  const TG = {
-    stack: [],
-    restoring: false,
-    initialized: false
-  };
+  let stack = [];
+  let booted = false;
 
   function qsa(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
   function qs(sel, root=document){ return root.querySelector(sel); }
-
   function screens(){ return qsa(".screen"); }
 
+  function firstRealScreen(){
+    return document.getElementById("home")
+      || document.getElementById("start")
+      || screens().find(s => !/splash|loader|loading/i.test(s.id || s.className))
+      || screens()[0]
+      || null;
+  }
+
   function activeScreen(){
-    return qs(".screen.active") || document.getElementById("home") || screens()[0] || null;
+    return qs(".screen.active") || qs(".screen.is-active-screen") || firstRealScreen();
   }
 
   function activeId(){
@@ -27,184 +29,123 @@
     return s ? s.id : "home";
   }
 
-  function scrollYNow(){
-    return window.scrollY || document.documentElement.scrollTop || 0;
-  }
+  function y(){ return window.scrollY || document.documentElement.scrollTop || 0; }
 
   function tabFor(id){
-    const map = {
-      home: "home",
-      start: "home",
-      booking: "booking",
-      buchen: "booking",
-      yumak: "yumak",
-      rewards: "rewards",
-      profile: "profile",
-      profil: "profile"
-    };
+    const map = {home:"home",start:"home",booking:"booking",buchen:"booking",yumak:"yumak",rewards:"rewards",profile:"profile",profil:"profile"};
     return map[id] || null;
   }
 
   function updateTabs(id){
     const wanted = tabFor(id);
-    const selector = ".bottom-nav a,.bottom-nav button,.tabbar a,.tabbar button,.nav-item,.bottom-tab,[data-tab],[data-go]";
-    qsa(selector).forEach(el => {
+    qsa(".bottom-nav a,.bottom-nav button,.tabbar a,.tabbar button,.nav-item,.bottom-tab,[data-tab],[data-go]").forEach(el => {
       const raw = (el.dataset.tab || el.dataset.go || el.getAttribute("href") || "").replace("#","");
       const on = wanted && (raw === wanted || raw === id || tabFor(raw) === wanted);
       el.classList.toggle("active", !!on);
       el.classList.toggle("is-active", !!on);
-      if(on) el.setAttribute("aria-current","page");
-      else el.removeAttribute("aria-current");
+      if(on) el.setAttribute("aria-current","page"); else el.removeAttribute("aria-current");
     });
   }
 
-  function showScreen(id, y=0){
+  function hideSplash(){
+    qsa(".splash,#splash,.splash-screen,.loader,.loading-screen").forEach(el => {
+      el.style.display = "none";
+      el.style.visibility = "hidden";
+      el.style.opacity = "0";
+      el.style.pointerEvents = "none";
+    });
+    document.body.classList.add("tg-ready");
+  }
+
+  function show(id, scrollY){
     const target = document.getElementById(id);
     if(!target) return false;
 
-    screens().forEach(s => s.classList.remove("active","is-active-screen"));
+    screens().forEach(s => {
+      s.classList.remove("active","is-active-screen");
+      s.style.display = "none";
+    });
+
     target.classList.add("active","is-active-screen");
+    target.style.display = "block";
+    target.style.visibility = "visible";
+    target.style.opacity = "1";
 
     document.body.dataset.screen = id;
     updateTabs(id);
+    hideSplash();
 
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: y || 0, behavior: "auto" });
-    });
-
+    requestAnimationFrame(() => window.scrollTo({top: scrollY || 0, behavior:"auto"}));
     return true;
+  }
+
+  function ensureVisible(){
+    hideSplash();
+
+    const active = activeScreen();
+    if(active && active.id){
+      show(active.id, y());
+    } else {
+      const first = firstRealScreen();
+      if(first && first.id) show(first.id, 0);
+    }
   }
 
   function pushCurrent(nextId){
     const id = activeId();
     if(!id || id === nextId) return;
+    const item = {id:id, y:y()};
+    const last = stack[stack.length - 1];
+    if(last && last.id === item.id) last.y = item.y;
+    else stack.push(item);
 
-    const entry = { id, y: scrollYNow() };
-    const last = TG.stack[TG.stack.length - 1];
-
-    if(last && last.id === entry.id){
-      last.y = entry.y;
-    } else {
-      TG.stack.push(entry);
-    }
-
-    // remove same screen duplicates in a row
-    TG.stack = TG.stack.filter((item, i, arr) => i === 0 || item.id !== arr[i-1].id);
-
-    // hard remove ping-pong patterns: A,B,A -> A
-    for(let i = TG.stack.length - 3; i >= 0; i--){
-      const a = TG.stack[i], b = TG.stack[i+1], c = TG.stack[i+2];
+    // prevent A-B-A ping pong
+    for(let i = stack.length - 3; i >= 0; i--){
+      const a=stack[i], b=stack[i+1], c=stack[i+2];
       if(a && b && c && a.id === c.id && a.id !== b.id){
-        TG.stack.splice(i+1, 2);
+        stack.splice(i+1,2);
       }
     }
-
-    if(TG.stack.length > 50) TG.stack = TG.stack.slice(-50);
+    if(stack.length > 40) stack = stack.slice(-40);
   }
 
-  function goTo(id, options={}){
+  function goTo(id){
     if(!id || !document.getElementById(id)) return false;
-
-    if(!TG.restoring && options.push !== false){
-      pushCurrent(id);
-    }
-
-    return showScreen(id, 0);
+    pushCurrent(id);
+    return show(id,0);
   }
 
   function goBack(){
     const current = activeId();
-
-    let prev = TG.stack.pop();
-
+    let prev = stack.pop();
     while(prev && (!prev.id || prev.id === current || !document.getElementById(prev.id))){
-      prev = TG.stack.pop();
+      prev = stack.pop();
     }
-
-    TG.restoring = true;
-
-    if(prev){
-      showScreen(prev.id, prev.y || 0);
-    } else {
-      showScreen("home", 0);
-    }
-
-    setTimeout(() => { TG.restoring = false; }, 150);
+    if(prev) show(prev.id, prev.y || 0);
+    else show((firstRealScreen() && firstRealScreen().id) || "home", 0);
   }
 
-  // Global compatibility for existing inline/older code
   window.tgGoTo = goTo;
   window.tgGoBack = goBack;
   window.showScreen = function(id){ return goTo(id); };
 
-  // Block old browser history behavior inside app
-  window.addEventListener("popstate", function(e){
-    e.preventDefault();
-    goBack();
-  });
+  function initRouter(){
+    if(booted) return;
+    booted = true;
 
-  function initDirectionButtons(){
     document.addEventListener("click", function(e){
-      const btn = e.target.closest("[data-direction-choice]");
-      if(!btn) return;
-
-      const wrap = btn.closest(".ride-direction-v280");
-      if(!wrap) return;
-
-      wrap.querySelectorAll("button").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      wrap.dataset.direction = btn.dataset.directionChoice;
-
-      const round = qs(".roundtrip-toggle");
-      const repeat = qs(".repeat-toggle");
-      if(round) round.classList.toggle("active", btn.dataset.directionChoice === "roundtrip");
-      if(repeat) repeat.classList.toggle("active", btn.dataset.directionChoice === "repeat");
-    });
-  }
-
-  function initBookingFieldStates(){
-    function update(){
-      qsa(".booking-field input, .profile-form-v260 input").forEach(input => {
-        const wrap = input.closest(".booking-field") || input.closest("label");
-        if(wrap) wrap.classList.toggle("has-value", !!input.value.trim());
-      });
-    }
-    document.addEventListener("input", update);
-    update();
-  }
-
-  function initYumakGreeting(){
-    const target = qs(".yumak-dynamic-greeting");
-    if(!target) return;
-    const greetings = [
-      "Willkommen zurück.",
-      "Bereit für deine nächste Fahrt?",
-      "Schön, dass du wieder da bist.",
-      "Ich bin da, wenn du Hilfe brauchst."
-    ];
-    target.textContent = greetings[Math.floor(Date.now() / 1800000) % greetings.length];
-  }
-
-  function initClickRouter(){
-    document.addEventListener("click", function(e){
-      const back = e.target.closest("[data-back], .js-back, .back-button");
+      const back = e.target.closest("[data-back],.js-back,.back-button");
       if(back){
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        goBack();
-        return false;
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+        goBack(); return false;
       }
 
       const go = e.target.closest("[data-go]");
       if(go){
         const id = go.dataset.go;
         if(id && document.getElementById(id)){
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          goTo(id);
-          return false;
+          e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+          goTo(id); return false;
         }
       }
 
@@ -212,35 +153,17 @@
       if(link){
         const id = link.getAttribute("href").replace("#","");
         if(id && document.getElementById(id)){
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          goTo(id);
-          return false;
+          e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+          goTo(id); return false;
         }
       }
     }, true);
+
+    ensureVisible();
+    setTimeout(ensureVisible, 700);
+    setTimeout(ensureVisible, 1600);
   }
 
-  function init(){
-    if(TG.initialized) return;
-    TG.initialized = true;
-
-    initClickRouter();
-    initDirectionButtons();
-    initBookingFieldStates();
-    initYumakGreeting();
-
-    updateTabs(activeId());
-    document.body.dataset.screen = activeId();
-
-    // reset stack on fresh load to prevent old bad session loops
-    TG.stack = [];
-  }
-
-  if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", initRouter);
+  else initRouter();
 })();

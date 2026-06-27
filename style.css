@@ -5816,3 +5816,35 @@ body[data-screen="profile"] .bottom-nav [data-go="profile"]{
   color:#ffdf6e!important;
   opacity:1!important;
 }
+
+
+/* V2.8.3 Emergency Visible Fix */
+body.tg-ready .splash,
+body.tg-ready #splash,
+body.tg-ready .splash-screen,
+body.tg-ready .loader,
+body.tg-ready .loading-screen{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  display:none!important;
+}
+
+.screen{
+  display:none;
+}
+
+.screen.active,
+.screen.is-active-screen{
+  display:block!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+
+body:not(.tg-ready) .screen.active{
+  display:block!important;
+}
+
+html, body{
+  min-height:100%!important;
+}
