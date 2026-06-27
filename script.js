@@ -257,3 +257,188 @@
   function boot(){document.documentElement.classList.add('tg-v330-nox');document.body.classList.add('tg-v330-nox');$('#booking')?.classList.add('tg-v330-booking');buildTypes();buildChips();buildTrips();buildNav();let saved='taxi';try{saved=sessionStorage.getItem('tg_ride_type_v330')||'taxi'}catch(e){}setType(saved);document.addEventListener('click',e=>{let tc=e.target.closest('#booking .tg-v330-typecard'); if(tc){e.preventDefault();setType(tc.dataset.type);return}let go=e.target.closest('[data-go]'); if(go){let t=typeOf(go.dataset.go+' '+go.textContent); if(t)setType(t)} setTimeout(buildNav,50)},true); setTimeout(()=>{buildChips();buildTrips();buildNav();setType(document.body.dataset.rideType||saved)},700)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
+
+
+/* =========================================================
+   V3.3.1 – Home Inline Icon Fix
+   Entfernt gelbe Kästchen auf Startseite dauerhaft.
+   ========================================================= */
+(function(){
+  "use strict";
+
+  function $(s,r=document){return r.querySelector(s)}
+  function $$(s,r=document){return Array.from(r.querySelectorAll(s))}
+
+  const icons = {
+    taxi:'<svg viewBox="0 0 48 48"><path d="M11 31h26"/><path d="M9 31l2.5-12h25L39 31"/><path d="M16 19l3-7h10l3 7"/><path d="M16 31v4"/><path d="M32 31v4"/><circle cx="15" cy="31" r="2.2"/><circle cx="33" cy="31" r="2.2"/><path d="M20 10h8"/></svg>',
+    medical:'<svg viewBox="0 0 48 48"><path d="M24 10v28"/><path d="M10 24h28"/></svg>',
+    wheelchair:'<svg viewBox="0 0 48 48"><circle cx="18" cy="35" r="7"/><path d="M18 28V14"/><path d="M18 14h10"/><path d="M18 22h11"/><path d="M29 22l6 13h6"/><circle cx="18" cy="9" r="2"/></svg>',
+    airport:'<svg viewBox="0 0 48 48"><path d="M20 42l4-17L7 16l3-4l17 5l4-13l4 2l-2 15l9 6l-2 4l-10-4l-6 15z"/></svg>',
+    home:'<svg viewBox="0 0 48 48"><path d="M7 22l17-15l17 15"/><path d="M11 20v21h26V20"/><path d="M19 41V29h10v12"/></svg>',
+    booking:'<svg viewBox="0 0 48 48"><rect x="8" y="10" width="32" height="30" rx="4"/><path d="M16 6v8"/><path d="M32 6v8"/><path d="M8 19h32"/><path d="M16 27h.1"/><path d="M24 27h.1"/><path d="M32 27h.1"/></svg>',
+    yumak:'<svg viewBox="0 0 48 48"><path d="M10 18L8 8l9 6"/><path d="M38 18l2-10l-9 6"/><circle cx="24" cy="26" r="14"/><path d="M18 24h.1"/><path d="M30 24h.1"/><path d="M22 30h4"/><path d="M16 32l-8 2"/><path d="M32 32l8 2"/></svg>',
+    rewards:'<svg viewBox="0 0 48 48"><path d="M40 24v16H8V24"/><path d="M5 14h38v10H5z"/><path d="M24 14v26"/><path d="M24 14h-7a5 5 0 1 1 5-5c0 3 2 5 2 5z"/><path d="M24 14h7a5 5 0 1 0-5-5c0 3-2 5-2 5z"/></svg>',
+    profile:'<svg viewBox="0 0 48 48"><circle cx="24" cy="16" r="8"/><path d="M9 42a15 15 0 0 1 30 0"/></svg>',
+    arrow:'<svg viewBox="0 0 48 48"><path d="M10 24h28"/><path d="M27 13l11 11l-11 11"/></svg>',
+    star:'<svg viewBox="0 0 48 48"><path d="M24 6l5.5 11.2l12.3 1.8l-8.9 8.6l2.1 12.2L24 34l-11 5.8l2.1-12.2L6.2 19l12.3-1.8z"/></svg>',
+    review:'<svg viewBox="0 0 48 48"><path d="M39 31a8 8 0 0 1-8 8H16L7 43V15a8 8 0 0 1 8-8h16a8 8 0 0 1 8 8z"/><path d="M16 19h16"/><path d="M16 27h10"/></svg>',
+    phone:'<svg viewBox="0 0 48 48"><path d="M40 31v6a4 4 0 0 1-4.4 4A39 39 0 0 1 19 35a38 38 0 0 1-12-12A39 39 0 0 1 1 6.4A4 4 0 0 1 5 2h6a4 4 0 0 1 4 3.4c.2 2 .7 4 1.4 5.8a4 4 0 0 1-.9 4.2L13 18a31 31 0 0 0 17 17l2.6-2.5a4 4 0 0 1 4.2-.9c1.8.7 3.8 1.2 5.8 1.4A4 4 0 0 1 40 31z"/></svg>',
+    menu:'<svg viewBox="0 0 48 48"><path d="M10 15h28"/><path d="M10 24h28"/><path d="M10 33h28"/></svg>'
+  };
+
+  function icon(name, cls){
+    return '<span class="'+(cls || 'tg331-iconbox')+'"><span class="tg331-icon">'+(icons[name] || icons.taxi)+'</span></span>';
+  }
+
+  function guessType(el){
+    const raw = ((el.dataset.go || el.dataset.type || el.dataset.bookingType || "") + " " + (el.textContent || "")).toLowerCase();
+    if(raw.includes("kranken") || raw.includes("dialyse") || raw.includes("arzt")) return "medical";
+    if(raw.includes("rollstuhl") || raw.includes("wheel")) return "wheelchair";
+    if(raw.includes("flug") || raw.includes("airport") || raw.includes("fra")) return "airport";
+    if(raw.includes("taxi")) return "taxi";
+    if(raw.includes("reward") || raw.includes("geschenk")) return "rewards";
+    if(raw.includes("yumak")) return "yumak";
+    if(raw.includes("profil")) return "profile";
+    if(raw.includes("buchen")) return "booking";
+    return null;
+  }
+
+  function cleanHomeCards(){
+    const selectors = [
+      "#home .service-card",
+      "#home .home-service-card",
+      "#home .quick-card",
+      "#home [data-go='booking']",
+      "#home [data-go='medical']",
+      "#home [data-go='wheelchair']",
+      "#home [data-go='airport']"
+    ];
+
+    $$(selectors.join(",")).forEach(card=>{
+      if(card.dataset.tg331Home === "1") return;
+
+      const type = guessType(card);
+      if(!type) return;
+
+      card.dataset.tg331Home = "1";
+      card.classList.add("tg331-home-card");
+
+      // Remove only visual icon placeholders, keep text and arrows.
+      $$("img, svg, .icon, .card-icon, .service-icon, .tg-premium-icon-box, .tg-v330-iconbox, .tg-inline-icon-box", card).forEach(node=>{
+        const isTextWrapper = node.matches && node.matches(".tg331-home-card-copy");
+        if(!isTextWrapper) node.remove();
+      });
+
+      card.insertAdjacentHTML("afterbegin", icon(type, "tg331-home-iconbox"));
+    });
+  }
+
+  function cleanFloatingButtons(){
+    // Top left menu / top right phone yellow square placeholders
+    $$("button, a").forEach(btn=>{
+      const raw = ((btn.dataset.go || btn.getAttribute("aria-label") || btn.textContent || "")).toLowerCase();
+      if(btn.dataset.tg331Float === "1") return;
+      let key = null;
+      if(raw.includes("menu") || raw.includes("menü")) key = "menu";
+      if(raw.includes("phone") || raw.includes("telefon") || raw.includes("anrufen")) key = "phone";
+      if(!key) return;
+
+      btn.dataset.tg331Float = "1";
+      btn.classList.add("tg331-round-icon-button");
+      btn.innerHTML = '<span class="tg331-round-icon">'+icons[key]+'</span>';
+    });
+  }
+
+  function cleanBottomNav(){
+    const navMap = {home:"home",booking:"booking",yumak:"yumak",rewards:"rewards",profile:"profile"};
+
+    $$(".bottom-nav button[data-go]").forEach(btn=>{
+      const key = navMap[btn.dataset.go];
+      if(!key) return;
+
+      const label = {
+        home:"Start",
+        booking:"Buchen",
+        yumak:"Yumak",
+        rewards:"Rewards",
+        profile:"Profil"
+      }[btn.dataset.go];
+
+      btn.classList.add("tg331-nav-button");
+      btn.innerHTML = '<span class="tg331-nav-icon">'+icons[key]+'</span><span>'+label+'</span>';
+    });
+  }
+
+  function cleanBookingCards(){
+    // Booking screen visible card placeholders if old systems still injected
+    $$("#booking .booking-type-grid button").forEach(card=>{
+      if(card.classList.contains("tg-v330-typecard")) return;
+      if(card.dataset.tg331Booking === "1") return;
+
+      const type = guessType(card);
+      if(!type) return;
+
+      card.dataset.tg331Booking = "1";
+      card.classList.add("tg331-booking-type-card");
+
+      const label = {
+        taxi:"Taxi",
+        medical:"Krankenfahrt",
+        wheelchair:"Rollstuhl",
+        airport:"Flughafen"
+      }[type];
+      const sub = {
+        taxi:"Jetzt oder später",
+        medical:"Dialyse · Chemo · Arzt",
+        wheelchair:"Barrierefrei fahren",
+        airport:"FRA · FKB · STR"
+      }[type];
+
+      card.innerHTML = icon(type, "tg331-home-iconbox") + '<span class="tg331-booking-copy"><b>'+label+'</b><small>'+sub+'</small></span>';
+    });
+  }
+
+  function removeSquares(){
+    // Any old square placeholders still left
+    $$(".tg-premium-icon-box, .tg-svg-icon, .type-card-v302 .tg-svg-icon, .booking-type-polish-icon").forEach(el=>{
+      if(el.closest(".tg331-home-card,.tg331-booking-type-card,.tg-v330-typecard")) return;
+      el.style.display = "none";
+    });
+  }
+
+  function boot(){
+    document.body.classList.add("tg331-ready");
+    cleanHomeCards();
+    cleanFloatingButtons();
+    cleanBottomNav();
+    cleanBookingCards();
+    removeSquares();
+
+    setTimeout(function(){
+      cleanHomeCards();
+      cleanFloatingButtons();
+      cleanBottomNav();
+      cleanBookingCards();
+      removeSquares();
+    }, 500);
+
+    setTimeout(function(){
+      cleanHomeCards();
+      cleanBottomNav();
+      cleanBookingCards();
+      removeSquares();
+    }, 1200);
+  }
+
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+
+  document.addEventListener("click", function(){
+    setTimeout(function(){
+      cleanHomeCards();
+      cleanBottomNav();
+      cleanBookingCards();
+      removeSquares();
+    }, 80);
+  }, true);
+})();

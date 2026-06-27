@@ -6806,3 +6806,198 @@ html.tg-v330-nox,body.tg-v330-nox,html,body{max-width:100%!important;overflow-x:
 #booking .tg-v330-chip>img,#booking .tg-v330-chip>svg,#booking .tg-v330-trip>img,#booking .tg-v330-trip>svg{display:none!important}
 .bottom-nav button .tg-v330-navicon{width:28px!important;height:28px!important;display:block!important;opacity:.45!important}.bottom-nav button.active .tg-v330-navicon,.bottom-nav button.is-active .tg-v330-navicon{opacity:1!important}.bottom-nav button.active .tg-v330-navicon svg,.bottom-nav button.is-active .tg-v330-navicon svg{stroke:#ffd96a!important;filter:drop-shadow(0 0 11px rgba(255,217,106,.46))!important}.bottom-nav button:not(.active):not(.is-active) .tg-v330-navicon svg{stroke:rgba(255,255,255,.38)!important;filter:none!important}
 @media(max-width:390px){#booking.tg-v330-booking{padding-left:14px!important;padding-right:14px!important}#booking .tg-v330-typecard{height:86px!important;min-height:86px!important;max-height:86px!important;grid-template-columns:40px minmax(0,1fr)!important;gap:8px!important;padding:10px!important}.tg-v330-iconbox{width:38px!important;height:38px!important;min-width:38px!important}.tg-v330-icon{width:23px!important;height:23px!important}.tg-v330-copy b{font-size:15px!important}.tg-v330-copy small{font-size:9px!important}}
+
+
+
+/* =========================================================
+   V3.3.1 – Home Inline Icon Fix
+   Gelbe Kästchen auf Startseite endgültig deaktivieren
+   ========================================================= */
+
+.tg331-icon svg,
+.tg331-home-iconbox svg,
+.tg331-nav-icon svg,
+.tg331-round-icon svg{
+  width:100%!important;
+  height:100%!important;
+  fill:none!important;
+  stroke:#ffd96a!important;
+  stroke-width:3.2!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  display:block!important;
+  filter:drop-shadow(0 0 8px rgba(255,217,106,.22))!important;
+}
+
+.tg331-home-iconbox{
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  border-radius:16px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:rgba(255,217,106,.06)!important;
+  border:1px solid rgba(255,217,106,.30)!important;
+  box-shadow:0 0 18px rgba(255,217,106,.10), inset 0 1px 0 rgba(255,255,255,.04)!important;
+  overflow:hidden!important;
+}
+
+.tg331-icon{
+  width:25px!important;
+  height:25px!important;
+  display:block!important;
+}
+
+/* Startseiten-Karten sauber */
+#home .tg331-home-card{
+  display:grid!important;
+  grid-template-columns:54px minmax(0,1fr) 22px!important;
+  align-items:center!important;
+  gap:12px!important;
+  overflow:hidden!important;
+}
+
+#home .tg331-home-card > img,
+#home .tg331-home-card > svg,
+#home .tg331-home-card > .icon,
+#home .tg331-home-card > .card-icon,
+#home .tg331-home-card > .service-icon,
+#home .tg331-home-card > .tg-premium-icon-box,
+#home .tg331-home-card > .tg-v330-iconbox,
+#home .tg331-home-card > .tg-inline-icon-box{
+  display:none!important;
+}
+
+/* Aber unser neues Icon sichtbar lassen */
+#home .tg331-home-card > .tg331-home-iconbox{
+  display:grid!important;
+}
+
+/* alte gelbe Platzhalter global optisch entschärfen */
+.tg-premium-icon-box,
+.tg-svg-icon,
+.type-card-v302 .tg-svg-icon,
+.booking-type-polish-icon{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+
+/* Runde Buttons oben */
+.tg331-round-icon-button{
+  display:grid!important;
+  place-items:center!important;
+}
+
+.tg331-round-icon-button > img,
+.tg331-round-icon-button > svg,
+.tg331-round-icon-button > span:not(.tg331-round-icon){
+  display:none!important;
+}
+
+.tg331-round-icon{
+  width:28px!important;
+  height:28px!important;
+  display:block!important;
+}
+
+/* Bottom Nav komplett inline */
+.bottom-nav .tg331-nav-button{
+  display:grid!important;
+  place-items:center!important;
+  gap:4px!important;
+}
+
+.tg331-nav-icon{
+  width:28px!important;
+  height:28px!important;
+  display:block!important;
+  opacity:.42!important;
+}
+
+.bottom-nav button.active .tg331-nav-icon,
+.bottom-nav button.is-active .tg331-nav-icon{
+  opacity:1!important;
+}
+
+.bottom-nav button.active .tg331-nav-icon svg,
+.bottom-nav button.is-active .tg331-nav-icon svg{
+  stroke:#ffd96a!important;
+  filter:drop-shadow(0 0 11px rgba(255,217,106,.46))!important;
+}
+
+.bottom-nav button:not(.active):not(.is-active) .tg331-nav-icon svg{
+  stroke:rgba(255,255,255,.38)!important;
+  filter:none!important;
+}
+
+/* Buchungs-Fallback Karten, falls V3.3 noch nicht greift */
+#booking .tg331-booking-type-card{
+  display:grid!important;
+  grid-template-columns:54px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:10px!important;
+  overflow:hidden!important;
+  min-width:0!important;
+}
+
+.tg331-booking-copy{
+  min-width:0!important;
+  display:block!important;
+}
+
+.tg331-booking-copy b{
+  display:block!important;
+  color:#fff!important;
+  font-size:16px!important;
+  font-weight:950!important;
+  line-height:1.05!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+.tg331-booking-copy small{
+  display:block!important;
+  margin-top:5px!important;
+  color:rgba(255,255,255,.56)!important;
+  font-size:9.8px!important;
+  font-weight:850!important;
+  line-height:1.15!important;
+  overflow:hidden!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+}
+
+/* Sicherheit: keine gelben Quadrate von alten Bild-Platzhaltern */
+#home img[src$=".svg"],
+.bottom-nav img[src$=".svg"]{
+  background:transparent!important;
+  border:none!important;
+}
+
+/* iPhone Breite stabil */
+html,body,#home,#booking{
+  max-width:100%!important;
+  overflow-x:hidden!important;
+}
+
+@media(max-width:390px){
+  .tg331-home-iconbox{
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    border-radius:15px!important;
+  }
+
+  .tg331-icon{
+    width:23px!important;
+    height:23px!important;
+  }
+
+  #home .tg331-home-card{
+    grid-template-columns:50px minmax(0,1fr) 20px!important;
+    gap:10px!important;
+  }
+}
