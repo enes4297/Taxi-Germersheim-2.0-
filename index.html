@@ -1094,90 +1094,6 @@
     });
   </script>
 
-
-  <script>
-    (function(){
-      const navStack = [];
-      let currentScreenId = document.querySelector(".screen.active")?.id || "home";
-
-      function activeScreen(){
-        return document.querySelector(".screen.active");
-      }
-
-      function rememberCurrent(){
-        const screen = activeScreen();
-        if(!screen) return;
-        currentScreenId = screen.id || currentScreenId || "home";
-        const last = navStack[navStack.length - 1];
-        const snapshot = { id: currentScreenId, y: window.scrollY || 0 };
-        if(!last || last.id !== snapshot.id || Math.abs((last.y||0) - snapshot.y) > 12){
-          navStack.push(snapshot);
-          if(navStack.length > 20) navStack.shift();
-        } else {
-          last.y = snapshot.y;
-        }
-      }
-
-      window.tgShowScreenSmart = function(id, push=true){
-        if(!id) return;
-        if(push) rememberCurrent();
-
-        document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-        const target = document.getElementById(id);
-        if(target){
-          target.classList.add("active");
-          currentScreenId = id;
-        }
-        window.scrollTo({ top:0, behavior:"smooth" });
-      };
-
-      window.tgGoBack = function(){
-        const previous = navStack.pop();
-        if(previous && previous.id){
-          document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-          const target = document.getElementById(previous.id);
-          if(target){
-            target.classList.add("active");
-            currentScreenId = previous.id;
-            requestAnimationFrame(()=>{
-              window.scrollTo({ top: previous.y || 0, behavior:"smooth" });
-            });
-            return;
-          }
-        }
-
-        document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-        document.getElementById("home")?.classList.add("active");
-        currentScreenId = "home";
-        window.scrollTo({ top:0, behavior:"smooth" });
-      };
-
-      document.addEventListener("click", function(e){
-        const back = e.target.closest("[data-back]");
-        if(back){
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          window.tgGoBack();
-          return;
-        }
-
-        const go = e.target.closest("[data-go]");
-        if(go){
-          const target = go.dataset.go === "home" ? "home" : go.dataset.go;
-          if(target){
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            window.tgShowScreenSmart(target, true);
-          }
-        }
-      }, true);
-
-      document.addEventListener("DOMContentLoaded", function(){
-        currentScreenId = document.querySelector(".screen.active")?.id || "home";
-      });
-    })();
-  </script>
-
   <script>
     function initYumakBirthday(){
       const now = new Date();
@@ -1191,20 +1107,6 @@
       });
     }
     document.addEventListener("DOMContentLoaded", initYumakBirthday);
-  </script>
-
-
-  <script>
-    if(typeof window.showScreen === "function"){
-      const oldShowScreen = window.showScreen;
-      window.showScreen = function(id){
-        if(typeof window.tgShowScreenSmart === "function"){
-          window.tgShowScreenSmart(id, true);
-        } else {
-          oldShowScreen(id);
-        }
-      };
-    }
   </script>
 
 
@@ -1227,6 +1129,106 @@
       });
     }
     document.addEventListener("DOMContentLoaded", initYumakIllustrationSystem);
+  </script>
+
+
+  <script>
+    (function(){
+      const SCROLL_KEY="tg_scroll_positions_v241";
+      const STACK_KEY="tg_nav_stack_v241";
+      const DEFAULT_SCREEN="home";
+
+      function read(key, fallback){ try{return JSON.parse(sessionStorage.getItem(key)||"");}catch(e){return fallback;} }
+      function write(key, value){ try{sessionStorage.setItem(key, JSON.stringify(value));}catch(e){} }
+      function allScreens(){ return Array.from(document.querySelectorAll(".screen")); }
+      function active(){ return document.querySelector(".screen.active") || document.getElementById(DEFAULT_SCREEN) || allScreens()[0]; }
+      function activeId(){ const s=active(); return s ? s.id : DEFAULT_SCREEN; }
+
+      function saveScroll(id){
+        id = id || activeId();
+        const pos = read(SCROLL_KEY,{});
+        pos[id] = window.scrollY || document.documentElement.scrollTop || 0;
+        write(SCROLL_KEY,pos);
+      }
+
+      function tabName(screenId){
+        const map={home:"home",start:"home",booking:"booking",buchen:"booking",yumak:"yumak",rewards:"rewards",profile:"profile",profil:"profile"};
+        return map[screenId] || null;
+      }
+
+      function setActiveTab(screenId){
+        const wanted = tabName(screenId);
+        const selector = ".bottom-nav a,.bottom-nav button,.tabbar a,.tabbar button,.nav-item,.bottom-tab,[data-tab],[data-go]";
+        document.querySelectorAll(selector).forEach(function(el){
+          const raw = (el.dataset.tab || el.dataset.go || el.getAttribute("href") || "").replace("#","");
+          const isActive = wanted && (raw===wanted || raw===screenId || tabName(raw)===wanted);
+          el.classList.toggle("active", !!isActive);
+          el.classList.toggle("is-active", !!isActive);
+          if(isActive){ el.setAttribute("aria-current","page"); } else { el.removeAttribute("aria-current"); }
+        });
+      }
+
+      function activate(id, options){
+        options = options || {};
+        const target = document.getElementById(id);
+        if(!target) return false;
+        allScreens().forEach(s=>s.classList.remove("active","is-active-screen"));
+        target.classList.add("active","is-active-screen");
+        document.body.dataset.screen = id;
+        setActiveTab(id);
+        const y = typeof options.y === "number" ? options.y : 0;
+        requestAnimationFrame(()=>window.scrollTo({top:y, behavior:options.smooth ? "smooth" : "auto"}));
+        return true;
+      }
+
+      function goTo(id, push){
+        if(!id) return;
+        if(id==="home") id=DEFAULT_SCREEN;
+        const from = activeId();
+        saveScroll(from);
+        if(push!==false && from && from!==id){
+          const stack = read(STACK_KEY,[]);
+          stack.push({id:from, y:window.scrollY||0});
+          write(STACK_KEY, stack.slice(-40));
+        }
+        activate(id,{y:0, smooth:true});
+      }
+
+      function goBack(){
+        const from = activeId();
+        saveScroll(from);
+        const stack = read(STACK_KEY,[]);
+        const prev = stack.pop();
+        write(STACK_KEY,stack);
+        if(prev && prev.id && document.getElementById(prev.id)){
+          activate(prev.id,{y:prev.y||0, smooth:false});
+        } else {
+          activate(DEFAULT_SCREEN,{y:0, smooth:false});
+        }
+      }
+
+      window.tgGoTo = goTo;
+      window.tgGoBack = goBack;
+      window.tgSetActiveTab = setActiveTab;
+      window.showScreen = function(id){ goTo(id,true); };
+
+      document.addEventListener("click", function(e){
+        const back = e.target.closest("[data-back],.js-back,.back-button");
+        if(back){ e.preventDefault(); e.stopImmediatePropagation(); goBack(); return; }
+
+        const go = e.target.closest("[data-go]");
+        if(go){
+          const id = go.dataset.go;
+          if(id && document.getElementById(id)){
+            e.preventDefault(); e.stopImmediatePropagation(); goTo(id,true);
+          }
+        }
+      }, true);
+
+      window.addEventListener("beforeunload", ()=>saveScroll(activeId()), {passive:true});
+      window.addEventListener("pagehide", ()=>saveScroll(activeId()), {passive:true});
+      document.addEventListener("DOMContentLoaded", ()=>{ setActiveTab(activeId()); document.body.dataset.screen=activeId(); });
+    })();
   </script>
 
 </body>

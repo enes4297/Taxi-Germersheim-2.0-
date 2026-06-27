@@ -5598,3 +5598,16 @@ button, a{
 .yumak-chat-preview{animation:yumakChatPreviewIn .2s cubic-bezier(.2,.8,.2,1) both}@keyframes yumakChatPreviewIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}.yumak-rewards-orb picture,.yumak-rewards-orb img{width:100%;height:100%;display:block;object-fit:cover}
 @media(prefers-reduced-motion:reduce){.yumak-hero-visual picture,.yumak-hero-visual img,.yumak-visual-glow,.yumak-visual-particle,.yumak-quote-carousel p{animation:none!important}.yumak-quote-carousel p:first-child{opacity:1!important;transform:none!important}}
 @media(max-width:390px){.yumak-clean-header{grid-template-columns:48px 1fr 48px!important}.yumak-clean-header h2{font-size:38px}.yumak-hero-visual{min-height:270px}.yumak-hero-copy h3{font-size:32px}.yumak-action-list,.yumak-future-grid{grid-template-columns:1fr}.yumak-rewards-concept,.yumak-diary-panel{grid-template-columns:1fr}.yumak-rewards-concept picture,.yumak-diary-panel picture{width:100%;height:190px}}
+
+/* V2.4.1 PATCH – Navigation + Active Tab */
+.bottom-nav a.active,.bottom-nav button.active,.bottom-nav a.is-active,.bottom-nav button.is-active,
+.tabbar a.active,.tabbar button.active,.nav-item.active,.bottom-tab.active,[data-go].active,[data-tab].active{
+  color:#ffdf6e!important; opacity:1!important;
+}
+.bottom-nav a.active svg,.bottom-nav button.active svg,.bottom-nav a.is-active svg,.bottom-nav button.is-active svg,
+.tabbar a.active svg,.tabbar button.active svg,.nav-item.active svg,.bottom-tab.active svg{
+  color:#ffdf6e!important; stroke:#ffdf6e!important; filter:drop-shadow(0 0 8px rgba(255,217,106,.32));
+}
+.bottom-nav a:not(.active):not(.is-active),.bottom-nav button:not(.active):not(.is-active),
+.tabbar a:not(.active):not(.is-active),.tabbar button:not(.active):not(.is-active){ opacity:.62; }
+[data-back]{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
