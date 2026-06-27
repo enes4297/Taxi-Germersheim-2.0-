@@ -5800,3 +5800,19 @@ button[data-call]:before{
 [data-back]{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
 .bottom-nav a.active,.bottom-nav button.active,.bottom-nav a.is-active,.bottom-nav button.is-active,.tabbar a.active,.tabbar button.active,.nav-item.active,.bottom-tab.active{color:#ffdf6e!important;opacity:1!important}
 .bottom-nav a.active svg,.bottom-nav button.active svg,.bottom-nav a.is-active svg,.bottom-nav button.is-active svg,.tabbar a.active svg,.tabbar button.active svg{stroke:#ffdf6e!important;color:#ffdf6e!important;filter:drop-shadow(0 0 8px rgba(255,217,106,.32))!important}
+
+
+/* V2.8.2 – Single Navigation Source Fix */
+[data-back]{
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+
+body[data-screen="home"] .bottom-nav [data-go="home"],
+body[data-screen="booking"] .bottom-nav [data-go="booking"],
+body[data-screen="yumak"] .bottom-nav [data-go="yumak"],
+body[data-screen="rewards"] .bottom-nav [data-go="rewards"],
+body[data-screen="profile"] .bottom-nav [data-go="profile"]{
+  color:#ffdf6e!important;
+  opacity:1!important;
+}
