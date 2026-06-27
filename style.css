@@ -6013,3 +6013,165 @@ body.splash-finished .splash{
   position:relative!important;
   z-index:20!important;
 }
+
+
+/* =========================================================
+   V3.0.1 – Booking UI Polish
+   Zentrierte Fahrtkarten + Rollstuhl ohne Doppelicon
+   ========================================================= */
+
+/* Hinfahrt/Rückfahrt-Karten: Text optisch mittig */
+.ride-direction-v280 button,
+.ride-direction-v290 button,
+.ride-direction-v291 button,
+.direction-options button,
+.trip-type-grid button,
+.trip-choice-polished{
+  display:grid!important;
+  grid-template-columns:42px 1fr 42px!important;
+  align-items:center!important;
+  justify-items:center!important;
+  text-align:center!important;
+  gap:0!important;
+  min-height:82px!important;
+  padding:0 14px!important;
+}
+
+.ride-direction-v280 button span,
+.ride-direction-v290 button span,
+.ride-direction-v291 button span,
+.direction-options button span,
+.trip-type-grid button span,
+.trip-choice-polished span:first-child{
+  grid-column:1!important;
+  justify-self:center!important;
+  margin:0!important;
+}
+
+.ride-direction-v280 button b,
+.ride-direction-v290 button b,
+.ride-direction-v291 button b,
+.direction-options button b,
+.trip-type-grid button b,
+.trip-choice-polished b{
+  grid-column:2!important;
+  justify-self:center!important;
+  text-align:center!important;
+  width:100%!important;
+  margin:0!important;
+  white-space:nowrap!important;
+}
+
+/* Fahrttyp-Kacheln einheitlich */
+.booking-type-grid{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:12px!important;
+}
+
+.booking-type-grid button{
+  min-height:98px!important;
+  height:98px!important;
+  display:grid!important;
+  grid-template-columns:54px 1fr!important;
+  align-items:center!important;
+  gap:13px!important;
+  padding:16px!important;
+  overflow:hidden!important;
+  white-space:nowrap!important;
+  text-align:left!important;
+}
+
+.booking-type-grid button img,
+.booking-type-grid button svg{
+  width:38px!important;
+  height:38px!important;
+  max-width:38px!important;
+  max-height:38px!important;
+  object-fit:contain!important;
+  margin:0!important;
+  justify-self:center!important;
+}
+
+/* Rollstuhl-Kachel: altes blaues Emoji/Icon komplett ersetzen */
+.booking-type-wheelchair-polished{
+  grid-template-columns:54px 1fr!important;
+}
+
+.booking-type-wheelchair-polished > img,
+.booking-type-wheelchair-polished > svg,
+.booking-type-wheelchair-polished > span:not(.booking-type-polish-icon):not(.booking-type-polish-label),
+.booking-type-wheelchair-polished::before,
+.booking-type-wheelchair-polished::after{
+  display:none!important;
+  content:none!important;
+}
+
+.booking-type-polish-icon{
+  width:46px!important;
+  height:46px!important;
+  border-radius:17px!important;
+  display:grid!important;
+  place-items:center!important;
+  justify-self:center!important;
+  color:#ffd96a!important;
+  font-size:27px!important;
+  background:rgba(255,217,106,.07)!important;
+  border:1px solid rgba(255,217,106,.25)!important;
+  filter:drop-shadow(0 0 8px rgba(255,217,106,.22))!important;
+}
+
+.booking-type-polish-label{
+  display:block!important;
+  color:#fff!important;
+  font-size:22px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:nowrap!important;
+  min-width:0!important;
+}
+
+/* Alle Fahrttyp-Texte nicht abschneiden */
+.booking-type-grid button b,
+.booking-type-grid button strong,
+.booking-type-grid button .label{
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:nowrap!important;
+  min-width:0!important;
+}
+
+/* Mobile Feinjustierung */
+@media(max-width:390px){
+  .booking-type-grid button{
+    min-height:92px!important;
+    height:92px!important;
+    grid-template-columns:48px 1fr!important;
+    gap:10px!important;
+    padding:14px!important;
+  }
+
+  .booking-type-polish-icon{
+    width:42px!important;
+    height:42px!important;
+    font-size:25px!important;
+  }
+
+  .booking-type-polish-label,
+  .booking-type-grid button b,
+  .booking-type-grid button strong{
+    font-size:19px!important;
+  }
+
+  .ride-direction-v280 button,
+  .ride-direction-v290 button,
+  .ride-direction-v291 button,
+  .direction-options button,
+  .trip-type-grid button,
+  .trip-choice-polished{
+    grid-template-columns:38px 1fr 38px!important;
+    min-height:78px!important;
+  }
+}
