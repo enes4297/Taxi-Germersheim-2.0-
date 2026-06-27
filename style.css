@@ -7001,3 +7001,202 @@ html,body,#home,#booking{
     gap:10px!important;
   }
 }
+
+
+
+/* =========================================================
+   V3.3.2 – Home Cards + Premium Yumak Nav
+   ========================================================= */
+
+.tg332-icon svg,
+.tg332-card-iconbox svg,
+.tg332-nav-icon svg{
+  width:100%!important;
+  height:100%!important;
+  fill:none!important;
+  stroke:#ffd96a!important;
+  stroke-width:3.2!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  display:block!important;
+  filter:drop-shadow(0 0 9px rgba(255,217,106,.22))!important;
+}
+
+/* Home cards fixed: icon | text | arrow */
+#home .tg332-home-card{
+  display:grid!important;
+  grid-template-columns:54px minmax(0,1fr) 22px!important;
+  align-items:center!important;
+  gap:12px!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-align:left!important;
+}
+
+#home .tg332-home-card > *{
+  min-width:0!important;
+}
+
+.tg332-card-iconbox{
+  width:46px!important;
+  height:46px!important;
+  min-width:46px!important;
+  border-radius:17px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:rgba(255,217,106,.065)!important;
+  border:1px solid rgba(255,217,106,.30)!important;
+  box-shadow:0 0 18px rgba(255,217,106,.12), inset 0 1px 0 rgba(255,255,255,.04)!important;
+}
+
+.tg332-icon{
+  width:25px!important;
+  height:25px!important;
+  display:block!important;
+}
+
+.tg332-card-copy{
+  display:block!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+
+.tg332-card-copy b{
+  display:block!important;
+  color:#fff!important;
+  font-family:var(--serif)!important;
+  font-size:22px!important;
+  font-weight:950!important;
+  line-height:1.02!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+.tg332-card-copy small{
+  display:block!important;
+  margin-top:5px!important;
+  color:rgba(255,255,255,.62)!important;
+  font-size:13px!important;
+  font-weight:750!important;
+  line-height:1.12!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+}
+
+.tg332-card-arrow{
+  justify-self:end!important;
+  color:#ffd96a!important;
+  font-size:35px!important;
+  line-height:1!important;
+  font-weight:850!important;
+  text-shadow:0 0 10px rgba(255,217,106,.25)!important;
+}
+
+/* kill old duplicate empty circles inside home cards */
+#home .tg332-home-card .tg331-home-iconbox,
+#home .tg332-home-card .tg-premium-icon-box,
+#home .tg332-home-card .tg-v330-iconbox,
+#home .tg332-home-card .tg-inline-icon-box,
+#home .tg332-home-card .tg-svg-icon,
+#home .tg332-home-card .booking-type-polish-icon,
+#home .tg332-home-card img,
+#home .tg332-home-card > svg{
+  display:none!important;
+}
+
+/* But keep our new icon visible */
+#home .tg332-home-card .tg332-card-iconbox{
+  display:grid!important;
+}
+
+/* Bottom nav premium */
+.bottom-nav .tg332-nav-btn{
+  display:grid!important;
+  place-items:center!important;
+  gap:4px!important;
+}
+
+.tg332-nav-icon{
+  width:28px!important;
+  height:28px!important;
+  display:block!important;
+  opacity:.42!important;
+}
+
+.bottom-nav button.active .tg332-nav-icon,
+.bottom-nav button.is-active .tg332-nav-icon{
+  opacity:1!important;
+}
+
+.bottom-nav button.active .tg332-nav-icon svg,
+.bottom-nav button.is-active .tg332-nav-icon svg{
+  stroke:#ffd96a!important;
+  filter:drop-shadow(0 0 11px rgba(255,217,106,.46))!important;
+}
+
+.bottom-nav button:not(.active):not(.is-active) .tg332-nav-icon svg{
+  stroke:rgba(255,255,255,.36)!important;
+  filter:none!important;
+}
+
+/* Yumak tab gets a premium badge look, not cheap line-cat */
+.bottom-nav .tg332-yumak-nav .tg332-nav-icon{
+  width:32px!important;
+  height:32px!important;
+  border-radius:13px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:rgba(255,217,106,.045)!important;
+  border:1px solid rgba(255,217,106,.16)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03)!important;
+  padding:4px!important;
+}
+
+.bottom-nav button.active.tg332-yumak-nav .tg332-nav-icon,
+.bottom-nav button.is-active.tg332-yumak-nav .tg332-nav-icon{
+  background:rgba(255,217,106,.10)!important;
+  border-color:rgba(255,217,106,.34)!important;
+  box-shadow:0 0 17px rgba(255,217,106,.16), inset 0 1px 0 rgba(255,255,255,.04)!important;
+}
+
+/* Remove the extra blank circles on booking trip buttons */
+#booking .tg-v330-trip span:empty,
+#booking .trip-grid-v310 button span:empty{
+  display:none!important;
+}
+
+/* Mobile card typography */
+@media(max-width:390px){
+  #home .tg332-home-card{
+    grid-template-columns:50px minmax(0,1fr) 18px!important;
+    gap:10px!important;
+  }
+
+  .tg332-card-iconbox{
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+    border-radius:16px!important;
+  }
+
+  .tg332-icon{
+    width:23px!important;
+    height:23px!important;
+  }
+
+  .tg332-card-copy b{
+    font-size:19px!important;
+  }
+
+  .tg332-card-copy small{
+    font-size:12px!important;
+  }
+
+  .tg332-card-arrow{
+    font-size:30px!important;
+  }
+}

@@ -442,3 +442,142 @@
     }, 80);
   }, true);
 })();
+
+
+/* =========================================================
+   V3.3.2 – Home Card Layout + Premium Yumak Nav Fix
+   ========================================================= */
+(function(){
+  "use strict";
+
+  function $(s,r=document){return r.querySelector(s)}
+  function $$(s,r=document){return Array.from(r.querySelectorAll(s))}
+
+  const icons = {
+    taxi:'<svg viewBox="0 0 48 48"><path d="M11 31h26"/><path d="M9 31l2.5-12h25L39 31"/><path d="M16 19l3-7h10l3 7"/><path d="M16 31v4"/><path d="M32 31v4"/><circle cx="15" cy="31" r="2.2"/><circle cx="33" cy="31" r="2.2"/><path d="M20 10h8"/></svg>',
+    medical:'<svg viewBox="0 0 48 48"><path d="M24 10v28"/><path d="M10 24h28"/></svg>',
+    wheelchair:'<svg viewBox="0 0 48 48"><circle cx="18" cy="35" r="7"/><path d="M18 28V14"/><path d="M18 14h10"/><path d="M18 22h11"/><path d="M29 22l6 13h6"/><circle cx="18" cy="9" r="2"/></svg>',
+    airport:'<svg viewBox="0 0 48 48"><path d="M20 42l4-17L7 16l3-4l17 5l4-13l4 2l-2 15l9 6l-2 4l-10-4l-6 15z"/></svg>',
+    home:'<svg viewBox="0 0 48 48"><path d="M7 22l17-15l17 15"/><path d="M11 20v21h26V20"/><path d="M19 41V29h10v12"/></svg>',
+    booking:'<svg viewBox="0 0 48 48"><rect x="8" y="10" width="32" height="30" rx="4"/><path d="M16 6v8"/><path d="M32 6v8"/><path d="M8 19h32"/><path d="M16 27h.1"/><path d="M24 27h.1"/><path d="M32 27h.1"/></svg>',
+    rewards:'<svg viewBox="0 0 48 48"><path d="M40 24v16H8V24"/><path d="M5 14h38v10H5z"/><path d="M24 14v26"/><path d="M24 14h-7a5 5 0 1 1 5-5c0 3 2 5 2 5z"/><path d="M24 14h7a5 5 0 1 0-5-5c0 3-2 5-2 5z"/></svg>',
+    profile:'<svg viewBox="0 0 48 48"><circle cx="24" cy="16" r="8"/><path d="M9 42a15 15 0 0 1 30 0"/></svg>',
+    yumakPremium:'<svg viewBox="0 0 48 48"><path d="M12 18L9 8l9 6"/><path d="M36 18l3-10l-9 6"/><circle cx="24" cy="26" r="13"/><path d="M18.5 24.5h.1"/><path d="M29.5 24.5h.1"/><path d="M22 29.5c1.2 1 2.8 1 4 0"/><path d="M16 30.5l-7 1.5"/><path d="M32 30.5l7 1.5"/><path d="M20 36h8"/><circle cx="24" cy="26" r="18" opacity=".35"/></svg>'
+  };
+
+  function iconHtml(name, cls){
+    return '<span class="'+cls+'"><span class="tg332-icon">'+(icons[name] || icons.taxi)+'</span></span>';
+  }
+
+  function getType(el){
+    const raw = ((el.dataset.go || el.dataset.type || el.dataset.bookingType || "") + " " + (el.textContent || "")).toLowerCase();
+    if(raw.includes("kranken") || raw.includes("dialyse") || raw.includes("arzt")) return "medical";
+    if(raw.includes("rollstuhl") || raw.includes("wheel")) return "wheelchair";
+    if(raw.includes("flug") || raw.includes("airport") || raw.includes("fra")) return "airport";
+    if(raw.includes("taxi")) return "taxi";
+    return null;
+  }
+
+  function cleanCardText(card){
+    // Keep textual content readable, remove duplicate empty icon boxes from previous patches.
+    $$(".tg331-home-iconbox,.tg-premium-icon-box,.tg-v330-iconbox,.tg-inline-icon-box,.tg-svg-icon,.type-card-v302,.booking-type-polish-icon,img,svg", card).forEach(node=>{
+      if(node.classList && node.classList.contains("tg332-card-iconbox")) return;
+      if(node.closest && node.closest(".tg332-card-iconbox")) return;
+      node.remove();
+    });
+
+    // If previous grid left weird wrappers, normalize the card text.
+    const type = getType(card);
+    if(!type) return;
+
+    const title = {
+      taxi:"Taxi",
+      medical:"Krankenfahrt",
+      wheelchair:"Rollstuhl",
+      airport:"Flughafen"
+    }[type];
+
+    const sub = {
+      taxi:"Jetzt oder später",
+      medical:"Arzt, Dialyse & mehr",
+      wheelchair:"Privat & medizinisch",
+      airport:"FRA · FKB · STR"
+    }[type];
+
+    const arrow = '<span class="tg332-card-arrow">›</span>';
+    card.innerHTML = iconHtml(type, "tg332-card-iconbox") +
+      '<span class="tg332-card-copy"><b>'+title+'</b><small>'+sub+'</small></span>' +
+      arrow;
+  }
+
+  function fixHomeCards(){
+    const selectors = [
+      "#home .service-card",
+      "#home .home-service-card",
+      "#home .quick-card",
+      "#home [data-go='booking']",
+      "#home [data-go='medical']",
+      "#home [data-go='wheelchair']",
+      "#home [data-go='airport']"
+    ];
+
+    $$(selectors.join(",")).forEach(card=>{
+      const type = getType(card);
+      if(!type) return;
+      card.classList.add("tg332-home-card");
+      card.dataset.tg332Type = type;
+      cleanCardText(card);
+    });
+  }
+
+  function fixBottomNav(){
+    const map = {
+      home:["Start","home"],
+      booking:["Buchen","booking"],
+      yumak:["Yumak","yumakPremium"],
+      rewards:["Rewards","rewards"],
+      profile:["Profil","profile"]
+    };
+
+    $$(".bottom-nav button[data-go]").forEach(btn=>{
+      const cfg = map[btn.dataset.go];
+      if(!cfg) return;
+      btn.classList.add("tg332-nav-btn");
+      if(btn.dataset.go === "yumak") btn.classList.add("tg332-yumak-nav");
+      btn.innerHTML = '<span class="tg332-nav-icon">'+icons[cfg[1]]+'</span><span>'+cfg[0]+'</span>';
+    });
+  }
+
+  function fixBookingTripDuplicates(){
+    // Remove extra blank circles on trip buttons caused by older icon systems.
+    $$("#booking .trip-grid-v310 button, #booking .tg-v330-trip, #booking .tg331-booking-type-card").forEach(btn=>{
+      $$("span", btn).forEach((sp, i)=>{
+        if(i > 2 && !sp.textContent.trim()) sp.remove();
+      });
+    });
+  }
+
+  function boot(){
+    document.body.classList.add("tg332-ready");
+    fixHomeCards();
+    fixBottomNav();
+    fixBookingTripDuplicates();
+
+    setTimeout(function(){
+      fixHomeCards();
+      fixBottomNav();
+      fixBookingTripDuplicates();
+    }, 500);
+  }
+
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+
+  document.addEventListener("click", function(){
+    setTimeout(function(){
+      fixHomeCards();
+      fixBottomNav();
+      fixBookingTripDuplicates();
+    }, 80);
+  }, true);
+})();
