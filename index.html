@@ -1345,5 +1345,142 @@
     document.addEventListener("DOMContentLoaded", initRideDirectionV280);
   </script>
 
+
+  <script>
+  /* V3.0 SAFE BOOKING FIX – tiny patch only */
+  (function(){
+    function qs(s,r=document){return r.querySelector(s)}
+    function qsa(s,r=document){return Array.from(r.querySelectorAll(s))}
+
+    const labelMap = {
+      taxi: "Normale Taxifahrt",
+      medical: "Krankenfahrt",
+      wheelchair: "Rollstuhlfahrt",
+      airport: "Flughafentransfer"
+    };
+
+    function normalizeType(v){
+      v = (v || "").toLowerCase();
+      if(v.includes("medical") || v.includes("kranken")) return "medical";
+      if(v.includes("wheel") || v.includes("rollstuhl")) return "wheelchair";
+      if(v.includes("airport") || v.includes("flug")) return "airport";
+      if(v.includes("taxi")) return "taxi";
+      return null;
+    }
+
+    function forceTypeVisible(){
+      const typeBlock = qs(".booking-type");
+      if(typeBlock){
+        typeBlock.classList.remove("is-collapsed");
+        typeBlock.style.display = "";
+        typeBlock.style.visibility = "visible";
+        typeBlock.style.opacity = "1";
+        typeBlock.style.pointerEvents = "auto";
+      }
+      const grid = qs(".booking-type-grid");
+      if(grid){
+        grid.style.display = "grid";
+        grid.style.visibility = "visible";
+        grid.style.pointerEvents = "auto";
+      }
+    }
+
+    function setTypeSafe(type, title){
+      type = normalizeType(type) || "taxi";
+      title = title || labelMap[type] || "Normale Taxifahrt";
+
+      window.currentBookingType = type;
+      window.bookingCameFromService = false;
+
+      document.body.dataset.rideType = type;
+      try{ sessionStorage.setItem("tg_booking_type", type); }catch(e){}
+
+      qsa(".booking-type-grid button").forEach(btn=>{
+        btn.classList.toggle("active", btn.dataset.type === type);
+      });
+
+      const context = qs(".booking-service-context");
+      if(context) context.textContent = title;
+
+      qsa(".summary-type").forEach(s=>s.textContent = title);
+
+      qsa(".conditional-panel").forEach(p=>p.classList.remove("show"));
+      if(type === "medical") qs(".medical-panel")?.classList.add("show");
+      if(type === "airport") qs(".airport-panel")?.classList.add("show");
+      if(type === "wheelchair") qs(".wheelchair-panel")?.classList.add("show");
+
+      if(typeof window.setRideMode === "function") window.setRideMode(type);
+      forceTypeVisible();
+
+      if(typeof window.updateBookingState === "function") window.updateBookingState();
+    }
+
+    function updateNavSafe(id){
+      const map = {home:"home",booking:"booking",yumak:"yumak",rewards:"rewards",profile:"profile"};
+      const tab = map[id] || null;
+      qsa(".bottom-nav button").forEach(btn=>{
+        const active = !!tab && btn.dataset.go === tab;
+        btn.classList.toggle("active", active);
+        btn.classList.toggle("is-active", active);
+      });
+    }
+
+    function activeScreenId(){
+      const active = qs(".screen.active");
+      return active ? active.id : "home";
+    }
+
+    document.addEventListener("click", function(e){
+      const serviceOption = e.target.closest(".service-select-screen [data-booking-type]");
+      if(serviceOption){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        const type = serviceOption.dataset.bookingType || "medical";
+        const title = serviceOption.dataset.serviceTitle || labelMap[normalizeType(type)] || "Fahrtanfrage";
+        setTypeSafe(type, title);
+
+        if(typeof window.showScreen === "function") window.showScreen("booking");
+        return false;
+      }
+
+      const typeButton = e.target.closest(".booking-type-grid button[data-type]");
+      if(typeButton){
+        setTimeout(function(){
+          setTypeSafe(typeButton.dataset.type, labelMap[normalizeType(typeButton.dataset.type)]);
+          forceTypeVisible();
+        }, 0);
+      }
+
+      const reset = e.target.closest("[data-reset-ride-type], .booking-change-type-v293 button, .booking-change-type-v294 button");
+      if(reset){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        forceTypeVisible();
+        const grid = qs(".booking-type-grid");
+        if(grid) grid.scrollIntoView({behavior:"smooth", block:"center"});
+        return false;
+      }
+
+      const nav = e.target.closest(".bottom-nav button[data-go]");
+      if(nav){
+        setTimeout(()=>updateNavSafe(nav.dataset.go), 20);
+      }
+    }, true);
+
+    document.addEventListener("DOMContentLoaded", function(){
+      forceTypeVisible();
+      try{
+        const saved = sessionStorage.getItem("tg_booking_type");
+        if(saved) setTypeSafe(saved, labelMap[normalizeType(saved)]);
+      }catch(e){}
+      updateNavSafe(activeScreenId());
+      setTimeout(forceTypeVisible, 400);
+    });
+  })();
+  </script>
+
 </body>
 </html>

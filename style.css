@@ -5905,3 +5905,111 @@ body.splash-finished .splash{
   position:relative!important;
   z-index:5!important;
 }
+
+
+/* =========================================================
+   V3.0 SAFE BOOKING FIX
+   Kleine Korrekturen ohne Umbau
+   ========================================================= */
+
+/* Fahrttyp bleibt sichtbar und wechselbar */
+.booking-type.is-collapsed{
+  display:block!important;
+}
+
+.booking-type,
+.booking-type-grid{
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+
+.booking-type-grid{
+  display:grid!important;
+}
+
+/* Krankenfahrt-Unterauswahl klickbar */
+.service-select-screen button,
+.service-select-screen [data-booking-type]{
+  position:relative!important;
+  z-index:5!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+
+/* doppelte Rollstuhl-Symbole durch alte Pseudo-Icons entfernen */
+.booking-type-grid button[data-type="wheelchair"]::before,
+.ride-options button::before,
+.fahrt-details button::before,
+.detail-chips button::before{
+  content:none!important;
+  display:none!important;
+}
+
+/* Fahrttyp-Icons einheitlicher ohne HTML umzubauen */
+.booking-type-grid button{
+  grid-template-columns:34px 1fr!important;
+  overflow:hidden!important;
+  white-space:nowrap!important;
+}
+
+.booking-type-grid button img{
+  width:28px!important;
+  height:28px!important;
+  object-fit:contain!important;
+  margin:0!important;
+}
+
+.booking-type-grid button{
+  text-overflow:ellipsis!important;
+}
+
+/* Detailchips: keine Dopplung, Text sauber */
+.ride-options button,
+.mini-options button{
+  overflow:hidden!important;
+  white-space:nowrap!important;
+}
+
+.ride-options button img,
+.mini-options button img{
+  max-width:24px!important;
+  max-height:24px!important;
+}
+
+/* Bottom Nav: Icon und Text aktiv, Start nicht dauerhaft */
+.bottom-nav button.active,
+.bottom-nav button.is-active{
+  color:var(--gold-2)!important;
+  opacity:1!important;
+}
+
+.bottom-nav button.active span,
+.bottom-nav button.is-active span{
+  color:var(--gold-2)!important;
+  text-shadow:0 0 12px rgba(255,217,106,.28)!important;
+}
+
+.bottom-nav button.active img,
+.bottom-nav button.is-active img{
+  opacity:1!important;
+  filter:brightness(0) saturate(100%) invert(86%) sepia(53%) saturate(620%) hue-rotate(355deg) brightness(112%) contrast(106%) drop-shadow(0 0 11px rgba(255,217,106,.46))!important;
+}
+
+.bottom-nav button:not(.active):not(.is-active) span{
+  color:rgba(255,255,255,.42)!important;
+}
+
+.bottom-nav button:not(.active):not(.is-active) img{
+  opacity:.58!important;
+}
+
+/* Wechsel-Button klickbar, falls vorhanden */
+[data-reset-ride-type],
+.booking-change-type-v293 button,
+.booking-change-type-v294 button{
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  position:relative!important;
+  z-index:20!important;
+}
