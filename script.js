@@ -42,19 +42,16 @@
   let userLocation=null;
   function getLocation(){
     if('geolocation' in navigator){
-      $('#locationBtn').textContent='Wird ermittelt...';
       navigator.geolocation.getCurrentPosition(pos=>{
         userLocation={lat:pos.coords.latitude,lon:pos.coords.longitude};
         $('#startAddress').value='Aktueller Standort';
         validate();
-        $('#locationBtn').innerHTML='<span data-icon="location"></span>Aktuellen Standort verwenden';
-        inject();
       },err=>{
         alert('Standortzugriff verweigert. Bitte in Browser-Einstellungen aktivieren.');
-        $('#locationBtn').innerHTML='<span data-icon="location"></span>Aktuellen Standort verwenden';
-        inject();
-      })
-    }else{alert('Geolocation nicht verfügbar')}
+      });
+    }else{
+      alert('Geolocation nicht verfügbar');
+    }
   }
   function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);initMapContainer('startMapContainer');initMapContainer('endMapContainer');
     document.addEventListener('click',e=>{let go=e.target.closest('[data-go]');if(go){if(go.dataset.service)setService(go.dataset.service);show(go.dataset.go)}let ss=e.target.closest('[data-service-select]');if(ss)setService(ss.dataset.serviceSelect);let trip=e.target.closest('[data-trip]');if(trip){$$('.trip-grid button').forEach(b=>b.classList.remove('active'));trip.classList.add('active')}let t=e.target.closest('.toggle button');if(t){$$('.toggle button').forEach(b=>b.classList.remove('active'));t.classList.add('active')}let locBtn=e.target.closest('#locationBtn');if(locBtn){getLocation();return}let chip=e.target.closest('.details button,.chips button,.small-toggle button');if(chip){if(chip.dataset.address){$('#targetAddress').value=chip.dataset.address;if(chip.dataset.service)setService(chip.dataset.service);validate()}else{chip.classList.toggle('active')}}});
