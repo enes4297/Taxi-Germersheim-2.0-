@@ -72,11 +72,11 @@
 
       <label>STARTADRESSE</label>
       <div class="input"><i data-icon="pin"></i><input id="startAddress" placeholder="Abholort eingeben"></div>
-      <button class="outline" type="button"><i data-icon="location"></i>Aktuellen Standort verwenden</button>
+      <button class="outline" type="button" id="locationBtn"><i data-icon="location"></i>Aktuellen Standort verwenden</button>
 
       <label>ZIELADRESSE</label>
       <div class="input"><i data-icon="flag"></i><input id="targetAddress" placeholder="Ziel eingeben"></div>
-      <div class="chips"><button>Zuhause</button><button>Arbeit</button><button>Krankenhaus</button><button>Flughafen</button></div>
+      <div class="chips"><button data-preset="home" data-address="Zuhause">Zuhause</button><button data-preset="work" data-address="Arbeit">Arbeit</button><button data-preset="hospital" data-address="Krankenhaus" data-service="medical">Krankenhaus</button><button data-preset="airport" data-address="Flughafen">Flughafen</button></div>
 
       <div class="toggle"><button class="active">Jetzt fahren</button><button>Für später planen</button></div>
 
