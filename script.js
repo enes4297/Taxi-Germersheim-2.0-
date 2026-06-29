@@ -27,6 +27,14 @@
     user:'<svg viewBox="0 0 48 48"><circle cx="24" cy="16" r="8"/><path d="M9 42a15 15 0 0 1 30 0"/></svg>'
   };
   const services={taxi:['Normale Taxifahrt','NORMALE TAXIFAHRT'],medical:['Krankenfahrt','KRANKENFAHRT'],wheelchair:['Rollstuhlfahrt','ROLLSTUHLFAHRT'],airport:['Flughafentransfer','FLUGHAFENTRANSFER']};
+  const searchData=[{name:'Germersheim Bahnhof',city:'Germersheim',category:'transport'},{name:'Germersheim Marktplatz',city:'Germersheim',category:'landmark'},{name:'Gemeinschaftspraxis Dr. König',city:'Germersheim',category:'medical'},{name:'Städtisches Krankenhaus Germersheim',city:'Germersheim',category:'hospital'},{name:'REWE Germersheim',city:'Germersheim',category:'shopping'},{name:'Frankfurt Flughafen',city:'Frankfurt am Main',category:'airport'},{name:'Heidelberg Hauptbahnhof',city:'Heidelberg',category:'transport'},{name:'Ludwigshafen Rathaus',city:'Ludwigshafen',category:'landmark'},{name:'Mannheim Schloss',city:'Mannheim',category:'landmark'},{name:'Speyer Dom',city:'Speyer',category:'landmark'}];
+  let startMarker=null,endMarker=null,mapContainers={};
+  function searchAddresses(query){if(!query||query.trim().length<2)return [];let q=query.trim().toLowerCase();return searchData.filter(a=>a.name.toLowerCase().includes(q)||a.city.toLowerCase().includes(q)).slice(0,5)}
+  function initMapContainer(elementId){let container=$(elementId);if(container){container.innerHTML='<div class="map-placeholder">Karte wird geladen...</div>';mapContainers[elementId]=container;return container}return null}
+  function setStartMarker(address,coords){startMarker={address,coords}}
+  function setEndMarker(address,coords){endMarker={address,coords}}
+  function getMarkers(){return {start:startMarker,end:endMarker}}
+  function clearMarkers(){startMarker=null;endMarker=null}
   function inject(){ $$('[data-icon]').forEach(el=>{el.innerHTML=icons[el.dataset.icon]||''}) }
   function show(id){ if(!$('#'+id)) id='home'; $$('.screen').forEach(s=>s.classList.toggle('active',s.id===id)); $$('.bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.go===id)); window.scrollTo(0,0) }
   function setService(s){ if(!services[s])s='taxi'; $('#selectedTitle').textContent=services[s][0]; $('#serviceLabel').textContent=services[s][1]; $$('.type-grid button').forEach(b=>b.classList.toggle('active',b.dataset.serviceSelect===s)); $('#medicalPanel').classList.toggle('hidden',s!=='medical') }
@@ -48,7 +56,7 @@
       })
     }else{alert('Geolocation nicht verfügbar')}
   }
-  function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);
+  function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);initMapContainer('startMapContainer');initMapContainer('endMapContainer');
     document.addEventListener('click',e=>{let go=e.target.closest('[data-go]');if(go){if(go.dataset.service)setService(go.dataset.service);show(go.dataset.go)}let ss=e.target.closest('[data-service-select]');if(ss)setService(ss.dataset.serviceSelect);let trip=e.target.closest('[data-trip]');if(trip){$$('.trip-grid button').forEach(b=>b.classList.remove('active'));trip.classList.add('active')}let t=e.target.closest('.toggle button');if(t){$$('.toggle button').forEach(b=>b.classList.remove('active'));t.classList.add('active')}let locBtn=e.target.closest('#locationBtn');if(locBtn){getLocation();return}let chip=e.target.closest('.details button,.chips button,.small-toggle button');if(chip){if(chip.dataset.address){$('#targetAddress').value=chip.dataset.address;if(chip.dataset.service)setService(chip.dataset.service);validate()}else{chip.classList.toggle('active')}}});
     document.addEventListener('input',validate,true)
   }
