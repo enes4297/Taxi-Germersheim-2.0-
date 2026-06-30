@@ -16,53 +16,64 @@
   <main class="app">
     <section id="home" class="screen active">
       <header class="topbar">
-        <div class="brand"><img src="logo.png" alt=""><b>TAXI GERMERSHEIM GMBH</b></div>
+        <div class="brand"><img src="logo.png" alt="Taxi Germersheim GmbH"><div><b>TAXI GERMERSHEIM GMBH</b><span>Moderne Mobilität für Germersheim</span></div></div>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen"><span data-icon="menu"></span></button>
         <nav class="site-nav">
-          <button type="button" data-go="home">Start</button>
-          <button type="button" data-go="booking">Buchen</button>
-          <button type="button" data-go="yumak">Yumak</button>
-          <button type="button" data-go="rewards">Rewards</button>
-          <button type="button" data-go="profile">Profil</button>
+          <button type="button" data-go="home" class="active">Start</button>
+          <button type="button" data-go="services">Leistungen</button>
+          <button type="button" data-go="booking" data-service="medical">Krankenfahrten</button>
+          <button type="button" data-go="booking" data-service="airport">Flughafentransfer</button>
+          <button type="button" data-go="kontakt">Kontakt</button>
         </nav>
-        <a class="round phone-link" href="tel:072743567"><span data-icon="phone"></span></a>
+        <div class="top-actions">
+          <a class="button phone-link" href="tel:072743567"><span data-icon="phone"></span><span>Jetzt anrufen</span></a>
+        </div>
       </header>
 
-      <div class="home-layout">
-        <div class="home-intro">
-          <div class="online"><i></i>24/7 ERREICHBAR</div>
-          <h1 class="hero-title">Wo möchten<br><em>Sie hin?</em></h1>
-
-          <button class="destination" data-go="booking" type="button">
-            <img src="logo.png" alt=""><span>Ziel eingeben</span><b>→</b>
-          </button>
-        </div>
-
-        <div class="home-panels">
-          <button class="rating" data-go="reviews" type="button">
-            <span>★★★★★</span><strong>5,0 Google</strong><small>230+ Bewertungen</small><b>›</b>
-          </button>
-
-          <div class="service-grid">
-            <button class="service" data-service="taxi" data-go="booking"><i data-icon="taxi"></i><span><b>Taxi</b><small>Jetzt oder später</small></span><em>›</em></button>
-            <button class="service" data-service="medical" data-go="booking"><i data-icon="medical"></i><span><b>Krankenfahrt</b><small>Arzt, Dialyse & mehr</small></span><em>›</em></button>
-            <button class="service" data-service="wheelchair" data-go="booking"><i data-icon="wheelchair"></i><span><b>Rollstuhl</b><small>Privat & medizinisch</small></span><em>›</em></button>
-            <button class="service" data-service="airport" data-go="booking"><i data-icon="airport"></i><span><b>Flughafen</b><small>FRA · FKB · STR</small></span><em>›</em></button>
+      <section class="hero-panel">
+        <div class="hero-copy">
+          <span class="eyebrow">Taxi Germersheim GmbH</span>
+          <h1>Ihr zuverlässiger Partner<br>für Taxi, Krankenfahrten<br>und Flughafentransfers.</h1>
+          <p>24/7 erreichbar, schnelle Buchungen und geprüfte Fahrzeuge für den Weg nach Hause, zur Klinik oder zum Flughafen.</p>
+          <div class="hero-actions">
+            <button class="destination" data-go="booking" type="button"><span>Fahrt anfragen</span><b>→</b></button>
+            <a class="hero-secondary" href="tel:072743567">Jetzt anrufen</a>
+            <a class="hero-tertiary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer">WhatsApp</a>
           </div>
-
-          <button class="wide" data-go="why" type="button">
-            <span><b>Warum Taxi<br>Germersheim GmbH?</b><small>MEHR ERFAHREN</small></span><em>›</em>
-          </button>
-
-          <button class="reward" data-go="rewards" type="button">
-            <i data-icon="rewards"></i><strong>Gold-<br>Mitglied<br><span>230 Punkte</span></strong><div class="bar"><u></u></div><small>Nächstes Abzeichen<br><b>in 70 Punkten</b></small>
-          </button>
-
-          <button class="yumak-home" data-go="yumak" type="button">
-            <img src="assets/yumak/yumak-portrait.jpg" onerror="this.src='yumak.png'" alt="">
-            <span><b>Yumak</b><small>Ihr digitaler Assistent.</small></span><strong>Frage Yumak</strong><em>›</em>
-          </button>
         </div>
-      </div>
+        <div class="hero-image"><img src="logo.png" alt="Taxi Germersheim"></div>
+      </section>
+
+      <section id="services" class="services-section">
+        <div class="section-header"><small>Unsere Services</small><h2>Mobilität für jede Anforderung</h2></div>
+        <div class="service-grid">
+          <button class="service" data-service="taxi" data-go="booking"><i data-icon="taxi"></i><span><b>Taxi</b><small>Jetzt oder später</small></span><em>›</em></button>
+          <button class="service" data-service="medical" data-go="booking"><i data-icon="medical"></i><span><b>Krankenfahrt</b><small>Arzt, Dialyse & mehr</small></span><em>›</em></button>
+          <button class="service" data-service="wheelchair" data-go="booking"><i data-icon="wheelchair"></i><span><b>Rollstuhl</b><small>Privat & medizinisch</small></span><em>›</em></button>
+          <button class="service" data-service="airport" data-go="booking"><i data-icon="airport"></i><span><b>Flughafen</b><small>FRA · FKB · STR</small></span><em>›</em></button>
+        </div>
+      </section>
+
+      <section class="feature-grid">
+        <article class="feature-card rating" data-go="reviews">
+          <span>★★★★★</span>
+          <div><strong>5,0 Google</strong><small>230+ Bewertungen</small></div>
+          <em>›</em>
+        </article>
+        <article class="feature-card wide" data-go="why">
+          <div><b>Warum Taxi Germersheim?</b><small>Verlässliche Fahrten in Premium-Optik</small></div>
+          <em>›</em>
+        </article>
+        <article class="feature-card reward" data-go="rewards">
+          <div><strong>Gold-Mitglied<br><span>230 Punkte</span></strong><small>Nächstes Abzeichen in 70 Punkten</small></div>
+          <div class="bar"><u></u></div>
+        </article>
+        <article class="feature-card yumak-home" data-go="yumak">
+          <img src="assets/yumak/yumak-portrait.jpg" onerror="this.src='yumak.png'" alt="Yumak">
+          <div><b>Yumak</b><small>Ihr digitaler Assistent für Buchungen und Bonuspunkte.</small></div>
+          <em>›</em>
+        </article>
+      </section>
     </section>
 
     <section id="booking" class="screen">
@@ -121,13 +132,26 @@
     <section id="why" class="screen simple"><header class="page-head"><button data-go="home">‹</button><h2>Warum wir?</h2><i></i></header><article class="panel"><small>TAXI GERMERSHEIM GMBH</small><h1>Zuverlässig, menschlich, erreichbar.</h1><p>24/7 erreichbar, Krankenfahrten, Rollstuhlservice und Flughafentransfers.</p></article></section>
   </main>
 
-  <nav class="bottom-nav">
-    <button class="active" data-go="home"><span data-icon="home"></span><b>Start</b></button>
-    <button data-go="booking"><span data-icon="booking"></span><b>Buchen</b></button>
-    <button data-go="yumak"><span class="yumak-tab" data-icon="yumak"></span><b>Yumak</b></button>
-    <button data-go="rewards"><span data-icon="rewards"></span><b>Rewards</b></button>
-    <button data-go="profile"><span data-icon="profile"></span><b>Profil</b></button>
-  </nav>
+  <footer id="kontakt" class="site-footer">
+    <div class="footer-content">
+      <div>
+        <img class="footer-logo" src="logo.png" alt="Taxi Germersheim GmbH">
+        <p>Taxi Germersheim GmbH – Ihr Partner für zuverlässige Mobilität in Germersheim und Umgebung.</p>
+      </div>
+      <div class="footer-links">
+        <a data-go="home" href="#">Start</a>
+        <a data-go="booking" href="#">Buchen</a>
+        <a data-go="yumak" href="#">Yumak</a>
+        <a data-go="rewards" href="#">Rewards</a>
+        <a data-go="profile" href="#">Profil</a>
+      </div>
+      <div class="footer-contact">
+        <strong>Kontakt</strong>
+        <a href="tel:072743567">07274 3567</a>
+        <span>24/7 erreichbar</span>
+      </div>
+    </div>
+  </footer>
 <script src="script.js"></script>
 </body>
 </html>

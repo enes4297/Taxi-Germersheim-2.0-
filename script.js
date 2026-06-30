@@ -36,7 +36,7 @@
   function getMarkers(){return {start:startMarker,end:endMarker}}
   function clearMarkers(){startMarker=null;endMarker=null}
   function inject(){ $$('[data-icon]').forEach(el=>{el.innerHTML=icons[el.dataset.icon]||''}) }
-  function show(id){ if(!$('#'+id)) id='home'; $$('.screen').forEach(s=>s.classList.toggle('active',s.id===id)); $$('.bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.go===id)); $$('.site-nav button').forEach(b=>b.classList.toggle('active',b.dataset.go===id)); window.scrollTo(0,0) }
+  function show(id){ if(!$('#'+id)) id='home'; $$('.screen').forEach(s=>s.classList.toggle('active',s.id===id)); $$('.site-nav button').forEach(b=>b.classList.toggle('active',b.dataset.go===id)); window.scrollTo(0,0) }
   function setService(s){ if(!services[s])s='taxi'; $('#selectedTitle').textContent=services[s][0]; $('#serviceLabel').textContent=services[s][1]; $$('.type-grid button').forEach(b=>b.classList.toggle('active',b.dataset.serviceSelect===s)); $('#medicalPanel').classList.toggle('hidden',s!=='medical') }
   function validate(){let ok=$('#startAddress').value.trim()&&$('#targetAddress').value.trim()&&$('#customerPhone').value.trim();$('#sendRequest').textContent=ok?'Fahrtanfrage senden':'Fahrtanfrage nicht möglich'}
   let userLocation=null;
@@ -54,7 +54,39 @@
     }
   }
   function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);initMapContainer('startMapContainer');initMapContainer('endMapContainer');
-    document.addEventListener('click',e=>{let go=e.target.closest('[data-go]');if(go){if(go.dataset.service)setService(go.dataset.service);show(go.dataset.go)}let ss=e.target.closest('[data-service-select]');if(ss)setService(ss.dataset.serviceSelect);let trip=e.target.closest('[data-trip]');if(trip){$$('.trip-grid button').forEach(b=>b.classList.remove('active'));trip.classList.add('active')}let t=e.target.closest('.toggle button');if(t){$$('.toggle button').forEach(b=>b.classList.remove('active'));t.classList.add('active')}let locBtn=e.target.closest('#locationBtn');if(locBtn){getLocation();return}let chip=e.target.closest('.details button,.chips button,.small-toggle button');if(chip){if(chip.dataset.address){$('#targetAddress').value=chip.dataset.address;if(chip.dataset.service)setService(chip.dataset.service);validate()}else{chip.classList.toggle('active')}}});
+    const menuToggle=$('.menu-toggle');
+    const siteNav=$('.site-nav');
+    if(menuToggle){
+      menuToggle.setAttribute('aria-expanded','false');
+      menuToggle.addEventListener('click',()=>{
+        const open = siteNav?.classList.toggle('open');
+        menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    }
+    document.addEventListener('click',e=>{
+      let go=e.target.closest('[data-go]');
+      if(go){
+        e.preventDefault();
+        if(go.dataset.service)setService(go.dataset.service);
+        if(go.dataset.go==='services' || go.dataset.go==='kontakt'){
+          show('home');
+          setTimeout(()=>{const anchor=document.getElementById(go.dataset.go);anchor?.scrollIntoView({behavior:'smooth',block:'start'})},100);
+        } else {
+          show(go.dataset.go);
+        }
+        siteNav?.classList.remove('open');
+        menuToggle?.setAttribute('aria-expanded','false');
+      }
+      if(siteNav?.classList.contains('open') && !e.target.closest('.site-nav') && !e.target.closest('.menu-toggle')){
+        siteNav.classList.remove('open');
+        menuToggle?.setAttribute('aria-expanded','false');
+      }
+      let ss=e.target.closest('[data-service-select]');if(ss)setService(ss.dataset.serviceSelect);
+      let trip=e.target.closest('[data-trip]');if(trip){$$('.trip-grid button').forEach(b=>b.classList.remove('active'));trip.classList.add('active')}
+      let t=e.target.closest('.toggle button');if(t){$$('.toggle button').forEach(b=>b.classList.remove('active'));t.classList.add('active')}
+      let locBtn=e.target.closest('#locationBtn');if(locBtn){getLocation();return}
+      let chip=e.target.closest('.details button,.chips button,.small-toggle button');if(chip){if(chip.dataset.address){$('#targetAddress').value=chip.dataset.address;if(chip.dataset.service)setService(chip.dataset.service);validate()}else{chip.classList.toggle('active')}}
+    });
     document.addEventListener('input',validate,true)
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
