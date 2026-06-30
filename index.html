@@ -63,37 +63,97 @@
       <section id="services" class="services-section">
         <div class="section-header"><small>Unsere Services</small><h2>Mobilität für jede Anforderung</h2></div>
         <div class="service-grid">
-          <button class="service" data-service="taxi" data-go="booking"><i data-icon="taxi"></i><span><b>Taxi</b><small>Jetzt oder später</small></span><em>›</em></button>
-          <button class="service" data-service="medical" data-go="booking"><i data-icon="medical"></i><span><b>Krankenfahrt</b><small>Arzt, Dialyse & mehr</small></span><em>›</em></button>
-          <button class="service" data-service="wheelchair" data-go="booking"><i data-icon="wheelchair"></i><span><b>Rollstuhl</b><small>Privat & medizinisch</small></span><em>›</em></button>
-          <button class="service" data-service="airport" data-go="booking"><i data-icon="airport"></i><span><b>Flughafen</b><small>FRA · FKB · STR</small></span><em>›</em></button>
+          <button class="service" data-service="taxi" data-go="booking">
+            <i data-icon="taxi"></i>
+            <span>
+              <b>Taxi</b>
+              <ul class="service-points" aria-label="Taxi Vorteile">
+                <li>Sofort verfugbar</li>
+                <li>Kurz- & Fernfahrten</li>
+                <li>24/7 erreichbar</li>
+              </ul>
+            </span>
+            <em>›</em>
+          </button>
+          <button class="service" data-service="medical" data-go="booking">
+            <i data-icon="medical"></i>
+            <span>
+              <b>Krankenfahrten</b>
+              <ul class="service-points" aria-label="Krankenfahrten Vorteile">
+                <li>Alle Krankenkassen</li>
+                <li>Dialyse</li>
+                <li>Chemo & Bestrahlung</li>
+              </ul>
+            </span>
+            <em>›</em>
+          </button>
+          <button class="service" data-service="wheelchair" data-go="booking">
+            <i data-icon="wheelchair"></i>
+            <span>
+              <b>Rollstuhl</b>
+              <ul class="service-points" aria-label="Rollstuhlservice Vorteile">
+                <li>Barrierefrei</li>
+                <li>Speziell ausgestattete Fahrzeuge</li>
+                <li>Geschulte Fahrer</li>
+              </ul>
+            </span>
+            <em>›</em>
+          </button>
+          <button class="service" data-service="airport" data-go="booking">
+            <i data-icon="airport"></i>
+            <span>
+              <b>Flughafen</b>
+              <ul class="service-points" aria-label="Flughafentransfer Vorteile">
+                <li>FRA</li>
+                <li>FKB</li>
+                <li>STR</li>
+              </ul>
+            </span>
+            <em>›</em>
+          </button>
         </div>
       </section>
 
       <section class="feature-grid">
         <article class="feature-card rating" data-go="reviews">
-          <span>★★★★★</span>
-          <div><strong>5,0 Google</strong><small>230+ Bewertungen und starkes Kundenvertrauen</small></div>
+          <div class="rating-stack">
+            <span>★★★★★</span>
+            <strong>5,0</strong>
+            <small>230+ Bewertungen</small>
+            <p>Ausgezeichneter Kundenservice</p>
+          </div>
           <em>›</em>
         </article>
         <article class="feature-card wide" data-go="why">
           <div class="why-content">
             <b>Warum Taxi Germersheim?</b>
             <ul class="why-list" aria-label="Vertrauensmerkmale">
-              <li>Persönlich</li>
+              <li>Sicher</li>
+              <li>Zuverlassig</li>
               <li>Pünktlich</li>
               <li>Geprüfte Fahrer</li>
+              <li>Moderne Fahrzeuge</li>
             </ul>
           </div>
           <em>›</em>
         </article>
         <article class="feature-card reward" data-go="rewards">
-          <div><strong>Gold-Mitglied<br><span>230 Punkte</span></strong><small>Nächstes Abzeichen in 70 Punkten</small></div>
-          <div class="bar"><u></u></div>
+          <div class="reward-layout">
+            <div class="reward-main">
+              <strong>Gold-Mitglied</strong>
+              <span class="reward-points">230 Punkte</span>
+              <div class="bar"><u></u></div>
+            </div>
+            <small>Nächstes Level in 70 Punkten</small>
+          </div>
         </article>
         <article class="feature-card yumak-home" data-go="yumak">
           <img src="assets/yumak/yumak-portrait.jpg" onerror="this.src='yumak.png'" alt="Yumak">
-          <div><b>Yumak</b><small>Ihr digitaler Assistent für Buchungen und Bonuspunkte.</small></div>
+          <div>
+            <b>Yumak</b>
+            <small>Ihr digitaler Assistent für Buchungen, Fragen und Bonusprogramm.</small>
+            <span class="yumak-more">Mehr erfahren →</span>
+          </div>
           <em>›</em>
         </article>
       </section>
@@ -157,11 +217,12 @@
 
   <footer id="kontakt" class="site-footer">
     <div class="footer-content">
-      <div>
+      <div class="footer-brand">
         <img class="footer-logo" src="logo.png" alt="Taxi Germersheim GmbH">
         <p>Taxi Germersheim GmbH – Ihr Partner für zuverlässige Mobilität in Germersheim und Umgebung.</p>
       </div>
       <div class="footer-links">
+        <strong>Navigation</strong>
         <a data-go="home" href="#">Start</a>
         <a data-go="booking" href="#">Buchen</a>
         <a data-go="yumak" href="#">Yumak</a>
@@ -171,8 +232,14 @@
       <div class="footer-contact">
         <strong>Kontakt</strong>
         <a href="tel:072743567">07274 3567</a>
+        <a href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer">WhatsApp</a>
+        <a href="mailto:info@taxi-germersheim.de">info@taxi-germersheim.de</a>
+        <small>Öffnungszeiten:</small>
         <span>24/7 erreichbar</span>
       </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© Taxi Germersheim GmbH</span>
     </div>
   </footer>
 <script src="script.js"></script>
