@@ -68,7 +68,12 @@
       if(go){
         e.preventDefault();
         if(go.dataset.service)setService(go.dataset.service);
-        show(go.dataset.go);
+        if(go.dataset.go==='services' || go.dataset.go==='kontakt'){
+          show('home');
+          setTimeout(()=>{const anchor=document.getElementById(go.dataset.go);anchor?.scrollIntoView({behavior:'smooth',block:'start'})},100);
+        } else {
+          show(go.dataset.go);
+        }
         siteNav?.classList.remove('open');
         menuToggle?.setAttribute('aria-expanded','false');
       }

@@ -17,15 +17,17 @@
     <section id="home" class="screen active">
       <header class="topbar">
         <div class="brand"><img src="logo.png" alt="Taxi Germersheim GmbH"><div><b>TAXI GERMERSHEIM GMBH</b><span>Moderne Mobilität für Germersheim</span></div></div>
-        <button class="menu-toggle" type="button"><span data-icon="menu"></span></button>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen"><span data-icon="menu"></span></button>
         <nav class="site-nav">
-          <button type="button" data-go="home">Start</button>
-          <button type="button" data-go="booking">Buchen</button>
-          <button type="button" data-go="yumak">Yumak</button>
-          <button type="button" data-go="rewards">Rewards</button>
-          <button type="button" data-go="profile">Profil</button>
+          <button type="button" data-go="home" class="active">Start</button>
+          <button type="button" data-go="services">Leistungen</button>
+          <button type="button" data-go="booking" data-service="medical">Krankenfahrten</button>
+          <button type="button" data-go="booking" data-service="airport">Flughafentransfer</button>
+          <button type="button" data-go="kontakt">Kontakt</button>
         </nav>
-        <a class="button phone-link" href="tel:072743567"><span data-icon="phone"></span><span>Jetzt anrufen</span></a>
+        <div class="top-actions">
+          <a class="button phone-link" href="tel:072743567"><span data-icon="phone"></span><span>Jetzt anrufen</span></a>
+        </div>
       </header>
 
       <section class="hero-panel">
@@ -36,12 +38,13 @@
           <div class="hero-actions">
             <button class="destination" data-go="booking" type="button"><span>Fahrt anfragen</span><b>→</b></button>
             <a class="hero-secondary" href="tel:072743567">Jetzt anrufen</a>
+            <a class="hero-tertiary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer">WhatsApp</a>
           </div>
         </div>
         <div class="hero-image"><img src="logo.png" alt="Taxi Germersheim"></div>
       </section>
 
-      <section class="services-section">
+      <section id="services" class="services-section">
         <div class="section-header"><small>Unsere Services</small><h2>Mobilität für jede Anforderung</h2></div>
         <div class="service-grid">
           <button class="service" data-service="taxi" data-go="booking"><i data-icon="taxi"></i><span><b>Taxi</b><small>Jetzt oder später</small></span><em>›</em></button>
@@ -129,7 +132,7 @@
     <section id="why" class="screen simple"><header class="page-head"><button data-go="home">‹</button><h2>Warum wir?</h2><i></i></header><article class="panel"><small>TAXI GERMERSHEIM GMBH</small><h1>Zuverlässig, menschlich, erreichbar.</h1><p>24/7 erreichbar, Krankenfahrten, Rollstuhlservice und Flughafentransfers.</p></article></section>
   </main>
 
-  <footer class="site-footer">
+  <footer id="kontakt" class="site-footer">
     <div class="footer-content">
       <div>
         <img class="footer-logo" src="logo.png" alt="Taxi Germersheim GmbH">
