@@ -68,7 +68,7 @@
       if(go){
         e.preventDefault();
         if(go.dataset.service)setService(go.dataset.service);
-        if(go.dataset.go==='services' || go.dataset.go==='kontakt'){
+        if(go.dataset.go==='kontakt'){
           show('home');
           setTimeout(()=>{const anchor=document.getElementById(go.dataset.go);anchor?.scrollIntoView({behavior:'smooth',block:'start'})},100);
         } else {
