@@ -312,6 +312,8 @@
                 <button class="ride-choice" type="button" data-value="Krankenhaus">Krankenhaus</button>
                 <button class="ride-choice" type="button" data-value="Sonstiges">Sonstiges</button>
               </div>
+              <p id="assistError1" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
+              <button id="assistNext1" class="assistant-next" type="button" data-assist-next="1">Weiter</button>
             </div>
           </section>
 
@@ -320,7 +322,10 @@
             <div class="assistant-step-body">
               <input id="assistPickup" type="text" placeholder="Abholadresse eingeben">
               <p id="assistError2" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
-              <button id="assistNext2" class="assistant-next" type="button" data-assist-next="2">Weiter</button>
+              <div class="assistant-step-actions">
+                <button id="assistBack2" class="assistant-next" type="button" data-assist-back="2">Zurück</button>
+                <button id="assistNext2" class="assistant-next" type="button" data-assist-next="2">Weiter</button>
+              </div>
             </div>
           </section>
 
@@ -329,7 +334,10 @@
             <div class="assistant-step-body">
               <input id="assistDestination" type="text" placeholder="Zieladresse eingeben">
               <p id="assistError3" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
-              <button id="assistNext3" class="assistant-next" type="button" data-assist-next="3">Weiter</button>
+              <div class="assistant-step-actions">
+                <button id="assistBack3" class="assistant-next" type="button" data-assist-back="3">Zurück</button>
+                <button id="assistNext3" class="assistant-next" type="button" data-assist-next="3">Weiter</button>
+              </div>
             </div>
           </section>
 
@@ -338,7 +346,10 @@
             <div class="assistant-step-body">
               <input id="assistDate" type="date">
               <p id="assistError4" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
-              <button id="assistNext4" class="assistant-next hidden" type="button" data-assist-next="4">Weiter</button>
+              <div class="assistant-step-actions">
+                <button id="assistBack4" class="assistant-next" type="button" data-assist-back="4">Zurück</button>
+                <button id="assistNext4" class="assistant-next" type="button" data-assist-next="4">Weiter</button>
+              </div>
             </div>
           </section>
 
@@ -348,7 +359,10 @@
               <input id="assistTime" type="time">
               <small class="field-help">Bitte geben Sie die Uhrzeit an, zu der wir Sie abholen sollen – nicht die Uhrzeit Ihres Arzttermins.</small>
               <p id="assistError5" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
-              <button id="assistNext5" class="assistant-next hidden" type="button" data-assist-next="5">Weiter</button>
+              <div class="assistant-step-actions">
+                <button id="assistBack5" class="assistant-next" type="button" data-assist-back="5">Zurück</button>
+                <button id="assistNext5" class="assistant-next" type="button" data-assist-next="5">Weiter</button>
+              </div>
             </div>
           </section>
 
@@ -361,7 +375,10 @@
               <div class="field-grid full"><label for="assistInsurance">Krankenkasse (optional)</label><input id="assistInsurance" type="text"></div>
               <div class="field-grid full"><label for="assistNotes">Bemerkungen (optional)</label><textarea id="assistNotes" rows="4"></textarea></div>
               <p id="assistError6" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
-              <button id="assistNext6" class="assistant-next" type="button" data-assist-next="6">Zusammenfassung anzeigen</button>
+              <div class="assistant-step-actions">
+                <button id="assistBack6" class="assistant-next" type="button" data-assist-back="6">Zurück</button>
+                <button id="assistNext6" class="assistant-next" type="button" data-assist-next="6">Zusammenfassung anzeigen</button>
+              </div>
             </div>
           </section>
 
