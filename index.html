@@ -16,18 +16,28 @@
   <main class="app">
     <section id="home" class="screen active">
       <header class="topbar">
-        <div class="brand"><img src="logo.png" alt="Taxi Germersheim GmbH"><div><b>TAXI GERMERSHEIM GMBH</b><span>Moderne Mobilität für Germersheim</span></div></div>
-        <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen"><span data-icon="menu"></span></button>
+        <div class="brand"><img src="logo.png" alt="Taxi Germersheim GmbH"></div>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen">
+          <span class="menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+        </button>
         <nav class="site-nav">
-          <button type="button" data-go="home" class="active">Start</button>
-          <button type="button" data-go="services">Leistungen</button>
-          <button type="button" data-go="medical">Krankenfahrten</button>
-          <button type="button" data-go="booking" data-service="airport">Flughafentransfer</button>
+          <button type="button" data-go="home" class="active">Startseite</button>
+          <div class="nav-item nav-item-services">
+            <button type="button" class="nav-trigger" data-nav-toggle="services" aria-expanded="false">Leistungen <span>▼</span></button>
+            <div class="nav-dropdown" aria-label="Leistungen">
+              <button type="button" data-go="booking" data-service="taxi"><span>🚖</span><b>Taxi</b></button>
+              <button type="button" data-go="medical"><span>🏥</span><b>Krankenfahrten</b></button>
+              <button type="button" data-go="booking" data-service="wheelchair"><span>♿</span><b>Rollstuhlfahrten</b></button>
+              <button type="button" data-go="booking" data-service="airport"><span>✈</span><b>Flughafentransfer</b></button>
+              <button type="button" data-go="booking"><span>📦</span><b>Kurierfahrten</b></button>
+            </div>
+          </div>
+          <button type="button" data-go="why">Über uns</button>
           <button type="button" data-go="kontakt">Kontakt</button>
         </nav>
+        <div class="site-nav-backdrop" aria-hidden="true"></div>
         <div class="top-actions">
-          <a class="button contact-pill" href="tel:072743567">Jetzt anrufen</a>
-          <a class="button contact-pill contact-pill-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer">WhatsApp</a>
+          <button id="headerBookBtn" class="button nav-book-btn" type="button">Jetzt buchen</button>
         </div>
       </header>
 
