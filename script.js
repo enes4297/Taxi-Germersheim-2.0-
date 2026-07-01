@@ -53,7 +53,118 @@
       alert('Geolocation nicht verfügbar');
     }
   }
+  function initMedicalAssistant(){
+    const root=$('#medicalAssistant');
+    if(!root) return;
+    const steps=$$('.assistant-step',root);
+    const rideChoices=$$('.ride-choice',root);
+    const stepMap=new Map(steps.map(s=>[Number(s.dataset.step),s]));
+    const form={
+      type:'',
+      pickup:$('#assistPickup')?.value||'',
+      destination:$('#assistDestination')?.value||'',
+      date:$('#assistDate')?.value||'',
+      time:$('#assistTime')?.value||'',
+      name:$('#assistName')?.value||'',
+      phone:$('#assistPhone')?.value||'',
+      email:$('#assistEmail')?.value||'',
+      insurance:$('#assistInsurance')?.value||'',
+      notes:$('#assistNotes')?.value||''
+    };
+    const summaryIds={
+      type:'#summaryType',pickup:'#summaryPickup',destination:'#summaryDestination',
+      date:'#summaryDate',time:'#summaryTime',name:'#summaryName',phone:'#summaryPhone',
+      email:'#summaryEmail',insurance:'#summaryInsurance',notes:'#summaryNotes'
+    };
+    const success=$('#assistSuccess');
+    const setActive=n=>{
+      steps.forEach(s=>s.classList.toggle('is-active',Number(s.dataset.step)===n));
+    };
+    const isComplete=n=>{
+      if(n===1) return !!form.type;
+      if(n===2) return !!form.pickup.trim();
+      if(n===3) return !!form.destination.trim();
+      if(n===4) return !!form.date;
+      if(n===5) return !!form.time;
+      if(n===6) return !!form.name.trim() && !!form.phone.trim();
+      return false;
+    };
+    const updateSummary=()=>{
+      Object.entries(summaryIds).forEach(([key,selector])=>{
+        const el=$(selector); if(!el) return;
+        const value=(form[key]||'').toString().trim();
+        el.textContent=value||'-';
+      });
+    };
+    const refresh=()=>{
+      let unlocked=1;
+      for(let n=1;n<=6;n++){
+        if(isComplete(n)) unlocked=n+1; else break;
+      }
+      steps.forEach(step=>{
+        const n=Number(step.dataset.step);
+        step.classList.toggle('is-locked',n>unlocked);
+        step.classList.toggle('is-complete',isComplete(n));
+      });
+      if(unlocked>=7) updateSummary();
+      const active=$('.assistant-step.is-active',root);
+      const activeNum=active?Number(active.dataset.step):1;
+      if(activeNum>unlocked) setActive(unlocked);
+    };
+
+    root.addEventListener('click',e=>{
+      const head=e.target.closest('.assistant-step-head');
+      if(head){
+        const step=head.closest('.assistant-step');
+        if(step && !step.classList.contains('is-locked')) setActive(Number(step.dataset.step));
+      }
+      const choice=e.target.closest('.ride-choice');
+      if(choice){
+        form.type=choice.dataset.value||'';
+        rideChoices.forEach(c=>c.classList.toggle('is-selected',c===choice));
+        refresh();
+        if(form.type) setActive(2);
+      }
+      const submit=e.target.closest('#assistSubmit');
+      if(submit){
+        refresh();
+        if(!isComplete(6)) return;
+        success.hidden=false;
+      }
+      const edit=e.target.closest('#assistEdit');
+      if(edit){
+        success.hidden=true;
+        setActive(1);
+        refresh();
+      }
+    });
+
+    root.addEventListener('input',e=>{
+      const id=e.target.id;
+      if(id==='assistPickup') form.pickup=e.target.value;
+      if(id==='assistDestination') form.destination=e.target.value;
+      if(id==='assistDate') form.date=e.target.value;
+      if(id==='assistTime') form.time=e.target.value;
+      if(id==='assistName') form.name=e.target.value;
+      if(id==='assistPhone') form.phone=e.target.value;
+      if(id==='assistEmail') form.email=e.target.value;
+      if(id==='assistInsurance') form.insurance=e.target.value;
+      if(id==='assistNotes') form.notes=e.target.value;
+      success.hidden=true;
+      refresh();
+    });
+
+    root.addEventListener('change',e=>{
+      const id=e.target.id;
+      if(id==='assistDate') form.date=e.target.value;
+      if(id==='assistTime') form.time=e.target.value;
+      refresh();
+    });
+
+    refresh();
+  }
   function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);initMapContainer('startMapContainer');initMapContainer('endMapContainer');
+    initMedicalAssistant();
     const menuToggle=$('.menu-toggle');
     const siteNav=$('.site-nav');
     if(menuToggle){
