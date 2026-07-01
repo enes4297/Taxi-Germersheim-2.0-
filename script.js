@@ -160,6 +160,7 @@
       });
       updateProgress();
       refreshSummary();
+      if(state.activeStep!==5) closeOverlay('time');
       const active=$(`.nova-step[data-step="${state.activeStep}"]`);
       const focusEl=active?.querySelector('input:not([type="hidden"]), textarea, button.nova-confirm, button.nova-picker-trigger, button.nova-choice');
       focusEl?.focus();
@@ -198,6 +199,10 @@
       showHint();
       if(step<7){
         setStep(step+1);
+        if(step===4){
+          renderTimeGrids();
+          openOverlay('time');
+        }
       }
     }
 
@@ -233,13 +238,18 @@
         renderCalendar();
       }
       if(kind==='time' && timeOverlay){
+        if(state.activeStep!==5) return;
         timeOverlay.hidden=false;
+        timeOverlay.classList.add('is-open');
       }
     }
 
     function closeOverlay(kind){
       if(kind==='date' && dateOverlay) dateOverlay.hidden=true;
-      if(kind==='time' && timeOverlay) timeOverlay.hidden=true;
+      if(kind==='time' && timeOverlay){
+        timeOverlay.classList.remove('is-open');
+        timeOverlay.hidden=true;
+      }
     }
 
     function renderTimeGrids(){
@@ -396,6 +406,10 @@
 
     updateProgress();
     refreshSummary();
+    if(timeOverlay){
+      timeOverlay.classList.remove('is-open');
+      timeOverlay.hidden=true;
+    }
     setStep(1);
   }
   function initMedicalBookingScroll(){

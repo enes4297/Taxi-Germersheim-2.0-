@@ -745,6 +745,10 @@ body:before{background-size:54px 54px;opacity:.12}
 #medical.medical-page #novaDateOverlay .nova-overlay-panel{width:100%;max-height:none;overflow:visible;padding:14px;border-radius:16px;box-shadow:none;background:linear-gradient(150deg,rgba(15,16,22,.98),rgba(8,9,13,.98))}
 #medical.medical-page #novaDateOverlay .nova-overlay-head h4{font-size:28px}
 
+#medical.medical-page #novaTimeOverlay.nova-overlay{display:none;visibility:hidden;opacity:0;pointer-events:none;transition:opacity .22s ease}
+#medical.medical-page #novaTimeOverlay.nova-overlay.is-open{display:flex;visibility:visible;opacity:1;pointer-events:auto;align-items:center;justify-content:center}
+#medical.medical-page #novaTimeOverlay.nova-overlay[hidden]{display:none;visibility:hidden;opacity:0;pointer-events:none}
+
 #medical.medical-page .nova-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:6px}
 #medical.medical-page .nova-weekdays span{display:grid;place-items:center;min-height:34px;border-radius:10px;background:rgba(255,255,255,.03);font-size:13px;font-weight:800;color:rgba(255,255,255,.72)}
 #medical.medical-page .nova-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:stretch}
