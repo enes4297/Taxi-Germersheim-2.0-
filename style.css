@@ -611,3 +611,55 @@ body:before{background-size:54px 54px;opacity:.12}
   #medical.medical-page .medical-help-actions{display:grid;grid-template-columns:1fr;gap:8px}
   #medical.medical-page .medical-help-actions .button{min-width:0;width:100%}
 }
+
+/* Phase 3.2 - Medical Hero only */
+#medical.medical-page .medical-hero{
+  grid-template-columns:minmax(0,1fr) minmax(220px,35%);
+  grid-template-areas:
+    'copy visual'
+    'trust trust'
+    'actions actions';
+  gap:14px 18px;
+  padding:30px 30px 26px;
+  margin-bottom:20px;
+  animation:fade .45s ease;
+}
+#medical.medical-page .medical-hero-copy{grid-area:copy;display:grid;gap:10px;align-content:start}
+#medical.medical-page .medical-kicker{display:inline-block;color:var(--gold);font-size:12px;font-weight:900;letter-spacing:.18em}
+#medical.medical-page .medical-hero-copy h1{font-size:58px;line-height:.96;letter-spacing:-.045em;margin:0;max-width:760px}
+#medical.medical-page .medical-hero-copy p{font-size:17px;line-height:1.72;color:rgba(255,255,255,.8);max-width:760px;max-height:5.3em;overflow:hidden}
+
+#medical.medical-page .medical-hero-visual{grid-area:visual;justify-self:end;align-self:start}
+#medical.medical-page .medical-symbol{width:158px;height:158px;border-radius:22px;border-color:rgba(255,255,255,.14);box-shadow:0 14px 34px rgba(0,0,0,.22)}
+#medical.medical-page .medical-symbol i{width:66px;height:66px;color:rgba(255,217,106,.86)}
+
+#medical.medical-page .medical-trust-strip{grid-area:trust;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09)}
+#medical.medical-page .medical-trust-strip span{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.85);font-size:13px;font-weight:700;white-space:nowrap}
+#medical.medical-page .medical-trust-strip i{width:14px;height:14px;color:var(--gold);opacity:.9;flex:0 0 14px}
+
+#medical.medical-page .medical-hero-actions{grid-area:actions;display:flex;gap:10px;align-items:center;margin-top:0}
+#medical.medical-page .medical-hero-actions .button{height:50px;padding:0 20px;min-width:0;border-radius:14px;transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease,background .28s ease}
+#medical.medical-page .medical-hero-actions .button:not(.contact-pill-secondary){background:linear-gradient(135deg,#ffe07f,#d8a842);color:#111;border-color:rgba(255,255,255,.16);font-weight:900;min-width:270px;box-shadow:0 14px 30px rgba(255,217,106,.16)}
+#medical.medical-page .medical-hero-actions .contact-pill-secondary{height:42px;padding:0 14px;min-width:110px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.82);border:1px solid rgba(255,255,255,.12);box-shadow:none;font-size:12px;font-weight:800}
+#medical.medical-page .medical-hero-actions .button:hover{transform:translateY(-2px)}
+
+@media(max-width:1100px){
+  #medical.medical-page .medical-hero{grid-template-columns:1fr;grid-template-areas:'copy' 'visual' 'trust' 'actions';padding:26px 24px}
+  #medical.medical-page .medical-hero-copy h1{font-size:46px}
+  #medical.medical-page .medical-hero-visual{justify-self:start}
+  #medical.medical-page .medical-trust-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:760px){
+  #medical.medical-page .medical-hero{padding:22px 18px;gap:12px}
+  #medical.medical-page .medical-kicker{font-size:11px}
+  #medical.medical-page .medical-hero-copy h1{font-size:36px}
+  #medical.medical-page .medical-hero-copy p{font-size:16px;line-height:1.68;max-height:none}
+  #medical.medical-page .medical-symbol{width:132px;height:132px}
+  #medical.medical-page .medical-symbol i{width:56px;height:56px}
+  #medical.medical-page .medical-trust-strip{grid-template-columns:1fr;padding:10px}
+  #medical.medical-page .medical-trust-strip span{font-size:13px}
+  #medical.medical-page .medical-hero-actions{display:grid;grid-template-columns:1fr auto;gap:8px}
+  #medical.medical-page .medical-hero-actions .button:not(.contact-pill-secondary){min-width:0;width:100%}
+  #medical.medical-page .medical-hero-actions .contact-pill-secondary{height:50px;min-width:96px;font-size:12px}
+}
