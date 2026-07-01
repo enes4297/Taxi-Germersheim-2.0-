@@ -76,17 +76,19 @@
       email:'#summaryEmail',insurance:'#summaryInsurance',notes:'#summaryNotes'
     };
     const success=$('#assistSuccess');
-    const getUnlocked=()=>{
-      let unlocked=1;
-      for(let n=1;n<=6;n++){
-        if(isComplete(n)) unlocked=n+1; else break;
-      }
-      return unlocked;
+    const completed=new Set();
+    let editMode=false;
+    const errors={
+      2:$('#assistError2'),
+      3:$('#assistError3'),
+      4:$('#assistError4'),
+      5:$('#assistError5'),
+      6:$('#assistError6')
     };
     const setActive=n=>{
       steps.forEach(s=>s.classList.toggle('is-active',Number(s.dataset.step)===n));
     };
-    const isComplete=n=>{
+    const isFilled=n=>{
       if(n===1) return !!form.type;
       if(n===2) return !!form.pickup.trim();
       if(n===3) return !!form.destination.trim();
@@ -94,6 +96,25 @@
       if(n===5) return !!form.time;
       if(n===6) return !!form.name.trim() && !!form.phone.trim();
       return false;
+    };
+    const hideError=n=>{ if(errors[n]) errors[n].hidden=true; };
+    const showError=n=>{ if(errors[n]) errors[n].hidden=false; };
+    const clearCompletedFrom=n=>{
+      for(let i=n;i<=6;i++) completed.delete(i);
+    };
+    const getUnlocked=()=>{
+      if(editMode) return 7;
+      let unlocked=1;
+      for(let n=1;n<=6;n++){
+        if(completed.has(n)) unlocked=n+1; else break;
+      }
+      return unlocked;
+    };
+    const completeStep=n=>{
+      if(!isFilled(n)) return false;
+      completed.add(n);
+      hideError(n);
+      return true;
     };
     const updateSummary=()=>{
       Object.entries(summaryIds).forEach(([key,selector])=>{
@@ -107,19 +128,14 @@
       steps.forEach(step=>{
         const n=Number(step.dataset.step);
         step.classList.toggle('is-locked',n>unlocked);
-        step.classList.toggle('is-complete',isComplete(n));
+        step.classList.toggle('is-complete',completed.has(n));
       });
       updateSummary();
+      $('#assistNext4')?.classList.toggle('hidden',!form.date);
+      $('#assistNext5')?.classList.toggle('hidden',!form.time);
       const active=$('.assistant-step.is-active',root);
       const activeNum=active?Number(active.dataset.step):1;
       if(activeNum>unlocked) setActive(unlocked);
-    };
-    const advanceFromCurrent=()=>{
-      const active=$('.assistant-step.is-active',root);
-      if(!active) return;
-      const current=Number(active.dataset.step);
-      if(current>=7) return;
-      if(isComplete(current)) setActive(Math.min(getUnlocked(),current+1));
     };
 
     root.addEventListener('click',e=>{
@@ -132,18 +148,39 @@
       if(choice){
         form.type=choice.dataset.value||'';
         rideChoices.forEach(c=>c.classList.toggle('is-selected',c===choice));
+        completeStep(1);
+        editMode=false;
         refresh();
-        advanceFromCurrent();
+        setActive(2);
+      }
+      const next=e.target.closest('[data-assist-next]');
+      if(next){
+        const n=Number(next.dataset.assistNext);
+        if(!completeStep(n)){
+          showError(n);
+          refresh();
+          return;
+        }
+        editMode=false;
+        clearCompletedFrom(n+1);
+        refresh();
+        setActive(Math.min(7,n+1));
       }
       const submit=e.target.closest('#assistSubmit');
       if(submit){
+        if(!completed.has(6)){
+          setActive(6);
+          showError(6);
+          refresh();
+          return;
+        }
         refresh();
-        if(!isComplete(6)) return;
         success.hidden=false;
       }
       const edit=e.target.closest('#assistEdit');
       if(edit){
         success.hidden=true;
+        editMode=true;
         setActive(1);
         refresh();
       }
@@ -160,17 +197,31 @@
       if(id==='assistEmail') form.email=e.target.value;
       if(id==='assistInsurance') form.insurance=e.target.value;
       if(id==='assistNotes') form.notes=e.target.value;
+      if(id==='assistPickup' && !form.pickup.trim()) clearCompletedFrom(2);
+      if(id==='assistDestination' && !form.destination.trim()) clearCompletedFrom(3);
+      if(id==='assistName' || id==='assistPhone'){
+        if(!form.name.trim() || !form.phone.trim()) clearCompletedFrom(6);
+      }
       success.hidden=true;
+      if(id==='assistPickup') hideError(2);
+      if(id==='assistDestination') hideError(3);
+      if(id==='assistName' || id==='assistPhone') hideError(6);
       refresh();
-      advanceFromCurrent();
     });
 
     root.addEventListener('change',e=>{
       const id=e.target.id;
-      if(id==='assistDate') form.date=e.target.value;
-      if(id==='assistTime') form.time=e.target.value;
+      if(id==='assistDate'){
+        form.date=e.target.value;
+        if(!form.date) clearCompletedFrom(4);
+        hideError(4);
+      }
+      if(id==='assistTime'){
+        form.time=e.target.value;
+        if(!form.time) clearCompletedFrom(5);
+        hideError(5);
+      }
       refresh();
-      advanceFromCurrent();
     });
 
     refresh();

@@ -712,6 +712,9 @@ body:before{background-size:54px 54px;opacity:.12}
 #medical.medical-page .medical-submit{height:54px;padding:0 18px;border-radius:14px;border:1px solid rgba(255,255,255,.16);background:linear-gradient(135deg,#ffe07f,#d8a842);color:#111;font-size:15px;font-weight:900;letter-spacing:.02em;cursor:pointer;transition:transform .24s ease,box-shadow .24s ease,filter .24s ease}
 #medical.medical-page .medical-submit:hover{transform:translateY(-2px);box-shadow:0 16px 36px rgba(255,217,106,.22);filter:brightness(1.02)}
 #medical.medical-page .assistant-edit{height:54px;padding:0 16px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#fff;font-weight:800;cursor:pointer}
+#medical.medical-page .assistant-next{height:46px;min-width:140px;padding:0 16px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-size:14px;font-weight:800;cursor:pointer;justify-self:start}
+#medical.medical-page .assistant-next:hover{border-color:rgba(255,217,106,.5);background:rgba(255,217,106,.12)}
+#medical.medical-page .assistant-step-error{margin:0;color:#ffb0b0;font-size:13px;font-weight:700}
 #medical.medical-page .assistant-success{margin:2px 0 0;color:#83db77;font-size:14px;font-weight:700}
 
 @media(max-width:760px){
