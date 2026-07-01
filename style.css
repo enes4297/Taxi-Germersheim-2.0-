@@ -676,6 +676,12 @@ body:before{background-size:54px 54px;opacity:.12}
 #medical.medical-page .yumak-assistant-card p{margin:0;color:rgba(255,255,255,.88);font-size:16px;line-height:1.55}
 
 #medical.medical-page .medical-assistant{display:grid;gap:10px}
+#medical.medical-page .assistant-progress{display:grid;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
+#medical.medical-page .assistant-progress b{font-size:14px;letter-spacing:.02em;color:rgba(255,255,255,.88)}
+#medical.medical-page .assistant-progress-track{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+#medical.medical-page .assistant-progress-track span{display:block;height:100%;width:14.285%;background:linear-gradient(90deg,#ffe07f,#d8a842);transition:width .3s ease}
+#medical.medical-page .assistant-speech{margin:0;padding:10px 12px;max-width:360px;border-radius:12px;background:rgba(255,217,106,.14);border:1px solid rgba(255,217,106,.35);color:#ffe7a4;font-size:14px;font-weight:800;opacity:0;transform:translateY(-4px);transition:opacity .25s ease,transform .25s ease}
+#medical.medical-page .assistant-speech.is-visible{opacity:1;transform:translateY(0)}
 #medical.medical-page .assistant-step{border-radius:18px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);overflow:hidden;transition:border-color .28s ease,box-shadow .28s ease,background .28s ease,opacity .28s ease}
 #medical.medical-page .assistant-step.is-locked{opacity:.5}
 #medical.medical-page .assistant-step.is-active{border-color:rgba(255,217,106,.45);box-shadow:0 10px 26px rgba(255,217,106,.1)}
@@ -684,8 +690,8 @@ body:before{background-size:54px 54px;opacity:.12}
 #medical.medical-page .assistant-step-no{width:28px;height:28px;border-radius:999px;display:grid;place-items:center;background:rgba(255,255,255,.1);font-size:13px;font-weight:900}
 #medical.medical-page .assistant-step.is-active .assistant-step-no{background:rgba(255,217,106,.18);color:var(--gold)}
 #medical.medical-page .assistant-step-head b{font-size:18px;line-height:1.2}
-#medical.medical-page .assistant-check{opacity:0;color:#83db77;font-style:normal;font-weight:900}
-#medical.medical-page .assistant-step.is-complete .assistant-check{opacity:1}
+#medical.medical-page .assistant-check{opacity:0;color:#83db77;font-style:normal;font-weight:900;transform:scale(.6)}
+#medical.medical-page .assistant-step.is-complete .assistant-check{opacity:1;animation:checkPop .28s ease forwards}
 
 #medical.medical-page .assistant-step-body{display:none;padding:0 16px 16px;opacity:0;transform:translateY(-6px);max-height:0;transition:opacity .26s ease,transform .26s ease,max-height .26s ease}
 #medical.medical-page .assistant-step.is-active .assistant-step-body{display:grid;gap:10px;opacity:1;transform:translateY(0);max-height:1000px}
@@ -727,13 +733,18 @@ body:before{background-size:54px 54px;opacity:.12}
 #medical.medical-page .assistant-date-day:hover{transform:translateY(-1px);border-color:rgba(255,217,106,.4);background:rgba(255,217,106,.1)}
 #medical.medical-page .assistant-date-day.is-today{border-color:rgba(255,217,106,.4);box-shadow:0 0 0 2px rgba(255,217,106,.15) inset}
 #medical.medical-page .assistant-date-day.is-selected{border-color:rgba(255,217,106,.65);background:linear-gradient(135deg,rgba(255,217,106,.26),rgba(255,181,64,.2));color:#ffe9ac}
+#medical.medical-page .assistant-date-day.is-disabled{opacity:.3;cursor:not-allowed;pointer-events:none;filter:grayscale(.15)}
 #medical.medical-page .assistant-date-day.is-empty{visibility:hidden;pointer-events:none}
 
-#medical.medical-page .assistant-time-list{display:grid;gap:8px;max-height:56vh;overflow:auto;padding-right:2px}
-#medical.medical-page .assistant-time-option{min-height:54px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:#fff;font-size:20px;font-weight:800;text-align:left;padding:0 16px;cursor:pointer}
+#medical.medical-page .assistant-time-list{display:grid;gap:12px;max-height:56vh;overflow:auto;padding-right:2px}
+#medical.medical-page .assistant-time-hour{display:grid;gap:8px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
+#medical.medical-page .assistant-time-hour b{font-size:16px;color:rgba(255,255,255,.88)}
+#medical.medical-page .assistant-time-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+#medical.medical-page .assistant-time-option{min-height:50px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:#fff;font-size:16px;font-weight:800;text-align:center;padding:0 8px;cursor:pointer}
 #medical.medical-page .assistant-time-option:hover{border-color:rgba(255,217,106,.45);background:rgba(255,217,106,.1)}
 #medical.medical-page .assistant-time-option.is-selected{border-color:rgba(255,217,106,.62);background:linear-gradient(135deg,rgba(255,217,106,.24),rgba(255,181,64,.18));color:#ffe8a2}
 
+#medical.medical-page .assistant-summary-lead{margin:0;color:rgba(255,255,255,.9);font-size:16px;font-weight:800}
 #medical.medical-page .assistant-summary-card{display:grid;gap:8px;padding:14px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1)}
 #medical.medical-page .assistant-summary-card div{display:grid;grid-template-columns:minmax(160px,200px) 1fr;gap:10px;align-items:start}
 #medical.medical-page .assistant-summary-card span{color:rgba(255,255,255,.62);font-size:13px}
@@ -766,7 +777,8 @@ body:before{background-size:54px 54px;opacity:.12}
   #medical.medical-page .assistant-picker-panel{padding:14px;border-radius:16px}
   #medical.medical-page .assistant-picker-head h4{font-size:28px}
   #medical.medical-page .assistant-date-day{min-height:50px;font-size:16px}
-  #medical.medical-page .assistant-time-option{min-height:50px;font-size:18px}
+  #medical.medical-page .assistant-time-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #medical.medical-page .assistant-time-option{min-height:48px;font-size:16px}
   #medical.medical-page .assistant-summary-card div{grid-template-columns:1fr;gap:2px}
   #medical.medical-page .assistant-summary-actions{display:grid;grid-template-columns:1fr;gap:8px}
 }
@@ -774,4 +786,9 @@ body:before{background-size:54px 54px;opacity:.12}
 @keyframes calendarSlide{
   from{opacity:0;transform:translateX(8px)}
   to{opacity:1;transform:translateX(0)}
+}
+
+@keyframes checkPop{
+  from{opacity:0;transform:scale(.6)}
+  to{opacity:1;transform:scale(1)}
 }

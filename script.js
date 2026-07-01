@@ -83,6 +83,9 @@
     const timeTitle=$('#assistTimeTitle');
     const pickupTimeTrigger=$('#assistTimeTrigger');
     const doctorTimeTrigger=$('#assistDoctorTimeTrigger');
+    const progressLabel=$('#assistProgressLabel');
+    const progressBar=$('#assistProgressBar');
+    const speech=$('#assistSpeech');
 
     const success=$('#assistSuccess');
     const errors={
@@ -126,6 +129,8 @@
     let activeTimeTarget='pickup';
     let calendarMonth=new Date();
     const completedSteps=new Set();
+    let speechTimer=null;
+    const speechLines=['Perfekt.','Alles klar.','Super.','Fast geschafft.','Nur noch zwei Schritte.','Ich habe alles notiert.','Prima.','Das war einfach.'];
 
     Object.values(errors).forEach(el=>{if(el) el.textContent='Bitte füllen Sie die Pflichtangaben aus.'});
 
@@ -156,6 +161,24 @@
         }
       }
       return slots;
+    }
+
+    function speak(stepNumber){
+      if(!speech) return;
+      const text=speechLines[(stepNumber-1)%speechLines.length];
+      speech.textContent=text;
+      speech.hidden=false;
+      speech.classList.add('is-visible');
+      if(speechTimer) clearTimeout(speechTimer);
+      speechTimer=setTimeout(()=>{
+        speech.classList.remove('is-visible');
+        setTimeout(()=>{speech.hidden=true;},220);
+      },1000);
+    }
+
+    function updateProgress(stepNumber){
+      if(progressLabel) progressLabel.textContent=`Schritt ${stepNumber} von 7`;
+      if(progressBar) progressBar.style.width=`${(stepNumber/7)*100}%`;
     }
 
     function readForm(){
@@ -251,6 +274,7 @@
       const monthDays=lastDay.getDate();
       const startOffset=(firstDay.getDay()+6)%7;
       const todayIso=formatIsoDate(new Date());
+      const todayDate=parseIsoDate(todayIso);
       const selectedIso=dateInput?.value||'';
       dateMonthLabel.textContent=firstDay.toLocaleDateString('de-DE',{month:'long',year:'numeric'});
 
@@ -262,6 +286,7 @@
         const classes=['assistant-date-day'];
         if(iso===todayIso) classes.push('is-today');
         if(iso===selectedIso) classes.push('is-selected');
+        if(todayDate && dt<todayDate) classes.push('is-disabled');
         cells.push(`<button class="${classes.join(' ')}" type="button" data-date-value="${iso}">${day}</button>`);
       }
       dateCalendar.innerHTML=cells.join('');
@@ -289,10 +314,18 @@
       readForm();
       const selected=activeTimeTarget==='pickup'?form.time:form.doctorTime;
       timeTitle.textContent=activeTimeTarget==='pickup'?'Gewünschte Abholzeit':'Termin beim Arzt (optional)';
-      timeList.innerHTML=buildTimeSlots().map(slot=>{
-        const selectedClass=slot===selected?' is-selected':'';
-        return `<button class="assistant-time-option${selectedClass}" type="button" data-time-value="${slot}">${slot}</button>`;
-      }).join('');
+      const slots=buildTimeSlots();
+      const groups=[];
+      for(let h=6;h<=22;h++){
+        const hh=String(h).padStart(2,'0');
+        const hourSlots=slots.filter(t=>t.startsWith(`${hh}:`));
+        const buttons=hourSlots.map(slot=>{
+          const selectedClass=slot===selected?' is-selected':'';
+          return `<button class="assistant-time-option${selectedClass}" type="button" data-time-value="${slot}">${slot.slice(3)}</button>`;
+        }).join('');
+        groups.push(`<article class="assistant-time-hour"><b>${hh} Uhr</b><div class="assistant-time-grid">${buttons}</div></article>`);
+      }
+      timeList.innerHTML=groups.join('');
     }
 
     function validateStep(stepNumber){
@@ -314,7 +347,15 @@
         step.classList.toggle('is-locked',n>maxUnlocked);
         step.classList.toggle('is-complete',completedSteps.has(n));
       });
+      updateProgress(currentStep);
       updateSummary();
+    }
+
+    function focusFirstInteractive(stepNumber){
+      const stepEl=$(`.assistant-step[data-step="${stepNumber}"]`,root);
+      if(!stepEl) return;
+      const focusEl=stepEl.querySelector('input:not([type="hidden"]), textarea, button.assistant-picker-trigger, button.assistant-next, .ride-choice');
+      focusEl?.focus();
     }
 
     function goNext(stepNumber){
@@ -325,9 +366,11 @@
       }
       hideError(stepNumber);
       completedSteps.add(stepNumber);
+      speak(stepNumber);
       if(stepNumber<7){
         maxUnlocked=Math.max(maxUnlocked,stepNumber+1);
         showStep(stepNumber+1);
+        focusFirstInteractive(stepNumber+1);
       }
     }
 
@@ -432,6 +475,8 @@
           success.hidden=true;
           clearCompletedFrom(5);
           goNext(5);
+          const step6Inputs=$$('#medicalAssistant .assistant-step[data-step="6"] input');
+          step6Inputs[0]?.focus();
           return;
         }
         if(activeTimeTarget==='doctor' && doctorTimeInput){
@@ -460,6 +505,11 @@
         success.hidden=true;
         clearCompletedFrom(step);
         goNext(step);
+        if(step===6){
+          completedSteps.add(6);
+          maxUnlocked=Math.max(maxUnlocked,7);
+          showStep(7);
+        }
         return;
       }
 
@@ -519,12 +569,46 @@
 
     root.addEventListener('keydown',e=>{
       if(e.key!=='Enter') return;
-      if(e.target.tagName==='TEXTAREA') return;
       const activeStepEl=e.target.closest('.assistant-step');
       if(!activeStepEl) return;
       const step=Number(activeStepEl.dataset.step)||currentStep;
       if(step!==currentStep) return;
       if(step<1 || step>6) return;
+      if(step===2 || step===3){
+        e.preventDefault();
+        success.hidden=true;
+        clearCompletedFrom(step);
+        goNext(step);
+        return;
+      }
+      if(step===6){
+        if(e.target.tagName==='TEXTAREA' && e.target.id==='assistNotes'){
+          e.preventDefault();
+          success.hidden=true;
+          clearCompletedFrom(6);
+          goNext(6);
+          completedSteps.add(6);
+          maxUnlocked=Math.max(maxUnlocked,7);
+          showStep(7);
+          return;
+        }
+        if(e.target.tagName==='TEXTAREA') return;
+        const inputs=$$('.assistant-step[data-step="6"] input',root);
+        const index=inputs.indexOf(e.target);
+        if(index>-1 && index<inputs.length-1){
+          e.preventDefault();
+          inputs[index+1].focus();
+          return;
+        }
+        e.preventDefault();
+        success.hidden=true;
+        clearCompletedFrom(6);
+        goNext(6);
+        completedSteps.add(6);
+        maxUnlocked=Math.max(maxUnlocked,7);
+        showStep(7);
+        return;
+      }
       e.preventDefault();
       success.hidden=true;
       clearCompletedFrom(step);

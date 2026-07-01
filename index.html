@@ -300,6 +300,12 @@
         </article>
 
         <div id="medicalAssistant" class="medical-assistant" aria-live="polite">
+          <div class="assistant-progress" aria-live="polite">
+            <b id="assistProgressLabel">Schritt 1 von 7</b>
+            <div class="assistant-progress-track"><span id="assistProgressBar"></span></div>
+          </div>
+          <p id="assistSpeech" class="assistant-speech" hidden></p>
+
           <section class="assistant-step is-active" data-step="1">
             <button class="assistant-step-head" type="button"><span class="assistant-step-no">1</span><b>Art der Krankenfahrt</b><i class="assistant-check">✓</i></button>
             <div class="assistant-step-body">
@@ -401,7 +407,6 @@
               <p id="assistError5" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
               <div class="assistant-step-actions">
                 <button id="assistBack5" class="assistant-next" type="button" data-assist-back="5">Zurück</button>
-                <button id="assistNext5" class="assistant-next" type="button" data-assist-next="5">Weiter</button>
               </div>
             </div>
           </section>
@@ -425,6 +430,7 @@
           <section class="assistant-step is-locked" data-step="7">
             <button class="assistant-step-head" type="button"><span class="assistant-step-no">7</span><b>Zusammenfassung</b><i class="assistant-check">✓</i></button>
             <div class="assistant-step-body">
+              <p class="assistant-summary-lead">Bitte prüfen Sie Ihre Angaben.</p>
               <article class="assistant-summary-card">
                 <div><span>Art der Fahrt</span><b id="summaryType">-</b></div>
                 <div><span>Abholadresse</span><b id="summaryPickup">-</b></div>
