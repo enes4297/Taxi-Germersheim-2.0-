@@ -317,6 +317,86 @@
           <a class="button contact-pill-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Krankenfahrt%20anfragen" target="_blank" rel="noreferrer">WhatsApp</a>
         </div>
       </section>
+
+      <section class="medical-booking" aria-labelledby="medical-booking-title">
+        <div class="medical-booking-head">
+          <h3 id="medical-booking-title">Krankenfahrt anfragen</h3>
+          <p>Teilen Sie uns Ihre Fahrt mit. Wir melden uns schnellstmöglich bei Ihnen und unterstützen Sie bei Fragen rund um Ihre Krankenfahrt.</p>
+        </div>
+
+        <div class="medical-booking-layout">
+          <form class="medical-booking-form" action="#" method="post">
+            <div class="field-grid two">
+              <label for="medicalName">Vor- und Nachname</label>
+              <input id="medicalName" name="medicalName" type="text" required>
+            </div>
+
+            <div class="field-grid two">
+              <label for="medicalPhone">Telefonnummer</label>
+              <input id="medicalPhone" name="medicalPhone" type="tel" required>
+            </div>
+
+            <div class="field-grid two">
+              <label for="medicalEmail">E-Mail (optional)</label>
+              <input id="medicalEmail" name="medicalEmail" type="email">
+            </div>
+
+            <div class="field-grid full">
+              <label for="medicalPickup">Abholadresse</label>
+              <input id="medicalPickup" name="medicalPickup" type="text" required>
+            </div>
+
+            <div class="field-grid full">
+              <label for="medicalDestination">Zieladresse</label>
+              <input id="medicalDestination" name="medicalDestination" type="text" required>
+            </div>
+
+            <div class="field-row">
+              <div class="field-grid two">
+                <label for="medicalDate">Datum</label>
+                <input id="medicalDate" name="medicalDate" type="date" required>
+              </div>
+              <div class="field-grid two">
+                <label for="medicalTime">Uhrzeit</label>
+                <input id="medicalTime" name="medicalTime" type="time" required>
+              </div>
+            </div>
+
+            <div class="field-grid full">
+              <label for="medicalType">Art der Fahrt</label>
+              <select id="medicalType" name="medicalType" required>
+                <option value="">Bitte auswählen</option>
+                <option>Arzttermin</option>
+                <option>Dialyse</option>
+                <option>Chemotherapie</option>
+                <option>Strahlentherapie</option>
+                <option>Reha</option>
+                <option>Krankenhaus</option>
+                <option>Sonstiges</option>
+              </select>
+            </div>
+
+            <div class="field-grid full">
+              <label for="medicalInsurance">Krankenkasse (optional)</label>
+              <input id="medicalInsurance" name="medicalInsurance" type="text">
+            </div>
+
+            <div class="field-grid full">
+              <label for="medicalNotes">Bemerkungen</label>
+              <textarea id="medicalNotes" name="medicalNotes" rows="5"></textarea>
+            </div>
+
+            <button class="medical-submit" type="submit">Krankenfahrt anfragen</button>
+          </form>
+
+          <aside class="medical-contact-card" aria-label="Kontaktinformationen">
+            <a class="medical-contact-phone" href="tel:072743567">07274 3567</a>
+            <span>24/7 erreichbar</span>
+            <a class="button contact-pill-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Krankenfahrt%20anfragen" target="_blank" rel="noreferrer">WhatsApp</a>
+            <a class="button" href="tel:072743567">Jetzt anrufen</a>
+          </aside>
+        </div>
+      </section>
     </section>
 
     <section id="booking" class="screen">
