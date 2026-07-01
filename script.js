@@ -62,7 +62,10 @@
     {street:'Queichheimer Hauptstrasse 18',postalCode:'76829',city:'Landau',group:'Adresse',type:'both'},
     {street:'Kaiserallee 31',postalCode:'76133',city:'Karlsruhe',group:'Adresse',type:'both'},
     {street:'Augustaanlage 42',postalCode:'68165',city:'Mannheim',group:'Adresse',type:'both'},
-    {street:'Bergheimer Strasse 55',postalCode:'69115',city:'Heidelberg',group:'Adresse',type:'both'}
+    {street:'Bergheimer Strasse 55',postalCode:'69115',city:'Heidelberg',group:'Adresse',type:'both'},
+    {street:'Friedrich-Ebert-Strasse 7',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'both'},
+    {street:'Friedrichstrasse 24',postalCode:'67346',city:'Speyer',group:'Adresse',type:'both'},
+    {street:'Friedrich-Ebert-Anlage 16',postalCode:'69117',city:'Heidelberg',group:'Adresse',type:'both'}
   ];
   let addressConfigCache=null;
   let startMarker=null,endMarker=null,mapContainers={};
@@ -93,7 +96,8 @@
   async function loadAddressConfig(){
     if(addressConfigCache) return addressConfigCache;
     try{
-      const response=await fetch('assets/data/address-config.json',{cache:'no-store'});
+      const configUrl=new URL('assets/data/address-config.json',document.baseURI).toString();
+      const response=await fetch(configUrl,{cache:'no-store'});
       if(!response.ok) throw new Error('config-not-found');
       const raw=await response.json();
       addressConfigCache={
