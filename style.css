@@ -687,8 +687,8 @@ body:before{background-size:54px 54px;opacity:.12}
 #medical.medical-page .assistant-check{opacity:0;color:#83db77;font-style:normal;font-weight:900}
 #medical.medical-page .assistant-step.is-complete .assistant-check{opacity:1}
 
-#medical.medical-page .assistant-step-body{display:none;padding:0 16px 16px;animation:fade .35s ease}
-#medical.medical-page .assistant-step.is-active .assistant-step-body{display:grid;gap:10px}
+#medical.medical-page .assistant-step-body{display:none;padding:0 16px 16px;opacity:0;transform:translateY(-6px);max-height:0;transition:opacity .26s ease,transform .26s ease,max-height .26s ease}
+#medical.medical-page .assistant-step.is-active .assistant-step-body{display:grid;gap:10px;opacity:1;transform:translateY(0);max-height:1000px}
 #medical.medical-page .assistant-step-body input,
 #medical.medical-page .assistant-step-body textarea{width:100%;min-height:56px;border-radius:14px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#fff;padding:0 14px;font-size:17px;outline:0;transition:border-color .24s ease,box-shadow .24s ease,background .24s ease}
 #medical.medical-page .assistant-step-body textarea{min-height:114px;padding:12px 14px;resize:vertical}
@@ -704,6 +704,19 @@ body:before{background-size:54px 54px;opacity:.12}
 #medical.medical-page .ride-choice.is-selected{border-color:rgba(255,217,106,.5);background:rgba(255,217,106,.1);box-shadow:0 0 0 3px rgba(255,217,106,.12)}
 #medical.medical-page .ride-choice.is-selected:before{content:'◉';color:var(--gold)}
 
+#medical.medical-page .assist-suggestions{display:grid;gap:6px;padding:8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(7,8,11,.96)}
+#medical.medical-page .assist-suggestion{height:40px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#fff;text-align:left;padding:0 12px;font-size:14px;cursor:pointer}
+#medical.medical-page .assist-suggestion:hover{border-color:rgba(255,217,106,.45);background:rgba(255,217,106,.12)}
+
+#medical.medical-page .assistant-date-wrap{position:relative}
+#medical.medical-page .assistant-date-wrap input{padding-right:108px}
+#medical.medical-page .assistant-date-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);padding:4px 8px;border-radius:999px;background:rgba(255,217,106,.13);border:1px solid rgba(255,217,106,.28);font-size:12px;font-weight:800;color:rgba(255,232,166,.96);pointer-events:none}
+
+#medical.medical-page .assistant-time-chips{display:flex;flex-wrap:wrap;gap:8px}
+#medical.medical-page .assist-time-chip{height:38px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.04);color:#fff;font-size:14px;font-weight:800;cursor:pointer}
+#medical.medical-page .assist-time-chip:hover{border-color:rgba(255,217,106,.45);background:rgba(255,217,106,.12)}
+#medical.medical-page .assist-time-chip.is-selected{border-color:rgba(255,217,106,.55);background:rgba(255,217,106,.16);color:var(--gold)}
+
 #medical.medical-page .assistant-summary-card{display:grid;gap:8px;padding:14px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1)}
 #medical.medical-page .assistant-summary-card div{display:grid;grid-template-columns:minmax(160px,200px) 1fr;gap:10px;align-items:start}
 #medical.medical-page .assistant-summary-card span{color:rgba(255,255,255,.62);font-size:13px}
@@ -714,6 +727,7 @@ body:before{background-size:54px 54px;opacity:.12}
 #medical.medical-page .assistant-edit{height:54px;padding:0 16px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#fff;font-weight:800;cursor:pointer}
 #medical.medical-page .assistant-next{height:46px;min-width:140px;padding:0 16px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-size:14px;font-weight:800;cursor:pointer;justify-self:start}
 #medical.medical-page .assistant-next:hover{border-color:rgba(255,217,106,.5);background:rgba(255,217,106,.12)}
+#medical.medical-page .assistant-step-actions{display:flex;gap:8px;flex-wrap:wrap}
 #medical.medical-page .assistant-step-error{margin:0;color:#ffb0b0;font-size:13px;font-weight:700}
 #medical.medical-page .assistant-success{margin:2px 0 0;color:#83db77;font-size:14px;font-weight:700}
 
@@ -732,6 +746,8 @@ body:before{background-size:54px 54px;opacity:.12}
   #medical.medical-page .assistant-edit{min-height:52px;font-size:15px}
   #medical.medical-page .assistant-step-body textarea{min-height:108px}
   #medical.medical-page .ride-type-options{grid-template-columns:1fr}
+  #medical.medical-page .assistant-time-chips{gap:6px}
+  #medical.medical-page .assist-time-chip{min-height:36px;font-size:13px}
   #medical.medical-page .assistant-summary-card div{grid-template-columns:1fr;gap:2px}
   #medical.medical-page .assistant-summary-actions{display:grid;grid-template-columns:1fr;gap:8px}
 }
