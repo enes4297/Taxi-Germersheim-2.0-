@@ -243,7 +243,7 @@
           <span><i data-icon="taxi"></i>Pünktliche Abholung</span>
         </div>
         <div class="medical-hero-actions">
-          <a class="button" href="tel:072743567">Krankenfahrt anfragen</a>
+          <button id="medicalHeroBookBtn" class="button" type="button">Jetzt buchen</button>
           <a class="button contact-pill-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Krankenfahrt%20anfragen" target="_blank" rel="noreferrer">WhatsApp schreiben</a>
         </div>
       </section>
@@ -285,48 +285,18 @@
         </ol>
       </section>
 
-      <section class="medical-section">
-        <h3>Welche Fahrten übernehmen wir?</h3>
-        <div class="medical-cards">
-          <article class="medical-card"><i data-icon="medical"></i><b>Arztbesuche</b><p>Fahrten zum Haus- und Facharzt.</p></article>
-          <article class="medical-card"><i data-icon="medical"></i><b>Dialyse</b><p>Regelmäßige Hin- und Rückfahrten.</p></article>
-          <article class="medical-card"><i data-icon="medical"></i><b>Chemotherapie</b><p>Ruhige und pünktliche Terminfahrten.</p></article>
-          <article class="medical-card"><i data-icon="medical"></i><b>Strahlentherapie</b><p>Sichere Fahrten zu jeder Sitzung.</p></article>
-          <article class="medical-card"><i data-icon="medical"></i><b>Reha</b><p>Komfortable Fahrten zur Reha.</p></article>
-          <article class="medical-card"><i data-icon="medical"></i><b>Krankenhaus</b><p>Fahrten zur Aufnahme oder Entlassung.</p></article>
-        </div>
-      </section>
-
-      <section class="medical-section">
-        <h3>Was brauchen Sie?</h3>
-        <ul class="medical-checklist" aria-label="Checkliste Krankenfahrten">
-          <li>Name</li>
-          <li>Datum und Uhrzeit</li>
-          <li>Abholadresse</li>
-          <li>Zieladresse</li>
-          <li>Telefonnummer</li>
-          <li>Falls vorhanden: Verordnung oder Genehmigung</li>
-        </ul>
-      </section>
-
-      <section class="medical-help">
-        <h3>Wir helfen Ihnen</h3>
-        <p><strong>Sie sind unsicher?</strong><br>Rufen Sie uns einfach an. Wir erklären Ihnen ruhig und verständlich, was Sie brauchen.</p>
-        <div class="medical-help-actions">
-          <a class="button" href="tel:072743567">Jetzt anrufen</a>
-          <a class="button contact-pill-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Krankenfahrt%20anfragen" target="_blank" rel="noreferrer">WhatsApp</a>
-        </div>
-      </section>
-
-      <section class="medical-booking" aria-labelledby="medical-booking-title">
+      <section id="medicalBookingSection" class="medical-booking" aria-labelledby="medical-booking-title">
         <div class="medical-booking-head">
-          <h3 id="medical-booking-title">Krankenfahrt anfragen</h3>
-          <p>Teilen Sie uns Ihre Fahrt mit. Wir melden uns schnellstmöglich bei Ihnen und unterstützen Sie bei Fragen rund um Ihre Krankenfahrt.</p>
+          <h3 id="medical-booking-title">Yumak Buchungsassistent</h3>
+          <p>Wenige Angaben reichen aus. Yumak begleitet Sie klar und Schritt für Schritt bis zur Anfrage.</p>
         </div>
 
         <article class="yumak-assistant-card" aria-label="Yumak Assistent">
           <img src="assets/yumak/yumak-portrait.jpg" onerror="this.src='yumak.png'" alt="Yumak">
-          <p>Ich bin Yumak. Ich helfe Ihnen Schritt für Schritt bei Ihrer Krankenfahrt.</p>
+          <div>
+            <h4>Yumak hilft Ihnen beim Buchen</h4>
+            <p>Ich führe Sie Schritt für Schritt durch Ihre Krankenfahrt. Einfach auswählen, ausfüllen und absenden.</p>
+          </div>
         </article>
 
         <div id="medicalAssistant" class="medical-assistant" aria-live="polite">
@@ -403,6 +373,40 @@
           </section>
         </div>
       </section>
+
+      <section class="medical-section">
+        <h3>Welche Fahrten übernehmen wir?</h3>
+        <div class="medical-cards">
+          <article class="medical-card"><i data-icon="medical"></i><b>Arztbesuche</b><p>Fahrten zum Haus- und Facharzt.</p></article>
+          <article class="medical-card"><i data-icon="medical"></i><b>Dialyse</b><p>Regelmäßige Hin- und Rückfahrten.</p></article>
+          <article class="medical-card"><i data-icon="medical"></i><b>Chemotherapie</b><p>Ruhige und pünktliche Terminfahrten.</p></article>
+          <article class="medical-card"><i data-icon="medical"></i><b>Strahlentherapie</b><p>Sichere Fahrten zu jeder Sitzung.</p></article>
+          <article class="medical-card"><i data-icon="medical"></i><b>Reha</b><p>Komfortable Fahrten zur Reha.</p></article>
+          <article class="medical-card"><i data-icon="medical"></i><b>Krankenhaus</b><p>Fahrten zur Aufnahme oder Entlassung.</p></article>
+        </div>
+      </section>
+
+      <section class="medical-section">
+        <h3>Was brauchen Sie?</h3>
+        <ul class="medical-checklist" aria-label="Checkliste Krankenfahrten">
+          <li>Name</li>
+          <li>Datum und Uhrzeit</li>
+          <li>Abholadresse</li>
+          <li>Zieladresse</li>
+          <li>Telefonnummer</li>
+          <li>Falls vorhanden: Verordnung oder Genehmigung</li>
+        </ul>
+      </section>
+
+      <section class="medical-help">
+        <h3>Wir helfen Ihnen</h3>
+        <p><strong>Sie sind unsicher?</strong><br>Rufen Sie uns einfach an. Wir erklären Ihnen ruhig und verständlich, was Sie brauchen.</p>
+        <div class="medical-help-actions">
+          <a class="button" href="tel:072743567">Jetzt anrufen</a>
+          <a class="button contact-pill-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Krankenfahrt%20anfragen" target="_blank" rel="noreferrer">WhatsApp</a>
+        </div>
+      </section>
+
     </section>
 
     <section id="booking" class="screen">

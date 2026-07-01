@@ -58,7 +58,6 @@
     if(!root) return;
     const steps=$$('.assistant-step',root);
     const rideChoices=$$('.ride-choice',root);
-    const stepMap=new Map(steps.map(s=>[Number(s.dataset.step),s]));
     const form={
       type:'',
       pickup:$('#assistPickup')?.value||'',
@@ -77,6 +76,13 @@
       email:'#summaryEmail',insurance:'#summaryInsurance',notes:'#summaryNotes'
     };
     const success=$('#assistSuccess');
+    const getUnlocked=()=>{
+      let unlocked=1;
+      for(let n=1;n<=6;n++){
+        if(isComplete(n)) unlocked=n+1; else break;
+      }
+      return unlocked;
+    };
     const setActive=n=>{
       steps.forEach(s=>s.classList.toggle('is-active',Number(s.dataset.step)===n));
     };
@@ -97,19 +103,23 @@
       });
     };
     const refresh=()=>{
-      let unlocked=1;
-      for(let n=1;n<=6;n++){
-        if(isComplete(n)) unlocked=n+1; else break;
-      }
+      const unlocked=getUnlocked();
       steps.forEach(step=>{
         const n=Number(step.dataset.step);
         step.classList.toggle('is-locked',n>unlocked);
         step.classList.toggle('is-complete',isComplete(n));
       });
-      if(unlocked>=7) updateSummary();
+      updateSummary();
       const active=$('.assistant-step.is-active',root);
       const activeNum=active?Number(active.dataset.step):1;
       if(activeNum>unlocked) setActive(unlocked);
+    };
+    const advanceFromCurrent=()=>{
+      const active=$('.assistant-step.is-active',root);
+      if(!active) return;
+      const current=Number(active.dataset.step);
+      if(current>=7) return;
+      if(isComplete(current)) setActive(Math.min(getUnlocked(),current+1));
     };
 
     root.addEventListener('click',e=>{
@@ -123,7 +133,7 @@
         form.type=choice.dataset.value||'';
         rideChoices.forEach(c=>c.classList.toggle('is-selected',c===choice));
         refresh();
-        if(form.type) setActive(2);
+        advanceFromCurrent();
       }
       const submit=e.target.closest('#assistSubmit');
       if(submit){
@@ -152,6 +162,7 @@
       if(id==='assistNotes') form.notes=e.target.value;
       success.hidden=true;
       refresh();
+      advanceFromCurrent();
     });
 
     root.addEventListener('change',e=>{
@@ -159,12 +170,22 @@
       if(id==='assistDate') form.date=e.target.value;
       if(id==='assistTime') form.time=e.target.value;
       refresh();
+      advanceFromCurrent();
     });
 
     refresh();
   }
+  function initMedicalBookingScroll(){
+    const cta=$('#medicalHeroBookBtn');
+    const target=$('#medicalBookingSection');
+    if(!cta||!target) return;
+    cta.addEventListener('click',()=>{
+      target.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+  }
   function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);initMapContainer('startMapContainer');initMapContainer('endMapContainer');
     initMedicalAssistant();
+    initMedicalBookingScroll();
     const menuToggle=$('.menu-toggle');
     const siteNav=$('.site-nav');
     if(menuToggle){
