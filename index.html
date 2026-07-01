@@ -324,84 +324,83 @@
           <p>Teilen Sie uns Ihre Fahrt mit. Wir melden uns schnellstmöglich bei Ihnen und unterstützen Sie bei Fragen rund um Ihre Krankenfahrt.</p>
         </div>
 
-        <div class="medical-booking-layout">
-          <form class="medical-booking-form" action="#" method="post">
-            <div class="field-grid full">
-              <label for="medicalName">Vor- und Nachname</label>
-              <input id="medicalName" name="medicalName" type="text" required>
-            </div>
+        <article class="yumak-assistant-card" aria-label="Yumak Assistent">
+          <img src="assets/yumak/yumak-portrait.jpg" onerror="this.src='yumak.png'" alt="Yumak">
+          <p>Ich bin Yumak. Ich helfe Ihnen Schritt für Schritt bei Ihrer Krankenfahrt.</p>
+        </article>
 
-            <div class="field-grid full">
-              <label for="medicalPhone">Telefonnummer</label>
-              <input id="medicalPhone" name="medicalPhone" type="tel" required>
-            </div>
-
-            <div class="field-grid full">
-              <label for="medicalEmail">E-Mail (optional)</label>
-              <input id="medicalEmail" name="medicalEmail" type="email">
-            </div>
-
-            <div class="field-grid full">
-              <label for="medicalPickup">Abholadresse</label>
-              <input id="medicalPickup" name="medicalPickup" type="text" required>
-            </div>
-
-            <div class="field-grid full">
-              <label for="medicalDestination">Zieladresse</label>
-              <input id="medicalDestination" name="medicalDestination" type="text" required>
-            </div>
-
-            <div class="field-row">
-              <div class="field-grid two">
-                <label for="medicalDate">Abholdatum</label>
-                <input id="medicalDate" name="medicalDate" type="date" required>
-              </div>
-              <div class="field-grid two">
-                <label for="medicalTime">Gewünschte Abholzeit</label>
-                <input id="medicalTime" name="medicalTime" type="time" required>
-                <small class="field-help">Bitte geben Sie die Uhrzeit an, zu der wir Sie abholen sollen – nicht die Uhrzeit Ihres Arzttermins.</small>
+        <div id="medicalAssistant" class="medical-assistant" aria-live="polite">
+          <section class="assistant-step is-active" data-step="1">
+            <button class="assistant-step-head" type="button"><span class="assistant-step-no">1</span><b>Art der Krankenfahrt</b><i class="assistant-check">✓</i></button>
+            <div class="assistant-step-body">
+              <div class="ride-type-options">
+                <button class="ride-choice" type="button" data-value="Arzttermin">Arzttermin</button>
+                <button class="ride-choice" type="button" data-value="Dialyse">Dialyse</button>
+                <button class="ride-choice" type="button" data-value="Chemotherapie">Chemotherapie</button>
+                <button class="ride-choice" type="button" data-value="Strahlentherapie">Strahlentherapie</button>
+                <button class="ride-choice" type="button" data-value="Reha">Reha</button>
+                <button class="ride-choice" type="button" data-value="Krankenhaus">Krankenhaus</button>
+                <button class="ride-choice" type="button" data-value="Sonstiges">Sonstiges</button>
               </div>
             </div>
+          </section>
 
-            <fieldset class="field-grid full ride-type-group">
-              <legend>Art der Fahrt</legend>
-              <div class="ride-type-options" role="radiogroup" aria-label="Art der Fahrt">
-                <label class="ride-type-option"><input type="radio" name="medicalType" value="Arzttermin" required><span>Arzttermin</span></label>
-                <label class="ride-type-option"><input type="radio" name="medicalType" value="Dialyse"><span>Dialyse</span></label>
-                <label class="ride-type-option"><input type="radio" name="medicalType" value="Chemotherapie"><span>Chemotherapie</span></label>
-                <label class="ride-type-option"><input type="radio" name="medicalType" value="Strahlentherapie"><span>Strahlentherapie</span></label>
-                <label class="ride-type-option"><input type="radio" name="medicalType" value="Reha"><span>Reha</span></label>
-                <label class="ride-type-option"><input type="radio" name="medicalType" value="Krankenhaus"><span>Krankenhaus</span></label>
-                <label class="ride-type-option"><input type="radio" name="medicalType" value="Sonstiges"><span>Sonstiges</span></label>
+          <section class="assistant-step is-locked" data-step="2">
+            <button class="assistant-step-head" type="button"><span class="assistant-step-no">2</span><b>Abholadresse</b><i class="assistant-check">✓</i></button>
+            <div class="assistant-step-body"><input id="assistPickup" type="text" placeholder="Abholadresse eingeben"></div>
+          </section>
+
+          <section class="assistant-step is-locked" data-step="3">
+            <button class="assistant-step-head" type="button"><span class="assistant-step-no">3</span><b>Zieladresse</b><i class="assistant-check">✓</i></button>
+            <div class="assistant-step-body"><input id="assistDestination" type="text" placeholder="Zieladresse eingeben"></div>
+          </section>
+
+          <section class="assistant-step is-locked" data-step="4">
+            <button class="assistant-step-head" type="button"><span class="assistant-step-no">4</span><b>Abholdatum</b><i class="assistant-check">✓</i></button>
+            <div class="assistant-step-body"><input id="assistDate" type="date"></div>
+          </section>
+
+          <section class="assistant-step is-locked" data-step="5">
+            <button class="assistant-step-head" type="button"><span class="assistant-step-no">5</span><b>Gewünschte Abholzeit</b><i class="assistant-check">✓</i></button>
+            <div class="assistant-step-body">
+              <input id="assistTime" type="time">
+              <small class="field-help">Bitte geben Sie die Uhrzeit an, zu der wir Sie abholen sollen – nicht die Uhrzeit Ihres Arzttermins.</small>
+            </div>
+          </section>
+
+          <section class="assistant-step is-locked" data-step="6">
+            <button class="assistant-step-head" type="button"><span class="assistant-step-no">6</span><b>Kontaktdaten</b><i class="assistant-check">✓</i></button>
+            <div class="assistant-step-body">
+              <div class="field-grid full"><label for="assistName">Vor- und Nachname</label><input id="assistName" type="text"></div>
+              <div class="field-grid full"><label for="assistPhone">Telefonnummer</label><input id="assistPhone" type="tel"></div>
+              <div class="field-grid full"><label for="assistEmail">E-Mail (optional)</label><input id="assistEmail" type="email"></div>
+              <div class="field-grid full"><label for="assistInsurance">Krankenkasse (optional)</label><input id="assistInsurance" type="text"></div>
+              <div class="field-grid full"><label for="assistNotes">Bemerkungen (optional)</label><textarea id="assistNotes" rows="4"></textarea></div>
+            </div>
+          </section>
+
+          <section class="assistant-step is-locked" data-step="7">
+            <button class="assistant-step-head" type="button"><span class="assistant-step-no">7</span><b>Zusammenfassung</b><i class="assistant-check">✓</i></button>
+            <div class="assistant-step-body">
+              <article class="assistant-summary-card">
+                <div><span>Art der Fahrt</span><b id="summaryType">-</b></div>
+                <div><span>Abholadresse</span><b id="summaryPickup">-</b></div>
+                <div><span>Zieladresse</span><b id="summaryDestination">-</b></div>
+                <div><span>Abholdatum</span><b id="summaryDate">-</b></div>
+                <div><span>Gewünschte Abholzeit</span><b id="summaryTime">-</b></div>
+                <div><span>Name</span><b id="summaryName">-</b></div>
+                <div><span>Telefonnummer</span><b id="summaryPhone">-</b></div>
+                <div><span>E-Mail</span><b id="summaryEmail">-</b></div>
+                <div><span>Krankenkasse</span><b id="summaryInsurance">-</b></div>
+                <div><span>Bemerkungen</span><b id="summaryNotes">-</b></div>
+              </article>
+              <div class="assistant-summary-actions">
+                <button id="assistSubmit" class="medical-submit" type="button">Anfrage absenden</button>
+                <button id="assistEdit" class="assistant-edit" type="button">Angaben bearbeiten</button>
               </div>
-            </fieldset>
-
-            <div class="field-grid full">
-              <label for="medicalInsurance">Krankenkasse (optional)</label>
-              <input id="medicalInsurance" name="medicalInsurance" type="text">
+              <p id="assistSuccess" class="assistant-success" hidden>Ihre Anfrage wurde gespeichert. Wir melden uns schnellstmöglich bei Ihnen.</p>
             </div>
-
-            <div class="field-grid full">
-              <label for="medicalNotes">Bemerkungen</label>
-              <textarea id="medicalNotes" name="medicalNotes" rows="5"></textarea>
-            </div>
-
-            <button class="medical-submit" type="submit">Krankenfahrt anfragen</button>
-            <p class="medical-consent">Mit dem Absenden erklären Sie sich mit unserer Datenschutzerklärung einverstanden.</p>
-          </form>
-
-          <aside class="medical-contact-card" aria-label="Kontaktinformationen">
-            <h4>Fragen?</h4>
-            <a class="medical-contact-phone" href="tel:072743567">07274 3567</a>
-            <a class="medical-contact-link" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Krankenfahrt%20anfragen" target="_blank" rel="noreferrer">WhatsApp</a>
-            <span>24/7 erreichbar</span>
-            <ul class="medical-contact-points" aria-label="Vorteile">
-              <li>Hilfe bei Verordnungen</li>
-              <li>Freundliche Beratung</li>
-              <li>Schnelle Rückmeldung</li>
-            </ul>
-            <a class="button" href="tel:072743567">Jetzt anrufen</a>
-          </aside>
+          </section>
         </div>
       </section>
     </section>
