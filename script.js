@@ -27,9 +27,129 @@
     user:'<svg viewBox="0 0 48 48"><circle cx="24" cy="16" r="8"/><path d="M9 42a15 15 0 0 1 30 0"/></svg>'
   };
   const services={taxi:['Normale Taxifahrt','NORMALE TAXIFAHRT'],medical:['Krankenfahrt','KRANKENFAHRT'],wheelchair:['Rollstuhlfahrt','ROLLSTUHLFAHRT'],airport:['Flughafentransfer','FLUGHAFENTRANSFER']};
-  const searchData=[{name:'Germersheim Bahnhof',city:'Germersheim',category:'transport'},{name:'Germersheim Marktplatz',city:'Germersheim',category:'landmark'},{name:'Gemeinschaftspraxis Dr. König',city:'Germersheim',category:'medical'},{name:'Städtisches Krankenhaus Germersheim',city:'Germersheim',category:'hospital'},{name:'REWE Germersheim',city:'Germersheim',category:'shopping'},{name:'Frankfurt Flughafen',city:'Frankfurt am Main',category:'airport'},{name:'Heidelberg Hauptbahnhof',city:'Heidelberg',category:'transport'},{name:'Ludwigshafen Rathaus',city:'Ludwigshafen',category:'landmark'},{name:'Mannheim Schloss',city:'Mannheim',category:'landmark'},{name:'Speyer Dom',city:'Speyer',category:'landmark'}];
+  const defaultAddressConfig={
+    allowedCities:[
+      'Germersheim','Sondernheim','Lingenfeld','Bellheim','Hördt','Rülzheim','Kuhardt','Leimersheim','Neupotz','Rheinzabern','Jockgrim','Wörth am Rhein','Speyer','Landau','Karlsruhe','Mannheim','Heidelberg'
+    ],
+    popularPlaces:['Krankenhäuser','Dialysezentren','Flughäfen','Bahnhöfe','wichtige Kliniken']
+  };
+  const fallbackAddressDataset=[
+    {title:'Asklepios Südpfalzklinik Germersheim',street:'An Fronte Karl 2',postalCode:'76726',city:'Germersheim',group:'Krankenhäuser',type:'destination'},
+    {title:'Klinikum Landau-Südliche Weinstraße',street:'Bodelschwinghstraße 11',postalCode:'76829',city:'Landau',group:'wichtige Kliniken',type:'destination'},
+    {title:'Universitätsklinikum Mannheim',street:'Theodor-Kutzer-Ufer 1-3',postalCode:'68167',city:'Mannheim',group:'wichtige Kliniken',type:'destination'},
+    {title:'Städtisches Klinikum Karlsruhe',street:'Moltkestraße 90',postalCode:'76133',city:'Karlsruhe',group:'Krankenhäuser',type:'destination'},
+    {title:'Nierenzentrum Germersheim',street:'Josef-Probst-Strasse 5',postalCode:'76726',city:'Germersheim',group:'Dialysezentren',type:'destination'},
+    {title:'Dialysezentrum Speyer',street:'Iggelheimer Strasse 26',postalCode:'67346',city:'Speyer',group:'Dialysezentren',type:'destination'},
+    {title:'Bahnhof Germersheim',street:'Bahnhofstrasse 23',postalCode:'76726',city:'Germersheim',group:'Bahnhöfe',type:'both'},
+    {title:'Hauptbahnhof Speyer',street:'Bahnhofstrasse 1',postalCode:'67346',city:'Speyer',group:'Bahnhöfe',type:'both'},
+    {title:'Mannheim Hauptbahnhof',street:'Willy-Brandt-Platz 17',postalCode:'68161',city:'Mannheim',group:'Bahnhöfe',type:'both'},
+    {title:'Flughafen Frankfurt Terminal 1',street:'Hugo-Eckener-Ring',postalCode:'60549',city:'Frankfurt am Main',group:'Flughäfen',type:'destination'},
+    {title:'Flughafen Karlsruhe/Baden-Baden',street:'Victoria Boulevard B101',postalCode:'77836',city:'Rheinmünster',group:'Flughäfen',type:'destination'},
+    {street:'Hauptstrasse 12',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'both'},
+    {street:'Luitpoldplatz 3',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'both'},
+    {street:'Kirchstrasse 8',postalCode:'76726',city:'Sondernheim',group:'Adresse',type:'both'},
+    {street:'Lingenfelder Strasse 4',postalCode:'67360',city:'Lingenfeld',group:'Adresse',type:'both'},
+    {street:'Karlstrasse 17',postalCode:'76756',city:'Bellheim',group:'Adresse',type:'both'},
+    {street:'Schulstrasse 6',postalCode:'76771',city:'Hördt',group:'Adresse',type:'both'},
+    {street:'Germersheimer Strasse 22',postalCode:'76761',city:'Rülzheim',group:'Adresse',type:'both'},
+    {street:'Rheinzaberner Strasse 14',postalCode:'76773',city:'Kuhardt',group:'Adresse',type:'both'},
+    {street:'Hafenstrasse 9',postalCode:'76774',city:'Leimersheim',group:'Adresse',type:'both'},
+    {street:'Lange Strasse 11',postalCode:'76777',city:'Neupotz',group:'Adresse',type:'both'},
+    {street:'Jockgrimer Strasse 27',postalCode:'76764',city:'Rheinzabern',group:'Adresse',type:'both'},
+    {street:'Bahnhofstrasse 19',postalCode:'76751',city:'Jockgrim',group:'Adresse',type:'both'},
+    {street:'Mozartstrasse 5',postalCode:'76744',city:'Wörth am Rhein',group:'Adresse',type:'both'},
+    {street:'Adenauerpark 2',postalCode:'67346',city:'Speyer',group:'Adresse',type:'both'},
+    {street:'Queichheimer Hauptstrasse 18',postalCode:'76829',city:'Landau',group:'Adresse',type:'both'},
+    {street:'Kaiserallee 31',postalCode:'76133',city:'Karlsruhe',group:'Adresse',type:'both'},
+    {street:'Augustaanlage 42',postalCode:'68165',city:'Mannheim',group:'Adresse',type:'both'},
+    {street:'Bergheimer Strasse 55',postalCode:'69115',city:'Heidelberg',group:'Adresse',type:'both'}
+  ];
+  let addressConfigCache=null;
   let startMarker=null,endMarker=null,mapContainers={};
-  function searchAddresses(query){if(!query||query.trim().length<2)return [];let q=query.trim().toLowerCase();return searchData.filter(a=>a.name.toLowerCase().includes(q)||a.city.toLowerCase().includes(q)).slice(0,5)}
+
+  function normalizeText(value){
+    return (value||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ß/g,'ss').trim();
+  }
+
+  function buildAddressLabel(item){
+    const streetLine=[item.street,item.houseNumber].filter(Boolean).join(' ').trim();
+    const cityLine=[item.postalCode,item.city].filter(Boolean).join(' ').trim();
+    return [item.title,streetLine,cityLine].filter(Boolean).join(', ');
+  }
+
+  function createAddressView(item){
+    const streetLine=[item.street,item.houseNumber].filter(Boolean).join(' ').trim();
+    const cityLine=[item.postalCode,item.city].filter(Boolean).join(' ');
+    const primary=item.title || streetLine || 'Adresse';
+    const secondary=item.title ? [streetLine,cityLine].filter(Boolean).join(' - ') : cityLine;
+    return {
+      primary,
+      secondary,
+      label:buildAddressLabel(item),
+      group:item.group||'Adresse'
+    };
+  }
+
+  async function loadAddressConfig(){
+    if(addressConfigCache) return addressConfigCache;
+    try{
+      const response=await fetch('assets/data/address-config.json',{cache:'no-store'});
+      if(!response.ok) throw new Error('config-not-found');
+      const raw=await response.json();
+      addressConfigCache={
+        allowedCities:Array.isArray(raw.allowedCities)?raw.allowedCities:defaultAddressConfig.allowedCities,
+        popularPlaces:Array.isArray(raw.popularPlaces)?raw.popularPlaces:defaultAddressConfig.popularPlaces
+      };
+    }catch(_err){
+      addressConfigCache=defaultAddressConfig;
+    }
+    return addressConfigCache;
+  }
+
+  function scoreAddressMatch(entry,query,type,config){
+    const q=normalizeText(query);
+    if(q.length<2) return null;
+
+    const cityAllowedSet=new Set((config.allowedCities||[]).map(normalizeText));
+    const popularSet=new Set((config.popularPlaces||[]).map(normalizeText));
+
+    const typeWeight=(entry.type==='both'||entry.type===type)?2:0;
+    const city=normalizeText(entry.city);
+    const primary=normalizeText(entry.title||'');
+    const street=normalizeText(entry.street||'');
+    const postal=normalizeText(entry.postalCode||'');
+    const group=normalizeText(entry.group||'');
+
+    const searchable=[primary,street,postal,city,group].filter(Boolean).join(' ');
+    if(!searchable.includes(q)) return null;
+
+    let score=0;
+    if(primary.startsWith(q)) score+=9;
+    if(street.startsWith(q)) score+=8;
+    if(city.startsWith(q)) score+=6;
+    if(postal.startsWith(q)) score+=5;
+    if(primary.includes(q)) score+=3;
+    if(street.includes(q)) score+=3;
+    if(city.includes(q)) score+=2;
+    if(cityAllowedSet.has(city)) score+=2;
+    if(popularSet.has(group)) score+=4;
+    score+=typeWeight;
+
+    return score;
+  }
+
+  async function searchAddress(query,type){
+    // TODO: Replace fallback search with backend geocoding service / Photon / Maps API.
+    const config=await loadAddressConfig();
+    const scored=fallbackAddressDataset
+      .map(entry=>({entry,score:scoreAddressMatch(entry,query,type,config)}))
+      .filter(item=>item.score!==null)
+      .sort((a,b)=>b.score-a.score)
+      .slice(0,8)
+      .map(item=>createAddressView(item.entry));
+
+    return scored;
+  }
   function initMapContainer(elementId){let container=$(elementId);if(container){container.innerHTML='<div class="map-placeholder">Karte wird geladen...</div>';mapContainers[elementId]=container;return container}return null}
   function setStartMarker(address,coords){startMarker={address,coords}}
   function setEndMarker(address,coords){endMarker={address,coords}}
@@ -90,6 +210,31 @@
       hintIndex:0
     };
 
+    const addressUi={
+      pickup:{
+        key:'pickup',
+        type:'pickup',
+        step:2,
+        input:$('#novaPickup'),
+        list:$('#novaPickupSuggestions'),
+        manualHint:$('#novaPickupManualHint'),
+        results:[],
+        activeIndex:-1,
+        requestId:0
+      },
+      destination:{
+        key:'destination',
+        type:'destination',
+        step:3,
+        input:$('#novaDestination'),
+        list:$('#novaDestinationSuggestions'),
+        manualHint:$('#novaDestinationManualHint'),
+        results:[],
+        activeIndex:-1,
+        requestId:0
+      }
+    };
+
     const hintLines=['Perfekt.','Alles klar.','Fast geschafft.'];
 
     function toIso(date){
@@ -147,8 +292,130 @@
       });
     }
 
+    function hideManualHint(ctx){
+      if(ctx?.manualHint) ctx.manualHint.hidden=true;
+    }
+
+    function showManualHint(ctx){
+      if(ctx?.manualHint) ctx.manualHint.hidden=false;
+    }
+
+    function closeAddressDropdown(ctx){
+      if(!ctx) return;
+      ctx.activeIndex=-1;
+      ctx.results=[];
+      if(ctx.list){
+        ctx.list.innerHTML='';
+        ctx.list.hidden=true;
+      }
+    }
+
+    function closeAllAddressDropdowns(){
+      closeAddressDropdown(addressUi.pickup);
+      closeAddressDropdown(addressUi.destination);
+      hideManualHint(addressUi.pickup);
+      hideManualHint(addressUi.destination);
+    }
+
+    function renderAddressDropdown(ctx){
+      if(!ctx?.list) return;
+      if(!ctx.results.length){
+        ctx.list.innerHTML='';
+        ctx.list.hidden=true;
+        return;
+      }
+
+      ctx.list.innerHTML=ctx.results.map((item,index)=>{
+        const isActive=index===ctx.activeIndex?' is-active':'';
+        return `<button type="button" class="nova-address-option${isActive}" data-address-select="${ctx.key}" data-address-index="${index}"><span class="nova-address-main">${item.primary}</span><span class="nova-address-sub">${item.secondary}</span></button>`;
+      }).join('');
+      ctx.list.hidden=false;
+    }
+
+    function applyAddressSelection(ctx,item){
+      if(!ctx?.input || !item) return;
+      ctx.input.value=item.label;
+      state.values[ctx.key]=item.label;
+      hideError(ctx.step);
+      hideManualHint(ctx);
+      closeAddressDropdown(ctx);
+      refreshSummary();
+      completeStep(ctx.step);
+    }
+
+    async function updateAddressSuggestions(ctx,query){
+      if(!ctx?.input) return;
+      const value=(query||'').trim();
+      state.values[ctx.key]=value;
+      if(value.length<2){
+        hideManualHint(ctx);
+        closeAddressDropdown(ctx);
+        refreshSummary();
+        return;
+      }
+
+      const requestId=ctx.requestId+1;
+      ctx.requestId=requestId;
+      const results=await searchAddress(value,ctx.type);
+      if(requestId!==ctx.requestId) return;
+
+      ctx.results=results;
+      ctx.activeIndex=results.length?0:-1;
+      renderAddressDropdown(ctx);
+      if(results.length===0) showManualHint(ctx);
+      else hideManualHint(ctx);
+      refreshSummary();
+    }
+
+    function moveAddressSelection(ctx,direction){
+      if(!ctx?.results.length) return;
+      const max=ctx.results.length-1;
+      if(ctx.activeIndex<0) ctx.activeIndex=0;
+      else ctx.activeIndex=Math.max(0,Math.min(max,ctx.activeIndex+direction));
+      renderAddressDropdown(ctx);
+    }
+
+    function setupAddressAutocomplete(ctx){
+      if(!ctx?.input) return;
+
+      ctx.input.setAttribute('autocomplete','off');
+      ctx.input.addEventListener('input',e=>{
+        hideError(ctx.step);
+        updateAddressSuggestions(ctx,e.target.value);
+      });
+
+      ctx.input.addEventListener('keydown',e=>{
+        if(e.key==='ArrowDown'){
+          e.preventDefault();
+          e.stopPropagation();
+          moveAddressSelection(ctx,1);
+          return;
+        }
+        if(e.key==='ArrowUp'){
+          e.preventDefault();
+          e.stopPropagation();
+          moveAddressSelection(ctx,-1);
+          return;
+        }
+        if(e.key==='Escape'){
+          e.preventDefault();
+          e.stopPropagation();
+          closeAddressDropdown(ctx);
+          return;
+        }
+        if(e.key==='Enter'){
+          if(!ctx.results.length) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const item=ctx.results[Math.max(0,ctx.activeIndex)]||ctx.results[0];
+          applyAddressSelection(ctx,item);
+        }
+      });
+    }
+
     function setStep(step){
       state.activeStep=Math.max(1,Math.min(7,step));
+      closeAllAddressDropdowns();
       steps.forEach(el=>{
         const n=Number(el.dataset.step);
         el.classList.toggle('is-open',n===state.activeStep);
@@ -274,6 +541,16 @@
     }
 
     root.addEventListener('click',e=>{
+      const addressSelect=e.target.closest('[data-address-select]');
+      if(addressSelect){
+        const key=addressSelect.dataset.addressSelect;
+        const index=Number(addressSelect.dataset.addressIndex);
+        const ctx=addressUi[key];
+        const item=ctx?.results?.[index];
+        applyAddressSelection(ctx,item);
+        return;
+      }
+
       const choice=e.target.closest('[data-ride]');
       if(choice){
         state.values.rideType=choice.dataset.ride||'';
@@ -348,6 +625,7 @@
     });
 
     root.addEventListener('keydown',e=>{
+      if(e.defaultPrevented) return;
       if(e.key!=='Enter') return;
       const openStep=e.target.closest('.nova-step.is-open');
       if(!openStep) return;
@@ -370,7 +648,11 @@
 
     document.addEventListener('click',e=>{
       if(!root.contains(e.target) && !dateOverlay?.contains(e.target)) closeOverlay('date');
+      if(!root.contains(e.target)) closeAllAddressDropdowns();
     });
+
+    setupAddressAutocomplete(addressUi.pickup);
+    setupAddressAutocomplete(addressUi.destination);
 
     updateProgress();
     refreshSummary();
