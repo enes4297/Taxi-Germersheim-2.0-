@@ -800,18 +800,74 @@
       target.scrollIntoView({behavior:'smooth',block:'start'});
     });
   }
-  function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);initMapContainer('startMapContainer');initMapContainer('endMapContainer');
-    initMedicalAssistant();
-    initMedicalBookingScroll();
+  function initPremiumNavigation(){
+    const topbar=$('.topbar');
     const menuToggle=$('.menu-toggle');
     const siteNav=$('.site-nav');
+    const backdrop=$('.site-nav-backdrop');
+    const servicesItem=$('.nav-item-services');
+    const servicesTrigger=servicesItem?.querySelector('.nav-trigger');
+    const bookBtn=$('#headerBookBtn');
+
+    function closeMobileMenu(){
+      siteNav?.classList.remove('open');
+      document.body.classList.remove('nav-open');
+      if(menuToggle) menuToggle.setAttribute('aria-expanded','false');
+    }
+
     if(menuToggle){
       menuToggle.setAttribute('aria-expanded','false');
       menuToggle.addEventListener('click',()=>{
-        const open = siteNav?.classList.toggle('open');
-        menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        const open=siteNav?.classList.toggle('open');
+        document.body.classList.toggle('nav-open',!!open);
+        menuToggle.setAttribute('aria-expanded',open?'true':'false');
       });
     }
+
+    backdrop?.addEventListener('click',()=>closeMobileMenu());
+
+    servicesTrigger?.addEventListener('click',e=>{
+      e.preventDefault();
+      const open=servicesItem.classList.toggle('is-open');
+      servicesTrigger.setAttribute('aria-expanded',open?'true':'false');
+    });
+
+    document.addEventListener('click',e=>{
+      if(servicesItem && !servicesItem.contains(e.target)){
+        servicesItem.classList.remove('is-open');
+        servicesTrigger?.setAttribute('aria-expanded','false');
+      }
+      if(siteNav?.classList.contains('open') && !e.target.closest('.site-nav') && !e.target.closest('.menu-toggle')){
+        closeMobileMenu();
+      }
+    });
+
+    bookBtn?.addEventListener('click',e=>{
+      e.preventDefault();
+      const activeScreen=$('.screen.active');
+      const bookingTarget=activeScreen?.querySelector('#medicalBookingSection');
+      if(bookingTarget){
+        bookingTarget.scrollIntoView({behavior:'smooth',block:'start'});
+      }else{
+        const contactTarget=$('#kontakt');
+        contactTarget?.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+      closeMobileMenu();
+    });
+
+    const onScroll=()=>{
+      const scrolled=window.scrollY>14;
+      topbar?.classList.toggle('is-scrolled',scrolled);
+    };
+    window.addEventListener('scroll',onScroll,{passive:true});
+    onScroll();
+  }
+  function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);initMapContainer('startMapContainer');initMapContainer('endMapContainer');
+    initMedicalAssistant();
+    initMedicalBookingScroll();
+    initPremiumNavigation();
+    const menuToggle=$('.menu-toggle');
+    const siteNav=$('.site-nav');
     document.addEventListener('click',e=>{
       let go=e.target.closest('[data-go]');
       if(go){
@@ -824,10 +880,9 @@
           show(go.dataset.go);
         }
         siteNav?.classList.remove('open');
-        menuToggle?.setAttribute('aria-expanded','false');
-      }
-      if(siteNav?.classList.contains('open') && !e.target.closest('.site-nav') && !e.target.closest('.menu-toggle')){
-        siteNav.classList.remove('open');
+        document.body.classList.remove('nav-open');
+        $('.nav-item-services')?.classList.remove('is-open');
+        $('.nav-item-services .nav-trigger')?.setAttribute('aria-expanded','false');
         menuToggle?.setAttribute('aria-expanded','false');
       }
       let ss=e.target.closest('[data-service-select]');if(ss)setService(ss.dataset.serviceSelect);
