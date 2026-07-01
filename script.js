@@ -34,38 +34,43 @@
     popularPlaces:['Krankenhäuser','Dialysezentren','Flughäfen','Bahnhöfe','wichtige Kliniken']
   };
   const fallbackAddressDataset=[
-    {title:'Asklepios Südpfalzklinik Germersheim',street:'An Fronte Karl 2',postalCode:'76726',city:'Germersheim',group:'Krankenhäuser',type:'destination'},
-    {title:'Klinikum Landau-Südliche Weinstraße',street:'Bodelschwinghstraße 11',postalCode:'76829',city:'Landau',group:'wichtige Kliniken',type:'destination'},
-    {title:'Universitätsklinikum Mannheim',street:'Theodor-Kutzer-Ufer 1-3',postalCode:'68167',city:'Mannheim',group:'wichtige Kliniken',type:'destination'},
-    {title:'Städtisches Klinikum Karlsruhe',street:'Moltkestraße 90',postalCode:'76133',city:'Karlsruhe',group:'Krankenhäuser',type:'destination'},
-    {title:'Nierenzentrum Germersheim',street:'Josef-Probst-Strasse 5',postalCode:'76726',city:'Germersheim',group:'Dialysezentren',type:'destination'},
-    {title:'Dialysezentrum Speyer',street:'Iggelheimer Strasse 26',postalCode:'67346',city:'Speyer',group:'Dialysezentren',type:'destination'},
-    {title:'Bahnhof Germersheim',street:'Bahnhofstrasse 23',postalCode:'76726',city:'Germersheim',group:'Bahnhöfe',type:'both'},
-    {title:'Hauptbahnhof Speyer',street:'Bahnhofstrasse 1',postalCode:'67346',city:'Speyer',group:'Bahnhöfe',type:'both'},
-    {title:'Mannheim Hauptbahnhof',street:'Willy-Brandt-Platz 17',postalCode:'68161',city:'Mannheim',group:'Bahnhöfe',type:'both'},
-    {title:'Flughafen Frankfurt Terminal 1',street:'Hugo-Eckener-Ring',postalCode:'60549',city:'Frankfurt am Main',group:'Flughäfen',type:'destination'},
-    {title:'Flughafen Karlsruhe/Baden-Baden',street:'Victoria Boulevard B101',postalCode:'77836',city:'Rheinmünster',group:'Flughäfen',type:'destination'},
-    {street:'Hauptstrasse 12',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'both'},
-    {street:'Luitpoldplatz 3',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'both'},
-    {street:'Kirchstrasse 8',postalCode:'76726',city:'Sondernheim',group:'Adresse',type:'both'},
-    {street:'Lingenfelder Strasse 4',postalCode:'67360',city:'Lingenfeld',group:'Adresse',type:'both'},
-    {street:'Karlstrasse 17',postalCode:'76756',city:'Bellheim',group:'Adresse',type:'both'},
-    {street:'Schulstrasse 6',postalCode:'76771',city:'Hördt',group:'Adresse',type:'both'},
-    {street:'Germersheimer Strasse 22',postalCode:'76761',city:'Rülzheim',group:'Adresse',type:'both'},
-    {street:'Rheinzaberner Strasse 14',postalCode:'76773',city:'Kuhardt',group:'Adresse',type:'both'},
-    {street:'Hafenstrasse 9',postalCode:'76774',city:'Leimersheim',group:'Adresse',type:'both'},
-    {street:'Lange Strasse 11',postalCode:'76777',city:'Neupotz',group:'Adresse',type:'both'},
-    {street:'Jockgrimer Strasse 27',postalCode:'76764',city:'Rheinzabern',group:'Adresse',type:'both'},
-    {street:'Bahnhofstrasse 19',postalCode:'76751',city:'Jockgrim',group:'Adresse',type:'both'},
-    {street:'Mozartstrasse 5',postalCode:'76744',city:'Wörth am Rhein',group:'Adresse',type:'both'},
-    {street:'Adenauerpark 2',postalCode:'67346',city:'Speyer',group:'Adresse',type:'both'},
-    {street:'Queichheimer Hauptstrasse 18',postalCode:'76829',city:'Landau',group:'Adresse',type:'both'},
-    {street:'Kaiserallee 31',postalCode:'76133',city:'Karlsruhe',group:'Adresse',type:'both'},
-    {street:'Augustaanlage 42',postalCode:'68165',city:'Mannheim',group:'Adresse',type:'both'},
-    {street:'Bergheimer Strasse 55',postalCode:'69115',city:'Heidelberg',group:'Adresse',type:'both'},
-    {street:'Friedrich-Ebert-Strasse 7',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'both'},
-    {street:'Friedrichstrasse 24',postalCode:'67346',city:'Speyer',group:'Adresse',type:'both'},
-    {street:'Friedrich-Ebert-Anlage 16',postalCode:'69117',city:'Heidelberg',group:'Adresse',type:'both'}
+    {title:'Asklepios Südpfalzklinik Germersheim',street:'An Fronte Karl 2',postalCode:'76726',city:'Germersheim',group:'Krankenhäuser',type:'clinic',scope:'destination'},
+    {title:'Klinikum Landau-Südliche Weinstraße',street:'Bodelschwinghstraße 11',postalCode:'76829',city:'Landau',group:'wichtige Kliniken',type:'clinic',scope:'destination'},
+    {title:'Universitätsklinikum Mannheim',street:'Theodor-Kutzer-Ufer 1-3',postalCode:'68167',city:'Mannheim',group:'wichtige Kliniken',type:'clinic',scope:'destination'},
+    {title:'Städtisches Klinikum Karlsruhe',street:'Moltkestraße 90',postalCode:'76133',city:'Karlsruhe',group:'Krankenhäuser',type:'clinic',scope:'destination'},
+    {title:'Nierenzentrum Germersheim',street:'Josef-Probst-Strasse 5',postalCode:'76726',city:'Germersheim',group:'Dialysezentren',type:'clinic',scope:'destination'},
+    {title:'Dialysezentrum Speyer',street:'Iggelheimer Strasse 26',postalCode:'67346',city:'Speyer',group:'Dialysezentren',type:'clinic',scope:'destination'},
+    {title:'Bahnhof Germersheim',street:'Bahnhofstrasse 23',postalCode:'76726',city:'Germersheim',group:'Bahnhöfe',type:'station',scope:'both'},
+    {title:'Hauptbahnhof Speyer',street:'Bahnhofstrasse 1',postalCode:'67346',city:'Speyer',group:'Bahnhöfe',type:'station',scope:'both'},
+    {title:'Mannheim Hauptbahnhof',street:'Willy-Brandt-Platz 17',postalCode:'68161',city:'Mannheim',group:'Bahnhöfe',type:'station',scope:'both'},
+    {title:'Flughafen Frankfurt Terminal 1',street:'Hugo-Eckener-Ring',postalCode:'60549',city:'Frankfurt am Main',group:'Flughäfen',type:'airport',scope:'destination'},
+    {title:'Flughafen Karlsruhe/Baden-Baden',street:'Victoria Boulevard B101',postalCode:'77836',city:'Rheinmünster',group:'Flughäfen',type:'airport',scope:'destination'},
+    {title:'Germersheim',postalCode:'76726',city:'Germersheim',group:'Ort',type:'city',scope:'both'},
+    {title:'Sondernheim',postalCode:'76726',city:'Sondernheim',group:'Ort',type:'city',scope:'both'},
+    {title:'Lingenfeld',postalCode:'67360',city:'Lingenfeld',group:'Ort',type:'city',scope:'both'},
+    {title:'Speyer',postalCode:'67346',city:'Speyer',group:'Ort',type:'city',scope:'both'},
+    {title:'Heidelberg',postalCode:'69115',city:'Heidelberg',group:'Ort',type:'city',scope:'both'},
+    {street:'Hauptstrasse 12',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Luitpoldplatz 3',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Kirchstrasse 8',postalCode:'76726',city:'Sondernheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Lingenfelder Strasse 4',postalCode:'67360',city:'Lingenfeld',group:'Adresse',type:'street',scope:'both'},
+    {street:'Karlstrasse 17',postalCode:'76756',city:'Bellheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Schulstrasse 6',postalCode:'76771',city:'Hördt',group:'Adresse',type:'street',scope:'both'},
+    {street:'Germersheimer Strasse 22',postalCode:'76761',city:'Rülzheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Rheinzaberner Strasse 14',postalCode:'76773',city:'Kuhardt',group:'Adresse',type:'street',scope:'both'},
+    {street:'Hafenstrasse 9',postalCode:'76774',city:'Leimersheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Lange Strasse 11',postalCode:'76777',city:'Neupotz',group:'Adresse',type:'street',scope:'both'},
+    {street:'Jockgrimer Strasse 27',postalCode:'76764',city:'Rheinzabern',group:'Adresse',type:'street',scope:'both'},
+    {street:'Bahnhofstrasse 19',postalCode:'76751',city:'Jockgrim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Mozartstrasse 5',postalCode:'76744',city:'Wörth am Rhein',group:'Adresse',type:'street',scope:'both'},
+    {street:'Adenauerpark 2',postalCode:'67346',city:'Speyer',group:'Adresse',type:'street',scope:'both'},
+    {street:'Queichheimer Hauptstrasse 18',postalCode:'76829',city:'Landau',group:'Adresse',type:'street',scope:'both'},
+    {street:'Kaiserallee 31',postalCode:'76133',city:'Karlsruhe',group:'Adresse',type:'street',scope:'both'},
+    {street:'Augustaanlage 42',postalCode:'68165',city:'Mannheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Bergheimer Strasse 55',postalCode:'69115',city:'Heidelberg',group:'Adresse',type:'street',scope:'both'},
+    {street:'Friedrich-Ebert-Strasse 7',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Friedrichstrasse 24',postalCode:'67346',city:'Speyer',group:'Adresse',type:'street',scope:'both'},
+    {street:'Friedrich-Ebert-Anlage 16',postalCode:'69117',city:'Heidelberg',group:'Adresse',type:'street',scope:'both'}
   ];
   let addressConfigCache=null;
   let startMarker=null,endMarker=null,mapContainers={};
@@ -110,34 +115,65 @@
     return addressConfigCache;
   }
 
-  function scoreAddressMatch(entry,query,type,config){
+  function rankAddressSuggestion(entry,query,searchType,config){
     const q=normalizeText(query);
     if(q.length<2) return null;
 
-    const cityAllowedSet=new Set((config.allowedCities||[]).map(normalizeText));
-    const popularSet=new Set((config.popularPlaces||[]).map(normalizeText));
+    if(entry.scope && entry.scope!=='both' && entry.scope!==searchType) return null;
 
-    const typeWeight=(entry.type==='both'||entry.type===type)?2:0;
+    const allowedCities=(config.allowedCities||[]).map(normalizeText);
+    const allowedCitySet=new Set(allowedCities);
+    const germersheim=normalizeText('Germersheim');
+
     const city=normalizeText(entry.city);
     const primary=normalizeText(entry.title||'');
     const street=normalizeText(entry.street||'');
     const postal=normalizeText(entry.postalCode||'');
-    const group=normalizeText(entry.group||'');
+    const type=entry.type||'poi';
 
-    const searchable=[primary,street,postal,city,group].filter(Boolean).join(' ');
+    const searchable=[primary,street,postal,city].filter(Boolean).join(' ');
     if(!searchable.includes(q)) return null;
 
     let score=0;
-    if(primary.startsWith(q)) score+=9;
-    if(street.startsWith(q)) score+=8;
-    if(city.startsWith(q)) score+=6;
-    if(postal.startsWith(q)) score+=5;
-    if(primary.includes(q)) score+=3;
-    if(street.includes(q)) score+=3;
-    if(city.includes(q)) score+=2;
-    if(cityAllowedSet.has(city)) score+=2;
-    if(popularSet.has(group)) score+=4;
-    score+=typeWeight;
+    const exact=(primary===q || street===q || city===q || postal===q);
+    if(exact) score+=220;
+
+    if(street.startsWith(q)) score+=120;
+    if(primary.startsWith(q)) score+=110;
+    if(city.startsWith(q)) score+=95;
+    if(postal.startsWith(q)) score+=80;
+
+    if(street.includes(q)) score+=45;
+    if(primary.includes(q)) score+=40;
+    if(city.includes(q)) score+=30;
+    if(postal.includes(q)) score+=24;
+
+    const isGermersheimCity=city===germersheim;
+    const isAllowedCity=allowedCitySet.has(city);
+
+    if(searchType==='pickup'){
+      if(type==='street' && isGermersheimCity) score+=200;
+      else if(type==='street' && isAllowedCity) score+=150;
+      else if(type==='city' && isAllowedCity) score+=120;
+      else if(type==='clinic') score+=70;
+      else if(type==='station') score+=45;
+      else if(type==='poi') score+=30;
+      else if(type==='airport') score-=220;
+
+      if(q.length<=2 && type==='airport') score-=120;
+    }else{
+      if(type==='clinic') score+=170;
+      else if(type==='airport') score+=155;
+      else if(type==='station') score+=110;
+      else if(type==='street') score+=85;
+      else if(type==='city') score+=80;
+      else if(type==='poi') score+=75;
+
+      if(exact) score+=80;
+    }
+
+    if(type==='street' && q.length<=2 && street.startsWith(q)) score+=40;
+    if(type==='airport' && q.length<=2 && !primary.startsWith(q)) score-=60;
 
     return score;
   }
@@ -146,9 +182,14 @@
     // TODO: Replace fallback search with backend geocoding service / Photon / Maps API.
     const config=await loadAddressConfig();
     const scored=fallbackAddressDataset
-      .map(entry=>({entry,score:scoreAddressMatch(entry,query,type,config)}))
+      .map(entry=>({entry,score:rankAddressSuggestion(entry,query,type,config)}))
       .filter(item=>item.score!==null)
-      .sort((a,b)=>b.score-a.score)
+      .sort((a,b)=>{
+        if(b.score!==a.score) return b.score-a.score;
+        const aLabel=normalizeText(buildAddressLabel(a.entry));
+        const bLabel=normalizeText(buildAddressLabel(b.entry));
+        return aLabel.localeCompare(bLabel,'de');
+      })
       .slice(0,8)
       .map(item=>createAddressView(item.entry));
 
