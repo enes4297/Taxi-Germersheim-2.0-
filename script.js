@@ -199,10 +199,6 @@
       showHint();
       if(step<7){
         setStep(step+1);
-        if(step===4){
-          renderTimeGrids();
-          openOverlay('time');
-        }
       }
     }
 
