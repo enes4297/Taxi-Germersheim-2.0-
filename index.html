@@ -326,17 +326,17 @@
 
         <div class="medical-booking-layout">
           <form class="medical-booking-form" action="#" method="post">
-            <div class="field-grid two">
+            <div class="field-grid full">
               <label for="medicalName">Vor- und Nachname</label>
               <input id="medicalName" name="medicalName" type="text" required>
             </div>
 
-            <div class="field-grid two">
+            <div class="field-grid full">
               <label for="medicalPhone">Telefonnummer</label>
               <input id="medicalPhone" name="medicalPhone" type="tel" required>
             </div>
 
-            <div class="field-grid two">
+            <div class="field-grid full">
               <label for="medicalEmail">E-Mail (optional)</label>
               <input id="medicalEmail" name="medicalEmail" type="email">
             </div>
@@ -353,28 +353,28 @@
 
             <div class="field-row">
               <div class="field-grid two">
-                <label for="medicalDate">Datum</label>
+                <label for="medicalDate">Abholdatum</label>
                 <input id="medicalDate" name="medicalDate" type="date" required>
               </div>
               <div class="field-grid two">
-                <label for="medicalTime">Uhrzeit</label>
+                <label for="medicalTime">Gewünschte Abholzeit</label>
                 <input id="medicalTime" name="medicalTime" type="time" required>
+                <small class="field-help">Bitte geben Sie die Uhrzeit an, zu der wir Sie abholen sollen – nicht die Uhrzeit Ihres Arzttermins.</small>
               </div>
             </div>
 
-            <div class="field-grid full">
-              <label for="medicalType">Art der Fahrt</label>
-              <select id="medicalType" name="medicalType" required>
-                <option value="">Bitte auswählen</option>
-                <option>Arzttermin</option>
-                <option>Dialyse</option>
-                <option>Chemotherapie</option>
-                <option>Strahlentherapie</option>
-                <option>Reha</option>
-                <option>Krankenhaus</option>
-                <option>Sonstiges</option>
-              </select>
-            </div>
+            <fieldset class="field-grid full ride-type-group">
+              <legend>Art der Fahrt</legend>
+              <div class="ride-type-options" role="radiogroup" aria-label="Art der Fahrt">
+                <label class="ride-type-option"><input type="radio" name="medicalType" value="Arzttermin" required><span>Arzttermin</span></label>
+                <label class="ride-type-option"><input type="radio" name="medicalType" value="Dialyse"><span>Dialyse</span></label>
+                <label class="ride-type-option"><input type="radio" name="medicalType" value="Chemotherapie"><span>Chemotherapie</span></label>
+                <label class="ride-type-option"><input type="radio" name="medicalType" value="Strahlentherapie"><span>Strahlentherapie</span></label>
+                <label class="ride-type-option"><input type="radio" name="medicalType" value="Reha"><span>Reha</span></label>
+                <label class="ride-type-option"><input type="radio" name="medicalType" value="Krankenhaus"><span>Krankenhaus</span></label>
+                <label class="ride-type-option"><input type="radio" name="medicalType" value="Sonstiges"><span>Sonstiges</span></label>
+              </div>
+            </fieldset>
 
             <div class="field-grid full">
               <label for="medicalInsurance">Krankenkasse (optional)</label>
@@ -387,12 +387,19 @@
             </div>
 
             <button class="medical-submit" type="submit">Krankenfahrt anfragen</button>
+            <p class="medical-consent">Mit dem Absenden erklären Sie sich mit unserer Datenschutzerklärung einverstanden.</p>
           </form>
 
           <aside class="medical-contact-card" aria-label="Kontaktinformationen">
+            <h4>Fragen?</h4>
             <a class="medical-contact-phone" href="tel:072743567">07274 3567</a>
+            <a class="medical-contact-link" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Krankenfahrt%20anfragen" target="_blank" rel="noreferrer">WhatsApp</a>
             <span>24/7 erreichbar</span>
-            <a class="button contact-pill-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Krankenfahrt%20anfragen" target="_blank" rel="noreferrer">WhatsApp</a>
+            <ul class="medical-contact-points" aria-label="Vorteile">
+              <li>Hilfe bei Verordnungen</li>
+              <li>Freundliche Beratung</li>
+              <li>Schnelle Rückmeldung</li>
+            </ul>
             <a class="button" href="tel:072743567">Jetzt anrufen</a>
           </aside>
         </div>
