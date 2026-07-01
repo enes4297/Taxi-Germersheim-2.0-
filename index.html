@@ -327,6 +327,8 @@
             <header class="nova-step-head"><span class="nova-step-index">2</span><b>Abholadresse</b><i class="nova-step-check">✓</i></header>
             <div class="nova-step-body">
               <input id="novaPickup" type="text" placeholder="Abholadresse eingeben">
+              <div id="novaPickupSuggestions" class="nova-address-dropdown" hidden aria-label="Vorschläge Abholadresse"></div>
+              <p id="novaPickupManualHint" class="nova-address-manual-hint" hidden>Adresse nicht gefunden? Sie können sie trotzdem manuell eintragen.</p>
               <p class="nova-error" data-error="2" hidden>Bitte geben Sie die Abholadresse ein.</p>
               <button type="button" class="nova-confirm" data-confirm-step="2">Schritt bestätigen</button>
             </div>
@@ -336,6 +338,8 @@
             <header class="nova-step-head"><span class="nova-step-index">3</span><b>Zieladresse</b><i class="nova-step-check">✓</i></header>
             <div class="nova-step-body">
               <input id="novaDestination" type="text" placeholder="Zieladresse eingeben">
+              <div id="novaDestinationSuggestions" class="nova-address-dropdown" hidden aria-label="Vorschläge Zieladresse"></div>
+              <p id="novaDestinationManualHint" class="nova-address-manual-hint" hidden>Adresse nicht gefunden? Sie können sie trotzdem manuell eintragen.</p>
               <p class="nova-error" data-error="3" hidden>Bitte geben Sie die Zieladresse ein.</p>
               <button type="button" class="nova-confirm" data-confirm-step="3">Schritt bestätigen</button>
             </div>

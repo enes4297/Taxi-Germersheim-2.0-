@@ -1,0 +1,28 @@
+{
+  "allowedCities": [
+    "Germersheim",
+    "Sondernheim",
+    "Lingenfeld",
+    "Bellheim",
+    "Hördt",
+    "Rülzheim",
+    "Kuhardt",
+    "Leimersheim",
+    "Neupotz",
+    "Rheinzabern",
+    "Jockgrim",
+    "Wörth am Rhein",
+    "Speyer",
+    "Landau",
+    "Karlsruhe",
+    "Mannheim",
+    "Heidelberg"
+  ],
+  "popularPlaces": [
+    "Krankenhäuser",
+    "Dialysezentren",
+    "Flughäfen",
+    "Bahnhöfe",
+    "wichtige Kliniken"
+  ]
+}
