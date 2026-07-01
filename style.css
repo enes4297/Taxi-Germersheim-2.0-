@@ -189,6 +189,86 @@ button svg,button [data-icon] svg,.outline svg,#locationBtn svg{width:22px!impor
   -webkit-tap-highlight-color:transparent!important;
 }
 
+/* Phase 3 Detail Polish - Krankenfahrten nur */
+#medical.medical-page{padding:8px 0 22px}
+#medical.medical-page .page-head{margin:4px 0 26px}
+#medical.medical-page .page-head h2{font-size:40px;letter-spacing:-.02em}
+#medical.medical-page .page-head i{display:block}
+#medical.medical-page .medical-hero{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,.8fr);gap:24px;align-items:center;padding:42px;border-radius:34px;background:linear-gradient(150deg,rgba(20,21,27,.98),rgba(8,9,12,.98));border:1px solid rgba(255,217,106,.2);box-shadow:0 28px 76px rgba(0,0,0,.28);margin-bottom:22px}
+#medical.medical-page .medical-hero-copy h1{margin:0 0 14px;font-family:var(--serif);font-size:56px;line-height:.98;letter-spacing:-.04em}
+#medical.medical-page .medical-hero-copy p{margin:0;max-width:760px;color:rgba(255,255,255,.84);font-size:20px;line-height:1.65}
+#medical.medical-page .medical-hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+#medical.medical-page .medical-hero-actions .button{height:52px;padding:0 20px;font-size:14px;font-weight:900;min-width:252px;justify-content:center}
+#medical.medical-page .medical-trust-line{margin-top:14px;color:rgba(255,255,255,.78)!important;font-size:15px!important;line-height:1.6!important}
+#medical.medical-page .medical-hero-visual{display:grid;place-items:center}
+#medical.medical-page .medical-symbol{width:220px;height:220px;border-radius:32px;display:grid;place-items:center;background:radial-gradient(circle at 40% 25%,rgba(255,217,106,.2),rgba(255,217,106,.08) 45%,rgba(255,217,106,.02) 100%);border:1px solid rgba(255,217,106,.28);box-shadow:0 24px 54px rgba(0,0,0,.3)}
+#medical.medical-page .medical-symbol i{width:112px;height:112px;color:var(--gold)}
+
+#medical.medical-page .medical-section{margin-bottom:22px}
+#medical.medical-page .medical-section h3{margin:0 0 14px;font-family:var(--serif);font-size:38px;line-height:1.02;letter-spacing:-.03em}
+
+#medical.medical-page .medical-explainer{padding:24px 26px;border-radius:24px;background:linear-gradient(150deg,rgba(255,255,255,.06),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 38px rgba(0,0,0,.22)}
+#medical.medical-page .medical-explainer p{margin:0;color:rgba(255,255,255,.86);font-size:19px;line-height:1.62}
+#medical.medical-page .medical-explainer strong{color:var(--gold)}
+
+#medical.medical-page .medical-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#medical.medical-page .medical-steps li{position:relative;display:grid;grid-template-columns:54px minmax(0,1fr);grid-template-areas:'num icon' 'num title' 'num text';column-gap:14px;row-gap:8px;align-content:start;min-height:196px;padding:22px;border-radius:24px;background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.12);box-shadow:0 18px 44px rgba(0,0,0,.22);transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease}
+#medical.medical-page .medical-steps li:hover{transform:translateY(-4px);box-shadow:0 26px 70px rgba(0,0,0,.28);border-color:rgba(255,255,255,.2)}
+#medical.medical-page .medical-steps .step-number{grid-area:num;display:grid;place-items:center;width:44px;height:44px;border-radius:999px;background:rgba(255,217,106,.12);border:1px solid rgba(255,217,106,.36);color:var(--gold);font-size:20px;font-weight:900}
+#medical.medical-page .medical-steps i{grid-area:icon;width:38px;height:38px;color:var(--gold)}
+#medical.medical-page .medical-steps b{grid-area:title;font-size:22px;line-height:1.2;color:#fff}
+#medical.medical-page .medical-steps p{grid-area:text;margin:0;color:rgba(255,255,255,.82);font-size:16px;line-height:1.55}
+
+#medical.medical-page .medical-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+#medical.medical-page .medical-card{display:grid;align-content:start;gap:9px;min-height:176px;padding:20px;border-radius:22px;background:linear-gradient(155deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.11);box-shadow:0 16px 38px rgba(0,0,0,.2);transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease}
+#medical.medical-page .medical-card:hover{transform:translateY(-4px);box-shadow:0 24px 62px rgba(0,0,0,.27);border-color:rgba(255,255,255,.2)}
+#medical.medical-page .medical-card i{width:44px;height:44px;padding:10px;border-radius:14px;color:var(--gold);background:rgba(255,217,106,.1);border:1px solid rgba(255,217,106,.27)}
+#medical.medical-page .medical-card b{font-family:var(--serif);font-size:27px;line-height:1.02}
+#medical.medical-page .medical-card p{margin:0;color:rgba(255,255,255,.82);font-size:15px;line-height:1.55;display:-webkit-box;line-clamp:2;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+#medical.medical-page .medical-checklist{list-style:none;margin:0;padding:20px;border-radius:24px;background:linear-gradient(150deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.12);display:grid;gap:10px}
+#medical.medical-page .medical-checklist li{display:flex;align-items:flex-start;gap:10px;color:rgba(255,255,255,.9);font-size:18px;line-height:1.5}
+#medical.medical-page .medical-checklist li:before{content:'✓';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 18px;color:var(--gold);font-size:14px;font-weight:900;margin-top:4px}
+
+#medical.medical-page .medical-help{margin-top:4px;padding:28px;border-radius:28px;background:linear-gradient(145deg,rgba(20,21,27,.98),rgba(8,9,12,.98));border:1px solid rgba(255,217,106,.22);box-shadow:0 22px 56px rgba(0,0,0,.26)}
+#medical.medical-page .medical-help h3{margin:0 0 10px;font-family:var(--serif);font-size:38px;line-height:1.03}
+#medical.medical-page .medical-help p{margin:0;color:rgba(255,255,255,.86);font-size:19px;line-height:1.65}
+#medical.medical-page .medical-help strong{color:var(--gold)}
+#medical.medical-page .medical-help-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+#medical.medical-page .medical-help-actions .button{height:52px;min-width:210px;justify-content:center;font-size:14px;font-weight:900}
+
+@media(max-width:1100px){
+  #medical.medical-page .medical-hero{grid-template-columns:1fr;padding:34px}
+  #medical.medical-page .medical-hero-copy h1{font-size:46px}
+  #medical.medical-page .medical-steps{grid-template-columns:1fr 1fr}
+  #medical.medical-page .medical-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:760px){
+  #medical.medical-page .page-head{margin:0 0 20px}
+  #medical.medical-page .page-head h2{font-size:34px}
+  #medical.medical-page .medical-hero{padding:26px 22px;border-radius:28px}
+  #medical.medical-page .medical-hero-copy h1{font-size:38px}
+  #medical.medical-page .medical-hero-copy p{font-size:17px;line-height:1.68}
+  #medical.medical-page .medical-hero-actions{display:grid;grid-template-columns:1fr;gap:8px}
+  #medical.medical-page .medical-hero-actions .button{min-width:0;width:100%}
+  #medical.medical-page .medical-trust-line{font-size:14px!important}
+  #medical.medical-page .medical-symbol{width:176px;height:176px}
+  #medical.medical-page .medical-symbol i{width:92px;height:92px}
+  #medical.medical-page .medical-section h3{font-size:32px}
+  #medical.medical-page .medical-explainer p{font-size:17px}
+  #medical.medical-page .medical-steps{grid-template-columns:1fr}
+  #medical.medical-page .medical-steps li{min-height:0}
+  #medical.medical-page .medical-cards{grid-template-columns:1fr}
+  #medical.medical-page .medical-card{min-height:0}
+  #medical.medical-page .medical-checklist li{font-size:17px}
+  #medical.medical-page .medical-help{padding:24px}
+  #medical.medical-page .medical-help h3{font-size:32px}
+  #medical.medical-page .medical-help p{font-size:17px}
+  #medical.medical-page .medical-help-actions{display:grid;grid-template-columns:1fr;gap:8px}
+  #medical.medical-page .medical-help-actions .button{min-width:0;width:100%}
+}
+
 /* Phase 2 - Leistungen Seite */
 #services.services-page{padding:8px 0 10px;display:none}
 #services.services-page.active{display:block;animation:fade .22s ease}
