@@ -60,24 +60,29 @@
     const rideChoices=$$('.ride-choice',root);
     const form={
       type:'',
-      pickup:$('#assistPickup')?.value||'',
-      destination:$('#assistDestination')?.value||'',
-      date:$('#assistDate')?.value||'',
-      time:$('#assistTime')?.value||'',
-      name:$('#assistName')?.value||'',
-      phone:$('#assistPhone')?.value||'',
-      email:$('#assistEmail')?.value||'',
-      insurance:$('#assistInsurance')?.value||'',
-      notes:$('#assistNotes')?.value||''
+      pickup:'',
+      destination:'',
+      date:'',
+      time:'',
+      name:'',
+      phone:'',
+      email:'',
+      insurance:'',
+      notes:''
     };
-    const summaryIds={
-      type:'#summaryType',pickup:'#summaryPickup',destination:'#summaryDestination',
-      date:'#summaryDate',time:'#summaryTime',name:'#summaryName',phone:'#summaryPhone',
-      email:'#summaryEmail',insurance:'#summaryInsurance',notes:'#summaryNotes'
+    const summaryEls={
+      type:$('#summaryType'),
+      pickup:$('#summaryPickup'),
+      destination:$('#summaryDestination'),
+      date:$('#summaryDate'),
+      time:$('#summaryTime'),
+      name:$('#summaryName'),
+      phone:$('#summaryPhone'),
+      email:$('#summaryEmail'),
+      insurance:$('#summaryInsurance'),
+      notes:$('#summaryNotes')
     };
     const success=$('#assistSuccess');
-    const completed=new Set();
-    let editMode=false;
     const errors={
       1:$('#assistError1'),
       2:$('#assistError2'),
@@ -86,151 +91,149 @@
       5:$('#assistError5'),
       6:$('#assistError6')
     };
-    const setActive=n=>{
-      steps.forEach(s=>s.classList.toggle('is-active',Number(s.dataset.step)===n));
-    };
-    const isFilled=n=>{
-      if(n===1) return !!form.type;
-      if(n===2) return !!form.pickup.trim();
-      if(n===3) return !!form.destination.trim();
-      if(n===4) return !!form.date;
-      if(n===5) return !!form.time;
-      if(n===6) return !!form.name.trim() && !!form.phone.trim();
-      return false;
-    };
-    const hideError=n=>{ if(errors[n]) errors[n].hidden=true; };
-    const showError=n=>{ if(errors[n]) errors[n].hidden=false; };
-    const clearCompletedFrom=n=>{
-      for(let i=n;i<=6;i++) completed.delete(i);
-    };
-    const getUnlocked=()=>{
-      if(editMode) return 7;
-      let unlocked=1;
-      for(let n=1;n<=6;n++){
-        if(completed.has(n)) unlocked=n+1; else break;
-      }
-      return unlocked;
-    };
-    const completeStep=n=>{
-      if(!isFilled(n)) return false;
-      completed.add(n);
-      hideError(n);
-      return true;
-    };
-    const updateSummary=()=>{
-      Object.entries(summaryIds).forEach(([key,selector])=>{
-        const el=$(selector); if(!el) return;
+    let currentStep=1;
+    let maxUnlocked=1;
+    const completedSteps=new Set();
+
+    Object.values(errors).forEach(el=>{if(el) el.textContent='Bitte füllen Sie die Pflichtangaben aus.'});
+
+    function readForm(){
+      form.pickup=$('#assistPickup')?.value||'';
+      form.destination=$('#assistDestination')?.value||'';
+      form.date=$('#assistDate')?.value||'';
+      form.time=$('#assistTime')?.value||'';
+      form.name=$('#assistName')?.value||'';
+      form.phone=$('#assistPhone')?.value||'';
+      form.email=$('#assistEmail')?.value||'';
+      form.insurance=$('#assistInsurance')?.value||'';
+      form.notes=$('#assistNotes')?.value||'';
+    }
+
+    function showError(stepNumber){ if(errors[stepNumber]) errors[stepNumber].hidden=false; }
+    function hideError(stepNumber){ if(errors[stepNumber]) errors[stepNumber].hidden=true; }
+
+    function clearCompletedFrom(stepNumber){
+      for(let n=stepNumber;n<=6;n++) completedSteps.delete(n);
+    }
+
+    function updateSummary(){
+      Object.entries(summaryEls).forEach(([key,el])=>{
+        if(!el) return;
         const value=(form[key]||'').toString().trim();
         el.textContent=value||'-';
       });
-    };
-    const refresh=()=>{
-      const unlocked=getUnlocked();
+    }
+
+    function validateStep(stepNumber){
+      readForm();
+      if(stepNumber===1) return !!form.type;
+      if(stepNumber===2) return !!form.pickup.trim();
+      if(stepNumber===3) return !!form.destination.trim();
+      if(stepNumber===4) return !!form.date;
+      if(stepNumber===5) return !!form.time;
+      if(stepNumber===6) return !!form.name.trim() && !!form.phone.trim();
+      return true;
+    }
+
+    function showStep(stepNumber){
+      currentStep=Math.max(1,Math.min(7,stepNumber));
       steps.forEach(step=>{
         const n=Number(step.dataset.step);
-        step.classList.toggle('is-locked',n>unlocked);
-        step.classList.toggle('is-complete',completed.has(n));
+        step.classList.toggle('is-active',n===currentStep);
+        step.classList.toggle('is-locked',n>maxUnlocked);
+        step.classList.toggle('is-complete',completedSteps.has(n));
       });
       updateSummary();
-    };
+    }
+
+    function goNext(stepNumber){
+      if(!validateStep(stepNumber)){
+        showError(stepNumber);
+        showStep(stepNumber);
+        return;
+      }
+      hideError(stepNumber);
+      completedSteps.add(stepNumber);
+      if(stepNumber<7){
+        maxUnlocked=Math.max(maxUnlocked,stepNumber+1);
+        showStep(stepNumber+1);
+      }
+    }
+
+    function goBack(stepNumber){
+      showStep(Math.max(1,stepNumber-1));
+    }
 
     root.addEventListener('click',e=>{
-      const head=e.target.closest('.assistant-step-head');
-      if(head) return;
       const choice=e.target.closest('.ride-choice');
       if(choice){
         form.type=choice.dataset.value||'';
         rideChoices.forEach(c=>c.classList.toggle('is-selected',c===choice));
         hideError(1);
         success.hidden=true;
-        refresh();
+        return;
       }
-      const back=e.target.closest('[data-assist-back]');
-      if(back){
-        const n=Number(back.dataset.assistBack);
-        const prev=Math.max(1,n-1);
+
+      const nextBtn=e.target.closest('[data-next],[data-assist-next]');
+      if(nextBtn){
+        const raw=nextBtn.dataset.next||nextBtn.dataset.assistNext||String(currentStep);
+        const step=Number(raw)||currentStep;
         success.hidden=true;
-        setActive(prev);
-        refresh();
+        clearCompletedFrom(step);
+        goNext(step);
         return;
       }
-      const next=e.target.closest('[data-assist-next]');
-      if(next){
-        const n=Number(next.dataset.assistNext);
-        if(!completeStep(n)){
-          showError(n);
-          refresh();
-          return;
-        }
-        editMode=false;
-        clearCompletedFrom(n+1);
-        refresh();
-        setActive(Math.min(7,n+1));
+
+      const backBtn=e.target.closest('[data-back],[data-assist-back]');
+      if(backBtn){
+        const raw=backBtn.dataset.back||backBtn.dataset.assistBack||String(currentStep);
+        const step=Number(raw)||currentStep;
+        success.hidden=true;
+        goBack(step);
         return;
       }
-      const submit=e.target.closest('#assistSubmit');
-      if(submit){
-        if(!completed.has(6)){
-          setActive(6);
-          showError(6);
-          refresh();
-          return;
-        }
-        refresh();
+
+      const summaryBtn=e.target.closest('[data-summary]');
+      if(summaryBtn){
+        success.hidden=true;
+        clearCompletedFrom(6);
+        goNext(6);
+        return;
+      }
+
+      const editBtn=e.target.closest('[data-edit],#assistEdit');
+      if(editBtn){
+        success.hidden=true;
+        maxUnlocked=7;
+        showStep(1);
+        return;
+      }
+
+      const submitBtn=e.target.closest('#assistSubmit');
+      if(submitBtn){
+        readForm();
+        updateSummary();
         success.hidden=false;
-      }
-      const edit=e.target.closest('#assistEdit');
-      if(edit){
-        success.hidden=true;
-        editMode=true;
-        setActive(1);
-        refresh();
       }
     });
 
     root.addEventListener('input',e=>{
       const id=e.target.id;
-      if(id==='assistPickup') form.pickup=e.target.value;
-      if(id==='assistDestination') form.destination=e.target.value;
-      if(id==='assistDate') form.date=e.target.value;
-      if(id==='assistTime') form.time=e.target.value;
-      if(id==='assistName') form.name=e.target.value;
-      if(id==='assistPhone') form.phone=e.target.value;
+      if(id==='assistPickup'){form.pickup=e.target.value;hideError(2);if(!form.pickup.trim()) clearCompletedFrom(2)}
+      if(id==='assistDestination'){form.destination=e.target.value;hideError(3);if(!form.destination.trim()) clearCompletedFrom(3)}
+      if(id==='assistDate'){form.date=e.target.value;hideError(4);if(!form.date) clearCompletedFrom(4)}
+      if(id==='assistTime'){form.time=e.target.value;hideError(5);if(!form.time) clearCompletedFrom(5)}
+      if(id==='assistName'){form.name=e.target.value;hideError(6);if(!form.name.trim()||!form.phone.trim()) clearCompletedFrom(6)}
+      if(id==='assistPhone'){form.phone=e.target.value;hideError(6);if(!form.name.trim()||!form.phone.trim()) clearCompletedFrom(6)}
       if(id==='assistEmail') form.email=e.target.value;
       if(id==='assistInsurance') form.insurance=e.target.value;
       if(id==='assistNotes') form.notes=e.target.value;
-      if(id==='assistPickup' && !form.pickup.trim()) clearCompletedFrom(2);
-      if(id==='assistDestination' && !form.destination.trim()) clearCompletedFrom(3);
-      if(id==='assistDate' && !form.date) clearCompletedFrom(4);
-      if(id==='assistTime' && !form.time) clearCompletedFrom(5);
-      if(id==='assistName' || id==='assistPhone'){
-        if(!form.name.trim() || !form.phone.trim()) clearCompletedFrom(6);
-      }
       success.hidden=true;
-      if(id==='assistPickup') hideError(2);
-      if(id==='assistDestination') hideError(3);
-      if(id==='assistDate') hideError(4);
-      if(id==='assistTime') hideError(5);
-      if(id==='assistName' || id==='assistPhone') hideError(6);
-      refresh();
+      updateSummary();
+      showStep(currentStep);
     });
 
-    root.addEventListener('change',e=>{
-      const id=e.target.id;
-      if(id==='assistDate'){
-        form.date=e.target.value;
-        if(!form.date) clearCompletedFrom(4);
-        hideError(4);
-      }
-      if(id==='assistTime'){
-        form.time=e.target.value;
-        if(!form.time) clearCompletedFrom(5);
-        hideError(5);
-      }
-      refresh();
-    });
-
-    refresh();
+    showStep(1);
   }
   function initMedicalBookingScroll(){
     const cta=$('#medicalHeroBookBtn');
