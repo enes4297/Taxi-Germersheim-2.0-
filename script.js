@@ -79,6 +79,7 @@
     const completed=new Set();
     let editMode=false;
     const errors={
+      1:$('#assistError1'),
       2:$('#assistError2'),
       3:$('#assistError3'),
       4:$('#assistError4'),
@@ -131,27 +132,27 @@
         step.classList.toggle('is-complete',completed.has(n));
       });
       updateSummary();
-      $('#assistNext4')?.classList.toggle('hidden',!form.date);
-      $('#assistNext5')?.classList.toggle('hidden',!form.time);
-      const active=$('.assistant-step.is-active',root);
-      const activeNum=active?Number(active.dataset.step):1;
-      if(activeNum>unlocked) setActive(unlocked);
     };
 
     root.addEventListener('click',e=>{
       const head=e.target.closest('.assistant-step-head');
-      if(head){
-        const step=head.closest('.assistant-step');
-        if(step && !step.classList.contains('is-locked')) setActive(Number(step.dataset.step));
-      }
+      if(head) return;
       const choice=e.target.closest('.ride-choice');
       if(choice){
         form.type=choice.dataset.value||'';
         rideChoices.forEach(c=>c.classList.toggle('is-selected',c===choice));
-        completeStep(1);
-        editMode=false;
+        hideError(1);
+        success.hidden=true;
         refresh();
-        setActive(2);
+      }
+      const back=e.target.closest('[data-assist-back]');
+      if(back){
+        const n=Number(back.dataset.assistBack);
+        const prev=Math.max(1,n-1);
+        success.hidden=true;
+        setActive(prev);
+        refresh();
+        return;
       }
       const next=e.target.closest('[data-assist-next]');
       if(next){
@@ -165,6 +166,7 @@
         clearCompletedFrom(n+1);
         refresh();
         setActive(Math.min(7,n+1));
+        return;
       }
       const submit=e.target.closest('#assistSubmit');
       if(submit){
@@ -199,12 +201,16 @@
       if(id==='assistNotes') form.notes=e.target.value;
       if(id==='assistPickup' && !form.pickup.trim()) clearCompletedFrom(2);
       if(id==='assistDestination' && !form.destination.trim()) clearCompletedFrom(3);
+      if(id==='assistDate' && !form.date) clearCompletedFrom(4);
+      if(id==='assistTime' && !form.time) clearCompletedFrom(5);
       if(id==='assistName' || id==='assistPhone'){
         if(!form.name.trim() || !form.phone.trim()) clearCompletedFrom(6);
       }
       success.hidden=true;
       if(id==='assistPickup') hideError(2);
       if(id==='assistDestination') hideError(3);
+      if(id==='assistDate') hideError(4);
+      if(id==='assistTime') hideError(5);
       if(id==='assistName' || id==='assistPhone') hideError(6);
       refresh();
     });
