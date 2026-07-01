@@ -73,6 +73,7 @@
     {street:'Friedrich-Ebert-Anlage 16',postalCode:'69117',city:'Heidelberg',group:'Adresse',type:'street',scope:'both'}
   ];
   let addressConfigCache=null;
+  let streetDirectoryCache=null;
   let startMarker=null,endMarker=null,mapContainers={};
 
   function normalizeText(value){
@@ -82,14 +83,18 @@
   function buildAddressLabel(item){
     const streetLine=[item.street,item.houseNumber].filter(Boolean).join(' ').trim();
     const cityLine=[item.postalCode,item.city].filter(Boolean).join(' ').trim();
-    return [item.title,streetLine,cityLine].filter(Boolean).join(', ');
+    const district=item.district||'';
+    const locality=[cityLine,district].filter(Boolean).join(' ');
+    return [item.title,streetLine,locality].filter(Boolean).join(', ');
   }
 
   function createAddressView(item){
     const streetLine=[item.street,item.houseNumber].filter(Boolean).join(' ').trim();
     const cityLine=[item.postalCode,item.city].filter(Boolean).join(' ');
+    const district=item.district||'';
+    const locality=[cityLine,district].filter(Boolean).join(' ');
     const primary=item.title || streetLine || 'Adresse';
-    const secondary=item.title ? [streetLine,cityLine].filter(Boolean).join(' - ') : cityLine;
+    const secondary=item.title ? [streetLine,locality].filter(Boolean).join(' - ') : locality;
     return {
       primary,
       secondary,
@@ -115,6 +120,77 @@
     return addressConfigCache;
   }
 
+  function createStreetDirectoryFallback(){
+    return fallbackAddressDataset
+      .filter(item=>item.type==='street')
+      .map(item=>({
+        street:item.street||'',
+        city:item.city||'',
+        postalCode:item.postalCode||'',
+        district:item.district||'',
+        houseNumbers:['1','2','3','4','5','6','7','8'],
+        type:'street'
+      }));
+  }
+
+  async function loadStreetDirectory(){
+    if(streetDirectoryCache) return streetDirectoryCache;
+    try{
+      const streetsUrl=new URL('assets/data/streets-germersheim.json',document.baseURI).toString();
+      const response=await fetch(streetsUrl,{cache:'no-store'});
+      if(!response.ok) throw new Error('street-directory-not-found');
+      const raw=await response.json();
+      streetDirectoryCache=Array.isArray(raw)?raw:createStreetDirectoryFallback();
+    }catch(_err){
+      streetDirectoryCache=createStreetDirectoryFallback();
+    }
+    return streetDirectoryCache;
+  }
+
+  function parseStreetQuery(query){
+    const compact=(query||'').replace(/\s+/g,' ').trim();
+    const numberMatches=compact.match(/\b(\d{1,4}[a-zA-Z]?)\b/g)||[];
+    const houseNumberToken=numberMatches.find(token=>token.length<=5) || '';
+    const queryWithoutHouseNumber=houseNumberToken
+      ? compact.replace(new RegExp(`\\b${houseNumberToken}\\b`,'i'),' ').replace(/\s+/g,' ').trim()
+      : compact;
+    return {
+      houseNumber:houseNumberToken,
+      textQuery:queryWithoutHouseNumber
+    };
+  }
+
+  function buildStreetDirectoryCandidates(streetRows,query){
+    const parsed=parseStreetQuery(query);
+    const normalizedQuery=normalizeText(parsed.textQuery || query);
+    if(normalizedQuery.length<2) return [];
+
+    return streetRows
+      .filter(row=>row && row.type==='street')
+      .map(row=>{
+        const searchable=[row.street,row.city,row.postalCode,row.district].filter(Boolean).map(normalizeText).join(' ');
+        if(!searchable.includes(normalizedQuery)) return null;
+
+        const availableNumbers=Array.isArray(row.houseNumbers)?row.houseNumbers:[];
+        const selectedHouseNumber=parsed.houseNumber && availableNumbers.includes(parsed.houseNumber)
+          ? parsed.houseNumber
+          : '';
+
+        return {
+          street:row.street,
+          city:row.city,
+          postalCode:row.postalCode,
+          district:row.district||'',
+          houseNumber:selectedHouseNumber,
+          group:'Adresse',
+          type:'street',
+          scope:'both',
+          source:'directory'
+        };
+      })
+      .filter(Boolean);
+  }
+
   function rankAddressSuggestion(entry,query,searchType,config){
     const q=normalizeText(query);
     if(q.length<2) return null;
@@ -129,13 +205,15 @@
     const primary=normalizeText(entry.title||'');
     const street=normalizeText(entry.street||'');
     const postal=normalizeText(entry.postalCode||'');
+    const district=normalizeText(entry.district||'');
+    const houseNumber=normalizeText(entry.houseNumber||'');
     const type=entry.type||'poi';
 
-    const searchable=[primary,street,postal,city].filter(Boolean).join(' ');
+    const searchable=[primary,street,postal,city,district,houseNumber].filter(Boolean).join(' ');
     if(!searchable.includes(q)) return null;
 
     let score=0;
-    const exact=(primary===q || street===q || city===q || postal===q);
+    const exact=(primary===q || street===q || city===q || postal===q || district===q);
     if(exact) score+=220;
 
     if(street.startsWith(q)) score+=120;
@@ -147,6 +225,9 @@
     if(primary.includes(q)) score+=40;
     if(city.includes(q)) score+=30;
     if(postal.includes(q)) score+=24;
+    if(district.startsWith(q)) score+=40;
+    if(district.includes(q)) score+=16;
+    if(houseNumber===q) score+=28;
 
     const isGermersheimCity=city===germersheim;
     const isAllowedCity=allowedCitySet.has(city);
@@ -161,6 +242,7 @@
       else if(type==='airport') score-=220;
 
       if(q.length<=2 && type==='airport') score-=120;
+      if(entry.source==='directory' && type==='street') score+=90;
     }else{
       if(type==='clinic') score+=170;
       else if(type==='airport') score+=155;
@@ -173,6 +255,7 @@
     }
 
     if(type==='street' && q.length<=2 && street.startsWith(q)) score+=40;
+    if(type==='street' && houseNumber) score+=26;
     if(type==='airport' && q.length<=2 && !primary.startsWith(q)) score-=60;
 
     return score;
@@ -180,8 +263,9 @@
 
   async function searchAddress(query,type){
     // TODO: Replace fallback search with backend geocoding service / Photon / Maps API.
-    const config=await loadAddressConfig();
-    const scored=fallbackAddressDataset
+    const [config,streetRows]=await Promise.all([loadAddressConfig(),loadStreetDirectory()]);
+    const streetCandidates=buildStreetDirectoryCandidates(streetRows,query);
+    const scored=[...streetCandidates,...fallbackAddressDataset]
       .map(entry=>({entry,score:rankAddressSuggestion(entry,query,type,config)}))
       .filter(item=>item.score!==null)
       .sort((a,b)=>{
@@ -189,6 +273,10 @@
         const aLabel=normalizeText(buildAddressLabel(a.entry));
         const bLabel=normalizeText(buildAddressLabel(b.entry));
         return aLabel.localeCompare(bLabel,'de');
+      })
+      .filter((item,index,array)=>{
+        const label=normalizeText(buildAddressLabel(item.entry));
+        return array.findIndex(other=>normalizeText(buildAddressLabel(other.entry))===label)===index;
       })
       .slice(0,8)
       .map(item=>createAddressView(item.entry));
