@@ -321,6 +321,7 @@
             <button class="assistant-step-head" type="button"><span class="assistant-step-no">2</span><b>Abholadresse</b><i class="assistant-check">✓</i></button>
             <div class="assistant-step-body">
               <input id="assistPickup" type="text" placeholder="Abholadresse eingeben">
+              <div id="assistPickupSuggestions" class="assist-suggestions" hidden></div>
               <p id="assistError2" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
               <div class="assistant-step-actions">
                 <button id="assistBack2" class="assistant-next" type="button" data-assist-back="2">Zurück</button>
@@ -333,6 +334,7 @@
             <button class="assistant-step-head" type="button"><span class="assistant-step-no">3</span><b>Zieladresse</b><i class="assistant-check">✓</i></button>
             <div class="assistant-step-body">
               <input id="assistDestination" type="text" placeholder="Zieladresse eingeben">
+              <div id="assistDestinationSuggestions" class="assist-suggestions" hidden></div>
               <p id="assistError3" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
               <div class="assistant-step-actions">
                 <button id="assistBack3" class="assistant-next" type="button" data-assist-back="3">Zurück</button>
@@ -344,7 +346,10 @@
           <section class="assistant-step is-locked" data-step="4">
             <button class="assistant-step-head" type="button"><span class="assistant-step-no">4</span><b>Abholdatum</b><i class="assistant-check">✓</i></button>
             <div class="assistant-step-body">
-              <input id="assistDate" type="date">
+              <div class="assistant-date-wrap">
+                <input id="assistDate" type="date">
+                <span class="assistant-date-icon" aria-hidden="true">Kalender</span>
+              </div>
               <p id="assistError4" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
               <div class="assistant-step-actions">
                 <button id="assistBack4" class="assistant-next" type="button" data-assist-back="4">Zurück</button>
@@ -356,6 +361,16 @@
           <section class="assistant-step is-locked" data-step="5">
             <button class="assistant-step-head" type="button"><span class="assistant-step-no">5</span><b>Gewünschte Abholzeit</b><i class="assistant-check">✓</i></button>
             <div class="assistant-step-body">
+              <div class="assistant-time-chips" aria-label="Schnelle Uhrzeiten">
+                <button class="assist-time-chip" type="button" data-time="06:00">06:00</button>
+                <button class="assist-time-chip" type="button" data-time="07:00">07:00</button>
+                <button class="assist-time-chip" type="button" data-time="08:00">08:00</button>
+                <button class="assist-time-chip" type="button" data-time="09:00">09:00</button>
+                <button class="assist-time-chip" type="button" data-time="10:00">10:00</button>
+                <button class="assist-time-chip" type="button" data-time="12:00">12:00</button>
+                <button class="assist-time-chip" type="button" data-time="14:00">14:00</button>
+                <button class="assist-time-chip" type="button" data-time="16:00">16:00</button>
+              </div>
               <input id="assistTime" type="time">
               <small class="field-help">Bitte geben Sie die Uhrzeit an, zu der wir Sie abholen sollen – nicht die Uhrzeit Ihres Arzttermins.</small>
               <p id="assistError5" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>

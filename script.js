@@ -83,6 +83,18 @@
       notes:$('#summaryNotes')
     };
     const success=$('#assistSuccess');
+    const pickupInput=$('#assistPickup');
+    const destinationInput=$('#assistDestination');
+    const timeInput=$('#assistTime');
+    const pickupSuggestions=$('#assistPickupSuggestions');
+    const destinationSuggestions=$('#assistDestinationSuggestions');
+    const timeChips=$$('.assist-time-chip',root);
+    const streetSuggestions=[
+      'Friedrich-Ebert-Straße','Bahnhofstraße','Hauptstraße','August-Keiler-Straße',
+      'Rheinbrückenstraße','Josef-Probst-Straße','Waldstraße','Königstraße',
+      'Marktstraße','Sondernheimer Straße','Lingenfelder Straße','Bellheimer Straße',
+      'Wörther Straße','Speyerer Straße'
+    ];
     const errors={
       1:$('#assistError1'),
       2:$('#assistError2'),
@@ -122,6 +134,38 @@
         const value=(form[key]||'').toString().trim();
         el.textContent=value||'-';
       });
+    }
+
+    function renderAddressSuggestions(inputEl,listEl){
+      if(!inputEl||!listEl) return;
+      const query=inputEl.value.trim().toLowerCase();
+      if(query.length<2){
+        listEl.hidden=true;
+        listEl.innerHTML='';
+        return;
+      }
+      const matches=streetSuggestions
+        .filter(name=>name.toLowerCase().includes(query))
+        .slice(0,6);
+      if(!matches.length){
+        listEl.hidden=true;
+        listEl.innerHTML='';
+        return;
+      }
+      listEl.innerHTML=matches
+        .map(name=>`<button class="assist-suggestion" type="button" data-address-choice="${name}">${name}</button>`)
+        .join('');
+      listEl.hidden=false;
+    }
+
+    function hideAddressSuggestions(){
+      if(pickupSuggestions){pickupSuggestions.hidden=true;pickupSuggestions.innerHTML='';}
+      if(destinationSuggestions){destinationSuggestions.hidden=true;destinationSuggestions.innerHTML='';}
+    }
+
+    function syncTimeChipState(){
+      const value=(timeInput?.value||'').trim();
+      timeChips.forEach(chip=>chip.classList.toggle('is-selected',chip.dataset.time===value));
     }
 
     function validateStep(stepNumber){
@@ -174,6 +218,38 @@
         return;
       }
 
+      const suggestion=e.target.closest('[data-address-choice]');
+      if(suggestion){
+        const value=suggestion.dataset.addressChoice||'';
+        if(pickupSuggestions && pickupSuggestions.contains(suggestion) && pickupInput){
+          pickupInput.value=value;
+          form.pickup=value;
+          hideError(2);
+        }
+        if(destinationSuggestions && destinationSuggestions.contains(suggestion) && destinationInput){
+          destinationInput.value=value;
+          form.destination=value;
+          hideError(3);
+        }
+        hideAddressSuggestions();
+        updateSummary();
+        showStep(currentStep);
+        return;
+      }
+
+      const timeChip=e.target.closest('.assist-time-chip');
+      if(timeChip && timeInput){
+        const value=timeChip.dataset.time||'';
+        timeInput.value=value;
+        form.time=value;
+        hideError(5);
+        success.hidden=true;
+        syncTimeChipState();
+        updateSummary();
+        showStep(currentStep);
+        return;
+      }
+
       const nextBtn=e.target.closest('[data-next],[data-assist-next]');
       if(nextBtn){
         const raw=nextBtn.dataset.next||nextBtn.dataset.assistNext||String(currentStep);
@@ -215,14 +291,18 @@
         updateSummary();
         success.hidden=false;
       }
+
+      if(!e.target.closest('.assist-suggestions') && e.target!==pickupInput && e.target!==destinationInput){
+        hideAddressSuggestions();
+      }
     });
 
     root.addEventListener('input',e=>{
       const id=e.target.id;
-      if(id==='assistPickup'){form.pickup=e.target.value;hideError(2);if(!form.pickup.trim()) clearCompletedFrom(2)}
-      if(id==='assistDestination'){form.destination=e.target.value;hideError(3);if(!form.destination.trim()) clearCompletedFrom(3)}
+      if(id==='assistPickup'){form.pickup=e.target.value;hideError(2);if(!form.pickup.trim()) clearCompletedFrom(2);renderAddressSuggestions(pickupInput,pickupSuggestions)}
+      if(id==='assistDestination'){form.destination=e.target.value;hideError(3);if(!form.destination.trim()) clearCompletedFrom(3);renderAddressSuggestions(destinationInput,destinationSuggestions)}
       if(id==='assistDate'){form.date=e.target.value;hideError(4);if(!form.date) clearCompletedFrom(4)}
-      if(id==='assistTime'){form.time=e.target.value;hideError(5);if(!form.time) clearCompletedFrom(5)}
+      if(id==='assistTime'){form.time=e.target.value;hideError(5);if(!form.time) clearCompletedFrom(5);syncTimeChipState()}
       if(id==='assistName'){form.name=e.target.value;hideError(6);if(!form.name.trim()||!form.phone.trim()) clearCompletedFrom(6)}
       if(id==='assistPhone'){form.phone=e.target.value;hideError(6);if(!form.name.trim()||!form.phone.trim()) clearCompletedFrom(6)}
       if(id==='assistEmail') form.email=e.target.value;
@@ -233,6 +313,25 @@
       showStep(currentStep);
     });
 
+    root.addEventListener('keydown',e=>{
+      if(e.key!=='Enter') return;
+      if(e.target.tagName==='TEXTAREA') return;
+      const activeStepEl=e.target.closest('.assistant-step');
+      if(!activeStepEl) return;
+      const step=Number(activeStepEl.dataset.step)||currentStep;
+      if(step!==currentStep) return;
+      if(step<1 || step>6) return;
+      e.preventDefault();
+      success.hidden=true;
+      clearCompletedFrom(step);
+      goNext(step);
+    });
+
+    document.addEventListener('click',e=>{
+      if(!root.contains(e.target)) hideAddressSuggestions();
+    });
+
+    syncTimeChipState();
     showStep(1);
   }
   function initMedicalBookingScroll(){
