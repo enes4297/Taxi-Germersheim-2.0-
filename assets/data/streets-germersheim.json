@@ -1,0 +1,146 @@
+[
+  {
+    "street": "Friedrich-Ebert-Straße",
+    "city": "Germersheim",
+    "postalCode": "76726",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Luitpoldplatz",
+    "city": "Germersheim",
+    "postalCode": "76726",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Kirchstraße",
+    "city": "Sondernheim",
+    "postalCode": "76726",
+    "district": "Sondernheim",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Lingenfelder Straße",
+    "city": "Lingenfeld",
+    "postalCode": "67360",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Karlstraße",
+    "city": "Bellheim",
+    "postalCode": "76756",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Schulstraße",
+    "city": "Hördt",
+    "postalCode": "76771",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Germersheimer Straße",
+    "city": "Rülzheim",
+    "postalCode": "76761",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Rheinzaberner Straße",
+    "city": "Kuhardt",
+    "postalCode": "76773",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Hafenstraße",
+    "city": "Leimersheim",
+    "postalCode": "76774",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Lange Straße",
+    "city": "Neupotz",
+    "postalCode": "76777",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Jockgrimer Straße",
+    "city": "Rheinzabern",
+    "postalCode": "76764",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Bahnhofstraße",
+    "city": "Jockgrim",
+    "postalCode": "76751",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Mozartstraße",
+    "city": "Wörth am Rhein",
+    "postalCode": "76744",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Adenauerpark",
+    "city": "Speyer",
+    "postalCode": "67346",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Queichheimer Hauptstraße",
+    "city": "Landau",
+    "postalCode": "76829",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Kaiserallee",
+    "city": "Karlsruhe",
+    "postalCode": "76133",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Augustaanlage",
+    "city": "Mannheim",
+    "postalCode": "68165",
+    "district": "",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  },
+  {
+    "street": "Bergheimer Straße",
+    "city": "Heidelberg",
+    "postalCode": "69115",
+    "district": "Bergheim",
+    "houseNumbers": ["1", "2", "3", "4", "5", "6", "7", "8"],
+    "type": "street"
+  }
+]
