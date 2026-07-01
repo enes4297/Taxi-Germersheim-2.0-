@@ -299,158 +299,137 @@
           </div>
         </article>
 
-        <div id="medicalAssistant" class="medical-assistant" aria-live="polite">
-          <div class="assistant-progress" aria-live="polite">
-            <b id="assistProgressLabel">Schritt 1 von 7</b>
-            <div class="assistant-progress-track"><span id="assistProgressBar"></span></div>
+        <div id="medicalAssistant" class="nova-assistant" aria-live="polite">
+          <div class="nova-status" aria-live="polite">
+            <strong id="novaProgressText">Schritt 1 von 7</strong>
+            <div class="nova-progress-track"><span id="novaProgressFill"></span></div>
+            <p id="novaHint" class="nova-hint" hidden>Perfekt.</p>
           </div>
-          <p id="assistSpeech" class="assistant-speech" hidden></p>
 
-          <section class="assistant-step is-active" data-step="1">
-            <button class="assistant-step-head" type="button"><span class="assistant-step-no">1</span><b>Art der Krankenfahrt</b><i class="assistant-check">✓</i></button>
-            <div class="assistant-step-body">
-              <div class="ride-type-options">
-                <button class="ride-choice" type="button" data-value="Arzttermin">Arzttermin</button>
-                <button class="ride-choice" type="button" data-value="Dialyse">Dialyse</button>
-                <button class="ride-choice" type="button" data-value="Chemotherapie">Chemotherapie</button>
-                <button class="ride-choice" type="button" data-value="Strahlentherapie">Strahlentherapie</button>
-                <button class="ride-choice" type="button" data-value="Reha">Reha</button>
-                <button class="ride-choice" type="button" data-value="Krankenhaus">Krankenhaus</button>
-                <button class="ride-choice" type="button" data-value="Sonstiges">Sonstiges</button>
+          <section class="nova-step is-open" data-step="1">
+            <header class="nova-step-head"><span class="nova-step-index">1</span><b>Art der Krankenfahrt</b><i class="nova-step-check">✓</i></header>
+            <div class="nova-step-body">
+              <div class="nova-choice-grid">
+                <button type="button" class="nova-choice" data-ride="Arzttermin">Arzttermin</button>
+                <button type="button" class="nova-choice" data-ride="Dialyse">Dialyse</button>
+                <button type="button" class="nova-choice" data-ride="Chemotherapie">Chemotherapie</button>
+                <button type="button" class="nova-choice" data-ride="Strahlentherapie">Strahlentherapie</button>
+                <button type="button" class="nova-choice" data-ride="Reha">Reha</button>
+                <button type="button" class="nova-choice" data-ride="Krankenhaus">Krankenhaus</button>
+                <button type="button" class="nova-choice" data-ride="Sonstiges">Sonstiges</button>
               </div>
-              <p id="assistError1" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
-              <button id="assistNext1" class="assistant-next" type="button" data-assist-next="1">Weiter</button>
+              <p class="nova-error" data-error="1" hidden>Bitte wählen Sie eine Art der Krankenfahrt.</p>
+              <button type="button" class="nova-confirm" data-confirm-step="1">Schritt bestätigen</button>
             </div>
           </section>
 
-          <section class="assistant-step is-locked" data-step="2">
-            <button class="assistant-step-head" type="button"><span class="assistant-step-no">2</span><b>Abholadresse</b><i class="assistant-check">✓</i></button>
-            <div class="assistant-step-body">
-              <input id="assistPickup" type="text" placeholder="Abholadresse eingeben">
-              <div id="assistPickupSuggestions" class="assist-suggestions" hidden></div>
-              <p id="assistError2" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
-              <div class="assistant-step-actions">
-                <button id="assistBack2" class="assistant-next" type="button" data-assist-back="2">Zurück</button>
-                <button id="assistNext2" class="assistant-next" type="button" data-assist-next="2">Weiter</button>
-              </div>
+          <section class="nova-step" data-step="2">
+            <header class="nova-step-head"><span class="nova-step-index">2</span><b>Abholadresse</b><i class="nova-step-check">✓</i></header>
+            <div class="nova-step-body">
+              <input id="novaPickup" type="text" placeholder="Abholadresse eingeben">
+              <p class="nova-error" data-error="2" hidden>Bitte geben Sie die Abholadresse ein.</p>
+              <button type="button" class="nova-confirm" data-confirm-step="2">Schritt bestätigen</button>
             </div>
           </section>
 
-          <section class="assistant-step is-locked" data-step="3">
-            <button class="assistant-step-head" type="button"><span class="assistant-step-no">3</span><b>Zieladresse</b><i class="assistant-check">✓</i></button>
-            <div class="assistant-step-body">
-              <input id="assistDestination" type="text" placeholder="Zieladresse eingeben">
-              <div id="assistDestinationSuggestions" class="assist-suggestions" hidden></div>
-              <p id="assistError3" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
-              <div class="assistant-step-actions">
-                <button id="assistBack3" class="assistant-next" type="button" data-assist-back="3">Zurück</button>
-                <button id="assistNext3" class="assistant-next" type="button" data-assist-next="3">Weiter</button>
-              </div>
+          <section class="nova-step" data-step="3">
+            <header class="nova-step-head"><span class="nova-step-index">3</span><b>Zieladresse</b><i class="nova-step-check">✓</i></header>
+            <div class="nova-step-body">
+              <input id="novaDestination" type="text" placeholder="Zieladresse eingeben">
+              <p class="nova-error" data-error="3" hidden>Bitte geben Sie die Zieladresse ein.</p>
+              <button type="button" class="nova-confirm" data-confirm-step="3">Schritt bestätigen</button>
             </div>
           </section>
 
-          <section class="assistant-step is-locked" data-step="4">
-            <button class="assistant-step-head" type="button"><span class="assistant-step-no">4</span><b>Abholdatum</b><i class="assistant-check">✓</i></button>
-            <div class="assistant-step-body">
-              <input id="assistDate" type="hidden">
-              <div class="assistant-date-actions">
-                <button class="assistant-next" type="button" data-quick-date="today">Heute</button>
-                <button class="assistant-next" type="button" data-quick-date="tomorrow">Morgen</button>
-                <button class="assistant-next" type="button" data-quick-date="custom">Datum auswählen</button>
-              </div>
-              <button id="assistDateTrigger" class="assistant-picker-trigger" type="button">Datum auswählen</button>
-              <div id="assistDateOverlay" class="assistant-picker-overlay hidden" aria-hidden="true">
-                <div class="assistant-picker-backdrop" data-close-overlay="date"></div>
-                <article class="assistant-picker-panel" role="dialog" aria-modal="true" aria-label="Datum auswählen">
-                  <header class="assistant-picker-head">
-                    <button class="assistant-next" type="button" data-date-nav="prev">←</button>
-                    <h4 id="assistDateMonthLabel">Monat Jahr</h4>
-                    <button class="assistant-next" type="button" data-date-nav="next">→</button>
-                  </header>
-                  <div class="assistant-weekdays" aria-hidden="true"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
-                  <div id="assistDateCalendar" class="assistant-date-grid"></div>
-                  <div class="assistant-picker-foot">
-                    <button class="assistant-next" type="button" data-close-overlay="date">Schließen</button>
-                  </div>
-                </article>
-              </div>
-              <p id="assistError4" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
-              <div class="assistant-step-actions">
-                <button id="assistBack4" class="assistant-next" type="button" data-assist-back="4">Zurück</button>
-                <button id="assistNext4" class="assistant-next" type="button" data-assist-next="4">Weiter</button>
-              </div>
+          <section class="nova-step" data-step="4">
+            <header class="nova-step-head"><span class="nova-step-index">4</span><b>Datum</b><i class="nova-step-check">✓</i></header>
+            <div class="nova-step-body">
+              <input id="novaDateValue" type="hidden">
+              <button id="novaDateOpen" type="button" class="nova-picker-trigger">Datum auswählen</button>
+              <p class="nova-error" data-error="4" hidden>Bitte wählen Sie ein Datum.</p>
             </div>
           </section>
 
-          <section class="assistant-step is-locked" data-step="5">
-            <button class="assistant-step-head" type="button"><span class="assistant-step-no">5</span><b>Gewünschte Abholzeit</b><i class="assistant-check">✓</i></button>
-            <div class="assistant-step-body">
-              <input id="assistTime" type="hidden">
-              <button id="assistTimeTrigger" class="assistant-picker-trigger" type="button" data-time-target="pickup">Abholzeit auswählen</button>
-              <small class="field-help">Bitte geben Sie die Uhrzeit an, zu der wir Sie abholen sollen – nicht die Uhrzeit Ihres Arzttermins.</small>
-              <div class="field-grid full">
-                <label for="assistDoctorTime">Termin beim Arzt (optional)</label>
-                <input id="assistDoctorTime" type="hidden">
-                <button id="assistDoctorTimeTrigger" class="assistant-picker-trigger" type="button" data-time-target="doctor">Arzttermin auswählen</button>
-                <small class="field-help">So können wir Ihre Abholzeit besser planen.</small>
-              </div>
-              <div id="assistTimeOverlay" class="assistant-picker-overlay hidden" aria-hidden="true">
-                <div class="assistant-picker-backdrop" data-close-overlay="time"></div>
-                <article class="assistant-picker-panel" role="dialog" aria-modal="true" aria-label="Uhrzeit auswählen">
-                  <header class="assistant-picker-head">
-                    <h4 id="assistTimeTitle">Uhrzeit auswählen</h4>
-                    <button class="assistant-next" type="button" data-close-overlay="time">Schließen</button>
-                  </header>
-                  <div id="assistTimeList" class="assistant-time-list"></div>
-                </article>
-              </div>
-              <p id="assistError5" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
-              <div class="assistant-step-actions">
-                <button id="assistBack5" class="assistant-next" type="button" data-assist-back="5">Zurück</button>
-              </div>
+          <section class="nova-step" data-step="5">
+            <header class="nova-step-head"><span class="nova-step-index">5</span><b>Uhrzeit</b><i class="nova-step-check">✓</i></header>
+            <div class="nova-step-body">
+              <input id="novaTimeValue" type="hidden">
+              <button id="novaTimeOpen" type="button" class="nova-picker-trigger">Uhrzeit auswählen</button>
+              <p class="nova-error" data-error="5" hidden>Bitte wählen Sie eine Uhrzeit.</p>
             </div>
           </section>
 
-          <section class="assistant-step is-locked" data-step="6">
-            <button class="assistant-step-head" type="button"><span class="assistant-step-no">6</span><b>Kontaktdaten</b><i class="assistant-check">✓</i></button>
-            <div class="assistant-step-body">
-              <div class="field-grid full"><label for="assistName">Vor- und Nachname</label><input id="assistName" type="text"></div>
-              <div class="field-grid full"><label for="assistPhone">Telefonnummer</label><input id="assistPhone" type="tel"></div>
-              <div class="field-grid full"><label for="assistEmail">E-Mail (optional)</label><input id="assistEmail" type="email"></div>
-              <div class="field-grid full"><label for="assistInsurance">Krankenkasse (optional)</label><input id="assistInsurance" type="text"></div>
-              <div class="field-grid full"><label for="assistNotes">Bemerkungen (optional)</label><textarea id="assistNotes" rows="4"></textarea></div>
-              <p id="assistError6" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
-              <div class="assistant-step-actions">
-                <button id="assistBack6" class="assistant-next" type="button" data-assist-back="6">Zurück</button>
-                <button id="assistNext6" class="assistant-next" type="button" data-assist-next="6">Zusammenfassung anzeigen</button>
-              </div>
+          <section class="nova-step" data-step="6">
+            <header class="nova-step-head"><span class="nova-step-index">6</span><b>Kontaktdaten</b><i class="nova-step-check">✓</i></header>
+            <div class="nova-step-body">
+              <div class="field-grid full"><label for="novaName">Vor- und Nachname</label><input id="novaName" type="text"></div>
+              <div class="field-grid full"><label for="novaPhone">Telefonnummer</label><input id="novaPhone" type="tel"></div>
+              <div class="field-grid full"><label for="novaEmail">E-Mail (optional)</label><input id="novaEmail" type="email"></div>
+              <div class="field-grid full"><label for="novaInsurance">Krankenkasse (optional)</label><input id="novaInsurance" type="text"></div>
+              <div class="field-grid full"><label for="novaNotes">Bemerkungen (optional)</label><textarea id="novaNotes" rows="4"></textarea></div>
+              <p class="nova-error" data-error="6" hidden>Bitte Name und Telefonnummer ausfüllen.</p>
+              <button type="button" class="nova-confirm" data-confirm-step="6">Schritt bestätigen</button>
             </div>
           </section>
 
-          <section class="assistant-step is-locked" data-step="7">
-            <button class="assistant-step-head" type="button"><span class="assistant-step-no">7</span><b>Zusammenfassung</b><i class="assistant-check">✓</i></button>
-            <div class="assistant-step-body">
-              <p class="assistant-summary-lead">Bitte prüfen Sie Ihre Angaben.</p>
-              <article class="assistant-summary-card">
-                <div><span>Art der Fahrt</span><b id="summaryType">-</b></div>
-                <div><span>Abholadresse</span><b id="summaryPickup">-</b></div>
-                <div><span>Zieladresse</span><b id="summaryDestination">-</b></div>
-                <div><span>Abholdatum</span><b id="summaryDate">-</b></div>
-                <div><span>Gewünschte Abholzeit</span><b id="summaryTime">-</b></div>
-                <div><span>Name</span><b id="summaryName">-</b></div>
-                <div><span>Telefonnummer</span><b id="summaryPhone">-</b></div>
-                <div><span>E-Mail</span><b id="summaryEmail">-</b></div>
-                <div><span>Krankenkasse</span><b id="summaryInsurance">-</b></div>
-                <div><span>Arzttermin (optional)</span><b id="summaryDoctorTime">-</b></div>
-                <div><span>Bemerkungen</span><b id="summaryNotes">-</b></div>
+          <section class="nova-step" data-step="7">
+            <header class="nova-step-head"><span class="nova-step-index">7</span><b>Zusammenfassung</b><i class="nova-step-check">✓</i></header>
+            <div class="nova-step-body">
+              <p class="nova-summary-lead">Bitte prüfen Sie Ihre Angaben.</p>
+              <article class="nova-summary-grid">
+                <div class="nova-summary-item"><span>Art der Fahrt</span><b id="novaSummaryType">-</b></div>
+                <div class="nova-summary-item"><span>Abholadresse</span><b id="novaSummaryPickup">-</b></div>
+                <div class="nova-summary-item"><span>Zieladresse</span><b id="novaSummaryDestination">-</b></div>
+                <div class="nova-summary-item"><span>Datum</span><b id="novaSummaryDate">-</b></div>
+                <div class="nova-summary-item"><span>Uhrzeit</span><b id="novaSummaryTime">-</b></div>
+                <div class="nova-summary-item"><span>Name</span><b id="novaSummaryName">-</b></div>
+                <div class="nova-summary-item"><span>Telefon</span><b id="novaSummaryPhone">-</b></div>
+                <div class="nova-summary-item"><span>E-Mail</span><b id="novaSummaryEmail">-</b></div>
+                <div class="nova-summary-item"><span>Krankenkasse</span><b id="novaSummaryInsurance">-</b></div>
+                <div class="nova-summary-item"><span>Bemerkungen</span><b id="novaSummaryNotes">-</b></div>
               </article>
-              <div class="assistant-summary-actions">
-                <button id="assistSubmit" class="medical-submit" type="button">Anfrage absenden</button>
-                <button id="assistEdit" class="assistant-edit" type="button">Angaben bearbeiten</button>
+              <div class="nova-summary-actions">
+                <button id="novaSubmit" type="button" class="medical-submit">Anfrage absenden</button>
+                <button id="novaEdit" type="button" class="assistant-edit">Bearbeiten</button>
               </div>
-              <p id="assistSuccess" class="assistant-success" hidden>Ihre Anfrage wurde gespeichert. Wir melden uns schnellstmöglich bei Ihnen.</p>
+              <p id="novaSuccess" class="assistant-success" hidden>Ihre Anfrage wurde gespeichert. Wir melden uns schnellstmöglich.</p>
             </div>
           </section>
+        </div>
+
+        <div id="novaDateOverlay" class="nova-overlay" hidden>
+          <div class="nova-overlay-backdrop" data-close-overlay="date"></div>
+          <article class="nova-overlay-panel" role="dialog" aria-modal="true" aria-label="Datum auswählen">
+            <header class="nova-overlay-head">
+              <button type="button" class="nova-confirm" data-month-nav="prev">←</button>
+              <h4 id="novaMonthLabel">Monat Jahr</h4>
+              <button type="button" class="nova-confirm" data-month-nav="next">→</button>
+            </header>
+            <div class="nova-weekdays" aria-hidden="true"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+            <div id="novaCalendarGrid" class="nova-calendar-grid"></div>
+            <footer class="nova-overlay-foot"><button type="button" class="nova-confirm" data-close-overlay="date">Schließen</button></footer>
+          </article>
+        </div>
+
+        <div id="novaTimeOverlay" class="nova-overlay" hidden>
+          <div class="nova-overlay-backdrop" data-close-overlay="time"></div>
+          <article class="nova-overlay-panel" role="dialog" aria-modal="true" aria-label="Uhrzeit auswählen">
+            <header class="nova-overlay-head">
+              <h4>Uhrzeit auswählen</h4>
+              <button type="button" class="nova-confirm" data-close-overlay="time">Schließen</button>
+            </header>
+            <div class="nova-time-panel">
+              <div>
+                <p class="nova-time-label">Stunde</p>
+                <div id="novaHourGrid" class="nova-time-grid"></div>
+              </div>
+              <div>
+                <p class="nova-time-label">Minute</p>
+                <div id="novaMinuteGrid" class="nova-time-grid"></div>
+              </div>
+            </div>
+            <p id="novaTimePreview" class="nova-time-preview">Ausgewählt: --:--</p>
+          </article>
         </div>
       </section>
 
