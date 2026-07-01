@@ -95,6 +95,25 @@
 
     const hintLines=['Perfekt.','Alles klar.','Fast geschafft.'];
 
+    function setTimeModalState(open){
+      if(!timeOverlay) return;
+      if(open){
+        timeOverlay.hidden=false;
+        timeOverlay.classList.add('is-open');
+        timeOverlay.style.display='flex';
+        timeOverlay.style.opacity='1';
+        timeOverlay.style.visibility='visible';
+        timeOverlay.style.pointerEvents='auto';
+        return;
+      }
+      timeOverlay.classList.remove('is-open');
+      timeOverlay.hidden=true;
+      timeOverlay.style.display='none';
+      timeOverlay.style.opacity='0';
+      timeOverlay.style.visibility='hidden';
+      timeOverlay.style.pointerEvents='none';
+    }
+
     function toIso(date){
       return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     }
@@ -235,16 +254,14 @@
       }
       if(kind==='time' && timeOverlay){
         if(state.activeStep!==5) return;
-        timeOverlay.hidden=false;
-        timeOverlay.classList.add('is-open');
+        setTimeModalState(true);
       }
     }
 
     function closeOverlay(kind){
       if(kind==='date' && dateOverlay) dateOverlay.hidden=true;
       if(kind==='time' && timeOverlay){
-        timeOverlay.classList.remove('is-open');
-        timeOverlay.hidden=true;
+        setTimeModalState(false);
       }
     }
 
@@ -402,10 +419,7 @@
 
     updateProgress();
     refreshSummary();
-    if(timeOverlay){
-      timeOverlay.classList.remove('is-open');
-      timeOverlay.hidden=true;
-    }
+    setTimeModalState(false);
     setStep(1);
   }
   function initMedicalBookingScroll(){
