@@ -366,8 +366,8 @@
           <section class="nova-step" data-step="5">
             <header class="nova-step-head"><span class="nova-step-index">5</span><b>Uhrzeit</b><i class="nova-step-check">✓</i></header>
             <div class="nova-step-body">
-              <input id="novaTimeValue" type="hidden">
-              <button id="novaTimeOpen" type="button" class="nova-picker-trigger">Uhrzeit auswählen</button>
+              <p class="nova-time-help">Bitte wählen Sie die Uhrzeit, zu der wir Sie abholen sollen – nicht die Uhrzeit Ihres Arzttermins.</p>
+              <div id="novaTimeList" class="nova-time-list" aria-label="Gewünschte Abholzeit"></div>
               <p class="nova-error" data-error="5" hidden>Bitte wählen Sie eine Uhrzeit.</p>
             </div>
           </section>
@@ -410,26 +410,6 @@
           </section>
         </div>
 
-        <div id="novaTimeOverlay" class="nova-overlay" hidden>
-          <div class="nova-overlay-backdrop" data-close-overlay="time"></div>
-          <article class="nova-overlay-panel" role="dialog" aria-modal="true" aria-label="Uhrzeit auswählen">
-            <header class="nova-overlay-head">
-              <h4>Uhrzeit auswählen</h4>
-              <button type="button" class="nova-confirm" data-close-overlay="time">Schließen</button>
-            </header>
-            <div class="nova-time-panel">
-              <div>
-                <p class="nova-time-label">Stunde</p>
-                <div id="novaHourGrid" class="nova-time-grid"></div>
-              </div>
-              <div>
-                <p class="nova-time-label">Minute</p>
-                <div id="novaMinuteGrid" class="nova-time-grid"></div>
-              </div>
-            </div>
-            <p id="novaTimePreview" class="nova-time-preview">Ausgewählt: --:--</p>
-          </article>
-        </div>
       </section>
 
       <section class="medical-section">

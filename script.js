@@ -64,12 +64,9 @@
     const success=$('#novaSuccess');
 
     const dateOverlay=$('#novaDateOverlay');
-    const timeOverlay=$('#novaTimeOverlay');
     const monthLabel=$('#novaMonthLabel');
     const calendarGrid=$('#novaCalendarGrid');
-    const hourGrid=$('#novaHourGrid');
-    const minuteGrid=$('#novaMinuteGrid');
-    const timePreview=$('#novaTimePreview');
+    const timeList=$('#novaTimeList');
 
     const state={
       activeStep:1,
@@ -94,25 +91,6 @@
     };
 
     const hintLines=['Perfekt.','Alles klar.','Fast geschafft.'];
-
-    function setTimeModalState(open){
-      if(!timeOverlay) return;
-      if(open){
-        timeOverlay.hidden=false;
-        timeOverlay.classList.add('is-open');
-        timeOverlay.style.display='flex';
-        timeOverlay.style.opacity='1';
-        timeOverlay.style.visibility='visible';
-        timeOverlay.style.pointerEvents='auto';
-        return;
-      }
-      timeOverlay.classList.remove('is-open');
-      timeOverlay.hidden=true;
-      timeOverlay.style.display='none';
-      timeOverlay.style.opacity='0';
-      timeOverlay.style.visibility='hidden';
-      timeOverlay.style.pointerEvents='none';
-    }
 
     function toIso(date){
       return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
@@ -179,7 +157,7 @@
       });
       updateProgress();
       refreshSummary();
-      if(state.activeStep!==5) closeOverlay('time');
+      renderTimeOptions();
       const active=$(`.nova-step[data-step="${state.activeStep}"]`);
       const focusEl=active?.querySelector('input:not([type="hidden"]), textarea, button.nova-confirm, button.nova-picker-trigger, button.nova-choice');
       focusEl?.focus();
@@ -247,42 +225,36 @@
       calendarGrid.innerHTML=cells.join('');
     }
 
+    function buildTimeSlots(){
+      const slots=[];
+      for(let h=6;h<=22;h++){
+        for(let m=0;m<60;m+=10){
+          if(h===22 && m>50) break;
+          slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+        }
+      }
+      return slots;
+    }
+
+    const timeSlots=buildTimeSlots();
+
+    function renderTimeOptions(){
+      if(!timeList) return;
+      timeList.innerHTML=timeSlots.map(slot=>{
+        const active=state.values.time===slot?' is-selected':'';
+        return `<button type="button" class="nova-time-option${active}" data-time-value="${slot}">${slot}</button>`;
+      }).join('');
+    }
+
     function openOverlay(kind){
       if(kind==='date' && dateOverlay){
         dateOverlay.hidden=false;
         renderCalendar();
       }
-      if(kind==='time' && timeOverlay){
-        if(state.activeStep!==5) return;
-        setTimeModalState(true);
-      }
     }
 
     function closeOverlay(kind){
       if(kind==='date' && dateOverlay) dateOverlay.hidden=true;
-      if(kind==='time' && timeOverlay){
-        setTimeModalState(false);
-      }
-    }
-
-    function renderTimeGrids(){
-      if(!hourGrid || !minuteGrid || !timePreview) return;
-      const hours=[];
-      for(let h=0;h<24;h++){
-        const hh=String(h).padStart(2,'0');
-        const active=state.selectedHour===hh?' is-selected':'';
-        hours.push(`<button type="button" class="nova-time-btn${active}" data-hour="${hh}">${hh}</button>`);
-      }
-      hourGrid.innerHTML=hours.join('');
-
-      const mins=['00','10','20','30','40','50'];
-      minuteGrid.innerHTML=mins.map(mm=>{
-        const active=state.selectedMinute===mm?' is-selected':'';
-        return `<button type="button" class="nova-time-btn${active}" data-minute="${mm}">${mm}</button>`;
-      }).join('');
-
-      const text=(state.selectedHour&&state.selectedMinute)?`${state.selectedHour}:${state.selectedMinute}`:'--:--';
-      timePreview.textContent=`Ausgewählt: ${text}`;
     }
 
     function applyDate(iso){
@@ -294,13 +266,10 @@
       completeStep(4);
     }
 
-    function applyTimeIfReady(){
-      if(!state.selectedHour || !state.selectedMinute) return;
-      state.values.time=`${state.selectedHour}:${state.selectedMinute}`;
-      const trigger=$('#novaTimeOpen');
-      if(trigger) trigger.textContent=state.values.time;
+    function applyTime(value){
+      state.values.time=value;
       hideError(5);
-      closeOverlay('time');
+      renderTimeOptions();
       completeStep(5);
     }
 
@@ -331,7 +300,6 @@
       }
 
       if(e.target.closest('#novaDateOpen')){ openOverlay('date'); return; }
-      if(e.target.closest('#novaTimeOpen')){ renderTimeGrids(); openOverlay('time'); return; }
 
       const monthNav=e.target.closest('[data-month-nav]');
       if(monthNav){
@@ -344,19 +312,9 @@
       const dateBtn=e.target.closest('[data-date]');
       if(dateBtn){ applyDate(dateBtn.dataset.date||''); return; }
 
-      const hourBtn=e.target.closest('[data-hour]');
-      if(hourBtn){
-        state.selectedHour=hourBtn.dataset.hour||null;
-        renderTimeGrids();
-        applyTimeIfReady();
-        return;
-      }
-
-      const minuteBtn=e.target.closest('[data-minute]');
-      if(minuteBtn){
-        state.selectedMinute=minuteBtn.dataset.minute||null;
-        renderTimeGrids();
-        applyTimeIfReady();
+      const timeBtn=e.target.closest('[data-time-value]');
+      if(timeBtn){
+        applyTime(timeBtn.dataset.timeValue||'');
         return;
       }
 
@@ -411,15 +369,12 @@
     });
 
     document.addEventListener('click',e=>{
-      if(!root.contains(e.target) && !dateOverlay?.contains(e.target) && !timeOverlay?.contains(e.target)){
-        closeOverlay('date');
-        closeOverlay('time');
-      }
+      if(!root.contains(e.target) && !dateOverlay?.contains(e.target)) closeOverlay('date');
     });
 
     updateProgress();
     refreshSummary();
-    setTimeModalState(false);
+    renderTimeOptions();
     setStep(1);
   }
   function initMedicalBookingScroll(){
