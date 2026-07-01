@@ -235,6 +235,65 @@ button svg,button [data-icon] svg,.outline svg,#locationBtn svg{width:22px!impor
   #services.services-page .service-premium-card h3{font-size:28px}
   #services.services-page .services-cta{width:100%;justify-self:stretch}
 }
+
+/* Phase 3 - Krankenfahrten Seite */
+#medical.medical-page{padding:8px 0 14px}
+#medical.medical-page .page-head{margin:4px 0 26px}
+#medical.medical-page .page-head h2{font-size:40px;letter-spacing:-.02em}
+#medical.medical-page .page-head i{display:block}
+#medical.medical-page .medical-hero{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:24px;align-items:center;padding:42px;border-radius:34px;background:linear-gradient(150deg,rgba(20,21,27,.98),rgba(8,9,12,.98));border:1px solid rgba(255,217,106,.2);box-shadow:0 28px 76px rgba(0,0,0,.28);margin-bottom:26px}
+#medical.medical-page .medical-hero-copy h1{margin:0 0 14px;font-family:var(--serif);font-size:52px;line-height:.98;letter-spacing:-.04em;max-width:860px}
+#medical.medical-page .medical-hero-copy p{margin:0;max-width:760px;color:rgba(255,255,255,.76);font-size:18px;line-height:1.75}
+#medical.medical-page .medical-hero-visual{display:grid;place-items:center}
+#medical.medical-page .medical-symbol{width:220px;height:220px;border-radius:32px;display:grid;place-items:center;background:radial-gradient(circle at 40% 25%,rgba(255,217,106,.2),rgba(255,217,106,.08) 45%,rgba(255,217,106,.02) 100%);border:1px solid rgba(255,217,106,.28);box-shadow:0 24px 54px rgba(0,0,0,.3)}
+#medical.medical-page .medical-symbol i{width:112px;height:112px;color:var(--gold)}
+#medical.medical-page .medical-section{margin-bottom:24px}
+#medical.medical-page .medical-section h3{margin:0 0 14px;font-family:var(--serif);font-size:38px;line-height:1.02;letter-spacing:-.03em}
+#medical.medical-page .medical-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+#medical.medical-page .medical-card{display:grid;align-content:start;gap:10px;min-height:208px;padding:24px;border-radius:26px;background:linear-gradient(155deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.11);box-shadow:0 18px 44px rgba(0,0,0,.22);transition:transform .32s cubic-bezier(.22,.61,.36,1),box-shadow .32s ease,border-color .28s ease,background .28s ease}
+#medical.medical-page .medical-card:hover{transform:translateY(-5px);box-shadow:0 30px 82px rgba(0,0,0,.3);border-color:rgba(255,255,255,.2);background:linear-gradient(155deg,rgba(255,255,255,.09),rgba(255,255,255,.03))}
+#medical.medical-page .medical-card i{width:52px;height:52px;padding:11px;border-radius:17px;color:var(--gold);background:rgba(255,217,106,.1);border:1px solid rgba(255,217,106,.27)}
+#medical.medical-page .medical-card b{font-family:var(--serif);font-size:28px;line-height:1.02}
+#medical.medical-page .medical-card p{margin:0;color:rgba(255,255,255,.72);font-size:14px;line-height:1.65}
+#medical.medical-page .medical-timeline{list-style:none;margin:0;padding:0;display:grid;gap:0;border-radius:28px;background:linear-gradient(145deg,rgba(20,21,27,.96),rgba(8,9,12,.96));border:1px solid rgba(255,255,255,.1);overflow:hidden}
+#medical.medical-page .medical-timeline li{display:grid;grid-template-columns:60px minmax(0,1fr);gap:12px;align-items:center;padding:18px 22px;position:relative}
+#medical.medical-page .medical-timeline li:not(:last-child){border-bottom:1px solid rgba(255,255,255,.08)}
+#medical.medical-page .medical-timeline li:not(:last-child):after{content:'↓';position:absolute;left:40px;bottom:-14px;color:var(--gold);font-size:16px;line-height:1;z-index:1}
+#medical.medical-page .medical-timeline span{width:36px;height:36px;border-radius:999px;display:grid;place-items:center;background:rgba(255,217,106,.12);border:1px solid rgba(255,217,106,.34);color:var(--gold);font-weight:900}
+#medical.medical-page .medical-timeline p{margin:0;color:rgba(255,255,255,.84);font-size:15px;line-height:1.55}
+#medical.medical-page .medical-advantages{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#medical.medical-page .medical-advantages li{display:flex;align-items:center;gap:10px;padding:16px 18px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.86);font-size:15px;font-weight:700;line-height:1.4}
+#medical.medical-page .medical-advantages li:before{content:'✓';display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 18px;color:var(--gold);font-size:14px;font-weight:900}
+#medical.medical-page .medical-cta{margin-top:6px;border-radius:30px;padding:30px;background:linear-gradient(145deg,rgba(20,21,27,.98),rgba(8,9,12,.98));border:1px solid rgba(255,217,106,.22);box-shadow:0 22px 56px rgba(0,0,0,.26)}
+#medical.medical-page .medical-cta h3{margin:0 0 14px;font-family:var(--serif);font-size:38px;line-height:1.02;letter-spacing:-.03em}
+#medical.medical-page .medical-cta-actions{display:flex;gap:12px;flex-wrap:wrap}
+#medical.medical-page .medical-cta-actions .button{min-width:220px;justify-content:center}
+
+@media(max-width:1100px){
+  #medical.medical-page .medical-hero{grid-template-columns:1fr;gap:18px;padding:34px}
+  #medical.medical-page .medical-hero-copy h1{font-size:44px}
+  #medical.medical-page .medical-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:760px){
+  #medical.medical-page .page-head{margin:0 0 20px}
+  #medical.medical-page .page-head h2{font-size:34px}
+  #medical.medical-page .medical-hero{padding:28px 22px;border-radius:28px}
+  #medical.medical-page .medical-hero-copy h1{font-size:36px}
+  #medical.medical-page .medical-hero-copy p{font-size:16px;line-height:1.72}
+  #medical.medical-page .medical-symbol{width:176px;height:176px}
+  #medical.medical-page .medical-symbol i{width:92px;height:92px}
+  #medical.medical-page .medical-section h3{font-size:32px}
+  #medical.medical-page .medical-cards{grid-template-columns:1fr;gap:14px}
+  #medical.medical-page .medical-card{min-height:0;padding:22px}
+  #medical.medical-page .medical-timeline li{grid-template-columns:50px minmax(0,1fr);padding:16px}
+  #medical.medical-page .medical-timeline li:not(:last-child):after{left:32px}
+  #medical.medical-page .medical-advantages{grid-template-columns:1fr}
+  #medical.medical-page .medical-cta{padding:24px}
+  #medical.medical-page .medical-cta h3{font-size:32px}
+  #medical.medical-page .medical-cta-actions{display:grid;grid-template-columns:1fr;gap:10px}
+  #medical.medical-page .medical-cta-actions .button{min-width:0;width:100%}
+}
 body{background:radial-gradient(circle at 50% 10%,rgba(255,217,106,.12),transparent 35%),#050505}
 body:before{background-size:54px 54px;opacity:.12}
 .app{padding:72px 40px 96px}
