@@ -55,577 +55,348 @@
   }
   function initMedicalAssistant(){
     const root=$('#medicalAssistant');
-    if(!root) return;
-    const steps=$$('.assistant-step',root);
-    const rideChoices=$$('.ride-choice',root);
-    const streetSuggestions=[
-      'Friedrich-Ebert-Straße','Bahnhofstraße','Hauptstraße','August-Keiler-Straße',
-      'Rheinbrückenstraße','Josef-Probst-Straße','Waldstraße','Königstraße',
-      'Marktstraße','Sondernheimer Straße','Lingenfelder Straße','Bellheimer Straße',
-      'Wörther Straße','Speyerer Straße'
-    ];
+    if(!root || !root.classList.contains('nova-assistant')) return;
 
-    const pickupInput=$('#assistPickup');
-    const destinationInput=$('#assistDestination');
-    const dateInput=$('#assistDate');
-    const timeInput=$('#assistTime');
-    const doctorTimeInput=$('#assistDoctorTime');
-    const pickupSuggestions=$('#assistPickupSuggestions');
-    const destinationSuggestions=$('#assistDestinationSuggestions');
+    const steps=$$('.nova-step',root);
+    const progressText=$('#novaProgressText');
+    const progressFill=$('#novaProgressFill');
+    const hint=$('#novaHint');
+    const success=$('#novaSuccess');
 
-    const dateTrigger=$('#assistDateTrigger');
-    const dateOverlay=$('#assistDateOverlay');
-    const dateMonthLabel=$('#assistDateMonthLabel');
-    const dateCalendar=$('#assistDateCalendar');
+    const dateOverlay=$('#novaDateOverlay');
+    const timeOverlay=$('#novaTimeOverlay');
+    const monthLabel=$('#novaMonthLabel');
+    const calendarGrid=$('#novaCalendarGrid');
+    const hourGrid=$('#novaHourGrid');
+    const minuteGrid=$('#novaMinuteGrid');
+    const timePreview=$('#novaTimePreview');
 
-    const timeOverlay=$('#assistTimeOverlay');
-    const timeList=$('#assistTimeList');
-    const timeTitle=$('#assistTimeTitle');
-    const pickupTimeTrigger=$('#assistTimeTrigger');
-    const doctorTimeTrigger=$('#assistDoctorTimeTrigger');
-    const progressLabel=$('#assistProgressLabel');
-    const progressBar=$('#assistProgressBar');
-    const speech=$('#assistSpeech');
-
-    const success=$('#assistSuccess');
-    const errors={
-      1:$('#assistError1'),
-      2:$('#assistError2'),
-      3:$('#assistError3'),
-      4:$('#assistError4'),
-      5:$('#assistError5'),
-      6:$('#assistError6')
-    };
-    const summaryEls={
-      type:$('#summaryType'),
-      pickup:$('#summaryPickup'),
-      destination:$('#summaryDestination'),
-      date:$('#summaryDate'),
-      time:$('#summaryTime'),
-      doctorTime:$('#summaryDoctorTime'),
-      name:$('#summaryName'),
-      phone:$('#summaryPhone'),
-      email:$('#summaryEmail'),
-      insurance:$('#summaryInsurance'),
-      notes:$('#summaryNotes')
+    const state={
+      activeStep:1,
+      completed:new Set(),
+      values:{
+        rideType:'',
+        pickup:'',
+        destination:'',
+        date:'',
+        time:'',
+        name:'',
+        phone:'',
+        email:'',
+        insurance:'',
+        notes:''
+      },
+      calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),
+      selectedHour:null,
+      selectedMinute:null,
+      hintTimer:null,
+      hintIndex:0
     };
 
-    const form={
-      type:'',
-      pickup:'',
-      destination:'',
-      date:'',
-      time:'',
-      doctorTime:'',
-      name:'',
-      phone:'',
-      email:'',
-      insurance:'',
-      notes:''
-    };
+    const hintLines=['Perfekt.','Alles klar.','Fast geschafft.'];
 
-    let currentStep=1;
-    let maxUnlocked=1;
-    let activeTimeTarget='pickup';
-    let calendarMonth=new Date();
-    const completedSteps=new Set();
-    let speechTimer=null;
-    const speechLines=['Perfekt.','Alles klar.','Super.','Fast geschafft.','Nur noch zwei Schritte.','Ich habe alles notiert.','Prima.','Das war einfach.'];
-
-    Object.values(errors).forEach(el=>{if(el) el.textContent='Bitte füllen Sie die Pflichtangaben aus.'});
-
-    function formatIsoDate(date){
+    function toIso(date){
       return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     }
 
-    function parseIsoDate(value){
+    function fromIso(value){
       if(!value) return null;
       const [y,m,d]=value.split('-').map(Number);
       if(!y||!m||!d) return null;
-      const parsed=new Date(y,m-1,d);
-      return Number.isNaN(parsed.getTime())?null:parsed;
+      const date=new Date(y,m-1,d);
+      return Number.isNaN(date.getTime())?null:date;
     }
 
-    function formatDisplayDate(value){
-      const parsed=parseIsoDate(value);
-      if(!parsed) return 'Datum auswählen';
-      return parsed.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+    function displayDate(value){
+      const date=fromIso(value);
+      if(!date) return 'Datum auswählen';
+      return date.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
     }
 
-    function buildTimeSlots(){
-      const slots=[];
-      for(let h=6;h<=22;h++){
-        for(let m=0;m<60;m+=10){
-          if(h===22 && m>50) break;
-          slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
-        }
-      }
-      return slots;
-    }
-
-    function speak(stepNumber){
-      if(!speech) return;
-      const text=speechLines[(stepNumber-1)%speechLines.length];
-      speech.textContent=text;
-      speech.hidden=false;
-      speech.classList.add('is-visible');
-      if(speechTimer) clearTimeout(speechTimer);
-      speechTimer=setTimeout(()=>{
-        speech.classList.remove('is-visible');
-        setTimeout(()=>{speech.hidden=true;},220);
+    function showHint(){
+      if(!hint) return;
+      if(state.hintTimer) clearTimeout(state.hintTimer);
+      hint.textContent=hintLines[state.hintIndex%hintLines.length];
+      state.hintIndex+=1;
+      hint.hidden=false;
+      hint.classList.add('is-visible');
+      state.hintTimer=setTimeout(()=>{
+        hint.classList.remove('is-visible');
+        setTimeout(()=>{hint.hidden=true;},220);
       },1000);
     }
 
-    function updateProgress(stepNumber){
-      if(progressLabel) progressLabel.textContent=`Schritt ${stepNumber} von 7`;
-      if(progressBar) progressBar.style.width=`${(stepNumber/7)*100}%`;
+    function updateProgress(){
+      if(progressText) progressText.textContent=`Schritt ${state.activeStep} von 7`;
+      if(progressFill) progressFill.style.width=`${(state.activeStep/7)*100}%`;
     }
 
-    function readForm(){
-      form.pickup=pickupInput?.value||'';
-      form.destination=destinationInput?.value||'';
-      form.date=dateInput?.value||'';
-      form.time=timeInput?.value||'';
-      form.doctorTime=doctorTimeInput?.value||'';
-      form.name=$('#assistName')?.value||'';
-      form.phone=$('#assistPhone')?.value||'';
-      form.email=$('#assistEmail')?.value||'';
-      form.insurance=$('#assistInsurance')?.value||'';
-      form.notes=$('#assistNotes')?.value||'';
-    }
-
-    function showError(stepNumber){ if(errors[stepNumber]) errors[stepNumber].hidden=false; }
-    function hideError(stepNumber){ if(errors[stepNumber]) errors[stepNumber].hidden=true; }
-
-    function clearCompletedFrom(stepNumber){
-      for(let n=stepNumber;n<=6;n++) completedSteps.delete(n);
-    }
-
-    function updateSummary(){
-      Object.entries(summaryEls).forEach(([key,el])=>{
-        if(!el) return;
-        const value=(form[key]||'').toString().trim();
-        el.textContent=value||'-';
+    function refreshSummary(){
+      const map={
+        novaSummaryType:state.values.rideType,
+        novaSummaryPickup:state.values.pickup,
+        novaSummaryDestination:state.values.destination,
+        novaSummaryDate:state.values.date?displayDate(state.values.date):'',
+        novaSummaryTime:state.values.time,
+        novaSummaryName:state.values.name,
+        novaSummaryPhone:state.values.phone,
+        novaSummaryEmail:state.values.email,
+        novaSummaryInsurance:state.values.insurance,
+        novaSummaryNotes:state.values.notes
+      };
+      Object.entries(map).forEach(([id,value])=>{
+        const el=$('#'+id);
+        if(el) el.textContent=(value||'').trim()||'-';
       });
     }
 
-    function renderAddressSuggestions(inputEl,listEl){
-      if(!inputEl||!listEl) return;
-      const query=inputEl.value.trim().toLowerCase();
-      if(query.length<2){
-        listEl.hidden=true;
-        listEl.innerHTML='';
+    function setStep(step){
+      state.activeStep=Math.max(1,Math.min(7,step));
+      steps.forEach(el=>{
+        const n=Number(el.dataset.step);
+        el.classList.toggle('is-open',n===state.activeStep);
+        el.classList.toggle('is-closed',n!==state.activeStep);
+        el.classList.toggle('is-complete',state.completed.has(n));
+      });
+      updateProgress();
+      refreshSummary();
+      const active=$(`.nova-step[data-step="${state.activeStep}"]`);
+      const focusEl=active?.querySelector('input:not([type="hidden"]), textarea, button.nova-confirm, button.nova-picker-trigger, button.nova-choice');
+      focusEl?.focus();
+    }
+
+    function showError(step,message){
+      const el=$(`.nova-error[data-error="${step}"]`,root);
+      if(!el) return;
+      if(message) el.textContent=message;
+      el.hidden=false;
+    }
+
+    function hideError(step){
+      const el=$(`.nova-error[data-error="${step}"]`,root);
+      if(el) el.hidden=true;
+    }
+
+    function validateStep(step){
+      if(step===1) return !!state.values.rideType;
+      if(step===2) return !!state.values.pickup.trim();
+      if(step===3) return !!state.values.destination.trim();
+      if(step===4) return !!state.values.date;
+      if(step===5) return !!state.values.time;
+      if(step===6) return !!state.values.name.trim() && !!state.values.phone.trim();
+      return true;
+    }
+
+    function completeStep(step){
+      if(!validateStep(step)){
+        if(step===6) showError(step,'Bitte Name und Telefonnummer ausfüllen.');
+        else showError(step);
         return;
       }
-      const matches=streetSuggestions
-        .filter(name=>name.toLowerCase().includes(query))
-        .slice(0,6);
-      if(!matches.length){
-        listEl.hidden=true;
-        listEl.innerHTML='';
-        return;
-      }
-      listEl.innerHTML=matches
-        .map(name=>`<button class="assist-suggestion" type="button" data-address-choice="${name}">${name}</button>`)
-        .join('');
-      listEl.hidden=false;
-    }
-
-    function hideAddressSuggestions(){
-      if(pickupSuggestions){pickupSuggestions.hidden=true;pickupSuggestions.innerHTML='';}
-      if(destinationSuggestions){destinationSuggestions.hidden=true;destinationSuggestions.innerHTML='';}
-    }
-
-    function openOverlay(overlay){
-      if(!overlay) return;
-      overlay.classList.remove('hidden');
-      overlay.setAttribute('aria-hidden','false');
-    }
-
-    function closeOverlay(overlay){
-      if(!overlay) return;
-      overlay.classList.add('hidden');
-      overlay.setAttribute('aria-hidden','true');
-    }
-
-    function setDateTriggerLabel(){
-      if(!dateTrigger) return;
-      readForm();
-      dateTrigger.textContent=formatDisplayDate(form.date);
-      dateTrigger.classList.toggle('is-filled',!!form.date);
-    }
-
-    function setTimeTriggerLabels(){
-      readForm();
-      if(pickupTimeTrigger){
-        pickupTimeTrigger.textContent=form.time||'Abholzeit auswählen';
-        pickupTimeTrigger.classList.toggle('is-filled',!!form.time);
-      }
-      if(doctorTimeTrigger){
-        doctorTimeTrigger.textContent=form.doctorTime||'Arzttermin auswählen';
-        doctorTimeTrigger.classList.toggle('is-filled',!!form.doctorTime);
+      hideError(step);
+      state.completed.add(step);
+      showHint();
+      if(step<7){
+        setStep(step+1);
       }
     }
 
     function renderCalendar(){
-      if(!dateCalendar||!dateMonthLabel) return;
-      const firstDay=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);
-      const lastDay=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0);
-      const monthDays=lastDay.getDate();
-      const startOffset=(firstDay.getDay()+6)%7;
-      const todayIso=formatIsoDate(new Date());
-      const todayDate=parseIsoDate(todayIso);
-      const selectedIso=dateInput?.value||'';
-      dateMonthLabel.textContent=firstDay.toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+      if(!calendarGrid || !monthLabel) return;
+      const monthStart=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth(),1);
+      const monthEnd=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,0);
+      const startOffset=(monthStart.getDay()+6)%7;
+      const today=new Date();
+      today.setHours(0,0,0,0);
+      const selected=state.values.date;
+      monthLabel.textContent=monthStart.toLocaleDateString('de-DE',{month:'long',year:'numeric'});
 
       const cells=[];
-      for(let i=0;i<startOffset;i++) cells.push('<span class="assistant-date-day is-empty"></span>');
-      for(let day=1;day<=monthDays;day++){
-        const dt=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),day);
-        const iso=formatIsoDate(dt);
-        const classes=['assistant-date-day'];
-        if(iso===todayIso) classes.push('is-today');
-        if(iso===selectedIso) classes.push('is-selected');
-        if(todayDate && dt<todayDate) classes.push('is-disabled');
-        cells.push(`<button class="${classes.join(' ')}" type="button" data-date-value="${iso}">${day}</button>`);
+      for(let i=0;i<startOffset;i++) cells.push('<span class="nova-calendar-day is-empty"></span>');
+      for(let day=1;day<=monthEnd.getDate();day++){
+        const date=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth(),day);
+        date.setHours(0,0,0,0);
+        const iso=toIso(date);
+        const cls=['nova-calendar-day'];
+        if(iso===toIso(today)) cls.push('is-today');
+        if(iso===selected) cls.push('is-selected');
+        if(date<today) cls.push('is-disabled');
+        const disabled=date<today?' disabled':'';
+        cells.push(`<button type="button" class="${cls.join(' ')}" data-date="${iso}"${disabled}>${day}</button>`);
       }
-      dateCalendar.innerHTML=cells.join('');
+      calendarGrid.innerHTML=cells.join('');
     }
 
-    function selectDate(value,autoAdvance){
-      if(!dateInput) return;
-      dateInput.value=value;
-      form.date=value;
-      hideError(4);
-      setDateTriggerLabel();
-      updateSummary();
-      closeOverlay(dateOverlay);
-      if(autoAdvance){
-        success.hidden=true;
-        clearCompletedFrom(4);
-        goNext(4);
-      }else{
-        showStep(currentStep);
+    function openOverlay(kind){
+      if(kind==='date' && dateOverlay){
+        dateOverlay.hidden=false;
+        renderCalendar();
+      }
+      if(kind==='time' && timeOverlay){
+        timeOverlay.hidden=false;
       }
     }
 
-    function renderTimeList(){
-      if(!timeList||!timeTitle) return;
-      readForm();
-      const selected=activeTimeTarget==='pickup'?form.time:form.doctorTime;
-      timeTitle.textContent=activeTimeTarget==='pickup'?'Gewünschte Abholzeit':'Termin beim Arzt (optional)';
-      const slots=buildTimeSlots();
-      const groups=[];
-      for(let h=6;h<=22;h++){
+    function closeOverlay(kind){
+      if(kind==='date' && dateOverlay) dateOverlay.hidden=true;
+      if(kind==='time' && timeOverlay) timeOverlay.hidden=true;
+    }
+
+    function renderTimeGrids(){
+      if(!hourGrid || !minuteGrid || !timePreview) return;
+      const hours=[];
+      for(let h=0;h<24;h++){
         const hh=String(h).padStart(2,'0');
-        const hourSlots=slots.filter(t=>t.startsWith(`${hh}:`));
-        const buttons=hourSlots.map(slot=>{
-          const selectedClass=slot===selected?' is-selected':'';
-          return `<button class="assistant-time-option${selectedClass}" type="button" data-time-value="${slot}">${slot.slice(3)}</button>`;
-        }).join('');
-        groups.push(`<article class="assistant-time-hour"><b>${hh} Uhr</b><div class="assistant-time-grid">${buttons}</div></article>`);
+        const active=state.selectedHour===hh?' is-selected':'';
+        hours.push(`<button type="button" class="nova-time-btn${active}" data-hour="${hh}">${hh}</button>`);
       }
-      timeList.innerHTML=groups.join('');
+      hourGrid.innerHTML=hours.join('');
+
+      const mins=['00','10','20','30','40','50'];
+      minuteGrid.innerHTML=mins.map(mm=>{
+        const active=state.selectedMinute===mm?' is-selected':'';
+        return `<button type="button" class="nova-time-btn${active}" data-minute="${mm}">${mm}</button>`;
+      }).join('');
+
+      const text=(state.selectedHour&&state.selectedMinute)?`${state.selectedHour}:${state.selectedMinute}`:'--:--';
+      timePreview.textContent=`Ausgewählt: ${text}`;
     }
 
-    function validateStep(stepNumber){
-      readForm();
-      if(stepNumber===1) return !!form.type;
-      if(stepNumber===2) return !!form.pickup.trim();
-      if(stepNumber===3) return !!form.destination.trim();
-      if(stepNumber===4) return !!form.date;
-      if(stepNumber===5) return !!form.time;
-      if(stepNumber===6) return !!form.name.trim() && !!form.phone.trim();
-      return true;
+    function applyDate(iso){
+      state.values.date=iso;
+      const trigger=$('#novaDateOpen');
+      if(trigger) trigger.textContent=displayDate(iso);
+      hideError(4);
+      closeOverlay('date');
+      completeStep(4);
     }
 
-    function showStep(stepNumber){
-      currentStep=Math.max(1,Math.min(7,stepNumber));
-      steps.forEach(step=>{
-        const n=Number(step.dataset.step);
-        step.classList.toggle('is-active',n===currentStep);
-        step.classList.toggle('is-locked',n>maxUnlocked);
-        step.classList.toggle('is-complete',completedSteps.has(n));
-      });
-      updateProgress(currentStep);
-      updateSummary();
-    }
-
-    function focusFirstInteractive(stepNumber){
-      const stepEl=$(`.assistant-step[data-step="${stepNumber}"]`,root);
-      if(!stepEl) return;
-      const focusEl=stepEl.querySelector('input:not([type="hidden"]), textarea, button.assistant-picker-trigger, button.assistant-next, .ride-choice');
-      focusEl?.focus();
-    }
-
-    function goNext(stepNumber){
-      if(!validateStep(stepNumber)){
-        showError(stepNumber);
-        showStep(stepNumber);
-        return;
-      }
-      hideError(stepNumber);
-      completedSteps.add(stepNumber);
-      speak(stepNumber);
-      if(stepNumber<7){
-        maxUnlocked=Math.max(maxUnlocked,stepNumber+1);
-        showStep(stepNumber+1);
-        focusFirstInteractive(stepNumber+1);
-      }
-    }
-
-    function goBack(stepNumber){
-      showStep(Math.max(1,stepNumber-1));
+    function applyTimeIfReady(){
+      if(!state.selectedHour || !state.selectedMinute) return;
+      state.values.time=`${state.selectedHour}:${state.selectedMinute}`;
+      const trigger=$('#novaTimeOpen');
+      if(trigger) trigger.textContent=state.values.time;
+      hideError(5);
+      closeOverlay('time');
+      completeStep(5);
     }
 
     root.addEventListener('click',e=>{
-      const choice=e.target.closest('.ride-choice');
+      const choice=e.target.closest('[data-ride]');
       if(choice){
-        form.type=choice.dataset.value||'';
-        rideChoices.forEach(c=>c.classList.toggle('is-selected',c===choice));
+        state.values.rideType=choice.dataset.ride||'';
+        $$('.nova-choice',root).forEach(btn=>btn.classList.toggle('is-selected',btn===choice));
         hideError(1);
-        success.hidden=true;
+        completeStep(1);
         return;
       }
 
-      const suggestion=e.target.closest('[data-address-choice]');
-      if(suggestion){
-        const value=suggestion.dataset.addressChoice||'';
-        if(pickupSuggestions && pickupSuggestions.contains(suggestion) && pickupInput){
-          pickupInput.value=value;
-          form.pickup=value;
-          hideError(2);
-        }
-        if(destinationSuggestions && destinationSuggestions.contains(suggestion) && destinationInput){
-          destinationInput.value=value;
-          form.destination=value;
-          hideError(3);
-        }
-        hideAddressSuggestions();
-        updateSummary();
-        showStep(currentStep);
-        return;
-      }
-
-      const quickDateBtn=e.target.closest('[data-quick-date]');
-      if(quickDateBtn){
-        const mode=quickDateBtn.dataset.quickDate;
-        const today=new Date();
-        if(mode==='today'){
-          calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);
-          renderCalendar();
-          selectDate(formatIsoDate(today),true);
-          return;
-        }
-        if(mode==='tomorrow'){
-          const tomorrow=new Date(today.getFullYear(),today.getMonth(),today.getDate()+1);
-          calendarMonth=new Date(tomorrow.getFullYear(),tomorrow.getMonth(),1);
-          renderCalendar();
-          selectDate(formatIsoDate(tomorrow),true);
-          return;
-        }
-        if(mode==='custom'){
-          const selected=parseIsoDate(dateInput?.value||'')||new Date();
-          calendarMonth=new Date(selected.getFullYear(),selected.getMonth(),1);
-          renderCalendar();
-          openOverlay(dateOverlay);
-          return;
-        }
-      }
-
-      if(e.target.closest('#assistDateTrigger')){
-        const selected=parseIsoDate(dateInput?.value||'')||new Date();
-        calendarMonth=new Date(selected.getFullYear(),selected.getMonth(),1);
-        renderCalendar();
-        openOverlay(dateOverlay);
-        return;
-      }
-
-      const dateNav=e.target.closest('[data-date-nav]');
-      if(dateNav){
-        calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+(dateNav.dataset.dateNav==='next'?1:-1),1);
-        renderCalendar();
-        return;
-      }
-
-      const datePick=e.target.closest('[data-date-value]');
-      if(datePick){
-        selectDate(datePick.dataset.dateValue||'',true);
-        return;
-      }
-
-      const timeTrigger=e.target.closest('[data-time-target]');
-      if(timeTrigger){
-        activeTimeTarget=timeTrigger.dataset.timeTarget||'pickup';
-        renderTimeList();
-        openOverlay(timeOverlay);
-        return;
-      }
-
-      const timePick=e.target.closest('[data-time-value]');
-      if(timePick){
-        const value=timePick.dataset.timeValue||'';
-        if(activeTimeTarget==='pickup' && timeInput){
-          timeInput.value=value;
-          form.time=value;
-          hideError(5);
-          setTimeTriggerLabels();
-          updateSummary();
-          closeOverlay(timeOverlay);
-          success.hidden=true;
-          clearCompletedFrom(5);
-          goNext(5);
-          const step6Inputs=$$('#medicalAssistant .assistant-step[data-step="6"] input');
-          step6Inputs[0]?.focus();
-          return;
-        }
-        if(activeTimeTarget==='doctor' && doctorTimeInput){
-          doctorTimeInput.value=value;
-          form.doctorTime=value;
-          setTimeTriggerLabels();
-          updateSummary();
-          closeOverlay(timeOverlay);
-          success.hidden=true;
-          showStep(currentStep);
-          return;
-        }
-      }
-
-      const closeOverlayBtn=e.target.closest('[data-close-overlay]');
-      if(closeOverlayBtn){
-        if(closeOverlayBtn.dataset.closeOverlay==='date') closeOverlay(dateOverlay);
-        if(closeOverlayBtn.dataset.closeOverlay==='time') closeOverlay(timeOverlay);
-        return;
-      }
-
-      const nextBtn=e.target.closest('[data-next],[data-assist-next]');
-      if(nextBtn){
-        const raw=nextBtn.dataset.next||nextBtn.dataset.assistNext||String(currentStep);
-        const step=Number(raw)||currentStep;
-        success.hidden=true;
-        clearCompletedFrom(step);
-        goNext(step);
+      const confirmBtn=e.target.closest('[data-confirm-step]');
+      if(confirmBtn){
+        const step=Number(confirmBtn.dataset.confirmStep);
+        if(step===2) state.values.pickup=$('#novaPickup')?.value||'';
+        if(step===3) state.values.destination=$('#novaDestination')?.value||'';
         if(step===6){
-          completedSteps.add(6);
-          maxUnlocked=Math.max(maxUnlocked,7);
-          showStep(7);
+          state.values.name=$('#novaName')?.value||'';
+          state.values.phone=$('#novaPhone')?.value||'';
+          state.values.email=$('#novaEmail')?.value||'';
+          state.values.insurance=$('#novaInsurance')?.value||'';
+          state.values.notes=$('#novaNotes')?.value||'';
         }
+        completeStep(step);
         return;
       }
 
-      const backBtn=e.target.closest('[data-back],[data-assist-back]');
-      if(backBtn){
-        const raw=backBtn.dataset.back||backBtn.dataset.assistBack||String(currentStep);
-        const step=Number(raw)||currentStep;
-        success.hidden=true;
-        goBack(step);
+      if(e.target.closest('#novaDateOpen')){ openOverlay('date'); return; }
+      if(e.target.closest('#novaTimeOpen')){ renderTimeGrids(); openOverlay('time'); return; }
+
+      const monthNav=e.target.closest('[data-month-nav]');
+      if(monthNav){
+        const dir=monthNav.dataset.monthNav==='next'?1:-1;
+        state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+dir,1);
+        renderCalendar();
         return;
       }
 
-      const summaryBtn=e.target.closest('[data-summary]');
-      if(summaryBtn){
-        success.hidden=true;
-        clearCompletedFrom(6);
-        goNext(6);
+      const dateBtn=e.target.closest('[data-date]');
+      if(dateBtn){ applyDate(dateBtn.dataset.date||''); return; }
+
+      const hourBtn=e.target.closest('[data-hour]');
+      if(hourBtn){
+        state.selectedHour=hourBtn.dataset.hour||null;
+        renderTimeGrids();
+        applyTimeIfReady();
         return;
       }
 
-      const editBtn=e.target.closest('[data-edit],#assistEdit');
+      const minuteBtn=e.target.closest('[data-minute]');
+      if(minuteBtn){
+        state.selectedMinute=minuteBtn.dataset.minute||null;
+        renderTimeGrids();
+        applyTimeIfReady();
+        return;
+      }
+
+      const closeBtn=e.target.closest('[data-close-overlay]');
+      if(closeBtn){ closeOverlay(closeBtn.dataset.closeOverlay); return; }
+
+      const editBtn=e.target.closest('#novaEdit');
       if(editBtn){
         success.hidden=true;
-        maxUnlocked=7;
-        showStep(1);
+        setStep(1);
         return;
       }
 
-      const submitBtn=e.target.closest('#assistSubmit');
+      const submitBtn=e.target.closest('#novaSubmit');
       if(submitBtn){
-        readForm();
-        updateSummary();
+        refreshSummary();
         success.hidden=false;
-      }
-
-      if(!e.target.closest('.assist-suggestions') && e.target!==pickupInput && e.target!==destinationInput){
-        hideAddressSuggestions();
       }
     });
 
     root.addEventListener('input',e=>{
       const id=e.target.id;
-      if(id==='assistPickup'){form.pickup=e.target.value;hideError(2);if(!form.pickup.trim()) clearCompletedFrom(2);renderAddressSuggestions(pickupInput,pickupSuggestions)}
-      if(id==='assistDestination'){form.destination=e.target.value;hideError(3);if(!form.destination.trim()) clearCompletedFrom(3);renderAddressSuggestions(destinationInput,destinationSuggestions)}
-      if(id==='assistDate'){form.date=e.target.value;hideError(4);if(!form.date) clearCompletedFrom(4);setDateTriggerLabel()}
-      if(id==='assistTime'){form.time=e.target.value;hideError(5);if(!form.time) clearCompletedFrom(5);setTimeTriggerLabels()}
-      if(id==='assistDoctorTime'){form.doctorTime=e.target.value;setTimeTriggerLabels()}
-      if(id==='assistName'){form.name=e.target.value;hideError(6);if(!form.name.trim()||!form.phone.trim()) clearCompletedFrom(6)}
-      if(id==='assistPhone'){form.phone=e.target.value;hideError(6);if(!form.name.trim()||!form.phone.trim()) clearCompletedFrom(6)}
-      if(id==='assistEmail') form.email=e.target.value;
-      if(id==='assistInsurance') form.insurance=e.target.value;
-      if(id==='assistNotes') form.notes=e.target.value;
-      success.hidden=true;
-      updateSummary();
-      showStep(currentStep);
+      if(id==='novaPickup'){ state.values.pickup=e.target.value; hideError(2); }
+      if(id==='novaDestination'){ state.values.destination=e.target.value; hideError(3); }
+      if(id==='novaName'){ state.values.name=e.target.value; hideError(6); }
+      if(id==='novaPhone'){ state.values.phone=e.target.value; hideError(6); }
+      if(id==='novaEmail') state.values.email=e.target.value;
+      if(id==='novaInsurance') state.values.insurance=e.target.value;
+      if(id==='novaNotes') state.values.notes=e.target.value;
+      refreshSummary();
     });
 
     root.addEventListener('keydown',e=>{
       if(e.key!=='Enter') return;
-      const activeStepEl=e.target.closest('.assistant-step');
-      if(!activeStepEl) return;
-      const step=Number(activeStepEl.dataset.step)||currentStep;
-      if(step!==currentStep) return;
-      if(step<1 || step>6) return;
-      if(step===2 || step===3){
+      const openStep=e.target.closest('.nova-step.is-open');
+      if(!openStep) return;
+      const step=Number(openStep.dataset.step);
+
+      if(step===2 || step===3 || step===6){
         e.preventDefault();
-        success.hidden=true;
-        clearCompletedFrom(step);
-        goNext(step);
-        return;
-      }
-      if(step===6){
-        if(e.target.tagName==='TEXTAREA' && e.target.id==='assistNotes'){
-          e.preventDefault();
-          success.hidden=true;
-          clearCompletedFrom(6);
-          goNext(6);
-          completedSteps.add(6);
-          maxUnlocked=Math.max(maxUnlocked,7);
-          showStep(7);
-          return;
+        if(step===2) state.values.pickup=$('#novaPickup')?.value||'';
+        if(step===3) state.values.destination=$('#novaDestination')?.value||'';
+        if(step===6){
+          state.values.name=$('#novaName')?.value||'';
+          state.values.phone=$('#novaPhone')?.value||'';
+          state.values.email=$('#novaEmail')?.value||'';
+          state.values.insurance=$('#novaInsurance')?.value||'';
+          state.values.notes=$('#novaNotes')?.value||'';
         }
-        if(e.target.tagName==='TEXTAREA') return;
-        const inputs=$$('.assistant-step[data-step="6"] input',root);
-        const index=inputs.indexOf(e.target);
-        if(index>-1 && index<inputs.length-1){
-          e.preventDefault();
-          inputs[index+1].focus();
-          return;
-        }
-        e.preventDefault();
-        success.hidden=true;
-        clearCompletedFrom(6);
-        goNext(6);
-        completedSteps.add(6);
-        maxUnlocked=Math.max(maxUnlocked,7);
-        showStep(7);
-        return;
+        completeStep(step);
       }
-      e.preventDefault();
-      success.hidden=true;
-      clearCompletedFrom(step);
-      goNext(step);
     });
 
     document.addEventListener('click',e=>{
-      if(!root.contains(e.target)){
-        hideAddressSuggestions();
-        closeOverlay(dateOverlay);
-        closeOverlay(timeOverlay);
+      if(!root.contains(e.target) && !dateOverlay?.contains(e.target) && !timeOverlay?.contains(e.target)){
+        closeOverlay('date');
+        closeOverlay('time');
       }
     });
 
-    setDateTriggerLabel();
-    setTimeTriggerLabels();
-    showStep(1);
+    updateProgress();
+    refreshSummary();
+    setStep(1);
   }
   function initMedicalBookingScroll(){
     const cta=$('#medicalHeroBookBtn');
