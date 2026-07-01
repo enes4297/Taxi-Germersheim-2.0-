@@ -58,43 +58,33 @@
     if(!root) return;
     const steps=$$('.assistant-step',root);
     const rideChoices=$$('.ride-choice',root);
-    const form={
-      type:'',
-      pickup:'',
-      destination:'',
-      date:'',
-      time:'',
-      name:'',
-      phone:'',
-      email:'',
-      insurance:'',
-      notes:''
-    };
-    const summaryEls={
-      type:$('#summaryType'),
-      pickup:$('#summaryPickup'),
-      destination:$('#summaryDestination'),
-      date:$('#summaryDate'),
-      time:$('#summaryTime'),
-      name:$('#summaryName'),
-      phone:$('#summaryPhone'),
-      email:$('#summaryEmail'),
-      insurance:$('#summaryInsurance'),
-      notes:$('#summaryNotes')
-    };
-    const success=$('#assistSuccess');
-    const pickupInput=$('#assistPickup');
-    const destinationInput=$('#assistDestination');
-    const timeInput=$('#assistTime');
-    const pickupSuggestions=$('#assistPickupSuggestions');
-    const destinationSuggestions=$('#assistDestinationSuggestions');
-    const timeChips=$$('.assist-time-chip',root);
     const streetSuggestions=[
       'Friedrich-Ebert-Straße','Bahnhofstraße','Hauptstraße','August-Keiler-Straße',
       'Rheinbrückenstraße','Josef-Probst-Straße','Waldstraße','Königstraße',
       'Marktstraße','Sondernheimer Straße','Lingenfelder Straße','Bellheimer Straße',
       'Wörther Straße','Speyerer Straße'
     ];
+
+    const pickupInput=$('#assistPickup');
+    const destinationInput=$('#assistDestination');
+    const dateInput=$('#assistDate');
+    const timeInput=$('#assistTime');
+    const doctorTimeInput=$('#assistDoctorTime');
+    const pickupSuggestions=$('#assistPickupSuggestions');
+    const destinationSuggestions=$('#assistDestinationSuggestions');
+
+    const dateTrigger=$('#assistDateTrigger');
+    const dateOverlay=$('#assistDateOverlay');
+    const dateMonthLabel=$('#assistDateMonthLabel');
+    const dateCalendar=$('#assistDateCalendar');
+
+    const timeOverlay=$('#assistTimeOverlay');
+    const timeList=$('#assistTimeList');
+    const timeTitle=$('#assistTimeTitle');
+    const pickupTimeTrigger=$('#assistTimeTrigger');
+    const doctorTimeTrigger=$('#assistDoctorTimeTrigger');
+
+    const success=$('#assistSuccess');
     const errors={
       1:$('#assistError1'),
       2:$('#assistError2'),
@@ -103,17 +93,77 @@
       5:$('#assistError5'),
       6:$('#assistError6')
     };
+    const summaryEls={
+      type:$('#summaryType'),
+      pickup:$('#summaryPickup'),
+      destination:$('#summaryDestination'),
+      date:$('#summaryDate'),
+      time:$('#summaryTime'),
+      doctorTime:$('#summaryDoctorTime'),
+      name:$('#summaryName'),
+      phone:$('#summaryPhone'),
+      email:$('#summaryEmail'),
+      insurance:$('#summaryInsurance'),
+      notes:$('#summaryNotes')
+    };
+
+    const form={
+      type:'',
+      pickup:'',
+      destination:'',
+      date:'',
+      time:'',
+      doctorTime:'',
+      name:'',
+      phone:'',
+      email:'',
+      insurance:'',
+      notes:''
+    };
+
     let currentStep=1;
     let maxUnlocked=1;
+    let activeTimeTarget='pickup';
+    let calendarMonth=new Date();
     const completedSteps=new Set();
 
     Object.values(errors).forEach(el=>{if(el) el.textContent='Bitte füllen Sie die Pflichtangaben aus.'});
 
+    function formatIsoDate(date){
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    }
+
+    function parseIsoDate(value){
+      if(!value) return null;
+      const [y,m,d]=value.split('-').map(Number);
+      if(!y||!m||!d) return null;
+      const parsed=new Date(y,m-1,d);
+      return Number.isNaN(parsed.getTime())?null:parsed;
+    }
+
+    function formatDisplayDate(value){
+      const parsed=parseIsoDate(value);
+      if(!parsed) return 'Datum auswählen';
+      return parsed.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+    }
+
+    function buildTimeSlots(){
+      const slots=[];
+      for(let h=6;h<=22;h++){
+        for(let m=0;m<60;m+=10){
+          if(h===22 && m>50) break;
+          slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+        }
+      }
+      return slots;
+    }
+
     function readForm(){
-      form.pickup=$('#assistPickup')?.value||'';
-      form.destination=$('#assistDestination')?.value||'';
-      form.date=$('#assistDate')?.value||'';
-      form.time=$('#assistTime')?.value||'';
+      form.pickup=pickupInput?.value||'';
+      form.destination=destinationInput?.value||'';
+      form.date=dateInput?.value||'';
+      form.time=timeInput?.value||'';
+      form.doctorTime=doctorTimeInput?.value||'';
       form.name=$('#assistName')?.value||'';
       form.phone=$('#assistPhone')?.value||'';
       form.email=$('#assistEmail')?.value||'';
@@ -163,9 +213,86 @@
       if(destinationSuggestions){destinationSuggestions.hidden=true;destinationSuggestions.innerHTML='';}
     }
 
-    function syncTimeChipState(){
-      const value=(timeInput?.value||'').trim();
-      timeChips.forEach(chip=>chip.classList.toggle('is-selected',chip.dataset.time===value));
+    function openOverlay(overlay){
+      if(!overlay) return;
+      overlay.classList.remove('hidden');
+      overlay.setAttribute('aria-hidden','false');
+    }
+
+    function closeOverlay(overlay){
+      if(!overlay) return;
+      overlay.classList.add('hidden');
+      overlay.setAttribute('aria-hidden','true');
+    }
+
+    function setDateTriggerLabel(){
+      if(!dateTrigger) return;
+      readForm();
+      dateTrigger.textContent=formatDisplayDate(form.date);
+      dateTrigger.classList.toggle('is-filled',!!form.date);
+    }
+
+    function setTimeTriggerLabels(){
+      readForm();
+      if(pickupTimeTrigger){
+        pickupTimeTrigger.textContent=form.time||'Abholzeit auswählen';
+        pickupTimeTrigger.classList.toggle('is-filled',!!form.time);
+      }
+      if(doctorTimeTrigger){
+        doctorTimeTrigger.textContent=form.doctorTime||'Arzttermin auswählen';
+        doctorTimeTrigger.classList.toggle('is-filled',!!form.doctorTime);
+      }
+    }
+
+    function renderCalendar(){
+      if(!dateCalendar||!dateMonthLabel) return;
+      const firstDay=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);
+      const lastDay=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0);
+      const monthDays=lastDay.getDate();
+      const startOffset=(firstDay.getDay()+6)%7;
+      const todayIso=formatIsoDate(new Date());
+      const selectedIso=dateInput?.value||'';
+      dateMonthLabel.textContent=firstDay.toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+
+      const cells=[];
+      for(let i=0;i<startOffset;i++) cells.push('<span class="assistant-date-day is-empty"></span>');
+      for(let day=1;day<=monthDays;day++){
+        const dt=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),day);
+        const iso=formatIsoDate(dt);
+        const classes=['assistant-date-day'];
+        if(iso===todayIso) classes.push('is-today');
+        if(iso===selectedIso) classes.push('is-selected');
+        cells.push(`<button class="${classes.join(' ')}" type="button" data-date-value="${iso}">${day}</button>`);
+      }
+      dateCalendar.innerHTML=cells.join('');
+    }
+
+    function selectDate(value,autoAdvance){
+      if(!dateInput) return;
+      dateInput.value=value;
+      form.date=value;
+      hideError(4);
+      setDateTriggerLabel();
+      updateSummary();
+      closeOverlay(dateOverlay);
+      if(autoAdvance){
+        success.hidden=true;
+        clearCompletedFrom(4);
+        goNext(4);
+      }else{
+        showStep(currentStep);
+      }
+    }
+
+    function renderTimeList(){
+      if(!timeList||!timeTitle) return;
+      readForm();
+      const selected=activeTimeTarget==='pickup'?form.time:form.doctorTime;
+      timeTitle.textContent=activeTimeTarget==='pickup'?'Gewünschte Abholzeit':'Termin beim Arzt (optional)';
+      timeList.innerHTML=buildTimeSlots().map(slot=>{
+        const selectedClass=slot===selected?' is-selected':'';
+        return `<button class="assistant-time-option${selectedClass}" type="button" data-time-value="${slot}">${slot}</button>`;
+      }).join('');
     }
 
     function validateStep(stepNumber){
@@ -237,16 +364,92 @@
         return;
       }
 
-      const timeChip=e.target.closest('.assist-time-chip');
-      if(timeChip && timeInput){
-        const value=timeChip.dataset.time||'';
-        timeInput.value=value;
-        form.time=value;
-        hideError(5);
-        success.hidden=true;
-        syncTimeChipState();
-        updateSummary();
-        showStep(currentStep);
+      const quickDateBtn=e.target.closest('[data-quick-date]');
+      if(quickDateBtn){
+        const mode=quickDateBtn.dataset.quickDate;
+        const today=new Date();
+        if(mode==='today'){
+          calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);
+          renderCalendar();
+          selectDate(formatIsoDate(today),true);
+          return;
+        }
+        if(mode==='tomorrow'){
+          const tomorrow=new Date(today.getFullYear(),today.getMonth(),today.getDate()+1);
+          calendarMonth=new Date(tomorrow.getFullYear(),tomorrow.getMonth(),1);
+          renderCalendar();
+          selectDate(formatIsoDate(tomorrow),true);
+          return;
+        }
+        if(mode==='custom'){
+          const selected=parseIsoDate(dateInput?.value||'')||new Date();
+          calendarMonth=new Date(selected.getFullYear(),selected.getMonth(),1);
+          renderCalendar();
+          openOverlay(dateOverlay);
+          return;
+        }
+      }
+
+      if(e.target.closest('#assistDateTrigger')){
+        const selected=parseIsoDate(dateInput?.value||'')||new Date();
+        calendarMonth=new Date(selected.getFullYear(),selected.getMonth(),1);
+        renderCalendar();
+        openOverlay(dateOverlay);
+        return;
+      }
+
+      const dateNav=e.target.closest('[data-date-nav]');
+      if(dateNav){
+        calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+(dateNav.dataset.dateNav==='next'?1:-1),1);
+        renderCalendar();
+        return;
+      }
+
+      const datePick=e.target.closest('[data-date-value]');
+      if(datePick){
+        selectDate(datePick.dataset.dateValue||'',true);
+        return;
+      }
+
+      const timeTrigger=e.target.closest('[data-time-target]');
+      if(timeTrigger){
+        activeTimeTarget=timeTrigger.dataset.timeTarget||'pickup';
+        renderTimeList();
+        openOverlay(timeOverlay);
+        return;
+      }
+
+      const timePick=e.target.closest('[data-time-value]');
+      if(timePick){
+        const value=timePick.dataset.timeValue||'';
+        if(activeTimeTarget==='pickup' && timeInput){
+          timeInput.value=value;
+          form.time=value;
+          hideError(5);
+          setTimeTriggerLabels();
+          updateSummary();
+          closeOverlay(timeOverlay);
+          success.hidden=true;
+          clearCompletedFrom(5);
+          goNext(5);
+          return;
+        }
+        if(activeTimeTarget==='doctor' && doctorTimeInput){
+          doctorTimeInput.value=value;
+          form.doctorTime=value;
+          setTimeTriggerLabels();
+          updateSummary();
+          closeOverlay(timeOverlay);
+          success.hidden=true;
+          showStep(currentStep);
+          return;
+        }
+      }
+
+      const closeOverlayBtn=e.target.closest('[data-close-overlay]');
+      if(closeOverlayBtn){
+        if(closeOverlayBtn.dataset.closeOverlay==='date') closeOverlay(dateOverlay);
+        if(closeOverlayBtn.dataset.closeOverlay==='time') closeOverlay(timeOverlay);
         return;
       }
 
@@ -301,8 +504,9 @@
       const id=e.target.id;
       if(id==='assistPickup'){form.pickup=e.target.value;hideError(2);if(!form.pickup.trim()) clearCompletedFrom(2);renderAddressSuggestions(pickupInput,pickupSuggestions)}
       if(id==='assistDestination'){form.destination=e.target.value;hideError(3);if(!form.destination.trim()) clearCompletedFrom(3);renderAddressSuggestions(destinationInput,destinationSuggestions)}
-      if(id==='assistDate'){form.date=e.target.value;hideError(4);if(!form.date) clearCompletedFrom(4)}
-      if(id==='assistTime'){form.time=e.target.value;hideError(5);if(!form.time) clearCompletedFrom(5);syncTimeChipState()}
+      if(id==='assistDate'){form.date=e.target.value;hideError(4);if(!form.date) clearCompletedFrom(4);setDateTriggerLabel()}
+      if(id==='assistTime'){form.time=e.target.value;hideError(5);if(!form.time) clearCompletedFrom(5);setTimeTriggerLabels()}
+      if(id==='assistDoctorTime'){form.doctorTime=e.target.value;setTimeTriggerLabels()}
       if(id==='assistName'){form.name=e.target.value;hideError(6);if(!form.name.trim()||!form.phone.trim()) clearCompletedFrom(6)}
       if(id==='assistPhone'){form.phone=e.target.value;hideError(6);if(!form.name.trim()||!form.phone.trim()) clearCompletedFrom(6)}
       if(id==='assistEmail') form.email=e.target.value;
@@ -328,10 +532,15 @@
     });
 
     document.addEventListener('click',e=>{
-      if(!root.contains(e.target)) hideAddressSuggestions();
+      if(!root.contains(e.target)){
+        hideAddressSuggestions();
+        closeOverlay(dateOverlay);
+        closeOverlay(timeOverlay);
+      }
     });
 
-    syncTimeChipState();
+    setDateTriggerLabel();
+    setTimeTriggerLabels();
     showStep(1);
   }
   function initMedicalBookingScroll(){

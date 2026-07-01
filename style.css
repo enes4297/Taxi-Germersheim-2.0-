@@ -708,14 +708,31 @@ body:before{background-size:54px 54px;opacity:.12}
 #medical.medical-page .assist-suggestion{height:40px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#fff;text-align:left;padding:0 12px;font-size:14px;cursor:pointer}
 #medical.medical-page .assist-suggestion:hover{border-color:rgba(255,217,106,.45);background:rgba(255,217,106,.12)}
 
-#medical.medical-page .assistant-date-wrap{position:relative}
-#medical.medical-page .assistant-date-wrap input{padding-right:108px}
-#medical.medical-page .assistant-date-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);padding:4px 8px;border-radius:999px;background:rgba(255,217,106,.13);border:1px solid rgba(255,217,106,.28);font-size:12px;font-weight:800;color:rgba(255,232,166,.96);pointer-events:none}
+#medical.medical-page .assistant-date-actions{display:flex;gap:8px;flex-wrap:wrap}
+#medical.medical-page .assistant-picker-trigger{width:100%;min-height:58px;border-radius:14px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#fff;padding:0 14px;text-align:left;font-size:17px;font-weight:800;cursor:pointer;transition:border-color .24s ease,box-shadow .24s ease,background .24s ease}
+#medical.medical-page .assistant-picker-trigger:hover{border-color:rgba(255,217,106,.45);background:rgba(255,217,106,.08)}
+#medical.medical-page .assistant-picker-trigger.is-filled{border-color:rgba(255,217,106,.5);background:rgba(255,217,106,.13)}
 
-#medical.medical-page .assistant-time-chips{display:flex;flex-wrap:wrap;gap:8px}
-#medical.medical-page .assist-time-chip{height:38px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.04);color:#fff;font-size:14px;font-weight:800;cursor:pointer}
-#medical.medical-page .assist-time-chip:hover{border-color:rgba(255,217,106,.45);background:rgba(255,217,106,.12)}
-#medical.medical-page .assist-time-chip.is-selected{border-color:rgba(255,217,106,.55);background:rgba(255,217,106,.16);color:var(--gold)}
+#medical.medical-page .assistant-picker-overlay{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;padding:20px}
+#medical.medical-page .assistant-picker-backdrop{position:absolute;inset:0;background:rgba(3,4,6,.72);backdrop-filter:blur(3px)}
+#medical.medical-page .assistant-picker-panel{position:relative;width:min(720px,100%);max-height:min(86vh,760px);overflow:auto;border-radius:20px;padding:18px;background:linear-gradient(150deg,rgba(17,18,24,.98),rgba(7,8,11,.98));border:1px solid rgba(255,255,255,.14);box-shadow:0 26px 72px rgba(0,0,0,.5)}
+#medical.medical-page .assistant-picker-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+#medical.medical-page .assistant-picker-head h4{margin:0;font-family:var(--serif);font-size:34px;line-height:1.05;letter-spacing:-.02em}
+#medical.medical-page .assistant-picker-foot{display:flex;justify-content:flex-end;margin-top:10px}
+
+#medical.medical-page .assistant-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:6px}
+#medical.medical-page .assistant-weekdays span{display:grid;place-items:center;min-height:34px;border-radius:10px;background:rgba(255,255,255,.03);font-size:13px;font-weight:800;color:rgba(255,255,255,.72)}
+#medical.medical-page .assistant-date-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;animation:calendarSlide .3s ease}
+#medical.medical-page .assistant-date-day{min-height:58px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:#fff;font-size:18px;font-weight:800;cursor:pointer;transition:border-color .2s ease,background .2s ease,transform .2s ease}
+#medical.medical-page .assistant-date-day:hover{transform:translateY(-1px);border-color:rgba(255,217,106,.4);background:rgba(255,217,106,.1)}
+#medical.medical-page .assistant-date-day.is-today{border-color:rgba(255,217,106,.4);box-shadow:0 0 0 2px rgba(255,217,106,.15) inset}
+#medical.medical-page .assistant-date-day.is-selected{border-color:rgba(255,217,106,.65);background:linear-gradient(135deg,rgba(255,217,106,.26),rgba(255,181,64,.2));color:#ffe9ac}
+#medical.medical-page .assistant-date-day.is-empty{visibility:hidden;pointer-events:none}
+
+#medical.medical-page .assistant-time-list{display:grid;gap:8px;max-height:56vh;overflow:auto;padding-right:2px}
+#medical.medical-page .assistant-time-option{min-height:54px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:#fff;font-size:20px;font-weight:800;text-align:left;padding:0 16px;cursor:pointer}
+#medical.medical-page .assistant-time-option:hover{border-color:rgba(255,217,106,.45);background:rgba(255,217,106,.1)}
+#medical.medical-page .assistant-time-option.is-selected{border-color:rgba(255,217,106,.62);background:linear-gradient(135deg,rgba(255,217,106,.24),rgba(255,181,64,.18));color:#ffe8a2}
 
 #medical.medical-page .assistant-summary-card{display:grid;gap:8px;padding:14px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1)}
 #medical.medical-page .assistant-summary-card div{display:grid;grid-template-columns:minmax(160px,200px) 1fr;gap:10px;align-items:start}
@@ -746,8 +763,15 @@ body:before{background-size:54px 54px;opacity:.12}
   #medical.medical-page .assistant-edit{min-height:52px;font-size:15px}
   #medical.medical-page .assistant-step-body textarea{min-height:108px}
   #medical.medical-page .ride-type-options{grid-template-columns:1fr}
-  #medical.medical-page .assistant-time-chips{gap:6px}
-  #medical.medical-page .assist-time-chip{min-height:36px;font-size:13px}
+  #medical.medical-page .assistant-picker-panel{padding:14px;border-radius:16px}
+  #medical.medical-page .assistant-picker-head h4{font-size:28px}
+  #medical.medical-page .assistant-date-day{min-height:50px;font-size:16px}
+  #medical.medical-page .assistant-time-option{min-height:50px;font-size:18px}
   #medical.medical-page .assistant-summary-card div{grid-template-columns:1fr;gap:2px}
   #medical.medical-page .assistant-summary-actions{display:grid;grid-template-columns:1fr;gap:8px}
+}
+
+@keyframes calendarSlide{
+  from{opacity:0;transform:translateX(8px)}
+  to{opacity:1;transform:translateX(0)}
 }

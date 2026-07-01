@@ -346,9 +346,27 @@
           <section class="assistant-step is-locked" data-step="4">
             <button class="assistant-step-head" type="button"><span class="assistant-step-no">4</span><b>Abholdatum</b><i class="assistant-check">✓</i></button>
             <div class="assistant-step-body">
-              <div class="assistant-date-wrap">
-                <input id="assistDate" type="date">
-                <span class="assistant-date-icon" aria-hidden="true">Kalender</span>
+              <input id="assistDate" type="hidden">
+              <div class="assistant-date-actions">
+                <button class="assistant-next" type="button" data-quick-date="today">Heute</button>
+                <button class="assistant-next" type="button" data-quick-date="tomorrow">Morgen</button>
+                <button class="assistant-next" type="button" data-quick-date="custom">Datum auswählen</button>
+              </div>
+              <button id="assistDateTrigger" class="assistant-picker-trigger" type="button">Datum auswählen</button>
+              <div id="assistDateOverlay" class="assistant-picker-overlay hidden" aria-hidden="true">
+                <div class="assistant-picker-backdrop" data-close-overlay="date"></div>
+                <article class="assistant-picker-panel" role="dialog" aria-modal="true" aria-label="Datum auswählen">
+                  <header class="assistant-picker-head">
+                    <button class="assistant-next" type="button" data-date-nav="prev">←</button>
+                    <h4 id="assistDateMonthLabel">Monat Jahr</h4>
+                    <button class="assistant-next" type="button" data-date-nav="next">→</button>
+                  </header>
+                  <div class="assistant-weekdays" aria-hidden="true"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+                  <div id="assistDateCalendar" class="assistant-date-grid"></div>
+                  <div class="assistant-picker-foot">
+                    <button class="assistant-next" type="button" data-close-overlay="date">Schließen</button>
+                  </div>
+                </article>
               </div>
               <p id="assistError4" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
               <div class="assistant-step-actions">
@@ -361,18 +379,25 @@
           <section class="assistant-step is-locked" data-step="5">
             <button class="assistant-step-head" type="button"><span class="assistant-step-no">5</span><b>Gewünschte Abholzeit</b><i class="assistant-check">✓</i></button>
             <div class="assistant-step-body">
-              <div class="assistant-time-chips" aria-label="Schnelle Uhrzeiten">
-                <button class="assist-time-chip" type="button" data-time="06:00">06:00</button>
-                <button class="assist-time-chip" type="button" data-time="07:00">07:00</button>
-                <button class="assist-time-chip" type="button" data-time="08:00">08:00</button>
-                <button class="assist-time-chip" type="button" data-time="09:00">09:00</button>
-                <button class="assist-time-chip" type="button" data-time="10:00">10:00</button>
-                <button class="assist-time-chip" type="button" data-time="12:00">12:00</button>
-                <button class="assist-time-chip" type="button" data-time="14:00">14:00</button>
-                <button class="assist-time-chip" type="button" data-time="16:00">16:00</button>
-              </div>
-              <input id="assistTime" type="time">
+              <input id="assistTime" type="hidden">
+              <button id="assistTimeTrigger" class="assistant-picker-trigger" type="button" data-time-target="pickup">Abholzeit auswählen</button>
               <small class="field-help">Bitte geben Sie die Uhrzeit an, zu der wir Sie abholen sollen – nicht die Uhrzeit Ihres Arzttermins.</small>
+              <div class="field-grid full">
+                <label for="assistDoctorTime">Termin beim Arzt (optional)</label>
+                <input id="assistDoctorTime" type="hidden">
+                <button id="assistDoctorTimeTrigger" class="assistant-picker-trigger" type="button" data-time-target="doctor">Arzttermin auswählen</button>
+                <small class="field-help">So können wir Ihre Abholzeit besser planen.</small>
+              </div>
+              <div id="assistTimeOverlay" class="assistant-picker-overlay hidden" aria-hidden="true">
+                <div class="assistant-picker-backdrop" data-close-overlay="time"></div>
+                <article class="assistant-picker-panel" role="dialog" aria-modal="true" aria-label="Uhrzeit auswählen">
+                  <header class="assistant-picker-head">
+                    <h4 id="assistTimeTitle">Uhrzeit auswählen</h4>
+                    <button class="assistant-next" type="button" data-close-overlay="time">Schließen</button>
+                  </header>
+                  <div id="assistTimeList" class="assistant-time-list"></div>
+                </article>
+              </div>
               <p id="assistError5" class="assistant-step-error" hidden>Bitte füllen Sie dieses Feld aus.</p>
               <div class="assistant-step-actions">
                 <button id="assistBack5" class="assistant-next" type="button" data-assist-back="5">Zurück</button>
@@ -410,6 +435,7 @@
                 <div><span>Telefonnummer</span><b id="summaryPhone">-</b></div>
                 <div><span>E-Mail</span><b id="summaryEmail">-</b></div>
                 <div><span>Krankenkasse</span><b id="summaryInsurance">-</b></div>
+                <div><span>Arzttermin (optional)</span><b id="summaryDoctorTime">-</b></div>
                 <div><span>Bemerkungen</span><b id="summaryNotes">-</b></div>
               </article>
               <div class="assistant-summary-actions">
