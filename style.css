@@ -792,6 +792,92 @@ body:before{background-size:54px 54px;opacity:.12}
   #medical.medical-page .nova-time-list{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
+/* Phase 5.0 - About Page Premium Styling */
+#why.about-page{display:grid;gap:22px}
+#why.about-page .page-head{margin-bottom:6px}
+#why.about-page .about-surface,
+#why.about-page .about-card,
+#why.about-page .about-section,
+#why.about-page .about-company-surface{
+  border:1px solid rgba(255,217,106,.18);
+  background:linear-gradient(155deg,rgba(20,21,27,.96),rgba(8,9,12,.97));
+  box-shadow:0 22px 54px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.04);
+}
+#why.about-page .about-hero,
+#why.about-page .about-cta{border-radius:30px;padding:34px}
+#why.about-page .about-hero small,
+#why.about-page .about-section-head small,
+#why.about-page .about-cta small{
+  display:block;
+  color:var(--gold);
+  font-weight:950;
+  letter-spacing:.18em;
+  font-size:12px;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+#why.about-page .about-hero h1,
+#why.about-page .about-cta h3{
+  margin:0 0 14px;
+  font-family:var(--serif);
+  font-size:clamp(40px,5vw,64px);
+  line-height:.98;
+  letter-spacing:-.04em;
+}
+#why.about-page .about-hero p{
+  margin:0;
+  max-width:860px;
+  color:rgba(255,255,255,.84);
+  font-size:clamp(18px,2vw,22px);
+  line-height:1.7;
+}
+
+#why.about-page .about-section{padding:28px;border-radius:28px}
+#why.about-page .about-section-head{margin-bottom:18px}
+#why.about-page .about-section-head h3{margin:0;font-family:var(--serif);font-size:clamp(30px,3.6vw,44px);line-height:1.04;letter-spacing:-.03em}
+
+#why.about-page .about-values,
+#why.about-page .about-trust-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+#why.about-page .about-trust-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+#why.about-page .about-card{border-radius:24px;padding:22px;display:grid;gap:10px}
+#why.about-page .about-value-card i{width:44px;height:44px;padding:10px;border-radius:14px;color:var(--gold);background:rgba(255,217,106,.1);border:1px solid rgba(255,217,106,.22)}
+#why.about-page .about-value-card b,
+#why.about-page .about-trust-card b{font-family:var(--serif);font-size:26px;line-height:1.05;color:#fff}
+#why.about-page .about-card p{margin:0;color:rgba(255,255,255,.82);font-size:16px;line-height:1.6}
+
+#why.about-page .about-company-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;align-items:start}
+#why.about-page .about-company-copy{padding:24px;border-radius:22px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09)}
+#why.about-page .about-company-copy p{margin:0;color:rgba(255,255,255,.84);font-size:18px;line-height:1.72}
+#why.about-page .about-features{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#why.about-page .about-features li{min-height:58px;display:flex;align-items:center;padding:0 16px;border-radius:16px;border:1px solid rgba(255,217,106,.18);background:rgba(255,255,255,.03);color:#fff;font-weight:850;font-size:16px}
+
+#why.about-page .about-cta{display:grid;gap:12px;align-items:start}
+#why.about-page .about-cta h3{font-size:clamp(34px,4.8vw,56px);margin-bottom:4px}
+#why.about-page .about-cta-actions{display:flex;flex-wrap:wrap;gap:10px}
+#why.about-page .about-primary-cta,
+#why.about-page .about-secondary-cta{height:54px;min-width:210px;justify-content:center;border-radius:999px}
+#why.about-page .about-primary-cta{border:1px solid rgba(255,217,106,.5);background:linear-gradient(135deg,#ffe7a2,#d6a540);color:#111;font-weight:900}
+#why.about-page .about-secondary-cta{border:1px solid rgba(255,217,106,.24);background:rgba(255,217,106,.06);color:var(--gold);font-weight:900}
+
+@media(max-width:980px){
+  #why.about-page .about-values,
+  #why.about-page .about-trust-grid,
+  #why.about-page .about-company-grid{grid-template-columns:1fr}
+}
+
+@media(max-width:760px){
+  #why.about-page{gap:18px}
+  #why.about-page .about-hero,
+  #why.about-page .about-cta,
+  #why.about-page .about-section{padding:22px;border-radius:24px}
+  #why.about-page .about-card{padding:18px}
+  #why.about-page .about-card b,
+  #why.about-page .about-trust-card b{font-size:22px}
+  #why.about-page .about-features{grid-template-columns:1fr}
+  #why.about-page .about-primary-cta,
+  #why.about-page .about-secondary-cta{width:100%;min-width:0}
+}
+
 /* Phase 4.0 - Premium Navigation Redesign */
 #home .topbar{
   position:sticky;
