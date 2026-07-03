@@ -952,11 +952,19 @@
 
     applyFilters();
   }
+  function initLegalLinks(){
+    const privacyLink=$('.footer-bottom-links a:first-child');
+    if(privacyLink && !privacyLink.dataset.go){
+      privacyLink.dataset.go='datenschutz';
+      privacyLink.setAttribute('href','#');
+    }
+  }
   function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);initMapContainer('startMapContainer');initMapContainer('endMapContainer');
     initMedicalAssistant();
     initMedicalBookingScroll();
     initPremiumNavigation();
     initFaqCenter();
+    initLegalLinks();
     const menuToggle=$('.menu-toggle');
     const siteNav=$('.site-nav');
     document.addEventListener('click',e=>{
