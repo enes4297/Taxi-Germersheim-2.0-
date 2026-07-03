@@ -1178,15 +1178,16 @@
 
     applyFilters();
   }
-  function dismissSplash(){
-    const splash=$('#splash');
+  function hideSplash(){
+    const splash=document.getElementById('splash');
     if(!splash) return;
-    splash.classList.add('hide');
-    splash.setAttribute('aria-hidden','true');
+    splash.classList.add('splash-hide');
+    setTimeout(()=>{
+      splash.remove();
+    },700);
   }
   function boot(){inject();setService('taxi');validate();initMapContainer('startMapContainer');initMapContainer('endMapContainer');
-    setTimeout(dismissSplash,2000);
-    setTimeout(dismissSplash,2500);
+    setTimeout(hideSplash,1200);
     initMedicalAssistant();
     initMedicalBookingScroll();
     initPremiumNavigation();
