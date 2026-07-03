@@ -862,10 +862,101 @@
     window.addEventListener('scroll',onScroll,{passive:true});
     onScroll();
   }
+  function initFaqCenter(){
+    const root=$('#faq');
+    if(!root) return;
+
+    const searchInput=$('#faqSearchInput',root);
+    const categoryButtons=$$('.faq-category',root);
+    const items=$$('.faq-item',root);
+    const emptyState=$('#faqEmptyState',root);
+    let activeCategory='all';
+    let openItem=null;
+
+    const norm=v=>(v||'').toLowerCase().trim();
+    const splitCats=item=>(item.dataset.category||'').split(',').map(v=>v.trim()).filter(Boolean);
+
+    function closeItem(item){
+      if(!item) return;
+      item.classList.remove('is-open');
+      const q=$('.faq-question',item);
+      const a=$('.faq-answer',item);
+      if(q) q.setAttribute('aria-expanded','false');
+      if(a) a.style.maxHeight='0px';
+      if(openItem===item) openItem=null;
+    }
+
+    function openFaqItem(item){
+      if(!item) return;
+      if(openItem && openItem!==item) closeItem(openItem);
+      item.classList.add('is-open');
+      const q=$('.faq-question',item);
+      const a=$('.faq-answer',item);
+      if(q) q.setAttribute('aria-expanded','true');
+      if(a) a.style.maxHeight=a.scrollHeight+'px';
+      openItem=item;
+    }
+
+    function isVisibleByFilter(item,query){
+      const categories=splitCats(item);
+      const inCategory=activeCategory==='all' || categories.includes(activeCategory);
+      if(!inCategory) return false;
+      if(!query) return true;
+      const questionText=norm($('.faq-question span',item)?.textContent);
+      const answerText=norm($('.faq-answer-inner',item)?.textContent);
+      return (questionText+' '+answerText+' '+categories.join(' ')).includes(query);
+    }
+
+    function applyFilters(){
+      const query=norm(searchInput?.value||'');
+      let visibleCount=0;
+      items.forEach(item=>{
+        const visible=isVisibleByFilter(item,query);
+        item.hidden=!visible;
+        if(!visible) closeItem(item);
+        if(visible) visibleCount++;
+      });
+
+      if(emptyState) emptyState.hidden=visibleCount!==0;
+
+      if(openItem && openItem.hidden) openItem=null;
+      if(openItem){
+        const a=$('.faq-answer',openItem);
+        if(a) a.style.maxHeight=a.scrollHeight+'px';
+      }
+    }
+
+    categoryButtons.forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        categoryButtons.forEach(b=>b.classList.toggle('active',b===btn));
+        activeCategory=btn.dataset.category||'all';
+        applyFilters();
+      });
+    });
+
+    items.forEach(item=>{
+      const trigger=$('.faq-question',item);
+      trigger?.addEventListener('click',()=>{
+        if(item.hidden) return;
+        if(item.classList.contains('is-open')) closeItem(item);
+        else openFaqItem(item);
+      });
+    });
+
+    searchInput?.addEventListener('input',applyFilters);
+    window.addEventListener('resize',()=>{
+      if(!openItem) return;
+      const a=$('.faq-answer',openItem);
+      if(a) a.style.maxHeight=a.scrollHeight+'px';
+    });
+
+    applyFilters();
+  }
   function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);initMapContainer('startMapContainer');initMapContainer('endMapContainer');
     initMedicalAssistant();
     initMedicalBookingScroll();
     initPremiumNavigation();
+    initFaqCenter();
     const menuToggle=$('.menu-toggle');
     const siteNav=$('.site-nav');
     document.addEventListener('click',e=>{
