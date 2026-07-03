@@ -1047,3 +1047,115 @@ body.nav-open #home .menu-bars i:nth-child(3){transform:translateY(-6px) rotate(
   #home .site-nav-backdrop{display:block;position:fixed;inset:0;background:rgba(2,3,5,.45);backdrop-filter:blur(2px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease;z-index:160}
   body.nav-open #home .site-nav-backdrop{opacity:1;visibility:visible;pointer-events:auto}
 }
+
+/* Phase 4.5 - Global Design System */
+:root{
+  --ds-black:#050505;
+  --ds-black-soft:#101116;
+  --ds-gold:#ffd96a;
+  --ds-gold-strong:#d2a33a;
+  --ds-gray:rgba(255,255,255,.62);
+  --ds-text:#ffffff;
+  --ds-card-radius:24px;
+  --ds-card-shadow:0 18px 34px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.035);
+  --ds-card-padding:22px;
+  --ds-btn-height:52px;
+  --ds-btn-radius:16px;
+  --ds-input-height:56px;
+  --ds-transition:.22s ease;
+  --ds-section-gap:22px;
+}
+
+html,body{background:var(--ds-black)!important;color:var(--ds-text)!important}
+
+h1,.hero-copy h1,.panel h1,.selected h2{
+  font-family:var(--serif)!important;
+  line-height:1.02!important;
+  letter-spacing:-.03em!important;
+}
+
+h2,.page-head h2{
+  font-family:var(--serif)!important;
+  line-height:1.06!important;
+  letter-spacing:-.02em!important;
+}
+
+h3,.extra h3,.medical-section h3{
+  font-family:var(--serif)!important;
+  line-height:1.12!important;
+  letter-spacing:-.015em!important;
+}
+
+p,li,small,label{
+  color:var(--ds-gray)!important;
+  line-height:1.6!important;
+}
+
+section{margin-bottom:var(--ds-section-gap)!important}
+
+.panel,.selected,.extra,.service,.wide,.reward,.yumak-home,.medical-card,.about-card,.about-surface,.about-section,.about-company-surface,
+#medical.medical-page .nova-step,#medical.medical-page .nova-status,#medical.medical-page .nova-summary-item,
+.input,textarea,.map-container,.medical-explainer,.medical-help,.medical-checklist,.medical-steps li{
+  border-radius:var(--ds-card-radius)!important;
+  box-shadow:var(--ds-card-shadow)!important;
+}
+
+.panel,.selected,.extra,.about-section,.about-surface,.about-card{padding:var(--ds-card-padding)!important}
+
+button,.button,.actions a,.actions button,.services-cta,.nova-confirm,.nova-picker-trigger,.assistant-edit,.medical-submit,.about-primary-cta,.about-secondary-cta,.nav-book-btn{
+  min-height:var(--ds-btn-height)!important;
+  border-radius:var(--ds-btn-radius)!important;
+  font-size:15px!important;
+  font-weight:850!important;
+  transition:transform var(--ds-transition),background var(--ds-transition),border-color var(--ds-transition),box-shadow var(--ds-transition),color var(--ds-transition),filter var(--ds-transition)!important;
+}
+
+button:hover,.button:hover,.actions a:hover,.services-cta:hover,.nova-confirm:hover,.nova-picker-trigger:hover,.assistant-edit:hover,.medical-submit:hover,.about-primary-cta:hover,.about-secondary-cta:hover,.nav-book-btn:hover{
+  transform:translateY(-1px)!important;
+}
+
+.steps button,.chips button,.small-toggle button,.details button{
+  min-height:44px!important;
+  border-radius:999px!important;
+  transition:transform var(--ds-transition),background var(--ds-transition),border-color var(--ds-transition),color var(--ds-transition)!important;
+}
+
+.input,.extra input,textarea,
+#medical.medical-page .nova-step-body input,
+#medical.medical-page .nova-step-body textarea{
+  border-radius:18px!important;
+}
+
+input,textarea,select{
+  font-size:17px!important;
+}
+
+input:focus,textarea:focus,select:focus,
+#medical.medical-page .nova-step-body input:focus,
+#medical.medical-page .nova-step-body textarea:focus{
+  border-color:rgba(255,217,106,.5)!important;
+  box-shadow:0 0 0 3px rgba(255,217,106,.14)!important;
+}
+
+[data-icon],.service i,.type-grid i,.trip-grid i,.medical-card i,.about-value-card i,.yumak-card i,.icon-badge,.reward>i{
+  display:grid!important;
+  place-items:center!important;
+}
+
+[data-icon] svg,.service i svg,.type-grid i svg,.trip-grid i svg,.medical-card i svg,.about-value-card i svg,.yumak-card i svg,.icon-badge svg,.reward>i svg{
+  width:22px!important;
+  height:22px!important;
+}
+
+@media(max-width:900px){
+  section{margin-bottom:18px!important}
+  .panel,.selected,.extra,.about-section,.about-surface,.about-card{padding:18px!important}
+}
+
+@media(max-width:760px){
+  .button,button,.services-cta,.nova-confirm,.nova-picker-trigger,.assistant-edit,.medical-submit,.about-primary-cta,.about-secondary-cta,.nav-book-btn{
+    min-height:50px!important;
+    font-size:14px!important;
+  }
+  .actions{gap:10px!important}
+}
