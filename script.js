@@ -522,6 +522,12 @@
     });
 
     refreshMapContainers();
+
+    return {
+      showBanner,
+      hideBanner,
+      hasValidConsent:()=>!!parseStoredConsent()
+    };
   }
   function runAfterIntroComplete(onComplete){
     const finish=()=>{
@@ -1300,21 +1306,33 @@
     initMedicalBookingScroll();
     initPremiumNavigation();
     initFaqCenter();
-    initConsentManager({showBannerOnInit:false});
+    const consentManager=initConsentManager({showBannerOnInit:false});
+    let cookieBannerShown=false;
+    let introCallbackFired=false;
+
+    function showCookieBanner(){
+      if(cookieBannerShown) return;
+      if(consentManager?.hasValidConsent?.()) return;
+      consentManager?.showBanner?.();
+      cookieBannerShown=true;
+    }
+
     runAfterIntroComplete(()=>{
-      if(!parseStoredConsent()){
-        const banner=$('#consentBanner');
-        const backdrop=$('#consentBackdrop');
-        if(banner){
-          banner.hidden=false;
-          banner.setAttribute('aria-hidden','false');
-        }
-        if(backdrop){
-          backdrop.hidden=false;
-          backdrop.setAttribute('aria-hidden','false');
-        }
-      }
+      introCallbackFired=true;
+      showCookieBanner();
     });
+
+    setTimeout(()=>{
+      if(introCallbackFired) return;
+      const splash=$('#splash');
+      if(!splash){
+        showCookieBanner();
+        return;
+      }
+      const computed=window.getComputedStyle(splash);
+      const introVisible=!splash.classList.contains('hide') && computed.visibility!=='hidden' && computed.opacity!=='0';
+      if(!introVisible) showCookieBanner();
+    },1500);
     initContactRequestForm();
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);
