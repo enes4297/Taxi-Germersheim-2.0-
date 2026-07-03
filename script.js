@@ -376,11 +376,16 @@
     try{
       const current=localStorage.getItem(CONSENT_STORAGE_KEY);
       if(current===CONSENT_ALL || current===CONSENT_NECESSARY) return toConsentModel(current);
+      if(current!==null) localStorage.removeItem(CONSENT_STORAGE_KEY);
 
       const legacyRaw=localStorage.getItem(LEGACY_CONSENT_KEY);
       if(!legacyRaw) return null;
       const parsed=JSON.parse(legacyRaw);
-      const migratedChoice=parsed?.external ? CONSENT_ALL : CONSENT_NECESSARY;
+      if(typeof parsed?.external!=='boolean'){
+        localStorage.removeItem(LEGACY_CONSENT_KEY);
+        return null;
+      }
+      const migratedChoice=parsed.external ? CONSENT_ALL : CONSENT_NECESSARY;
       localStorage.setItem(CONSENT_STORAGE_KEY,migratedChoice);
       localStorage.removeItem(LEGACY_CONSENT_KEY);
       return toConsentModel(migratedChoice);
@@ -525,7 +530,7 @@
 
     const splash=$('#splash');
     if(!splash){
-      finish();
+      setTimeout(finish,1000);
       return;
     }
 
@@ -543,7 +548,7 @@
     const computed=window.getComputedStyle(splash);
     const isAlreadyHidden=splash.classList.contains('hide') || computed.visibility==='hidden' || computed.opacity==='0';
     if(isAlreadyHidden){
-      done();
+      setTimeout(done,1000);
       return;
     }
 
