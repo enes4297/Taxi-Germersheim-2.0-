@@ -508,6 +508,53 @@
       <label>NOTIZ OPTIONAL</label><textarea placeholder="z. B. Rollstuhl, Gepäck, Krankenkasse, Abholhinweis"></textarea>
 
       <div class="actions"><button id="sendRequest">Fahrtanfrage nicht möglich</button><a href="tel:072743567"><i data-icon="phone"></i>Jetzt anrufen</a></div>
+
+      <section class="panel request-prep" aria-labelledby="request-prep-title">
+        <small>Kontaktformular</small>
+        <h3 id="request-prep-title">Fahrtanfrage senden</h3>
+        <p class="request-prep-note">Dieses Formular ist vorbereitet. Der E-Mail-/Backend-Versand kann spaeter per Formspree, Netlify Forms, EmailJS oder eigenem Server angebunden werden.</p>
+
+        <form id="contactRequestForm" class="request-form" novalidate>
+          <div class="request-grid">
+            <label for="requestName">Name</label>
+            <input id="requestName" name="name" type="text" required>
+
+            <label for="requestPhone">Telefon</label>
+            <input id="requestPhone" name="phone" type="tel" required>
+
+            <label for="requestEmail">E-Mail</label>
+            <input id="requestEmail" name="email" type="email" required>
+
+            <label for="requestPickup">Abholadresse</label>
+            <input id="requestPickup" name="pickup" type="text" required>
+
+            <label for="requestDestination">Zieladresse</label>
+            <input id="requestDestination" name="destination" type="text" required>
+
+            <label for="requestDate">Datum</label>
+            <input id="requestDate" name="date" type="date" required>
+
+            <label for="requestTime">Uhrzeit</label>
+            <input id="requestTime" name="time" type="time" required>
+
+            <label for="requestPassengers">Personenanzahl</label>
+            <input id="requestPassengers" name="passengers" type="number" min="1" max="8" value="1" required>
+
+            <label for="requestMessage">Nachricht / Besonderheiten</label>
+            <textarea id="requestMessage" name="message" rows="4" placeholder="z. B. Kindersitz, Rollstuhl, zusaetzliche Hinweise"></textarea>
+          </div>
+
+          <label class="request-consent">
+            <input id="requestPrivacy" name="privacy" type="checkbox" required>
+            <span>Ich habe die Datenschutzerklaerung gelesen und stimme der Verarbeitung meiner Angaben zur Bearbeitung meiner Anfrage zu.</span>
+          </label>
+
+          <div class="request-actions">
+            <button id="requestSubmit" type="submit" class="button">Anfrage vorbereiten</button>
+            <p id="requestStatus" aria-live="polite"></p>
+          </div>
+        </form>
+      </section>
     </section>
 
     <section id="yumak" class="screen simple"><header class="page-head"><button data-go="home">‹</button><h2>Yumak</h2><i></i></header><article class="panel yumak-greeting"><img class="yumak-img" src="assets/yumak/yumak-portrait.jpg" onerror="this.src='yumak.png'"><h1>Hallo, ich bin Yumak 🐾</h1><p>Ich helfe dir später beim Buchen, Sammeln von Abzeichen und bei Fragen rund um Taxi Germersheim.</p></article><div class="yumak-features"><button class="yumak-card" data-go="booking" type="button"><i data-icon="booking"></i><div class="yumak-card-body"><b>Fahrt buchen</b><small>Ich helfe dir bei deiner Fahrt und beantworte Fragen.</small></div><span class="yumak-card-action">Fahrt starten</span></button><button class="yumak-card" data-go="rewards" type="button"><i data-icon="rewards"></i><div class="yumak-card-body"><b>Rewards</b><small>Erfahre mehr über Abzeichen, Punkte und Belohnungen.</small></div><span class="yumak-card-action">Rewards ansehen</span></button><button class="yumak-card" type="button"><i data-icon="phone"></i><div class="yumak-card-body"><b>Hilfe</b><small>24/7 Hilfe zu Buchung, Krankenfahrten und Unternehmen.</small></div><span class="yumak-card-action">Hilfe öffnen</span></button></div></section>
@@ -861,6 +908,43 @@
 
     <div class="footer-bottom" aria-hidden="true"></div>
   </footer>
+
+  <div id="consentBackdrop" class="consent-backdrop" hidden></div>
+  <section id="consentBanner" class="consent-banner" hidden aria-label="Cookie und Dienste Zustimmung">
+    <div class="consent-copy">
+      <strong>Cookie- und Diensteinstellungen</strong>
+      <p>Wir nutzen notwendige Cookies. Externe Dienste wie Google Maps werden erst nach Ihrer Zustimmung geladen.</p>
+      <a href="datenschutz.html">Datenschutz lesen</a>
+    </div>
+    <div class="consent-actions">
+      <button id="consentAcceptAll" type="button" class="button">Alle akzeptieren</button>
+      <button id="consentNecessaryOnly" type="button" class="button">Nur notwendige Cookies</button>
+      <button id="consentOpenSettings" type="button" class="button">Einstellungen</button>
+    </div>
+  </section>
+
+  <section id="consentSettings" class="consent-settings" hidden aria-label="Cookie Einstellungen">
+    <header>
+      <h3>Einstellungen</h3>
+      <button id="consentCloseSettings" type="button" aria-label="Schliessen">×</button>
+    </header>
+    <div class="consent-settings-body">
+      <article>
+        <b>Notwendige Cookies</b>
+        <p>Immer aktiv, damit Grundfunktionen der Website laufen.</p>
+      </article>
+      <label class="consent-toggle" for="consentExternalToggle">
+        <span>
+          <b>Externe Dienste / Marketing</b>
+          <small>Erforderlich fuer Google Maps und vergleichbare Dienste.</small>
+        </span>
+        <input id="consentExternalToggle" type="checkbox">
+      </label>
+    </div>
+    <footer>
+      <button id="consentSaveSettings" type="button" class="button">Auswahl speichern</button>
+    </footer>
+  </section>
 <script src="script.js"></script>
 </body>
 </html>
