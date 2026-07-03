@@ -383,7 +383,11 @@
       external:!!next.external,
       updatedAt:Date.now()
     };
-    localStorage.setItem(CONSENT_KEY,JSON.stringify(consentState));
+    try{
+      localStorage.setItem(CONSENT_KEY,JSON.stringify(consentState));
+    }catch(_err){
+      // If storage is blocked, keep runtime state so UI still behaves correctly.
+    }
     refreshMapContainers();
   }
   function enableExternalServices(){
@@ -399,7 +403,8 @@
   function setEndMarker(address,coords){endMarker={address,coords}}
   function getMarkers(){return {start:startMarker,end:endMarker}}
   function clearMarkers(){startMarker=null;endMarker=null}
-  function initConsentManager(){
+  function initConsentManager(options={}){
+    const {showBannerOnInit=true}=options;
     const banner=$('#consentBanner');
     const backdrop=$('#consentBackdrop');
     const settings=$('#consentSettings');
@@ -439,7 +444,7 @@
       if(wasOpen && settingsOpener && typeof settingsOpener.focus==='function') settingsOpener.focus();
     }
 
-    if(!stored) showBanner();
+    if(!stored && showBannerOnInit) showBanner();
 
     acceptAll?.addEventListener('click',()=>{
       saveConsent({external:true});
@@ -476,6 +481,43 @@
     });
 
     refreshMapContainers();
+  }
+  function runAfterIntroComplete(onComplete){
+    const finish=()=>{
+      if(typeof onComplete==='function') onComplete();
+    };
+
+    const splash=$('#splash');
+    if(!splash){
+      finish();
+      return;
+    }
+
+    let finished=false;
+    const done=()=>{
+      if(finished) return;
+      finished=true;
+      finish();
+    };
+
+    const ensureHidden=()=>{
+      splash.classList.add('hide');
+    };
+
+    const computed=window.getComputedStyle(splash);
+    const isAlreadyHidden=splash.classList.contains('hide') || computed.visibility==='hidden' || computed.opacity==='0';
+    if(isAlreadyHidden){
+      done();
+      return;
+    }
+
+    setTimeout(ensureHidden,2000);
+    splash.addEventListener('transitionend',event=>{
+      if(event.target===splash && event.propertyName==='opacity') done();
+    },{once:true});
+
+    // Fallback in case transitionend is skipped.
+    setTimeout(done,2600);
   }
   function initContactRequestForm(){
     const form=$('#contactRequestForm');
@@ -1212,12 +1254,18 @@
 
     applyFilters();
   }
-  function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);initMapContainer('startMapContainer');initMapContainer('endMapContainer');
+  function boot(){inject();setService('taxi');validate();initMapContainer('startMapContainer');initMapContainer('endMapContainer');
     initMedicalAssistant();
     initMedicalBookingScroll();
     initPremiumNavigation();
     initFaqCenter();
-    initConsentManager();
+    initConsentManager({showBannerOnInit:false});
+    runAfterIntroComplete(()=>{
+      if(!parseStoredConsent()){
+        $('#consentBanner')?.removeAttribute('hidden');
+        $('#consentBackdrop')?.removeAttribute('hidden');
+      }
+    });
     initContactRequestForm();
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);
