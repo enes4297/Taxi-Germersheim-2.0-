@@ -75,7 +75,10 @@
   let addressConfigCache=null;
   let streetDirectoryCache=null;
   let startMarker=null,endMarker=null,mapContainers={};
-  const CONSENT_KEY='tg_consent_v1';
+  const CONSENT_STORAGE_KEY='taxiGermersheimCookieConsent';
+  const LEGACY_CONSENT_KEY='tg_consent_v1';
+  const CONSENT_ALL='all';
+  const CONSENT_NECESSARY='necessary';
   const defaultConsent={necessary:true,external:false,updatedAt:0};
   let consentState={...defaultConsent};
 
@@ -364,27 +367,38 @@
     return container;
   }
   function parseStoredConsent(){
+    const toConsentModel=choice=>({
+      necessary:true,
+      external:choice===CONSENT_ALL,
+      updatedAt:Date.now(),
+      choice
+    });
     try{
-      const raw=localStorage.getItem(CONSENT_KEY);
-      if(!raw) return null;
-      const parsed=JSON.parse(raw);
-      return {
-        necessary:true,
-        external:!!parsed.external,
-        updatedAt:Number(parsed.updatedAt)||Date.now()
-      };
+      const current=localStorage.getItem(CONSENT_STORAGE_KEY);
+      if(current===CONSENT_ALL || current===CONSENT_NECESSARY) return toConsentModel(current);
+
+      const legacyRaw=localStorage.getItem(LEGACY_CONSENT_KEY);
+      if(!legacyRaw) return null;
+      const parsed=JSON.parse(legacyRaw);
+      const migratedChoice=parsed?.external ? CONSENT_ALL : CONSENT_NECESSARY;
+      localStorage.setItem(CONSENT_STORAGE_KEY,migratedChoice);
+      localStorage.removeItem(LEGACY_CONSENT_KEY);
+      return toConsentModel(migratedChoice);
     }catch(_err){
       return null;
     }
   }
   function saveConsent(next){
+    const choice=next.external?CONSENT_ALL:CONSENT_NECESSARY;
     consentState={
       necessary:true,
       external:!!next.external,
-      updatedAt:Date.now()
+      updatedAt:Date.now(),
+      choice
     };
     try{
-      localStorage.setItem(CONSENT_KEY,JSON.stringify(consentState));
+      localStorage.setItem(CONSENT_STORAGE_KEY,choice);
+      localStorage.removeItem(LEGACY_CONSENT_KEY);
     }catch(_err){
       // If storage is blocked, keep runtime state so UI still behaves correctly.
     }
@@ -420,26 +434,48 @@
     if(stored) consentState=stored;
 
     function showBanner(){
-      if(banner) banner.hidden=false;
-      if(backdrop) backdrop.hidden=false;
+      if(banner){
+        banner.hidden=false;
+        banner.setAttribute('aria-hidden','false');
+      }
+      if(backdrop){
+        backdrop.hidden=false;
+        backdrop.setAttribute('aria-hidden','false');
+      }
     }
     function hideBanner(){
-      if(banner) banner.hidden=true;
-      if(backdrop) backdrop.hidden=true;
+      if(banner){
+        banner.hidden=true;
+        banner.setAttribute('aria-hidden','true');
+      }
+      if(backdrop){
+        backdrop.hidden=true;
+        backdrop.setAttribute('aria-hidden','true');
+      }
     }
     function openSettingsDialog(){
       if(!settings) return;
       settingsOpener=document.activeElement;
       if(externalToggle) externalToggle.checked=!!consentState.external;
       settings.hidden=false;
-      if(backdrop) backdrop.hidden=false;
+      settings.setAttribute('aria-hidden','false');
+      if(backdrop){
+        backdrop.hidden=false;
+        backdrop.setAttribute('aria-hidden','false');
+      }
       requestAnimationFrame(()=>focusFirstInteractive(settings));
     }
     function closeSettingsDialog(){
       const wasOpen=!!settings && !settings.hidden;
-      if(settings) settings.hidden=true;
+      if(settings){
+        settings.hidden=true;
+        settings.setAttribute('aria-hidden','true');
+      }
       if(!banner || banner.hidden) {
-        if(backdrop) backdrop.hidden=true;
+        if(backdrop){
+          backdrop.hidden=true;
+          backdrop.setAttribute('aria-hidden','true');
+        }
       }
       if(wasOpen && settingsOpener && typeof settingsOpener.focus==='function') settingsOpener.focus();
     }
@@ -1262,8 +1298,16 @@
     initConsentManager({showBannerOnInit:false});
     runAfterIntroComplete(()=>{
       if(!parseStoredConsent()){
-        $('#consentBanner')?.removeAttribute('hidden');
-        $('#consentBackdrop')?.removeAttribute('hidden');
+        const banner=$('#consentBanner');
+        const backdrop=$('#consentBackdrop');
+        if(banner){
+          banner.hidden=false;
+          banner.setAttribute('aria-hidden','false');
+        }
+        if(backdrop){
+          backdrop.hidden=false;
+          backdrop.setAttribute('aria-hidden','false');
+        }
       }
     });
     initContactRequestForm();
