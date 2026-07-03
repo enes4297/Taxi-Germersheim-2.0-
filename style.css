@@ -1934,3 +1934,32 @@ input:focus,textarea:focus,select:focus,
 @media(max-width:900px){
   .consent-banner{grid-template-columns:1fr;left:14px;right:14px;bottom:12px}
 }
+
+.visually-hidden{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:-1px!important;
+  overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;
+  white-space:nowrap!important;
+  border:0!important;
+}
+
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{
+  outline:2px solid rgba(255,217,106,.95);
+  outline-offset:2px;
+  box-shadow:0 0 0 4px rgba(255,217,106,.2);
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+    scroll-behavior:auto!important;
+  }
+
+  .screen.active{animation:none!important}
+}
