@@ -514,8 +514,26 @@
   }
   function inject(){ $$('[data-icon]').forEach(el=>{el.innerHTML=icons[el.dataset.icon]||''}) }
   function show(id){ if(!$('#'+id)) id='home'; $$('.screen').forEach(s=>s.classList.toggle('active',s.id===id)); $$('.site-nav button').forEach(b=>b.classList.toggle('active',b.dataset.go===id)); window.scrollTo(0,0) }
-  function setService(s){ if(!services[s])s='taxi'; $('#selectedTitle').textContent=services[s][0]; $('#serviceLabel').textContent=services[s][1]; $$('.type-grid button').forEach(b=>b.classList.toggle('active',b.dataset.serviceSelect===s)); $('#medicalPanel').classList.toggle('hidden',s!=='medical') }
-  function validate(){let ok=$('#startAddress').value.trim()&&$('#targetAddress').value.trim()&&$('#customerPhone').value.trim();$('#sendRequest').textContent=ok?'Fahrtanfrage senden':'Fahrtanfrage nicht möglich'}
+  function setService(s){
+    const selectedTitle=$('#selectedTitle');
+    const serviceLabel=$('#serviceLabel');
+    const medicalPanel=$('#medicalPanel');
+    if(!selectedTitle || !serviceLabel || !medicalPanel) return;
+    if(!services[s]) s='taxi';
+    selectedTitle.textContent=services[s][0];
+    serviceLabel.textContent=services[s][1];
+    $$('.type-grid button').forEach(b=>b.classList.toggle('active',b.dataset.serviceSelect===s));
+    medicalPanel.classList.toggle('hidden',s!=='medical');
+  }
+  function validate(){
+    const start=$('#startAddress');
+    const target=$('#targetAddress');
+    const phone=$('#customerPhone');
+    const send=$('#sendRequest');
+    if(!start || !target || !phone || !send) return;
+    const ok=start.value.trim()&&target.value.trim()&&phone.value.trim();
+    send.textContent=ok?'Fahrtanfrage senden':'Fahrtanfrage nicht möglich';
+  }
   let userLocation=null;
   function getLocation(){
     if('geolocation' in navigator){

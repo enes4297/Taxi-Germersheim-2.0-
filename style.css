@@ -1953,6 +1953,34 @@ input:focus,textarea:focus,select:focus,
   box-shadow:0 0 0 4px rgba(255,217,106,.2);
 }
 
+.site-nav a{
+  background:transparent;
+  border:0;
+  color:rgba(255,255,255,.78);
+  font-weight:800;
+  font-size:14px;
+  padding:10px 14px;
+  border-radius:18px;
+  transition:background .2s ease,color .2s ease;
+}
+
+.site-nav a:hover,
+.site-nav a.active{
+  background:rgba(255,217,106,.08);
+  color:var(--gold);
+}
+
+.page-head .page-head-link{
+  width:52px;
+  height:52px;
+  border-radius:19px;
+  background:rgba(16,17,22,.78);
+  border:1px solid rgba(255,255,255,.1);
+  display:grid;
+  place-items:center;
+  font-size:40px;
+}
+
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{
     animation-duration:.01ms!important;
