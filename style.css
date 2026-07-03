@@ -1853,6 +1853,12 @@ input:focus,textarea:focus,select:focus,
   z-index:290;
 }
 
+.consent-banner[hidden],
+.consent-backdrop[hidden],
+.consent-settings[hidden]{
+  display:none!important;
+}
+
 .consent-copy strong{display:block;color:#fff;font-size:18px;margin-bottom:6px}
 .consent-copy p{margin:0 0 8px;color:rgba(255,255,255,.8)!important;font-size:14px;line-height:1.55}
 .consent-copy a{color:var(--gold);font-weight:800}
