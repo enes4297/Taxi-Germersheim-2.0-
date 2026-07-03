@@ -75,6 +75,9 @@
   let addressConfigCache=null;
   let streetDirectoryCache=null;
   let startMarker=null,endMarker=null,mapContainers={};
+  const CONSENT_KEY='tg_consent_v1';
+  const defaultConsent={necessary:true,external:false,updatedAt:0};
+  let consentState={...defaultConsent};
 
   function normalizeText(value){
     return (value||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ß/g,'ss').trim();
@@ -283,11 +286,183 @@
 
     return scored;
   }
-  function initMapContainer(elementId){let container=$(elementId);if(container){container.innerHTML='<div class="map-placeholder">Karte wird geladen...</div>';mapContainers[elementId]=container;return container}return null}
+  function getMapQueryForContainer(elementId){
+    const defaultQuery='Taxi Germersheim GmbH Friedrich-Ebert-Strasse 8 76726 Germersheim';
+    if(elementId==='startMapContainer') return $('#startAddress')?.value?.trim() || defaultQuery;
+    if(elementId==='endMapContainer') return $('#targetAddress')?.value?.trim() || defaultQuery;
+    return defaultQuery;
+  }
+  function getMapEmbedUrl(elementId){
+    const query=getMapQueryForContainer(elementId);
+    return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+  }
+  function hasExternalConsent(){
+    return !!consentState.external;
+  }
+  function renderMapPlaceholder(container){
+    if(!container) return;
+    container.innerHTML='';
+    const box=document.createElement('div');
+    box.className='map-consent-placeholder';
+    box.innerHTML='<p>Google Maps wird erst geladen, wenn Sie externe Dienste akzeptieren.</p><button type="button" class="map-consent-btn" data-map-consent="accept">Google Maps akzeptieren und laden</button>';
+    container.appendChild(box);
+  }
+  function loadMapIntoContainer(container,elementId){
+    if(!container) return;
+    const iframe=document.createElement('iframe');
+    iframe.className='map-embed-frame';
+    iframe.loading='lazy';
+    iframe.referrerPolicy='no-referrer-when-downgrade';
+    iframe.allowFullscreen=true;
+    iframe.title='Google Maps';
+    iframe.src=getMapEmbedUrl(elementId);
+    container.innerHTML='';
+    container.appendChild(iframe);
+  }
+  function refreshMapContainers(){
+    Object.entries(mapContainers).forEach(([id,container])=>{
+      if(hasExternalConsent()) loadMapIntoContainer(container,id);
+      else renderMapPlaceholder(container);
+    });
+  }
+  function initMapContainer(elementId){
+    const container=$(elementId);
+    if(!container) return null;
+    mapContainers[elementId]=container;
+    refreshMapContainers();
+    return container;
+  }
+  function parseStoredConsent(){
+    try{
+      const raw=localStorage.getItem(CONSENT_KEY);
+      if(!raw) return null;
+      const parsed=JSON.parse(raw);
+      return {
+        necessary:true,
+        external:!!parsed.external,
+        updatedAt:Number(parsed.updatedAt)||Date.now()
+      };
+    }catch(_err){
+      return null;
+    }
+  }
+  function saveConsent(next){
+    consentState={
+      necessary:true,
+      external:!!next.external,
+      updatedAt:Date.now()
+    };
+    localStorage.setItem(CONSENT_KEY,JSON.stringify(consentState));
+    refreshMapContainers();
+  }
+  function enableExternalServices(){
+    saveConsent({external:true});
+    const banner=$('#consentBanner');
+    const backdrop=$('#consentBackdrop');
+    const settings=$('#consentSettings');
+    if(banner) banner.hidden=true;
+    if(backdrop) backdrop.hidden=true;
+    if(settings) settings.hidden=true;
+  }
   function setStartMarker(address,coords){startMarker={address,coords}}
   function setEndMarker(address,coords){endMarker={address,coords}}
   function getMarkers(){return {start:startMarker,end:endMarker}}
   function clearMarkers(){startMarker=null;endMarker=null}
+  function initConsentManager(){
+    const banner=$('#consentBanner');
+    const backdrop=$('#consentBackdrop');
+    const settings=$('#consentSettings');
+    const acceptAll=$('#consentAcceptAll');
+    const onlyNecessary=$('#consentNecessaryOnly');
+    const openSettings=$('#consentOpenSettings');
+    const closeSettings=$('#consentCloseSettings');
+    const saveSettings=$('#consentSaveSettings');
+    const externalToggle=$('#consentExternalToggle');
+
+    const stored=parseStoredConsent();
+    if(stored) consentState=stored;
+
+    function showBanner(){
+      if(banner) banner.hidden=false;
+      if(backdrop) backdrop.hidden=false;
+    }
+    function hideBanner(){
+      if(banner) banner.hidden=true;
+      if(backdrop) backdrop.hidden=true;
+    }
+    function openSettingsDialog(){
+      if(!settings) return;
+      if(externalToggle) externalToggle.checked=!!consentState.external;
+      settings.hidden=false;
+      if(backdrop) backdrop.hidden=false;
+    }
+    function closeSettingsDialog(){
+      if(settings) settings.hidden=true;
+      if(!banner || banner.hidden) {
+        if(backdrop) backdrop.hidden=true;
+      }
+    }
+
+    if(!stored) showBanner();
+
+    acceptAll?.addEventListener('click',()=>{
+      saveConsent({external:true});
+      hideBanner();
+      closeSettingsDialog();
+    });
+
+    onlyNecessary?.addEventListener('click',()=>{
+      saveConsent({external:false});
+      hideBanner();
+      closeSettingsDialog();
+    });
+
+    openSettings?.addEventListener('click',openSettingsDialog);
+    closeSettings?.addEventListener('click',closeSettingsDialog);
+
+    saveSettings?.addEventListener('click',()=>{
+      saveConsent({external:!!externalToggle?.checked});
+      hideBanner();
+      closeSettingsDialog();
+    });
+
+    refreshMapContainers();
+  }
+  function initContactRequestForm(){
+    const form=$('#contactRequestForm');
+    if(!form) return;
+
+    const privacy=$('#requestPrivacy');
+    const submit=$('#requestSubmit');
+    const status=$('#requestStatus');
+
+    function syncFormState(){
+      const allowSubmit=!!privacy?.checked;
+      if(submit) submit.disabled=!allowSubmit;
+    }
+
+    privacy?.addEventListener('change',syncFormState);
+
+    form.addEventListener('submit',e=>{
+      e.preventDefault();
+      if(!privacy?.checked){
+        if(status) status.textContent='Bitte Datenschutz-Einwilligung aktivieren.';
+        return;
+      }
+      if(!form.reportValidity()) return;
+
+      // TODO: Hier spaeter Formspree, Netlify Forms, EmailJS oder eigenen API-Endpoint anbinden.
+      if(status) status.textContent='Formular ist vorbereitet. Versand wird spaeter an einen Dienst angebunden.';
+    });
+
+    syncFormState();
+  }
+  function resolveInitialScreen(){
+    const params=new URLSearchParams(window.location.search);
+    const page=params.get('page');
+    if(page && $('#'+page)) return page;
+    return null;
+  }
   function inject(){ $$('[data-icon]').forEach(el=>{el.innerHTML=icons[el.dataset.icon]||''}) }
   function show(id){ if(!$('#'+id)) id='home'; $$('.screen').forEach(s=>s.classList.toggle('active',s.id===id)); $$('.site-nav button').forEach(b=>b.classList.toggle('active',b.dataset.go===id)); window.scrollTo(0,0) }
   function setService(s){ if(!services[s])s='taxi'; $('#selectedTitle').textContent=services[s][0]; $('#serviceLabel').textContent=services[s][1]; $$('.type-grid button').forEach(b=>b.classList.toggle('active',b.dataset.serviceSelect===s)); $('#medicalPanel').classList.toggle('hidden',s!=='medical') }
@@ -965,9 +1140,19 @@
     initPremiumNavigation();
     initFaqCenter();
     initLegalLinks();
+    initConsentManager();
+    initContactRequestForm();
+    const initialScreen=resolveInitialScreen();
+    if(initialScreen) show(initialScreen);
     const menuToggle=$('.menu-toggle');
     const siteNav=$('.site-nav');
     document.addEventListener('click',e=>{
+      let mapConsent=e.target.closest('[data-map-consent="accept"]');
+      if(mapConsent){
+        e.preventDefault();
+        enableExternalServices();
+        return;
+      }
       let go=e.target.closest('[data-go]');
       if(go){
         e.preventDefault();
@@ -990,7 +1175,12 @@
       let locBtn=e.target.closest('#locationBtn');if(locBtn){getLocation();return}
       let chip=e.target.closest('.details button,.chips button,.small-toggle button');if(chip){if(chip.dataset.address){$('#targetAddress').value=chip.dataset.address;if(chip.dataset.service)setService(chip.dataset.service);validate()}else{chip.classList.toggle('active')}}
     });
-    document.addEventListener('input',validate,true)
+    document.addEventListener('input',e=>{
+      validate();
+      if(hasExternalConsent()){
+        if(e.target.id==='startAddress' || e.target.id==='targetAddress') refreshMapContainers();
+      }
+    },true)
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

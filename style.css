@@ -1827,3 +1827,110 @@ input:focus,textarea:focus,select:focus,
   #datenschutz .privacy-card-wide{grid-column:auto}
   #datenschutz .privacy-card p{font-size:15px}
 }
+
+/* Consent + Google Maps placeholder + request form */
+.consent-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(2,3,5,.58);
+  backdrop-filter:blur(2px);
+  z-index:280;
+}
+
+.consent-banner{
+  position:fixed;
+  left:20px;
+  right:20px;
+  bottom:18px;
+  display:grid;
+  grid-template-columns:minmax(0,1.8fr) minmax(320px,1fr);
+  gap:16px;
+  padding:18px;
+  border-radius:20px;
+  border:1px solid rgba(255,217,106,.32);
+  background:linear-gradient(145deg,rgba(12,13,18,.98),rgba(7,8,11,.98));
+  box-shadow:0 24px 56px rgba(0,0,0,.35);
+  z-index:290;
+}
+
+.consent-copy strong{display:block;color:#fff;font-size:18px;margin-bottom:6px}
+.consent-copy p{margin:0 0 8px;color:rgba(255,255,255,.8)!important;font-size:14px;line-height:1.55}
+.consent-copy a{color:var(--gold);font-weight:800}
+
+.consent-actions{display:grid;grid-template-columns:1fr;gap:8px;align-content:center}
+.consent-actions .button{height:46px;border-radius:12px;justify-content:center;font-size:14px}
+
+.consent-settings{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:min(520px,calc(100vw - 32px));
+  padding:16px;
+  border-radius:18px;
+  border:1px solid rgba(255,217,106,.3);
+  background:linear-gradient(145deg,rgba(12,13,18,.99),rgba(7,8,11,.99));
+  box-shadow:0 26px 60px rgba(0,0,0,.38);
+  z-index:300;
+}
+
+.consent-settings header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.consent-settings header h3{margin:0;color:#fff;font-size:24px;font-family:var(--serif)}
+.consent-settings header button{width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);cursor:pointer}
+
+.consent-settings-body article{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.09);margin-bottom:10px}
+.consent-settings-body article b{display:block;color:#fff;margin-bottom:4px}
+.consent-settings-body article p{margin:0;color:rgba(255,255,255,.72)!important;font-size:14px;line-height:1.55}
+
+.consent-toggle{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.consent-toggle b{display:block;color:#fff;margin-bottom:2px}
+.consent-toggle small{color:rgba(255,255,255,.72);line-height:1.5}
+.consent-toggle input{width:22px;height:22px;accent-color:#d5a437}
+.consent-settings footer{margin-top:12px}
+
+.map-consent-placeholder{
+  width:100%;
+  height:100%;
+  display:grid;
+  align-content:center;
+  justify-items:center;
+  gap:12px;
+  padding:16px;
+  text-align:center;
+}
+
+.map-consent-placeholder p{margin:0;color:rgba(255,255,255,.8)!important;font-size:14px;line-height:1.5;max-width:420px}
+.map-consent-btn{height:44px;padding:0 16px;border-radius:12px;border:1px solid rgba(255,217,106,.38);background:rgba(255,217,106,.08);color:var(--gold);font-weight:860;cursor:pointer}
+.map-consent-btn:hover{background:rgba(255,217,106,.16)}
+.map-embed-frame{width:100%;height:100%;border:0}
+
+.request-prep h3{margin:0 0 8px;font-family:var(--serif);font-size:30px;line-height:1.05}
+.request-prep-note{margin:0 0 14px;color:rgba(255,255,255,.78)!important;line-height:1.6}
+
+.request-form{display:grid;gap:12px}
+.request-grid{display:grid;gap:8px}
+.request-grid label{margin:6px 0 2px;color:var(--gold)!important;font-size:12px;letter-spacing:.13em}
+.request-grid input,.request-grid textarea{
+  width:100%;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.03);
+  color:#fff;
+  padding:12px 14px;
+  outline:0;
+}
+.request-grid input:focus,.request-grid textarea:focus{border-color:rgba(255,217,106,.44);box-shadow:0 0 0 3px rgba(255,217,106,.14)}
+.request-grid textarea{min-height:102px;resize:vertical}
+
+.request-consent{display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:flex-start}
+.request-consent input{margin-top:3px;accent-color:#d5a437}
+.request-consent span{color:rgba(255,255,255,.82);line-height:1.55;font-size:14px}
+
+.request-actions{display:grid;gap:8px}
+.request-actions .button{width:100%;border-radius:14px}
+.request-actions .button:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.2)}
+#requestStatus{margin:0;color:rgba(255,255,255,.74)!important;font-size:14px;line-height:1.5}
+
+@media(max-width:900px){
+  .consent-banner{grid-template-columns:1fr;left:14px;right:14px;bottom:12px}
+}
