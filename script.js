@@ -345,15 +345,21 @@
     }
   }
   function showCookieBanner(){
-    const banner=$('#cookieBanner');
+    const banner=document.getElementById('cookieBanner');
     if(!banner) return;
     banner.hidden=false;
+    banner.removeAttribute('hidden');
+    banner.style.display='flex';
+    banner.style.visibility='visible';
+    banner.style.opacity='1';
     banner.setAttribute('aria-hidden','false');
   }
   function hideCookieBanner(){
-    const banner=$('#cookieBanner');
+    const banner=document.getElementById('cookieBanner');
     if(!banner) return;
     banner.hidden=true;
+    banner.setAttribute('hidden','');
+    banner.style.display='none';
     banner.setAttribute('aria-hidden','true');
   }
   function hasExternalConsent(){
