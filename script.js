@@ -76,11 +76,8 @@
   let streetDirectoryCache=null;
   let startMarker=null,endMarker=null,mapContainers={};
   const CONSENT_STORAGE_KEY='taxiGermersheimCookieConsent';
-  const LEGACY_CONSENT_KEY='tg_consent_v1';
   const CONSENT_ALL='all';
   const CONSENT_NECESSARY='necessary';
-  const defaultConsent={necessary:true,external:false,updatedAt:0};
-  let consentState={...defaultConsent};
 
   function getFocusableElements(container){
     if(!container) return [];
@@ -330,8 +327,37 @@
     const query=getMapQueryForContainer(elementId);
     return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
   }
+  function getStoredCookieConsent(){
+    try{
+      const value=localStorage.getItem(CONSENT_STORAGE_KEY);
+      if(value===CONSENT_ALL || value===CONSENT_NECESSARY) return value;
+      if(value!==null) localStorage.removeItem(CONSENT_STORAGE_KEY);
+      return null;
+    }catch(_err){
+      return null;
+    }
+  }
+  function persistCookieConsent(value){
+    try{
+      localStorage.setItem(CONSENT_STORAGE_KEY,value);
+    }catch(_err){
+      // Keep UI functional even if storage is unavailable.
+    }
+  }
+  function showCookieBanner(){
+    const banner=$('#cookieBanner');
+    if(!banner) return;
+    banner.hidden=false;
+    banner.setAttribute('aria-hidden','false');
+  }
+  function hideCookieBanner(){
+    const banner=$('#cookieBanner');
+    if(!banner) return;
+    banner.hidden=true;
+    banner.setAttribute('aria-hidden','true');
+  }
   function hasExternalConsent(){
-    return !!consentState.external;
+    return getStoredCookieConsent()===CONSENT_ALL;
   }
   function renderMapPlaceholder(container){
     if(!container) return;
@@ -366,205 +392,50 @@
     refreshMapContainers();
     return container;
   }
-  function parseStoredConsent(){
-    const toConsentModel=choice=>({
-      necessary:true,
-      external:choice===CONSENT_ALL,
-      updatedAt:Date.now(),
-      choice
-    });
-    try{
-      const current=localStorage.getItem(CONSENT_STORAGE_KEY);
-      if(current===CONSENT_ALL || current===CONSENT_NECESSARY) return toConsentModel(current);
-      if(current!==null) localStorage.removeItem(CONSENT_STORAGE_KEY);
-
-      const legacyRaw=localStorage.getItem(LEGACY_CONSENT_KEY);
-      if(!legacyRaw) return null;
-      const parsed=JSON.parse(legacyRaw);
-      if(typeof parsed?.external!=='boolean'){
-        localStorage.removeItem(LEGACY_CONSENT_KEY);
-        return null;
-      }
-      const migratedChoice=parsed.external ? CONSENT_ALL : CONSENT_NECESSARY;
-      localStorage.setItem(CONSENT_STORAGE_KEY,migratedChoice);
-      localStorage.removeItem(LEGACY_CONSENT_KEY);
-      return toConsentModel(migratedChoice);
-    }catch(_err){
-      return null;
-    }
-  }
-  function saveConsent(next){
-    const choice=next.external?CONSENT_ALL:CONSENT_NECESSARY;
-    consentState={
-      necessary:true,
-      external:!!next.external,
-      updatedAt:Date.now(),
-      choice
-    };
-    try{
-      localStorage.setItem(CONSENT_STORAGE_KEY,choice);
-      localStorage.removeItem(LEGACY_CONSENT_KEY);
-    }catch(_err){
-      // If storage is blocked, keep runtime state so UI still behaves correctly.
-    }
-    refreshMapContainers();
-  }
   function enableExternalServices(){
-    saveConsent({external:true});
-    const banner=$('#consentBanner');
-    const backdrop=$('#consentBackdrop');
-    const settings=$('#consentSettings');
-    if(banner) banner.hidden=true;
-    if(backdrop) backdrop.hidden=true;
-    if(settings) settings.hidden=true;
+    persistCookieConsent(CONSENT_ALL);
+    hideCookieBanner();
+    refreshMapContainers();
   }
   function setStartMarker(address,coords){startMarker={address,coords}}
   function setEndMarker(address,coords){endMarker={address,coords}}
   function getMarkers(){return {start:startMarker,end:endMarker}}
   function clearMarkers(){startMarker=null;endMarker=null}
-  function initConsentManager(options={}){
-    const {showBannerOnInit=true}=options;
-    const banner=$('#consentBanner');
-    const backdrop=$('#consentBackdrop');
-    const settings=$('#consentSettings');
-    const acceptAll=$('#consentAcceptAll');
-    const onlyNecessary=$('#consentNecessaryOnly');
-    const openSettings=$('#consentOpenSettings');
-    const closeSettings=$('#consentCloseSettings');
-    const saveSettings=$('#consentSaveSettings');
-    const externalToggle=$('#consentExternalToggle');
-    let settingsOpener=null;
+  function initCookieBanner(){
+    const banner=$('#cookieBanner');
+    const acceptAll=$('#cookieAcceptAll');
+    const necessary=$('#cookieNecessary');
+    const settings=$('#cookieSettings');
+    if(!banner) return;
 
-    const stored=parseStoredConsent();
-    if(stored) consentState=stored;
+    hideCookieBanner();
 
-    function showBanner(){
-      if(banner){
-        banner.hidden=false;
-        banner.setAttribute('aria-hidden','false');
-      }
-      if(backdrop){
-        backdrop.hidden=false;
-        backdrop.setAttribute('aria-hidden','false');
-      }
-    }
-    function hideBanner(){
-      if(banner){
-        banner.hidden=true;
-        banner.setAttribute('aria-hidden','true');
-      }
-      if(backdrop){
-        backdrop.hidden=true;
-        backdrop.setAttribute('aria-hidden','true');
-      }
-    }
-    function openSettingsDialog(){
-      if(!settings) return;
-      settingsOpener=document.activeElement;
-      if(externalToggle) externalToggle.checked=!!consentState.external;
-      settings.hidden=false;
-      settings.setAttribute('aria-hidden','false');
-      if(backdrop){
-        backdrop.hidden=false;
-        backdrop.setAttribute('aria-hidden','false');
-      }
-      requestAnimationFrame(()=>focusFirstInteractive(settings));
-    }
-    function closeSettingsDialog(){
-      const wasOpen=!!settings && !settings.hidden;
-      if(settings){
-        settings.hidden=true;
-        settings.setAttribute('aria-hidden','true');
-      }
-      if(!banner || banner.hidden) {
-        if(backdrop){
-          backdrop.hidden=true;
-          backdrop.setAttribute('aria-hidden','true');
-        }
-      }
-      if(wasOpen && settingsOpener && typeof settingsOpener.focus==='function') settingsOpener.focus();
+    if(getStoredCookieConsent()){
+      refreshMapContainers();
+      return;
     }
 
-    if(!stored && showBannerOnInit) showBanner();
+    setTimeout(()=>{
+      if(!getStoredCookieConsent()) showCookieBanner();
+    },1500);
 
     acceptAll?.addEventListener('click',()=>{
-      saveConsent({external:true});
-      hideBanner();
-      closeSettingsDialog();
+      persistCookieConsent(CONSENT_ALL);
+      hideCookieBanner();
+      refreshMapContainers();
     });
 
-    onlyNecessary?.addEventListener('click',()=>{
-      saveConsent({external:false});
-      hideBanner();
-      closeSettingsDialog();
+    necessary?.addEventListener('click',()=>{
+      persistCookieConsent(CONSENT_NECESSARY);
+      hideCookieBanner();
+      refreshMapContainers();
     });
 
-    openSettings?.addEventListener('click',openSettingsDialog);
-    closeSettings?.addEventListener('click',closeSettingsDialog);
-    backdrop?.addEventListener('click',()=>{
-      if(settings && !settings.hidden) closeSettingsDialog();
-    });
-
-    settings?.addEventListener('keydown',e=>{
-      if(settings.hidden) return;
-      if(e.key==='Escape'){
-        e.preventDefault();
-        closeSettingsDialog();
-        return;
-      }
-      trapFocus(e,settings);
-    });
-
-    saveSettings?.addEventListener('click',()=>{
-      saveConsent({external:!!externalToggle?.checked});
-      hideBanner();
-      closeSettingsDialog();
+    settings?.addEventListener('click',()=>{
+      alert('Cookie-Einstellungen werden in einer nächsten Version erweitert. Aktuell können Sie alle oder nur notwendige Cookies wählen.');
     });
 
     refreshMapContainers();
-
-    return {
-      showBanner,
-      hideBanner,
-      hasValidConsent:()=>!!parseStoredConsent()
-    };
-  }
-  function runAfterIntroComplete(onComplete){
-    const finish=()=>{
-      if(typeof onComplete==='function') onComplete();
-    };
-
-    const splash=$('#splash');
-    if(!splash){
-      setTimeout(finish,1000);
-      return;
-    }
-
-    let finished=false;
-    const done=()=>{
-      if(finished) return;
-      finished=true;
-      finish();
-    };
-
-    const ensureHidden=()=>{
-      splash.classList.add('hide');
-    };
-
-    const computed=window.getComputedStyle(splash);
-    const isAlreadyHidden=splash.classList.contains('hide') || computed.visibility==='hidden' || computed.opacity==='0';
-    if(isAlreadyHidden){
-      setTimeout(done,1000);
-      return;
-    }
-
-    setTimeout(ensureHidden,2000);
-    splash.addEventListener('transitionend',event=>{
-      if(event.target===splash && event.propertyName==='opacity') done();
-    },{once:true});
-
-    // Fallback in case transitionend is skipped.
-    setTimeout(done,2600);
   }
   function initContactRequestForm(){
     const form=$('#contactRequestForm');
@@ -1306,33 +1177,7 @@
     initMedicalBookingScroll();
     initPremiumNavigation();
     initFaqCenter();
-    const consentManager=initConsentManager({showBannerOnInit:false});
-    let cookieBannerShown=false;
-    let introCallbackFired=false;
-
-    function showCookieBanner(){
-      if(cookieBannerShown) return;
-      if(consentManager?.hasValidConsent?.()) return;
-      consentManager?.showBanner?.();
-      cookieBannerShown=true;
-    }
-
-    runAfterIntroComplete(()=>{
-      introCallbackFired=true;
-      showCookieBanner();
-    });
-
-    setTimeout(()=>{
-      if(introCallbackFired) return;
-      const splash=$('#splash');
-      if(!splash){
-        showCookieBanner();
-        return;
-      }
-      const computed=window.getComputedStyle(splash);
-      const introVisible=!splash.classList.contains('hide') && computed.visibility!=='hidden' && computed.opacity!=='0';
-      if(!introVisible) showCookieBanner();
-    },1500);
+    initCookieBanner();
     initContactRequestForm();
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);

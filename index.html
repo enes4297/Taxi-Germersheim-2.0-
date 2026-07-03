@@ -798,42 +798,17 @@
     <div class="footer-bottom" aria-hidden="true"></div>
   </footer>
 
-  <div id="consentBackdrop" class="consent-backdrop" hidden></div>
-  <section id="consentBanner" class="consent-banner" hidden role="region" aria-label="Cookie und Dienste Zustimmung">
+  <section id="cookieBanner" class="consent-banner" hidden role="region" aria-label="Cookie und Dienste Zustimmung">
     <div class="consent-copy">
       <strong>Cookie- und Diensteinstellungen</strong>
       <p>Wir nutzen notwendige Cookies. Externe Dienste wie Google Maps werden erst nach Ihrer Zustimmung geladen.</p>
       <a href="datenschutz.html">Datenschutz lesen</a>
     </div>
     <div class="consent-actions">
-      <button id="consentAcceptAll" type="button" class="button">Alle akzeptieren</button>
-      <button id="consentNecessaryOnly" type="button" class="button">Nur notwendige Cookies</button>
-      <button id="consentOpenSettings" type="button" class="button">Einstellungen</button>
+      <button id="cookieAcceptAll" type="button" class="button">Alle akzeptieren</button>
+      <button id="cookieNecessary" type="button" class="button">Nur notwendige Cookies</button>
+      <button id="cookieSettings" type="button" class="button">Einstellungen</button>
     </div>
-  </section>
-
-  <section id="consentSettings" class="consent-settings" hidden role="dialog" aria-modal="true" aria-labelledby="consentSettingsTitle" aria-describedby="consentSettingsDesc">
-    <header>
-      <h3 id="consentSettingsTitle">Einstellungen</h3>
-      <button id="consentCloseSettings" type="button" aria-label="Schliessen">×</button>
-    </header>
-    <div class="consent-settings-body">
-      <p id="consentSettingsDesc" class="visually-hidden">Waehlbare Einstellungen fuer notwendige Cookies und externe Dienste.</p>
-      <article>
-        <b>Notwendige Cookies</b>
-        <p>Immer aktiv, damit Grundfunktionen der Website laufen.</p>
-      </article>
-      <label class="consent-toggle" for="consentExternalToggle">
-        <span>
-          <b>Externe Dienste / Marketing</b>
-          <small>Erforderlich fuer Google Maps und vergleichbare Dienste.</small>
-        </span>
-        <input id="consentExternalToggle" type="checkbox">
-      </label>
-    </div>
-    <footer>
-      <button id="consentSaveSettings" type="button" class="button">Auswahl speichern</button>
-    </footer>
   </section>
 <script src="script.js"></script>
 </body>
