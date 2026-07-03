@@ -363,12 +363,13 @@
               <p class="nova-error" data-error="4" hidden>Bitte wählen Sie ein Datum.</p>
               <div id="novaDateOverlay" class="nova-overlay" hidden>
                 <div class="nova-overlay-backdrop" data-close-overlay="date"></div>
-                <article class="nova-overlay-panel" role="dialog" aria-modal="true" aria-label="Datum auswählen">
+                <article class="nova-overlay-panel" role="dialog" aria-modal="true" aria-labelledby="novaMonthLabel" aria-describedby="novaDateHelp">
                   <header class="nova-overlay-head">
                     <button type="button" class="nova-confirm" data-month-nav="prev">←</button>
                     <h4 id="novaMonthLabel">Monat Jahr</h4>
                     <button type="button" class="nova-confirm" data-month-nav="next">→</button>
                   </header>
+                  <p id="novaDateHelp" class="visually-hidden">Waehlen Sie ein Datum aus dem Kalender. Mit Escape schliessen.</p>
                   <div class="nova-weekdays" aria-hidden="true"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
                   <div id="novaCalendarGrid" class="nova-calendar-grid"></div>
                   <footer class="nova-overlay-foot"><button type="button" class="nova-confirm" data-close-overlay="date">Schließen</button></footer>
@@ -910,7 +911,7 @@
   </footer>
 
   <div id="consentBackdrop" class="consent-backdrop" hidden></div>
-  <section id="consentBanner" class="consent-banner" hidden aria-label="Cookie und Dienste Zustimmung">
+  <section id="consentBanner" class="consent-banner" hidden role="region" aria-label="Cookie und Dienste Zustimmung">
     <div class="consent-copy">
       <strong>Cookie- und Diensteinstellungen</strong>
       <p>Wir nutzen notwendige Cookies. Externe Dienste wie Google Maps werden erst nach Ihrer Zustimmung geladen.</p>
@@ -923,12 +924,13 @@
     </div>
   </section>
 
-  <section id="consentSettings" class="consent-settings" hidden aria-label="Cookie Einstellungen">
+  <section id="consentSettings" class="consent-settings" hidden role="dialog" aria-modal="true" aria-labelledby="consentSettingsTitle" aria-describedby="consentSettingsDesc">
     <header>
-      <h3>Einstellungen</h3>
+      <h3 id="consentSettingsTitle">Einstellungen</h3>
       <button id="consentCloseSettings" type="button" aria-label="Schliessen">×</button>
     </header>
     <div class="consent-settings-body">
+      <p id="consentSettingsDesc" class="visually-hidden">Waehlbare Einstellungen fuer notwendige Cookies und externe Dienste.</p>
       <article>
         <b>Notwendige Cookies</b>
         <p>Immer aktiv, damit Grundfunktionen der Website laufen.</p>

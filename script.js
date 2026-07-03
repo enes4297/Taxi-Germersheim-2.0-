@@ -79,6 +79,37 @@
   const defaultConsent={necessary:true,external:false,updatedAt:0};
   let consentState={...defaultConsent};
 
+  function getFocusableElements(container){
+    if(!container) return [];
+    return Array.from(container.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'))
+      .filter(el=>!el.hasAttribute('hidden') && el.getAttribute('aria-hidden')!=='true');
+  }
+
+  function focusFirstInteractive(container){
+    const focusables=getFocusableElements(container);
+    focusables[0]?.focus();
+  }
+
+  function trapFocus(event,container){
+    if(event.key!=='Tab') return;
+    const focusables=getFocusableElements(container);
+    if(!focusables.length){
+      event.preventDefault();
+      return;
+    }
+    const first=focusables[0];
+    const last=focusables[focusables.length-1];
+    const active=document.activeElement;
+
+    if(event.shiftKey && active===first){
+      event.preventDefault();
+      last.focus();
+    }else if(!event.shiftKey && active===last){
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   function normalizeText(value){
     return (value||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ß/g,'ss').trim();
   }
@@ -378,6 +409,7 @@
     const closeSettings=$('#consentCloseSettings');
     const saveSettings=$('#consentSaveSettings');
     const externalToggle=$('#consentExternalToggle');
+    let settingsOpener=null;
 
     const stored=parseStoredConsent();
     if(stored) consentState=stored;
@@ -392,15 +424,19 @@
     }
     function openSettingsDialog(){
       if(!settings) return;
+      settingsOpener=document.activeElement;
       if(externalToggle) externalToggle.checked=!!consentState.external;
       settings.hidden=false;
       if(backdrop) backdrop.hidden=false;
+      requestAnimationFrame(()=>focusFirstInteractive(settings));
     }
     function closeSettingsDialog(){
+      const wasOpen=!!settings && !settings.hidden;
       if(settings) settings.hidden=true;
       if(!banner || banner.hidden) {
         if(backdrop) backdrop.hidden=true;
       }
+      if(wasOpen && settingsOpener && typeof settingsOpener.focus==='function') settingsOpener.focus();
     }
 
     if(!stored) showBanner();
@@ -419,6 +455,19 @@
 
     openSettings?.addEventListener('click',openSettingsDialog);
     closeSettings?.addEventListener('click',closeSettingsDialog);
+    backdrop?.addEventListener('click',()=>{
+      if(settings && !settings.hidden) closeSettingsDialog();
+    });
+
+    settings?.addEventListener('keydown',e=>{
+      if(settings.hidden) return;
+      if(e.key==='Escape'){
+        e.preventDefault();
+        closeSettingsDialog();
+        return;
+      }
+      trapFocus(e,settings);
+    });
 
     saveSettings?.addEventListener('click',()=>{
       saveConsent({external:!!externalToggle?.checked});
@@ -492,9 +541,11 @@
     const success=$('#novaSuccess');
 
     const dateOverlay=$('#novaDateOverlay');
+    const dateDialog=$('.nova-overlay-panel',dateOverlay);
     const monthLabel=$('#novaMonthLabel');
     const calendarGrid=$('#novaCalendarGrid');
     const timeList=$('#novaTimeList');
+    let dateOverlayOpener=null;
 
     const state={
       activeStep:1,
@@ -823,13 +874,19 @@
 
     function openOverlay(kind){
       if(kind==='date' && dateOverlay){
+        dateOverlayOpener=document.activeElement;
         dateOverlay.hidden=false;
         renderCalendar();
+        requestAnimationFrame(()=>focusFirstInteractive(dateDialog||dateOverlay));
       }
     }
 
     function closeOverlay(kind){
-      if(kind==='date' && dateOverlay) dateOverlay.hidden=true;
+      if(kind==='date' && dateOverlay){
+        const wasOpen=!dateOverlay.hidden;
+        dateOverlay.hidden=true;
+        if(wasOpen && dateOverlayOpener && typeof dateOverlayOpener.focus==='function') dateOverlayOpener.focus();
+      }
     }
 
     function applyDate(iso){
@@ -957,6 +1014,16 @@
     document.addEventListener('click',e=>{
       if(!root.contains(e.target) && !dateOverlay?.contains(e.target)) closeOverlay('date');
       if(!root.contains(e.target)) closeAllAddressDropdowns();
+    });
+
+    dateOverlay?.addEventListener('keydown',e=>{
+      if(dateOverlay.hidden) return;
+      if(e.key==='Escape'){
+        e.preventDefault();
+        closeOverlay('date');
+        return;
+      }
+      trapFocus(e,dateDialog||dateOverlay);
     });
 
     setupAddressAutocomplete(addressUi.pickup);
@@ -1127,19 +1194,11 @@
 
     applyFilters();
   }
-  function initLegalLinks(){
-    const privacyLink=$('.footer-bottom-links a:first-child');
-    if(privacyLink && !privacyLink.dataset.go){
-      privacyLink.dataset.go='datenschutz';
-      privacyLink.setAttribute('href','#');
-    }
-  }
   function boot(){inject();setService('taxi');validate();setTimeout(()=>$('#splash')?.classList.add('hide'),2000);initMapContainer('startMapContainer');initMapContainer('endMapContainer');
     initMedicalAssistant();
     initMedicalBookingScroll();
     initPremiumNavigation();
     initFaqCenter();
-    initLegalLinks();
     initConsentManager();
     initContactRequestForm();
     const initialScreen=resolveInitialScreen();
