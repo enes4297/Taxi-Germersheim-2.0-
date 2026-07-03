@@ -514,6 +514,116 @@
     <section id="rewards" class="screen simple"><header class="page-head"><button data-go="home">‹</button><h2>Rewards</h2><i></i></header><article class="panel"><small>YUMAK EMPFIEHLT</small><h1>Drehspiel & Abzeichen</h1><p>Später begleitet Yumak Gewinne, Bonuspunkte und besondere Belohnungen.</p></article></section>
     <section id="profile" class="screen simple"><header class="page-head"><button data-go="home">‹</button><h2>Profil</h2><i></i></header><article class="panel"><small>KUNDENBEREICH</small><h1>Ihr Profil</h1><p>Login, Lieblingsadressen und Stammkundenbereich kommen später.</p></article></section>
     <section id="reviews" class="screen simple"><header class="page-head"><button data-go="home">‹</button><h2>Google Bewertungen</h2><i></i></header><article class="panel center"><div class="stars">★★★★★</div><h1>5,0 Google</h1><p>230+ Bewertungen für Taxi Germersheim GmbH</p></article></section>
+
+    <section id="faq" class="screen faq-page">
+      <header class="page-head">
+        <button data-go="home" type="button">‹</button>
+        <h2>FAQ Center</h2>
+        <i></i>
+      </header>
+
+      <article class="faq-hero">
+        <small>FAQ CENTER</small>
+        <h1>Häufige Fragen</h1>
+        <p>Hier finden Sie Antworten auf die wichtigsten Fragen rund um Taxi Germersheim und unsere Fahrten.</p>
+      </article>
+
+      <section class="faq-search-wrap" aria-label="FAQ Suche">
+        <label for="faqSearchInput">Suche</label>
+        <div class="faq-search-input">
+          <i data-icon="booking"></i>
+          <input id="faqSearchInput" type="text" placeholder="Wonach suchen Sie?" autocomplete="off">
+        </div>
+      </section>
+
+      <section class="faq-categories" aria-label="FAQ Kategorien">
+        <button type="button" class="faq-category active" data-category="all"><span>✨</span><b>Alle</b></button>
+        <button type="button" class="faq-category" data-category="taxi"><span>🚖</span><b>Taxi</b></button>
+        <button type="button" class="faq-category" data-category="medical"><span>🏥</span><b>Krankenfahrten</b></button>
+        <button type="button" class="faq-category" data-category="wheelchair"><span>♿</span><b>Rollstuhlfahrten</b></button>
+        <button type="button" class="faq-category" data-category="airport"><span>✈</span><b>Flughafentransfer</b></button>
+        <button type="button" class="faq-category" data-category="payment"><span>💳</span><b>Bezahlung</b></button>
+      </section>
+
+      <section class="faq-accordion" aria-label="Häufige Fragen und Antworten">
+        <article class="faq-item" data-category="taxi,medical,wheelchair,airport,payment">
+          <button type="button" class="faq-question" aria-expanded="false">
+            <span>Kann ich telefonisch buchen?</span>
+            <b>+</b>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">Ja. Sie können uns jederzeit telefonisch erreichen und Ihre Fahrt direkt buchen.</div></div>
+        </article>
+
+        <article class="faq-item" data-category="taxi,medical,wheelchair,airport">
+          <button type="button" class="faq-question" aria-expanded="false">
+            <span>Kann ich per WhatsApp buchen?</span>
+            <b>+</b>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">Ja. Über WhatsApp können Sie Ihre Anfrage schnell und unkompliziert senden.</div></div>
+        </article>
+
+        <article class="faq-item" data-category="medical,payment">
+          <button type="button" class="faq-question" aria-expanded="false">
+            <span>Werden Krankenfahrten von der Krankenkasse übernommen?</span>
+            <b>+</b>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">In vielen Fällen ja. Ob eine Kostenübernahme möglich ist, hängt von Verordnung und Krankenkasse ab.</div></div>
+        </article>
+
+        <article class="faq-item" data-category="wheelchair">
+          <button type="button" class="faq-question" aria-expanded="false">
+            <span>Kann ich einen Rollstuhl mitnehmen?</span>
+            <b>+</b>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">Ja. Wir bieten Fahrten mit geeigneten Fahrzeugen für Rollstuhlfahrten an.</div></div>
+        </article>
+
+        <article class="faq-item" data-category="payment">
+          <button type="button" class="faq-question" aria-expanded="false">
+            <span>Wie bezahle ich?</span>
+            <b>+</b>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">Die Bezahlung ist je nach Fahrt bar und in der Regel auch per gängiger Kartenzahlung möglich.</div></div>
+        </article>
+
+        <article class="faq-item" data-category="taxi,medical,wheelchair,airport">
+          <button type="button" class="faq-question" aria-expanded="false">
+            <span>Kann ich eine Fahrt vorbestellen?</span>
+            <b>+</b>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">Ja. Vorbestellungen sind jederzeit möglich, damit Ihre Abholung pünktlich geplant wird.</div></div>
+        </article>
+
+        <article class="faq-item" data-category="taxi,medical,wheelchair,airport">
+          <button type="button" class="faq-question" aria-expanded="false">
+            <span>Sind Sie 24 Stunden erreichbar?</span>
+            <b>+</b>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">Ja. Wir sind 24 Stunden täglich für Sie erreichbar.</div></div>
+        </article>
+
+        <article class="faq-item" data-category="taxi,medical,wheelchair,airport">
+          <button type="button" class="faq-question" aria-expanded="false">
+            <span>Wie kurzfristig kann ich buchen?</span>
+            <b>+</b>
+          </button>
+          <div class="faq-answer"><div class="faq-answer-inner">Kurzfristige Buchungen sind möglich. Kontaktieren Sie uns am besten direkt telefonisch oder per WhatsApp.</div></div>
+        </article>
+
+        <p id="faqEmptyState" class="faq-empty" hidden>Keine passende Frage gefunden. Kontaktieren Sie uns gerne direkt.</p>
+      </section>
+
+      <article class="faq-contact-card">
+        <small>Direkter Kontakt</small>
+        <h3>Ihre Frage war nicht dabei?</h3>
+        <div class="faq-contact-actions">
+          <a class="button" href="tel:072743567"><i data-icon="phone"></i>Jetzt anrufen</a>
+          <a class="button" href="https://wa.me/4972743567?text=Ich%20habe%20eine%20Frage%20zu%20Taxi%20Germersheim" target="_blank" rel="noreferrer"><i data-icon="yumak"></i>WhatsApp</a>
+          <button type="button" class="button" data-go="booking"><i data-icon="taxi"></i>Jetzt buchen</button>
+        </div>
+      </article>
+    </section>
+
     <section id="why" class="screen simple about-page">
       <header class="page-head"><button data-go="home">‹</button><h2>Über uns</h2><i></i></header>
 
@@ -623,7 +733,7 @@
         <a data-go="why" href="#">Über uns</a>
         <a href="#kontakt">Kontakt</a>
         <a data-go="booking" href="#">Jetzt buchen</a>
-        <a href="#">FAQ (Platzhalter)</a>
+        <a data-go="faq" href="#">FAQ (Platzhalter)</a>
       </div>
     </div>
 
