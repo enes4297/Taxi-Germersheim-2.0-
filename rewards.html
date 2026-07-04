@@ -51,23 +51,24 @@
           </article>
 
           <section class="rv2-stats" aria-label="Rewards Statistiken">
-            <article class="rv2-stat-card"><small>Punkte</small><strong>230</strong></article>
-            <article class="rv2-stat-card"><small>Aktuelles Level</small><strong>Gold</strong></article>
-            <article class="rv2-stat-card"><small>Nächstes Level</small><strong>Platin</strong></article>
+            <article class="rv2-stat-card" data-rewards-field="points-card"><i data-icon="rewards"></i><small>Punkte</small><strong data-rewards-points>230</strong><em>Gesamtes Guthaben</em></article>
+            <article class="rv2-stat-card" data-rewards-field="current-level-card"><i data-icon="user"></i><small>Aktuelles Level</small><strong data-rewards-level-current>Gold</strong><em>Starke Vorteile aktiv</em></article>
+            <article class="rv2-stat-card" data-rewards-field="next-level-card"><i data-icon="right"></i><small>Nächstes Level</small><strong data-rewards-level-next>Platin</strong><em>Noch 120 Punkte</em></article>
           </section>
 
           <section class="rv2-progress" aria-label="Level Fortschritt">
             <div class="rv2-progress-head">
               <h3>Fortschritt</h3>
               <span>230 / 350 Punkte</span>
+              <b class="rv2-progress-percent" data-rewards-progress-percent>66%</b>
             </div>
             <div class="rv2-progress-bar" aria-label="Großer Fortschrittsbalken"><u></u></div>
             <div class="rv2-level-line" aria-label="Level-Linie">
-              <span>Bronze</span>
-              <span>Silber</span>
-              <span class="is-current">Gold</span>
-              <span>Platin</span>
-              <span>Legend</span>
+              <span data-level="bronze">Bronze</span>
+              <span data-level="silber">Silber</span>
+              <span class="is-current" data-level="gold">Gold</span>
+              <span data-level="platin">Platin</span>
+              <span data-level="legend">Legend</span>
             </div>
           </section>
 
@@ -82,8 +83,8 @@
               <article class="rv2-badge-card is-unlocked"><b>Stammkunde</b><small>Freigeschaltet</small></article>
               <article class="rv2-badge-card is-unlocked"><b>Flughafen-Profi</b><small>Freigeschaltet</small></article>
               <article class="rv2-badge-card is-unlocked"><b>Nachtfahrer</b><small>Freigeschaltet</small></article>
-              <article class="rv2-badge-card is-locked is-secret"><b>Geheimnisvoll</b><small>Gesperrt</small></article>
-              <article class="rv2-badge-card is-locked is-secret"><b>Noch geheim</b><small>Gesperrt</small></article>
+              <article class="rv2-badge-card is-locked is-secret" title="???"><b>Geheimnisvoll</b><small><span class="rv2-lock" aria-hidden="true">&#128274;</span>Gesperrt</small></article>
+              <article class="rv2-badge-card is-locked is-secret" title="???"><b>Noch geheim</b><small><span class="rv2-lock" aria-hidden="true">&#128274;</span>Gesperrt</small></article>
             </div>
           </section>
 
@@ -91,18 +92,18 @@
             <article class="rv2-rewards-box">
               <h3>Belohnungen</h3>
               <div class="rv2-reward-cards">
-                <article class="rv2-reward-card"><b>5 EUR Gutschein</b><small>Ab Gold-Level</small></article>
-                <article class="rv2-reward-card"><b>Freifahrt-Los</b><small>Exklusiver Reward</small></article>
+                <article class="rv2-reward-card" data-reward-type="voucher"><b>5 EUR Gutschein</b><small>Ab Gold-Level</small><button class="button rv2-reward-btn" type="button">Bald einloesbar</button></article>
+                <article class="rv2-reward-card" data-reward-type="free-ride"><b>Freifahrt-Los</b><small>Exklusiver Reward</small><button class="button rv2-reward-btn" type="button">Bald aktivierbar</button></article>
               </div>
             </article>
 
             <article class="rv2-points-box">
               <h3>So sammelst du Punkte</h3>
               <ul>
-                <li><span>Fahrt buchen</span><b>+10 Punkte</b></li>
-                <li><span>Krankenfahrt</span><b>+20 Punkte</b></li>
-                <li><span>Weiterempfehlung</span><b>+50 Punkte</b></li>
-                <li><span>Google Bewertung</span><b>+15 Punkte</b></li>
+                <li class="tone-gold"><i data-icon="taxi"></i><span>Fahrt buchen</span><b>+10 Punkte</b></li>
+                <li class="tone-green"><i data-icon="medical"></i><span>Krankenfahrt</span><b>+20 Punkte</b></li>
+                <li class="tone-gold"><i data-icon="repeat"></i><span>Weiterempfehlung</span><b>+50 Punkte</b></li>
+                <li class="tone-yellow"><i data-icon="profile"></i><span>Google Bewertung</span><b>+15 Punkte</b></li>
               </ul>
             </article>
           </section>
@@ -118,14 +119,14 @@
                   <div class="rv2-wheel-leds"></div>
                   <div class="rv2-wheel-surface"></div>
                   <ul class="rv2-wheel-labels" aria-hidden="true">
-                    <li style="--i:0">10 Punkte</li>
-                    <li style="--i:1">25 Punkte</li>
-                    <li style="--i:2">50 Punkte</li>
-                    <li style="--i:3">5 EUR Gutschein</li>
-                    <li style="--i:4">Freifahrt-Los</li>
-                    <li style="--i:5">Niete</li>
-                    <li style="--i:6">Extra Dreh</li>
-                    <li style="--i:7">Geheimpreis</li>
+                    <li style="--i:0"><span class="rv2-seg-icon" aria-hidden="true">&#9733;</span><span>10 Punkte</span></li>
+                    <li style="--i:1"><span class="rv2-seg-icon" aria-hidden="true">&#9728;</span><span>25 Punkte</span></li>
+                    <li style="--i:2"><span class="rv2-seg-icon" aria-hidden="true">&#128081;</span><span>50 Punkte</span></li>
+                    <li style="--i:3"><span class="rv2-seg-icon" aria-hidden="true">&#127873;</span><span>5 EUR Gutschein</span></li>
+                    <li style="--i:4"><span class="rv2-seg-icon" aria-hidden="true">&#128663;</span><span>Freifahrt-Los</span></li>
+                    <li style="--i:5"><span class="rv2-seg-icon" aria-hidden="true">&#10060;</span><span>Niete</span></li>
+                    <li style="--i:6"><span class="rv2-seg-icon" aria-hidden="true">&#10227;</span><span>Extra Dreh</span></li>
+                    <li style="--i:7"><span class="rv2-seg-icon" aria-hidden="true">&#10024;</span><span>Geheimpreis</span></li>
                   </ul>
                   <div class="rv2-wheel-logo"><img src="logo.png" alt="Taxi Germersheim Logo"></div>
                 </div>
@@ -134,6 +135,11 @@
               <button class="button rv2-spin-btn" type="button">Rad drehen</button>
               <p class="rv2-spin-result" aria-live="polite">Noch kein Dreh durchgeführt.</p>
               <small class="rv2-spin-note">Demo-Version - Gewinne werden später mit dem Kundenkonto verbunden.</small>
+              <article class="rv2-win-card" hidden>
+                <strong>Glückwunsch!</strong>
+                <p data-rewards-win-message>Du hast 50 Punkte gewonnen.</p>
+              </article>
+              <div class="rv2-confetti" aria-hidden="true"></div>
             </div>
           </article>
         </aside>

@@ -1395,19 +1395,88 @@
     const widgets=$$('[data-rewards-wheel]');
     if(!widgets.length) return;
 
-    const segments=['10 Punkte','25 Punkte','50 Punkte','Freifahrt-Los','5 EUR Gutschein','Niete','Extra-Dreh','Geheimpreis'];
+    const segments=[
+      {label:'10 Punkte',message:'Du hast 10 Punkte gewonnen.',win:true},
+      {label:'25 Punkte',message:'Du hast 25 Punkte gewonnen.',win:true},
+      {label:'50 Punkte',message:'Du hast 50 Punkte gewonnen.',win:true},
+      {label:'5 EUR Gutschein',message:'Du hast einen 5 EUR Gutschein gewonnen.',win:true},
+      {label:'Freifahrt-Los',message:'Du hast ein Freifahrt-Los gewonnen.',win:true},
+      {label:'Niete',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false},
+      {label:'Extra Dreh',message:'Du hast einen Extra-Dreh gewonnen.',win:true},
+      {label:'Geheimpreis',message:'Du hast einen Geheimpreis gewonnen.',win:true}
+    ];
     const segmentAngle=360/segments.length;
+    const pointerAngle=270;
 
-    widgets.forEach((widget,index)=>{
+    const easeInOutCubic=t=>(t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2);
+
+    // Lightweight confetti burst without external dependencies.
+    function triggerConfetti(host){
+      if(!host) return;
+      const colors=['#ffd96a','#d2a33a','#74e79f','#ffefb8','#ffffff'];
+      host.innerHTML='';
+      const burstCount=34;
+      const width=Math.max(host.clientWidth,220);
+
+      for(let i=0;i<burstCount;i++){
+        const piece=document.createElement('span');
+        piece.className='rv2-confetti-piece';
+        const x=(Math.random()*width)-width/2;
+        piece.style.setProperty('--x',`${Math.round(x)}px`);
+        piece.style.setProperty('--drift',`${Math.round((Math.random()-.5)*120)}px`);
+        piece.style.setProperty('--rot',`${Math.round(320+Math.random()*420)}deg`);
+        piece.style.setProperty('--dur',`${Math.round(900+Math.random()*900)}ms`);
+        piece.style.background=colors[Math.floor(Math.random()*colors.length)];
+        host.append(piece);
+      }
+
+      setTimeout(()=>{
+        host.innerHTML='';
+      },1900);
+    }
+
+    widgets.forEach(widget=>{
       const disc=$('.rv2-wheel-rotator',widget) || $('.rewards-wheel-disc',widget);
       const spinBtn=$('.rv2-spin-btn',widget) || $('.rewards-spin-btn',widget);
       const result=$('.rv2-spin-result',widget) || $('.rewards-spin-result',widget);
       const note=$('.rv2-spin-note',widget) || $('.rewards-spin-note',widget);
+      const winCard=$('.rv2-win-card',widget);
+      const winMessage=$('[data-rewards-win-message]',widget);
+      const confettiHost=$('.rv2-confetti',widget);
       if(!disc || !spinBtn || !result) return;
 
       let spun=false;
       let spinning=false;
       let rotation=0;
+      let frameId=0;
+
+      function setWheelRotation(value){
+        disc.style.transform=`rotate(${value}deg)`;
+      }
+
+      // rAF animation keeps spin smooth and independent from CSS transition timing.
+      function animateSpin(from,to,duration,onComplete){
+        let startTime=0;
+
+        const tick=(time)=>{
+          if(!startTime) startTime=time;
+          const elapsed=time-startTime;
+          const progress=Math.min(elapsed/duration,1);
+          const eased=easeInOutCubic(progress);
+          const current=from+(to-from)*eased;
+          setWheelRotation(current);
+
+          if(progress<1){
+            frameId=requestAnimationFrame(tick);
+            return;
+          }
+
+          frameId=0;
+          onComplete(current);
+        };
+
+        frameId=requestAnimationFrame(tick);
+      }
 
       spinBtn.addEventListener('click',()=>{
         if(spun || spinning) return;
@@ -1417,38 +1486,47 @@
         spinBtn.disabled=true;
         spinBtn.setAttribute('aria-busy','true');
         result.textContent='Das Rad dreht...';
+        result.classList.remove('is-win','is-lose');
 
+        if(winCard){
+          winCard.hidden=true;
+          winCard.classList.remove('is-visible');
+        }
+
+        // Target angle maps the chosen segment center to the fixed top pointer.
         const selectedIndex=Math.floor(Math.random()*segments.length);
+        const selectedSegment=segments[selectedIndex];
         const centerAngle=selectedIndex*segmentAngle + segmentAngle/2;
-        const extraTurns=4 + Math.floor(Math.random()*3);
-        const jitter=(Math.random()-0.5)*(segmentAngle*0.36);
-        const durationMs=4400 + Math.floor(Math.random()*700);
-        rotation += extraTurns*360 + (360-centerAngle) + jitter;
+        const extraTurns=5 + Math.floor(Math.random()*3);
+        const jitter=(Math.random()-0.5)*(segmentAngle*0.26);
+        const durationMs=4200 + Math.floor(Math.random()*800);
+        const startRotation=rotation;
+        const targetRotation=startRotation + extraTurns*360 + (pointerAngle-centerAngle) + jitter;
 
-        disc.style.transitionDuration=`${durationMs}ms`;
-        disc.style.transitionTimingFunction='cubic-bezier(.05,.88,.16,1)';
-        disc.style.transform=`rotate(${rotation}deg)`;
-
-        const onDone=()=>{
-          disc.removeEventListener('transitionend',onDone);
+        if(frameId) cancelAnimationFrame(frameId);
+        animateSpin(startRotation,targetRotation,durationMs,finalRotation=>{
+          rotation=((finalRotation%360)+360)%360;
           spinning=false;
-          result.textContent=`Gewinn: ${segments[selectedIndex]}`;
+
+          if(selectedSegment.win){
+            result.textContent=`Gewinn: ${selectedSegment.label}`;
+            result.classList.add('is-win');
+            triggerConfetti(confettiHost);
+
+            if(winCard && winMessage){
+              winMessage.textContent=selectedSegment.message;
+              winCard.hidden=false;
+              requestAnimationFrame(()=>winCard.classList.add('is-visible'));
+            }
+          }else{
+            result.textContent='Dieses Mal leider kein Gewinn.';
+            result.classList.add('is-lose');
+          }
+
           if(note) note.textContent='Du kannst morgen wieder drehen.';
           spinBtn.textContent='Du kannst morgen wieder drehen.';
           spinBtn.setAttribute('aria-busy','false');
-        };
-
-        disc.addEventListener('transitionend',onDone,{once:true});
-
-        setTimeout(()=>{
-          if(spinning){
-            spinning=false;
-            result.textContent=`Gewinn: ${segments[selectedIndex]}`;
-            if(note) note.textContent='Du kannst morgen wieder drehen.';
-            spinBtn.textContent='Du kannst morgen wieder drehen.';
-            spinBtn.setAttribute('aria-busy','false');
-          }
-        },durationMs + 250);
+        });
       });
     });
   }
