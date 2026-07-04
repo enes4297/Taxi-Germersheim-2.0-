@@ -39,271 +39,111 @@
       </div>
     </header>
 
-    <section id="rewards" class="screen active simple rewards-page">
+    <section id="rewards" class="screen active simple rewards-page rewards-v2">
       <header class="page-head"><a href="index.html" class="page-head-link" aria-label="Zur Startseite">‹</a><h2>Rewards</h2><i></i></header>
 
-      <article class="rewards-hero">
-        <small>PREMIUM REWARDS</small>
-        <h1>Ihr Vorteilsprogramm für treue Fahrgäste</h1>
-        <p>Diese erste Version bereitet die Rewards-Fläche für spätere Verknüpfungen mit Kundenkonto, Punkten, Abzeichen und einem kommenden Glücksrad vor.</p>
-      </article>
-
-      <p class="rewards-maintenance-note">Hinweis für spätere Pflege: Die Karten sind bewusst modular aufgebaut. Daten können später direkt aus Kundenkonto oder Backend in die vorgesehenen Felder geladen werden.</p>
-
-      <section class="rewards-summary-grid" aria-label="Rewards Übersicht">
-        <article class="rewards-summary-card rewards-summary-current">
-          <small>Aktueller Status</small>
-          <h3>Gold</h3>
-          <strong>230 Punkte</strong>
-          <p>Nächster Meilenstein: Platin bei 350 Punkten.</p>
-        </article>
-
-        <article class="rewards-summary-card rewards-summary-progress">
-          <small>Fortschritt zum nächsten Level</small>
-          <div class="rewards-progress-head">
-            <span>Gold</span>
-            <span>Platin</span>
-          </div>
-          <div class="rewards-progress-bar" aria-label="Fortschrittsbalken zum nächsten Level"><u></u></div>
-          <p>230 von 350 Punkten erreicht. Noch 120 Punkte bis zum nächsten Level.</p>
-        </article>
-
-        <article class="rewards-summary-card rewards-summary-next">
-          <small>Nächstes Ziel</small>
-          <h3>Platin</h3>
-          <p>Mehr Punkte, bessere Vorteile und noch exklusivere Belohnungen.</p>
-        </article>
-      </section>
-
-      <section class="rewards-level-section" aria-label="Level-System">
-        <div class="section-header rewards-section-header">
-          <small>LEVEL-SYSTEM</small>
-          <h2>Bronze bis Legend</h2>
-        </div>
-        <div class="rewards-level-grid">
-          <article class="rewards-level-card is-complete">
-            <span>Bronze</span>
-            <strong>0 - 99</strong>
-            <p>Start-Level für neue Fahrgäste.</p>
+      <section class="rv2-main-layout" aria-label="Rewards Dashboard">
+        <div class="rv2-left">
+          <article class="rv2-hero">
+            <small>PREMIUM REWARDS</small>
+            <h1>Rewards</h1>
+            <p>Ihr Bonusprogramm bei Taxi Germersheim. Punkte sammeln, Level aufsteigen und exklusive Vorteile freischalten.</p>
           </article>
-          <article class="rewards-level-card is-complete">
-            <span>Silber</span>
-            <strong>100 - 199</strong>
-            <p>Erweiterte Vorteile für regelmäßige Fahrten.</p>
-          </article>
-          <article class="rewards-level-card is-current">
-            <span>Gold</span>
-            <strong>200 - 349</strong>
-            <p>Aktuelles Level mit spürbaren Extras.</p>
-          </article>
-          <article class="rewards-level-card">
-            <span>Platin</span>
-            <strong>350 - 499</strong>
-            <p>Für besonders treue Kunden mit höherem Status.</p>
-          </article>
-          <article class="rewards-level-card rewards-level-legend">
-            <span>Legend</span>
-            <strong>500+</strong>
-            <p>Das Premium-Ziel für außergewöhnliche Treue.</p>
-          </article>
-        </div>
-      </section>
 
-      <section class="rewards-content-grid" aria-label="Rewards Inhalte">
-        <article class="rewards-card rewards-badges">
-          <div class="rewards-card-head">
-            <small>MEINE ABZEICHEN</small>
-            <h3>Abzeichen</h3>
-          </div>
-          <p class="rewards-badge-intro">6 von 14 Abzeichen freigeschaltet. Schalten Sie durch regelmäßige Fahrten, Treue und besondere Einsätze weitere Belohnungen frei.</p>
+          <section class="rv2-stats" aria-label="Rewards Statistiken">
+            <article class="rv2-stat-card"><small>Punkte</small><strong>230</strong></article>
+            <article class="rv2-stat-card"><small>Aktuelles Level</small><strong>Gold</strong></article>
+            <article class="rv2-stat-card"><small>Nächstes Level</small><strong>Platin</strong></article>
+          </section>
 
-          <div class="rewards-badge-categories" data-rewards-field="badges">
-            <article class="rewards-badge-category">
-              <header>
-                <h4>Fahrten</h4>
-                <span>2/3</span>
-              </header>
-              <ul class="rewards-badge-list" aria-label="Abzeichen Kategorie Fahrten">
-                <li class="rewards-badge-card is-unlocked">
-                  <b>Erste Fahrt</b>
-                  <small>Freigeschaltet</small>
-                </li>
-                <li class="rewards-badge-card is-unlocked">
-                  <b>Nachtfahrer</b>
-                  <small>Freigeschaltet</small>
-                </li>
-                <li class="rewards-badge-card is-locked">
-                  <b>100 Fahrten</b>
-                  <small>Gesperrt</small>
-                  <div class="rewards-badge-progress" aria-hidden="true"><u style="width:70%"></u></div>
-                  <em>Fortschritt: 70/100</em>
-                </li>
-              </ul>
-            </article>
-
-            <article class="rewards-badge-category">
-              <header>
-                <h4>Treue</h4>
-                <span>1/2</span>
-              </header>
-              <ul class="rewards-badge-list" aria-label="Abzeichen Kategorie Treue">
-                <li class="rewards-badge-card is-unlocked">
-                  <b>Stammkunde</b>
-                  <small>Freigeschaltet</small>
-                </li>
-                <li class="rewards-badge-card is-locked">
-                  <b>Germersheim Legend</b>
-                  <small>Gesperrt</small>
-                  <div class="rewards-badge-progress" aria-hidden="true"><u style="width:46%"></u></div>
-                  <em>Fortschritt: 230/500</em>
-                </li>
-              </ul>
-            </article>
-
-            <article class="rewards-badge-category">
-              <header>
-                <h4>Krankenfahrten</h4>
-                <span>1/2</span>
-              </header>
-              <ul class="rewards-badge-list" aria-label="Abzeichen Kategorie Krankenfahrten">
-                <li class="rewards-badge-card is-unlocked">
-                  <b>Helfende Hand</b>
-                  <small>Freigeschaltet</small>
-                </li>
-                <li class="rewards-badge-card is-locked">
-                  <b>Fürsorge-Profi</b>
-                  <small>Gesperrt</small>
-                  <div class="rewards-badge-progress" aria-hidden="true"><u style="width:55%"></u></div>
-                  <em>Fortschritt: 11/20</em>
-                </li>
-              </ul>
-            </article>
-
-            <article class="rewards-badge-category">
-              <header>
-                <h4>Flughafen</h4>
-                <span>1/2</span>
-              </header>
-              <ul class="rewards-badge-list" aria-label="Abzeichen Kategorie Flughafen">
-                <li class="rewards-badge-card is-unlocked">
-                  <b>Flughafen-Profi</b>
-                  <small>Freigeschaltet</small>
-                </li>
-                <li class="rewards-badge-card is-locked">
-                  <b>Terminal-Master</b>
-                  <small>Gesperrt</small>
-                  <div class="rewards-badge-progress" aria-hidden="true"><u style="width:40%"></u></div>
-                  <em>Fortschritt: 8/20</em>
-                </li>
-              </ul>
-            </article>
-
-            <article class="rewards-badge-category">
-              <header>
-                <h4>Geheim</h4>
-                <span>0/2</span>
-              </header>
-              <ul class="rewards-badge-list" aria-label="Abzeichen Kategorie Geheim">
-                <li class="rewards-badge-card is-secret is-locked">
-                  <b>Geheimnisvolles Abzeichen</b>
-                  <small>Gesperrt</small>
-                  <em>Dieses Abzeichen bleibt bis zur Freischaltung verborgen.</em>
-                </li>
-                <li class="rewards-badge-card is-secret is-locked">
-                  <b>Unbekanntes Emblem</b>
-                  <small>Gesperrt</small>
-                  <em>Bedingungen werden bewusst nicht angezeigt.</em>
-                </li>
-              </ul>
-            </article>
-
-            <article class="rewards-badge-category">
-              <header>
-                <h4>Saison</h4>
-                <span>1/3</span>
-              </header>
-              <ul class="rewards-badge-list" aria-label="Abzeichen Kategorie Saison">
-                <li class="rewards-badge-card is-unlocked">
-                  <b>Sommerfahrer</b>
-                  <small>Freigeschaltet</small>
-                </li>
-                <li class="rewards-badge-card is-locked">
-                  <b>Winterfest</b>
-                  <small>Gesperrt</small>
-                  <div class="rewards-badge-progress" aria-hidden="true"><u style="width:15%"></u></div>
-                  <em>Fortschritt: 3/20</em>
-                </li>
-                <li class="rewards-badge-card is-locked">
-                  <b>Festtags-Sammler</b>
-                  <small>Gesperrt</small>
-                  <div class="rewards-badge-progress" aria-hidden="true"><u style="width:25%"></u></div>
-                  <em>Fortschritt: 1/4</em>
-                </li>
-              </ul>
-            </article>
-          </div>
-        </article>
-
-        <article class="rewards-card rewards-rewards">
-          <div class="rewards-card-head">
-            <small>BELOHNUNGEN</small>
-            <h3>Belohnungen</h3>
-          </div>
-          <ul class="rewards-list" aria-label="Belohnungen Übersicht">
-            <li><span>Fahrtguthaben</span><b>Ab 200 Punkten</b></li>
-            <li><span>Upgrade-Vorteil</span><b>Ab Gold</b></li>
-            <li><span>Partner-Rabatte</span><b>Ab Platin</b></li>
-            <li><span>Exklusive Aktionen</span><b>Ab Legend</b></li>
-          </ul>
-        </article>
-
-        <article class="rewards-card rewards-points">
-          <div class="rewards-card-head">
-            <small>SO SAMMELST DU PUNKTE</small>
-            <h3>Punktesystem</h3>
-          </div>
-          <ul class="rewards-list">
-            <li><span>Normale Fahrt</span><b>10 Punkte</b></li>
-            <li><span>Flughafentransfer</span><b>20 Punkte</b></li>
-            <li><span>Krankenfahrt</span><b>15 Punkte</b></li>
-            <li><span>Bewertung / Empfehlung</span><b>Bald möglich</b></li>
-          </ul>
-        </article>
-
-        <article class="rewards-card rewards-wheel">
-          <div class="rewards-card-head">
-            <small>ZUKUNFTS-MODUL</small>
-            <h3>Glücksrad</h3>
-          </div>
-          <div class="rewards-spin-widget" data-rewards-wheel>
-            <div class="rewards-wheel-shell" aria-hidden="true">
-              <div class="rewards-wheel-pointer"></div>
-              <div class="rewards-wheel-disc-wrap">
-                <div class="rewards-wheel-disc"></div>
-                <ul class="rewards-wheel-labels" aria-hidden="true">
-                  <li style="--i:0">10 Punkte</li>
-                  <li style="--i:1">25 Punkte</li>
-                  <li style="--i:2">50 Punkte</li>
-                  <li style="--i:3">Freifahrt-Los</li>
-                  <li style="--i:4">5 EUR Gutschein</li>
-                  <li style="--i:5">Niete</li>
-                  <li style="--i:6">Extra-Dreh</li>
-                  <li style="--i:7">Geheimpreis</li>
-                </ul>
-              </div>
-              <div class="rewards-wheel-hub">TG</div>
+          <section class="rv2-progress" aria-label="Level Fortschritt">
+            <div class="rv2-progress-head">
+              <h3>Fortschritt</h3>
+              <span>230 / 350 Punkte</span>
             </div>
-            <button class="button rewards-spin-btn" type="button">Rad drehen</button>
-            <p class="rewards-spin-result" aria-live="polite">Noch kein Dreh durchgeführt.</p>
-            <small class="rewards-spin-note">Demo-Version - Gewinne werden später mit dem Kundenkonto verbunden.</small>
-          </div>
-          <p>Das Glücksrad ist als sichtbare Demo integriert und wird in der nächsten Ausbaustufe mit Punkten, Gutscheinen und Kundenkonto verknüpft.</p>
-        </article>
+            <div class="rv2-progress-bar" aria-label="Großer Fortschrittsbalken"><u></u></div>
+            <div class="rv2-level-line" aria-label="Level-Linie">
+              <span>Bronze</span>
+              <span>Silber</span>
+              <span class="is-current">Gold</span>
+              <span>Platin</span>
+              <span>Legend</span>
+            </div>
+          </section>
+
+          <section class="rv2-badges" aria-label="Meine Abzeichen">
+            <header class="rv2-section-head">
+              <h3>Meine Abzeichen</h3>
+              <a href="rewards.html#all-badges">Alle anzeigen</a>
+            </header>
+
+            <div id="all-badges" class="rv2-badge-grid" data-rewards-field="badges">
+              <article class="rv2-badge-card is-unlocked"><b>Erste Fahrt</b><small>Freigeschaltet</small></article>
+              <article class="rv2-badge-card is-unlocked"><b>Stammkunde</b><small>Freigeschaltet</small></article>
+              <article class="rv2-badge-card is-unlocked"><b>Flughafen-Profi</b><small>Freigeschaltet</small></article>
+              <article class="rv2-badge-card is-unlocked"><b>Nachtfahrer</b><small>Freigeschaltet</small></article>
+              <article class="rv2-badge-card is-locked is-secret"><b>Geheimnisvoll</b><small>Gesperrt</small></article>
+              <article class="rv2-badge-card is-locked is-secret"><b>Noch geheim</b><small>Gesperrt</small></article>
+            </div>
+          </section>
+
+          <section class="rv2-rewards-points" aria-label="Belohnungen und Punktequellen">
+            <article class="rv2-rewards-box">
+              <h3>Belohnungen</h3>
+              <div class="rv2-reward-cards">
+                <article class="rv2-reward-card"><b>5 EUR Gutschein</b><small>Ab Gold-Level</small></article>
+                <article class="rv2-reward-card"><b>Freifahrt-Los</b><small>Exklusiver Reward</small></article>
+              </div>
+            </article>
+
+            <article class="rv2-points-box">
+              <h3>So sammelst du Punkte</h3>
+              <ul>
+                <li><span>Fahrt buchen</span><b>+10 Punkte</b></li>
+                <li><span>Krankenfahrt</span><b>+20 Punkte</b></li>
+                <li><span>Weiterempfehlung</span><b>+50 Punkte</b></li>
+                <li><span>Google Bewertung</span><b>+15 Punkte</b></li>
+              </ul>
+            </article>
+          </section>
+        </div>
+
+        <aside class="rv2-right" aria-label="Glücksrad Bereich">
+          <article class="rv2-wheel-card">
+            <h3>Glücksrad</h3>
+            <div class="rv2-spin-widget" data-rewards-wheel>
+              <div class="rv2-wheel-shell" aria-hidden="true">
+                <div class="rv2-wheel-pointer"></div>
+                <div class="rv2-wheel-rotator">
+                  <div class="rv2-wheel-leds"></div>
+                  <div class="rv2-wheel-surface"></div>
+                  <ul class="rv2-wheel-labels" aria-hidden="true">
+                    <li style="--i:0">10 Punkte</li>
+                    <li style="--i:1">25 Punkte</li>
+                    <li style="--i:2">50 Punkte</li>
+                    <li style="--i:3">5 EUR Gutschein</li>
+                    <li style="--i:4">Freifahrt-Los</li>
+                    <li style="--i:5">Niete</li>
+                    <li style="--i:6">Extra Dreh</li>
+                    <li style="--i:7">Geheimpreis</li>
+                  </ul>
+                  <div class="rv2-wheel-logo"><img src="logo.png" alt="Taxi Germersheim Logo"></div>
+                </div>
+              </div>
+
+              <button class="button rv2-spin-btn" type="button">Rad drehen</button>
+              <p class="rv2-spin-result" aria-live="polite">Noch kein Dreh durchgeführt.</p>
+              <small class="rv2-spin-note">Demo-Version - Gewinne werden später mit dem Kundenkonto verbunden.</small>
+            </div>
+          </article>
+        </aside>
       </section>
 
-      <section class="rewards-actions-grid" aria-label="Rewards Aktionen">
-        <a class="button rewards-action-primary" href="kundenkonto.html">Mit Kundenkonto verbinden</a>
-        <a class="button rewards-action-secondary" href="index.html?page=booking">Punkte bei Fahrt sammeln</a>
+      <section class="rv2-info-grid" aria-label="Rewards Vorteile">
+        <article class="rv2-info-card"><h4>Täglich drehen</h4><p>Ein täglicher Demo-Dreh als Vorschau auf das kommende Rewards-System.</p></article>
+        <article class="rv2-info-card"><h4>Punkte sammeln</h4><p>Punkte durch Fahrten, Bewertungen und Empfehlungen aufbauen.</p></article>
+        <article class="rv2-info-card"><h4>Belohnungen</h4><p>Gutscheine, Freifahrt-Lose und weitere Premium-Vorteile freischalten.</p></article>
+        <article class="rv2-info-card"><h4>Exklusive Abzeichen</h4><p>Seltene Meilensteine entdecken und besondere Statusabzeichen erhalten.</p></article>
       </section>
     </section>
   </main>
