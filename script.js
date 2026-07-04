@@ -370,7 +370,7 @@
     container.innerHTML='';
     const box=document.createElement('div');
     box.className='map-consent-placeholder';
-    box.innerHTML='<p>Google Maps wird erst geladen, wenn Sie externe Dienste akzeptieren.</p><button type="button" class="map-consent-btn" data-map-consent="accept">Google Maps akzeptieren und laden</button>';
+    box.innerHTML='<p>Google Maps wird erst geladen, wenn externe Dienste akzeptiert wurden.</p><button type="button" class="map-consent-btn" data-map-action="load">Google Maps laden</button>';
     container.appendChild(box);
   }
   function loadMapIntoContainer(container,elementId){
@@ -392,11 +392,18 @@
     });
   }
   function initMapContainer(elementId){
-    const container=$(elementId);
+    const container=$('#'+elementId);
     if(!container) return null;
     mapContainers[elementId]=container;
     refreshMapContainers();
     return container;
+  }
+  function loadMapFromPlaceholder(button){
+    const container=button?.closest('.map-container');
+    if(!container) return;
+    const elementId=container.id;
+    if(!elementId) return;
+    loadMapIntoContainer(container,elementId);
   }
   function enableExternalServices(){
     persistCookieConsent(CONSENT_ALL);
@@ -1199,10 +1206,10 @@
     const menuToggle=$('.menu-toggle');
     const siteNav=$('.site-nav');
     document.addEventListener('click',e=>{
-      let mapConsent=e.target.closest('[data-map-consent="accept"]');
-      if(mapConsent){
+      let mapLoad=e.target.closest('[data-map-action="load"]');
+      if(mapLoad){
         e.preventDefault();
-        enableExternalServices();
+        loadMapFromPlaceholder(mapLoad);
         return;
       }
       let go=e.target.closest('[data-go]');
