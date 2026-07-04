@@ -2888,7 +2888,8 @@ input:focus,textarea:focus,select:focus,
 #rewards.rewards-v2 .rv2-points-box .tone-yellow b{border-color:rgba(255,214,122,.33);background:rgba(200,154,37,.2);color:#ffefbf}
 #rewards.rewards-v2 .rv2-points-box li + li{border-top:1px solid rgba(255,255,255,.06)}
 
-#rewards.rewards-v2 .rv2-wheel-card{padding:20px;display:grid;gap:12px;position:sticky;top:92px}
+#rewards.rewards-v2 .rv2-wheel-card{padding:20px;display:grid;gap:12px;position:sticky;top:92px;overflow:hidden}
+#rewards.rewards-v2 .rv2-wheel-card::before{content:'';position:absolute;inset:-16% -10%;background:radial-gradient(circle,rgba(255,217,106,.14) 0 1.2px,transparent 1.3px) 0 0/22px 22px;opacity:.24;pointer-events:none;animation:rv2ParticleDrift 18s linear infinite}
 #rewards.rewards-v2 .rv2-wheel-card h3{margin:0;font-family:var(--serif);font-size:40px;line-height:1}
 #rewards.rewards-v2 .rv2-spin-widget{display:grid;justify-items:center;gap:12px}
 
@@ -2897,7 +2898,15 @@ input:focus,textarea:focus,select:focus,
 #rewards.rewards-v2 .rv2-spin-widget.is-spinning .rv2-wheel-shell{animation:rv2WheelCamera 4.8s cubic-bezier(.2,.65,.2,1) both;filter:drop-shadow(0 24px 46px rgba(0,0,0,.42))}
 #rewards.rewards-v2 .rv2-wheel-shell::before{content:'';position:absolute;inset:-7px;border-radius:50%;background:linear-gradient(145deg,#fff2bf 0%,#f4cf77 20%,#c38c2c 45%,#744f1f 62%,#f2ce79 86%,#fff0bc 100%);box-shadow:0 24px 48px rgba(0,0,0,.32),0 0 0 2px rgba(255,236,167,.4),inset 0 2px 4px rgba(255,255,255,.5),inset 0 -6px 8px rgba(58,34,9,.32);z-index:0}
 #rewards.rewards-v2 .rv2-wheel-shell.is-spinning::before{animation:rv2RingReflect 1.2s linear infinite}
-#rewards.rewards-v2 .rv2-wheel-shell::after{content:'';position:absolute;inset:4px;border-radius:50%;border:2px solid rgba(255,233,162,.56);box-shadow:inset 0 0 0 8px rgba(18,13,8,.36),inset 0 0 28px rgba(255,217,106,.18);z-index:1;pointer-events:none}
+#rewards.rewards-v2 .rv2-wheel-shell::after{content:'';position:absolute;inset:4px;border-radius:50%;border:2px solid rgba(255,233,162,.56);box-shadow:inset 0 0 0 8px rgba(18,13,8,.36),inset 0 0 28px rgba(255,217,106,.18);z-index:1;pointer-events:none;background:
+radial-gradient(circle at 50% 6%,#a27126 0 4px,transparent 5px),
+radial-gradient(circle at 94% 50%,#a27126 0 4px,transparent 5px),
+radial-gradient(circle at 50% 94%,#a27126 0 4px,transparent 5px),
+radial-gradient(circle at 6% 50%,#a27126 0 4px,transparent 5px),
+radial-gradient(circle at 79% 21%,#a27126 0 3px,transparent 4px),
+radial-gradient(circle at 21% 79%,#a27126 0 3px,transparent 4px),
+radial-gradient(circle at 21% 21%,#a27126 0 3px,transparent 4px),
+radial-gradient(circle at 79% 79%,#a27126 0 3px,transparent 4px)}
 #rewards.rewards-v2 .rv2-wheel-pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:22px solid transparent;border-right:22px solid transparent;border-top:44px solid #f8de95;filter:drop-shadow(0 10px 14px rgba(0,0,0,.42)) drop-shadow(0 0 18px rgba(255,217,106,.34));z-index:8;transform-origin:50% 6px}
 #rewards.rewards-v2 .rv2-wheel-pointer::before{content:'';position:absolute;left:50%;top:-42px;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#fff0bf,#d1932d);border:1px solid rgba(0,0,0,.22);box-shadow:0 2px 6px rgba(0,0,0,.3),0 0 10px rgba(255,217,106,.36)}
 #rewards.rewards-v2 .rv2-wheel-pointer::after{content:'';position:absolute;left:50%;top:-31px;transform:translateX(-50%);width:22px;height:10px;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.52),rgba(255,255,255,0));opacity:.82}
@@ -2912,7 +2921,11 @@ input:focus,textarea:focus,select:focus,
 #rewards.rewards-v2 .rv2-spin-widget.is-spinning .rv2-wheel-surface::after{animation:rv2SurfaceGloss 1.5s linear infinite}
 
 #rewards.rewards-v2 .rv2-wheel-labels{position:absolute;inset:20px;list-style:none;margin:0;padding:0;z-index:3;pointer-events:none}
-#rewards.rewards-v2 .rv2-wheel-labels li{position:absolute;left:50%;top:50%;width:43%;transform-origin:0 0;transform:rotate(calc(var(--i)*45deg - 67.5deg)) translateY(-198px);display:grid;justify-items:center;gap:2px;color:#fff;font-size:12px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;text-shadow:0 2px 4px rgba(0,0,0,.82),0 0 10px rgba(0,0,0,.4)}
+#rewards.rewards-v2 .rv2-wheel-labels li{position:absolute;left:50%;top:50%;width:43%;transform-origin:0 0;transform:rotate(calc(var(--i)*45deg - 67.5deg)) translateY(-198px);display:grid;justify-items:center;gap:2px;color:#fff;font-size:12px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;text-shadow:0 2px 4px rgba(0,0,0,.82),0 0 10px rgba(0,0,0,.4);pointer-events:auto;transition:filter .2s ease,transform .2s ease}
+#rewards.rewards-v2 .rv2-wheel-labels li::before{content:'✦ ✦';font-size:9px;letter-spacing:.2em;color:rgba(255,226,146,.86)}
+#rewards.rewards-v2 .rv2-wheel-labels li:hover{filter:brightness(1.1);transform:rotate(calc(var(--i)*45deg - 67.5deg)) translateY(-198px) scale(1.03)}
+#rewards.rewards-v2 .rv2-wheel-labels li.is-hit{filter:drop-shadow(0 0 10px rgba(255,217,106,.5))}
+#rewards.rewards-v2 .rv2-wheel-labels li.is-hit::after{content:'';position:absolute;width:76%;height:26px;border-radius:999px;border:1px solid rgba(255,217,106,.6);background:rgba(255,217,106,.14);z-index:-1;box-shadow:0 0 18px rgba(255,217,106,.45)}
 #rewards.rewards-v2 .rv2-wheel-labels li span:last-child{white-space:nowrap;font-size:11px}
 #rewards.rewards-v2 .rv2-seg-icon{font-size:14px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
 
@@ -2943,6 +2956,8 @@ input:focus,textarea:focus,select:focus,
 #rewards.rewards-v2 .rv2-win-card[data-effect='extra-spin']{border-color:rgba(197,129,255,.48);background:linear-gradient(140deg,rgba(170,92,245,.2),rgba(30,22,45,.6));box-shadow:0 0 22px rgba(168,108,255,.26)}
 #rewards.rewards-v2 .rv2-win-card[data-effect='mystery']{border-color:rgba(230,190,255,.48);background:linear-gradient(140deg,rgba(255,217,106,.22),rgba(98,52,158,.38));box-shadow:0 0 24px rgba(202,152,255,.26)}
 #rewards.rewards-v2 .rv2-win-card[data-effect='no-win']{border-color:rgba(255,255,255,.2);background:linear-gradient(140deg,rgba(130,136,152,.14),rgba(26,28,34,.58));box-shadow:none}
+
+#rewards.rewards-v2 .rv2-spin-widget.is-win-flash .rv2-wheel-shell::before{animation:rv2WheelWinFlash .36s ease}
 
 #rewards.rewards-v2 .rv2-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:20px}
 #rewards.rewards-v2 .rv2-confetti-piece{position:absolute;top:-8%;left:50%;width:8px;height:14px;border-radius:2px;opacity:.95;transform:translate3d(var(--x,0),-10%,0) rotate(0deg);animation:rv2ConfettiFall var(--dur,1300ms) cubic-bezier(.16,.84,.31,1) forwards}
@@ -3059,6 +3074,17 @@ input:focus,textarea:focus,select:focus,
 @keyframes rv2TaxiPulse{
   0%,100%{opacity:.8;transform:translateY(0)}
   50%{opacity:1;transform:translateY(-1px)}
+}
+
+@keyframes rv2WheelWinFlash{
+  0%{filter:brightness(1)}
+  50%{filter:brightness(1.2)}
+  100%{filter:brightness(1)}
+}
+
+@keyframes rv2ParticleDrift{
+  0%{transform:translate3d(0,0,0)}
+  100%{transform:translate3d(0,-18px,0)}
 }
 
 @keyframes rv2ConfettiFall{

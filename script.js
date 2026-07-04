@@ -1421,7 +1421,7 @@
     // Optional audio hook layer (no assets yet).
     const audioHooks={
       enabled:false,
-      assets:{spinLoop:null,tick:null,win:null},
+      assets:{spinLoop:null,tick:null,win:null,jackpot:null},
       play(name,{loop=false}={}){
         if(!this.enabled) return;
         const audio=this.assets[name];
@@ -1439,15 +1439,26 @@
       }
     };
 
-    // Short acceleration phase followed by longer deceleration for a more physical spin.
+    // Three-phase profile: acceleration, cruise, deceleration.
     const spinEase=t=>{
-      if(t<=.16){
-        const a=t/.16;
-        return .16*a*a;
+      const accelTime=.2;
+      const cruiseTime=.48;
+      const accelDist=.22;
+      const cruiseDist=.46;
+      const decelDist=.32;
+
+      if(t<=accelTime){
+        const a=t/accelTime;
+        return accelDist*a*a;
       }
 
-      const d=(t-.16)/.84;
-      return .16 + .84*(1-Math.pow(1-d,3.4));
+      if(t<=accelTime+cruiseTime){
+        const c=(t-accelTime)/cruiseTime;
+        return accelDist + cruiseDist*c;
+      }
+
+      const d=(t-accelTime-cruiseTime)/(1-accelTime-cruiseTime);
+      return accelDist + cruiseDist + decelDist*(1-Math.pow(1-d,3.4));
     };
 
     // Lightweight confetti burst without external dependencies.
@@ -1485,6 +1496,7 @@
       const winCard=$('.rv2-win-card',widget);
       const winMessage=$('[data-rewards-win-message]',widget);
       const confettiHost=$('.rv2-confetti',widget);
+      const labels=$$('.rv2-wheel-labels li',widget);
       if(!disc || !spinBtn || !result) return;
 
       let spun=false;
@@ -1545,6 +1557,7 @@
         spinBtn.textContent='Dreht...';
         result.textContent='Das Rad dreht...';
         result.classList.remove('is-win','is-lose');
+        labels.forEach(li=>li.classList.remove('is-hit'));
         widget.classList.add('is-spinning');
         if(wheelShell) wheelShell.classList.add('is-spinning');
         audioHooks.play('spinLoop',{loop:true});
@@ -1586,6 +1599,12 @@
               winCard.hidden=false;
               requestAnimationFrame(()=>winCard.classList.add('is-visible'));
             }
+
+            labels[selectedIndex]?.classList.add('is-hit');
+            widget.classList.add('is-win-flash');
+            setTimeout(()=>widget.classList.remove('is-win-flash'),360);
+
+            if(selectedSegment.effect==='mystery') audioHooks.play('jackpot');
           }else{
             result.textContent='Dieses Mal leider kein Gewinn.';
             result.classList.add('is-lose');
