@@ -109,95 +109,27 @@
     }
     const first=focusables[0];
     const last=focusables[focusables.length-1];
-    const active=document.activeElement;
-
-    if(event.shiftKey && active===first){
+    if(event.shiftKey && document.activeElement===first){
       event.preventDefault();
       last.focus();
-    }else if(!event.shiftKey && active===last){
+      return;
+    }
+    if(!event.shiftKey && document.activeElement===last){
       event.preventDefault();
       first.focus();
     }
   }
 
-  function normalizeText(value){
-    return (value||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ß/g,'ss').trim();
-  }
+    function parseStreetQuery(query){
+    const safeQuery=String(query||'').trim();
+    if(!safeQuery) return {houseNumber:'',textQuery:''};
 
-  function buildAddressLabel(item){
-    const streetLine=[item.street,item.houseNumber].filter(Boolean).join(' ').trim();
-    const cityLine=[item.postalCode,item.city].filter(Boolean).join(' ').trim();
-    const district=item.district||'';
-    const locality=[cityLine,district].filter(Boolean).join(' ');
-    return [item.title,streetLine,locality].filter(Boolean).join(', ');
-  }
-
-  function createAddressView(item){
-    const streetLine=[item.street,item.houseNumber].filter(Boolean).join(' ').trim();
-    const cityLine=[item.postalCode,item.city].filter(Boolean).join(' ');
-    const district=item.district||'';
-    const locality=[cityLine,district].filter(Boolean).join(' ');
-    const primary=item.title || streetLine || 'Adresse';
-    const secondary=item.title ? [streetLine,locality].filter(Boolean).join(' - ') : locality;
-    return {
-      primary,
-      secondary,
-      label:buildAddressLabel(item),
-      group:item.group||'Adresse'
-    };
-  }
-
-  async function loadAddressConfig(){
-    if(addressConfigCache) return addressConfigCache;
-    try{
-      const configUrl=new URL('assets/data/address-config.json',document.baseURI).toString();
-      const response=await fetch(configUrl,{cache:'no-store'});
-      if(!response.ok) throw new Error('config-not-found');
-      const raw=await response.json();
-      addressConfigCache={
-        allowedCities:Array.isArray(raw.allowedCities)?raw.allowedCities:defaultAddressConfig.allowedCities,
-        popularPlaces:Array.isArray(raw.popularPlaces)?raw.popularPlaces:defaultAddressConfig.popularPlaces
-      };
-    }catch(_err){
-      addressConfigCache=defaultAddressConfig;
-    }
-    return addressConfigCache;
-  }
-
-  function createStreetDirectoryFallback(){
-    return fallbackAddressDataset
-      .filter(item=>item.type==='street')
-      .map(item=>({
-        street:item.street||'',
-        city:item.city||'',
-        postalCode:item.postalCode||'',
-        district:item.district||'',
-        houseNumbers:['1','2','3','4','5','6','7','8'],
-        type:'street'
-      }));
-  }
-
-  async function loadStreetDirectory(){
-    if(streetDirectoryCache) return streetDirectoryCache;
-    try{
-      const streetsUrl=new URL('assets/data/streets-germersheim.json',document.baseURI).toString();
-      const response=await fetch(streetsUrl,{cache:'no-store'});
-      if(!response.ok) throw new Error('street-directory-not-found');
-      const raw=await response.json();
-      streetDirectoryCache=Array.isArray(raw)?raw:createStreetDirectoryFallback();
-    }catch(_err){
-      streetDirectoryCache=createStreetDirectoryFallback();
-    }
-    return streetDirectoryCache;
-  }
-
-  function parseStreetQuery(query){
-    const compact=(query||'').replace(/\s+/g,' ').trim();
-    const numberMatches=compact.match(/\b(\d{1,4}[a-zA-Z]?)\b/g)||[];
-    const houseNumberToken=numberMatches.find(token=>token.length<=5) || '';
+    const houseNumberMatch=safeQuery.match(/\b\d+[a-zA-Z]?\b$/);
+    const houseNumberToken=houseNumberMatch ? houseNumberMatch[0] : '';
     const queryWithoutHouseNumber=houseNumberToken
-      ? compact.replace(new RegExp(`\\b${houseNumberToken}\\b`,'i'),' ').replace(/\s+/g,' ').trim()
-      : compact;
+      ? safeQuery.slice(0,safeQuery.length-houseNumberToken.length).trim()
+      : safeQuery;
+
     return {
       houseNumber:houseNumberToken,
       textQuery:queryWithoutHouseNumber
@@ -1948,6 +1880,49 @@
       window.addEventListener('resize',onResize,{passive:true});
     });
   }
+    function initRewardsVoucherBalance(){
+    const root=$('#rewards.rewards-v2 [data-voucher-balance]');
+    if(!root) return;
+
+    const fareInput=$('[data-credit-fare]',root);
+    const availableInput=$('[data-credit-available]',root);
+    const applyInput=$('[data-credit-apply]',root);
+    const restField=$('[data-credit-rest]',root);
+    const balanceField=$('[data-credit-balance-value]',root);
+
+    if(!fareInput || !availableInput || !applyInput || !restField) return;
+
+    // Demo-only calculation layer. This structure is ready for future backend values.
+    function toEuroNumber(value){
+      const parsed=Number(String(value).replace(',','.'));
+      return Number.isFinite(parsed) ? Math.max(0,parsed) : 0;
+    }
+
+    function formatEuro(value){
+      return `${value.toFixed(2).replace('.',',')} �`;
+    }
+
+    function recalc(){
+      const fare=toEuroNumber(fareInput.value);
+      const available=toEuroNumber(availableInput.value);
+      const requested=toEuroNumber(applyInput.value);
+      const maxApplicable=Math.min(fare,available);
+      const applied=Math.min(requested,maxApplicable);
+      const rest=Math.max(0,fare-applied);
+
+      applyInput.value=String(applied.toFixed(2));
+      restField.value=formatEuro(rest);
+      if(balanceField) balanceField.textContent=formatEuro(available);
+    }
+
+    ['input','change'].forEach(eventName=>{
+      fareInput.addEventListener(eventName,recalc);
+      availableInput.addEventListener(eventName,recalc);
+      applyInput.addEventListener(eventName,recalc);
+    });
+
+    recalc();
+  }
   function hideSplash(){
     const splash=document.getElementById('splash');
     if(!splash) return;
@@ -1970,6 +1945,7 @@
     initCookieBanner();
     initContactRequestForm();
     initRewardsWheel();
+    initRewardsVoucherBalance();
 
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);
