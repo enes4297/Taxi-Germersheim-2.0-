@@ -62,6 +62,7 @@
               <span>230 / 350 Punkte</span>
               <b class="rv2-progress-percent" data-rewards-progress-percent>66%</b>
             </div>
+            <p class="rv2-next-goal">Nur noch <strong>120 Punkte</strong> bis Platin.</p>
             <div class="rv2-progress-bar" aria-label="Großer Fortschrittsbalken"><u></u></div>
             <div class="rv2-level-line" aria-label="Level-Linie">
               <span data-level="bronze">Bronze</span>
@@ -79,8 +80,8 @@
             </header>
 
             <div id="all-badges" class="rv2-badge-grid" data-rewards-field="badges">
-              <article class="rv2-badge-card is-unlocked"><b>Erste Fahrt</b><small>Freigeschaltet</small></article>
-              <article class="rv2-badge-card is-unlocked"><b>Stammkunde</b><small>Freigeschaltet</small></article>
+              <article class="rv2-badge-card is-unlocked" data-badge-new="true"><b>Erste Fahrt</b><small>Freigeschaltet</small></article>
+              <article class="rv2-badge-card is-unlocked" data-badge-new="true"><b>Stammkunde</b><small>Freigeschaltet</small></article>
               <article class="rv2-badge-card is-unlocked"><b>Flughafen-Profi</b><small>Freigeschaltet</small></article>
               <article class="rv2-badge-card is-unlocked"><b>Nachtfahrer</b><small>Freigeschaltet</small></article>
               <article class="rv2-badge-card is-locked is-secret" title="???"><b>Geheimnisvoll</b><small><span class="rv2-lock" aria-hidden="true">&#128274;</span>Gesperrt</small></article>
@@ -92,8 +93,8 @@
             <article class="rv2-rewards-box">
               <h3>Belohnungen</h3>
               <div class="rv2-reward-cards">
-                <article class="rv2-reward-card" data-reward-type="voucher"><b>5 EUR Gutschein</b><small>Ab Gold-Level</small><button class="button rv2-reward-btn" type="button">Bald einloesbar</button></article>
-                <article class="rv2-reward-card" data-reward-type="free-ride"><b>Freifahrt-Los</b><small>Exklusiver Reward</small><button class="button rv2-reward-btn" type="button">Bald aktivierbar</button></article>
+                <article class="rv2-reward-card" data-reward-type="voucher" data-reward-state="upcoming"><b>5 EUR Gutschein</b><small>Ab Gold-Level</small><em class="rv2-reward-status">Bald einloesbar</em><button class="button rv2-reward-btn" type="button">Bald einloesbar</button></article>
+                <article class="rv2-reward-card" data-reward-type="free-ride" data-reward-state="progress"><b>Freifahrt-Los</b><small>Exklusiver Reward</small><em class="rv2-reward-status">In Bearbeitung</em><button class="button rv2-reward-btn" type="button">Bald aktivierbar</button></article>
               </div>
             </article>
 
@@ -137,7 +138,7 @@
               </div>
 
               <button class="button rv2-spin-btn" type="button">Rad drehen</button>
-              <small class="rv2-spin-countdown-label" hidden>Nächster Dreh möglich in</small>
+              <small class="rv2-spin-countdown-label" hidden><span aria-hidden="true">📅</span> Nächster Dreh möglich in</small>
               <p class="rv2-spin-countdown" aria-live="polite" hidden>23:59:59</p>
               <p class="rv2-spin-result" aria-live="polite">Noch kein Dreh durchgeführt.</p>
               <small class="rv2-spin-note">Demo-Version - Gewinne werden später mit dem Kundenkonto verbunden.</small>

@@ -1485,6 +1485,29 @@
       }
     };
 
+    function initRewardsPresentation(){
+      const root=$('#rewards.rewards-v2');
+      if(!root) return;
+
+      const progressText=$('.rv2-progress-head span',root);
+      const nextGoal=$('.rv2-next-goal',root);
+      const nextLevel=$('[data-rewards-level-next]',root)?.textContent?.trim() || 'Platin';
+      if(progressText && nextGoal){
+        const nums=progressText.textContent.match(/(\d+)\s*\/\s*(\d+)/);
+        if(nums){
+          const current=Number(nums[1]);
+          const target=Number(nums[2]);
+          const remaining=Math.max(0,target-current);
+          nextGoal.innerHTML=`Nur noch <strong>${remaining} Punkte</strong> bis ${nextLevel}.`;
+        }
+      }
+
+      const freshBadges=$$('[data-badge-new="true"]',root);
+      freshBadges.forEach((badge,index)=>{
+        badge.style.animationDelay=`${120 + index*120}ms`;
+      });
+    }
+
     function polarToCartesian(cx,cy,r,deg){
       const rad=(deg*Math.PI)/180;
       return {x:cx + r*Math.cos(rad),y:cy + r*Math.sin(rad)};
@@ -1703,6 +1726,8 @@
         host.innerHTML='';
       },1900);
     }
+
+    initRewardsPresentation();
 
     widgets.forEach(widget=>{
       const disc=$('.rv2-wheel-rotator',widget) || $('.rewards-wheel-disc',widget);
