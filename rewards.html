@@ -198,6 +198,39 @@
         <article class="rv2-info-card"><h4>Belohnungen</h4><p>Gutscheine, Freifahrt-Lose und weitere Premium-Vorteile freischalten.</p></article>
         <article class="rv2-info-card"><h4>Exklusive Abzeichen</h4><p>Seltene Meilensteine entdecken und besondere Statusabzeichen erhalten.</p></article>
       </section>
+
+      <section class="rv2-voucher-balance" aria-label="Gutschein-Guthaben" data-voucher-balance>
+        <header class="rv2-section-head">
+          <h3>Gutschein-Guthaben</h3>
+        </header>
+
+        <article class="rv2-credit-card" data-credit-balance>
+          <small>Gutschein-Guthaben</small>
+          <strong data-credit-balance-value>15 €</strong>
+          <p>Kann bei der nächsten Fahrt angerechnet werden.</p>
+        </article>
+
+        <article class="rv2-credit-calc" aria-label="Gutschein anrechnen (Demo)">
+          <h4>Gutschein anrechnen</h4>
+          <div class="rv2-credit-grid">
+            <label>Fahrpreis<input type="number" min="0" step="0.01" value="32" data-credit-fare></label>
+            <label>Verfügbares Guthaben<input type="number" min="0" step="0.01" value="15" data-credit-available></label>
+            <label>Anzurechnender Betrag<input type="number" min="0" step="0.01" value="15" data-credit-apply></label>
+            <label>Restbetrag<input type="text" value="17 €" readonly data-credit-rest></label>
+          </div>
+        </article>
+
+        <article class="rv2-credit-history" aria-label="Gutschein-Verlauf">
+          <h4>Gutschein-Verlauf</h4>
+          <ul>
+            <li><span>5 € Gutschein durch Glücksrad erhalten</span><b>+5 €</b></li>
+            <li><span>10 € Gutschein durch Aktion erhalten</span><b>+10 €</b></li>
+            <li><span>15 € bei Fahrt angerechnet</span><b>-15 €</b></li>
+          </ul>
+        </article>
+
+        <p class="rv2-credit-note">Gutscheine werden Ihrem Kundenkonto gutgeschrieben und können bei Fahrten angerechnet werden.</p>
+      </section>
     </section>
   </main>
 
