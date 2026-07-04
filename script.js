@@ -1415,22 +1415,27 @@
         spinning=true;
         spun=true;
         spinBtn.disabled=true;
+        spinBtn.setAttribute('aria-busy','true');
         result.textContent='Das Rad dreht...';
 
         const selectedIndex=Math.floor(Math.random()*segments.length);
         const centerAngle=selectedIndex*segmentAngle + segmentAngle/2;
         const extraTurns=4 + Math.floor(Math.random()*3);
         const jitter=(Math.random()-0.5)*(segmentAngle*0.36);
+        const durationMs=4400 + Math.floor(Math.random()*700);
         rotation += extraTurns*360 + (360-centerAngle) + jitter;
 
+        disc.style.transitionDuration=`${durationMs}ms`;
+        disc.style.transitionTimingFunction='cubic-bezier(.05,.88,.16,1)';
         disc.style.transform=`rotate(${rotation}deg)`;
 
         const onDone=()=>{
           disc.removeEventListener('transitionend',onDone);
           spinning=false;
-          result.textContent=`Ergebnis: ${segments[selectedIndex]}`;
+          result.textContent=`Gewinn: ${segments[selectedIndex]}`;
           if(note) note.textContent='Du kannst morgen wieder drehen.';
           spinBtn.textContent='Du kannst morgen wieder drehen.';
+          spinBtn.setAttribute('aria-busy','false');
         };
 
         disc.addEventListener('transitionend',onDone,{once:true});
@@ -1438,11 +1443,12 @@
         setTimeout(()=>{
           if(spinning){
             spinning=false;
-            result.textContent=`Ergebnis: ${segments[selectedIndex]}`;
+            result.textContent=`Gewinn: ${segments[selectedIndex]}`;
             if(note) note.textContent='Du kannst morgen wieder drehen.';
             spinBtn.textContent='Du kannst morgen wieder drehen.';
+            spinBtn.setAttribute('aria-busy','false');
           }
-        },4300);
+        },durationMs + 250);
       });
     });
   }
