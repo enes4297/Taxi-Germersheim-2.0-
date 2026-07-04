@@ -1962,6 +1962,37 @@
       }
     });
   }
+  function initRewardsSeasonalEvents(){
+    const root=$('#rewards.rewards-v2 [data-rewards-seasonal-events]');
+    if(!root) return;
+
+    const eventCards=$$('[data-event-id]',root);
+    if(!eventCards.length) return;
+
+    const statusLabelMap={
+      active:'Aktiv',
+      upcoming:'Bald verfügbar',
+      ended:'Beendet'
+    };
+
+    let featuredSet=false;
+    eventCards.forEach(card=>{
+      const rawStatus=String(card.dataset.eventStatus || 'upcoming').trim().toLowerCase();
+      const status=(rawStatus in statusLabelMap) ? rawStatus : 'upcoming';
+      card.dataset.eventStatus=status;
+
+      const statusNode=$('.rv2-seasonal-status',card);
+      if(statusNode) statusNode.textContent=statusLabelMap[status];
+
+      // Keep this demo future-ready: one current event can be highlighted by status/data flag.
+      const shouldFeature=(card.dataset.eventFeatured==='true') || (!featuredSet && status==='active');
+      if(shouldFeature){
+        card.dataset.eventFeatured='true';
+        card.classList.add('is-featured');
+        featuredSet=true;
+      }
+    });
+  }
   function hideSplash(){
     const splash=document.getElementById('splash');
     if(!splash) return;
@@ -1986,6 +2017,7 @@
     initRewardsWheel();
     initRewardsVoucherBalance();
     initRewardsMissions();
+    initRewardsSeasonalEvents();
 
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);
