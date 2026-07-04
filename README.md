@@ -16,3 +16,11 @@
 - Datenfelder: über data-account-field für spätere API/Backend-Anbindung vorbereitet
 - Profilbild austauschen: src der account-avatar in kundenkonto.html ersetzen
 - Styles: dedizierter Block Kundenkonto Seite in style.css
+
+## Rewards pflegen
+
+- Seite: rewards.html
+- Level-System: rewards-level-grid in rewards.html
+- Abzeichen / Belohnungen / Punkte: eigene Karten mit data-rewards-field vorbereitet
+- Glücksrad: rewards-wheel-placeholder ist als spätere Erweiterungsfläche vorgesehen
+- Styles: dedizierter Block Rewards Seite in style.css
