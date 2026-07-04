@@ -1408,7 +1408,16 @@
     const segmentAngle=360/segments.length;
     const pointerAngle=270;
 
-    const easeInOutCubic=t=>(t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2);
+    // Short acceleration phase followed by longer deceleration for a more physical spin.
+    const spinEase=t=>{
+      if(t<=.16){
+        const a=t/.16;
+        return .16*a*a;
+      }
+
+      const d=(t-.16)/.84;
+      return .16 + .84*(1-Math.pow(1-d,3.4));
+    };
 
     // Lightweight confetti burst without external dependencies.
     function triggerConfetti(host){
@@ -1462,7 +1471,7 @@
           if(!startTime) startTime=time;
           const elapsed=time-startTime;
           const progress=Math.min(elapsed/duration,1);
-          const eased=easeInOutCubic(progress);
+          const eased=spinEase(progress);
           const current=from+(to-from)*eased;
           setWheelRotation(current);
 
@@ -1499,7 +1508,7 @@
         const centerAngle=selectedIndex*segmentAngle + segmentAngle/2;
         const extraTurns=5 + Math.floor(Math.random()*3);
         const jitter=(Math.random()-0.5)*(segmentAngle*0.26);
-        const durationMs=4200 + Math.floor(Math.random()*800);
+        const durationMs=4400 + Math.floor(Math.random()*700);
         const startRotation=rotation;
         const targetRotation=startRotation + extraTurns*360 + (pointerAngle-centerAngle) + jitter;
 
