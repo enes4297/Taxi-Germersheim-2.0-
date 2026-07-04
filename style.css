@@ -2001,3 +2001,79 @@ input:focus,textarea:focus,select:focus,
 
   .screen.active{animation:none!important}
 }
+
+/* Mobile QA hardening: screen visibility, nav, touch sizes, overflow safety */
+.screen{display:none!important}
+.screen.active{display:block!important}
+#why.about-page{display:none!important}
+#why.about-page.active{display:grid!important}
+
+@media(max-width:740px){
+  .app{padding-left:16px!important;padding-right:16px!important}
+
+  #home .brand img{
+    width:78px!important;
+    max-height:72px;
+    height:auto;
+  }
+
+  #home .topbar{
+    grid-template-columns:1fr auto!important;
+    grid-template-areas:'brand toggle' 'actions actions'!important;
+    min-height:0!important;
+    padding:12px 14px!important;
+    gap:10px!important;
+    margin-bottom:12px!important;
+  }
+
+  #home .site-nav{
+    top:0!important;
+    right:0!important;
+    width:min(320px,84vw)!important;
+    height:100dvh!important;
+    visibility:hidden;
+    pointer-events:none;
+  }
+
+  #home .site-nav.open{
+    visibility:visible;
+    pointer-events:auto;
+  }
+
+  #home .nav-book-btn,
+  .actions button,
+  .actions a,
+  .request-actions .button,
+  .map-consent-btn,
+  .footer-column a,
+  .footer-bottom-links a,
+  .site-nav button,
+  .site-nav .nav-trigger{
+    min-height:44px!important;
+  }
+
+  .actions{grid-template-columns:1fr!important}
+
+  .hero-trust,
+  .panel p,
+  .request-prep-note,
+  .request-consent span,
+  .footer-brand small,
+  .footer-contact span{
+    font-size:15px!important;
+    line-height:1.6!important;
+  }
+
+  .request-consent input{
+    width:18px!important;
+    height:18px!important;
+  }
+
+  .site-footer{padding-left:14px!important;padding-right:14px!important}
+}
+
+@media(max-width:420px){
+  .app{padding-left:14px!important;padding-right:14px!important}
+  #home .topbar{padding:10px 12px!important}
+  .footer-column a{padding:10px!important}
+}
