@@ -1404,9 +1404,9 @@
           {key:'points-25',icon:'⭐',label:'25 Punkte',desc:'Bonus',message:'Du hast 25 Punkte gewonnen.',win:true,effect:'points'},
           {key:'points-50',icon:'⭐',label:'50 Punkte',desc:'Bonus',message:'Du hast 50 Punkte gewonnen.',win:true,effect:'points'},
           {key:'voucher',icon:'🎁',label:'5 €',desc:'Gutschein',message:'Du hast einen 5 EUR Gutschein gewonnen.',win:true,effect:'voucher'},
-          {key:'free-ride',icon:'🚖',label:'Freifahrt',desc:'Los',message:'Du hast ein Freifahrt-Los gewonnen.',win:true,effect:'free-ride'},
-          {key:'no-win',icon:'✕',label:'Niete',desc:'Kein Gewinn',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false,effect:'no-win'},
-          {key:'extra-spin',icon:'↻',label:'Extra Dreh',desc:'Chance',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
+          {key:'free-ride',icon:'🚕',label:'Freifahrt',desc:'Los',message:'Du hast ein Freifahrt-Los gewonnen.',win:true,effect:'free-ride'},
+          {key:'no-win',icon:'❌',label:'Niete',desc:'Kein Gewinn',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false,effect:'no-win'},
+          {key:'extra-spin',icon:'🔄',label:'Extra Dreh',desc:'Chance',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
           {key:'mystery',icon:'🎁',label:'Geheim',desc:'Preis',message:'Du hast einen Geheimpreis gewonnen.',win:true,effect:'mystery'}
         ]
       }
@@ -1525,93 +1525,25 @@
       defs.dataset.ready='true';
     }
 
-    function clamp(min,value,max){
-      return Math.min(max,Math.max(min,value));
+    function getSecondsUntilTomorrow(){
+      const now=new Date();
+      const nextMidnight=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,0,0);
+      return Math.max(0,Math.floor((nextMidnight.getTime()-now.getTime())/1000));
     }
 
-    function ensureTextOverlay(widget,segmentData){
-      const shell=$('.rv2-wheel-shell',widget);
-      if(!shell) return null;
-
-      let overlay=$('.rv2-wheel-text-overlay',shell);
-      if(!overlay){
-        overlay=document.createElement('div');
-        overlay.className='rv2-wheel-text-overlay';
-        overlay.setAttribute('aria-hidden','true');
-        shell.append(overlay);
-      }
-
-      overlay.innerHTML='';
-      const cards=segmentData.map((segment,index)=>{
-        const card=document.createElement('div');
-        card.className='rv2-wheel-text-card';
-        card.dataset.segmentIndex=String(index);
-
-        const icon=document.createElement('span');
-        icon.className='rv2-wheel-text-icon';
-        icon.textContent=segment.icon || '⭐';
-
-        const title=document.createElement('span');
-        title.className='rv2-wheel-text-title';
-        title.textContent=segment.label;
-
-        const desc=document.createElement('span');
-        desc.className='rv2-wheel-text-desc';
-        desc.textContent=segment.desc || '';
-
-        card.append(icon,title,desc);
-        overlay.append(card);
-        return card;
-      });
-
-      return {
-        shell,
-        overlay,
-        cards,
-        centerRatio:.5,
-        labelRadiusRatio:168/560,
-        baseAngles:segmentData.map((_,index)=>-90 + index*segmentAngle + segmentAngle/2),
-        size:0
-      };
+    function formatHms(totalSeconds){
+      const sec=Math.max(0,totalSeconds|0);
+      const h=Math.floor(sec/3600);
+      const m=Math.floor((sec%3600)/60);
+      const s=sec%60;
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     }
 
-    function refreshOverlayTypography(overlayState){
-      if(!overlayState?.overlay) return;
-      const size=Math.max(overlayState.overlay.clientWidth,overlayState.overlay.clientHeight,1);
-      overlayState.size=size;
-      const radius=size*overlayState.labelRadiusRatio;
-      const arcLen=(2*Math.PI*radius)/segments.length;
-      const adjacentDistance=2*radius*Math.sin((segmentAngle/2)*(Math.PI/180));
-      const safeDiag=adjacentDistance*.92;
-      const aspect=1.55;
-      const noOverlapWidth=safeDiag/Math.sqrt(1+Math.pow(1/aspect,2));
-      const baseWidth=clamp(54,Math.min(arcLen*.84,noOverlapWidth),114);
-      const cardWidth=clamp(34,baseWidth*.58,70);
-      const cardHeight=clamp(26,cardWidth/aspect,40);
-      const iconSize=clamp(8.6,cardWidth*.17,13.2);
-      const titleSize=clamp(6.8,cardWidth*.106,10.2);
-      const descSize=clamp(6.2,cardWidth*.09,8.9);
-      overlayState.overlay.style.setProperty('--rv2-text-card-w',`${cardWidth.toFixed(2)}px`);
-      overlayState.overlay.style.setProperty('--rv2-text-card-h',`${cardHeight.toFixed(2)}px`);
-      overlayState.overlay.style.setProperty('--rv2-text-icon-size',`${iconSize.toFixed(2)}px`);
-      overlayState.overlay.style.setProperty('--rv2-text-title-size',`${titleSize.toFixed(2)}px`);
-      overlayState.overlay.style.setProperty('--rv2-text-desc-size',`${descSize.toFixed(2)}px`);
-    }
-
-    function updateOverlayPositions(overlayState,rotationDeg){
-      if(!overlayState?.cards?.length) return;
-      if(!overlayState.size) refreshOverlayTypography(overlayState);
-
-      const size=overlayState.size || overlayState.overlay.clientWidth || 1;
-      const center=size*overlayState.centerRatio;
-      const radius=size*overlayState.labelRadiusRatio;
-
-      overlayState.cards.forEach((card,index)=>{
-        const angle=((overlayState.baseAngles[index] + rotationDeg)*Math.PI)/180;
-        const x=center + Math.cos(angle)*radius;
-        const y=center + Math.sin(angle)*radius;
-        card.style.left=`${(x/size*100).toFixed(3)}%`;
-        card.style.top=`${(y/size*100).toFixed(3)}%`;
+    function updateSvgLabelsRotation(svgBuild,rotationDeg){
+      if(!svgBuild?.labelGroups?.length) return;
+      svgBuild.labelGroups.forEach((group,index)=>{
+        const point=svgBuild.labelPoints[index];
+        group.setAttribute('transform',`translate(${point.x.toFixed(3)} ${point.y.toFixed(3)}) rotate(${(-rotationDeg).toFixed(3)})`);
       });
     }
 
@@ -1619,7 +1551,14 @@
       const svg=$('.rv2-wheel-svg',widget);
       if(!svg) return null;
       if(svg.dataset.built==='true'){
-        return {segmentPaths:$$('.rv2-svg-segment',svg)};
+        return {
+          segmentPaths:$$('.rv2-svg-segment',svg),
+          labelGroups:$$('.rv2-svg-label-group',svg),
+          labelPoints:segmentData.map((_,index)=>{
+            const midDeg=-90 + index*segmentAngle + segmentAngle/2;
+            return polarToCartesian(280,280,180,midDeg);
+          })
+        };
       }
 
       ensureSvgDefs(svg);
@@ -1632,6 +1571,7 @@
       const cy=280;
       const outerR=214;
       const innerR=116;
+      const labelR=180;
       ledsGroup.innerHTML='';
       for(let i=0;i<80;i++){
         const angle=-90 + i*(360/80);
@@ -1650,15 +1590,50 @@
       segmentData.forEach((segment,index)=>{
         const startDeg=-90 + index*segmentAngle;
         const endDeg=startDeg + segmentAngle;
+        const midDeg=startDeg + segmentAngle/2;
         const path=document.createElementNS('http://www.w3.org/2000/svg','path');
         path.setAttribute('d',describeWedgePath(cx,cy,outerR,innerR,startDeg,endDeg));
         path.setAttribute('class',`rv2-svg-segment ${index%2===0 ? 'is-even' : 'is-odd'}`);
         path.dataset.segmentIndex=String(index);
         segmentsGroup.append(path);
+
+        const labelPoint=polarToCartesian(cx,cy,labelR,midDeg);
+        const labelGroup=document.createElementNS('http://www.w3.org/2000/svg','g');
+        labelGroup.setAttribute('class','rv2-svg-label-group');
+        labelGroup.dataset.segmentIndex=String(index);
+        labelGroup.setAttribute('transform',`translate(${labelPoint.x.toFixed(3)} ${labelPoint.y.toFixed(3)})`);
+
+        const icon=document.createElementNS('http://www.w3.org/2000/svg','text');
+        icon.setAttribute('class','rv2-svg-label-icon');
+        icon.setAttribute('x','0');
+        icon.setAttribute('y','-14');
+        icon.textContent=segment.icon || '⭐';
+
+        const title=document.createElementNS('http://www.w3.org/2000/svg','text');
+        title.setAttribute('class','rv2-svg-label-title');
+        title.setAttribute('x','0');
+        title.setAttribute('y','3');
+        title.textContent=segment.label || '';
+
+        const desc=document.createElementNS('http://www.w3.org/2000/svg','text');
+        desc.setAttribute('class','rv2-svg-label-desc');
+        desc.setAttribute('x','0');
+        desc.setAttribute('y','16');
+        desc.textContent=segment.desc || '';
+
+        labelGroup.append(icon,title,desc);
+        labelsGroup.append(labelGroup);
       });
 
       svg.dataset.built='true';
-      return {segmentPaths:$$('.rv2-svg-segment',svg)};
+      return {
+        segmentPaths:$$('.rv2-svg-segment',svg),
+        labelGroups:$$('.rv2-svg-label-group',svg),
+        labelPoints:segmentData.map((_,index)=>{
+          const midDeg=-90 + index*segmentAngle + segmentAngle/2;
+          return polarToCartesian(cx,cy,labelR,midDeg);
+        })
+      };
     }
 
     // Three-phase profile: acceleration, cruise, deceleration.
@@ -1713,14 +1688,14 @@
       const spinBtn=$('.rv2-spin-btn',widget) || $('.rewards-spin-btn',widget);
       const result=$('.rv2-spin-result',widget) || $('.rewards-spin-result',widget);
       const note=$('.rv2-spin-note',widget) || $('.rewards-spin-note',widget);
+      const countdownLabel=$('.rv2-spin-countdown-label',widget);
+      const countdownValue=$('.rv2-spin-countdown',widget);
       const wheelShell=$('.rv2-wheel-shell',widget);
       const pointer=$('.rv2-wheel-pointer',widget);
       const winCard=$('.rv2-win-card',widget);
       const winMessage=$('[data-rewards-win-message]',widget);
       const confettiHost=$('.rv2-confetti',widget);
       const svgBuild=buildSvgWheel(widget,segments);
-      const textOverlay=ensureTextOverlay(widget,segments);
-      const labels=$$('.rv2-wheel-labels li',widget);
       if(!disc || !spinBtn || !result) return;
 
       let spun=false;
@@ -1728,11 +1703,38 @@
       let rotation=0;
       let frameId=0;
       let lastPointerBucket=-1;
+      let hoverBucket=-1;
+      let countdownTimer=0;
       const defaultSpinBtnText='Rad drehen';
       const defaultNoteText=(note?.textContent || '').trim();
 
       function hasTodayCooldown(){
         return getStoredSpinDate()===getTodayYmd();
+      }
+
+      function stopCountdownTicker(){
+        if(!countdownTimer) return;
+        clearInterval(countdownTimer);
+        countdownTimer=0;
+      }
+
+      function updateCountdownUi(){
+        if(!countdownValue) return;
+        countdownValue.textContent=formatHms(getSecondsUntilTomorrow());
+      }
+
+      function startCountdownTicker(){
+        if(!countdownValue) return;
+        stopCountdownTicker();
+        updateCountdownUi();
+        countdownTimer=window.setInterval(()=>{
+          if(!hasTodayCooldown()){
+            stopCountdownTicker();
+            applyCooldownUi(false);
+            return;
+          }
+          updateCountdownUi();
+        },1000);
       }
 
       function applyCooldownUi(locked){
@@ -1742,19 +1744,25 @@
           spinBtn.setAttribute('aria-busy','false');
           spinBtn.textContent='Heute bereits gedreht';
           if(note) note.textContent='Morgen wieder verfügbar';
+          if(countdownLabel) countdownLabel.hidden=false;
+          if(countdownValue) countdownValue.hidden=false;
+          startCountdownTicker();
           return;
         }
 
         if(spinning) return;
+        stopCountdownTicker();
         spinBtn.disabled=false;
         spinBtn.removeAttribute('aria-busy');
         spinBtn.textContent=defaultSpinBtnText;
         if(note && defaultNoteText) note.textContent=defaultNoteText;
+        if(countdownLabel) countdownLabel.hidden=true;
+        if(countdownValue) countdownValue.hidden=true;
       }
 
       function setWheelRotation(value){
         disc.style.transform=`rotate(${value}deg)`;
-        updateOverlayPositions(textOverlay,value);
+        updateSvgLabelsRotation(svgBuild,value);
       }
 
       function pulsePointer(){
@@ -1781,6 +1789,11 @@
             lastPointerBucket=pointerBucket;
             pulsePointer();
             audioHooks.play('tick');
+          }
+          if(pointerBucket!==hoverBucket){
+            if(hoverBucket>=0) svgBuild?.segmentPaths?.[hoverBucket]?.classList.remove('is-under-pointer');
+            svgBuild?.segmentPaths?.[pointerBucket]?.classList.add('is-under-pointer');
+            hoverBucket=pointerBucket;
           }
 
           if(progress<1){
@@ -1810,13 +1823,13 @@
         spinBtn.textContent='Dreht...';
         result.textContent='Das Rad dreht...';
         result.classList.remove('is-win','is-lose');
-        svgBuild?.segmentPaths?.forEach(path=>path.classList.remove('is-hit'));
-        textOverlay?.cards?.forEach(card=>card.classList.remove('is-hit'));
-        labels.forEach(li=>li.classList.remove('is-hit'));
+        svgBuild?.segmentPaths?.forEach(path=>path.classList.remove('is-hit','is-under-pointer'));
+        svgBuild?.labelGroups?.forEach(group=>group.classList.remove('is-hit'));
         widget.classList.add('is-spinning');
         if(wheelShell) wheelShell.classList.add('is-spinning');
         audioHooks.play('spinLoop',{loop:true});
         lastPointerBucket=-1;
+        hoverBucket=-1;
 
         if(winCard){
           winCard.hidden=true;
@@ -1840,6 +1853,7 @@
           widget.classList.remove('is-spinning');
           if(wheelShell) wheelShell.classList.remove('is-spinning');
           audioHooks.stop('spinLoop');
+          if(hoverBucket>=0) svgBuild?.segmentPaths?.[hoverBucket]?.classList.remove('is-under-pointer');
 
           const normalized=((pointerAngle-(rotation%360))+360)%360;
           const finalIndex=Math.floor(normalized/segmentAngle)%segments.length;
@@ -1859,8 +1873,7 @@
             }
 
             svgBuild?.segmentPaths?.[finalIndex]?.classList.add('is-hit');
-            textOverlay?.cards?.[finalIndex]?.classList.add('is-hit');
-            labels[finalIndex]?.classList.add('is-hit');
+            svgBuild?.labelGroups?.[finalIndex]?.classList.add('is-hit');
             widget.classList.add('is-win-flash');
             setTimeout(()=>widget.classList.remove('is-win-flash'),360);
 
@@ -1881,12 +1894,10 @@
         });
       });
 
-      refreshOverlayTypography(textOverlay);
       setWheelRotation(rotation);
       applyCooldownUi(hasTodayCooldown());
       const onResize=()=>{
-        refreshOverlayTypography(textOverlay);
-        updateOverlayPositions(textOverlay,rotation);
+        setWheelRotation(rotation);
       };
       window.addEventListener('resize',onResize,{passive:true});
     });
