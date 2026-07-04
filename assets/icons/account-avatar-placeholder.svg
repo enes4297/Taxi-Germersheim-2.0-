@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-label="Profilbild Platzhalter">
+  <defs>
+    <linearGradient id="avatarBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1b22"/>
+      <stop offset="100%" stop-color="#08090c"/>
+    </linearGradient>
+    <linearGradient id="avatarAccent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f2d17a"/>
+      <stop offset="100%" stop-color="#b9892c"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="160" cy="160" r="156" fill="url(#avatarBg)"/>
+  <circle cx="160" cy="120" r="52" fill="none" stroke="url(#avatarAccent)" stroke-width="12"/>
+  <path d="M64 262c22-49 58-76 96-76s74 27 96 76" fill="none" stroke="url(#avatarAccent)" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="160" cy="160" r="152" fill="none" stroke="url(#avatarAccent)" stroke-opacity="0.6" stroke-width="4"/>
+</svg>
