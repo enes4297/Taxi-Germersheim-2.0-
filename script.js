@@ -1880,7 +1880,7 @@
       window.addEventListener('resize',onResize,{passive:true});
     });
   }
-    function initRewardsVoucherBalance(){
+  function initRewardsVoucherBalance(){
     const root=$('#rewards.rewards-v2 [data-voucher-balance]');
     if(!root) return;
 
@@ -1923,6 +1923,45 @@
 
     recalc();
   }
+  function initRewardsMissions(){
+    const root=$('#rewards.rewards-v2 [data-rewards-missions]');
+    if(!root) return;
+
+    const missionCards=$$('[data-mission-id]',root);
+    if(!missionCards.length) return;
+
+    const statusLabelMap={
+      active:'Aktiv',
+      done:'Abgeschlossen',
+      locked:'Gesperrt'
+    };
+
+    missionCards.forEach(card=>{
+      const rawStatus=String(card.dataset.missionStatus || 'locked').trim().toLowerCase();
+      const status=(rawStatus in statusLabelMap) ? rawStatus : 'locked';
+      const current=Math.max(0,Number(card.dataset.missionCurrent || 0));
+      const target=Math.max(1,Number(card.dataset.missionTarget || 1));
+      const progress=Math.max(0,Math.min(100,(current/target)*100));
+
+      card.dataset.missionStatus=status;
+
+      const statusNode=$('.rv2-mission-status',card);
+      if(statusNode) statusNode.textContent=statusLabelMap[status];
+
+      const progressBar=$('.rv2-mission-progress',card);
+      if(progressBar){
+        progressBar.style.setProperty('--mission-progress',`${progress.toFixed(2)}%`);
+        progressBar.setAttribute('aria-valuemin','0');
+        progressBar.setAttribute('aria-valuemax',String(target));
+        progressBar.setAttribute('aria-valuenow',String(Math.min(current,target)));
+      }
+
+      const progressText=$('.rv2-mission-progress-text',card);
+      if(progressText && !progressText.textContent.trim()){
+        progressText.textContent=`${Math.min(current,target)} / ${target}`;
+      }
+    });
+  }
   function hideSplash(){
     const splash=document.getElementById('splash');
     if(!splash) return;
@@ -1946,6 +1985,7 @@
     initContactRequestForm();
     initRewardsWheel();
     initRewardsVoucherBalance();
+    initRewardsMissions();
 
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);
