@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <title>Rewards | Taxi Germersheim GmbH</title>
+  <meta name="description" content="Premium-Rewards-Seite von Taxi Germersheim mit Level-System, Punkten, Abzeichen, Belohnungen und Platzhalter für das spätere Glücksrad.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="rewards.html">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:site_name" content="Taxi Germersheim GmbH">
+  <meta property="og:title" content="Rewards | Taxi Germersheim GmbH">
+  <meta property="og:description" content="Erste Premium-Version des Rewards-Systems mit Levels, Punkten, Abzeichen und Vorteilen.">
+  <meta property="og:url" content="rewards.html">
+  <meta property="og:image" content="logo.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand"><a href="index.html"><img src="logo.png" alt="Taxi Germersheim GmbH"></a></div>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen">
+        <span class="menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <nav class="site-nav">
+        <a href="index.html">Startseite</a>
+        <a href="index.html?page=services">Leistungen</a>
+        <a href="flotte.html">Fahrzeugflotte</a>
+        <a href="kundenkonto.html">Kundenkonto</a>
+        <a href="rewards.html" class="active">Rewards</a>
+        <a href="index.html?page=why">Über uns</a>
+        <a href="index.html#kontakt">Kontakt</a>
+      </nav>
+      <div class="site-nav-backdrop" aria-hidden="true"></div>
+      <div class="top-actions">
+        <a id="headerBookBtn" class="button nav-book-btn" href="index.html?page=booking">Jetzt buchen</a>
+      </div>
+    </header>
+
+    <section id="rewards" class="screen active simple rewards-page">
+      <header class="page-head"><a href="index.html" class="page-head-link" aria-label="Zur Startseite">‹</a><h2>Rewards</h2><i></i></header>
+
+      <article class="rewards-hero">
+        <small>PREMIUM REWARDS</small>
+        <h1>Ihr Vorteilsprogramm für treue Fahrgäste</h1>
+        <p>Diese erste Version bereitet die Rewards-Fläche für spätere Verknüpfungen mit Kundenkonto, Punkten, Abzeichen und einem kommenden Glücksrad vor.</p>
+      </article>
+
+      <p class="rewards-maintenance-note">Hinweis für spätere Pflege: Die Karten sind bewusst modular aufgebaut. Daten können später direkt aus Kundenkonto oder Backend in die vorgesehenen Felder geladen werden.</p>
+
+      <section class="rewards-summary-grid" aria-label="Rewards Übersicht">
+        <article class="rewards-summary-card rewards-summary-current">
+          <small>Aktueller Status</small>
+          <h3>Gold</h3>
+          <strong>230 Punkte</strong>
+          <p>Nächster Meilenstein: Platin bei 350 Punkten.</p>
+        </article>
+
+        <article class="rewards-summary-card rewards-summary-progress">
+          <small>Fortschritt zum nächsten Level</small>
+          <div class="rewards-progress-head">
+            <span>Gold</span>
+            <span>Platin</span>
+          </div>
+          <div class="rewards-progress-bar" aria-label="Fortschrittsbalken zum nächsten Level"><u></u></div>
+          <p>230 von 350 Punkten erreicht. Noch 120 Punkte bis zum nächsten Level.</p>
+        </article>
+
+        <article class="rewards-summary-card rewards-summary-next">
+          <small>Nächstes Ziel</small>
+          <h3>Platin</h3>
+          <p>Mehr Punkte, bessere Vorteile und noch exklusivere Belohnungen.</p>
+        </article>
+      </section>
+
+      <section class="rewards-level-section" aria-label="Level-System">
+        <div class="section-header rewards-section-header">
+          <small>LEVEL-SYSTEM</small>
+          <h2>Bronze bis Legend</h2>
+        </div>
+        <div class="rewards-level-grid">
+          <article class="rewards-level-card is-complete">
+            <span>Bronze</span>
+            <strong>0 - 99</strong>
+            <p>Start-Level für neue Fahrgäste.</p>
+          </article>
+          <article class="rewards-level-card is-complete">
+            <span>Silber</span>
+            <strong>100 - 199</strong>
+            <p>Erweiterte Vorteile für regelmäßige Fahrten.</p>
+          </article>
+          <article class="rewards-level-card is-current">
+            <span>Gold</span>
+            <strong>200 - 349</strong>
+            <p>Aktuelles Level mit spürbaren Extras.</p>
+          </article>
+          <article class="rewards-level-card">
+            <span>Platin</span>
+            <strong>350 - 499</strong>
+            <p>Für besonders treue Kunden mit höherem Status.</p>
+          </article>
+          <article class="rewards-level-card rewards-level-legend">
+            <span>Legend</span>
+            <strong>500+</strong>
+            <p>Das Premium-Ziel für außergewöhnliche Treue.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="rewards-content-grid" aria-label="Rewards Inhalte">
+        <article class="rewards-card rewards-badges">
+          <div class="rewards-card-head">
+            <small>MEINE ABZEICHEN</small>
+            <h3>Abzeichen</h3>
+          </div>
+          <div class="rewards-badge-grid" data-rewards-field="badges">
+            <span>Premium Stammkunde</span>
+            <span>Flughafen-Profi</span>
+            <span>Frühbucher</span>
+            <span>Nachtfahrer</span>
+          </div>
+        </article>
+
+        <article class="rewards-card rewards-rewards">
+          <div class="rewards-card-head">
+            <small>BELOHNUNGEN</small>
+            <h3>Belohnungen</h3>
+          </div>
+          <ul class="rewards-list" aria-label="Belohnungen Übersicht">
+            <li><span>Fahrtguthaben</span><b>Ab 200 Punkten</b></li>
+            <li><span>Upgrade-Vorteil</span><b>Ab Gold</b></li>
+            <li><span>Partner-Rabatte</span><b>Ab Platin</b></li>
+            <li><span>Exklusive Aktionen</span><b>Ab Legend</b></li>
+          </ul>
+        </article>
+
+        <article class="rewards-card rewards-points">
+          <div class="rewards-card-head">
+            <small>SO SAMMELST DU PUNKTE</small>
+            <h3>Punktesystem</h3>
+          </div>
+          <ul class="rewards-list">
+            <li><span>Normale Fahrt</span><b>10 Punkte</b></li>
+            <li><span>Flughafentransfer</span><b>20 Punkte</b></li>
+            <li><span>Krankenfahrt</span><b>15 Punkte</b></li>
+            <li><span>Bewertung / Empfehlung</span><b>Bald möglich</b></li>
+          </ul>
+        </article>
+
+        <article class="rewards-card rewards-wheel">
+          <div class="rewards-card-head">
+            <small>ZUKUNFTS-MODUL</small>
+            <h3>Glücksrad</h3>
+          </div>
+          <div class="rewards-wheel-placeholder" aria-hidden="true">
+            <div class="rewards-wheel-ring"></div>
+            <div class="rewards-wheel-center">Bald</div>
+          </div>
+          <p>Das Glücksrad wird später als eigenes Modul verbunden. Die Fläche ist bereits dafür vorbereitet.</p>
+        </article>
+      </section>
+
+      <section class="rewards-actions-grid" aria-label="Rewards Aktionen">
+        <a class="button rewards-action-primary" href="kundenkonto.html">Mit Kundenkonto verbinden</a>
+        <a class="button rewards-action-secondary" href="index.html?page=booking">Punkte bei Fahrt sammeln</a>
+      </section>
+    </section>
+  </main>
+
+  <footer id="kontakt" class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img class="footer-logo" src="logo.png" alt="Taxi Germersheim GmbH">
+        <strong>Taxi Germersheim</strong>
+        <p>Sicher. Zuverlässig. Pünktlich.</p>
+        <small>24 Stunden täglich für Sie erreichbar.</small>
+        <small class="footer-availability">24/7 erreichbar per Telefon und WhatsApp</small>
+      </div>
+
+      <div class="footer-column footer-services">
+        <strong>Leistungen</strong>
+        <a href="index.html?page=booking">Taxi</a>
+        <a href="index.html?page=medical">Krankenfahrten</a>
+        <a href="index.html?page=booking">Rollstuhlfahrten</a>
+        <a href="index.html?page=booking">Flughafentransfer</a>
+        <a href="index.html?page=booking">Kurierfahrten</a>
+      </div>
+
+      <div class="footer-column footer-contact">
+        <strong>Kontakt</strong>
+        <a class="footer-cta-primary" href="tel:072743567"><i data-icon="phone"></i><span>Jetzt anrufen: 07274 3567</span></a>
+        <a class="footer-cta-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer"><i data-icon="yumak"></i><span>WhatsApp-Nachricht senden</span></a>
+        <a class="footer-contact-link" href="mailto:info@taxigermersheim.de"><i data-icon="profile"></i><span>E-Mail: info@taxigermersheim.de</span></a>
+        <a class="footer-contact-link" href="https://maps.google.com/?q=Friedrich-Ebert-Stra%C3%9Fe+8,+76726+Germersheim" target="_blank" rel="noreferrer"><i data-icon="pin"></i><span>Adresse: Friedrich-Ebert-Straße 8<br>76726 Germersheim</span></a>
+      </div>
+
+      <div class="footer-column footer-quicklinks">
+        <strong>Schnellzugriff</strong>
+        <a href="index.html">Startseite</a>
+        <a href="index.html?page=why">Über uns</a>
+        <a href="flotte.html">Fahrzeugflotte</a>
+        <a href="kundenkonto.html">Kundenkonto</a>
+        <a href="rewards.html">Rewards</a>
+        <a href="index.html#kontakt">Kontakt</a>
+        <a href="index.html?page=booking">Jetzt buchen</a>
+        <a href="index.html?page=faq">FAQ</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom-line">
+      <p>© 2026 Taxi Germersheim.<br>Alle Rechte vorbehalten.</p>
+      <div class="footer-bottom-links">
+        <a href="datenschutz.html">Datenschutz</a>
+        <a href="impressum.html">Impressum</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom" aria-hidden="true"></div>
+  </footer>
+
+  <section id="cookieBanner" class="consent-banner" hidden role="region" aria-label="Cookie und Dienste Zustimmung">
+    <div class="consent-copy">
+      <strong>Cookie- und Diensteinstellungen</strong>
+      <p>Wir nutzen notwendige Cookies. Externe Dienste wie Google Maps werden erst nach Ihrer Zustimmung geladen.</p>
+      <a href="datenschutz.html">Datenschutz lesen</a>
+    </div>
+    <div class="consent-actions">
+      <button id="cookieAcceptAll" type="button" class="button">Alle akzeptieren</button>
+      <button id="cookieNecessary" type="button" class="button">Nur notwendige Cookies</button>
+      <button id="cookieSettings" type="button" class="button">Einstellungen</button>
+    </div>
+  </section>
+  <script src="script.js"></script>
+</body>
+</html>
