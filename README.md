@@ -24,3 +24,11 @@
 - Abzeichen / Belohnungen / Punkte: eigene Karten mit data-rewards-field vorbereitet
 - Glücksrad: rewards-wheel-placeholder ist als spätere Erweiterungsfläche vorgesehen
 - Styles: dedizierter Block Rewards Seite in style.css
+
+## Abzeichen-System pflegen
+
+- Hauptbereich: rewards.html, Karte rewards-badges
+- Kategorien: Fahrten, Treue, Krankenfahrten, Flughafen, Geheim, Saison
+- Statuslogik im Design: is-unlocked und is-locked
+- Geheime Abzeichen: is-secret ohne Fortschrittsanzeige
+- Kundenkonto-Übersicht: kompakte Badge-Vorschau in kundenkonto.html

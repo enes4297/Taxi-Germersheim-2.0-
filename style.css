@@ -2477,6 +2477,12 @@ input:focus,textarea:focus,select:focus,
 
 #account.account-page .account-badges{display:flex;flex-wrap:wrap;gap:8px}
 #account.account-page .account-badges span{min-height:34px;display:inline-flex;align-items:center;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,217,106,.22);background:rgba(255,217,106,.06);color:#ffe9ae!important;font-size:12px;font-weight:850;letter-spacing:.02em}
+#account.account-page .account-badge-intro{margin:0;color:rgba(255,255,255,.8)!important;font-size:14px;line-height:1.6}
+#account.account-page .account-badges span.is-unlocked{border-color:rgba(255,217,106,.3);background:rgba(255,217,106,.11);color:#ffebb2!important}
+#account.account-page .account-badges span.is-locked{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:rgba(255,255,255,.74)!important}
+#account.account-page .account-badges span.is-secret{border-style:dashed;letter-spacing:.04em}
+#account.account-page .account-badge-link{justify-self:start;min-height:44px;padding:0 16px;border-radius:12px;font-size:12px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;border:1px solid rgba(255,217,106,.28);background:rgba(255,217,106,.08);color:#ffe9ae}
+#account.account-page .account-badge-link:hover{background:rgba(255,217,106,.14);border-color:rgba(255,217,106,.44)}
 
 @media(max-width:1100px){
   #account.account-page .account-hero{padding:38px 34px 34px}
@@ -2687,6 +2693,31 @@ input:focus,textarea:focus,select:focus,
 
 #rewards.rewards-page .rewards-badge-grid{display:flex;flex-wrap:wrap;gap:8px}
 #rewards.rewards-page .rewards-badge-grid span{min-height:34px;display:inline-flex;align-items:center;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,217,106,.22);background:rgba(255,217,106,.06);color:#ffe9ae!important;font-size:12px;font-weight:850;letter-spacing:.02em}
+#rewards.rewards-page .rewards-badge-intro{margin:0;color:rgba(255,255,255,.8)!important;font-size:15px;line-height:1.65}
+#rewards.rewards-page .rewards-badge-categories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#rewards.rewards-page .rewards-badge-category{min-height:100%;padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);display:grid;gap:10px;align-content:start}
+#rewards.rewards-page .rewards-badge-category header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#rewards.rewards-page .rewards-badge-category h4{margin:0;font-family:var(--serif);font-size:24px;line-height:1.06}
+#rewards.rewards-page .rewards-badge-category header span{min-height:28px;display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,217,106,.26);background:rgba(255,217,106,.07);color:#ffe9ae;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+
+#rewards.rewards-page .rewards-badge-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+#rewards.rewards-page .rewards-badge-card{display:grid;gap:6px;min-height:74px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
+#rewards.rewards-page .rewards-badge-card b{font-size:15px;line-height:1.3;color:#fff}
+#rewards.rewards-page .rewards-badge-card small{display:inline-flex;align-items:center;width:max-content;min-height:24px;padding:0 8px;border-radius:999px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:900}
+#rewards.rewards-page .rewards-badge-card em{font-style:normal;color:rgba(255,255,255,.7);font-size:12px;line-height:1.45}
+
+#rewards.rewards-page .rewards-badge-card.is-unlocked{border-color:rgba(255,217,106,.3);background:rgba(255,217,106,.1)}
+#rewards.rewards-page .rewards-badge-card.is-unlocked small{background:rgba(255,217,106,.18);color:#ffe9ae;border:1px solid rgba(255,217,106,.34)}
+
+#rewards.rewards-page .rewards-badge-card.is-locked{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.04)}
+#rewards.rewards-page .rewards-badge-card.is-locked small{background:rgba(255,255,255,.08);color:rgba(255,255,255,.74);border:1px solid rgba(255,255,255,.16)}
+
+#rewards.rewards-page .rewards-badge-progress{width:100%;height:8px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden}
+#rewards.rewards-page .rewards-badge-progress u{display:block;height:100%;background:linear-gradient(90deg,#d2a33a,#ffd96a)}
+
+#rewards.rewards-page .rewards-badge-card.is-secret{border-style:dashed;background:linear-gradient(155deg,rgba(255,255,255,.03),rgba(255,255,255,.01))}
+#rewards.rewards-page .rewards-badge-card.is-secret b{letter-spacing:.04em}
+#rewards.rewards-page .rewards-badge-card.is-secret em{color:rgba(255,255,255,.62)!important}
 
 #rewards.rewards-page .rewards-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 #rewards.rewards-page .rewards-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;min-height:42px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
@@ -2726,6 +2757,8 @@ input:focus,textarea:focus,select:focus,
   #rewards.rewards-page .rewards-content-grid{grid-template-columns:1fr;gap:14px}
   #rewards.rewards-page .rewards-wheel{grid-column:auto}
   #rewards.rewards-page .rewards-actions-grid{grid-template-columns:1fr}
+  #rewards.rewards-page .rewards-badge-categories{grid-template-columns:1fr}
+  #account.account-page .account-badge-link{width:100%;justify-content:center}
 }
 
 @media(max-width:420px){
