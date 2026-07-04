@@ -1416,8 +1416,29 @@
     const activeWheel=wheelVariants.standard;
     const segments=activeWheel.segments;
     const segmentAngle=360/segments.length;
+    // Top pointer at 12 o'clock. In our SVG wheel, segment geometry starts at -90 deg.
     const pointerAngle=270;
+    const segmentStartAngle=-90;
     const spinStorageKey='taxiRewardsLastSpinDate';
+
+    // Keep angle math in one place so future wheel variants can safely reuse it.
+    function normalizeDegrees(angle){
+      return ((angle%360)+360)%360;
+    }
+
+    // Determine which segment is directly under the fixed top pointer after rotation.
+    // Steps:
+    // 1) normalize final rotation to 0..359
+    // 2) compute dynamic segment size from segment count
+    // 3) map fixed pointer angle into wheel-local coordinates
+    // 4) derive segment index by floor(localAngle / segmentSize)
+    function getSegmentIndexAtPointer(rotationDeg,totalSegments,pointerDeg,startDeg){
+      const safeSegments=Math.max(1,totalSegments|0);
+      const normalizedRotation=normalizeDegrees(rotationDeg);
+      const segmentSize=360/safeSegments;
+      const localPointerAngle=normalizeDegrees(pointerDeg - normalizedRotation - startDeg);
+      return Math.floor(localPointerAngle/segmentSize)%safeSegments;
+    }
 
     function getTodayYmd(){
       const now=new Date();
@@ -1783,8 +1804,7 @@
           const current=from+(to-from)*eased;
           setWheelRotation(current);
 
-          const normalized=((pointerAngle-(current%360))+360)%360;
-          const pointerBucket=Math.floor(normalized/segmentAngle);
+          const pointerBucket=getSegmentIndexAtPointer(current,segments.length,pointerAngle,segmentStartAngle);
           if(pointerBucket!==lastPointerBucket){
             lastPointerBucket=pointerBucket;
             pulsePointer();
@@ -1848,15 +1868,16 @@
 
         if(frameId) cancelAnimationFrame(frameId);
         animateSpin(startRotation,targetRotation,durationMs,finalRotation=>{
-          rotation=((finalRotation%360)+360)%360;
+          rotation=normalizeDegrees(finalRotation);
           spinning=false;
           widget.classList.remove('is-spinning');
           if(wheelShell) wheelShell.classList.remove('is-spinning');
           audioHooks.stop('spinLoop');
           if(hoverBucket>=0) svgBuild?.segmentPaths?.[hoverBucket]?.classList.remove('is-under-pointer');
 
-          const normalized=((pointerAngle-(rotation%360))+360)%360;
-          const finalIndex=Math.floor(normalized/segmentAngle)%segments.length;
+          // Always read the final winner from the actual stopped wheel angle,
+          // never from the initially targeted/random animation hint.
+          const finalIndex=getSegmentIndexAtPointer(rotation,segments.length,pointerAngle,segmentStartAngle);
           const selectedSegment=segments[finalIndex];
 
           if(selectedSegment.win){
