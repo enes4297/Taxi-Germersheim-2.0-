@@ -2725,11 +2725,24 @@ input:focus,textarea:focus,select:focus,
 #rewards.rewards-page .rewards-list li b{color:#ffe8a7;font-size:13px;letter-spacing:.02em;text-transform:uppercase}
 
 #rewards.rewards-page .rewards-wheel{grid-column:span 12;text-align:center;justify-items:center}
-#rewards.rewards-page .rewards-wheel-placeholder{position:relative;width:min(280px,100%);aspect-ratio:1/1;display:grid;place-items:center}
-#rewards.rewards-page .rewards-wheel-ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,217,106,.3);background:radial-gradient(circle at 50% 50%,rgba(255,217,106,.16),rgba(20,21,27,.9) 58%,rgba(8,9,12,.98) 100%);box-shadow:inset 0 0 0 16px rgba(255,255,255,.02),0 18px 40px rgba(0,0,0,.24)}
-#rewards.rewards-page .rewards-wheel-placeholder:before,#rewards.rewards-page .rewards-wheel-placeholder:after{content:'';position:absolute;inset:14%;border-radius:50%;border:1px dashed rgba(255,217,106,.22)}
-#rewards.rewards-page .rewards-wheel-placeholder:after{inset:30%;border-style:solid}
-#rewards.rewards-page .rewards-wheel-center{position:relative;z-index:1;width:104px;height:104px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#ffe7a2,#d6a540);color:#111;font-family:var(--serif);font-size:26px;font-weight:900;box-shadow:0 14px 34px rgba(255,217,106,.22)}
+#rewards.rewards-page .rewards-spin-widget{width:100%;display:grid;justify-items:center;gap:12px}
+#rewards.rewards-page .rewards-wheel-shell{position:relative;width:min(360px,100%);aspect-ratio:1/1;display:grid;place-items:center;isolation:isolate}
+#rewards.rewards-page .rewards-wheel-pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-top:0;border-bottom:28px solid #f3d57f;filter:drop-shadow(0 8px 14px rgba(0,0,0,.28));z-index:4}
+
+#rewards.rewards-page .rewards-wheel-disc-wrap{position:relative;width:100%;height:100%;border-radius:50%;padding:14px;background:radial-gradient(circle at 50% 50%,rgba(255,217,106,.16),rgba(15,16,20,.95) 60%,rgba(8,9,12,.98) 100%);border:1px solid rgba(255,217,106,.32);box-shadow:inset 0 0 0 16px rgba(255,255,255,.02),0 20px 44px rgba(0,0,0,.28)}
+#rewards.rewards-page .rewards-wheel-disc{width:100%;height:100%;border-radius:50%;border:1px solid rgba(255,255,255,.2);transform:rotate(0deg);transition:transform 3.8s cubic-bezier(.16,.85,.22,1);background:conic-gradient(from -90deg,#6f5320 0deg 45deg,#b88632 45deg 90deg,#7a5c24 90deg 135deg,#d1a34a 135deg 180deg,#66501f 180deg 225deg,#9d7830 225deg 270deg,#7a5d27 270deg 315deg,#c7963f 315deg 360deg)}
+
+#rewards.rewards-page .rewards-wheel-labels{position:absolute;inset:14px;list-style:none;margin:0;padding:0;pointer-events:none}
+#rewards.rewards-page .rewards-wheel-labels li{position:absolute;left:50%;top:50%;width:45%;transform-origin:0 0;transform:rotate(calc(var(--i)*45deg - 67.5deg)) translateY(-128px);display:inline-flex;justify-content:center;align-items:center;color:#fff;font-size:11px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+
+#rewards.rewards-page .rewards-wheel-hub{position:absolute;z-index:3;width:92px;height:92px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#ffe7a2,#d6a540);color:#111;font-family:var(--serif);font-size:28px;font-weight:900;box-shadow:0 14px 34px rgba(255,217,106,.22)}
+
+#rewards.rewards-page .rewards-spin-btn{min-height:52px;min-width:180px;border-radius:14px;border:1px solid rgba(255,217,106,.52);background:linear-gradient(135deg,#ffe7a2,#d6a540);color:#111;font-size:13px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+#rewards.rewards-page .rewards-spin-btn:hover{filter:brightness(1.02)}
+#rewards.rewards-page .rewards-spin-btn:disabled{opacity:.52;cursor:not-allowed;filter:grayscale(.18)}
+
+#rewards.rewards-page .rewards-spin-result{margin:0;min-height:22px;color:#ffe8a7!important;font-size:15px;font-weight:860;line-height:1.5}
+#rewards.rewards-page .rewards-spin-note{display:block;color:rgba(255,255,255,.72)!important;font-size:12px;line-height:1.55;max-width:52ch}
 
 #rewards.rewards-page .rewards-actions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 #rewards.rewards-page .rewards-action-primary,#rewards.rewards-page .rewards-action-secondary{min-height:54px;justify-content:center;border-radius:16px;font-size:14px;font-weight:900}
@@ -2758,6 +2771,8 @@ input:focus,textarea:focus,select:focus,
   #rewards.rewards-page .rewards-wheel{grid-column:auto}
   #rewards.rewards-page .rewards-actions-grid{grid-template-columns:1fr}
   #rewards.rewards-page .rewards-badge-categories{grid-template-columns:1fr}
+  #rewards.rewards-page .rewards-wheel-shell{width:min(300px,100%)}
+  #rewards.rewards-page .rewards-wheel-labels li{font-size:10px;transform:rotate(calc(var(--i)*45deg - 67.5deg)) translateY(-106px)}
   #account.account-page .account-badge-link{width:100%;justify-content:center}
 }
 
@@ -2767,5 +2782,7 @@ input:focus,textarea:focus,select:focus,
   #rewards.rewards-page .rewards-card-head h3{font-size:27px}
   #rewards.rewards-page .rewards-level-grid{grid-template-columns:1fr}
   #rewards.rewards-page .rewards-level-card{min-height:0}
-  #rewards.rewards-page .rewards-wheel-placeholder{width:240px}
+  #rewards.rewards-page .rewards-wheel-shell{width:240px}
+  #rewards.rewards-page .rewards-wheel-hub{width:76px;height:76px;font-size:24px}
+  #rewards.rewards-page .rewards-wheel-labels li{font-size:9px;transform:rotate(calc(var(--i)*45deg - 67.5deg)) translateY(-82px)}
 }

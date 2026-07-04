@@ -1391,6 +1391,56 @@
 
     applyFilters();
   }
+  function initRewardsWheel(){
+    const widgets=$$('[data-rewards-wheel]');
+    if(!widgets.length) return;
+
+    const segments=['10 Punkte','25 Punkte','50 Punkte','Freifahrt-Los','5 EUR Gutschein','Niete','Extra-Dreh','Geheimpreis'];
+    const segmentAngle=360/segments.length;
+
+    widgets.forEach((widget,index)=>{
+      const disc=$('.rewards-wheel-disc',widget);
+      const spinBtn=$('.rewards-spin-btn',widget);
+      const result=$('.rewards-spin-result',widget);
+      if(!disc || !spinBtn || !result) return;
+
+      let spun=false;
+      let spinning=false;
+      let rotation=0;
+
+      spinBtn.addEventListener('click',()=>{
+        if(spun || spinning) return;
+
+        spinning=true;
+        spun=true;
+        spinBtn.disabled=true;
+        result.textContent='Das Rad dreht...';
+
+        const selectedIndex=Math.floor(Math.random()*segments.length);
+        const centerAngle=selectedIndex*segmentAngle + segmentAngle/2;
+        const extraTurns=4 + Math.floor(Math.random()*3);
+        const jitter=(Math.random()-0.5)*(segmentAngle*0.36);
+        rotation += extraTurns*360 + (360-centerAngle) + jitter;
+
+        disc.style.transform=`rotate(${rotation}deg)`;
+
+        const onDone=()=>{
+          disc.removeEventListener('transitionend',onDone);
+          spinning=false;
+          result.textContent=`Ergebnis: ${segments[selectedIndex]}`;
+        };
+
+        disc.addEventListener('transitionend',onDone,{once:true});
+
+        setTimeout(()=>{
+          if(spinning){
+            spinning=false;
+            result.textContent=`Ergebnis: ${segments[selectedIndex]}`;
+          }
+        },4300);
+      });
+    });
+  }
   function hideSplash(){
     const splash=document.getElementById('splash');
     if(!splash) return;
@@ -1412,6 +1462,7 @@
     initFaqCenter();
     initCookieBanner();
     initContactRequestForm();
+    initRewardsWheel();
 
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);
