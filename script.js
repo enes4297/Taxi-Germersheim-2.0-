@@ -74,7 +74,7 @@
   ];
   let addressConfigCache=null;
   let streetDirectoryCache=null;
-  let startMarker=null,endMarker=null,mapContainers={};
+  let mapContainers={};
   const CONSENT_STORAGE_KEY='taxiGermersheimCookieConsent';
   const CONSENT_ALL='all';
   const CONSENT_NECESSARY='necessary';
@@ -405,15 +405,6 @@
     if(!elementId) return;
     loadMapIntoContainer(container,elementId);
   }
-  function enableExternalServices(){
-    persistCookieConsent(CONSENT_ALL);
-    hideCookieBanner();
-    refreshMapContainers();
-  }
-  function setStartMarker(address,coords){startMarker={address,coords}}
-  function setEndMarker(address,coords){endMarker={address,coords}}
-  function getMarkers(){return {start:startMarker,end:endMarker}}
-  function clearMarkers(){startMarker=null;endMarker=null}
   function initCookieBanner(){
     const banner=$('#cookieBanner');
     const acceptAll=$('#cookieAcceptAll');
@@ -485,8 +476,17 @@
     if(page && $('#'+page)) return page;
     return null;
   }
-  function inject(){ $$('[data-icon]').forEach(el=>{el.innerHTML=icons[el.dataset.icon]||''}) }
-  function show(id){ if(!$('#'+id)) id='home'; $$('.screen').forEach(s=>s.classList.toggle('active',s.id===id)); $$('.site-nav button').forEach(b=>b.classList.toggle('active',b.dataset.go===id)); window.scrollTo(0,0) }
+  function inject(){
+    $$('[data-icon]').forEach(el=>{
+      el.innerHTML=icons[el.dataset.icon]||'';
+    });
+  }
+  function show(id){
+    if(!$('#'+id)) id='home';
+    $$('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+    $$('.site-nav button').forEach(b=>b.classList.toggle('active',b.dataset.go===id));
+    window.scrollTo(0,0);
+  }
   function setService(s){
     const selectedTitle=$('#selectedTitle');
     const serviceLabel=$('#serviceLabel');
@@ -507,6 +507,107 @@
     const ok=start.value.trim()&&target.value.trim()&&phone.value.trim();
     send.textContent=ok?'Fahrtanfrage senden':'Fahrtanfrage nicht möglich';
   }
+
+  function setSingleActive(selector,activeElement){
+    $$(selector).forEach(button=>button.classList.toggle('active',button===activeElement));
+  }
+
+  function getNavigationElements(){
+    const servicesItem=$('.nav-item-services');
+    return {
+      topbar:$('.topbar'),
+      menuToggle:$('.menu-toggle'),
+      siteNav:$('.site-nav'),
+      backdrop:$('.site-nav-backdrop'),
+      servicesItem,
+      servicesTrigger:servicesItem?.querySelector('.nav-trigger') || null,
+      bookBtn:$('#headerBookBtn')
+    };
+  }
+
+  function closeNavigationState(nav){
+    nav.siteNav?.classList.remove('open');
+    document.body.classList.remove('nav-open');
+    nav.menuToggle?.setAttribute('aria-expanded','false');
+    nav.servicesItem?.classList.remove('is-open');
+    nav.servicesTrigger?.setAttribute('aria-expanded','false');
+  }
+
+  function handleGoAction(event,go,nav){
+    event.preventDefault();
+    if(go.dataset.service) setService(go.dataset.service);
+
+    if(go.dataset.go==='kontakt'){
+      show('home');
+      setTimeout(()=>{
+        const anchor=document.getElementById(go.dataset.go);
+        anchor?.scrollIntoView({behavior:'smooth',block:'start'});
+      },100);
+    }else{
+      show(go.dataset.go);
+    }
+
+    closeNavigationState(nav);
+  }
+
+  function handleChipClick(chip){
+    if(chip.dataset.address){
+      $('#targetAddress').value=chip.dataset.address;
+      if(chip.dataset.service) setService(chip.dataset.service);
+      validate();
+      return;
+    }
+    chip.classList.toggle('active');
+  }
+
+  function handleGlobalClick(e,nav){
+    const mapLoad=e.target.closest('[data-map-action="load"]');
+    if(mapLoad){
+      e.preventDefault();
+      loadMapFromPlaceholder(mapLoad);
+      return;
+    }
+
+    const go=e.target.closest('[data-go]');
+    if(go){
+      handleGoAction(e,go,nav);
+      return;
+    }
+
+    const serviceSelect=e.target.closest('[data-service-select]');
+    if(serviceSelect){
+      setService(serviceSelect.dataset.serviceSelect);
+      return;
+    }
+
+    const trip=e.target.closest('[data-trip]');
+    if(trip){
+      setSingleActive('.trip-grid button',trip);
+      return;
+    }
+
+    const toggleButton=e.target.closest('.toggle button');
+    if(toggleButton){
+      setSingleActive('.toggle button',toggleButton);
+      return;
+    }
+
+    const locationButton=e.target.closest('#locationBtn');
+    if(locationButton){
+      getLocation();
+      return;
+    }
+
+    const chip=e.target.closest('.details button,.chips button,.small-toggle button');
+    if(chip) handleChipClick(chip);
+  }
+
+  function handleGlobalInput(e){
+    validate();
+    if(!hasExternalConsent()) return;
+    if(e.target.id==='startAddress' || e.target.id==='targetAddress') refreshMapContainers();
+  }
+
   let userLocation=null;
   function getLocation(){
     if('geolocation' in navigator){
@@ -1034,48 +1135,36 @@
     });
   }
   function initPremiumNavigation(){
-    const topbar=$('.topbar');
-    const menuToggle=$('.menu-toggle');
-    const siteNav=$('.site-nav');
-    const backdrop=$('.site-nav-backdrop');
-    const servicesItem=$('.nav-item-services');
-    const servicesTrigger=servicesItem?.querySelector('.nav-trigger');
-    const bookBtn=$('#headerBookBtn');
+    const nav=getNavigationElements();
 
-    function closeMobileMenu(){
-      siteNav?.classList.remove('open');
-      document.body.classList.remove('nav-open');
-      if(menuToggle) menuToggle.setAttribute('aria-expanded','false');
-    }
-
-    if(menuToggle){
-      menuToggle.setAttribute('aria-expanded','false');
-      menuToggle.addEventListener('click',()=>{
-        const open=siteNav?.classList.toggle('open');
+    if(nav.menuToggle){
+      nav.menuToggle.setAttribute('aria-expanded','false');
+      nav.menuToggle.addEventListener('click',()=>{
+        const open=nav.siteNav?.classList.toggle('open');
         document.body.classList.toggle('nav-open',!!open);
-        menuToggle.setAttribute('aria-expanded',open?'true':'false');
+        nav.menuToggle.setAttribute('aria-expanded',open?'true':'false');
       });
     }
 
-    backdrop?.addEventListener('click',()=>closeMobileMenu());
+    nav.backdrop?.addEventListener('click',()=>closeNavigationState(nav));
 
-    servicesTrigger?.addEventListener('click',e=>{
+    nav.servicesTrigger?.addEventListener('click',e=>{
       e.preventDefault();
-      const open=servicesItem.classList.toggle('is-open');
-      servicesTrigger.setAttribute('aria-expanded',open?'true':'false');
+      const open=nav.servicesItem.classList.toggle('is-open');
+      nav.servicesTrigger.setAttribute('aria-expanded',open?'true':'false');
     });
 
     document.addEventListener('click',e=>{
-      if(servicesItem && !servicesItem.contains(e.target)){
-        servicesItem.classList.remove('is-open');
-        servicesTrigger?.setAttribute('aria-expanded','false');
+      if(nav.servicesItem && !nav.servicesItem.contains(e.target)){
+        nav.servicesItem.classList.remove('is-open');
+        nav.servicesTrigger?.setAttribute('aria-expanded','false');
       }
-      if(siteNav?.classList.contains('open') && !e.target.closest('.site-nav') && !e.target.closest('.menu-toggle')){
-        closeMobileMenu();
+      if(nav.siteNav?.classList.contains('open') && !e.target.closest('.site-nav') && !e.target.closest('.menu-toggle')){
+        closeNavigationState(nav);
       }
     });
 
-    bookBtn?.addEventListener('click',e=>{
+    nav.bookBtn?.addEventListener('click',e=>{
       e.preventDefault();
       const activeScreen=$('.screen.active');
       const bookingTarget=activeScreen?.querySelector('#medicalBookingSection');
@@ -1085,15 +1174,17 @@
         const contactTarget=$('#kontakt');
         contactTarget?.scrollIntoView({behavior:'smooth',block:'start'});
       }
-      closeMobileMenu();
+      closeNavigationState(nav);
     });
 
     const onScroll=()=>{
       const scrolled=window.scrollY>14;
-      topbar?.classList.toggle('is-scrolled',scrolled);
+      nav.topbar?.classList.toggle('is-scrolled',scrolled);
     };
     window.addEventListener('scroll',onScroll,{passive:true});
     onScroll();
+
+    return nav;
   }
   function initFaqCenter(){
     const root=$('#faq');
@@ -1193,53 +1284,26 @@
       splash.remove();
     },700);
   }
-  function boot(){inject();setService('taxi');validate();initMapContainer('startMapContainer');initMapContainer('endMapContainer');
+  function boot(){
+    inject();
+    setService('taxi');
+    validate();
+    initMapContainer('startMapContainer');
+    initMapContainer('endMapContainer');
     setTimeout(hideSplash,1200);
     initMedicalAssistant();
     initMedicalBookingScroll();
-    initPremiumNavigation();
+    const nav=initPremiumNavigation();
     initFaqCenter();
     initCookieBanner();
     initContactRequestForm();
+
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);
-    const menuToggle=$('.menu-toggle');
-    const siteNav=$('.site-nav');
-    document.addEventListener('click',e=>{
-      let mapLoad=e.target.closest('[data-map-action="load"]');
-      if(mapLoad){
-        e.preventDefault();
-        loadMapFromPlaceholder(mapLoad);
-        return;
-      }
-      let go=e.target.closest('[data-go]');
-      if(go){
-        e.preventDefault();
-        if(go.dataset.service)setService(go.dataset.service);
-        if(go.dataset.go==='kontakt'){
-          show('home');
-          setTimeout(()=>{const anchor=document.getElementById(go.dataset.go);anchor?.scrollIntoView({behavior:'smooth',block:'start'})},100);
-        } else {
-          show(go.dataset.go);
-        }
-        siteNav?.classList.remove('open');
-        document.body.classList.remove('nav-open');
-        $('.nav-item-services')?.classList.remove('is-open');
-        $('.nav-item-services .nav-trigger')?.setAttribute('aria-expanded','false');
-        menuToggle?.setAttribute('aria-expanded','false');
-      }
-      let ss=e.target.closest('[data-service-select]');if(ss)setService(ss.dataset.serviceSelect);
-      let trip=e.target.closest('[data-trip]');if(trip){$$('.trip-grid button').forEach(b=>b.classList.remove('active'));trip.classList.add('active')}
-      let t=e.target.closest('.toggle button');if(t){$$('.toggle button').forEach(b=>b.classList.remove('active'));t.classList.add('active')}
-      let locBtn=e.target.closest('#locationBtn');if(locBtn){getLocation();return}
-      let chip=e.target.closest('.details button,.chips button,.small-toggle button');if(chip){if(chip.dataset.address){$('#targetAddress').value=chip.dataset.address;if(chip.dataset.service)setService(chip.dataset.service);validate()}else{chip.classList.toggle('active')}}
-    });
-    document.addEventListener('input',e=>{
-      validate();
-      if(hasExternalConsent()){
-        if(e.target.id==='startAddress' || e.target.id==='targetAddress') refreshMapContainers();
-      }
-    },true)
+
+    // Single delegation point keeps interaction logic centralized and avoids many per-node listeners.
+    document.addEventListener('click',e=>handleGlobalClick(e,nav));
+    document.addEventListener('input',handleGlobalInput,true);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
