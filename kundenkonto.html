@@ -4,16 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#050505">
-  <title>Impressum - Taxi Germersheim GmbH in Germersheim</title>
-  <meta name="description" content="Impressum der Taxi Germersheim GmbH in Germersheim mit allen gesetzlichen Pflichtangaben, Kontaktdaten und Registerinformationen.">
+  <title>Kundenkonto | Taxi Germersheim GmbH</title>
+  <meta name="description" content="Premium-Kundenkonto von Taxi Germersheim mit Dashboard-Bereichen für Rewards, Punkte, Adressen, Buchungshistorie und Gutscheine.">
   <meta name="robots" content="index,follow">
-  <link rel="canonical" href="impressum.html">
+  <link rel="canonical" href="kundenkonto.html">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="de_DE">
   <meta property="og:site_name" content="Taxi Germersheim GmbH">
-  <meta property="og:title" content="Impressum - Taxi Germersheim GmbH in Germersheim">
-  <meta property="og:description" content="Rechtliche Angaben, Kontaktdaten und Unternehmensdaten der Taxi Germersheim GmbH.">
-  <meta property="og:url" content="impressum.html">
+  <meta property="og:title" content="Kundenkonto | Taxi Germersheim GmbH">
+  <meta property="og:description" content="Erste Premium-Dashboard-Version für zukünftige Account-Funktionen.">
+  <meta property="og:url" content="kundenkonto.html">
   <meta property="og:image" content="logo.png">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -25,10 +25,10 @@
         <span class="menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
       </button>
       <nav class="site-nav">
-        <a href="index.html" class="active">Startseite</a>
+        <a href="index.html">Startseite</a>
         <a href="index.html?page=services">Leistungen</a>
         <a href="flotte.html">Fahrzeugflotte</a>
-        <a href="kundenkonto.html">Kundenkonto</a>
+        <a href="kundenkonto.html" class="active">Kundenkonto</a>
         <a href="index.html?page=why">Über uns</a>
         <a href="index.html#kontakt">Kontakt</a>
       </nav>
@@ -38,63 +38,93 @@
       </div>
     </header>
 
-    <section id="impressum" class="screen active simple legal-page">
-      <header class="page-head"><a href="index.html" class="page-head-link" aria-label="Zur Startseite">‹</a><h2>Impressum</h2><i></i></header>
+    <section id="account" class="screen active simple account-page">
+      <header class="page-head"><a href="index.html" class="page-head-link" aria-label="Zur Startseite">‹</a><h2>Kundenkonto</h2><i></i></header>
 
-      <article class="legal-hero">
-        <small>Rechtliche Angaben</small>
-        <h1>Taxi Germersheim GmbH</h1>
-        <p>Alle gesetzlichen Pflichtangaben im Überblick.</p>
+      <article class="account-hero">
+        <small>PREMIUM DASHBOARD</small>
+        <h1>Ihr persönliches Kundenkonto</h1>
+        <p>Diese erste Version ist als hochwertiges Design- und Struktur-Fundament vorbereitet. Registrierung, Login und Datenanbindung folgen in einem späteren Schritt.</p>
       </article>
 
-      <section class="legal-grid" aria-label="Impressumsangaben">
-        <article class="legal-card legal-card-company">
-          <div class="legal-card-head"><i data-icon="home"></i><b>Unternehmensdaten</b></div>
-          <div class="legal-row">
-            <p>Taxi Germersheim GmbH<br>Friedrich-Ebert-Straße 8<br>76726 Germersheim<br>Deutschland</p>
+      <p class="account-maintenance-note">Strukturhinweis: Jede Karte kann später direkt über data-account-card und data-account-field mit echten Datenquellen verbunden werden.</p>
+
+      <section class="account-grid" aria-label="Kundenkonto Dashboard">
+        <article class="account-card account-card-profile" data-account-card="profile">
+          <div class="account-card-head">
+            <h3>Profil</h3>
+            <small>Status: Platzhalter</small>
+          </div>
+          <div class="account-profile-wrap">
+            <img class="account-avatar" src="assets/icons/account-avatar-placeholder.svg" alt="Profilbild Platzhalter" loading="lazy" data-account-field="profileImage">
+            <div class="account-profile-meta">
+              <strong data-account-field="name">Max Mustermann</strong>
+              <span data-account-field="memberSince">Mitglied seit: Januar 2026</span>
+            </div>
+          </div>
+          <div class="account-actions" aria-label="Konto Aktionen">
+            <button class="button" type="button">Anmelden</button>
+            <button class="button" type="button">Registrieren</button>
+            <button class="button" type="button">Später abmelden</button>
           </div>
         </article>
 
-        <article class="legal-card legal-card-contact">
-          <div class="legal-card-head"><i data-icon="phone"></i><b>Kontakt</b></div>
-          <div class="legal-row">
-            <b>Telefon</b>
-            <p><a href="tel:072743567">07274 3567</a></p>
+        <article class="account-card" data-account-card="rewards">
+          <div class="account-card-head">
+            <h3>Rewards</h3>
+            <small>Vorteilsprogramm</small>
           </div>
-          <div class="legal-row">
-            <b>E-Mail</b>
-            <p><a href="mailto:info@taxigermersheim.de">info@taxigermersheim.de</a></p>
+          <ul class="account-list" aria-label="Rewards Übersicht">
+            <li><span>Rewards-Level</span><b data-account-field="rewardsLevel">Gold</b></li>
+            <li><span>Punkte</span><b data-account-field="points">230</b></li>
+          </ul>
+        </article>
+
+        <article class="account-card" data-account-card="badges">
+          <div class="account-card-head">
+            <h3>Abzeichen</h3>
+            <small>Erreichte Meilensteine</small>
+          </div>
+          <div class="account-badges" data-account-field="badges">
+            <span>Premium Stammkunde</span>
+            <span>Flughafen-Profi</span>
+            <span>Frühbucher</span>
           </div>
         </article>
 
-        <article class="legal-card legal-card-management">
-          <div class="legal-card-head"><i data-icon="user"></i><b>Geschäftsführung</b></div>
-          <div class="legal-row">
-            <p>Ismet Enes Carman<br>Sermin Duman</p>
+        <article class="account-card" data-account-card="favorite-addresses">
+          <div class="account-card-head">
+            <h3>Lieblingsadressen</h3>
+            <small>Schnellauswahl</small>
           </div>
+          <ul class="account-list" data-account-field="favoriteAddresses" aria-label="Lieblingsadressen">
+            <li><span>Zuhause</span><b>Germersheim Zentrum</b></li>
+            <li><span>Arbeit</span><b>Industriegebiet Süd</b></li>
+            <li><span>Regelziel</span><b>Bahnhof Germersheim</b></li>
+          </ul>
         </article>
 
-        <article class="legal-card legal-card-register">
-          <div class="legal-card-head"><i data-icon="booking"></i><b>Registerdaten</b></div>
-          <div class="legal-row">
-            <b>Registergericht</b>
-            <p>Amtsgericht Landau in der Pfalz</p>
+        <article class="account-card" data-account-card="booking-history">
+          <div class="account-card-head">
+            <h3>Buchungshistorie</h3>
+            <small>Letzte Fahrten</small>
           </div>
-          <div class="legal-row">
-            <b>Registernummer</b>
-            <p>HRB 33841</p>
-          </div>
-          <div class="legal-row">
-            <b>Steuernummer</b>
-            <p>41/650/23698</p>
-          </div>
+          <ul class="account-list" data-account-field="bookingHistory" aria-label="Buchungshistorie">
+            <li><span>18.06.2026</span><b>Germersheim → FRA</b></li>
+            <li><span>12.06.2026</span><b>Krankenfahrt Dialyse</b></li>
+            <li><span>04.06.2026</span><b>Bahnhof → Innenstadt</b></li>
+          </ul>
         </article>
 
-        <article class="legal-card legal-card-authority">
-          <div class="legal-card-head"><i data-icon="pin"></i><b>Genehmigungsbehörde</b></div>
-          <div class="legal-row">
-            <p>Kreisverwaltung Germersheim<br>Luitpoldplatz 1<br>76726 Germersheim</p>
+        <article class="account-card" data-account-card="vouchers">
+          <div class="account-card-head">
+            <h3>Gutscheine</h3>
+            <small>Verfügbare Rabatte</small>
           </div>
+          <ul class="account-list" data-account-field="vouchers" aria-label="Gutscheine">
+            <li><span>Sommerbonus</span><b>10% auf nächste Fahrt</b></li>
+            <li><span>Treuevorteil</span><b>5 EUR Guthaben</b></li>
+          </ul>
         </article>
       </section>
     </section>
