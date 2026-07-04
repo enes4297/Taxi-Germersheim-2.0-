@@ -1417,6 +1417,31 @@
     const segments=activeWheel.segments;
     const segmentAngle=360/segments.length;
     const pointerAngle=270;
+    const spinStorageKey='taxiRewardsLastSpinDate';
+
+    function getTodayYmd(){
+      const now=new Date();
+      const year=now.getFullYear();
+      const month=String(now.getMonth()+1).padStart(2,'0');
+      const day=String(now.getDate()).padStart(2,'0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function getStoredSpinDate(){
+      try{
+        return localStorage.getItem(spinStorageKey) || '';
+      }catch(_err){
+        return '';
+      }
+    }
+
+    function setStoredSpinDate(value){
+      try{
+        localStorage.setItem(spinStorageKey,value);
+      }catch(_err){
+        // Ignore storage errors in demo mode.
+      }
+    }
 
     // Optional audio hook layer (no assets yet).
     const audioHooks={
@@ -1544,7 +1569,7 @@
         overlay,
         cards,
         centerRatio:.5,
-        labelRadiusRatio:208/560,
+        labelRadiusRatio:168/560,
         baseAngles:segmentData.map((_,index)=>-90 + index*segmentAngle + segmentAngle/2),
         size:0
       };
@@ -1561,11 +1586,11 @@
       const aspect=1.55;
       const noOverlapWidth=safeDiag/Math.sqrt(1+Math.pow(1/aspect,2));
       const baseWidth=clamp(54,Math.min(arcLen*.84,noOverlapWidth),114);
-      const cardWidth=clamp(40,baseWidth*.73,84);
-      const cardHeight=clamp(30,cardWidth/aspect,44);
-      const iconSize=clamp(9.5,cardWidth*.175,15.5);
-      const titleSize=clamp(7.2,cardWidth*.112,11.4);
-      const descSize=clamp(6.6,cardWidth*.096,9.6);
+      const cardWidth=clamp(34,baseWidth*.58,70);
+      const cardHeight=clamp(26,cardWidth/aspect,40);
+      const iconSize=clamp(8.6,cardWidth*.17,13.2);
+      const titleSize=clamp(6.8,cardWidth*.106,10.2);
+      const descSize=clamp(6.2,cardWidth*.09,8.9);
       overlayState.overlay.style.setProperty('--rv2-text-card-w',`${cardWidth.toFixed(2)}px`);
       overlayState.overlay.style.setProperty('--rv2-text-card-h',`${cardHeight.toFixed(2)}px`);
       overlayState.overlay.style.setProperty('--rv2-text-icon-size',`${iconSize.toFixed(2)}px`);
@@ -1703,6 +1728,29 @@
       let rotation=0;
       let frameId=0;
       let lastPointerBucket=-1;
+      const defaultSpinBtnText='Rad drehen';
+      const defaultNoteText=(note?.textContent || '').trim();
+
+      function hasTodayCooldown(){
+        return getStoredSpinDate()===getTodayYmd();
+      }
+
+      function applyCooldownUi(locked){
+        spun=locked;
+        if(locked){
+          spinBtn.disabled=true;
+          spinBtn.setAttribute('aria-busy','false');
+          spinBtn.textContent='Heute bereits gedreht';
+          if(note) note.textContent='Morgen wieder verfügbar';
+          return;
+        }
+
+        if(spinning) return;
+        spinBtn.disabled=false;
+        spinBtn.removeAttribute('aria-busy');
+        spinBtn.textContent=defaultSpinBtnText;
+        if(note && defaultNoteText) note.textContent=defaultNoteText;
+      }
 
       function setWheelRotation(value){
         disc.style.transform=`rotate(${value}deg)`;
@@ -1748,7 +1796,12 @@
       }
 
       spinBtn.addEventListener('click',()=>{
-        if(spun || spinning) return;
+        if(spinning) return;
+        if(hasTodayCooldown()){
+          applyCooldownUi(true);
+          return;
+        }
+        if(spun) return;
 
         spinning=true;
         spun=true;
@@ -1823,14 +1876,14 @@
             }
           }
 
-          if(note) note.textContent='Morgen erneut verfügbar';
-          spinBtn.textContent='Bereits gedreht';
-          spinBtn.setAttribute('aria-busy','false');
+          setStoredSpinDate(getTodayYmd());
+          applyCooldownUi(true);
         });
       });
 
       refreshOverlayTypography(textOverlay);
       setWheelRotation(rotation);
+      applyCooldownUi(hasTodayCooldown());
       const onResize=()=>{
         refreshOverlayTypography(textOverlay);
         updateOverlayPositions(textOverlay,rotation);
