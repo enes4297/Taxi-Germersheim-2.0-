@@ -1400,14 +1400,14 @@
       standard:{
         id:'standard',
         segments:[
-          {key:'points-10',label:'10 Punkte',message:'Du hast 10 Punkte gewonnen.',win:true,effect:'points'},
-          {key:'points-25',label:'25 Punkte',message:'Du hast 25 Punkte gewonnen.',win:true,effect:'points'},
-          {key:'points-50',label:'50 Punkte',message:'Du hast 50 Punkte gewonnen.',win:true,effect:'points'},
-          {key:'voucher',label:'5 EUR Gutschein',message:'Du hast einen 5 EUR Gutschein gewonnen.',win:true,effect:'voucher'},
-          {key:'free-ride',label:'Freifahrt-Los',message:'Du hast ein Freifahrt-Los gewonnen.',win:true,effect:'free-ride'},
-          {key:'no-win',label:'Niete',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false,effect:'no-win'},
-          {key:'extra-spin',label:'Extra Dreh',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
-          {key:'mystery',label:'Geheimpreis',message:'Du hast einen Geheimpreis gewonnen.',win:true,effect:'mystery'}
+          {key:'points-10',icon:'★',label:'10 Punkte',desc:'Sofortbonus',message:'Du hast 10 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'points-25',icon:'★',label:'25 Punkte',desc:'Starker Bonus',message:'Du hast 25 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'points-50',icon:'★',label:'50 Punkte',desc:'Premium Bonus',message:'Du hast 50 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'voucher',icon:'🎟',label:'5 EUR Gutschein',desc:'Ticket Reward',message:'Du hast einen 5 EUR Gutschein gewonnen.',win:true,effect:'voucher'},
+          {key:'free-ride',icon:'🚕',label:'Freifahrt-Los',desc:'Taxi Extra',message:'Du hast ein Freifahrt-Los gewonnen.',win:true,effect:'free-ride'},
+          {key:'no-win',icon:'✕',label:'Niete',desc:'Heute kein Gewinn',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false,effect:'no-win'},
+          {key:'extra-spin',icon:'↻',label:'Extra Dreh',desc:'Noch eine Chance',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
+          {key:'mystery',icon:'🎁',label:'Geheimpreis',desc:'Mystery Reward',message:'Du hast einen Geheimpreis gewonnen.',win:true,effect:'mystery'}
         ]
       }
       // Future-ready slots:
@@ -1438,6 +1438,133 @@
         audio.currentTime=0;
       }
     };
+
+    function polarToCartesian(cx,cy,r,deg){
+      const rad=(deg*Math.PI)/180;
+      return {x:cx + r*Math.cos(rad),y:cy + r*Math.sin(rad)};
+    }
+
+    function describeWedgePath(cx,cy,outerR,innerR,startDeg,endDeg){
+      const p1=polarToCartesian(cx,cy,outerR,startDeg);
+      const p2=polarToCartesian(cx,cy,outerR,endDeg);
+      const p3=polarToCartesian(cx,cy,innerR,endDeg);
+      const p4=polarToCartesian(cx,cy,innerR,startDeg);
+      const largeArc=endDeg-startDeg<=180 ? 0 : 1;
+      return [
+        `M ${p1.x.toFixed(3)} ${p1.y.toFixed(3)}`,
+        `A ${outerR} ${outerR} 0 ${largeArc} 1 ${p2.x.toFixed(3)} ${p2.y.toFixed(3)}`,
+        `L ${p3.x.toFixed(3)} ${p3.y.toFixed(3)}`,
+        `A ${innerR} ${innerR} 0 ${largeArc} 0 ${p4.x.toFixed(3)} ${p4.y.toFixed(3)}`,
+        'Z'
+      ].join(' ');
+    }
+
+    function ensureSvgDefs(svg,uid){
+      const defs=svg.querySelector('defs');
+      if(!defs || defs.dataset.ready==='true') return;
+      defs.insertAdjacentHTML('beforeend',[
+        `<linearGradient id="rv2SvgMetalOuter" x1="0%" y1="0%" x2="100%" y2="100%">`,
+        '<stop offset="0%" stop-color="#fff1be"/>',
+        '<stop offset="28%" stop-color="#e0b356"/>',
+        '<stop offset="58%" stop-color="#9a6a24"/>',
+        '<stop offset="100%" stop-color="#f5cd78"/>',
+        '</linearGradient>',
+        `<linearGradient id="rv2SvgMetalInner" x1="0%" y1="100%" x2="100%" y2="0%">`,
+        '<stop offset="0%" stop-color="#7d531d"/>',
+        '<stop offset="45%" stop-color="#f0c66c"/>',
+        '<stop offset="100%" stop-color="#8c5b20"/>',
+        '</linearGradient>',
+        `<linearGradient id="rv2SvgSegmentDark" x1="0%" y1="0%" x2="100%" y2="100%">`,
+        '<stop offset="0%" stop-color="#1f1a14"/>',
+        '<stop offset="100%" stop-color="#4a3722"/>',
+        '</linearGradient>',
+        `<linearGradient id="rv2SvgSegmentGold" x1="0%" y1="0%" x2="100%" y2="100%">`,
+        '<stop offset="0%" stop-color="#5d4325"/>',
+        '<stop offset="100%" stop-color="#8a6535"/>',
+        '</linearGradient>',
+        `<linearGradient id="rv2SvgSegmentHit" x1="0%" y1="0%" x2="100%" y2="100%">`,
+        '<stop offset="0%" stop-color="#d9a94a"/>',
+        '<stop offset="100%" stop-color="#f8dd95"/>',
+        '</linearGradient>'
+      ].join(''));
+      defs.dataset.ready='true';
+    }
+
+    function buildSvgWheel(widget,segmentData){
+      const svg=$('.rv2-wheel-svg',widget);
+      if(!svg) return null;
+      if(svg.dataset.built==='true'){
+        return {segmentPaths:$$('.rv2-svg-segment',svg)};
+      }
+
+      ensureSvgDefs(svg);
+      const ledsGroup=$('.rv2-svg-leds',svg);
+      const segmentsGroup=$('.rv2-svg-segments',svg);
+      const labelsGroup=$('.rv2-svg-labels',svg);
+      if(!ledsGroup || !segmentsGroup || !labelsGroup) return null;
+
+      const cx=280;
+      const cy=280;
+      const outerR=214;
+      const innerR=116;
+      const labelR=164;
+
+      ledsGroup.innerHTML='';
+      for(let i=0;i<80;i++){
+        const angle=-90 + i*(360/80);
+        const pos=polarToCartesian(cx,cy,226,angle);
+        const led=document.createElementNS('http://www.w3.org/2000/svg','circle');
+        led.setAttribute('cx',pos.x.toFixed(3));
+        led.setAttribute('cy',pos.y.toFixed(3));
+        led.setAttribute('r',i%2===0 ? '1.9' : '1.5');
+        led.setAttribute('class','rv2-svg-led');
+        ledsGroup.append(led);
+      }
+
+      segmentsGroup.innerHTML='';
+      labelsGroup.innerHTML='';
+
+      segmentData.forEach((segment,index)=>{
+        const startDeg=-90 + index*segmentAngle;
+        const endDeg=startDeg + segmentAngle;
+        const midDeg=startDeg + segmentAngle/2;
+
+        const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+        path.setAttribute('d',describeWedgePath(cx,cy,outerR,innerR,startDeg,endDeg));
+        path.setAttribute('class',`rv2-svg-segment ${index%2===0 ? 'is-even' : 'is-odd'}`);
+        path.dataset.segmentIndex=String(index);
+        segmentsGroup.append(path);
+
+        const labelPoint=polarToCartesian(cx,cy,labelR,midDeg);
+        const group=document.createElementNS('http://www.w3.org/2000/svg','g');
+        group.setAttribute('class','rv2-svg-label-group');
+        group.setAttribute('transform',`translate(${labelPoint.x.toFixed(3)} ${labelPoint.y.toFixed(3)})`);
+
+        const icon=document.createElementNS('http://www.w3.org/2000/svg','text');
+        icon.setAttribute('class','rv2-svg-label-icon');
+        icon.setAttribute('x','0');
+        icon.setAttribute('y','-14');
+        icon.textContent=segment.icon;
+
+        const title=document.createElementNS('http://www.w3.org/2000/svg','text');
+        title.setAttribute('class','rv2-svg-label-title');
+        title.setAttribute('x','0');
+        title.setAttribute('y','2');
+        title.textContent=segment.label;
+
+        const desc=document.createElementNS('http://www.w3.org/2000/svg','text');
+        desc.setAttribute('class','rv2-svg-label-desc');
+        desc.setAttribute('x','0');
+        desc.setAttribute('y','16');
+        desc.textContent=segment.desc || '';
+
+        group.append(icon,title,desc);
+        labelsGroup.append(group);
+      });
+
+      svg.dataset.built='true';
+      return {segmentPaths:$$('.rv2-svg-segment',svg)};
+    }
 
     // Three-phase profile: acceleration, cruise, deceleration.
     const spinEase=t=>{
@@ -1496,6 +1623,7 @@
       const winCard=$('.rv2-win-card',widget);
       const winMessage=$('[data-rewards-win-message]',widget);
       const confettiHost=$('.rv2-confetti',widget);
+      const svgBuild=buildSvgWheel(widget,segments);
       const labels=$$('.rv2-wheel-labels li',widget);
       if(!disc || !spinBtn || !result) return;
 
@@ -1557,6 +1685,7 @@
         spinBtn.textContent='Dreht...';
         result.textContent='Das Rad dreht...';
         result.classList.remove('is-win','is-lose');
+        svgBuild?.segmentPaths?.forEach(path=>path.classList.remove('is-hit'));
         labels.forEach(li=>li.classList.remove('is-hit'));
         widget.classList.add('is-spinning');
         if(wheelShell) wheelShell.classList.add('is-spinning');
@@ -1571,7 +1700,6 @@
 
         // Target angle maps the chosen segment center to the fixed top pointer.
         const selectedIndex=Math.floor(Math.random()*segments.length);
-        const selectedSegment=segments[selectedIndex];
         const centerAngle=selectedIndex*segmentAngle + segmentAngle/2;
         const extraTurns=5 + Math.floor(Math.random()*3);
         const jitter=(Math.random()-0.5)*(segmentAngle*0.26);
@@ -1587,6 +1715,10 @@
           if(wheelShell) wheelShell.classList.remove('is-spinning');
           audioHooks.stop('spinLoop');
 
+          const normalized=((pointerAngle-(rotation%360))+360)%360;
+          const finalIndex=Math.floor(normalized/segmentAngle)%segments.length;
+          const selectedSegment=segments[finalIndex];
+
           if(selectedSegment.win){
             result.textContent=`Gewinn: ${selectedSegment.label}`;
             result.classList.add('is-win');
@@ -1600,7 +1732,8 @@
               requestAnimationFrame(()=>winCard.classList.add('is-visible'));
             }
 
-            labels[selectedIndex]?.classList.add('is-hit');
+            svgBuild?.segmentPaths?.[finalIndex]?.classList.add('is-hit');
+            labels[finalIndex]?.classList.add('is-hit');
             widget.classList.add('is-win-flash');
             setTimeout(()=>widget.classList.remove('is-win-flash'),360);
 
