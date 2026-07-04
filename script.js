@@ -1399,9 +1399,10 @@
     const segmentAngle=360/segments.length;
 
     widgets.forEach((widget,index)=>{
-      const disc=$('.rewards-wheel-disc',widget);
-      const spinBtn=$('.rewards-spin-btn',widget);
-      const result=$('.rewards-spin-result',widget);
+      const disc=$('.rv2-wheel-rotator',widget) || $('.rewards-wheel-disc',widget);
+      const spinBtn=$('.rv2-spin-btn',widget) || $('.rewards-spin-btn',widget);
+      const result=$('.rv2-spin-result',widget) || $('.rewards-spin-result',widget);
+      const note=$('.rv2-spin-note',widget) || $('.rewards-spin-note',widget);
       if(!disc || !spinBtn || !result) return;
 
       let spun=false;
@@ -1428,6 +1429,8 @@
           disc.removeEventListener('transitionend',onDone);
           spinning=false;
           result.textContent=`Ergebnis: ${segments[selectedIndex]}`;
+          if(note) note.textContent='Du kannst morgen wieder drehen.';
+          spinBtn.textContent='Morgen wieder drehen';
         };
 
         disc.addEventListener('transitionend',onDone,{once:true});
@@ -1436,6 +1439,8 @@
           if(spinning){
             spinning=false;
             result.textContent=`Ergebnis: ${segments[selectedIndex]}`;
+            if(note) note.textContent='Du kannst morgen wieder drehen.';
+            spinBtn.textContent='Morgen wieder drehen';
           }
         },4300);
       });
