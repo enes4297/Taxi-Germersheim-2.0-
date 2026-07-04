@@ -78,6 +78,16 @@
   const CONSENT_STORAGE_KEY='taxiGermersheimCookieConsent';
   const CONSENT_ALL='all';
   const CONSENT_NECESSARY='necessary';
+  const CONTACT_SERVICE_CONFIG={
+    // Set provider to 'formspree' or 'emailjs' when real transport is connected.
+    provider:null,
+    formspreeEndpoint:'',
+    emailjs:{
+      serviceId:'',
+      templateId:'',
+      publicKey:''
+    }
+  };
 
   function getFocusableElements(container){
     if(!container) return [];
@@ -448,24 +458,129 @@
     const privacy=$('#requestPrivacy');
     const submit=$('#requestSubmit');
     const status=$('#requestStatus');
+    const requiredFields=$$('[required]',form);
+
+    function setStatus(message,isError){
+      if(!status) return;
+      status.textContent=message;
+      status.dataset.state=isError?'error':'success';
+    }
+
+    function clearStatus(){
+      if(!status) return;
+      status.textContent='';
+      delete status.dataset.state;
+    }
+
+    function getPayload(){
+      const data=new FormData(form);
+      return {
+        name:(data.get('name')||'').toString().trim(),
+        phone:(data.get('phone')||'').toString().trim(),
+        email:(data.get('email')||'').toString().trim(),
+        pickup:(data.get('pickup')||'').toString().trim(),
+        destination:(data.get('destination')||'').toString().trim(),
+        date:(data.get('date')||'').toString().trim(),
+        time:(data.get('time')||'').toString().trim(),
+        passengers:(data.get('passengers')||'').toString().trim(),
+        message:(data.get('message')||'').toString().trim(),
+        privacyAccepted:!!privacy?.checked
+      };
+    }
+
+    function validateRequiredFields(){
+      requiredFields.forEach(field=>field.removeAttribute('aria-invalid'));
+
+      const invalidFields=requiredFields.filter(field=>{
+        if(field.type==='checkbox') return !field.checked;
+        if(field.type==='email') return !field.value.trim() || !field.checkValidity();
+        return !field.value.trim() || !field.checkValidity();
+      });
+
+      invalidFields.forEach(field=>field.setAttribute('aria-invalid','true'));
+      return invalidFields;
+    }
+
+    async function sendContactRequest(payload){
+      if(CONTACT_SERVICE_CONFIG.provider==='formspree'){
+        if(!CONTACT_SERVICE_CONFIG.formspreeEndpoint) throw new Error('not_configured');
+        const response=await fetch(CONTACT_SERVICE_CONFIG.formspreeEndpoint,{
+          method:'POST',
+          headers:{
+            'Accept':'application/json',
+            'Content-Type':'application/json'
+          },
+          body:JSON.stringify(payload)
+        });
+        if(!response.ok) throw new Error('send_failed');
+        return;
+      }
+
+      if(CONTACT_SERVICE_CONFIG.provider==='emailjs'){
+        const {serviceId,templateId,publicKey}=CONTACT_SERVICE_CONFIG.emailjs;
+        if(!serviceId || !templateId || !publicKey) throw new Error('not_configured');
+
+        const response=await fetch('https://api.emailjs.com/api/v1.0/email/send',{
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json'
+          },
+          body:JSON.stringify({
+            service_id:serviceId,
+            template_id:templateId,
+            user_id:publicKey,
+            template_params:payload
+          })
+        });
+        if(!response.ok) throw new Error('send_failed');
+        return;
+      }
+
+      throw new Error('not_configured');
+    }
 
     function syncFormState(){
       const allowSubmit=!!privacy?.checked;
       if(submit) submit.disabled=!allowSubmit;
     }
 
-    privacy?.addEventListener('change',syncFormState);
+    privacy?.addEventListener('change',()=>{
+      syncFormState();
+      clearStatus();
+      privacy.removeAttribute('aria-invalid');
+    });
 
-    form.addEventListener('submit',e=>{
+    form.addEventListener('input',e=>{
+      clearStatus();
+      if(e.target?.hasAttribute?.('aria-invalid')) e.target.removeAttribute('aria-invalid');
+    });
+
+    form.addEventListener('submit',async e=>{
       e.preventDefault();
-      if(!privacy?.checked){
-        if(status) status.textContent='Bitte Datenschutz-Einwilligung aktivieren.';
+      const invalidFields=validateRequiredFields();
+      if(invalidFields.length){
+        setStatus('Bitte füllen Sie alle Pflichtfelder korrekt aus und bestätigen Sie den Datenschutz.',true);
+        invalidFields[0].focus();
         return;
       }
-      if(!form.reportValidity()) return;
 
-      // TODO: Hier spaeter Formspree, Netlify Forms, EmailJS oder eigenen API-Endpoint anbinden.
-      if(status) status.textContent='Formular ist vorbereitet. Versand wird spaeter an einen Dienst angebunden.';
+      const payload=getPayload();
+      if(submit) submit.disabled=true;
+
+      try{
+        await sendContactRequest(payload);
+        form.reset();
+        syncFormState();
+        setStatus('Ihre Anfrage wurde erfolgreich gesendet.',false);
+      }catch(error){
+        if(error?.message==='not_configured'){
+          setStatus('Der Versanddienst ist noch nicht verbunden. Bitte rufen Sie uns an oder schreiben Sie per WhatsApp.',true);
+        }else{
+          setStatus('Der Versand konnte nicht abgeschlossen werden. Bitte rufen Sie uns an oder schreiben Sie per WhatsApp.',true);
+        }
+      }finally{
+        syncFormState();
+      }
     });
 
     syncFormState();
