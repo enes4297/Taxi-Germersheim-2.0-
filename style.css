@@ -2893,17 +2893,23 @@ input:focus,textarea:focus,select:focus,
 #rewards.rewards-v2 .rv2-spin-widget{display:grid;justify-items:center;gap:12px}
 
 #rewards.rewards-v2 .rv2-wheel-shell{position:relative;width:min(560px,100%);aspect-ratio:1/1;display:grid;place-items:center;isolation:isolate}
+#rewards.rewards-v2 .rv2-wheel-shell{transform:translateZ(0);transition:transform .35s cubic-bezier(.22,.61,.36,1),filter .35s ease}
+#rewards.rewards-v2 .rv2-spin-widget.is-spinning .rv2-wheel-shell{animation:rv2WheelCamera 4.8s cubic-bezier(.2,.65,.2,1) both;filter:drop-shadow(0 24px 46px rgba(0,0,0,.42))}
 #rewards.rewards-v2 .rv2-wheel-shell::before{content:'';position:absolute;inset:-7px;border-radius:50%;background:linear-gradient(145deg,#fff2bf 0%,#f4cf77 20%,#c38c2c 45%,#744f1f 62%,#f2ce79 86%,#fff0bc 100%);box-shadow:0 24px 48px rgba(0,0,0,.32),0 0 0 2px rgba(255,236,167,.4),inset 0 2px 4px rgba(255,255,255,.5),inset 0 -6px 8px rgba(58,34,9,.32);z-index:0}
+#rewards.rewards-v2 .rv2-wheel-shell.is-spinning::before{animation:rv2RingReflect 1.2s linear infinite}
 #rewards.rewards-v2 .rv2-wheel-shell::after{content:'';position:absolute;inset:4px;border-radius:50%;border:2px solid rgba(255,233,162,.56);box-shadow:inset 0 0 0 8px rgba(18,13,8,.36),inset 0 0 28px rgba(255,217,106,.18);z-index:1;pointer-events:none}
-#rewards.rewards-v2 .rv2-wheel-pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:22px solid transparent;border-right:22px solid transparent;border-top:44px solid #f8de95;filter:drop-shadow(0 10px 14px rgba(0,0,0,.42)) drop-shadow(0 0 18px rgba(255,217,106,.34));z-index:8}
+#rewards.rewards-v2 .rv2-wheel-pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:22px solid transparent;border-right:22px solid transparent;border-top:44px solid #f8de95;filter:drop-shadow(0 10px 14px rgba(0,0,0,.42)) drop-shadow(0 0 18px rgba(255,217,106,.34));z-index:8;transform-origin:50% 6px}
 #rewards.rewards-v2 .rv2-wheel-pointer::before{content:'';position:absolute;left:50%;top:-42px;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#fff0bf,#d1932d);border:1px solid rgba(0,0,0,.22);box-shadow:0 2px 6px rgba(0,0,0,.3),0 0 10px rgba(255,217,106,.36)}
 #rewards.rewards-v2 .rv2-wheel-pointer::after{content:'';position:absolute;left:50%;top:-31px;transform:translateX(-50%);width:22px;height:10px;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.52),rgba(255,255,255,0));opacity:.82}
+#rewards.rewards-v2 .rv2-wheel-pointer.is-tick{animation:rv2PointerTick .2s cubic-bezier(.22,.61,.36,1)}
 #rewards.rewards-v2 .rv2-wheel-rotator{position:relative;width:100%;height:100%;border-radius:50%;transform:rotate(0deg);will-change:transform}
 
 #rewards.rewards-v2 .rv2-wheel-leds{position:absolute;inset:0;border-radius:50%;background:repeating-conic-gradient(rgba(255,232,164,.98) 0deg 1.2deg,rgba(255,232,164,.32) 1.2deg 6.8deg),radial-gradient(circle,rgba(255,227,148,.32),transparent 72%);mask:radial-gradient(circle,transparent 69%,#000 71% 84%,transparent 86%);filter:drop-shadow(0 0 14px rgba(255,217,106,.52));z-index:2;animation:rv2LedPulse 2.6s ease-in-out infinite}
+#rewards.rewards-v2 .rv2-spin-widget.is-spinning .rv2-wheel-leds{animation-duration:.9s;filter:drop-shadow(0 0 18px rgba(255,226,146,.62))}
 #rewards.rewards-v2 .rv2-wheel-surface{position:absolute;inset:20px;border-radius:50%;border:2px solid rgba(255,217,106,.62);background:conic-gradient(from -90deg,#241a11 0deg 45deg,#4a3521 45deg 90deg,#1b1510 90deg 135deg,#664622 135deg 180deg,#1d1711 180deg 225deg,#523a22 225deg 270deg,#1b150f 270deg 315deg,#644420 315deg 360deg);box-shadow:inset 0 0 0 18px rgba(255,255,255,.02),inset 0 -20px 36px rgba(0,0,0,.38),inset 0 22px 28px rgba(255,255,255,.04),0 34px 78px rgba(0,0,0,.38);z-index:1}
 #rewards.rewards-v2 .rv2-wheel-surface::before{content:'';position:absolute;inset:0;border-radius:50%;background:repeating-conic-gradient(rgba(255,255,255,.1) 0deg 1deg,transparent 1deg 44deg,rgba(0,0,0,.24) 44deg 45deg)}
 #rewards.rewards-v2 .rv2-wheel-surface::after{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 30% 22%,rgba(255,255,255,.22),rgba(255,255,255,0) 34%),radial-gradient(circle at 70% 74%,rgba(0,0,0,.28),transparent 44%)}
+#rewards.rewards-v2 .rv2-spin-widget.is-spinning .rv2-wheel-surface::after{animation:rv2SurfaceGloss 1.5s linear infinite}
 
 #rewards.rewards-v2 .rv2-wheel-labels{position:absolute;inset:20px;list-style:none;margin:0;padding:0;z-index:3;pointer-events:none}
 #rewards.rewards-v2 .rv2-wheel-labels li{position:absolute;left:50%;top:50%;width:43%;transform-origin:0 0;transform:rotate(calc(var(--i)*45deg - 67.5deg)) translateY(-198px);display:grid;justify-items:center;gap:2px;color:#fff;font-size:12px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;text-shadow:0 2px 4px rgba(0,0,0,.82),0 0 10px rgba(0,0,0,.4)}
@@ -2927,6 +2933,16 @@ input:focus,textarea:focus,select:focus,
 #rewards.rewards-v2 .rv2-win-card.is-visible{opacity:1;transform:translateY(0)}
 #rewards.rewards-v2 .rv2-win-card strong{font-family:var(--serif);font-size:28px;color:#ffe8a7;line-height:1}
 #rewards.rewards-v2 .rv2-win-card p{margin:0;font-size:15px;color:#fff;line-height:1.5}
+#rewards.rewards-v2 .rv2-win-card{position:relative;overflow:hidden}
+#rewards.rewards-v2 .rv2-win-card::before{content:'';position:absolute;inset:0;opacity:.7;background:linear-gradient(120deg,transparent 0 30%,rgba(255,255,255,.24) 46%,transparent 62%);transform:translateX(-100%)}
+#rewards.rewards-v2 .rv2-win-card.is-visible::before{animation:rv2WinSweep .55s ease .08s both}
+#rewards.rewards-v2 .rv2-win-card[data-effect='points']{border-color:rgba(255,217,106,.55);box-shadow:0 0 22px rgba(255,217,106,.24)}
+#rewards.rewards-v2 .rv2-win-card[data-effect='voucher']{border-color:rgba(255,228,166,.68);box-shadow:0 0 24px rgba(255,224,140,.3)}
+#rewards.rewards-v2 .rv2-win-card[data-effect='voucher'] strong::after{content:'  Ticket';font-size:14px;color:#ffe7af;letter-spacing:.08em;text-transform:uppercase}
+#rewards.rewards-v2 .rv2-win-card[data-effect='free-ride'] strong::after{content:'  Taxi';font-size:14px;color:#ffe7af;letter-spacing:.08em;text-transform:uppercase;animation:rv2TaxiPulse 1.1s ease-in-out infinite}
+#rewards.rewards-v2 .rv2-win-card[data-effect='extra-spin']{border-color:rgba(197,129,255,.48);background:linear-gradient(140deg,rgba(170,92,245,.2),rgba(30,22,45,.6));box-shadow:0 0 22px rgba(168,108,255,.26)}
+#rewards.rewards-v2 .rv2-win-card[data-effect='mystery']{border-color:rgba(230,190,255,.48);background:linear-gradient(140deg,rgba(255,217,106,.22),rgba(98,52,158,.38));box-shadow:0 0 24px rgba(202,152,255,.26)}
+#rewards.rewards-v2 .rv2-win-card[data-effect='no-win']{border-color:rgba(255,255,255,.2);background:linear-gradient(140deg,rgba(130,136,152,.14),rgba(26,28,34,.58));box-shadow:none}
 
 #rewards.rewards-v2 .rv2-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:20px}
 #rewards.rewards-v2 .rv2-confetti-piece{position:absolute;top:-8%;left:50%;width:8px;height:14px;border-radius:2px;opacity:.95;transform:translate3d(var(--x,0),-10%,0) rotate(0deg);animation:rv2ConfettiFall var(--dur,1300ms) cubic-bezier(.16,.84,.31,1) forwards}
@@ -3008,6 +3024,41 @@ input:focus,textarea:focus,select:focus,
 @keyframes rv2LedPulse{
   0%,100%{opacity:.9;filter:drop-shadow(0 0 12px rgba(255,217,106,.5))}
   50%{opacity:1;filter:drop-shadow(0 0 18px rgba(255,227,148,.62))}
+}
+
+@keyframes rv2WheelCamera{
+  0%{transform:scale(1)}
+  34%{transform:scale(1.03)}
+  100%{transform:scale(1)}
+}
+
+@keyframes rv2RingReflect{
+  0%{filter:brightness(1)}
+  50%{filter:brightness(1.12)}
+  100%{filter:brightness(1)}
+}
+
+@keyframes rv2SurfaceGloss{
+  0%{opacity:.85;transform:rotate(0deg)}
+  50%{opacity:1;transform:rotate(3deg)}
+  100%{opacity:.85;transform:rotate(0deg)}
+}
+
+@keyframes rv2PointerTick{
+  0%{transform:translateX(-50%) rotate(0deg)}
+  40%{transform:translateX(-50%) rotate(-6deg)}
+  70%{transform:translateX(-50%) rotate(2.5deg)}
+  100%{transform:translateX(-50%) rotate(0deg)}
+}
+
+@keyframes rv2WinSweep{
+  from{transform:translateX(-100%)}
+  to{transform:translateX(100%)}
+}
+
+@keyframes rv2TaxiPulse{
+  0%,100%{opacity:.8;transform:translateY(0)}
+  50%{opacity:1;transform:translateY(-1px)}
 }
 
 @keyframes rv2ConfettiFall{

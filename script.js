@@ -1395,18 +1395,49 @@
     const widgets=$$('[data-rewards-wheel]');
     if(!widgets.length) return;
 
-    const segments=[
-      {label:'10 Punkte',message:'Du hast 10 Punkte gewonnen.',win:true},
-      {label:'25 Punkte',message:'Du hast 25 Punkte gewonnen.',win:true},
-      {label:'50 Punkte',message:'Du hast 50 Punkte gewonnen.',win:true},
-      {label:'5 EUR Gutschein',message:'Du hast einen 5 EUR Gutschein gewonnen.',win:true},
-      {label:'Freifahrt-Los',message:'Du hast ein Freifahrt-Los gewonnen.',win:true},
-      {label:'Niete',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false},
-      {label:'Extra Dreh',message:'Du hast einen Extra-Dreh gewonnen.',win:true},
-      {label:'Geheimpreis',message:'Du hast einen Geheimpreis gewonnen.',win:true}
-    ];
+    // Prepared architecture for future wheel variants (VIP/event/seasonal/etc.).
+    const wheelVariants={
+      standard:{
+        id:'standard',
+        segments:[
+          {key:'points-10',label:'10 Punkte',message:'Du hast 10 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'points-25',label:'25 Punkte',message:'Du hast 25 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'points-50',label:'50 Punkte',message:'Du hast 50 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'voucher',label:'5 EUR Gutschein',message:'Du hast einen 5 EUR Gutschein gewonnen.',win:true,effect:'voucher'},
+          {key:'free-ride',label:'Freifahrt-Los',message:'Du hast ein Freifahrt-Los gewonnen.',win:true,effect:'free-ride'},
+          {key:'no-win',label:'Niete',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false,effect:'no-win'},
+          {key:'extra-spin',label:'Extra Dreh',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
+          {key:'mystery',label:'Geheimpreis',message:'Du hast einen Geheimpreis gewonnen.',win:true,effect:'mystery'}
+        ]
+      }
+      // Future-ready slots:
+      // vip, seasonal, golden-special, event
+    };
+    const activeWheel=wheelVariants.standard;
+    const segments=activeWheel.segments;
     const segmentAngle=360/segments.length;
     const pointerAngle=270;
+
+    // Optional audio hook layer (no assets yet).
+    const audioHooks={
+      enabled:false,
+      assets:{spinLoop:null,tick:null,win:null},
+      play(name,{loop=false}={}){
+        if(!this.enabled) return;
+        const audio=this.assets[name];
+        if(!audio) return;
+        audio.loop=loop;
+        audio.currentTime=0;
+        audio.play().catch(()=>{});
+      },
+      stop(name){
+        if(!this.enabled) return;
+        const audio=this.assets[name];
+        if(!audio) return;
+        audio.pause();
+        audio.currentTime=0;
+      }
+    };
 
     // Short acceleration phase followed by longer deceleration for a more physical spin.
     const spinEase=t=>{
@@ -1449,6 +1480,8 @@
       const spinBtn=$('.rv2-spin-btn',widget) || $('.rewards-spin-btn',widget);
       const result=$('.rv2-spin-result',widget) || $('.rewards-spin-result',widget);
       const note=$('.rv2-spin-note',widget) || $('.rewards-spin-note',widget);
+      const wheelShell=$('.rv2-wheel-shell',widget);
+      const pointer=$('.rv2-wheel-pointer',widget);
       const winCard=$('.rv2-win-card',widget);
       const winMessage=$('[data-rewards-win-message]',widget);
       const confettiHost=$('.rv2-confetti',widget);
@@ -1458,9 +1491,16 @@
       let spinning=false;
       let rotation=0;
       let frameId=0;
+      let lastPointerBucket=-1;
 
       function setWheelRotation(value){
         disc.style.transform=`rotate(${value}deg)`;
+      }
+
+      function pulsePointer(){
+        if(!pointer) return;
+        pointer.classList.remove('is-tick');
+        requestAnimationFrame(()=>pointer.classList.add('is-tick'));
       }
 
       // rAF animation keeps spin smooth and independent from CSS transition timing.
@@ -1474,6 +1514,14 @@
           const eased=spinEase(progress);
           const current=from+(to-from)*eased;
           setWheelRotation(current);
+
+          const normalized=((pointerAngle-(current%360))+360)%360;
+          const pointerBucket=Math.floor(normalized/segmentAngle);
+          if(pointerBucket!==lastPointerBucket){
+            lastPointerBucket=pointerBucket;
+            pulsePointer();
+            audioHooks.play('tick');
+          }
 
           if(progress<1){
             frameId=requestAnimationFrame(tick);
@@ -1494,12 +1542,18 @@
         spun=true;
         spinBtn.disabled=true;
         spinBtn.setAttribute('aria-busy','true');
+        spinBtn.textContent='Dreht...';
         result.textContent='Das Rad dreht...';
         result.classList.remove('is-win','is-lose');
+        widget.classList.add('is-spinning');
+        if(wheelShell) wheelShell.classList.add('is-spinning');
+        audioHooks.play('spinLoop',{loop:true});
+        lastPointerBucket=-1;
 
         if(winCard){
           winCard.hidden=true;
           winCard.classList.remove('is-visible');
+          winCard.removeAttribute('data-effect');
         }
 
         // Target angle maps the chosen segment center to the fixed top pointer.
@@ -1516,24 +1570,35 @@
         animateSpin(startRotation,targetRotation,durationMs,finalRotation=>{
           rotation=((finalRotation%360)+360)%360;
           spinning=false;
+          widget.classList.remove('is-spinning');
+          if(wheelShell) wheelShell.classList.remove('is-spinning');
+          audioHooks.stop('spinLoop');
 
           if(selectedSegment.win){
             result.textContent=`Gewinn: ${selectedSegment.label}`;
             result.classList.add('is-win');
             triggerConfetti(confettiHost);
+            audioHooks.play('win');
 
             if(winCard && winMessage){
               winMessage.textContent=selectedSegment.message;
+              winCard.setAttribute('data-effect',selectedSegment.effect||'points');
               winCard.hidden=false;
               requestAnimationFrame(()=>winCard.classList.add('is-visible'));
             }
           }else{
             result.textContent='Dieses Mal leider kein Gewinn.';
             result.classList.add('is-lose');
+            if(winCard && winMessage){
+              winMessage.textContent=selectedSegment.message;
+              winCard.setAttribute('data-effect','no-win');
+              winCard.hidden=false;
+              requestAnimationFrame(()=>winCard.classList.add('is-visible'));
+            }
           }
 
-          if(note) note.textContent='Du kannst morgen wieder drehen.';
-          spinBtn.textContent='Du kannst morgen wieder drehen.';
+          if(note) note.textContent='Morgen erneut verfügbar';
+          spinBtn.textContent='Bereits gedreht';
           spinBtn.setAttribute('aria-busy','false');
         });
       });
