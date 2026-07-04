@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <title>404 - Seite nicht gefunden | Taxi Germersheim GmbH</title>
+  <meta name="description" content="Seite nicht gefunden bei Taxi Germersheim GmbH. Kehren Sie zur Startseite zurück oder kontaktieren Sie uns direkt per Telefon oder WhatsApp.">
+  <meta name="robots" content="noindex,follow">
+  <link rel="canonical" href="404.html">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .notfound-page {
+      display: block;
+      min-height: 62vh;
+    }
+
+    .notfound-hero {
+      padding: 42px 36px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 217, 106, .24);
+      background: linear-gradient(150deg, rgba(20, 21, 27, .98), rgba(8, 9, 12, .98));
+      box-shadow: 0 28px 68px rgba(0, 0, 0, .3);
+      display: grid;
+      gap: 14px;
+    }
+
+    .notfound-hero small {
+      display: block;
+      color: var(--gold);
+      font-size: 12px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    .notfound-hero h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(38px, 5vw, 58px);
+      line-height: 1;
+      letter-spacing: -.03em;
+      color: #fff;
+    }
+
+    .notfound-hero p {
+      margin: 0;
+      color: rgba(255, 255, 255, .84);
+      font-size: 18px;
+      line-height: 1.65;
+      max-width: 70ch;
+    }
+
+    .notfound-actions {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .notfound-actions .button {
+      min-height: 54px;
+      justify-content: center;
+      font-weight: 860;
+    }
+
+    .notfound-actions .button.primary {
+      border: 1px solid rgba(255, 217, 106, .5);
+      background: linear-gradient(135deg, #ffe7a2, #d6a540);
+      color: #111;
+    }
+
+    .notfound-actions .button.secondary {
+      border: 1px solid rgba(255, 255, 255, .18);
+      background: rgba(255, 255, 255, .06);
+      color: #fff;
+    }
+
+    @media (max-width: 760px) {
+      .notfound-hero {
+        padding: 28px 22px;
+        border-radius: 22px;
+      }
+
+      .notfound-hero p {
+        font-size: 16px;
+      }
+
+      .notfound-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand"><a href="index.html"><img src="logo.png" alt="Taxi Germersheim GmbH"></a></div>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen">
+        <span class="menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <nav class="site-nav">
+        <a href="index.html" class="active">Startseite</a>
+        <a href="index.html?page=services">Leistungen</a>
+        <a href="index.html?page=why">Über uns</a>
+        <a href="index.html#kontakt">Kontakt</a>
+      </nav>
+      <div class="site-nav-backdrop" aria-hidden="true"></div>
+      <div class="top-actions">
+        <a id="headerBookBtn" class="button nav-book-btn" href="index.html?page=booking">Jetzt buchen</a>
+      </div>
+    </header>
+
+    <section id="notfound" class="screen active simple notfound-page">
+      <article class="notfound-hero">
+        <small>404 Fehlerseite</small>
+        <h1>Seite nicht gefunden</h1>
+        <p>Die gewünschte Seite konnte leider nicht gefunden werden.</p>
+
+        <div class="notfound-actions">
+          <a class="button primary" href="index.html">Zur Startseite</a>
+          <a class="button secondary" href="tel:072743567">Jetzt anrufen</a>
+          <a class="button secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer">WhatsApp schreiben</a>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer id="kontakt" class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img class="footer-logo" src="logo.png" alt="Taxi Germersheim GmbH">
+        <strong>Taxi Germersheim</strong>
+        <p>Sicher. Zuverlässig. Pünktlich.</p>
+        <small>24 Stunden täglich für Sie erreichbar.</small>
+        <small class="footer-availability">24/7 erreichbar per Telefon und WhatsApp</small>
+      </div>
+
+      <div class="footer-column footer-services">
+        <strong>Leistungen</strong>
+        <a href="index.html?page=booking">Taxi</a>
+        <a href="index.html?page=medical">Krankenfahrten</a>
+        <a href="index.html?page=booking">Rollstuhlfahrten</a>
+        <a href="index.html?page=booking">Flughafentransfer</a>
+        <a href="index.html?page=booking">Kurierfahrten</a>
+      </div>
+
+      <div class="footer-column footer-contact">
+        <strong>Kontakt</strong>
+        <a class="footer-cta-primary" href="tel:072743567"><i data-icon="phone"></i><span>Jetzt anrufen: 07274 3567</span></a>
+        <a class="footer-cta-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer"><i data-icon="yumak"></i><span>WhatsApp-Nachricht senden</span></a>
+        <a class="footer-contact-link" href="mailto:info@taxigermersheim.de"><i data-icon="profile"></i><span>E-Mail: info@taxigermersheim.de</span></a>
+        <a class="footer-contact-link" href="https://maps.google.com/?q=Friedrich-Ebert-Stra%C3%9Fe+8,+76726+Germersheim" target="_blank" rel="noreferrer"><i data-icon="pin"></i><span>Adresse: Friedrich-Ebert-Straße 8<br>76726 Germersheim</span></a>
+      </div>
+
+      <div class="footer-column footer-quicklinks">
+        <strong>Schnellzugriff</strong>
+        <a href="index.html">Startseite</a>
+        <a href="index.html?page=why">Über uns</a>
+        <a href="index.html#kontakt">Kontakt</a>
+        <a href="index.html?page=booking">Jetzt buchen</a>
+        <a href="index.html?page=faq">FAQ</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom-line">
+      <p>© 2026 Taxi Germersheim.<br>Alle Rechte vorbehalten.</p>
+      <div class="footer-bottom-links">
+        <a href="datenschutz.html">Datenschutz</a>
+        <a href="impressum.html">Impressum</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom" aria-hidden="true"></div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
