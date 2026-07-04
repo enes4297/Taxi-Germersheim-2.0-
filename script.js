@@ -1400,14 +1400,14 @@
       standard:{
         id:'standard',
         segments:[
-          {key:'points-10',icon:'★',label:'10 Punkte',desc:'Sofortbonus',message:'Du hast 10 Punkte gewonnen.',win:true,effect:'points'},
-          {key:'points-25',icon:'★',label:'25 Punkte',desc:'Starker Bonus',message:'Du hast 25 Punkte gewonnen.',win:true,effect:'points'},
-          {key:'points-50',icon:'★',label:'50 Punkte',desc:'Premium Bonus',message:'Du hast 50 Punkte gewonnen.',win:true,effect:'points'},
-          {key:'voucher',icon:'🎟',label:'5 EUR Gutschein',desc:'Ticket Reward',message:'Du hast einen 5 EUR Gutschein gewonnen.',win:true,effect:'voucher'},
-          {key:'free-ride',icon:'🚕',label:'Freifahrt-Los',desc:'Taxi Extra',message:'Du hast ein Freifahrt-Los gewonnen.',win:true,effect:'free-ride'},
-          {key:'no-win',icon:'✕',label:'Niete',desc:'Heute kein Gewinn',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false,effect:'no-win'},
-          {key:'extra-spin',icon:'↻',label:'Extra Dreh',desc:'Noch eine Chance',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
-          {key:'mystery',icon:'🎁',label:'Geheimpreis',desc:'Mystery Reward',message:'Du hast einen Geheimpreis gewonnen.',win:true,effect:'mystery'}
+          {key:'points-10',icon:'⭐',label:'10 Punkte',desc:'Bonus',message:'Du hast 10 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'points-25',icon:'⭐',label:'25 Punkte',desc:'Bonus',message:'Du hast 25 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'points-50',icon:'⭐',label:'50 Punkte',desc:'Bonus',message:'Du hast 50 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'voucher',icon:'🎁',label:'5 €',desc:'Gutschein',message:'Du hast einen 5 EUR Gutschein gewonnen.',win:true,effect:'voucher'},
+          {key:'free-ride',icon:'🚖',label:'Freifahrt',desc:'Los',message:'Du hast ein Freifahrt-Los gewonnen.',win:true,effect:'free-ride'},
+          {key:'no-win',icon:'✕',label:'Niete',desc:'Kein Gewinn',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false,effect:'no-win'},
+          {key:'extra-spin',icon:'↻',label:'Extra Dreh',desc:'Chance',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
+          {key:'mystery',icon:'🎁',label:'Geheim',desc:'Preis',message:'Du hast einen Geheimpreis gewonnen.',win:true,effect:'mystery'}
         ]
       }
       // Future-ready slots:
@@ -1459,7 +1459,7 @@
       ].join(' ');
     }
 
-    function ensureSvgDefs(svg,uid){
+    function ensureSvgDefs(svg){
       const defs=svg.querySelector('defs');
       if(!defs || defs.dataset.ready==='true') return;
       defs.insertAdjacentHTML('beforeend',[
@@ -1490,6 +1490,95 @@
       defs.dataset.ready='true';
     }
 
+    function clamp(min,value,max){
+      return Math.min(max,Math.max(min,value));
+    }
+
+    function ensureTextOverlay(widget,segmentData){
+      const shell=$('.rv2-wheel-shell',widget);
+      if(!shell) return null;
+
+      let overlay=$('.rv2-wheel-text-overlay',shell);
+      if(!overlay){
+        overlay=document.createElement('div');
+        overlay.className='rv2-wheel-text-overlay';
+        overlay.setAttribute('aria-hidden','true');
+        shell.append(overlay);
+      }
+
+      overlay.innerHTML='';
+      const cards=segmentData.map((segment,index)=>{
+        const card=document.createElement('div');
+        card.className='rv2-wheel-text-card';
+        card.dataset.segmentIndex=String(index);
+
+        const icon=document.createElement('span');
+        icon.className='rv2-wheel-text-icon';
+        icon.textContent=segment.icon || '⭐';
+
+        const title=document.createElement('span');
+        title.className='rv2-wheel-text-title';
+        title.textContent=segment.label;
+
+        const desc=document.createElement('span');
+        desc.className='rv2-wheel-text-desc';
+        desc.textContent=segment.desc || '';
+
+        card.append(icon,title,desc);
+        overlay.append(card);
+        return card;
+      });
+
+      return {
+        shell,
+        overlay,
+        cards,
+        centerRatio:.5,
+        labelRadiusRatio:200/560,
+        baseAngles:segmentData.map((_,index)=>-90 + index*segmentAngle + segmentAngle/2),
+        size:0
+      };
+    }
+
+    function refreshOverlayTypography(overlayState){
+      if(!overlayState?.overlay) return;
+      const size=Math.max(overlayState.overlay.clientWidth,overlayState.overlay.clientHeight,1);
+      overlayState.size=size;
+      const radius=size*overlayState.labelRadiusRatio;
+      const arcLen=(2*Math.PI*radius)/segments.length;
+      const adjacentDistance=2*radius*Math.sin((segmentAngle/2)*(Math.PI/180));
+      const safeDiag=adjacentDistance*.92;
+      const aspect=1.36;
+      const noOverlapWidth=safeDiag/Math.sqrt(1+Math.pow(1/aspect,2));
+      const cardWidth=clamp(54,Math.min(arcLen*.84,noOverlapWidth),114);
+      const cardHeight=clamp(38,cardWidth/aspect,64);
+      const iconSize=clamp(11,cardWidth*.19,18.5);
+      const titleSize=clamp(8,cardWidth*.12,13.8);
+      const descSize=clamp(7,cardWidth*.105,10.8);
+      overlayState.overlay.style.setProperty('--rv2-text-card-w',`${cardWidth.toFixed(2)}px`);
+      overlayState.overlay.style.setProperty('--rv2-text-card-h',`${cardHeight.toFixed(2)}px`);
+      overlayState.overlay.style.setProperty('--rv2-text-icon-size',`${iconSize.toFixed(2)}px`);
+      overlayState.overlay.style.setProperty('--rv2-text-title-size',`${titleSize.toFixed(2)}px`);
+      overlayState.overlay.style.setProperty('--rv2-text-desc-size',`${descSize.toFixed(2)}px`);
+    }
+
+    function updateOverlayPositions(overlayState,rotationDeg){
+      if(!overlayState?.cards?.length) return;
+      if(!overlayState.size) refreshOverlayTypography(overlayState);
+
+      const size=overlayState.size || overlayState.overlay.clientWidth || 1;
+      const center=size*overlayState.centerRatio;
+      const radius=size*overlayState.labelRadiusRatio;
+
+      overlayState.cards.forEach((card,index)=>{
+        const angle=((overlayState.baseAngles[index] + rotationDeg)*Math.PI)/180;
+        const x=center + Math.cos(angle)*radius;
+        const y=center + Math.sin(angle)*radius;
+        card.style.left=`${(x/size*100).toFixed(3)}%`;
+        card.style.top=`${(y/size*100).toFixed(3)}%`;
+      });
+    }
+
     function buildSvgWheel(widget,segmentData){
       const svg=$('.rv2-wheel-svg',widget);
       if(!svg) return null;
@@ -1507,8 +1596,6 @@
       const cy=280;
       const outerR=214;
       const innerR=116;
-      const labelR=164;
-
       ledsGroup.innerHTML='';
       for(let i=0;i<80;i++){
         const angle=-90 + i*(360/80);
@@ -1527,39 +1614,11 @@
       segmentData.forEach((segment,index)=>{
         const startDeg=-90 + index*segmentAngle;
         const endDeg=startDeg + segmentAngle;
-        const midDeg=startDeg + segmentAngle/2;
-
         const path=document.createElementNS('http://www.w3.org/2000/svg','path');
         path.setAttribute('d',describeWedgePath(cx,cy,outerR,innerR,startDeg,endDeg));
         path.setAttribute('class',`rv2-svg-segment ${index%2===0 ? 'is-even' : 'is-odd'}`);
         path.dataset.segmentIndex=String(index);
         segmentsGroup.append(path);
-
-        const labelPoint=polarToCartesian(cx,cy,labelR,midDeg);
-        const group=document.createElementNS('http://www.w3.org/2000/svg','g');
-        group.setAttribute('class','rv2-svg-label-group');
-        group.setAttribute('transform',`translate(${labelPoint.x.toFixed(3)} ${labelPoint.y.toFixed(3)})`);
-
-        const icon=document.createElementNS('http://www.w3.org/2000/svg','text');
-        icon.setAttribute('class','rv2-svg-label-icon');
-        icon.setAttribute('x','0');
-        icon.setAttribute('y','-14');
-        icon.textContent=segment.icon;
-
-        const title=document.createElementNS('http://www.w3.org/2000/svg','text');
-        title.setAttribute('class','rv2-svg-label-title');
-        title.setAttribute('x','0');
-        title.setAttribute('y','2');
-        title.textContent=segment.label;
-
-        const desc=document.createElementNS('http://www.w3.org/2000/svg','text');
-        desc.setAttribute('class','rv2-svg-label-desc');
-        desc.setAttribute('x','0');
-        desc.setAttribute('y','16');
-        desc.textContent=segment.desc || '';
-
-        group.append(icon,title,desc);
-        labelsGroup.append(group);
       });
 
       svg.dataset.built='true';
@@ -1624,6 +1683,7 @@
       const winMessage=$('[data-rewards-win-message]',widget);
       const confettiHost=$('.rv2-confetti',widget);
       const svgBuild=buildSvgWheel(widget,segments);
+      const textOverlay=ensureTextOverlay(widget,segments);
       const labels=$$('.rv2-wheel-labels li',widget);
       if(!disc || !spinBtn || !result) return;
 
@@ -1635,6 +1695,7 @@
 
       function setWheelRotation(value){
         disc.style.transform=`rotate(${value}deg)`;
+        updateOverlayPositions(textOverlay,value);
       }
 
       function pulsePointer(){
@@ -1686,6 +1747,7 @@
         result.textContent='Das Rad dreht...';
         result.classList.remove('is-win','is-lose');
         svgBuild?.segmentPaths?.forEach(path=>path.classList.remove('is-hit'));
+        textOverlay?.cards?.forEach(card=>card.classList.remove('is-hit'));
         labels.forEach(li=>li.classList.remove('is-hit'));
         widget.classList.add('is-spinning');
         if(wheelShell) wheelShell.classList.add('is-spinning');
@@ -1733,6 +1795,7 @@
             }
 
             svgBuild?.segmentPaths?.[finalIndex]?.classList.add('is-hit');
+            textOverlay?.cards?.[finalIndex]?.classList.add('is-hit');
             labels[finalIndex]?.classList.add('is-hit');
             widget.classList.add('is-win-flash');
             setTimeout(()=>widget.classList.remove('is-win-flash'),360);
@@ -1754,6 +1817,14 @@
           spinBtn.setAttribute('aria-busy','false');
         });
       });
+
+      refreshOverlayTypography(textOverlay);
+      setWheelRotation(rotation);
+      const onResize=()=>{
+        refreshOverlayTypography(textOverlay);
+        updateOverlayPositions(textOverlay,rotation);
+      };
+      window.addEventListener('resize',onResize,{passive:true});
     });
   }
   function hideSplash(){
