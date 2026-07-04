@@ -844,11 +844,29 @@
             <small>ZUKUNFTS-MODUL</small>
             <h3>Glücksrad</h3>
           </div>
-          <div class="rewards-wheel-placeholder" aria-hidden="true">
-            <div class="rewards-wheel-ring"></div>
-            <div class="rewards-wheel-center">Bald</div>
+          <div class="rewards-spin-widget" data-rewards-wheel>
+            <div class="rewards-wheel-shell" aria-hidden="true">
+              <div class="rewards-wheel-pointer"></div>
+              <div class="rewards-wheel-disc-wrap">
+                <div class="rewards-wheel-disc"></div>
+                <ul class="rewards-wheel-labels" aria-hidden="true">
+                  <li style="--i:0">10 Punkte</li>
+                  <li style="--i:1">25 Punkte</li>
+                  <li style="--i:2">50 Punkte</li>
+                  <li style="--i:3">Freifahrt-Los</li>
+                  <li style="--i:4">5 EUR Gutschein</li>
+                  <li style="--i:5">Niete</li>
+                  <li style="--i:6">Extra-Dreh</li>
+                  <li style="--i:7">Geheimpreis</li>
+                </ul>
+              </div>
+              <div class="rewards-wheel-hub">TG</div>
+            </div>
+            <button class="button rewards-spin-btn" type="button">Rad drehen</button>
+            <p class="rewards-spin-result" aria-live="polite">Noch kein Dreh durchgeführt.</p>
+            <small class="rewards-spin-note">Demo-Version - Gewinne werden später mit dem Kundenkonto verbunden.</small>
           </div>
-          <p>Das Glücksrad wird später als eigenes Modul verbunden. Die Fläche ist bereits dafür vorbereitet.</p>
+          <p>Das Glücksrad ist als sichtbare Demo integriert und wird in der nächsten Ausbaustufe mit Punkten, Gutscheinen und Kundenkonto verknüpft.</p>
         </article>
       </section>
 
