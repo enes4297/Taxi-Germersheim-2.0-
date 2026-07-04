@@ -1475,17 +1475,27 @@
         '<stop offset="100%" stop-color="#8c5b20"/>',
         '</linearGradient>',
         `<linearGradient id="rv2SvgSegmentDark" x1="0%" y1="0%" x2="100%" y2="100%">`,
-        '<stop offset="0%" stop-color="#1f1a14"/>',
-        '<stop offset="100%" stop-color="#4a3722"/>',
+        '<stop offset="0%" stop-color="#2b2118"/>',
+        '<stop offset="100%" stop-color="#433120"/>',
         '</linearGradient>',
         `<linearGradient id="rv2SvgSegmentGold" x1="0%" y1="0%" x2="100%" y2="100%">`,
-        '<stop offset="0%" stop-color="#5d4325"/>',
-        '<stop offset="100%" stop-color="#8a6535"/>',
+        '<stop offset="0%" stop-color="#5a4329"/>',
+        '<stop offset="100%" stop-color="#795833"/>',
         '</linearGradient>',
         `<linearGradient id="rv2SvgSegmentHit" x1="0%" y1="0%" x2="100%" y2="100%">`,
         '<stop offset="0%" stop-color="#d9a94a"/>',
         '<stop offset="100%" stop-color="#f8dd95"/>',
-        '</linearGradient>'
+        '</linearGradient>',
+        `<radialGradient id="rv2SvgHubCore" cx="36%" cy="30%" r="72%">`,
+        '<stop offset="0%" stop-color="#fff4cc"/>',
+        '<stop offset="28%" stop-color="#f6cd76"/>',
+        '<stop offset="65%" stop-color="#b57a26"/>',
+        '<stop offset="100%" stop-color="#6d4517"/>',
+        '</radialGradient>',
+        `<filter id="rv2SvgSegDepth" x="-20%" y="-20%" width="140%" height="140%">`,
+        '<feDropShadow dx="0" dy="1.2" stdDeviation="1.8" flood-color="#000" flood-opacity=".28"/>',
+        '<feDropShadow dx="0" dy="-0.2" stdDeviation=".8" flood-color="#fff" flood-opacity=".05"/>',
+        '</filter>'
       ].join(''));
       defs.dataset.ready='true';
     }
@@ -1534,7 +1544,7 @@
         overlay,
         cards,
         centerRatio:.5,
-        labelRadiusRatio:200/560,
+        labelRadiusRatio:208/560,
         baseAngles:segmentData.map((_,index)=>-90 + index*segmentAngle + segmentAngle/2),
         size:0
       };
@@ -1548,13 +1558,14 @@
       const arcLen=(2*Math.PI*radius)/segments.length;
       const adjacentDistance=2*radius*Math.sin((segmentAngle/2)*(Math.PI/180));
       const safeDiag=adjacentDistance*.92;
-      const aspect=1.36;
+      const aspect=1.55;
       const noOverlapWidth=safeDiag/Math.sqrt(1+Math.pow(1/aspect,2));
-      const cardWidth=clamp(54,Math.min(arcLen*.84,noOverlapWidth),114);
-      const cardHeight=clamp(38,cardWidth/aspect,64);
-      const iconSize=clamp(11,cardWidth*.19,18.5);
-      const titleSize=clamp(8,cardWidth*.12,13.8);
-      const descSize=clamp(7,cardWidth*.105,10.8);
+      const baseWidth=clamp(54,Math.min(arcLen*.84,noOverlapWidth),114);
+      const cardWidth=clamp(40,baseWidth*.73,84);
+      const cardHeight=clamp(30,cardWidth/aspect,44);
+      const iconSize=clamp(9.5,cardWidth*.175,15.5);
+      const titleSize=clamp(7.2,cardWidth*.112,11.4);
+      const descSize=clamp(6.6,cardWidth*.096,9.6);
       overlayState.overlay.style.setProperty('--rv2-text-card-w',`${cardWidth.toFixed(2)}px`);
       overlayState.overlay.style.setProperty('--rv2-text-card-h',`${cardHeight.toFixed(2)}px`);
       overlayState.overlay.style.setProperty('--rv2-text-icon-size',`${iconSize.toFixed(2)}px`);
