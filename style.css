@@ -1217,6 +1217,17 @@ input:focus,textarea:focus,select:focus,
   line-height:1.55;
 }
 
+.footer-availability{
+  margin-top:4px;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid rgba(255,217,106,.28);
+  background:rgba(255,217,106,.08);
+  color:#ffe8a7!important;
+  font-size:13px!important;
+  font-weight:780;
+}
+
 .footer-column{
   display:grid;
   gap:8px;
@@ -1235,6 +1246,28 @@ input:focus,textarea:focus,select:focus,
   line-height:1.45;
   border:1px solid transparent;
   transition:background .2s ease,border-color .2s ease,color .2s ease,transform .2s ease;
+}
+
+.footer-contact .footer-cta-primary,
+.footer-contact .footer-cta-secondary{
+  align-items:center;
+  min-height:52px;
+  font-weight:860;
+}
+
+.footer-contact .footer-cta-primary{
+  border-color:rgba(255,217,106,.48);
+  background:linear-gradient(135deg,rgba(255,217,106,.16),rgba(210,163,58,.13));
+  color:#ffe9ae!important;
+}
+
+.footer-contact .footer-cta-secondary{
+  border-color:rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);
+}
+
+.footer-contact .footer-contact-link span{
+  line-height:1.5;
 }
 
 .footer-column a:hover{
@@ -1311,6 +1344,9 @@ input:focus,textarea:focus,select:focus,
   .footer-brand,.footer-column{padding:16px 14px}
   .footer-bottom-line{flex-direction:column;align-items:flex-start;padding-top:14px}
   .footer-bottom-links{width:100%;flex-wrap:wrap}
+  .footer-contact .footer-cta-primary,
+  .footer-contact .footer-cta-secondary,
+  .footer-contact .footer-contact-link{min-height:50px}
 }
 
 /* Phase 4.7 - Premium FAQ Center */
