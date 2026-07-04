@@ -1430,7 +1430,7 @@
           spinning=false;
           result.textContent=`Ergebnis: ${segments[selectedIndex]}`;
           if(note) note.textContent='Du kannst morgen wieder drehen.';
-          spinBtn.textContent='Morgen wieder drehen';
+          spinBtn.textContent='Du kannst morgen wieder drehen.';
         };
 
         disc.addEventListener('transitionend',onDone,{once:true});
@@ -1440,7 +1440,7 @@
             spinning=false;
             result.textContent=`Ergebnis: ${segments[selectedIndex]}`;
             if(note) note.textContent='Du kannst morgen wieder drehen.';
-            spinBtn.textContent='Morgen wieder drehen';
+            spinBtn.textContent='Du kannst morgen wieder drehen.';
           }
         },4300);
       });
