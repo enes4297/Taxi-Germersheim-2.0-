@@ -1993,6 +1993,37 @@
       }
     });
   }
+  function initRewardsYumakAssistant(){
+    const root=$('#rewards.rewards-v2 [data-rewards-yumak]');
+    if(!root) return;
+
+    const tipNode=$('[data-yumak-tip]',root);
+    const nextButton=$('[data-yumak-next-tip]',root);
+    const listItems=$$('li',$('.rv2-yumak-tip-list',root));
+    const tips=listItems.map(item=>item.textContent.trim()).filter(Boolean);
+
+    if(!tipNode || !nextButton || tips.length<2) return;
+
+    let index=Math.max(0,Number(root.dataset.yumakTipIndex || 0));
+
+    function showTip(newIndex){
+      index=((newIndex%tips.length)+tips.length)%tips.length;
+      root.dataset.yumakTipIndex=String(index);
+      tipNode.classList.remove('is-swapping');
+      requestAnimationFrame(()=>{
+        tipNode.textContent=tips[index];
+        tipNode.classList.add('is-swapping');
+      });
+    }
+
+    tipNode.addEventListener('animationend',()=>{
+      tipNode.classList.remove('is-swapping');
+    });
+
+    nextButton.addEventListener('click',()=>{
+      showTip(index+1);
+    });
+  }
   function hideSplash(){
     const splash=document.getElementById('splash');
     if(!splash) return;
@@ -2018,6 +2049,7 @@
     initRewardsVoucherBalance();
     initRewardsMissions();
     initRewardsSeasonalEvents();
+    initRewardsYumakAssistant();
 
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);
