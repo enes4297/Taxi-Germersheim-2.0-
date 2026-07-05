@@ -1836,6 +1836,14 @@
           // never from the initially targeted/random animation hint.
           const finalIndex=getSegmentIndexAtPointer(rotation,segments.length,pointerAngle,segmentStartAngle);
           const selectedSegment=segments[finalIndex];
+          document.dispatchEvent(new CustomEvent('rewards:wheelResult',{
+            detail:{
+              win:Boolean(selectedSegment.win),
+              effect:selectedSegment.effect || (selectedSegment.win ? 'points' : 'no-win'),
+              label:selectedSegment.label || '',
+              message:selectedSegment.message || ''
+            }
+          }));
 
           if(selectedSegment.win){
             result.textContent=`Gewinn: ${selectedSegment.label}`;
@@ -1999,12 +2007,22 @@
 
     const tipNode=$('[data-yumak-tip]',root);
     const nextButton=$('[data-yumak-next-tip]',root);
+    const missionButton=$('[data-yumak-open-mission]',root);
+    const wheelButton=$('[data-yumak-open-wheel]',root);
     const listItems=$$('li',$('.rv2-yumak-tip-list',root));
     const tips=listItems.map(item=>item.textContent.trim()).filter(Boolean);
 
     if(!tipNode || !nextButton || tips.length<2) return;
 
     let index=Math.max(0,Number(root.dataset.yumakTipIndex || 0));
+    const wheelReactions={
+      points:'Stark gedreht. Glueckwunsch zu deinem Reward.',
+      voucher:'Dein Reward ist da. Ich habe den Gutschein direkt fuer dich markiert.',
+      'free-ride':'Grossartig. Eine Freifahrt wurde freigeschaltet.',
+      mystery:'Premium-Moment. Eine Mystery-Belohnung ist aktiv.',
+      'extra-spin':'Extra-Dreh gesichert. Wir nutzen die Chance sofort.',
+      'no-win':'Heute war es eine Niete. Morgen holen wir den Gewinn.'
+    };
 
     function showTip(newIndex){
       index=((newIndex%tips.length)+tips.length)%tips.length;
@@ -2022,6 +2040,33 @@
 
     nextButton.addEventListener('click',()=>{
       showTip(index+1);
+    });
+
+    if(missionButton){
+      missionButton.addEventListener('click',()=>{
+        const missions=$('#rewards.rewards-v2 [data-rewards-missions]');
+        if(missions) missions.scrollIntoView({behavior:'smooth',block:'start'});
+      });
+    }
+
+    if(wheelButton){
+      wheelButton.addEventListener('click',()=>{
+        const wheel=$('#rewards.rewards-v2 [data-rewards-wheel]');
+        if(wheel) wheel.scrollIntoView({behavior:'smooth',block:'start'});
+      });
+    }
+
+    document.addEventListener('rewards:wheelResult',event=>{
+      const detail=event && event.detail ? event.detail : {};
+      const effect=String(detail.effect || (detail.win ? 'points' : 'no-win')).trim().toLowerCase();
+      root.dataset.yumakReaction=effect;
+
+      const reactionText=wheelReactions[effect] || (detail.win ? wheelReactions.points : wheelReactions['no-win']);
+      tipNode.classList.remove('is-swapping');
+      requestAnimationFrame(()=>{
+        tipNode.textContent=reactionText;
+        tipNode.classList.add('is-swapping');
+      });
     });
   }
   function initRewardsActivities(){
