@@ -1433,11 +1433,6 @@
           nextGoal.innerHTML=`Nur noch <strong>${remaining} Punkte</strong> bis ${nextLevel}.`;
         }
       }
-
-      const freshBadges=$$('[data-badge-new="true"]',root);
-      freshBadges.forEach((badge,index)=>{
-        badge.style.animationDelay=`${120 + index*120}ms`;
-      });
     }
 
     function polarToCartesian(cx,cy,r,deg){
@@ -1449,6 +1444,7 @@
       const p1=polarToCartesian(cx,cy,outerR,startDeg);
       const p2=polarToCartesian(cx,cy,outerR,endDeg);
       const p3=polarToCartesian(cx,cy,innerR,endDeg);
+
       const p4=polarToCartesian(cx,cy,innerR,startDeg);
       const largeArc=endDeg-startDeg<=180 ? 0 : 1;
       return [
@@ -2009,20 +2005,58 @@
     const nextButton=$('[data-yumak-next-tip]',root);
     const missionButton=$('[data-yumak-open-mission]',root);
     const wheelButton=$('[data-yumak-open-wheel]',root);
+    const stage=$('[data-yumak-character]',root);
+    const sparkHost=$('[data-yumak-hover-spark]',root);
+    const particleHost=$('[data-yumak-particles]',root);
+    const celebrateHost=$('[data-yumak-celebrate]',root);
+    const spinWidget=$('#rewards.rewards-v2 [data-rewards-wheel]');
+    const wheelDisc=spinWidget ? ($('.rv2-wheel-rotator',spinWidget) || $('.rewards-wheel-disc',spinWidget)) : null;
     const listItems=$$('li',$('.rv2-yumak-tip-list',root));
     const tips=listItems.map(item=>item.textContent.trim()).filter(Boolean);
 
     if(!tipNode || !nextButton || tips.length<2) return;
 
     let index=Math.max(0,Number(root.dataset.yumakTipIndex || 0));
-    const wheelReactions={
-      points:'Stark gedreht. Glueckwunsch zu deinem Reward.',
-      voucher:'Dein Reward ist da. Ich habe den Gutschein direkt fuer dich markiert.',
-      'free-ride':'Grossartig. Eine Freifahrt wurde freigeschaltet.',
-      mystery:'Premium-Moment. Eine Mystery-Belohnung ist aktiv.',
-      'extra-spin':'Extra-Dreh gesichert. Wir nutzen die Chance sofort.',
-      'no-win':'Heute war es eine Niete. Morgen holen wir den Gewinn.'
+    let tipTimer=0;
+    let blinkTimer=0;
+    let twitchTimer=0;
+    let reactionTimer=0;
+    let noWinResetTimer=0;
+    let frameId=0;
+    let pointerBurstTime=0;
+
+    const state={
+      hover:false,
+      spinning:false,
+      lookX:0,
+      lookY:0,
+      targetLookX:0,
+      targetLookY:0,
+      tailAngle:0,
+      headTilt:0,
+      earTilt:0,
+      bodyScale:1,
+      idleLift:0
     };
+
+    const wheelReactions={
+      points:'Starker Gewinn! Das war ein sauberer Treffer.',
+      voucher:'Gutschein gewonnen. Sehr stark, das zahlt sich aus.',
+      'free-ride':'Freifahrt gesichert. Das ist Premium-Level.',
+      mystery:'Geheimpreis! Das war eine besondere Landung.',
+      'extra-spin':'Extra-Dreh! Wir legen direkt nach.',
+      'no-win':'Heute ohne Gewinn, aber wir bleiben dran.'
+    };
+
+    function clearTimer(id){
+      if(!id) return 0;
+      clearTimeout(id);
+      return 0;
+    }
+
+    function randomRange(min,max){
+      return min + Math.random()*(max-min);
+    }
 
     function showTip(newIndex){
       index=((newIndex%tips.length)+tips.length)%tips.length;
@@ -2034,12 +2068,194 @@
       });
     }
 
+    function showTipText(text){
+      if(!text) return;
+      tipNode.classList.remove('is-swapping');
+      requestAnimationFrame(()=>{
+        tipNode.textContent=text;
+        tipNode.classList.add('is-swapping');
+      });
+    }
+
+    function queueAutoTip(){
+      tipTimer=clearTimer(tipTimer);
+      tipTimer=setTimeout(()=>{
+        showTip(index+1);
+        queueAutoTip();
+      },Math.round(randomRange(6000,10000)));
+    }
+
+    function scheduleBlink(){
+      blinkTimer=clearTimer(blinkTimer);
+      blinkTimer=setTimeout(()=>{
+        root.classList.add('is-blinking');
+        setTimeout(()=>root.classList.remove('is-blinking'),150);
+        scheduleBlink();
+      },Math.round(randomRange(2600,6200)));
+    }
+
+    function scheduleEarTwitch(){
+      twitchTimer=clearTimer(twitchTimer);
+      twitchTimer=setTimeout(()=>{
+        root.classList.add('is-ear-twitch');
+        setTimeout(()=>root.classList.remove('is-ear-twitch'),240);
+        scheduleEarTwitch();
+      },Math.round(randomRange(3200,7600)));
+    }
+
+    function createAmbientParticles(){
+      if(!particleHost) return;
+      particleHost.innerHTML='';
+      const count=12;
+      for(let i=0;i<count;i++){
+        const dot=document.createElement('span');
+        dot.className='rv2-yumak-particle';
+        dot.style.left=`${Math.round(randomRange(8,92))}%`;
+        dot.style.top=`${Math.round(randomRange(16,92))}%`;
+        dot.style.setProperty('--dur',`${Math.round(randomRange(3200,6200))}ms`);
+        dot.style.setProperty('--delay',`${Math.round(randomRange(-2000,1500))}ms`);
+        dot.style.setProperty('--travel',`${Math.round(randomRange(-16,-48))}px`);
+        particleHost.append(dot);
+      }
+    }
+
+    function sparkleBurst(kind){
+      if(!celebrateHost) return;
+      const paletteByKind={
+        win:['#ffd96a','#fff0bf','#c4ffda','#ffffff'],
+        voucher:['#ffd96a','#ffefc8','#ffde94','#fff7da'],
+        'extra-spin':['#ffd96a','#f4d382','#ffffff','#ffe7a6'],
+        mystery:['#d8b6ff','#ffe28a','#fff5d5','#c6e6ff'],
+        nowin:['#d7dae2','#b9c2d2','#f0f2f6','#e6dcc2']
+      };
+      const colors=paletteByKind[kind] || paletteByKind.win;
+      const pieces=kind==='mystery' ? 22 : 14;
+
+      for(let i=0;i<pieces;i++){
+        const node=document.createElement('span');
+        node.className='rv2-yumak-burst-piece';
+        node.style.left='50%';
+        node.style.top='52%';
+        node.style.setProperty('--tx',`${Math.round(randomRange(-90,90))}px`);
+        node.style.setProperty('--ty',`${Math.round(randomRange(-80,70))}px`);
+        node.style.setProperty('--dur',`${Math.round(randomRange(720,1400))}ms`);
+        node.style.setProperty('--piece-color',colors[Math.floor(Math.random()*colors.length)]);
+        celebrateHost.append(node);
+        setTimeout(()=>node.remove(),1450);
+      }
+    }
+
+    function spawnHoverSpark(x,y){
+      if(!sparkHost) return;
+      const now=performance.now();
+      if(now-pointerBurstTime<260) return;
+      pointerBurstTime=now;
+      const icon=Math.random()>.5 ? 'star' : 'heart';
+      const node=document.createElement('span');
+      node.className='rv2-yumak-spark';
+      node.dataset.spark=icon;
+      node.style.left=`${Math.round(x)}px`;
+      node.style.top=`${Math.round(y)}px`;
+      sparkHost.append(node);
+      setTimeout(()=>node.remove(),700);
+    }
+
+    function setReaction(effect){
+      const normalized=String(effect || 'idle').trim().toLowerCase();
+      root.dataset.yumakReaction=normalized;
+      reactionTimer=clearTimer(reactionTimer);
+      if(normalized!=='no-win'){
+        reactionTimer=setTimeout(()=>{
+          root.dataset.yumakReaction='idle';
+        },2200);
+      }
+      if(normalized==='no-win'){
+        noWinResetTimer=clearTimer(noWinResetTimer);
+        noWinResetTimer=setTimeout(()=>{
+          root.dataset.yumakReaction='idle';
+        },2000);
+      }
+    }
+
+    function updateCharacterCss(){
+      root.style.setProperty('--yumak-look-x',`${state.lookX.toFixed(2)}px`);
+      root.style.setProperty('--yumak-look-y',`${state.lookY.toFixed(2)}px`);
+      root.style.setProperty('--yumak-idle-y',`${state.idleLift.toFixed(2)}px`);
+      root.style.setProperty('--yumak-body-scale',state.bodyScale.toFixed(3));
+      root.style.setProperty('--yumak-head-tilt',`${state.headTilt.toFixed(2)}deg`);
+      root.style.setProperty('--yumak-tail-angle',`${state.tailAngle.toFixed(2)}deg`);
+      root.style.setProperty('--yumak-ear-left',`${(-8 + state.earTilt).toFixed(2)}deg`);
+      root.style.setProperty('--yumak-ear-right',`${(8 - state.earTilt).toFixed(2)}deg`);
+      root.style.setProperty('--yumak-breath',state.bodyScale.toFixed(3));
+    }
+
+    function parseWheelRotation(){
+      if(!wheelDisc) return 0;
+      const transform=wheelDisc.style.transform || '';
+      const match=/rotate\((-?[\d.]+)deg\)/.exec(transform);
+      if(!match) return 0;
+      const value=Number(match[1]);
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    function animate(now){
+      const t=now || performance.now();
+      const idleWave=Math.sin(t*0.0021);
+      const floatWave=Math.sin(t*0.0015 + .5);
+      state.idleLift=idleWave*1.4 + floatWave*1.8;
+
+      const reaction=root.dataset.yumakReaction || 'idle';
+      let tailBase=Math.sin(t*0.0024)*10;
+      let bodyBase=1 + Math.sin(t*0.0044)*0.014;
+      let headBase=Math.sin(t*0.0018)*1.9;
+      let earsBase=Math.sin(t*0.0026)*1.6;
+
+      if(state.hover){
+        tailBase=Math.sin(t*0.0053)*16;
+        earsBase=3 + Math.sin(t*0.008)*1.8;
+      }
+      if(state.spinning){
+        tailBase=Math.sin(t*0.0072)*19;
+        headBase+=3;
+        state.targetLookY=-1.8;
+      }
+
+      if(root.classList.contains('is-ear-twitch')) earsBase+=5;
+      if(reaction==='no-win'){
+        earsBase-=8;
+        tailBase=-13;
+        bodyBase=.986;
+        headBase=-7;
+      }
+      if(reaction==='mystery'){
+        state.targetLookX=0;
+        state.targetLookY=-3;
+      }
+
+      const lookLerp=.08;
+      state.lookX += (state.targetLookX - state.lookX)*lookLerp;
+      state.lookY += (state.targetLookY - state.lookY)*lookLerp;
+      state.tailAngle += (tailBase - state.tailAngle)*.13;
+      state.headTilt += (headBase - state.headTilt)*.09;
+      state.earTilt += (earsBase - state.earTilt)*.1;
+      state.bodyScale += (bodyBase - state.bodyScale)*.09;
+
+      if(state.spinning){
+        const wheelDeg=parseWheelRotation();
+        state.targetLookX=Math.max(-4,Math.min(6,Math.sin((wheelDeg+40)*Math.PI/180)*5 + 1));
+      }
+
+      updateCharacterCss();
+      frameId=requestAnimationFrame(animate);
+    }
+
     tipNode.addEventListener('animationend',()=>{
       tipNode.classList.remove('is-swapping');
     });
 
     nextButton.addEventListener('click',()=>{
       showTip(index+1);
+      queueAutoTip();
     });
 
     if(missionButton){
@@ -2056,18 +2272,59 @@
       });
     }
 
+    if(stage){
+      stage.addEventListener('pointerenter',()=>{
+        state.hover=true;
+        root.classList.add('is-hovering');
+      });
+      stage.addEventListener('pointerleave',()=>{
+        state.hover=false;
+        root.classList.remove('is-hovering');
+        state.targetLookX=0;
+        state.targetLookY=0;
+      });
+      stage.addEventListener('pointermove',event=>{
+        const bounds=stage.getBoundingClientRect();
+        const relX=(event.clientX-bounds.left)/Math.max(bounds.width,1);
+        const relY=(event.clientY-bounds.top)/Math.max(bounds.height,1);
+        state.targetLookX=(relX-.5)*7;
+        state.targetLookY=(relY-.45)*4;
+        spawnHoverSpark(event.clientX-bounds.left,event.clientY-bounds.top);
+      });
+    }
+
+    if(spinWidget){
+      const updateSpinMode=()=>{
+        state.spinning=spinWidget.classList.contains('is-spinning');
+        root.dataset.yumakMode=state.spinning ? 'watching' : 'idle';
+      };
+      const observer=new MutationObserver(updateSpinMode);
+      observer.observe(spinWidget,{attributes:true,attributeFilter:['class']});
+      updateSpinMode();
+    }
+
     document.addEventListener('rewards:wheelResult',event=>{
       const detail=event && event.detail ? event.detail : {};
       const effect=String(detail.effect || (detail.win ? 'points' : 'no-win')).trim().toLowerCase();
-      root.dataset.yumakReaction=effect;
+      setReaction(effect);
 
       const reactionText=wheelReactions[effect] || (detail.win ? wheelReactions.points : wheelReactions['no-win']);
-      tipNode.classList.remove('is-swapping');
-      requestAnimationFrame(()=>{
-        tipNode.textContent=reactionText;
-        tipNode.classList.add('is-swapping');
-      });
+      showTipText(reactionText);
+
+      if(effect==='extra-spin') sparkleBurst('extra-spin');
+      else if(effect==='mystery') sparkleBurst('mystery');
+      else if(effect==='voucher') sparkleBurst('voucher');
+      else if(effect==='no-win') sparkleBurst('nowin');
+      else sparkleBurst('win');
+
+      queueAutoTip();
     });
+
+    createAmbientParticles();
+    queueAutoTip();
+    scheduleBlink();
+    scheduleEarTwitch();
+    frameId=requestAnimationFrame(animate);
   }
   function initRewardsActivities(){
     const root=$('#rewards.rewards-v2 [data-rewards-activities]');
