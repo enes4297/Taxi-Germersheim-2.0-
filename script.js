@@ -2024,6 +2024,35 @@
       showTip(index+1);
     });
   }
+  function initRewardsActivities(){
+    const root=$('#rewards.rewards-v2 [data-rewards-activities]');
+    if(!root) return;
+
+    const filterButtons=$$('[data-activity-filter]',root);
+    const items=$$('[data-activity-type]',root);
+    if(!filterButtons.length || !items.length) return;
+
+    function applyFilter(filter){
+      items.forEach(item=>{
+        const type=String(item.dataset.activityType || '').trim().toLowerCase();
+        item.hidden=!(filter==='all' || type===filter);
+      });
+
+      filterButtons.forEach(button=>{
+        const active=(button.dataset.activityFilter===filter);
+        button.classList.toggle('is-active',active);
+        button.setAttribute('aria-selected',active ? 'true' : 'false');
+      });
+    }
+
+    filterButtons.forEach(button=>{
+      button.addEventListener('click',()=>{
+        applyFilter(button.dataset.activityFilter || 'all');
+      });
+    });
+
+    applyFilter('all');
+  }
   function hideSplash(){
     const splash=document.getElementById('splash');
     if(!splash) return;
@@ -2050,6 +2079,7 @@
     initRewardsMissions();
     initRewardsSeasonalEvents();
     initRewardsYumakAssistant();
+    initRewardsActivities();
 
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);

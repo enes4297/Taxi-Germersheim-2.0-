@@ -3147,6 +3147,33 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 #rewards.rewards-v2 .rv2-seasonal-note{margin:0;color:rgba(255,255,255,.74)!important;font-size:13px;line-height:1.6}
 #rewards.rewards-v2 .rv2-seasonal-note-subtle{font-size:12px;color:rgba(255,255,255,.62)!important}
 
+#rewards.rewards-v2 .rv2-activities{padding:20px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(140deg,rgba(255,225,138,.08),rgba(255,255,255,0) 37%),linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));box-shadow:0 20px 48px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08);display:grid;gap:14px}
+#rewards.rewards-v2 .rv2-activities .rv2-section-head small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,242,207,.72)!important;font-weight:850}
+
+#rewards.rewards-v2 .rv2-activity-filters{display:flex;flex-wrap:wrap;gap:8px}
+#rewards.rewards-v2 .rv2-activity-filter{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:rgba(255,255,255,.82);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:border-color .2s ease,background .2s ease,color .2s ease,transform .2s ease}
+#rewards.rewards-v2 .rv2-activity-filter:hover{transform:translateY(-1px);border-color:rgba(255,217,106,.36);color:#fff0c4}
+#rewards.rewards-v2 .rv2-activity-filter.is-active{border-color:rgba(255,217,106,.5);background:rgba(255,217,106,.14);color:#ffe8ad}
+
+#rewards.rewards-v2 .rv2-activity-timeline{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+#rewards.rewards-v2 .rv2-activity-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));position:relative;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+#rewards.rewards-v2 .rv2-activity-item::before{content:'';position:absolute;left:29px;top:46px;bottom:-12px;width:1px;background:linear-gradient(180deg,rgba(255,217,106,.4),rgba(255,255,255,0))}
+#rewards.rewards-v2 .rv2-activity-item:last-child::before{display:none}
+#rewards.rewards-v2 .rv2-activity-item:hover{transform:translateY(-1px);border-color:rgba(255,217,106,.3);box-shadow:0 14px 28px rgba(0,0,0,.2)}
+
+#rewards.rewards-v2 .rv2-activity-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;border:1px solid rgba(255,217,106,.3);background:rgba(255,217,106,.12);font-style:normal;font-size:18px}
+#rewards.rewards-v2 .rv2-activity-copy h4{margin:0;font-family:var(--serif);font-size:22px;line-height:1.08;color:#ffe8ab}
+#rewards.rewards-v2 .rv2-activity-copy p{margin:4px 0 0;color:rgba(255,255,255,.78)!important;font-size:13px;line-height:1.55}
+#rewards.rewards-v2 .rv2-activity-copy small{display:block;margin-top:6px;color:rgba(255,255,255,.62)!important;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+
+#rewards.rewards-v2 .rv2-activity-status{display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:0 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:900}
+#rewards.rewards-v2 .rv2-activity-item[data-activity-type='points'] .rv2-activity-status{border-color:rgba(255,217,106,.45);background:rgba(255,217,106,.14);color:#ffe8ad}
+#rewards.rewards-v2 .rv2-activity-item[data-activity-type='voucher'] .rv2-activity-status{border-color:rgba(132,200,255,.42);background:rgba(54,110,170,.24);color:#dbedff}
+#rewards.rewards-v2 .rv2-activity-item[data-activity-type='badge'] .rv2-activity-status{border-color:rgba(124,240,162,.42);background:rgba(46,138,78,.2);color:#d8ffe3}
+#rewards.rewards-v2 .rv2-activity-item[data-activity-type='mission'] .rv2-activity-status{border-color:rgba(255,187,118,.42);background:rgba(170,96,38,.2);color:#ffe6ca}
+
+#rewards.rewards-v2 .rv2-activity-note{margin:0;color:rgba(255,255,255,.74)!important;font-size:13px;line-height:1.6}
+
 @media(max-width:1240px){
   #rewards.rewards-v2 .rv2-main-layout{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-wheel-card{position:relative;top:auto}
@@ -3165,6 +3192,7 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-goal-premium h3{font-size:30px}
   #rewards.rewards-v2 .rv2-mission-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-seasonal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #rewards.rewards-v2 .rv2-activity-copy h4{font-size:20px}
   #rewards.rewards-v2 .rv2-credit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-svg-label-icon{font-size:19px}
   #rewards.rewards-v2 .rv2-svg-label-title{font-size:13px}
@@ -3187,6 +3215,8 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-mission-copy h4{font-size:22px}
   #rewards.rewards-v2 .rv2-seasonal-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-seasonal-copy h4{font-size:22px}
+  #rewards.rewards-v2 .rv2-activity-item{grid-template-columns:auto minmax(0,1fr)}
+  #rewards.rewards-v2 .rv2-activity-status{justify-self:start}
   #rewards.rewards-v2 .rv2-credit-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-level-line{grid-template-columns:1fr 1fr;gap:6px}
   #rewards.rewards-v2 .rv2-wheel-shell{width:min(360px,100%)}
@@ -3221,6 +3251,7 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-mission-copy h4{font-size:20px}
   #rewards.rewards-v2 .rv2-seasonal-meta{flex-direction:column;align-items:flex-start}
   #rewards.rewards-v2 .rv2-seasonal-copy h4{font-size:20px}
+  #rewards.rewards-v2 .rv2-activity-copy h4{font-size:18px}
 }
 
 @media(prefers-reduced-motion:reduce){
