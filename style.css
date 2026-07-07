@@ -3156,6 +3156,46 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 
 #rewards.rewards-v2 .rv2-credit-note{margin:0;color:rgba(255,255,255,.76)!important;font-size:13px;line-height:1.6}
 
+#rewards.rewards-v2 .rv2-customer-dashboard{padding:20px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(140deg,rgba(255,226,145,.08),rgba(255,255,255,0) 38%),linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));box-shadow:0 20px 48px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08);display:grid;gap:14px}
+#rewards.rewards-v2 .rv2-customer-dashboard .rv2-section-head small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,242,207,.72)!important;font-weight:850}
+#rewards.rewards-v2 .rv2-customer-top{display:grid;grid-template-columns:1.05fr 1fr;gap:10px}
+
+#rewards.rewards-v2 .rv2-customer-profile{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));display:grid;grid-template-columns:68px minmax(0,1fr);gap:12px;align-items:start;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+#rewards.rewards-v2 .rv2-customer-profile:hover{transform:translateY(-1px);border-color:rgba(255,217,106,.34);box-shadow:0 12px 26px rgba(0,0,0,.2)}
+#rewards.rewards-v2 .rv2-customer-avatar{width:68px;height:68px;border-radius:18px;border:1px solid rgba(255,217,106,.4);background:linear-gradient(145deg,rgba(255,223,132,.28),rgba(36,25,10,.6));display:grid;place-items:center;font-family:var(--serif);font-size:34px;color:#ffe9b0}
+#rewards.rewards-v2 .rv2-customer-profile-copy{display:grid;gap:4px}
+#rewards.rewards-v2 .rv2-customer-profile-copy small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,242,207,.72)!important;font-weight:850}
+#rewards.rewards-v2 .rv2-customer-profile-copy h4{margin:0;font-family:var(--serif);font-size:28px;line-height:1.04;color:#ffe8ab}
+#rewards.rewards-v2 .rv2-customer-profile-copy p{margin:0;color:rgba(255,255,255,.8)!important;font-size:13px;line-height:1.45}
+#rewards.rewards-v2 .rv2-customer-profile-copy p b{color:#ffe8b2}
+
+#rewards.rewards-v2 .rv2-customer-next-level{padding:14px;border-radius:18px;border:1px solid rgba(255,217,106,.34);background:linear-gradient(145deg,rgba(255,217,106,.18),rgba(24,18,10,.54));display:grid;gap:9px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+#rewards.rewards-v2 .rv2-customer-next-level:hover{transform:translateY(-1px);border-color:rgba(255,227,158,.56);box-shadow:0 14px 28px rgba(0,0,0,.24)}
+#rewards.rewards-v2 .rv2-customer-next-level small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,243,214,.78)!important;font-weight:850}
+#rewards.rewards-v2 .rv2-customer-next-level h4{margin:0;font-family:var(--serif);font-size:34px;line-height:.98;color:#ffecba}
+#rewards.rewards-v2 .rv2-customer-next-bar{height:14px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);overflow:hidden;position:relative}
+#rewards.rewards-v2 .rv2-customer-next-bar u{display:block;height:100%;width:var(--customer-progress,66%);background:linear-gradient(90deg,#ffeab3,#cf9430);box-shadow:0 0 16px rgba(255,217,106,.38);border-radius:inherit;position:relative}
+#rewards.rewards-v2 .rv2-customer-next-bar u::after{content:'';position:absolute;top:0;left:-24px;width:24px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);animation:rv2ProgressShine 2.8s linear infinite}
+#rewards.rewards-v2 .rv2-customer-next-level p{margin:0;color:#ffe8ad!important;font-size:14px;font-weight:800}
+
+#rewards.rewards-v2 .rv2-customer-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#rewards.rewards-v2 .rv2-customer-stat{padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));display:grid;gap:6px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+#rewards.rewards-v2 .rv2-customer-stat:hover{transform:translateY(-1px);border-color:rgba(255,217,106,.34);box-shadow:0 10px 22px rgba(0,0,0,.2)}
+#rewards.rewards-v2 .rv2-customer-stat i{width:30px;height:30px;border-radius:9px;border:1px solid rgba(255,217,106,.32);background:rgba(255,217,106,.11);display:grid;place-items:center;font-style:normal;font-size:16px}
+#rewards.rewards-v2 .rv2-customer-stat small{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.7)!important;font-weight:800;line-height:1.4}
+#rewards.rewards-v2 .rv2-customer-stat strong{font-family:var(--serif);font-size:28px;line-height:1;color:#ffe8ab}
+
+#rewards.rewards-v2 .rv2-customer-benefits,
+#rewards.rewards-v2 .rv2-customer-activities{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));display:grid;gap:10px}
+#rewards.rewards-v2 .rv2-customer-benefits h4,
+#rewards.rewards-v2 .rv2-customer-activities h4{margin:0;font-family:var(--serif);font-size:25px;line-height:1.05;color:#ffe8ab}
+#rewards.rewards-v2 .rv2-customer-benefits ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+#rewards.rewards-v2 .rv2-customer-benefits li{min-height:36px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,217,106,.24);background:rgba(255,217,106,.1);color:rgba(255,255,255,.88)!important;font-size:13px;line-height:1.45}
+#rewards.rewards-v2 .rv2-customer-activities ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+#rewards.rewards-v2 .rv2-customer-activities li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;min-height:40px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03)}
+#rewards.rewards-v2 .rv2-customer-activities li b{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#ffe8b2}
+#rewards.rewards-v2 .rv2-customer-activities li span{color:rgba(255,255,255,.84)!important;font-size:13px;line-height:1.45}
+
 #rewards.rewards-v2 .rv2-daily-streak,
 #rewards.rewards-v2 .rv2-daily-missions,
 #rewards.rewards-v2 .rv2-weekly-missions,
@@ -3313,6 +3353,8 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-progress-head span{grid-column:1 / -1}
   #rewards.rewards-v2 .rv2-badge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #rewards.rewards-v2 .rv2-customer-top{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-customer-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-yumak-copy h4{font-size:25px}
   #rewards.rewards-v2 .rv2-account-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-goal-premium h3{font-size:30px}
@@ -3333,6 +3375,8 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-hero h1{font-size:40px}
   #rewards.rewards-v2 .rv2-stats{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-rewards-points{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-customer-stat-grid{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-customer-next-level h4{font-size:30px}
   #rewards.rewards-v2 .rv2-yumak-assistant{padding:16px}
   #rewards.rewards-v2 .rv2-yumak-card{grid-template-columns:92px minmax(0,1fr);padding:16px}
     #rewards.rewards-v2 .rv2-yumak-visual{width:92px;height:148px}
@@ -3379,6 +3423,10 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-spin-countdown{font-size:19px}
   #rewards.rewards-v2 .rv2-spin-btn{min-width:100%;width:100%}
   #rewards.rewards-v2 .rv2-info-grid{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-customer-profile{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-customer-avatar{width:58px;height:58px;font-size:30px}
+  #rewards.rewards-v2 .rv2-customer-next-level h4{font-size:25px}
+  #rewards.rewards-v2 .rv2-customer-activities li{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-streak-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-daily-mission-card{grid-template-columns:auto minmax(0,1fr)}
   #rewards.rewards-v2 .rv2-daily-progress-circle{justify-self:start}
