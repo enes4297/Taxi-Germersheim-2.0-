@@ -3279,6 +3279,50 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 #rewards.rewards-v2 .rv2-special-card h4{margin:0;font-family:var(--serif);font-size:23px;line-height:1.06;color:#ffe8ab}
 #rewards.rewards-v2 .rv2-special-card b{justify-self:start;display:inline-flex;align-items:center;min-height:24px;padding:0 10px;border-radius:999px;border:1px solid rgba(184,189,199,.34);background:rgba(109,115,126,.2);color:#dde1ea;font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:900}
 
+#rewards.rewards-v2 .rv2-achievements,
+#rewards.rewards-v2 .rv2-collection{padding:20px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(140deg,rgba(255,226,145,.08),rgba(255,255,255,0) 38%),linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));box-shadow:0 20px 48px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08);display:grid;gap:14px}
+#rewards.rewards-v2 .rv2-achievements .rv2-section-head small,
+#rewards.rewards-v2 .rv2-collection .rv2-section-head small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,242,207,.72)!important;font-weight:850}
+
+#rewards.rewards-v2 .rv2-achievement-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#rewards.rewards-v2 .rv2-achievement-card{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));display:grid;gap:8px;align-content:start;position:relative;overflow:hidden;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+#rewards.rewards-v2 .rv2-achievement-card::before{content:'';position:absolute;inset:0;opacity:.3;background:linear-gradient(120deg,transparent 0 35%,rgba(255,255,255,.2) 48%,transparent 62%);transform:translateX(-110%)}
+#rewards.rewards-v2 .rv2-achievement-card:hover{transform:translateY(-2px);border-color:rgba(255,217,106,.34);box-shadow:0 14px 30px rgba(0,0,0,.24)}
+#rewards.rewards-v2 .rv2-achievement-card:hover::before{animation:rv2MissionSweep .65s ease}
+#rewards.rewards-v2 .rv2-achievement-card i{width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,217,106,.32);background:rgba(255,217,106,.12);display:grid;place-items:center;font-style:normal;font-size:18px}
+#rewards.rewards-v2 .rv2-achievement-card h4{margin:0;font-family:var(--serif);font-size:23px;line-height:1.06;color:#ffe8ab}
+#rewards.rewards-v2 .rv2-achievement-rarity{justify-self:start;display:inline-flex;align-items:center;min-height:24px;padding:0 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:900}
+#rewards.rewards-v2 .rv2-achievement-status{justify-self:start;display:inline-flex;align-items:center;min-height:24px;padding:0 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:900;font-style:normal}
+#rewards.rewards-v2 .rv2-achievement-progress{position:relative;height:10px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);overflow:hidden}
+#rewards.rewards-v2 .rv2-achievement-progress u{display:block;height:100%;width:var(--achievement-progress,0%);background:linear-gradient(90deg,#ffe9ab,#d39a34);box-shadow:0 0 16px rgba(255,217,106,.34);border-radius:inherit;transition:width .35s ease}
+#rewards.rewards-v2 .rv2-achievement-progress-text{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.72)!important;font-weight:800}
+
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-status='unlocked'] .rv2-achievement-status{border-color:rgba(124,240,162,.42);background:rgba(46,138,78,.2);color:#d8ffe3}
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-status='locked']{border-color:rgba(183,188,198,.26);background:linear-gradient(155deg,rgba(143,148,157,.12),rgba(255,255,255,.02))}
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-status='locked'] .rv2-achievement-status{border-color:rgba(184,189,199,.34);background:rgba(109,115,126,.2);color:#dde1ea}
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-status='locked'] .rv2-achievement-progress u{background:linear-gradient(90deg,#a6acb8,#7f8795)}
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-status='secret']{background:linear-gradient(155deg,rgba(29,30,34,.78),rgba(12,13,16,.9));border-color:rgba(94,99,109,.4)}
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-status='secret'] i{background:rgba(120,126,138,.2);border-color:rgba(132,137,149,.34)}
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-status='secret'] h4{color:rgba(235,238,245,.8)}
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-status='secret'] .rv2-achievement-progress u{background:linear-gradient(90deg,#949aa7,#727a88)}
+
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-rarity='normal'] .rv2-achievement-rarity,
+#rewards.rewards-v2 .rv2-collection-card[data-collection-rarity='normal'] .rv2-collection-rarity{border-color:rgba(201,207,218,.36);background:rgba(125,132,144,.18);color:#e5e8ef}
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-rarity='selten'] .rv2-achievement-rarity,
+#rewards.rewards-v2 .rv2-collection-card[data-collection-rarity='selten'] .rv2-collection-rarity{border-color:rgba(132,200,255,.42);background:rgba(54,110,170,.24);color:#dbedff}
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-rarity='episch'] .rv2-achievement-rarity,
+#rewards.rewards-v2 .rv2-collection-card[data-collection-rarity='episch'] .rv2-collection-rarity{border-color:rgba(204,142,255,.46);background:rgba(137,72,194,.24);color:#f0dcff}
+#rewards.rewards-v2 .rv2-achievement-card[data-ach-rarity='legendary'] .rv2-achievement-rarity,
+#rewards.rewards-v2 .rv2-collection-card[data-collection-rarity='legendary'] .rv2-collection-rarity{border-color:rgba(255,221,123,.56);background:rgba(255,217,106,.18);color:#ffe8ad;box-shadow:0 0 16px rgba(255,217,106,.2)}
+
+#rewards.rewards-v2 .rv2-collection-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+#rewards.rewards-v2 .rv2-collection-card{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));display:grid;gap:8px;align-content:start;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+#rewards.rewards-v2 .rv2-collection-card:hover{transform:translateY(-1px);border-color:rgba(255,217,106,.34);box-shadow:0 12px 26px rgba(0,0,0,.2)}
+#rewards.rewards-v2 .rv2-collection-card i{width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,217,106,.32);background:rgba(255,217,106,.12);display:grid;place-items:center;font-style:normal;font-size:18px}
+#rewards.rewards-v2 .rv2-collection-card h4{margin:0;font-family:var(--serif);font-size:22px;line-height:1.06;color:#ffe8ab}
+#rewards.rewards-v2 .rv2-collection-card p{margin:0;color:rgba(255,255,255,.78)!important;font-size:13px;line-height:1.5}
+#rewards.rewards-v2 .rv2-collection-rarity{justify-self:start;display:inline-flex;align-items:center;min-height:24px;padding:0 10px;border-radius:999px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:900}
+
 #rewards.rewards-v2 .rv2-missions{padding:20px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(140deg,rgba(255,226,145,.08),rgba(255,255,255,0) 38%),linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));box-shadow:0 20px 48px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08);display:grid;gap:14px}
 #rewards.rewards-v2 .rv2-missions .rv2-section-head small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,242,207,.72)!important;font-weight:850}
 #rewards.rewards-v2 .rv2-mission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -3387,6 +3431,8 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-streak-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-daily-mission-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-special-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #rewards.rewards-v2 .rv2-achievement-grid{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-collection-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-mission-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-seasonal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-activity-copy h4{font-size:20px}
@@ -3418,6 +3464,7 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-streak-meta{flex-direction:column;align-items:flex-start}
   #rewards.rewards-v2 .rv2-weekly-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-special-grid{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-collection-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-mission-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-mission-copy h4{font-size:22px}
   #rewards.rewards-v2 .rv2-seasonal-grid{grid-template-columns:1fr}
@@ -3459,6 +3506,7 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-streak-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-daily-mission-card{grid-template-columns:auto minmax(0,1fr)}
   #rewards.rewards-v2 .rv2-daily-progress-circle{justify-self:start}
+  #rewards.rewards-v2 .rv2-collection-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-yumak-assistant{padding:14px}
   #rewards.rewards-v2 .rv2-yumak-card{grid-template-columns:1fr;gap:12px;padding:14px}
     #rewards.rewards-v2 .rv2-yumak-visual{width:100px;height:140px}
