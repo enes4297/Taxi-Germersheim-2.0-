@@ -1927,6 +1927,133 @@
 
     recalc();
   }
+  function initRewardsCustomerDashboard(){
+    const root=$('#rewards.rewards-v2 [data-rewards-customer-dashboard]');
+    if(!root) return;
+
+    const storageKey='taxiRewardsCustomerDashboardState';
+    const defaultData={
+      profile:{
+        name:'Max Mustermann',
+        memberSince:'01.01.2026',
+        level:'Gold',
+        status:'Premium Mitglied',
+        points:230
+      },
+      nextLevel:{
+        currentPoints:230,
+        targetPoints:350,
+        levelName:'Platin'
+      },
+      stats:{
+        rides:184,
+        points:230,
+        spins:12,
+        vouchers:6,
+        badges:4,
+        streak:2
+      },
+      benefits:[
+        'Gold-Rabatte aktiv',
+        'Exklusive Gutscheine',
+        'Schnellere Level-Belohnungen',
+        'Event-Zugang'
+      ],
+      activities:[
+        {day:'Heute',text:'+5 Punkte · Glücksrad'},
+        {day:'Gestern',text:'+10 Punkte · Fahrt'},
+        {day:'Vor 3 Tagen',text:'Badge erhalten'}
+      ]
+    };
+
+    function readData(){
+      try{
+        const parsed=JSON.parse(localStorage.getItem(storageKey) || '');
+        if(!parsed || typeof parsed!=='object') return defaultData;
+        return {
+          profile:{...defaultData.profile,...(parsed.profile||{})},
+          nextLevel:{...defaultData.nextLevel,...(parsed.nextLevel||{})},
+          stats:{...defaultData.stats,...(parsed.stats||{})},
+          benefits:Array.isArray(parsed.benefits) && parsed.benefits.length ? parsed.benefits : defaultData.benefits,
+          activities:Array.isArray(parsed.activities) && parsed.activities.length ? parsed.activities : defaultData.activities
+        };
+      }catch(_err){
+        return defaultData;
+      }
+    }
+
+    function writeSeedIfMissing(data){
+      try{
+        if(!localStorage.getItem(storageKey)) localStorage.setItem(storageKey,JSON.stringify(data));
+      }catch(_err){
+        // localStorage optional in demo mode.
+      }
+    }
+
+    function text(selector,value){
+      const node=$(selector,root);
+      if(node) node.textContent=String(value);
+    }
+
+    const data=readData();
+    writeSeedIfMissing(data);
+
+    text('[data-cd-name]',data.profile.name);
+    text('[data-cd-member-since]',data.profile.memberSince);
+    text('[data-cd-level]',data.profile.level);
+    text('[data-cd-status]',data.profile.status);
+    text('[data-cd-points]',data.profile.points);
+    text('[data-cd-current-points]',data.nextLevel.currentPoints);
+    text('[data-cd-target-points]',data.nextLevel.targetPoints);
+
+    const current=Math.max(0,Number(data.nextLevel.currentPoints||0));
+    const target=Math.max(1,Number(data.nextLevel.targetPoints||1));
+    const remaining=Math.max(0,target-current);
+    const progress=Math.max(0,Math.min(100,(current/target)*100));
+
+    const progressWrap=$('.rv2-customer-next-bar',root);
+    const progressBar=$('[data-cd-progress-bar]',root);
+    if(progressWrap){
+      progressWrap.setAttribute('aria-valuemin','0');
+      progressWrap.setAttribute('aria-valuemax',String(target));
+      progressWrap.setAttribute('aria-valuenow',String(Math.min(current,target)));
+    }
+    if(progressBar) progressBar.style.width=`${progress.toFixed(2)}%`;
+    if(progressWrap) progressWrap.style.setProperty('--customer-progress',`${progress.toFixed(2)}%`);
+    text('[data-cd-remaining-text]',`Noch ${remaining} Punkte bis ${data.nextLevel.levelName}`);
+
+    const statNodes=$$('[data-cd-stat]',root);
+    statNodes.forEach(node=>{
+      const key=node.dataset.cdStat;
+      if(!key) return;
+      const val=(key in data.stats) ? data.stats[key] : 0;
+      node.textContent=String(val);
+    });
+
+    const benefitsList=$('[data-cd-benefits]',root);
+    if(benefitsList){
+      benefitsList.innerHTML='';
+      data.benefits.forEach(item=>{
+        const li=document.createElement('li');
+        li.textContent=`✓ ${String(item)}`;
+        benefitsList.append(li);
+      });
+    }
+
+    const activityList=$('[data-cd-activities]',root);
+    if(activityList){
+      activityList.innerHTML='';
+      data.activities.forEach(item=>{
+        const li=document.createElement('li');
+        const day=document.createElement('b');
+        const textNode=document.createElement('span');
+        day.textContent=String(item.day || 'Heute');
+        textNode.textContent=String(item.text || 'Aktivität');
+        li.append(day,textNode);
+        activityList.append(li);
+      });
+    }
+  }
   function initRewardsDailyStreak(){
     const root=$('#rewards.rewards-v2 [data-rewards-daily-streak]');
     if(!root) return;
@@ -2575,6 +2702,7 @@
     initContactRequestForm();
     initRewardsWheel();
     initRewardsVoucherBalance();
+    initRewardsCustomerDashboard();
     initRewardsDailyStreak();
     initRewardsDailyMissions();
     initRewardsWeeklyMissions();
