@@ -1927,6 +1927,203 @@
 
     recalc();
   }
+  function initRewardsDailyStreak(){
+    const root=$('#rewards.rewards-v2 [data-rewards-daily-streak]');
+    if(!root) return;
+
+    const dayCards=$$('[data-streak-day]',root);
+    const statusNode=$('[data-streak-status]',root);
+    const claimButton=$('[data-streak-claim]',root);
+    if(!dayCards.length) return;
+
+    const storageKey='taxiRewardsDailyStreakState';
+
+    function getTodayYmd(){
+      const now=new Date();
+      const year=now.getFullYear();
+      const month=String(now.getMonth()+1).padStart(2,'0');
+      const day=String(now.getDate()).padStart(2,'0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function getCurrentSeriesDay(){
+      const jsDay=new Date().getDay();
+      return ((jsDay+6)%7)+1;
+    }
+
+    function defaultState(){
+      const currentDay=getCurrentSeriesDay();
+      const claimed=[];
+      for(let day=1;day<currentDay;day++) claimed.push(day);
+      return {claimed,lastCheckin:'',currentDay};
+    }
+
+    function readState(){
+      try{
+        const parsed=JSON.parse(localStorage.getItem(storageKey) || '');
+        if(!parsed || typeof parsed!=='object') return defaultState();
+        const currentDay=getCurrentSeriesDay();
+        const claimed=Array.isArray(parsed.claimed)
+          ? parsed.claimed.map(n=>Number(n)).filter(n=>Number.isInteger(n) && n>=1 && n<=7)
+          : [];
+        return {
+          claimed:Array.from(new Set(claimed)).sort((a,b)=>a-b),
+          lastCheckin:String(parsed.lastCheckin || ''),
+          currentDay
+        };
+      }catch(_err){
+        return defaultState();
+      }
+    }
+
+    function writeState(state){
+      try{
+        localStorage.setItem(storageKey,JSON.stringify(state));
+      }catch(_err){
+        // Demo mode: storage can fail silently.
+      }
+    }
+
+    function render(){
+      const today=getTodayYmd();
+      const state=readState();
+      const claimedSet=new Set(state.claimed);
+
+      dayCards.forEach(card=>{
+        const day=Number(card.dataset.streakDay || 0);
+        const mark=$('[data-streak-mark]',card);
+        let viewState='locked';
+        const isClaimed=claimedSet.has(day);
+
+        if(day===state.currentDay) viewState='current';
+        else if(isClaimed) viewState='done';
+        else if(day<state.currentDay) viewState='done';
+
+        card.dataset.streakState=viewState;
+        card.dataset.streakComplete=(isClaimed || day<state.currentDay) ? 'true' : 'false';
+        if(mark){
+          if(viewState==='current' && isClaimed) mark.textContent='✔';
+          else mark.textContent=viewState==='done' ? '✔' : (viewState==='current' ? '★' : '🔒');
+        }
+      });
+
+      const doneCount=dayCards.filter(card=>card.dataset.streakState==='done').length;
+      const todayDone=claimedSet.has(state.currentDay) || state.lastCheckin===today;
+
+      if(statusNode){
+        if(todayDone) statusNode.textContent=`Tägliche Serie aktiv: ${doneCount}/7 Tage erledigt.`;
+        else statusNode.textContent=`Tag ${state.currentDay} ist heute aktiv. Jetzt Bonus sichern.`;
+      }
+
+      if(claimButton){
+        claimButton.disabled=todayDone;
+        claimButton.textContent=todayDone ? 'Heute erledigt' : 'Heute einchecken';
+      }
+    }
+
+    if(claimButton){
+      claimButton.addEventListener('click',()=>{
+        const today=getTodayYmd();
+        const state=readState();
+        if(state.lastCheckin===today) return;
+
+        if(!state.claimed.includes(state.currentDay)){
+          state.claimed.push(state.currentDay);
+          state.claimed=Array.from(new Set(state.claimed)).sort((a,b)=>a-b);
+        }
+        state.lastCheckin=today;
+        writeState(state);
+        render();
+      });
+    }
+
+    render();
+  }
+  function initRewardsDailyMissions(){
+    const root=$('#rewards.rewards-v2 [data-rewards-daily-missions]');
+    if(!root) return;
+
+    const cards=$$('[data-daily-mission-id]',root);
+    if(!cards.length) return;
+
+    const statusLabelMap={
+      active:'Aktiv',
+      done:'Abgeschlossen',
+      locked:'Gesperrt'
+    };
+
+    cards.forEach(card=>{
+      const current=Math.max(0,Number(card.dataset.dailyCurrent || 0));
+      const target=Math.max(1,Number(card.dataset.dailyTarget || 1));
+      const progress=Math.max(0,Math.min(100,(current/target)*100));
+      const rawStatus=String(card.dataset.dailyStatus || 'active').trim().toLowerCase();
+      const status=(rawStatus in statusLabelMap) ? rawStatus : 'active';
+
+      card.dataset.dailyStatus=status;
+
+      const statusNode=$('.rv2-daily-mission-status',card);
+      if(statusNode) statusNode.textContent=statusLabelMap[status];
+
+      const circle=$('.rv2-daily-progress-circle',card);
+      if(circle){
+        circle.style.setProperty('--daily-progress',progress.toFixed(2));
+        circle.setAttribute('aria-valuemin','0');
+        circle.setAttribute('aria-valuemax',String(target));
+        circle.setAttribute('aria-valuenow',String(Math.min(current,target)));
+      }
+
+      const textNode=$('[data-daily-progress-text]',card);
+      if(textNode) textNode.textContent=`${Math.round(progress)}%`;
+    });
+  }
+  function initRewardsWeeklyMissions(){
+    const root=$('#rewards.rewards-v2 [data-rewards-weekly-missions]');
+    if(!root) return;
+
+    const cards=$$('[data-weekly-target]',root);
+    if(!cards.length) return;
+
+    const statusLabelMap={
+      active:'Aktiv',
+      done:'Abgeschlossen',
+      locked:'Gesperrt'
+    };
+
+    cards.forEach(card=>{
+      const current=Math.max(0,Number(card.dataset.weeklyCurrent || 0));
+      const target=Math.max(1,Number(card.dataset.weeklyTarget || 1));
+      const progress=Math.max(0,Math.min(100,(current/target)*100));
+      const rawStatus=String(card.dataset.weeklyStatus || 'active').trim().toLowerCase();
+      const status=(rawStatus in statusLabelMap) ? rawStatus : 'active';
+
+      card.dataset.weeklyStatus=status;
+
+      const statusNode=$('.rv2-weekly-status',card);
+      if(statusNode) statusNode.textContent=statusLabelMap[status];
+
+      const bar=$('.rv2-weekly-progress',card);
+      if(bar){
+        bar.style.setProperty('--weekly-progress',`${progress.toFixed(2)}%`);
+        bar.setAttribute('aria-valuemin','0');
+        bar.setAttribute('aria-valuemax',String(target));
+        bar.setAttribute('aria-valuenow',String(Math.min(current,target)));
+      }
+
+      const textNode=$('.rv2-weekly-progress-text',card);
+      if(textNode) textNode.textContent=`${Math.min(current,target)} / ${target}`;
+    });
+  }
+  function initRewardsSpecialMissions(){
+    const root=$('#rewards.rewards-v2 [data-rewards-special-missions]');
+    if(!root) return;
+
+    // Demo-only placeholder section. Cards are structured so future DB data can replace content.
+    const cards=$$('.rv2-special-card',root);
+    cards.forEach(card=>{
+      const statusNode=$('b',card);
+      if(statusNode && !statusNode.textContent.trim()) statusNode.textContent='Bald verfügbar';
+    });
+  }
   function initRewardsMissions(){
     const root=$('#rewards.rewards-v2 [data-rewards-missions]');
     if(!root) return;
@@ -2378,6 +2575,10 @@
     initContactRequestForm();
     initRewardsWheel();
     initRewardsVoucherBalance();
+    initRewardsDailyStreak();
+    initRewardsDailyMissions();
+    initRewardsWeeklyMissions();
+    initRewardsSpecialMissions();
     initRewardsMissions();
     initRewardsSeasonalEvents();
     initRewardsYumakAssistant();
