@@ -545,17 +545,17 @@
             <label>STARTADRESSE</label>
             <div class="input pb-location-field" data-maps-autocomplete="pickup"><i data-icon="pin"></i><input id="startAddress" placeholder="Abholort eingeben" autocomplete="off" aria-autocomplete="list" aria-expanded="false"></div>
             <div class="pb-autocomplete-prep" data-autocomplete-list="pickup" hidden></div>
-            <div id="startMapContainer" class="map-container"></div>
             <button class="outline" type="button" id="locationBtn"><i data-icon="location"></i>Aktuellen Standort verwenden</button>
             <div class="pb-nav"><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
           <article class="panel pb-step" data-booking-step="2" hidden>
             <h3>Schritt 2 - Ziel</h3>
+            <label>ABHOLORT</label>
+            <div class="input pb-location-field pb-start-preview"><i data-icon="pin"></i><input id="bookingStartPreview" type="text" readonly value="-"></div>
             <label>ZIELADRESSE</label>
             <div class="input pb-location-field" data-maps-autocomplete="destination"><i data-icon="flag"></i><input id="targetAddress" placeholder="Zielort eingeben" autocomplete="off" aria-autocomplete="list" aria-expanded="false"></div>
             <div class="pb-autocomplete-prep" data-autocomplete-list="destination" hidden></div>
-            <div id="endMapContainer" class="map-container"></div>
             <div class="chips">
               <button type="button" data-preset="home" data-address="Zuhause">Zuhause</button>
               <button type="button" data-preset="work" data-address="Arbeit">Arbeit</button>
@@ -571,7 +571,11 @@
               <div class="pb-route-stats" aria-live="polite">
                 <p><span>Entfernung:</span> <b data-booking-distance>-</b></p>
                 <p><span>Geschätzte Fahrzeit:</span> <b data-booking-duration>-</b></p>
+                <p><span>Fahrtart:</span> <b data-booking-route-service>Taxi</b></p>
+                <p><span>Rewards-Punkte:</span> <b data-booking-route-points>ca. 15</b></p>
+                <p class="pb-route-fare-note">Fahrpreis wird nach Bestätigung berechnet.</p>
               </div>
+              <article class="pb-yumak-route-card" aria-live="polite"><p data-booking-yumak-hint>Perfekt! Deine Fahrt dauert ungefaehr 11 Minuten und bringt dir ca. 15 Punkte.</p></article>
             </section>
             <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
