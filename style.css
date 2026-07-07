@@ -3070,6 +3070,7 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 #rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='voucher'],
 #rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='free-ride']{border-color:rgba(124,240,162,.5);box-shadow:0 28px 72px rgba(0,0,0,.52),0 0 34px rgba(124,240,162,.22),inset 0 0 0 1px rgba(204,255,223,.18)}
 #rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='extra-spin']{border-color:rgba(255,225,136,.58);box-shadow:0 28px 72px rgba(0,0,0,.52),0 0 40px rgba(255,225,136,.26),inset 0 0 0 1px rgba(255,243,214,.18)}
+#rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='surprised']{border-color:rgba(255,225,136,.62);box-shadow:0 28px 72px rgba(0,0,0,.52),0 0 44px rgba(255,225,136,.3),inset 0 0 0 1px rgba(255,243,214,.2)}
 #rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='mystery']{border-color:rgba(188,157,255,.58);box-shadow:0 28px 72px rgba(0,0,0,.52),0 0 40px rgba(192,158,255,.3),inset 0 0 0 1px rgba(231,221,255,.16)}
 #rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='no-win']{border-color:rgba(201,207,218,.42);box-shadow:0 28px 72px rgba(0,0,0,.52),inset 0 0 0 1px rgba(255,255,255,.08)}
 #rewards.rewards-v2 .rv2-yumak-floating{margin-top:18px}
@@ -3100,6 +3101,8 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 #rewards.rewards-v2 .rv2-yumak-mouth{position:absolute;left:50%;top:58%;width:18px;height:9px;border-bottom:2px solid rgba(36,26,13,.78);border-radius:0 0 11px 11px;transform:translateX(-50%)}
 #rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='no-win'] .rv2-yumak-mouth{border-bottom-left-radius:0;border-bottom-right-radius:0;border-top:2px solid rgba(36,26,13,.78);border-bottom:0;top:60%}
 #rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='mystery'] .rv2-yumak-eye{transform:scale(1.2)}
+#rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='surprised'] .rv2-yumak-eye{transform:scale(1.18)}
+#rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='surprised'] .rv2-yumak-mouth{height:11px;border-bottom-width:2px}
 #rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='points'] .rv2-yumak-mouth,
 #rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='voucher'] .rv2-yumak-mouth,
 #rewards.rewards-v2 .rv2-yumak-assistant[data-yumak-reaction='free-ride'] .rv2-yumak-mouth{height:12px;border-bottom-width:3px}
@@ -3421,6 +3424,7 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 #rewards.rewards-v2 .rv2-mission-meta{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #rewards.rewards-v2 .rv2-mission-reward{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:#ffe8b2;font-weight:900}
 #rewards.rewards-v2 .rv2-mission-status{display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:0 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:900}
+#rewards.rewards-v2 .rv2-mission-status.is-pop{animation:rv2StatusPop .56s cubic-bezier(.2,.86,.31,1.02)}
 
 #rewards.rewards-v2 .rv2-mission-progress{position:relative;height:10px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);overflow:hidden}
 #rewards.rewards-v2 .rv2-mission-progress u{display:block;height:100%;width:var(--mission-progress,0%);background:linear-gradient(90deg,#ffe9ab,#d39a34);box-shadow:0 0 16px rgba(255,217,106,.34);border-radius:inherit;transition:width .35s ease}
@@ -3700,6 +3704,12 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   0%{opacity:0;transform:translateY(8px) scale(.98)}
   65%{opacity:1;transform:translateY(-1px) scale(1.01)}
   100%{opacity:1;transform:translateY(0) scale(1)}
+}
+
+@keyframes rv2StatusPop{
+  0%{transform:scale(.94);opacity:.75}
+  60%{transform:scale(1.08);opacity:1}
+  100%{transform:scale(1);opacity:1}
 }
 
 @keyframes rv2ResultPop{

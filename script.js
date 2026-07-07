@@ -89,6 +89,22 @@
     }
   };
 
+  function handleRewardEvent(type,payload){
+    const eventType=String(type || '').trim();
+    if(!eventType) return;
+    const detail={
+      type:eventType,
+      payload:payload && typeof payload==='object' ? payload : {},
+      timestamp:Date.now()
+    };
+    document.dispatchEvent(new CustomEvent('rewards:rewardEvent',{detail}));
+  }
+  try{
+    if(!window.handleRewardEvent) window.handleRewardEvent=handleRewardEvent;
+  }catch(_err){
+    // Ignore if global assignment is blocked.
+  }
+
   function getFocusableElements(container){
     if(!container) return [];
     return Array.from(container.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'))
@@ -1832,6 +1848,8 @@
           // never from the initially targeted/random animation hint.
           const finalIndex=getSegmentIndexAtPointer(rotation,segments.length,pointerAngle,segmentStartAngle);
           const selectedSegment=segments[finalIndex];
+          svgBuild?.segmentPaths?.[finalIndex]?.classList.add('is-hit');
+          svgBuild?.labelGroups?.[finalIndex]?.classList.add('is-hit');
           document.dispatchEvent(new CustomEvent('rewards:wheelResult',{
             detail:{
               win:Boolean(selectedSegment.win),
@@ -1853,9 +1871,6 @@
               winCard.hidden=false;
               requestAnimationFrame(()=>winCard.classList.add('is-visible'));
             }
-
-            svgBuild?.segmentPaths?.[finalIndex]?.classList.add('is-hit');
-            svgBuild?.labelGroups?.[finalIndex]?.classList.add('is-hit');
             widget.classList.add('is-win-flash');
             setTimeout(()=>widget.classList.remove('is-win-flash'),360);
 
@@ -2439,6 +2454,56 @@
       });
     }
 
+    function bindRewardEvents(){
+      if(root.dataset.rewardEventsBound==='true') return;
+      root.dataset.rewardEventsBound='true';
+
+      document.addEventListener('rewards:rewardEvent',event=>{
+        const detail=event && event.detail ? event.detail : {};
+        const type=String(detail.type || '').trim().toLowerCase();
+        const payload=detail.payload && typeof detail.payload==='object' ? detail.payload : {};
+        if(!type) return;
+
+        if(type==='wheel:result'){
+          const effect=String(payload.effect || '').trim().toLowerCase();
+          if(payload.win && effect==='voucher'){
+            showToast({title:'Belohnung',text:'Gutschein-Guthaben freigeschaltet',icon:'🎁',sound:'voucher'});
+          }else if(payload.win && effect==='extra-spin'){
+            showToast({title:'Extra-Dreh',text:'Extra-Dreh aktiviert',icon:'🔄',sound:'win'});
+          }else if(payload.win){
+            showToast({title:'Belohnung',text:`${String(payload.label || '+25 Punkte')} erhalten`,icon:'⭐',sound:'win'});
+          }else{
+            showToast({title:'Glücksrad',text:'Heute kein Gewinn, morgen neue Chance',icon:'🌙',sound:'lose'});
+          }
+          window.setTimeout(()=>syncDashboard({emitToasts:false}),40);
+          return;
+        }
+
+        if(type==='mystery:result'){
+          const rewardType=String(payload.rewardType || '').trim().toLowerCase();
+          if(rewardType==='voucher') showToast({title:'Mystery Box',text:'Gutschein-Guthaben aus Mystery Box erhalten',icon:'🎁',sound:'voucher'});
+          else if(rewardType==='badge') showToast({title:'Mystery Box',text:'Neues Abzeichen freigeschaltet',icon:'🏅',sound:'win'});
+          else if(rewardType==='points') showToast({title:'Mystery Box',text:'Bonuspunkte gutgeschrieben',icon:'⭐',sound:'win'});
+          else if(rewardType==='extra-spin') showToast({title:'Mystery Box',text:'Extra-Dreh erhalten',icon:'🔄',sound:'win'});
+          else showToast({title:'Mystery Box',text:'Heute nur ein Trostpreis',icon:'🫶',sound:'lose'});
+          window.setTimeout(()=>syncDashboard({emitToasts:false}),40);
+          return;
+        }
+
+        if(type==='mission:completed'){
+          showToast({title:'Mission',text:'Mission abgeschlossen',icon:'✅',sound:'tick'});
+          window.setTimeout(()=>syncDashboard({emitToasts:false}),40);
+          return;
+        }
+
+        if(type==='daily:checkin'){
+          const points=Math.max(0,Math.round(Number(payload.points) || 0));
+          showToast({title:'Daily Login',text:`Check-in erhalten: +${points} Punkte`,icon:'📅',sound:'win'});
+          window.setTimeout(()=>syncDashboard({emitToasts:false}),40);
+        }
+      });
+    }
+
     function syncDashboard({emitToasts}){
       const snapshot=readSnapshot();
       const signals=readSignals();
@@ -2470,21 +2535,18 @@
     }
 
     bindQuickActions();
+    bindRewardEvents();
     syncDashboard({emitToasts:true});
 
     document.addEventListener('rewards:wheelResult',event=>{
       const detail=event && event.detail ? event.detail : null;
       if(detail){
-        const effect=String(detail.effect || '').trim().toLowerCase();
-        if(detail.win && effect==='voucher'){
-          showToast({title:'Belohnung',text:'Gutschein-Guthaben freigeschaltet',icon:'🎁',sound:'voucher'});
-        }else if(detail.win){
-          showToast({title:'Belohnung',text:`${String(detail.label || '+25 Punkte')} erhalten`,icon:'⭐',sound:'win'});
-        }else{
-          showToast({title:'Glücksrad',text:'Heute kein Gewinn, morgen neue Chance',icon:'🌙',sound:'lose'});
-        }
+        handleRewardEvent('wheel:result',{
+          win:Boolean(detail.win),
+          effect:String(detail.effect || '').trim().toLowerCase(),
+          label:String(detail.label || '')
+        });
       }
-      window.setTimeout(()=>syncDashboard({emitToasts:false}),40);
     });
 
     // Some modules update their state after short animations/timers.
@@ -2494,6 +2556,8 @@
   function initRewardsMysteryBox(){
     const root=$('#rewards.rewards-v2 [data-rewards-mystery-box]');
     if(!root) return;
+    if(root.dataset.bound==='true') return;
+    root.dataset.bound='true';
 
     const statusNode=$('[data-mystery-status]',root);
     const noteNode=$('[data-mystery-note]',root);
@@ -2652,10 +2716,17 @@
 
       root.classList.add('is-opening');
       openButton.disabled=true;
+      handleRewardEvent('mystery:opening',{source:'mystery-box'});
 
       setTimeout(()=>{
         root.classList.remove('is-opening');
         const reward=rewards[Math.floor(Math.random()*rewards.length)];
+        let rewardType='other';
+        if(reward.id.includes('voucher')) rewardType='voucher';
+        else if(reward.id.includes('points')) rewardType='points';
+        else if(reward.id.includes('badge')) rewardType='badge';
+        else if(reward.id==='extra-spin') rewardType='extra-spin';
+        else if(reward.id==='no-win') rewardType='no-win';
 
         resultIcon.textContent=reward.icon;
         resultTitle.textContent=reward.title;
@@ -2666,6 +2737,14 @@
         createConfettiBurst(reward.win);
 
         writeState({lastOpenedDate:getTodayYmd(),lastRewardId:reward.id});
+        handleRewardEvent('mystery:result',{
+          rewardId:reward.id,
+          rewardType,
+          title:reward.title,
+          text:reward.text,
+          icon:reward.icon,
+          win:Boolean(reward.win)
+        });
         applyAvailability();
       },520);
     });
@@ -2675,6 +2754,8 @@
   function initRewardsDailyStreak(){
     const root=$('#rewards.rewards-v2 [data-rewards-daily-streak]');
     if(!root) return;
+    if(root.dataset.bound==='true') return;
+    root.dataset.bound='true';
 
     const dayCards=$$('[data-streak-day]',root);
     const statusNode=$('[data-streak-status]',root);
@@ -2779,6 +2860,10 @@
         state.lastCheckin=today;
         writeState(state);
         render();
+
+        const streakLength=state.claimed.length;
+        if(statusNode) statusNode.textContent=`Check-in bestätigt: +10 Punkte. Serie ${streakLength}/7 aktiv.`;
+        handleRewardEvent('daily:checkin',{points:10,streak:streakLength});
       });
     }
 
@@ -3002,6 +3087,8 @@
   function initRewardsMissions(){
     const root=$('#rewards.rewards-v2 [data-rewards-missions]');
     if(!root) return;
+    if(root.dataset.bound==='true') return;
+    root.dataset.bound='true';
 
     const missionCards=$$('[data-mission-id]',root);
     if(!missionCards.length) return;
@@ -3012,7 +3099,7 @@
       locked:'Gesperrt'
     };
 
-    missionCards.forEach(card=>{
+    function renderCard(card){
       const rawStatus=String(card.dataset.missionStatus || 'locked').trim().toLowerCase();
       const status=(rawStatus in statusLabelMap) ? rawStatus : 'locked';
       const current=Math.max(0,Number(card.dataset.missionCurrent || 0));
@@ -3033,9 +3120,38 @@
       }
 
       const progressText=$('.rv2-mission-progress-text',card);
-      if(progressText && !progressText.textContent.trim()){
-        progressText.textContent=`${Math.min(current,target)} / ${target}`;
-      }
+      if(progressText) progressText.textContent=`${Math.min(current,target)} / ${target}`;
+    }
+
+    missionCards.forEach(card=>{
+      renderCard(card);
+      card.addEventListener('click',()=>{
+        const status=String(card.dataset.missionStatus || 'locked').trim().toLowerCase();
+        if(status!=='active') return;
+
+        const target=Math.max(1,Number(card.dataset.missionTarget || 1));
+        const current=Math.max(0,Number(card.dataset.missionCurrent || 0));
+        const next=Math.min(target,current+1);
+        card.dataset.missionCurrent=String(next);
+
+        if(next>=target){
+          card.dataset.missionStatus='done';
+          const statusNode=$('.rv2-mission-status',card);
+          statusNode?.classList.remove('is-pop');
+          requestAnimationFrame(()=>statusNode?.classList.add('is-pop'));
+          window.setTimeout(()=>statusNode?.classList.remove('is-pop'),760);
+
+          const title=$('.rv2-mission-copy h4',card)?.textContent?.trim() || 'Mission';
+          const reward=String(card.dataset.missionReward || '').trim();
+          handleRewardEvent('mission:completed',{
+            missionId:String(card.dataset.missionId || '').trim(),
+            title,
+            reward
+          });
+        }
+
+        renderCard(card);
+      });
     });
   }
   function initRewardsSeasonalEvents(){
@@ -3119,7 +3235,7 @@
       voucher:'Gutschein gewonnen. Sehr stark, das zahlt sich aus.',
       'free-ride':'Freifahrt gesichert. Das ist Premium-Level.',
       mystery:'Geheimpreis! Das war eine besondere Landung.',
-      'extra-spin':'Extra-Dreh! Wir legen direkt nach.',
+      surprised:'Extra-Dreh! Ueberraschung, wir legen direkt nach.',
       'no-win':'Heute ohne Gewinn, aber wir bleiben dran.'
     };
 
@@ -3405,12 +3521,21 @@
     document.addEventListener('rewards:wheelResult',event=>{
       const detail=event && event.detail ? event.detail : {};
       const effect=String(detail.effect || (detail.win ? 'points' : 'no-win')).trim().toLowerCase();
-      setReaction(effect);
+      const moodByEffect={
+        points:'points',
+        voucher:'voucher',
+        'free-ride':'free-ride',
+        'extra-spin':'surprised',
+        mystery:'mystery',
+        'no-win':'no-win'
+      };
+      const mood=moodByEffect[effect] || (detail.win ? 'points' : 'no-win');
+      setReaction(mood);
 
-      const reactionText=wheelReactions[effect] || (detail.win ? wheelReactions.points : wheelReactions['no-win']);
+      const reactionText=wheelReactions[mood] || (detail.win ? wheelReactions.points : wheelReactions['no-win']);
       showTipText(reactionText);
 
-      if(effect==='extra-spin') sparkleBurst('extra-spin');
+      if(mood==='surprised') sparkleBurst('extra-spin');
       else if(effect==='mystery') sparkleBurst('mystery');
       else if(effect==='voucher') sparkleBurst('voucher');
       else if(effect==='no-win') sparkleBurst('nowin');
@@ -3429,10 +3554,14 @@
   function initRewardsActivities(){
     const root=$('#rewards.rewards-v2 [data-rewards-activities]');
     if(!root) return;
+    if(root.dataset.bound==='true') return;
+    root.dataset.bound='true';
 
     const filterButtons=$$('[data-activity-filter]',root);
     const items=$$('[data-activity-type]',root);
-    if(!filterButtons.length || !items.length) return;
+    const timeline=$('.rv2-activity-timeline',root);
+    if(!filterButtons.length || !items.length || !timeline) return;
+    let currentFilter='all';
 
     function applyFilter(filter){
       items.forEach(item=>{
@@ -3445,12 +3574,82 @@
         button.classList.toggle('is-active',active);
         button.setAttribute('aria-selected',active ? 'true' : 'false');
       });
+      currentFilter=filter;
+    }
+
+    function nowLabel(){
+      const d=new Date();
+      return `Heute, ${d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} Uhr`;
+    }
+
+    function prependActivity({type='points',icon='⭐',title='Neue Rewards-Aktualisierung',text='Ereignis gespeichert.'}){
+      const li=document.createElement('li');
+      li.className='rv2-activity-item';
+      li.dataset.activityType=type;
+
+      const iconNode=document.createElement('i');
+      iconNode.className='rv2-activity-icon';
+      iconNode.setAttribute('aria-hidden','true');
+      iconNode.textContent=icon;
+
+      const copy=document.createElement('div');
+      copy.className='rv2-activity-copy';
+      const h4=document.createElement('h4');
+      h4.textContent=title;
+      const p=document.createElement('p');
+      p.textContent=text;
+      const small=document.createElement('small');
+      small.textContent=nowLabel();
+      copy.append(h4,p,small);
+
+      const status=document.createElement('b');
+      status.className='rv2-activity-status';
+      const statusMap={points:'Punkte',voucher:'Gutschein',badge:'Abzeichen',mission:'Mission'};
+      status.textContent=statusMap[type] || 'Info';
+
+      li.append(iconNode,copy,status);
+      timeline.prepend(li);
+
+      while(timeline.children.length>12) timeline.lastElementChild?.remove();
+      applyFilter(currentFilter);
     }
 
     filterButtons.forEach(button=>{
       button.addEventListener('click',()=>{
         applyFilter(button.dataset.activityFilter || 'all');
       });
+    });
+
+    document.addEventListener('rewards:rewardEvent',event=>{
+      const detail=event && event.detail ? event.detail : {};
+      const type=String(detail.type || '').trim().toLowerCase();
+      const payload=detail.payload && typeof detail.payload==='object' ? detail.payload : {};
+      if(!type) return;
+
+      if(type==='wheel:result'){
+        const effect=String(payload.effect || '').trim().toLowerCase();
+        if(payload.win && effect==='voucher') prependActivity({type:'voucher',icon:'🎁',title:'Gutschein-Guthaben durch Glücksrad',text:'Das Rad hat neues Gutschein-Guthaben geliefert.'});
+        else if(payload.win) prependActivity({type:'points',icon:'🎯',title:`${String(payload.label || '+25 Punkte')} durch Glücksrad`,text:'Der Gewinn wurde als Demo-Ereignis verbucht.'});
+        else prependActivity({type:'mission',icon:'🌙',title:'Glücksrad ohne Gewinn',text:'Heute keine Belohnung - morgen neue Chance.'});
+        return;
+      }
+
+      if(type==='mystery:result'){
+        const rewardType=String(payload.rewardType || '').trim().toLowerCase();
+        if(rewardType==='voucher') prependActivity({type:'voucher',icon:'🎁',title:'Mystery Box: Gutschein erhalten',text:'Dein Gutschein-Guthaben wurde erweitert.'});
+        else if(rewardType==='badge') prependActivity({type:'badge',icon:'🏅',title:'Mystery Box: Abzeichen erhalten',text:'Ein neues Abzeichen wurde freigeschaltet.'});
+        else prependActivity({type:'points',icon:'📦',title:'Mystery Box geöffnet',text:String(payload.title || 'Belohnung wurde verbucht.')});
+        return;
+      }
+
+      if(type==='mission:completed'){
+        prependActivity({type:'mission',icon:'✅',title:`Mission abgeschlossen: ${String(payload.title || 'Mission')}`,text:String(payload.reward ? `Belohnung: ${payload.reward}` : 'Mission wurde erfolgreich abgeschlossen.')});
+        return;
+      }
+
+      if(type==='daily:checkin'){
+        prependActivity({type:'points',icon:'📅',title:'Daily Check-in bestätigt',text:`+${Math.max(0,Math.round(Number(payload.points)||0))} Punkte und Serie aktualisiert.`});
+      }
     });
 
     applyFilter('all');
