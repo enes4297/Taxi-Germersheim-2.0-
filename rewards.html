@@ -1143,6 +1143,80 @@
         </article>
       </section>
 
+      <section class="rv2-admin-settlement" aria-label="Admin Rewards-Abrechnung" data-rewards-admin-settlement>
+        <header class="rv2-section-head">
+          <h3>Rewards-Abrechnung</h3>
+          <small>Admin / Intern</small>
+        </header>
+
+        <p class="rv2-admin-note">Demo - spaeter nur intern sichtbar. Keine echte Zahlung, keine echte Buchung.</p>
+
+        <form class="rv2-admin-form" data-admin-settlement-form>
+          <div class="rv2-admin-grid">
+            <label>Kunde
+              <select data-admin-customer>
+                <option value="cust-max">Max Mustermann</option>
+                <option value="cust-enes">Enes Y.</option>
+                <option value="cust-selin">Selin K.</option>
+                <option value="cust-ali">Ali B.</option>
+              </select>
+            </label>
+            <label>Fahrtart
+              <select data-admin-ride-type>
+                <option value="taxi">Normale Taxifahrt</option>
+                <option value="medical">Krankenfahrt</option>
+                <option value="wheelchair">Rollstuhlfahrt</option>
+                <option value="airport">Flughafentransfer</option>
+              </select>
+            </label>
+            <label>Kunden-ID (Demo)
+              <input type="text" value="CUST-0001" data-admin-customer-id>
+            </label>
+            <label>Aktuelles Gutschein-Guthaben
+              <output data-admin-balance>0,00 EUR</output>
+            </label>
+            <label>Fahrpreis
+              <input type="number" min="0" step="0.01" value="32" data-admin-fare>
+            </label>
+            <label>Gutschein anrechnen
+              <input type="number" min="0" step="0.01" value="15" data-admin-apply>
+            </label>
+            <label>Restbetrag
+              <output data-admin-rest>17,00 EUR</output>
+            </label>
+            <label>Punkte gutschreiben
+              <input type="number" min="0" step="1" value="10" data-admin-points>
+            </label>
+          </div>
+
+          <div class="rv2-admin-future">
+            <p><b>Fahrerbericht-Struktur:</b> vorbereitet (driverId, shiftId, reportRef)</p>
+            <p><b>Datenbank-Struktur:</b> vorbereitet (dbStatus, syncRef, source)</p>
+          </div>
+
+          <button class="button rv2-admin-submit" type="submit">Abrechnung speichern</button>
+        </form>
+
+        <article class="rv2-admin-summary" aria-label="Abrechnungsübersicht">
+          <h4>Abrechnungsübersicht</h4>
+          <ul>
+            <li><span>Fahrpreis</span><b data-admin-summary-fare>0,00 EUR</b></li>
+            <li><span>Eingesetztes Guthaben</span><b data-admin-summary-voucher>0,00 EUR</b></li>
+            <li><span>Restbetrag</span><b data-admin-summary-rest>0,00 EUR</b></li>
+            <li><span>Neue Punkte</span><b data-admin-summary-points>+0</b></li>
+            <li><span>Neues Gutschein-Guthaben</span><b data-admin-summary-balance>0,00 EUR</b></li>
+          </ul>
+          <p data-admin-status>Admin-Demo bereit: Abrechnungen werden lokal gespeichert.</p>
+        </article>
+
+        <article class="rv2-admin-history" aria-label="Admin-Abrechnungsverlauf">
+          <h4>Admin-Abrechnungsverlauf</h4>
+          <ul data-admin-history>
+            <li><span>Heute | Max Mustermann | Taxifahrt</span><b>32,00 EUR | Gutschein 15,00 EUR | Rest 17,00 EUR | +10</b></li>
+          </ul>
+        </article>
+      </section>
+
       <div class="rv2-toast-stack" data-rewards-toast-stack aria-live="polite" aria-atomic="false"></div>
     </section>
   </main>

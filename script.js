@@ -2632,6 +2632,210 @@
     renderHistoryFromStore();
     recalc();
   }
+  function initRewardsAdminSettlement(){
+    const root=$('#rewards.rewards-v2 [data-rewards-admin-settlement]');
+    if(!root) return;
+    if(root.dataset.bound==='true') return;
+    root.dataset.bound='true';
+
+    const engine=(window.rewardsEngine && window.rewardsEngine.Store) ? window.rewardsEngine : null;
+    const storageKey='taxiRewardsAdminSettlementState';
+
+    const form=$('[data-admin-settlement-form]',root);
+    const customerSelect=$('[data-admin-customer]',root);
+    const rideTypeSelect=$('[data-admin-ride-type]',root);
+    const customerIdInput=$('[data-admin-customer-id]',root);
+    const balanceOutput=$('[data-admin-balance]',root);
+    const fareInput=$('[data-admin-fare]',root);
+    const applyInput=$('[data-admin-apply]',root);
+    const restOutput=$('[data-admin-rest]',root);
+    const pointsInput=$('[data-admin-points]',root);
+    const statusNode=$('[data-admin-status]',root);
+    const historyList=$('[data-admin-history]',root);
+    if(!form || !customerSelect || !rideTypeSelect || !customerIdInput || !balanceOutput || !fareInput || !applyInput || !restOutput || !pointsInput || !historyList) return;
+
+    const summaryNodes={
+      fare:$('[data-admin-summary-fare]',root),
+      voucher:$('[data-admin-summary-voucher]',root),
+      rest:$('[data-admin-summary-rest]',root),
+      points:$('[data-admin-summary-points]',root),
+      balance:$('[data-admin-summary-balance]',root)
+    };
+
+    const pointsByRide={taxi:10,medical:20,wheelchair:15,airport:18};
+    const rideLabelByKey={taxi:'Taxifahrt',medical:'Krankenfahrt',wheelchair:'Rollstuhlfahrt',airport:'Flughafentransfer'};
+
+    function toMoney(value){
+      const n=Number(String(value || '').replace(',','.'));
+      return Number.isFinite(n) ? Math.max(0,n) : 0;
+    }
+
+    function euro(value){
+      return `${Number(value || 0).toFixed(2).replace('.',',')} EUR`;
+    }
+
+    function defaultState(){
+      return {
+        customers:{
+          'cust-max':{name:'Max Mustermann',customerId:'CUST-0001',voucherBalance:25,pointsTotal:0},
+          'cust-enes':{name:'Enes Y.',customerId:'CUST-0002',voucherBalance:18,pointsTotal:0},
+          'cust-selin':{name:'Selin K.',customerId:'CUST-0003',voucherBalance:12,pointsTotal:0},
+          'cust-ali':{name:'Ali B.',customerId:'CUST-0004',voucherBalance:7.5,pointsTotal:0}
+        },
+        settlements:[]
+      };
+    }
+
+    function readState(){
+      try{
+        const parsed=JSON.parse(localStorage.getItem(storageKey) || '');
+        if(!parsed || typeof parsed!=='object') return defaultState();
+        const fallback=defaultState();
+        return {
+          customers:{...fallback.customers,...(parsed.customers && typeof parsed.customers==='object' ? parsed.customers : {})},
+          settlements:Array.isArray(parsed.settlements) ? parsed.settlements : []
+        };
+      }catch(_err){
+        return defaultState();
+      }
+    }
+
+    function writeState(state){
+      try{ localStorage.setItem(storageKey,JSON.stringify(state)); }catch(_err){}
+    }
+
+    function getSelectedCustomer(state){
+      const key=String(customerSelect.value || '').trim();
+      const customer=state.customers[key] && typeof state.customers[key]==='object' ? state.customers[key] : null;
+      return {key,customer};
+    }
+
+    function recalc(state){
+      const selected=getSelectedCustomer(state);
+      const balance=Math.max(0,Number(selected.customer?.voucherBalance) || 0);
+      const fare=toMoney(fareInput.value);
+      const requested=toMoney(applyInput.value);
+      const applied=Math.min(fare,balance,requested);
+      const rest=Math.max(0,fare-applied);
+
+      applyInput.value=String(applied.toFixed(2));
+      balanceOutput.textContent=euro(balance);
+      restOutput.textContent=euro(rest);
+      return {selected,fare,applied,rest,balance};
+    }
+
+    function renderSummary({fare,applied,rest,points,newBalance}){
+      if(summaryNodes.fare) summaryNodes.fare.textContent=euro(fare);
+      if(summaryNodes.voucher) summaryNodes.voucher.textContent=euro(applied);
+      if(summaryNodes.rest) summaryNodes.rest.textContent=euro(rest);
+      if(summaryNodes.points) summaryNodes.points.textContent=`+${Math.max(0,Math.round(Number(points) || 0))}`;
+      if(summaryNodes.balance) summaryNodes.balance.textContent=euro(newBalance);
+    }
+
+    function renderHistory(state){
+      const rows=Array.isArray(state.settlements) ? state.settlements.slice(0,12) : [];
+      if(!rows.length) return;
+      historyList.innerHTML='';
+      rows.forEach(entry=>{
+        const li=document.createElement('li');
+        const left=document.createElement('span');
+        const right=document.createElement('b');
+        const d=new Date(Number(entry.timestamp) || Date.now());
+        left.textContent=`${d.toLocaleDateString('de-DE')} | ${String(entry.customerName || 'Kunde')} | ${rideLabelByKey[String(entry.rideType || 'taxi')] || 'Taxifahrt'}`;
+        right.textContent=`${euro(entry.fare)} | Gutschein ${euro(entry.voucherUsed)} | Rest ${euro(entry.restPaid)} | +${Math.max(0,Math.round(Number(entry.points)||0))}`;
+        li.append(left,right);
+        historyList.append(li);
+      });
+    }
+
+    function syncCustomerFields(state){
+      const selected=getSelectedCustomer(state);
+      if(selected.customer){
+        customerIdInput.value=String(selected.customer.customerId || 'CUST-DEMO');
+      }
+    }
+
+    function submitSettlement(event){
+      event.preventDefault();
+      const state=readState();
+      const calc=recalc(state);
+      const selected=calc.selected;
+      if(!selected.customer) return;
+
+      const rideType=String(rideTypeSelect.value || 'taxi').trim().toLowerCase();
+      const points=Math.max(0,Math.round(Number(pointsInput.value) || pointsByRide[rideType] || 10));
+      const customerId=String(customerIdInput.value || selected.customer.customerId || 'CUST-DEMO').trim() || 'CUST-DEMO';
+      const newBalance=Number((Math.max(0,calc.balance-calc.applied)).toFixed(2));
+      const now=Date.now();
+
+      selected.customer.voucherBalance=newBalance;
+      selected.customer.customerId=customerId;
+      selected.customer.pointsTotal=Math.max(0,Math.round(Number(selected.customer.pointsTotal) || 0) + points);
+
+      const settlement={
+        timestamp:now,
+        dateIso:new Date(now).toISOString(),
+        customerKey:selected.key,
+        customerId,
+        customerName:String(selected.customer.name || 'Kunde'),
+        rideType,
+        fare:Number(calc.fare.toFixed(2)),
+        voucherUsed:Number(calc.applied.toFixed(2)),
+        restPaid:Number(calc.rest.toFixed(2)),
+        points,
+        voucherBalanceAfter:newBalance,
+        driverReport:{driverId:'DRV-DEMO',shiftId:'SHIFT-DEMO',reportRef:`REP-${now}`},
+        db:{status:'pending-demo',syncRef:`SYNC-${now}`,source:'localStorage'}
+      };
+
+      state.settlements=Array.isArray(state.settlements) ? state.settlements : [];
+      state.settlements.unshift(settlement);
+      state.settlements=state.settlements.slice(0,60);
+      writeState(state);
+
+      if(engine){
+        handleRewardEvent('booking:completed',{
+          customer:settlement.customerName,
+          rideType:settlement.rideType,
+          fare:settlement.fare,
+          voucherApplied:settlement.voucherUsed,
+          points:settlement.points
+        });
+      }
+
+      renderSummary({fare:settlement.fare,applied:settlement.voucherUsed,rest:settlement.restPaid,points:settlement.points,newBalance:settlement.voucherBalanceAfter});
+      renderHistory(state);
+      recalc(state);
+
+      if(statusNode){
+        statusNode.textContent=`Abrechnung gespeichert: ${settlement.customerName}, Fahrpreis ${euro(settlement.fare)}, Gutschein ${euro(settlement.voucherUsed)}, Rest ${euro(settlement.restPaid)}, +${settlement.points} Punkte.`;
+      }
+    }
+
+    ['input','change'].forEach(eventName=>{
+      fareInput.addEventListener(eventName,()=>recalc(readState()));
+      applyInput.addEventListener(eventName,()=>recalc(readState()));
+    });
+
+    customerSelect.addEventListener('change',()=>{
+      const state=readState();
+      syncCustomerFields(state);
+      recalc(state);
+    });
+
+    rideTypeSelect.addEventListener('change',()=>{
+      const key=String(rideTypeSelect.value || 'taxi').trim().toLowerCase();
+      pointsInput.value=String(pointsByRide[key] || 10);
+    });
+
+    form.addEventListener('submit',submitSettlement);
+
+    const start=readState();
+    syncCustomerFields(start);
+    renderHistory(start);
+    const calc=recalc(start);
+    renderSummary({fare:calc.fare,applied:calc.applied,rest:calc.rest,points:Math.max(0,Math.round(Number(pointsInput.value) || 0)),newBalance:calc.balance});
+  }
   function initRewardsCustomerDashboard(){
     const root=$('#rewards.rewards-v2 [data-rewards-customer-dashboard]');
     if(!root) return;
@@ -4596,12 +4800,32 @@
     }catch(_err){
       snapshot=null;
     }
-    if(!snapshot || typeof snapshot!=='object') return;
+    const points=Math.max(0,Math.round(Number(snapshot?.points) || 230));
+    const level=String(snapshot?.level?.label || 'Gold');
+    let voucherBalance=Math.max(0,Number(snapshot?.voucherBalance) || 15);
+    let rides=Array.isArray(snapshot?.rides?.history) ? snapshot.rides.history.slice(0,3) : [];
 
-    const points=Math.max(0,Math.round(Number(snapshot.points) || 0));
-    const level=String(snapshot.level?.label || 'Gold');
-    const voucherBalance=Math.max(0,Number(snapshot.voucherBalance) || 0);
-    const rides=Array.isArray(snapshot.rides?.history) ? snapshot.rides.history.slice(0,3) : [];
+    try{
+      const adminState=JSON.parse(localStorage.getItem('taxiRewardsAdminSettlementState') || '');
+      if(adminState && typeof adminState==='object'){
+        const customers=adminState.customers && typeof adminState.customers==='object' ? adminState.customers : {};
+        const maxCustomer=customers['cust-max'];
+        if(maxCustomer && typeof maxCustomer==='object'){
+          const balance=Number(maxCustomer.voucherBalance);
+          if(Number.isFinite(balance)) voucherBalance=Math.max(0,balance);
+        }
+        const settlements=Array.isArray(adminState.settlements) ? adminState.settlements : [];
+        if(settlements.length){
+          rides=settlements.slice(0,3).map(entry=>({
+            timestamp:entry.timestamp,
+            rideType:entry.rideType,
+            fare:entry.fare
+          }));
+        }
+      }
+    }catch(_err){
+      // Keep engine values if admin snapshot is not available.
+    }
 
     const pointsNode=$('[data-account-field="points"]',root);
     if(pointsNode) pointsNode.textContent=String(points);
@@ -4654,6 +4878,7 @@
     initRewardsWheel();
     initRewardsVoucherBalance();
     initRewardsRideBookingDemo();
+    initRewardsAdminSettlement();
     initRewardsCustomerDashboard();
     initRewardsVipStatus();
     initRewardsMysteryBox();
