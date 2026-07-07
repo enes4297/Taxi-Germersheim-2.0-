@@ -2168,6 +2168,7 @@
     if(!smartRoot || !quickRoot || !todayRoot || !toastStack) return;
 
     const storageKey='taxiRewardsDashboardSignalsState';
+    const soundStorageKey='taxiRewardsSoundState';
     const vipOrder=['bronze','silber','gold','platin','legend'];
     const quickActionTargets={
       wheel:'[data-rewards-wheel]',
@@ -2214,7 +2215,53 @@
       }
     }
 
-    function showToast({title,text,icon='✨'}){
+    function createSoundBus(){
+      let enabled=false;
+      try{
+        enabled=JSON.parse(localStorage.getItem(soundStorageKey) || 'false')===true;
+      }catch(_err){
+        enabled=false;
+      }
+
+      const sounds={
+        tick:null,
+        win:null,
+        voucher:null,
+        levelUp:null,
+        lose:null
+      };
+
+      function setEnabled(next){
+        enabled=Boolean(next);
+        try{ localStorage.setItem(soundStorageKey,JSON.stringify(enabled)); }catch(_err){}
+      }
+
+      function play(name){
+        const key=String(name || '').trim();
+        if(!(key in sounds)) return;
+        if(!enabled) return;
+        const audio=sounds[key];
+        if(!audio) return;
+        audio.currentTime=0;
+        audio.play().catch(()=>{});
+      }
+
+      return {
+        sounds,
+        get enabled(){ return enabled; },
+        setEnabled,
+        play
+      };
+    }
+
+    const rewardsSound=createSoundBus();
+    try{
+      if(!window.taxiRewardsSound) window.taxiRewardsSound=rewardsSound;
+    }catch(_err){
+      // Ignore if window binding is restricted.
+    }
+
+    function showToast({title,text,icon='✨',sound=''}){
       const toast=document.createElement('article');
       toast.className='rv2-toast';
       const iconNode=document.createElement('i');
@@ -2228,6 +2275,7 @@
       copy.append(strong,p);
       toast.append(iconNode,copy);
       toastStack.append(toast);
+      rewardsSound.play(sound);
 
       window.setTimeout(()=>{
         toast.classList.add('is-leaving');
@@ -2385,6 +2433,7 @@
         if(!selector) return;
         const target=$(selector,root);
         if(!target) return;
+        rewardsSound.play('tick');
         target.scrollIntoView({behavior:'smooth',block:'start'});
         markScrollTarget(target);
       });
@@ -2400,17 +2449,17 @@
 
       if(emitToasts){
         if(snapshot.missionDoneCount>signals.seenMissionDone){
-          showToast({title:'Missionen',text:'Neue Mission abgeschlossen',icon:'✅'});
+          showToast({title:'Missionen',text:'Neue Mission abgeschlossen',icon:'✅',sound:'tick'});
         }
         if(snapshot.achievementsUnlocked>signals.seenAchievements){
-          showToast({title:'Achievement',text:'Neues Badge freigeschaltet',icon:'🏅'});
+          showToast({title:'Achievement',text:'Neues Abzeichen erhalten',icon:'🏅',sound:'win'});
         }
         if(snapshot.mysteryAvailable && signals.lastMysteryToastDate!==snapshot.today){
-          showToast({title:'Mystery Box',text:'Mystery Box verfügbar',icon:'📦'});
+          showToast({title:'Mystery Box',text:'Mystery Box verfügbar',icon:'📦',sound:'tick'});
           signals.lastMysteryToastDate=snapshot.today;
         }
         if(snapshot.vipIndex>signals.seenVipIndex && snapshot.vipIndex>=0){
-          showToast({title:'VIP-Status',text:'VIP-Level erhöht',icon:'👑'});
+          showToast({title:'VIP-Status',text:'Level erhöht',icon:'👑',sound:'levelUp'});
         }
       }
 
@@ -2425,18 +2474,22 @@
 
     document.addEventListener('rewards:wheelResult',event=>{
       const detail=event && event.detail ? event.detail : null;
-      if(detail && detail.win){
-        showToast({
-          title:'Belohnung',
-          text:`${String(detail.label || 'Gewinn')} erhalten`,
-          icon:detail.effect==='voucher' ? '🎁' : '⭐'
-        });
+      if(detail){
+        const effect=String(detail.effect || '').trim().toLowerCase();
+        if(detail.win && effect==='voucher'){
+          showToast({title:'Belohnung',text:'Gutschein-Guthaben freigeschaltet',icon:'🎁',sound:'voucher'});
+        }else if(detail.win){
+          showToast({title:'Belohnung',text:`${String(detail.label || '+25 Punkte')} erhalten`,icon:'⭐',sound:'win'});
+        }else{
+          showToast({title:'Glücksrad',text:'Heute kein Gewinn, morgen neue Chance',icon:'🌙',sound:'lose'});
+        }
       }
       window.setTimeout(()=>syncDashboard({emitToasts:false}),40);
     });
 
     // Some modules update their state after short animations/timers.
     window.setTimeout(()=>syncDashboard({emitToasts:false}),650);
+    requestAnimationFrame(()=>root.classList.add('is-rewards-live'));
   }
   function initRewardsMysteryBox(){
     const root=$('#rewards.rewards-v2 [data-rewards-mystery-box]');
@@ -3030,6 +3083,8 @@
     const celebrateHost=$('[data-yumak-celebrate]',root);
     const spinWidget=$('#rewards.rewards-v2 [data-rewards-wheel]');
     const wheelDisc=spinWidget ? ($('.rv2-wheel-rotator',spinWidget) || $('.rewards-wheel-disc',spinWidget)) : null;
+    const wheelSpinButton=spinWidget ? $('.rv2-spin-btn',spinWidget) : null;
+    const mysteryOpenButton=$('#rewards.rewards-v2 [data-rewards-mystery-box] [data-mystery-open]');
     const listItems=$$('li',$('.rv2-yumak-tip-list',root));
     const tips=listItems.map(item=>item.textContent.trim()).filter(Boolean);
 
@@ -3043,6 +3098,7 @@
     let noWinResetTimer=0;
     let frameId=0;
     let pointerBurstTime=0;
+    let modeTimer=0;
 
     const state={
       hover:false,
@@ -3217,6 +3273,20 @@
       return Number.isFinite(value) ? value : 0;
     }
 
+    function isCooldownMode(){
+      const wheelLocked=Boolean(wheelSpinButton && wheelSpinButton.disabled);
+      const mysteryLocked=Boolean(mysteryOpenButton && mysteryOpenButton.disabled);
+      return wheelLocked && mysteryLocked;
+    }
+
+    function updateMode(){
+      if(state.spinning){
+        root.dataset.yumakMode='watching';
+        return;
+      }
+      root.dataset.yumakMode=isCooldownMode() ? 'sleepy' : 'idle';
+    }
+
     function animate(now){
       const t=now || performance.now();
       const idleWave=Math.sin(t*0.0021);
@@ -3237,6 +3307,14 @@
         tailBase=Math.sin(t*0.0072)*19;
         headBase+=3;
         state.targetLookY=-1.8;
+      }
+      if(root.dataset.yumakMode==='sleepy'){
+        tailBase=-10;
+        headBase=-5;
+        earsBase-=7;
+        bodyBase=.985;
+        state.targetLookX=0;
+        state.targetLookY=2.2;
       }
 
       if(root.classList.contains('is-ear-twitch')) earsBase+=5;
@@ -3315,12 +3393,14 @@
     if(spinWidget){
       const updateSpinMode=()=>{
         state.spinning=spinWidget.classList.contains('is-spinning');
-        root.dataset.yumakMode=state.spinning ? 'watching' : 'idle';
+        updateMode();
       };
       const observer=new MutationObserver(updateSpinMode);
       observer.observe(spinWidget,{attributes:true,attributeFilter:['class']});
       updateSpinMode();
     }
+
+    modeTimer=window.setInterval(updateMode,1000);
 
     document.addEventListener('rewards:wheelResult',event=>{
       const detail=event && event.detail ? event.detail : {};
@@ -3343,6 +3423,7 @@
     queueAutoTip();
     scheduleBlink();
     scheduleEarTwitch();
+    updateMode();
     frameId=requestAnimationFrame(animate);
   }
   function initRewardsActivities(){
