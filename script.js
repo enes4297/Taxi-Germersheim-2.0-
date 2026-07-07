@@ -806,9 +806,23 @@
   }
 
   async function initBookingPlacesAutocomplete(){
-    // Vorbereitung fuer spaetere Places-Integration (derzeit ohne Bindung in der Demo).
+    const pickupInput=$('#startAddress');
+    const targetInput=$('#targetAddress');
+    if(!pickupInput || !targetInput) return false;
+    if(pickupInput.dataset.autocompletePrepared==='true' && targetInput.dataset.autocompletePrepared==='true') return true;
+
     const loaded=await loadGoogleMapsApiOnce();
-    if(!loaded) return false;
+    const mode=loaded ? 'google-places-ready' : 'demo';
+    [pickupInput,targetInput].forEach(input=>{
+      input.dataset.autocompleteMode=mode;
+      input.dataset.autocompletePrepared='true';
+    });
+
+    $$('[data-autocomplete-list]').forEach(list=>{
+      list.dataset.autocompleteMode=mode;
+      list.hidden=true;
+    });
+
     return true;
   }
 
@@ -933,12 +947,14 @@
     const yumakHintNode=$('[data-booking-yumak-hint]');
     const summaryDistanceNode=$('[data-booking-summary-distance]');
     const summaryDurationNode=$('[data-booking-summary-duration]');
+    const summaryPointsNode=$('[data-booking-summary-points]');
     const points=getEstimatedRewardPoints();
     const routeService=services[bookingStepState.service]?.[0] || 'Normale Taxifahrt';
 
     if(startPreview) startPreview.value=start || '-';
     if(serviceNode) serviceNode.textContent=routeService;
     if(pointsNode) pointsNode.textContent=`ca. ${points}`;
+    if(summaryPointsNode) summaryPointsNode.textContent=`ca. ${points}`;
 
     if(!start || !target){
       bookingRouteState.distanceText='-';
@@ -949,7 +965,7 @@
       if(durationNode) durationNode.textContent='-';
       if(summaryDistanceNode) summaryDistanceNode.textContent='-';
       if(summaryDurationNode) summaryDurationNode.textContent='-';
-      if(yumakHintNode) yumakHintNode.textContent=`Perfekt! Sobald Start und Ziel gesetzt sind, zeigt Yumak dir Dauer und ca. ${points} Punkte an.`;
+      if(yumakHintNode) yumakHintNode.textContent='Perfekt! Das sind ungefaehr 7,5 km und 11 Minuten.';
       return;
     }
 
@@ -967,7 +983,11 @@
     if(durationNode) durationNode.textContent=durationText;
     if(summaryDistanceNode) summaryDistanceNode.textContent=distanceText;
     if(summaryDurationNode) summaryDurationNode.textContent=durationText;
-    if(yumakHintNode) yumakHintNode.textContent=`Perfekt! Deine Fahrt dauert ungefaehr ${durationText} und bringt dir ca. ${points} Punkte.`;
+    if(yumakHintNode){
+      if(bookingStepState.service==='medical') yumakHintNode.textContent='Fuer Krankenfahrten helfen wir dir gerne bei Fragen zur Kostenuebernahme.';
+      else if(bookingStepState.service==='airport') yumakHintNode.textContent='Plane bitte genug Zeit fuer Check-in und Gepaeck ein.';
+      else yumakHintNode.textContent=`Perfekt! Das sind ungefaehr ${distanceText} und ${durationText}.`;
+    }
   }
   function getStoredCookieConsent(){
     try{
@@ -1435,6 +1455,7 @@
     if(dateField && !dateField.value) dateField.valueAsDate=new Date();
     if(timeField && !timeField.value) timeField.value='12:00';
     applyRouteMapPresentationState($('#bookingRouteMapContainer'));
+    initBookingPlacesAutocomplete();
 
     showBookingStep(1);
     syncBookingSummary();
@@ -5286,6 +5307,7 @@
     setService('taxi');
     initPremiumBookingFlow();
     validate();
+    initMapContainer('startMapContainer');
     initMapContainer('bookingRouteMapContainer');
     setTimeout(hideSplash,1200);
     initMedicalAssistant();

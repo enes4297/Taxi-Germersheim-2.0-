@@ -545,6 +545,7 @@
             <label>STARTADRESSE</label>
             <div class="input pb-location-field" data-maps-autocomplete="pickup"><i data-icon="pin"></i><input id="startAddress" placeholder="Abholort eingeben" autocomplete="off" aria-autocomplete="list" aria-expanded="false"></div>
             <div class="pb-autocomplete-prep" data-autocomplete-list="pickup" hidden></div>
+            <div id="startMapContainer" class="map-container"></div>
             <button class="outline" type="button" id="locationBtn"><i data-icon="location"></i>Aktuellen Standort verwenden</button>
             <div class="pb-nav"><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
@@ -575,7 +576,7 @@
                 <p><span>Rewards-Punkte:</span> <b data-booking-route-points>ca. 15</b></p>
                 <p class="pb-route-fare-note">Fahrpreis wird nach Bestätigung berechnet.</p>
               </div>
-              <article class="pb-yumak-route-card" aria-live="polite"><p data-booking-yumak-hint>Perfekt! Deine Fahrt dauert ungefaehr 11 Minuten und bringt dir ca. 15 Punkte.</p></article>
+              <article class="pb-yumak-route-card" aria-live="polite"><p data-booking-yumak-hint>Perfekt! Das sind ungefaehr 7,5 km und 11 Minuten.</p></article>
             </section>
             <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
@@ -702,8 +703,10 @@
             <li><span>Datum</span><b data-booking-summary-date>-</b></li>
             <li><span>Uhrzeit</span><b data-booking-summary-time>-</b></li>
             <li><span>Fahrtart</span><b data-booking-summary-service>Taxi</b></li>
+            <li><span>Rewards-Punkte</span><b data-booking-summary-points>ca. 15</b></li>
             <li><span>Optionen</span><b data-booking-summary-options>Keine</b></li>
           </ul>
+          <p class="pb-summary-fare-note">Fahrpreis wird nach Bestätigung berechnet.</p>
           <p class="pb-rewards-hint" data-booking-rewards-hint hidden>Mit dieser Fahrt erhaeltst du ca. 15 Punkte.</p>
           <p class="pb-voucher-hint" data-booking-voucher-hint hidden>Gutschein-Guthaben verfuegbar.</p>
           <p class="pb-future-note">Vorbereitet fuer Google Maps, Fahrerzuweisung, Live-Status, Preisberechnung und Backend.</p>
