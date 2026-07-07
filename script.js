@@ -89,6 +89,24 @@
     }
   };
 
+  function saveBookingBridgeState(partial){
+    try{
+      const key='taxiBookingRewardsBridgeState';
+      const baseRaw=localStorage.getItem(key);
+      const base=baseRaw ? JSON.parse(baseRaw) : {};
+      const next={
+        customer:String(partial?.customer || base?.customer || '').trim(),
+        rideType:String(partial?.rideType || base?.rideType || '').trim().toLowerCase(),
+        pickup:String(partial?.pickup || base?.pickup || '').trim(),
+        destination:String(partial?.destination || base?.destination || '').trim(),
+        updatedAt:Date.now()
+      };
+      localStorage.setItem(key,JSON.stringify(next));
+    }catch(_err){
+      // localStorage optional in demo mode.
+    }
+  }
+
   function handleRewardEvent(type,payload){
     const eventType=String(type || '').trim();
     if(!eventType) return;
@@ -194,12 +212,23 @@
       points:230,
       level:{key:'gold',label:'Gold'},
       voucherBalance:12.5,
+      voucherHistory:[
+        {amount:5,title:'5 EUR Gutschein durch Gluecksrad erhalten',source:'wheel',timestamp:Date.now()-86400000},
+        {amount:10,title:'10 EUR Gutschein durch Aktion erhalten',source:'campaign',timestamp:Date.now()-172800000}
+      ],
       freeSpins:0,
       wheel:{lastSpinDate:'',lastResult:null},
       mystery:{lastOpenedDate:'',lastRewardId:''},
       login:{claimed:[],lastCheckin:'',currentDay:1,streakCount:0},
       missions:{},
       achievements:{unlocked:['first-ride','five-rides','airport-pro','regular']},
+      rides:{
+        totalCount:0,
+        totalFare:0,
+        totalVoucherUsed:0,
+        totalPointsEarned:0,
+        history:[]
+      },
       activities:[],
       vip:{current:'gold',next:'platin',remaining:120},
       updatedAt:Date.now()
@@ -262,6 +291,7 @@
       try{ localStorage.setItem('taxiRewardsAchievementsState',JSON.stringify({unlocked:nextState.achievements.unlocked})); }catch(_err){}
       try{ localStorage.setItem('taxiRewardsVipStatusState',JSON.stringify({currentLevel:nextState.vip.current,currentPoints:nextState.points,nextLevel:nextState.vip.next,nextLevelTargetPoints:RewardsUtils.levelByPoints(nextState.points).nextTarget})); }catch(_err){}
       try{ localStorage.setItem('taxiRewardsCustomerDashboardState',JSON.stringify({profile:{points:nextState.points,level:nextState.level.label},nextLevel:{currentPoints:nextState.points,targetPoints:RewardsUtils.levelByPoints(nextState.points).nextTarget,levelName:RewardsUtils.nextLevel(nextState.level.key).label}})); }catch(_err){}
+      try{ localStorage.setItem('taxiRewardsRideHistoryState',JSON.stringify({rides:nextState.rides})); }catch(_err){}
     }
 
     function commit(mutator){
@@ -306,8 +336,104 @@
     function addVoucher(amount,meta){
       const value=Math.max(0,Number(amount) || 0);
       if(!value) return;
-      commit(draft=>{ draft.voucherBalance=Number((Math.max(0,Number(draft.voucherBalance) || 0) + value).toFixed(2)); });
+      commit(draft=>{
+        draft.voucherBalance=Number((Math.max(0,Number(draft.voucherBalance) || 0) + value).toFixed(2));
+        draft.voucherHistory=Array.isArray(draft.voucherHistory) ? draft.voucherHistory : [];
+        draft.voucherHistory.unshift({
+          amount:value,
+          title:String(meta?.title || `${value.toFixed(2).replace('.',',')} EUR Gutschein erhalten`),
+          source:String(meta?.source || 'reward'),
+          timestamp:Date.now()
+        });
+        draft.voucherHistory=draft.voucherHistory.slice(0,20);
+      });
       RewardEvents.emit('reward.voucher',{amount:value,balance:state.voucherBalance,meta:meta || {}});
+    }
+
+    function consumeVoucher(amount,meta){
+      const value=Math.max(0,Number(amount) || 0);
+      if(!value) return 0;
+      let consumed=0;
+      commit(draft=>{
+        const balance=Math.max(0,Number(draft.voucherBalance) || 0);
+        consumed=Math.min(balance,value);
+        draft.voucherBalance=Number((balance-consumed).toFixed(2));
+        draft.voucherHistory=Array.isArray(draft.voucherHistory) ? draft.voucherHistory : [];
+        if(consumed>0){
+          draft.voucherHistory.unshift({
+            amount:-consumed,
+            title:String(meta?.title || `${consumed.toFixed(2).replace('.',',')} EUR bei Fahrt angerechnet`),
+            source:String(meta?.source || 'ride'),
+            timestamp:Date.now()
+          });
+          draft.voucherHistory=draft.voucherHistory.slice(0,20);
+        }
+      });
+      if(consumed>0) RewardEvents.emit('reward.voucher',{amount:-consumed,balance:state.voucherBalance,meta:meta || {}});
+      return consumed;
+    }
+
+    function completeRide(payload){
+      const customer=String(payload?.customer || 'Kunde').trim() || 'Kunde';
+      const rideType=String(payload?.rideType || 'taxi').trim().toLowerCase();
+      const fare=Math.max(0,Number(payload?.fare) || 0);
+      const requestedVoucher=Math.max(0,Number(payload?.voucherApplied) || 0);
+      const points=Math.max(0,Math.round(Number(payload?.points) || 0));
+
+      let usedVoucher=0;
+      if(requestedVoucher>0){
+        usedVoucher=consumeVoucher(requestedVoucher,{
+          source:'ride',
+          title:`${Math.min(requestedVoucher,fare).toFixed(2).replace('.',',')} EUR bei Fahrt angerechnet`
+        });
+      }
+
+      const netAmount=Math.max(0,fare-usedVoucher);
+      const rideEntry={
+        customer,
+        rideType,
+        fare:Number(fare.toFixed(2)),
+        voucherUsed:Number(usedVoucher.toFixed(2)),
+        points,
+        netAmount:Number(netAmount.toFixed(2)),
+        timestamp:Date.now()
+      };
+
+      commit(draft=>{
+        draft.rides=draft.rides && typeof draft.rides==='object' ? draft.rides : {totalCount:0,totalFare:0,totalVoucherUsed:0,totalPointsEarned:0,history:[]};
+        draft.rides.history=Array.isArray(draft.rides.history) ? draft.rides.history : [];
+        draft.rides.history.unshift(rideEntry);
+        draft.rides.history=draft.rides.history.slice(0,40);
+        draft.rides.totalCount=Math.max(0,Math.round(Number(draft.rides.totalCount) || 0)+1);
+        draft.rides.totalFare=Number((Math.max(0,Number(draft.rides.totalFare) || 0) + fare).toFixed(2));
+        draft.rides.totalVoucherUsed=Number((Math.max(0,Number(draft.rides.totalVoucherUsed) || 0) + usedVoucher).toFixed(2));
+        draft.rides.totalPointsEarned=Math.max(0,Math.round(Number(draft.rides.totalPointsEarned) || 0)+points);
+
+        const rideCount=draft.rides.totalCount;
+        draft.missions=draft.missions && typeof draft.missions==='object' ? draft.missions : {};
+        draft.missions['daily-first-ride']={status:'done',completedAt:Date.now(),title:'Erste Fahrt heute',reward:'+10 Punkte'};
+        draft.missions['first-ride']={status:'done',completedAt:Date.now(),title:'Erste Fahrt abschliessen',reward:'+50 Punkte'};
+        draft.missions['five-rides']={status:rideCount>=5 ? 'done' : 'active',current:Math.min(5,rideCount),target:5,title:'5 Fahrten sammeln',reward:'Abzeichen Stammkunde'};
+        if(rideType==='medical') draft.missions['medical-booking']={status:'done',completedAt:Date.now(),title:'Krankenfahrt buchen',reward:'+30 Punkte'};
+        if(rideType==='airport') draft.missions['airport-first']={status:'done',completedAt:Date.now(),title:'Erster Flughafentransfer',reward:'+100 Punkte'};
+
+        const unlocked=Array.isArray(draft.achievements?.unlocked) ? draft.achievements.unlocked : [];
+        if(!unlocked.includes('first-ride')) unlocked.push('first-ride');
+        if(rideCount>=5 && !unlocked.includes('five-rides')) unlocked.push('five-rides');
+        if(rideType==='medical' && !unlocked.includes('medical-hero')) unlocked.push('medical-hero');
+        if(rideType==='airport' && !unlocked.includes('airport-pro')) unlocked.push('airport-pro');
+        draft.achievements={...draft.achievements,unlocked};
+      });
+
+      if(points>0) addPoints(points,{source:'ride'});
+      addActivity({
+        type:'mission',
+        icon:'🚖',
+        title:`Fahrt abgeschlossen: ${rideType==='medical' ? 'Krankenfahrt' : rideType==='airport' ? 'Flughafentransfer' : rideType==='wheelchair' ? 'Rollstuhlfahrt' : 'Taxifahrt'}`,
+        text:`${fare.toFixed(2).replace('.',',')} EUR, Gutschein ${usedVoucher.toFixed(2).replace('.',',')} EUR, +${points} Punkte`
+      });
+      RewardEvents.emit('reward.ride',{entry:rideEntry,balance:state.voucherBalance});
+      return {entry:rideEntry,usedVoucher,netAmount,points,balance:state.voucherBalance};
     }
 
     function addFreeSpin(count){
@@ -389,6 +515,11 @@
         addPoints(points,{source:'daily'});
         addActivity({type:'points',icon:'📅',title:'Daily Check-in bestätigt',text:`+${points} Punkte und Serie aktualisiert.`});
         RewardEvents.emit('reward.login',{points,streak:state.login.streakCount});
+        return;
+      }
+
+      if(name==='booking:completed'){
+        completeRide(data);
       }
     }
 
@@ -433,8 +564,10 @@
         getState(){ return JSON.parse(JSON.stringify(state)); },
         addPoints,
         addVoucher,
+        consumeVoucher,
         addFreeSpin,
         addActivity,
+        completeRide,
         processEvent
       },
       processEvent
@@ -866,6 +999,11 @@
 
       try{
         await sendContactRequest(payload);
+        saveBookingBridgeState({
+          customer:payload.name,
+          pickup:payload.pickup,
+          destination:payload.destination
+        });
         form.reset();
         syncFormState();
         setStatus('Ihre Anfrage wurde erfolgreich gesendet.',false);
@@ -1477,6 +1615,12 @@
       const submitBtn=e.target.closest('#novaSubmit');
       if(submitBtn){
         refreshSummary();
+        saveBookingBridgeState({
+          customer:state.values.name,
+          rideType:state.values.rideType,
+          pickup:state.values.pickup,
+          destination:state.values.destination
+        });
         success.hidden=false;
       }
     });
@@ -2289,7 +2433,25 @@
     }
 
     function formatEuro(value){
-      return `${value.toFixed(2).replace('.',',')} �`;
+      return `${value.toFixed(2).replace('.',',')} EUR`;
+    }
+
+    function renderVoucherHistory(snapshot){
+      const list=$('.rv2-credit-history ul',root);
+      if(!list) return;
+      const rows=Array.isArray(snapshot?.voucherHistory) ? snapshot.voucherHistory.slice(0,6) : [];
+      if(!rows.length) return;
+      list.innerHTML='';
+      rows.forEach(row=>{
+        const li=document.createElement('li');
+        const span=document.createElement('span');
+        const b=document.createElement('b');
+        const amount=Number(row?.amount || 0);
+        span.textContent=String(row?.title || 'Voucher-Eintrag');
+        b.textContent=`${amount>=0?'+':'-'}${Math.abs(amount).toFixed(2).replace('.',',')} EUR`;
+        li.append(span,b);
+        list.append(li);
+      });
     }
 
     function recalc(){
@@ -2310,6 +2472,7 @@
       const snapshot=engine.Store.getState();
       const balance=Math.max(0,Number(snapshot.voucherBalance) || 0);
       availableInput.value=String(balance.toFixed(2));
+      renderVoucherHistory(snapshot);
       recalc();
     }
 
@@ -2322,6 +2485,151 @@
     if(engine) engine.Events.on('reward.voucher',syncFromStore);
     if(engine) engine.Events.on('reward.store',syncFromStore);
     syncFromStore();
+    recalc();
+  }
+  function initRewardsRideBookingDemo(){
+    const root=$('#rewards.rewards-v2 [data-rewards-booking-demo]');
+    if(!root) return;
+    if(root.dataset.bound==='true') return;
+    root.dataset.bound='true';
+
+    const engine=(window.rewardsEngine && window.rewardsEngine.Store) ? window.rewardsEngine : null;
+    const form=$('[data-ride-demo-form]',root);
+    const customerInput=$('[data-ride-customer]',root);
+    const rideTypeSelect=$('[data-ride-type]',root);
+    const fareInput=$('[data-ride-fare]',root);
+    const voucherInput=$('[data-ride-voucher-apply]',root);
+    const pointsInput=$('[data-ride-points]',root);
+    const availableNode=$('[data-ride-voucher-available]',root);
+    const maxNode=$('[data-ride-voucher-max]',root);
+    const restNode=$('[data-ride-rest]',root);
+    const historyList=$('[data-ride-history]',root);
+    const statusNode=$('[data-ride-status]',root);
+    if(!form || !customerInput || !rideTypeSelect || !fareInput || !voucherInput || !pointsInput || !historyList || !restNode) return;
+
+    const recommendedPoints={taxi:10,medical:20,wheelchair:15,airport:18};
+
+    function toEuro(value){
+      const n=Number(String(value || '').replace(',','.'));
+      return Number.isFinite(n) ? Math.max(0,n) : 0;
+    }
+
+    function euro(value){
+      return `${Number(value || 0).toFixed(2).replace('.',',')} EUR`;
+    }
+
+    function readBridge(){
+      try{
+        const parsed=JSON.parse(localStorage.getItem('taxiBookingRewardsBridgeState') || '');
+        return parsed && typeof parsed==='object' ? parsed : null;
+      }catch(_err){
+        return null;
+      }
+    }
+
+    function getBalance(){
+      if(engine) return Math.max(0,Number(engine.Store.getState().voucherBalance) || 0);
+      return 0;
+    }
+
+    function recalc(){
+      const fare=toEuro(fareInput.value);
+      const balance=getBalance();
+      const asked=toEuro(voucherInput.value);
+      const capped=Math.min(asked,fare,balance);
+      voucherInput.value=String(capped.toFixed(2));
+      const rest=Math.max(0,fare-capped);
+      restNode.textContent=euro(rest);
+      if(availableNode) availableNode.textContent=euro(balance);
+      if(maxNode) maxNode.textContent=euro(Math.min(fare,balance));
+      return {fare,voucherApplied:capped,rest,balance};
+    }
+
+    function getRideLabel(type){
+      if(type==='medical') return 'Krankenfahrt';
+      if(type==='airport') return 'Flughafentransfer';
+      if(type==='wheelchair') return 'Rollstuhlfahrt';
+      return 'Taxifahrt';
+    }
+
+    function renderHistoryFromStore(){
+      if(!engine) return;
+      const snapshot=engine.Store.getState();
+      const rows=Array.isArray(snapshot.rides?.history) ? snapshot.rides.history.slice(0,8) : [];
+      if(!rows.length) return;
+      historyList.innerHTML='';
+      rows.forEach(entry=>{
+        const li=document.createElement('li');
+        const date=new Date(Number(entry.timestamp) || Date.now());
+        const left=document.createElement('span');
+        left.textContent=`${date.toLocaleDateString('de-DE')} - ${getRideLabel(String(entry.rideType || 'taxi'))}`;
+        const right=document.createElement('b');
+        right.textContent=`${euro(entry.fare)} | Gutschein ${euro(entry.voucherUsed)} | +${Math.max(0,Math.round(Number(entry.points)||0))} Punkte`;
+        li.append(left,right);
+        historyList.append(li);
+      });
+    }
+
+    function applyBridgeDefaults(){
+      const bridge=readBridge();
+      if(bridge?.customer && !customerInput.value.trim()) customerInput.value=String(bridge.customer).trim();
+      if(bridge?.rideType && rideTypeSelect.querySelector(`option[value="${String(bridge.rideType).trim().toLowerCase()}"]`)){
+        rideTypeSelect.value=String(bridge.rideType).trim().toLowerCase();
+      }
+      if(!pointsInput.value.trim()) pointsInput.value=String(recommendedPoints[String(rideTypeSelect.value || 'taxi').toLowerCase()] || 10);
+    }
+
+    function submitRide(event){
+      event.preventDefault();
+      if(!engine) return;
+      const calc=recalc();
+      const customer=customerInput.value.trim() || 'Kunde';
+      const rideType=String(rideTypeSelect.value || 'taxi').trim().toLowerCase();
+      const points=Math.max(0,Math.round(Number(pointsInput.value) || (recommendedPoints[rideType] || 10)));
+
+      handleRewardEvent('booking:completed',{
+        customer,
+        rideType,
+        fare:calc.fare,
+        voucherApplied:calc.voucherApplied,
+        points
+      });
+
+      const rest=Math.max(0,calc.fare-calc.voucherApplied);
+      if(statusNode){
+        statusNode.textContent=`Fahrt gespeichert: ${euro(calc.fare)}, +${points} Punkte, Gutschein ${euro(calc.voucherApplied)}, Rest ${euro(rest)}.`;
+      }
+
+      const bridge=readBridge() || {};
+      saveBookingBridgeState({
+        customer,
+        rideType,
+        pickup:bridge.pickup,
+        destination:bridge.destination
+      });
+
+      renderHistoryFromStore();
+      recalc();
+    }
+
+    ['input','change'].forEach(eventName=>{
+      fareInput.addEventListener(eventName,recalc);
+      voucherInput.addEventListener(eventName,recalc);
+    });
+
+    rideTypeSelect.addEventListener('change',()=>{
+      pointsInput.value=String(recommendedPoints[String(rideTypeSelect.value || 'taxi').toLowerCase()] || 10);
+    });
+    form.addEventListener('submit',submitRide);
+
+    applyBridgeDefaults();
+    if(engine){
+      engine.Events.on('reward.store',()=>{
+        recalc();
+        renderHistoryFromStore();
+      });
+    }
+    renderHistoryFromStore();
     recalc();
   }
   function initRewardsCustomerDashboard(){
@@ -2374,12 +2682,26 @@
         const level=String(snapshot.level?.label || 'Gold');
         const levelInfo=engine.Utils.levelByPoints(points);
         const next=engine.Utils.nextLevel(levelInfo.key);
+        const rideCount=Math.max(0,Number(snapshot.rides?.totalCount) || 0);
+        const ridePoints=Math.max(0,Number(snapshot.rides?.totalPointsEarned) || 0);
+        const voucherBalance=Math.max(0,Number(snapshot.voucherBalance) || 0);
+        const activities=(Array.isArray(snapshot.activities) ? snapshot.activities : []).slice(0,3).map(entry=>({
+          day:'Heute',
+          text:String(entry.title || 'Aktivitaet')
+        }));
         return {
           profile:{...defaultData.profile,level,status:'Premium Mitglied',points},
           nextLevel:{currentPoints:points,targetPoints:levelInfo.nextTarget,levelName:next.label},
-          stats:{...defaultData.stats,points,spins:Math.max(0,(defaultData.stats.spins||0)+Math.max(0,Number(snapshot.freeSpins)||0)),vouchers:Math.round(Number(snapshot.voucherBalance)||0),streak:Math.max(0,Number(snapshot.login?.streakCount)||0)},
+          stats:{
+            ...defaultData.stats,
+            rides:Math.max(defaultData.stats.rides,rideCount),
+            points:Math.max(points,ridePoints),
+            spins:Math.max(0,(defaultData.stats.spins||0)+Math.max(0,Number(snapshot.freeSpins)||0)),
+            vouchers:Math.round(voucherBalance),
+            streak:Math.max(0,Number(snapshot.login?.streakCount)||0)
+          },
           benefits:defaultData.benefits,
-          activities:defaultData.activities
+          activities:activities.length ? activities : defaultData.activities
         };
       }
       try{
@@ -2490,6 +2812,20 @@
         if(!key) return;
         node.textContent=String((key in fresh.stats) ? fresh.stats[key] : 0);
       });
+
+      const activityList=$('[data-cd-activities]',root);
+      if(activityList){
+        activityList.innerHTML='';
+        fresh.activities.forEach(item=>{
+          const li=document.createElement('li');
+          const day=document.createElement('b');
+          const textNode=document.createElement('span');
+          day.textContent=String(item.day || 'Heute');
+          textNode.textContent=String(item.text || 'Aktivitaet');
+          li.append(day,textNode);
+          activityList.append(li);
+        });
+      }
     });
   }
   function initRewardsVipStatus(){
@@ -2987,6 +3323,14 @@
           const points=Math.max(0,Math.round(Number(payload.points) || 0));
           showToast({title:'Daily Login',text:`Check-in erhalten: +${points} Punkte`,icon:'📅',sound:'win'});
           window.setTimeout(()=>syncDashboard({emitToasts:false}),40);
+          return;
+        }
+
+        if(type==='booking:completed'){
+          const fare=Math.max(0,Number(payload.fare) || 0);
+          const points=Math.max(0,Math.round(Number(payload.points) || 0));
+          showToast({title:'Fahrt abgeschlossen',text:`${fare.toFixed(2).replace('.',',')} EUR abgeschlossen, +${points} Punkte`,icon:'🚖',sound:'win'});
+          window.setTimeout(()=>syncDashboard({emitToasts:false}),40);
         }
       });
     }
@@ -3359,6 +3703,7 @@
 
     const cards=$$('[data-daily-mission-id]',root);
     if(!cards.length) return;
+    const engine=(window.rewardsEngine && window.rewardsEngine.Store) ? window.rewardsEngine : null;
 
     const statusLabelMap={
       active:'Aktiv',
@@ -3389,6 +3734,30 @@
       const textNode=$('[data-daily-progress-text]',card);
       if(textNode) textNode.textContent=`${Math.round(progress)}%`;
     });
+
+    function syncFromStore(){
+      if(!engine) return;
+      const s=engine.Store.getState();
+      const done=String(s.missions?.['daily-first-ride']?.status || '').toLowerCase()==='done';
+      const card=$('[data-daily-mission-id="daily-first-ride"]',root);
+      if(!card) return;
+      card.dataset.dailyCurrent=done ? '1' : '0';
+      card.dataset.dailyStatus=done ? 'done' : 'active';
+      const circle=$('.rv2-daily-progress-circle',card);
+      if(circle){
+        circle.style.setProperty('--daily-progress',done ? '100' : '0');
+        circle.setAttribute('aria-valuenow',done ? '1' : '0');
+      }
+      const textNode=$('[data-daily-progress-text]',card);
+      if(textNode) textNode.textContent=done ? '100%' : '0%';
+      const statusNode=$('.rv2-daily-mission-status',card);
+      if(statusNode) statusNode.textContent=done ? 'Abgeschlossen' : 'Aktiv';
+    }
+
+    if(engine){
+      engine.Events.on('reward.store',syncFromStore);
+      syncFromStore();
+    }
   }
   function initRewardsWeeklyMissions(){
     const root=$('#rewards.rewards-v2 [data-rewards-weekly-missions]');
@@ -3576,6 +3945,7 @@
 
     const missionCards=$$('[data-mission-id]',root);
     if(!missionCards.length) return;
+    const engine=(window.rewardsEngine && window.rewardsEngine.Store) ? window.rewardsEngine : null;
 
     const statusLabelMap={
       active:'Aktiv',
@@ -3637,6 +4007,32 @@
         renderCard(card);
       });
     });
+
+    function syncFromStore(){
+      if(!engine) return;
+      const s=engine.Store.getState();
+      missionCards.forEach(card=>{
+        const id=String(card.dataset.missionId || '').trim();
+        const entry=s.missions && typeof s.missions==='object' ? s.missions[id] : null;
+        if(!entry || typeof entry!=='object') return;
+        const status=String(entry.status || '').toLowerCase();
+        if(status==='done'){
+          card.dataset.missionStatus='done';
+          const target=Math.max(1,Number(card.dataset.missionTarget || entry.target || 1));
+          card.dataset.missionCurrent=String(target);
+        }else if(status==='active'){
+          const current=Math.max(0,Number(entry.current || 0));
+          if(Number.isFinite(current)) card.dataset.missionCurrent=String(current);
+          card.dataset.missionStatus='active';
+        }
+        renderCard(card);
+      });
+    }
+
+    if(engine){
+      engine.Events.on('reward.store',syncFromStore);
+      syncFromStore();
+    }
   }
   function initRewardsSeasonalEvents(){
     const root=$('#rewards.rewards-v2 [data-rewards-seasonal-events]');
@@ -4048,6 +4444,11 @@
       showTipText('Level-Up! Ich feiere mit dir.');
       queueAutoTip();
     });
+    document.addEventListener('reward.ride',()=>{
+      setReaction('surprised');
+      showTipText('Starke Fahrt. Punkte und Missionen sind live aktualisiert.');
+      queueAutoTip();
+    });
 
     createAmbientParticles();
     queueAutoTip();
@@ -4185,6 +4586,48 @@
 
     applyFilter('all');
   }
+  function initCustomerAccountRewardsBridge(){
+    const root=$('#account.account-page');
+    if(!root) return;
+
+    let snapshot=null;
+    try{
+      snapshot=JSON.parse(localStorage.getItem('taxiRewardsEngineState') || '');
+    }catch(_err){
+      snapshot=null;
+    }
+    if(!snapshot || typeof snapshot!=='object') return;
+
+    const points=Math.max(0,Math.round(Number(snapshot.points) || 0));
+    const level=String(snapshot.level?.label || 'Gold');
+    const voucherBalance=Math.max(0,Number(snapshot.voucherBalance) || 0);
+    const rides=Array.isArray(snapshot.rides?.history) ? snapshot.rides.history.slice(0,3) : [];
+
+    const pointsNode=$('[data-account-field="points"]',root);
+    if(pointsNode) pointsNode.textContent=String(points);
+    const levelNode=$('[data-account-field="rewardsLevel"]',root);
+    if(levelNode) levelNode.textContent=level;
+
+    const voucherNode=$('[data-account-card="vouchers"] [data-account-field="vouchers"] li:first-child b',root);
+    if(voucherNode) voucherNode.textContent=`${voucherBalance.toFixed(2).replace('.',',')} EUR`;
+
+    const bookingList=$('[data-account-field="bookingHistory"]',root);
+    if(bookingList && rides.length){
+      bookingList.innerHTML='';
+      rides.forEach(entry=>{
+        const li=document.createElement('li');
+        const dateSpan=document.createElement('span');
+        const textBold=document.createElement('b');
+        const date=new Date(Number(entry.timestamp) || Date.now());
+        dateSpan.textContent=date.toLocaleDateString('de-DE');
+        const rideType=String(entry.rideType || 'taxi').toLowerCase();
+        const rideLabel=rideType==='medical' ? 'Krankenfahrt' : rideType==='airport' ? 'Flughafentransfer' : rideType==='wheelchair' ? 'Rollstuhlfahrt' : 'Taxifahrt';
+        textBold.textContent=`${rideLabel} - ${Number(entry.fare || 0).toFixed(2).replace('.',',')} EUR`;
+        li.append(dateSpan,textBold);
+        bookingList.append(li);
+      });
+    }
+  }
   function hideSplash(){
     const splash=document.getElementById('splash');
     if(!splash) return;
@@ -4206,9 +4649,11 @@
     initFaqCenter();
     initCookieBanner();
     initContactRequestForm();
+    initCustomerAccountRewardsBridge();
     initRewardsEngine();
     initRewardsWheel();
     initRewardsVoucherBalance();
+    initRewardsRideBookingDemo();
     initRewardsCustomerDashboard();
     initRewardsVipStatus();
     initRewardsMysteryBox();

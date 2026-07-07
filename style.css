@@ -3171,6 +3171,27 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 
 #rewards.rewards-v2 .rv2-credit-note{margin:0;color:rgba(255,255,255,.76)!important;font-size:13px;line-height:1.6}
 
+#rewards.rewards-v2 .rv2-ride-demo{margin-top:16px;padding:20px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(140deg,rgba(255,225,138,.08),rgba(255,255,255,0) 37%),linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));box-shadow:0 20px 48px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08);display:grid;gap:14px}
+#rewards.rewards-v2 .rv2-ride-demo .rv2-section-head small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,242,207,.72)!important;font-weight:850}
+#rewards.rewards-v2 .rv2-ride-form{display:grid;gap:12px}
+#rewards.rewards-v2 .rv2-ride-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#rewards.rewards-v2 .rv2-ride-grid label{display:grid;gap:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.66)!important;font-weight:900}
+#rewards.rewards-v2 .rv2-ride-grid input,
+#rewards.rewards-v2 .rv2-ride-grid select,
+#rewards.rewards-v2 .rv2-ride-grid output{height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.03);color:#fff;padding:0 12px;font-size:15px;font-weight:800;display:flex;align-items:center}
+#rewards.rewards-v2 .rv2-ride-grid output{background:rgba(255,217,106,.1);border-color:rgba(255,217,106,.35);color:#ffe8ad}
+#rewards.rewards-v2 .rv2-ride-meta{display:grid;gap:5px;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03)}
+#rewards.rewards-v2 .rv2-ride-meta p{margin:0;color:rgba(255,255,255,.82)!important;font-size:13px;line-height:1.45}
+#rewards.rewards-v2 .rv2-ride-meta b{color:#ffe8ad}
+#rewards.rewards-v2 .rv2-ride-submit{min-height:42px;max-width:max-content;padding:0 16px;border-radius:12px;border:1px solid rgba(255,225,149,.55);background:linear-gradient(135deg,rgba(255,224,145,.34),rgba(214,154,46,.28));color:#2e210e;font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase}
+#rewards.rewards-v2 .rv2-ride-status{margin:0;color:rgba(255,255,255,.74)!important;font-size:13px;line-height:1.6}
+#rewards.rewards-v2 .rv2-ride-history{padding:16px;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));display:grid;gap:10px}
+#rewards.rewards-v2 .rv2-ride-history h4{margin:0;font-family:var(--serif);font-size:29px;line-height:1.04;color:#ffe8a7}
+#rewards.rewards-v2 .rv2-ride-history ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+#rewards.rewards-v2 .rv2-ride-history li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;min-height:42px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
+#rewards.rewards-v2 .rv2-ride-history li span{color:rgba(255,255,255,.84)!important;font-size:14px;line-height:1.45}
+#rewards.rewards-v2 .rv2-ride-history li b{color:#ffe8a7;font-size:13px;letter-spacing:.02em}
+
 #rewards.rewards-v2 .rv2-mystery-box{padding:20px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(140deg,rgba(255,226,145,.08),rgba(255,255,255,0) 38%),linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));box-shadow:0 20px 48px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08);display:grid;gap:14px;position:relative;overflow:hidden}
 #rewards.rewards-v2 .rv2-mystery-box .rv2-section-head small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,242,207,.72)!important;font-weight:850}
 #rewards.rewards-v2 .rv2-mystery-main{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));display:grid;grid-template-columns:86px minmax(0,1fr);gap:12px;align-items:center}
@@ -3527,6 +3548,7 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-seasonal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-activity-copy h4{font-size:20px}
   #rewards.rewards-v2 .rv2-credit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #rewards.rewards-v2 .rv2-ride-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-svg-label-icon{font-size:19px}
   #rewards.rewards-v2 .rv2-svg-label-title{font-size:13px}
   #rewards.rewards-v2 .rv2-svg-label-desc{font-size:9px}
@@ -3567,6 +3589,7 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-activity-item{grid-template-columns:auto minmax(0,1fr)}
   #rewards.rewards-v2 .rv2-activity-status{justify-self:start}
   #rewards.rewards-v2 .rv2-credit-grid{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-ride-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-level-line{grid-template-columns:1fr 1fr;gap:6px}
   #rewards.rewards-v2 .rv2-wheel-shell{width:min(360px,100%)}
   #rewards.rewards-v2 .rv2-wheel-logo{width:138px;height:138px}
