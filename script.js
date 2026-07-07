@@ -2432,6 +2432,136 @@
       if(statusNode && !statusNode.textContent.trim()) statusNode.textContent='Bald verfügbar';
     });
   }
+  function initRewardsAchievements(){
+    const root=$('#rewards.rewards-v2 [data-rewards-achievements]');
+    if(!root) return;
+
+    const cards=$$('[data-achievement-id]',root);
+    if(!cards.length) return;
+
+    const storageKey='taxiRewardsAchievementsState';
+    const defaultState={
+      unlocked:['first-ride','five-rides','airport-pro','regular']
+    };
+
+    const statusLabelMap={
+      unlocked:'Freigeschaltet',
+      locked:'Gesperrt',
+      secret:'Geheim'
+    };
+
+    function readState(){
+      try{
+        const parsed=JSON.parse(localStorage.getItem(storageKey) || '');
+        if(!parsed || typeof parsed!=='object') return defaultState;
+        const unlocked=Array.isArray(parsed.unlocked)
+          ? parsed.unlocked.map(v=>String(v).trim()).filter(Boolean)
+          : defaultState.unlocked;
+        return {unlocked:Array.from(new Set(unlocked))};
+      }catch(_err){
+        return defaultState;
+      }
+    }
+
+    function seedState(state){
+      try{
+        if(!localStorage.getItem(storageKey)) localStorage.setItem(storageKey,JSON.stringify(state));
+      }catch(_err){
+        // Demo mode only.
+      }
+    }
+
+    const state=readState();
+    seedState(state);
+    const unlockedSet=new Set(state.unlocked);
+
+    cards.forEach(card=>{
+      const id=String(card.dataset.achievementId || '').trim();
+      let status=String(card.dataset.achStatus || 'locked').trim().toLowerCase();
+      if(status!=='secret' && unlockedSet.has(id)) status='unlocked';
+      if(!(status in statusLabelMap)) status='locked';
+      card.dataset.achStatus=status;
+
+      const statusNode=$('.rv2-achievement-status',card);
+      if(statusNode) statusNode.textContent=statusLabelMap[status];
+
+      const current=Math.max(0,Number(card.dataset.achCurrent || 0));
+      const target=Math.max(1,Number(card.dataset.achTarget || 1));
+      const progress=Math.max(0,Math.min(100,(current/target)*100));
+
+      const bar=$('.rv2-achievement-progress',card);
+      if(bar){
+        bar.style.setProperty('--achievement-progress',`${progress.toFixed(2)}%`);
+        bar.setAttribute('aria-valuemin','0');
+        bar.setAttribute('aria-valuemax',String(target));
+        bar.setAttribute('aria-valuenow',String(Math.min(current,target)));
+      }
+
+      const textNode=$('.rv2-achievement-progress-text',card);
+      if(textNode && !textNode.textContent.trim()){
+        textNode.textContent=status==='secret' ? '???' : `${Math.min(current,target)} / ${target}`;
+      }
+    });
+  }
+  function initRewardsCollection(){
+    const root=$('#rewards.rewards-v2 [data-rewards-collection]');
+    if(!root) return;
+
+    const cards=$$('[data-collection-kind]',root);
+    if(!cards.length) return;
+
+    const storageKey='taxiRewardsCollectionState';
+    const defaultState={
+      badges:4,
+      vouchers:6,
+      missions:9,
+      events:2,
+      rare:1
+    };
+
+    function readState(){
+      try{
+        const parsed=JSON.parse(localStorage.getItem(storageKey) || '');
+        if(!parsed || typeof parsed!=='object') return defaultState;
+        return {
+          badges:Number.isFinite(Number(parsed.badges)) ? Number(parsed.badges) : defaultState.badges,
+          vouchers:Number.isFinite(Number(parsed.vouchers)) ? Number(parsed.vouchers) : defaultState.vouchers,
+          missions:Number.isFinite(Number(parsed.missions)) ? Number(parsed.missions) : defaultState.missions,
+          events:Number.isFinite(Number(parsed.events)) ? Number(parsed.events) : defaultState.events,
+          rare:Number.isFinite(Number(parsed.rare)) ? Number(parsed.rare) : defaultState.rare
+        };
+      }catch(_err){
+        return defaultState;
+      }
+    }
+
+    function seedState(state){
+      try{
+        if(!localStorage.getItem(storageKey)) localStorage.setItem(storageKey,JSON.stringify(state));
+      }catch(_err){
+        // Demo mode only.
+      }
+    }
+
+    const state=readState();
+    seedState(state);
+
+    const copyByKind={
+      badges:count=>`${count} freigeschaltet`,
+      vouchers:count=>`${count} gesammelt`,
+      missions:count=>`${count} erledigt`,
+      events:count=>`${count} gesichert`,
+      rare:count=>`${count} legendär`
+    };
+
+    cards.forEach(card=>{
+      const kind=String(card.dataset.collectionKind || '').trim().toLowerCase();
+      if(!(kind in copyByKind)) return;
+      const count=Number(state[kind] || 0);
+      const textNode=$('p',card);
+      if(textNode) textNode.textContent=copyByKind[kind](count);
+    });
+  }
   function initRewardsMissions(){
     const root=$('#rewards.rewards-v2 [data-rewards-missions]');
     if(!root) return;
@@ -2889,6 +3019,8 @@
     initRewardsDailyMissions();
     initRewardsWeeklyMissions();
     initRewardsSpecialMissions();
+    initRewardsAchievements();
+    initRewardsCollection();
     initRewardsMissions();
     initRewardsSeasonalEvents();
     initRewardsYumakAssistant();
