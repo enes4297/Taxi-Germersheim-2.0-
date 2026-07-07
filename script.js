@@ -2157,6 +2157,287 @@
       else card.dataset.vipState='locked';
     });
   }
+  function initRewardsUnifiedDashboard(){
+    const root=$('#rewards.rewards-v2');
+    if(!root) return;
+
+    const smartRoot=$('[data-rewards-smart-dashboard]',root);
+    const quickRoot=$('[data-rewards-quick-actions]',root);
+    const todayRoot=$('[data-rewards-today-overview]',root);
+    const toastStack=$('[data-rewards-toast-stack]',root);
+    if(!smartRoot || !quickRoot || !todayRoot || !toastStack) return;
+
+    const storageKey='taxiRewardsDashboardSignalsState';
+    const vipOrder=['bronze','silber','gold','platin','legend'];
+    const quickActionTargets={
+      wheel:'[data-rewards-wheel]',
+      missions:'[data-rewards-missions]',
+      voucher:'[data-voucher-balance]',
+      achievements:'[data-rewards-achievements]',
+      mystery:'[data-rewards-mystery-box]'
+    };
+
+    function getTodayYmd(){
+      const now=new Date();
+      const year=now.getFullYear();
+      const month=String(now.getMonth()+1).padStart(2,'0');
+      const day=String(now.getDate()).padStart(2,'0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function toNumber(text){
+      const match=String(text || '').replace(/\./g,'').replace(',', '.').match(/-?\d+(\.\d+)?/);
+      return match ? Number(match[0]) : 0;
+    }
+
+    function readSignals(){
+      const defaults={seenMissionDone:0,seenAchievements:0,lastMysteryToastDate:'',seenVipIndex:-1};
+      try{
+        const parsed=JSON.parse(localStorage.getItem(storageKey) || '');
+        if(!parsed || typeof parsed!=='object') return defaults;
+        return {
+          seenMissionDone:Number.isFinite(Number(parsed.seenMissionDone)) ? Number(parsed.seenMissionDone) : defaults.seenMissionDone,
+          seenAchievements:Number.isFinite(Number(parsed.seenAchievements)) ? Number(parsed.seenAchievements) : defaults.seenAchievements,
+          lastMysteryToastDate:String(parsed.lastMysteryToastDate || ''),
+          seenVipIndex:Number.isFinite(Number(parsed.seenVipIndex)) ? Number(parsed.seenVipIndex) : defaults.seenVipIndex
+        };
+      }catch(_err){
+        return defaults;
+      }
+    }
+
+    function writeSignals(state){
+      try{
+        localStorage.setItem(storageKey,JSON.stringify(state));
+      }catch(_err){
+        // Demo mode: ignore localStorage errors.
+      }
+    }
+
+    function showToast({title,text,icon='✨'}){
+      const toast=document.createElement('article');
+      toast.className='rv2-toast';
+      const iconNode=document.createElement('i');
+      iconNode.setAttribute('aria-hidden','true');
+      iconNode.textContent=icon;
+      const copy=document.createElement('div');
+      const strong=document.createElement('strong');
+      const p=document.createElement('p');
+      strong.textContent=String(title || 'Info');
+      p.textContent=String(text || 'Neue Rewards-Aktualisierung verfügbar.');
+      copy.append(strong,p);
+      toast.append(iconNode,copy);
+      toastStack.append(toast);
+
+      window.setTimeout(()=>{
+        toast.classList.add('is-leaving');
+        window.setTimeout(()=>toast.remove(),300);
+      },3800);
+    }
+
+    function markScrollTarget(target){
+      if(!target) return;
+      target.classList.add('rv2-highlight-target');
+      window.setTimeout(()=>target.classList.remove('rv2-highlight-target'),950);
+    }
+
+    function readSnapshot(){
+      const today=getTodayYmd();
+
+      const pointsNode=$('[data-cd-points]',root) || $('[data-rewards-points]',root);
+      const levelNode=$('[data-vip-current]',root) || $('[data-cd-level]',root);
+      const voucherNode=$('[data-credit-balance-value]',root);
+
+      let streakCount=0;
+      let streakTodayDone=false;
+      try{
+        const streak=JSON.parse(localStorage.getItem('taxiRewardsDailyStreakState') || '');
+        if(streak && typeof streak==='object'){
+          const claimed=Array.isArray(streak.claimed)
+            ? streak.claimed.map(v=>Number(v)).filter(v=>Number.isInteger(v) && v>=1 && v<=7)
+            : [];
+          const currentDay=((new Date().getDay()+6)%7)+1;
+          streakTodayDone=String(streak.lastCheckin || '')===today || claimed.includes(currentDay);
+          streakCount=claimed.length;
+        }
+      }catch(_err){
+        streakCount=0;
+      }
+
+      const lastSpinDate=(()=>{
+        try{return localStorage.getItem('taxiRewardsLastSpinDate') || '';}catch(_err){return '';}
+      })();
+      const wheelAvailable=lastSpinDate!==today;
+
+      const mysteryRoot=$('[data-rewards-mystery-box]',root);
+      let mysteryAvailable=true;
+      try{
+        const state=JSON.parse(localStorage.getItem('taxiRewardsMysteryBoxState') || '');
+        const openedDate=state && typeof state==='object' ? String(state.lastOpenedDate || '') : '';
+        mysteryAvailable=openedDate!==today;
+      }catch(_err){
+        mysteryAvailable=true;
+      }
+      if(mysteryRoot && mysteryRoot.dataset.mysteryState==='locked') mysteryAvailable=false;
+
+      const dailyFirstRideDone=$('[data-daily-mission-id="daily-first-ride"]',root)?.dataset.dailyStatus==='done';
+      const missionDoneCount=$$('[data-rewards-missions] [data-mission-id][data-mission-status="done"]',root).length;
+      const achievementsUnlocked=$$('[data-rewards-achievements] [data-achievement-id][data-ach-status="unlocked"]',root).length;
+
+      const vipText=String(levelNode?.textContent || '').trim().toLowerCase();
+      const vipIndex=vipOrder.indexOf(vipText);
+
+      return {
+        today,
+        points:Math.max(0,Math.round(toNumber(pointsNode?.textContent))),
+        level:String(levelNode?.textContent || 'Gold').trim(),
+        voucher:String(voucherNode?.textContent || '0 €').trim(),
+        streakCount,
+        streakTodayDone,
+        wheelAvailable,
+        mysteryAvailable,
+        dailyFirstRideDone,
+        missionDoneCount,
+        achievementsUnlocked,
+        vipIndex
+      };
+    }
+
+    function renderSmart(snapshot){
+      const text=(selector,value)=>{
+        const node=$(selector,smartRoot);
+        if(node) node.textContent=String(value);
+      };
+
+      text('[data-smart-points]',snapshot.points);
+      text('[data-smart-level]',snapshot.level);
+      text('[data-smart-voucher]',snapshot.voucher);
+      text('[data-smart-streak]',`${snapshot.streakCount} Tage`);
+      text('[data-smart-streak-state]',snapshot.streakTodayDone ? 'Heute erledigt' : 'Heute offen');
+      text('[data-smart-wheel]',snapshot.wheelAvailable ? 'Ja' : 'Nein');
+      text('[data-smart-wheel-state]',snapshot.wheelAvailable ? 'Jetzt drehen' : 'Morgen wieder');
+      text('[data-smart-mystery]',snapshot.mysteryAvailable ? 'Ja' : 'Nein');
+      text('[data-smart-mystery-state]',snapshot.mysteryAvailable ? 'Jetzt öffnen' : 'Morgen wieder');
+
+      const wheelCard=$('[data-smart-card="wheel"]',smartRoot);
+      const mysteryCard=$('[data-smart-card="mystery"]',smartRoot);
+      if(wheelCard){
+        if(snapshot.wheelAvailable) wheelCard.dataset.priority='wheel-ready';
+        else wheelCard.removeAttribute('data-priority');
+      }
+      if(mysteryCard){
+        if(snapshot.mysteryAvailable) mysteryCard.dataset.priority='mystery-ready';
+        else mysteryCard.removeAttribute('data-priority');
+      }
+    }
+
+    function renderToday(snapshot){
+      const tasks={
+        wheel:!snapshot.wheelAvailable,
+        mystery:!snapshot.mysteryAvailable,
+        'first-ride':snapshot.dailyFirstRideDone,
+        'three-missions':snapshot.missionDoneCount>=3
+      };
+
+      const items=$$('[data-today-item]',todayRoot);
+      let doneCount=0;
+      items.forEach(item=>{
+        const key=item.dataset.todayItem;
+        const done=Boolean(tasks[key]);
+        if(done) doneCount+=1;
+        item.dataset.todayState=done ? 'done' : 'open';
+      });
+
+      const progress=Math.max(0,Math.min(100,(doneCount/4)*100));
+      const bar=$('.rv2-today-progress',todayRoot);
+      const fill=$('[data-today-progress-fill]',todayRoot);
+      const textNode=$('[data-today-progress-text]',todayRoot);
+
+      if(bar){
+        bar.setAttribute('aria-valuemin','0');
+        bar.setAttribute('aria-valuemax','4');
+        bar.setAttribute('aria-valuenow',String(doneCount));
+        bar.style.setProperty('--today-progress',`${progress.toFixed(2)}%`);
+      }
+      if(fill) fill.style.width=`${progress.toFixed(2)}%`;
+      if(textNode) textNode.textContent=`${doneCount} von 4 Aufgaben erledigt`;
+    }
+
+    function renderQuickBadges(snapshot,signals){
+      const missionsBadge=$('[data-quick-badge="missions"]',quickRoot);
+      const achievementsBadge=$('[data-quick-badge="achievements"]',quickRoot);
+      const hasMissionUpdate=snapshot.missionDoneCount>signals.seenMissionDone;
+      const hasAchievementUpdate=snapshot.achievementsUnlocked>signals.seenAchievements;
+
+      if(missionsBadge) missionsBadge.hidden=!hasMissionUpdate;
+      if(achievementsBadge) achievementsBadge.hidden=!hasAchievementUpdate;
+    }
+
+    function bindQuickActions(){
+      if(quickRoot.dataset.bound==='true') return;
+      quickRoot.dataset.bound='true';
+
+      quickRoot.addEventListener('click',event=>{
+        const button=event.target.closest('[data-dashboard-action]');
+        if(!button) return;
+        const action=button.dataset.dashboardAction;
+        const selector=quickActionTargets[action || ''];
+        if(!selector) return;
+        const target=$(selector,root);
+        if(!target) return;
+        target.scrollIntoView({behavior:'smooth',block:'start'});
+        markScrollTarget(target);
+      });
+    }
+
+    function syncDashboard({emitToasts}){
+      const snapshot=readSnapshot();
+      const signals=readSignals();
+
+      renderSmart(snapshot);
+      renderToday(snapshot);
+      renderQuickBadges(snapshot,signals);
+
+      if(emitToasts){
+        if(snapshot.missionDoneCount>signals.seenMissionDone){
+          showToast({title:'Missionen',text:'Neue Mission abgeschlossen',icon:'✅'});
+        }
+        if(snapshot.achievementsUnlocked>signals.seenAchievements){
+          showToast({title:'Achievement',text:'Neues Badge freigeschaltet',icon:'🏅'});
+        }
+        if(snapshot.mysteryAvailable && signals.lastMysteryToastDate!==snapshot.today){
+          showToast({title:'Mystery Box',text:'Mystery Box verfügbar',icon:'📦'});
+          signals.lastMysteryToastDate=snapshot.today;
+        }
+        if(snapshot.vipIndex>signals.seenVipIndex && snapshot.vipIndex>=0){
+          showToast({title:'VIP-Status',text:'VIP-Level erhöht',icon:'👑'});
+        }
+      }
+
+      signals.seenMissionDone=snapshot.missionDoneCount;
+      signals.seenAchievements=snapshot.achievementsUnlocked;
+      signals.seenVipIndex=Math.max(signals.seenVipIndex,snapshot.vipIndex);
+      writeSignals(signals);
+    }
+
+    bindQuickActions();
+    syncDashboard({emitToasts:true});
+
+    document.addEventListener('rewards:wheelResult',event=>{
+      const detail=event && event.detail ? event.detail : null;
+      if(detail && detail.win){
+        showToast({
+          title:'Belohnung',
+          text:`${String(detail.label || 'Gewinn')} erhalten`,
+          icon:detail.effect==='voucher' ? '🎁' : '⭐'
+        });
+      }
+      window.setTimeout(()=>syncDashboard({emitToasts:false}),40);
+    });
+
+    // Some modules update their state after short animations/timers.
+    window.setTimeout(()=>syncDashboard({emitToasts:false}),650);
+  }
   function initRewardsMysteryBox(){
     const root=$('#rewards.rewards-v2 [data-rewards-mystery-box]');
     if(!root) return;
@@ -3129,6 +3410,7 @@
     initRewardsSeasonalEvents();
     initRewardsYumakAssistant();
     initRewardsActivities();
+    initRewardsUnifiedDashboard();
 
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);
