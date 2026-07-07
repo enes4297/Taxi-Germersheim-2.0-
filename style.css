@@ -3246,6 +3246,46 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 #rewards.rewards-v2 .rv2-vip-benefit-card[data-vip-state='next']{border-color:rgba(132,200,255,.42);background:linear-gradient(145deg,rgba(99,144,196,.18),rgba(19,27,39,.62))}
 #rewards.rewards-v2 .rv2-vip-benefit-card[data-vip-state='locked']{border-color:rgba(183,188,198,.26);background:linear-gradient(155deg,rgba(143,148,157,.12),rgba(255,255,255,.02));opacity:.84}
 
+#rewards.rewards-v2 .rv2-smart-dashboard,
+#rewards.rewards-v2 .rv2-quick-actions,
+#rewards.rewards-v2 .rv2-today-overview{padding:20px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(140deg,rgba(255,226,145,.08),rgba(255,255,255,0) 38%),linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));box-shadow:0 20px 48px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08);display:grid;gap:14px}
+#rewards.rewards-v2 .rv2-smart-dashboard .rv2-section-head small,
+#rewards.rewards-v2 .rv2-quick-actions .rv2-section-head small,
+#rewards.rewards-v2 .rv2-today-overview .rv2-section-head small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,242,207,.72)!important;font-weight:850}
+
+#rewards.rewards-v2 .rv2-smart-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+#rewards.rewards-v2 .rv2-smart-card{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));display:grid;gap:7px;align-content:start;position:relative;overflow:hidden;animation:rv2CardRise .45s ease both}
+#rewards.rewards-v2 .rv2-smart-card i{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;border:1px solid rgba(255,217,106,.32);background:rgba(255,217,106,.12);font-style:normal;font-size:18px}
+#rewards.rewards-v2 .rv2-smart-card small{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.68)!important;font-weight:850}
+#rewards.rewards-v2 .rv2-smart-card strong{font-family:var(--serif);font-size:26px;line-height:1.06;color:#ffe8ab}
+#rewards.rewards-v2 .rv2-smart-card em{font-size:12px;line-height:1.4;color:rgba(255,255,255,.76)!important;font-style:normal}
+#rewards.rewards-v2 .rv2-smart-card[data-priority='wheel-ready']{border-color:rgba(255,221,123,.62);box-shadow:0 0 0 1px rgba(255,221,130,.22),0 16px 30px rgba(0,0,0,.25)}
+#rewards.rewards-v2 .rv2-smart-card[data-priority='mystery-ready']{border-color:rgba(255,217,106,.5);animation:rv2CardRise .45s ease both,rv2SmartPulse 2.8s ease-in-out infinite}
+
+#rewards.rewards-v2 .rv2-quick-actions-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+#rewards.rewards-v2 .rv2-quick-action{min-height:42px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.05));color:#ffeec6;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:11px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;position:relative}
+#rewards.rewards-v2 .rv2-quick-action:hover{border-color:rgba(255,217,106,.42)}
+#rewards.rewards-v2 .rv2-quick-badge{position:absolute;top:-7px;right:-6px;min-height:20px;padding:0 8px;border-radius:999px;border:1px solid rgba(255,221,123,.56);background:linear-gradient(135deg,#ffe8a5,#d9a53f);color:#241707;font-size:9px;letter-spacing:.07em;text-transform:uppercase;font-style:normal;display:inline-flex;align-items:center;font-weight:900;animation:rv2LevelPulse 2.2s ease-in-out infinite}
+
+#rewards.rewards-v2 .rv2-today-progress{height:12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);overflow:hidden}
+#rewards.rewards-v2 .rv2-today-progress u{display:block;height:100%;width:var(--today-progress,0%);background:linear-gradient(90deg,#ffeab3,#cf9430);box-shadow:0 0 16px rgba(255,217,106,.38);border-radius:inherit;transition:width .35s ease}
+#rewards.rewards-v2 .rv2-today-overview p[data-today-progress-text]{margin:0;color:#ffe8ad!important;font-size:13px;font-weight:800}
+#rewards.rewards-v2 .rv2-today-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#rewards.rewards-v2 .rv2-today-list li{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px;min-height:40px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03)}
+#rewards.rewards-v2 .rv2-today-list li i{width:20px;height:20px;display:grid;place-items:center;border-radius:999px;border:1px solid rgba(184,189,199,.34);background:rgba(109,115,126,.2);color:#dde1ea;font-style:normal;font-size:11px}
+#rewards.rewards-v2 .rv2-today-list li span{font-size:13px;line-height:1.45;color:rgba(255,255,255,.84)!important}
+#rewards.rewards-v2 .rv2-today-list li[data-today-state='done']{border-color:rgba(124,240,162,.42);background:rgba(46,138,78,.2)}
+#rewards.rewards-v2 .rv2-today-list li[data-today-state='done'] i{border-color:rgba(124,240,162,.42);background:rgba(46,138,78,.26);color:#d8ffe3}
+
+#rewards.rewards-v2 .rv2-highlight-target{animation:rv2TargetFlash .95s ease}
+
+#rewards.rewards-v2 .rv2-toast-stack{position:fixed;right:22px;bottom:20px;display:grid;gap:10px;z-index:60;pointer-events:none;max-width:min(360px,calc(100vw - 24px))}
+#rewards.rewards-v2 .rv2-toast{padding:12px 14px;border-radius:14px;border:1px solid rgba(255,221,123,.42);background:linear-gradient(145deg,rgba(255,217,106,.22),rgba(39,28,12,.82));box-shadow:0 14px 30px rgba(0,0,0,.32);display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;pointer-events:auto;animation:rv2ToastIn .36s ease both}
+#rewards.rewards-v2 .rv2-toast i{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;border:1px solid rgba(255,255,255,.26);background:rgba(255,255,255,.08);font-style:normal;font-size:16px}
+#rewards.rewards-v2 .rv2-toast strong{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#ffe9b4}
+#rewards.rewards-v2 .rv2-toast p{margin:2px 0 0;font-size:13px;line-height:1.45;color:rgba(255,255,255,.88)!important}
+#rewards.rewards-v2 .rv2-toast.is-leaving{animation:rv2ToastOut .3s ease both}
+
 #rewards.rewards-v2 .rv2-daily-streak,
 #rewards.rewards-v2 .rv2-daily-missions,
 #rewards.rewards-v2 .rv2-weekly-missions,
@@ -3461,6 +3501,8 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-achievement-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-collection-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-vip-benefit-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #rewards.rewards-v2 .rv2-smart-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #rewards.rewards-v2 .rv2-quick-actions-row{grid-template-columns:repeat(3,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-mission-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-seasonal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-activity-copy h4{font-size:20px}
@@ -3494,6 +3536,9 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-special-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-vip-level-line{grid-template-columns:repeat(3,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-vip-benefit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #rewards.rewards-v2 .rv2-smart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #rewards.rewards-v2 .rv2-quick-actions-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #rewards.rewards-v2 .rv2-today-list{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-collection-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-mission-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-mission-copy h4{font-size:22px}
@@ -3528,6 +3573,9 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-spin-countdown{font-size:19px}
   #rewards.rewards-v2 .rv2-spin-btn{min-width:100%;width:100%}
   #rewards.rewards-v2 .rv2-info-grid{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-smart-grid{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-quick-actions-row{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-toast-stack{right:12px;left:12px;bottom:12px;max-width:none}
   #rewards.rewards-v2 .rv2-vip-level-line{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
   #rewards.rewards-v2 .rv2-vip-benefit-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-mystery-result{grid-template-columns:1fr}
@@ -3562,7 +3610,10 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-spin-btn,
   #rewards.rewards-v2 .rv2-win-card{transition:none}
   #rewards.rewards-v2 .rv2-progress-bar u::after,
-  #rewards.rewards-v2 .rv2-badge-card.is-secret::before{animation:none}
+  #rewards.rewards-v2 .rv2-badge-card.is-secret::before,
+  #rewards.rewards-v2 .rv2-smart-card,
+  #rewards.rewards-v2 .rv2-toast,
+  #rewards.rewards-v2 .rv2-highlight-target{animation:none}
 }
 
 @keyframes rv2SecretSweep{
@@ -3578,6 +3629,26 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 @keyframes rv2CardRise{
   0%{opacity:0;transform:translateY(10px)}
   100%{opacity:1;transform:translateY(0)}
+}
+
+@keyframes rv2SmartPulse{
+  0%,100%{box-shadow:0 16px 30px rgba(0,0,0,.22),0 0 0 1px rgba(255,221,130,.15)}
+  50%{box-shadow:0 18px 34px rgba(0,0,0,.27),0 0 0 1px rgba(255,221,130,.36)}
+}
+
+@keyframes rv2TargetFlash{
+  0%{box-shadow:0 0 0 0 rgba(255,217,106,.55)}
+  100%{box-shadow:0 0 0 12px rgba(255,217,106,0)}
+}
+
+@keyframes rv2ToastIn{
+  0%{opacity:0;transform:translateY(12px) translateX(10px) scale(.98)}
+  100%{opacity:1;transform:translateY(0) translateX(0) scale(1)}
+}
+
+@keyframes rv2ToastOut{
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-8px) scale(.98)}
 }
 
 @keyframes rv2LevelPulse{

@@ -50,6 +50,91 @@
             <p>Ihr Bonusprogramm bei Taxi Germersheim. Punkte sammeln, Level aufsteigen und exklusive Vorteile freischalten.</p>
           </article>
 
+          <section class="rv2-smart-dashboard" aria-label="Smart Dashboard" data-rewards-smart-dashboard>
+            <header class="rv2-section-head">
+              <h3>Smart Dashboard</h3>
+              <small>Deine wichtigsten Rewards-Infos auf einen Blick</small>
+            </header>
+
+            <div class="rv2-smart-grid">
+              <article class="rv2-smart-card" data-smart-card="points">
+                <i aria-hidden="true">⭐</i>
+                <small>Aktuelle Punkte</small>
+                <strong data-smart-points>230</strong>
+                <em>Live-Stand</em>
+              </article>
+
+              <article class="rv2-smart-card" data-smart-card="level">
+                <i aria-hidden="true">🏆</i>
+                <small>Aktuelles Level</small>
+                <strong data-smart-level>Gold</strong>
+                <em>Premium aktiv</em>
+              </article>
+
+              <article class="rv2-smart-card" data-smart-card="voucher">
+                <i aria-hidden="true">🎁</i>
+                <small>Gutschein-Guthaben</small>
+                <strong data-smart-voucher>15 €</strong>
+                <em>Sofort einlösbar</em>
+              </article>
+
+              <article class="rv2-smart-card" data-smart-card="streak">
+                <i aria-hidden="true">🔥</i>
+                <small>Login-Serie</small>
+                <strong data-smart-streak>2 Tage</strong>
+                <em data-smart-streak-state>Heute offen</em>
+              </article>
+
+              <article class="rv2-smart-card" data-smart-card="wheel">
+                <i aria-hidden="true">🎡</i>
+                <small>Glücksrad verfügbar?</small>
+                <strong data-smart-wheel>Ja</strong>
+                <em data-smart-wheel-state>Jetzt drehen</em>
+              </article>
+
+              <article class="rv2-smart-card" data-smart-card="mystery">
+                <i aria-hidden="true">📦</i>
+                <small>Mystery Box verfügbar?</small>
+                <strong data-smart-mystery>Ja</strong>
+                <em data-smart-mystery-state>Jetzt öffnen</em>
+              </article>
+            </div>
+          </section>
+
+          <section class="rv2-quick-actions" aria-label="Schnellaktionen" data-rewards-quick-actions>
+            <header class="rv2-section-head">
+              <h3>Schnellaktionen</h3>
+              <small>Schneller Zugriff auf deine wichtigsten Rewards-Bereiche</small>
+            </header>
+
+            <div class="rv2-quick-actions-row" role="navigation" aria-label="Rewards Navigation">
+              <button class="button rv2-quick-action" type="button" data-dashboard-action="wheel"><span aria-hidden="true">🎡</span>Zum Glücksrad</button>
+              <button class="button rv2-quick-action" type="button" data-dashboard-action="missions"><span aria-hidden="true">✅</span>Zu Missionen <b class="rv2-quick-badge" data-quick-badge="missions" hidden>Neu</b></button>
+              <button class="button rv2-quick-action" type="button" data-dashboard-action="voucher"><span aria-hidden="true">🎟️</span>Zu Gutscheinen</button>
+              <button class="button rv2-quick-action" type="button" data-dashboard-action="achievements"><span aria-hidden="true">🏅</span>Zu Achievements <b class="rv2-quick-badge" data-quick-badge="achievements" hidden>Neu</b></button>
+              <button class="button rv2-quick-action" type="button" data-dashboard-action="mystery"><span aria-hidden="true">📦</span>Zu Mystery Box</button>
+            </div>
+          </section>
+
+          <section class="rv2-today-overview" aria-label="Heute erledigen" data-rewards-today-overview>
+            <header class="rv2-section-head">
+              <h3>Heute erledigen</h3>
+              <small>Deine Tagesübersicht mit Fortschritt</small>
+            </header>
+
+            <div class="rv2-today-progress" role="progressbar" aria-label="Heute erledigen Fortschritt" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0">
+              <u data-today-progress-fill></u>
+            </div>
+            <p data-today-progress-text>0 von 4 Aufgaben erledigt</p>
+
+            <ul class="rv2-today-list" data-today-list>
+              <li data-today-item="wheel"><i aria-hidden="true">✓</i><span>Glücksrad drehen</span></li>
+              <li data-today-item="mystery"><i aria-hidden="true">✓</i><span>Mystery Box öffnen</span></li>
+              <li data-today-item="first-ride"><i aria-hidden="true">✓</i><span>Erste Fahrt</span></li>
+              <li data-today-item="three-missions"><i aria-hidden="true">✓</i><span>3 Missionen abschließen</span></li>
+            </ul>
+          </section>
+
           <section class="rv2-customer-dashboard" aria-label="Premium Kunden-Dashboard" data-rewards-customer-dashboard>
             <header class="rv2-section-head">
               <h3>Premium Kunden-Dashboard</h3>
@@ -1015,6 +1100,8 @@
 
         <p class="rv2-credit-note">Gutscheine werden Ihrem Kundenkonto gutgeschrieben und können bei Fahrten angerechnet werden.</p>
       </section>
+
+      <div class="rv2-toast-stack" data-rewards-toast-stack aria-live="polite" aria-atomic="false"></div>
     </section>
   </main>
 
