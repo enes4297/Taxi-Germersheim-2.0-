@@ -3156,6 +3156,29 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 
 #rewards.rewards-v2 .rv2-credit-note{margin:0;color:rgba(255,255,255,.76)!important;font-size:13px;line-height:1.6}
 
+#rewards.rewards-v2 .rv2-mystery-box{padding:20px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(140deg,rgba(255,226,145,.08),rgba(255,255,255,0) 38%),linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));box-shadow:0 20px 48px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08);display:grid;gap:14px;position:relative;overflow:hidden}
+#rewards.rewards-v2 .rv2-mystery-box .rv2-section-head small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,242,207,.72)!important;font-weight:850}
+#rewards.rewards-v2 .rv2-mystery-main{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));display:grid;grid-template-columns:86px minmax(0,1fr);gap:12px;align-items:center}
+#rewards.rewards-v2 .rv2-mystery-chest{width:86px;height:86px;border-radius:18px;border:1px solid rgba(255,217,106,.5);background:radial-gradient(circle at 30% 20%,rgba(255,245,205,.38),rgba(27,19,10,.86));display:grid;place-items:center;box-shadow:0 10px 24px rgba(0,0,0,.24),0 0 20px rgba(255,217,106,.18)}
+#rewards.rewards-v2 .rv2-mystery-chest span{font-size:42px;line-height:1;filter:drop-shadow(0 6px 8px rgba(0,0,0,.3));transform:translateY(0)}
+#rewards.rewards-v2 .rv2-mystery-box.is-opening .rv2-mystery-chest span{animation:rv2MysteryPop .52s ease}
+#rewards.rewards-v2 .rv2-mystery-copy{display:grid;gap:8px}
+#rewards.rewards-v2 .rv2-mystery-status{justify-self:start;display:inline-flex;align-items:center;min-height:24px;padding:0 10px;border-radius:999px;border:1px solid rgba(255,217,106,.45);background:rgba(255,217,106,.14);color:#ffe8ad;font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:900}
+#rewards.rewards-v2 .rv2-mystery-box[data-mystery-state='opened'] .rv2-mystery-status{border-color:rgba(124,240,162,.42);background:rgba(46,138,78,.2);color:#d8ffe3}
+#rewards.rewards-v2 .rv2-mystery-box[data-mystery-state='locked'] .rv2-mystery-status{border-color:rgba(184,189,199,.34);background:rgba(109,115,126,.2);color:#dde1ea}
+#rewards.rewards-v2 .rv2-mystery-note{margin:0;color:rgba(255,255,255,.82)!important;font-size:13px;line-height:1.55}
+#rewards.rewards-v2 .rv2-mystery-open{min-height:38px;max-width:max-content;padding:0 16px;border-radius:12px;border:1px solid rgba(255,225,149,.55);background:linear-gradient(135deg,rgba(255,224,145,.34),rgba(214,154,46,.28));color:#2e210e;font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase}
+#rewards.rewards-v2 .rv2-mystery-open[disabled]{opacity:.65;cursor:default}
+#rewards.rewards-v2 .rv2-mystery-countdown{color:rgba(255,255,255,.66)!important;font-size:12px;letter-spacing:.05em;text-transform:uppercase;font-weight:800}
+
+#rewards.rewards-v2 .rv2-mystery-result{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));display:grid;grid-template-columns:42px minmax(0,1fr);gap:10px;align-items:start;position:relative;overflow:hidden;opacity:0;transform:scale(.98)}
+#rewards.rewards-v2 .rv2-mystery-result.is-visible{animation:rv2MysteryReveal .42s ease forwards}
+#rewards.rewards-v2 .rv2-mystery-result-icon{width:42px;height:42px;border-radius:12px;border:1px solid rgba(255,217,106,.34);background:rgba(255,217,106,.12);display:grid;place-items:center;font-style:normal;font-size:22px;color:#ffe8ad}
+#rewards.rewards-v2 .rv2-mystery-result-copy h4{margin:0;font-family:var(--serif);font-size:24px;line-height:1.06;color:#ffe8ab}
+#rewards.rewards-v2 .rv2-mystery-result-copy p{margin:4px 0 0;color:rgba(255,255,255,.8)!important;font-size:13px;line-height:1.55}
+#rewards.rewards-v2 .rv2-mystery-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#rewards.rewards-v2 .rv2-mystery-piece{position:absolute;top:42%;left:50%;width:7px;height:12px;border-radius:2px;opacity:.95;transform:translate3d(0,0,0) rotate(0deg);animation:rv2MysteryConfetti var(--dur,1100ms) cubic-bezier(.16,.84,.31,1) forwards}
+
 #rewards.rewards-v2 .rv2-customer-dashboard{padding:20px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(140deg,rgba(255,226,145,.08),rgba(255,255,255,0) 38%),linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,.02));box-shadow:0 20px 48px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08);display:grid;gap:14px}
 #rewards.rewards-v2 .rv2-customer-dashboard .rv2-section-head small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,242,207,.72)!important;font-weight:850}
 #rewards.rewards-v2 .rv2-customer-top{display:grid;grid-template-columns:1.05fr 1fr;gap:10px}
@@ -3358,6 +3381,9 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-yumak-copy h4{font-size:25px}
   #rewards.rewards-v2 .rv2-account-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-goal-premium h3{font-size:30px}
+  #rewards.rewards-v2 .rv2-mystery-main{grid-template-columns:74px minmax(0,1fr)}
+  #rewards.rewards-v2 .rv2-mystery-chest{width:74px;height:74px}
+  #rewards.rewards-v2 .rv2-mystery-chest span{font-size:36px}
   #rewards.rewards-v2 .rv2-streak-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   #rewards.rewards-v2 .rv2-daily-mission-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-special-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -3375,6 +3401,8 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-hero h1{font-size:40px}
   #rewards.rewards-v2 .rv2-stats{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-rewards-points{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-mystery-main{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-mystery-chest{width:78px;height:78px}
   #rewards.rewards-v2 .rv2-customer-stat-grid{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-customer-next-level h4{font-size:30px}
   #rewards.rewards-v2 .rv2-yumak-assistant{padding:16px}
@@ -3423,6 +3451,7 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
   #rewards.rewards-v2 .rv2-spin-countdown{font-size:19px}
   #rewards.rewards-v2 .rv2-spin-btn{min-width:100%;width:100%}
   #rewards.rewards-v2 .rv2-info-grid{grid-template-columns:1fr}
+  #rewards.rewards-v2 .rv2-mystery-result{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-customer-profile{grid-template-columns:1fr}
   #rewards.rewards-v2 .rv2-customer-avatar{width:58px;height:58px;font-size:30px}
   #rewards.rewards-v2 .rv2-customer-next-level h4{font-size:25px}
@@ -3533,6 +3562,23 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 @keyframes rv2YumakClap{
   0%,100%{transform:translateY(0)}
   50%{transform:translateY(-8px) translateX(2px)}
+}
+
+@keyframes rv2MysteryPop{
+  0%{transform:scale(1) rotate(0deg)}
+  35%{transform:scale(1.12) rotate(-5deg)}
+  65%{transform:scale(1.06) rotate(5deg)}
+  100%{transform:scale(1) rotate(0deg)}
+}
+
+@keyframes rv2MysteryReveal{
+  0%{opacity:0;transform:scale(.98)}
+  100%{opacity:1;transform:scale(1)}
+}
+
+@keyframes rv2MysteryConfetti{
+  0%{opacity:.98;transform:translate3d(0,0,0) rotate(0deg)}
+  100%{opacity:0;transform:translate3d(var(--x,0),var(--y,0),0) rotate(var(--rot,260deg))}
 }
 
 @keyframes rv2YumakFloat{
