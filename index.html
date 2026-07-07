@@ -511,99 +511,184 @@
 
     </section>
 
-    <section id="booking" class="screen">
+    <section id="booking" class="screen booking-premium">
       <header class="page-head"><button data-go="home" type="button">‹</button><h2>Buchen</h2><i></i></header>
-      <div class="steps"><button type="button" class="active">Start</button><button type="button">Ziel</button><button type="button">Details</button><button type="button">Absenden</button></div>
 
-      <article class="panel intro"><small>TAXI GERMERSHEIM GMBH</small><h1>Ihre Fahrt anfragen</h1><p>Start, Ziel und Fahrtdetails eintragen. Danach erhalten Sie eine klare Vorschau.</p></article>
-      <article class="panel selected"><small>GEWÄHLTER FAHRTTYP</small><h2 id="selectedTitle">Normale Taxifahrt</h2></article>
-      <div id="serviceLabel" class="service-label">NORMALE TAXIFAHRT</div>
+      <article class="panel intro">
+        <small>TAXI GERMERSHEIM GMBH</small>
+        <h1>Premium Booking Experience</h1>
+        <p>Schritt fuer Schritt zur Buchung. Schnell, klar und mobil optimiert.</p>
+      </article>
 
-      <div class="trip-grid">
-        <button class="active" data-trip="oneway" type="button"><i data-icon="right"></i><b>Hinfahrt</b></button>
-        <button data-trip="return" type="button"><i data-icon="left"></i><b>Rückfahrt</b></button>
-        <button data-trip="round" type="button"><i data-icon="round"></i><b>Hin- & Rückfahrt</b></button>
-        <button data-trip="repeat" type="button"><i data-icon="repeat"></i><b>Regelmäßig</b></button>
+      <div class="pb-progress">
+        <div class="pb-progress-head">
+          <p data-booking-progress-text>Schritt 1 von 7</p>
+          <b data-booking-progress-percent>14%</b>
+        </div>
+        <div class="pb-progress-track" aria-hidden="true"><u data-booking-progress-fill></u></div>
       </div>
 
-      <article class="yumak-info"><i data-icon="yumak"></i><span><b>Yumak prüft mit.</b><small>Start, Ziel und Telefonnummer reichen für die erste Anfrage.</small></span></article>
-
-      <label>STARTADRESSE</label>
-      <div class="input"><i data-icon="pin"></i><input id="startAddress" placeholder="Abholort eingeben"></div>
-      <div id="startMapContainer" class="map-container"></div>
-      <button class="outline" type="button" id="locationBtn"><i data-icon="location"></i>Aktuellen Standort verwenden</button>
-
-      <label>ZIELADRESSE</label>
-      <div class="input"><i data-icon="flag"></i><input id="targetAddress" placeholder="Ziel eingeben"></div>
-      <div id="endMapContainer" class="map-container"></div>
-      <div class="chips"><button type="button" data-preset="home" data-address="Zuhause">Zuhause</button><button type="button" data-preset="work" data-address="Arbeit">Arbeit</button><button type="button" data-preset="hospital" data-address="Krankenhaus" data-service="medical">Krankenhaus</button><button type="button" data-preset="airport" data-address="Flughafen">Flughafen</button></div>
-
-      <div class="toggle"><button type="button" class="active">Jetzt fahren</button><button type="button">Für später planen</button></div>
-
-      <label>FAHRTTYP</label>
-      <div class="type-grid">
-        <button class="active" data-service-select="taxi" type="button"><i data-icon="taxi"></i><b>Taxi</b></button>
-        <button data-service-select="medical" type="button"><i data-icon="medical"></i><b>Krankenfahrt</b></button>
-        <button data-service-select="wheelchair" type="button"><i data-icon="wheelchair"></i><b>Rollstuhl</b></button>
-        <button data-service-select="airport" type="button"><i data-icon="airport"></i><b>Flughafen</b></button>
+      <div class="steps pb-stepper" role="tablist" aria-label="Buchungsschritte">
+        <button type="button" class="active" data-booking-step-goto="1">Abholort</button>
+        <button type="button" data-booking-step-goto="2">Ziel</button>
+        <button type="button" data-booking-step-goto="3">Fahrtart</button>
+        <button type="button" data-booking-step-goto="4">Datum & Uhrzeit</button>
+        <button type="button" data-booking-step-goto="5">Fahrgaeste</button>
+        <button type="button" data-booking-step-goto="6">Optionen</button>
+        <button type="button" data-booking-step-goto="7">Uebersicht</button>
       </div>
 
-      <section id="medicalPanel" class="panel extra hidden"><h3>Zusatzangaben Krankenfahrt</h3><label>Krankenkasse</label><input placeholder="z. B. AOK, TK, Barmer"><label>Verordnung vorhanden?</label><div class="small-toggle"><button type="button">Ja</button><button type="button">Nein</button></div></section>
+      <section class="pb-shell" aria-label="Premium Buchung">
+        <div class="pb-flow">
+          <article class="panel pb-step is-active" data-booking-step="1">
+            <h3>Schritt 1 - Abholort</h3>
+            <label>STARTADRESSE</label>
+            <div class="input"><i data-icon="pin"></i><input id="startAddress" placeholder="Abholort eingeben"></div>
+            <div id="startMapContainer" class="map-container"></div>
+            <button class="outline" type="button" id="locationBtn"><i data-icon="location"></i>Aktuellen Standort verwenden</button>
+            <div class="pb-nav"><button class="button" type="button" data-booking-next>Weiter</button></div>
+          </article>
 
-      <label>FAHRTDETAILS</label>
-      <div class="details"><button type="button"><i data-icon="luggage"></i>Gepäck</button><button type="button"><i data-icon="child"></i>Kindersitz</button><button type="button"><i data-icon="wheelchair"></i>Rollstuhl</button><button type="button"><i data-icon="pet"></i>Haustier</button><button type="button"><i data-icon="passengers"></i>Mehr als 4</button></div>
+          <article class="panel pb-step" data-booking-step="2" hidden>
+            <h3>Schritt 2 - Ziel</h3>
+            <label>ZIELADRESSE</label>
+            <div class="input"><i data-icon="flag"></i><input id="targetAddress" placeholder="Ziel eingeben"></div>
+            <div id="endMapContainer" class="map-container"></div>
+            <div class="chips">
+              <button type="button" data-preset="home" data-address="Zuhause">Zuhause</button>
+              <button type="button" data-preset="work" data-address="Arbeit">Arbeit</button>
+              <button type="button" data-preset="hospital" data-address="Krankenhaus" data-service="medical">Krankenhaus</button>
+              <button type="button" data-preset="airport" data-address="Flughafen">Flughafen</button>
+            </div>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
+          </article>
 
-      <label>NAME</label><div class="input"><i data-icon="user"></i><input id="customerName" placeholder="Ihr Name"></div>
-      <label>TELEFONNUMMER</label><div class="input"><i data-icon="phone"></i><input id="customerPhone" type="tel" placeholder="Für Rückfragen"></div>
-      <label>NOTIZ OPTIONAL</label><textarea placeholder="z. B. Rollstuhl, Gepäck, Krankenkasse, Abholhinweis"></textarea>
+          <article class="panel pb-step" data-booking-step="3" hidden>
+            <h3>Schritt 3 - Fahrtart</h3>
+            <article class="panel selected"><small>GEWAEHLTER FAHRTTYP</small><h2 id="selectedTitle">Normale Taxifahrt</h2></article>
+            <div id="serviceLabel" class="service-label">NORMALE TAXIFAHRT</div>
+            <div class="trip-grid">
+              <button class="active" data-trip="oneway" type="button"><i data-icon="right"></i><b>Hinfahrt</b></button>
+              <button data-trip="return" type="button"><i data-icon="left"></i><b>Rueckfahrt</b></button>
+              <button data-trip="round" type="button"><i data-icon="round"></i><b>Hin- & Rueckfahrt</b></button>
+              <button data-trip="repeat" type="button"><i data-icon="repeat"></i><b>Regelmaessig</b></button>
+            </div>
+            <label>FAHRTTYP</label>
+            <div class="type-grid">
+              <button class="active" data-service-select="taxi" type="button"><i data-icon="taxi"></i><b>Taxi</b></button>
+              <button data-service-select="medical" type="button"><i data-icon="medical"></i><b>Krankenfahrt</b></button>
+              <button data-service-select="wheelchair" type="button"><i data-icon="wheelchair"></i><b>Rollstuhl</b></button>
+              <button data-service-select="airport" type="button"><i data-icon="airport"></i><b>Flughafentransfer</b></button>
+            </div>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
+          </article>
 
-      <div class="actions"><button id="sendRequest" type="button">Fahrtanfrage nicht möglich</button><a href="tel:072743567"><i data-icon="phone"></i>Jetzt anrufen</a></div>
+          <article class="panel pb-step" data-booking-step="4" hidden>
+            <h3>Schritt 4 - Datum & Uhrzeit</h3>
+            <div class="toggle"><button type="button" class="active">Jetzt fahren</button><button type="button">Fuer spaeter planen</button></div>
+            <label>DATUM</label>
+            <div class="input"><i data-icon="booking"></i><input id="bookingDate" type="date"></div>
+            <label>UHRZEIT</label>
+            <div class="input"><i data-icon="round"></i><input id="bookingTime" type="time"></div>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
+          </article>
 
-      <section class="panel request-prep" aria-labelledby="request-prep-title">
-        <small>Kontaktformular</small>
-        <h3 id="request-prep-title">Fahrtanfrage senden</h3>
-        <p class="request-prep-note">Dieses Formular ist vorbereitet. Der E-Mail-/Backend-Versand kann spaeter per Formspree, Netlify Forms, EmailJS oder eigenem Server angebunden werden.</p>
+          <article class="panel pb-step" data-booking-step="5" hidden>
+            <h3>Schritt 5 - Fahrgastanzahl</h3>
+            <label>ANZAHL FAHRGAESTE</label>
+            <div class="input"><i data-icon="passengers"></i><input id="bookingPassengers" type="number" min="1" max="8" value="1"></div>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
+          </article>
 
-        <form id="contactRequestForm" class="request-form" novalidate>
-          <div class="request-grid">
-            <label for="requestName">Name</label>
-            <input id="requestName" name="name" type="text" required>
+          <article class="panel pb-step" data-booking-step="6" hidden>
+            <h3>Schritt 6 - Zusatzoptionen</h3>
+            <section id="medicalPanel" class="panel extra hidden"><h3>Zusatzangaben Krankenfahrt</h3><label>Krankenkasse</label><input placeholder="z. B. AOK, TK, Barmer"><label>Verordnung vorhanden?</label><div class="small-toggle"><button type="button">Ja</button><button type="button">Nein</button></div></section>
+            <label>OPTIONEN</label>
+            <div class="details pb-option-grid">
+              <button type="button"><span aria-hidden="true">♿</span>Rollstuhl</button>
+              <button type="button"><span aria-hidden="true">✈</span>Flughafentransfer</button>
+              <button type="button"><span aria-hidden="true">🏥</span>Krankenfahrt</button>
+              <button type="button"><span aria-hidden="true">🐶</span>Haustier</button>
+              <button type="button"><span aria-hidden="true">👶</span>Kindersitz</button>
+              <button type="button"><span aria-hidden="true">💳</span>Kartenzahlung</button>
+              <button type="button"><span aria-hidden="true">🧳</span>Viel Gepaeck</button>
+            </div>
+            <label>NAME</label><div class="input"><i data-icon="user"></i><input id="customerName" placeholder="Ihr Name"></div>
+            <label>TELEFONNUMMER</label><div class="input"><i data-icon="phone"></i><input id="customerPhone" type="tel" placeholder="Fuer Rueckfragen"></div>
+            <label>NOTIZ OPTIONAL</label><textarea id="bookingNote" placeholder="z. B. Rollstuhl, Gepaeck, Krankenkasse, Abholhinweis"></textarea>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
+          </article>
 
-            <label for="requestPhone">Telefon</label>
-            <input id="requestPhone" name="phone" type="tel" required>
+          <article class="panel pb-step" data-booking-step="7" hidden>
+            <h3>Schritt 7 - Uebersicht</h3>
+            <article class="yumak-info"><i data-icon="yumak"></i><span><b>Yumak prueft mit.</b><small>Finale Datenkontrolle vor der Anfrage.</small></span></article>
+            <div class="actions"><button id="sendRequest" type="button">Fahrtanfrage nicht moeglich</button><a href="tel:072743567"><i data-icon="phone"></i>Jetzt anrufen</a></div>
 
-            <label for="requestEmail">E-Mail</label>
-            <input id="requestEmail" name="email" type="email" required>
+            <section class="panel request-prep" aria-labelledby="request-prep-title">
+              <small>Kontaktformular</small>
+              <h3 id="request-prep-title">Fahrtanfrage senden</h3>
+              <p class="request-prep-note">Dieses Formular ist vorbereitet. Der E-Mail-/Backend-Versand kann spaeter per Formspree, Netlify Forms, EmailJS oder eigenem Server angebunden werden.</p>
 
-            <label for="requestPickup">Abholadresse</label>
-            <input id="requestPickup" name="pickup" type="text" required>
+              <form id="contactRequestForm" class="request-form" novalidate>
+                <div class="request-grid">
+                  <label for="requestName">Name</label>
+                  <input id="requestName" name="name" type="text" required>
 
-            <label for="requestDestination">Zieladresse</label>
-            <input id="requestDestination" name="destination" type="text" required>
+                  <label for="requestPhone">Telefon</label>
+                  <input id="requestPhone" name="phone" type="tel" required>
 
-            <label for="requestDate">Datum</label>
-            <input id="requestDate" name="date" type="date" required>
+                  <label for="requestEmail">E-Mail</label>
+                  <input id="requestEmail" name="email" type="email" required>
 
-            <label for="requestTime">Uhrzeit</label>
-            <input id="requestTime" name="time" type="time" required>
+                  <label for="requestPickup">Abholadresse</label>
+                  <input id="requestPickup" name="pickup" type="text" required>
 
-            <label for="requestPassengers">Personenanzahl</label>
-            <input id="requestPassengers" name="passengers" type="number" min="1" max="8" value="1" required>
+                  <label for="requestDestination">Zieladresse</label>
+                  <input id="requestDestination" name="destination" type="text" required>
 
-            <label for="requestMessage">Nachricht / Besonderheiten</label>
-            <textarea id="requestMessage" name="message" rows="4" placeholder="z. B. Kindersitz, Rollstuhl, zusaetzliche Hinweise"></textarea>
-          </div>
+                  <label for="requestDate">Datum</label>
+                  <input id="requestDate" name="date" type="date" required>
 
-          <label class="request-consent">
-            <input id="requestPrivacy" name="privacy" type="checkbox" required>
-            <span>Ich habe die Datenschutzerklaerung gelesen und stimme der Verarbeitung meiner Angaben zur Bearbeitung meiner Anfrage zu.</span>
-          </label>
+                  <label for="requestTime">Uhrzeit</label>
+                  <input id="requestTime" name="time" type="time" required>
 
-          <div class="request-actions">
-            <button id="requestSubmit" type="submit" class="button">Anfrage vorbereiten</button>
-            <p id="requestStatus" aria-live="polite"></p>
-          </div>
-        </form>
+                  <label for="requestPassengers">Personenanzahl</label>
+                  <input id="requestPassengers" name="passengers" type="number" min="1" max="8" value="1" required>
+
+                  <label for="requestMessage">Nachricht / Besonderheiten</label>
+                  <textarea id="requestMessage" name="message" rows="4" placeholder="z. B. Kindersitz, Rollstuhl, zusaetzliche Hinweise"></textarea>
+                </div>
+
+                <label class="request-consent">
+                  <input id="requestPrivacy" name="privacy" type="checkbox" required>
+                  <span>Ich habe die Datenschutzerklaerung gelesen und stimme der Verarbeitung meiner Angaben zur Bearbeitung meiner Anfrage zu.</span>
+                </label>
+
+                <div class="request-actions">
+                  <button id="requestSubmit" type="submit" class="button">Anfrage vorbereiten</button>
+                  <p id="requestStatus" aria-live="polite"></p>
+                </div>
+              </form>
+            </section>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button></div>
+          </article>
+        </div>
+
+        <aside class="panel pb-summary" aria-label="Live Zusammenfassung">
+          <small>LIVE-ZUSAMMENFASSUNG</small>
+          <h3>Ihre Buchung</h3>
+          <ul>
+            <li><span>Abholort</span><b data-booking-summary-start>-</b></li>
+            <li><span>Ziel</span><b data-booking-summary-target>-</b></li>
+            <li><span>Datum</span><b data-booking-summary-date>-</b></li>
+            <li><span>Uhrzeit</span><b data-booking-summary-time>-</b></li>
+            <li><span>Fahrtart</span><b data-booking-summary-service>Taxi</b></li>
+            <li><span>Optionen</span><b data-booking-summary-options>Keine</b></li>
+          </ul>
+          <p class="pb-rewards-hint" data-booking-rewards-hint hidden>Mit dieser Fahrt erhaeltst du ca. 15 Punkte.</p>
+          <p class="pb-voucher-hint" data-booking-voucher-hint hidden>Gutschein-Guthaben verfuegbar.</p>
+          <p class="pb-future-note">Vorbereitet fuer Google Maps, Fahrerzuweisung, Live-Status, Preisberechnung und Backend.</p>
+        </aside>
       </section>
     </section>
 
