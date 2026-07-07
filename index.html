@@ -543,7 +543,8 @@
           <article class="panel pb-step is-active" data-booking-step="1">
             <h3>Schritt 1 - Abholort</h3>
             <label>STARTADRESSE</label>
-            <div class="input"><i data-icon="pin"></i><input id="startAddress" placeholder="Abholort eingeben"></div>
+            <div class="input pb-location-field" data-maps-autocomplete="pickup"><i data-icon="pin"></i><input id="startAddress" placeholder="Abholort eingeben" autocomplete="off" aria-autocomplete="list" aria-expanded="false"></div>
+            <div class="pb-autocomplete-prep" data-autocomplete-list="pickup" hidden></div>
             <div id="startMapContainer" class="map-container"></div>
             <button class="outline" type="button" id="locationBtn"><i data-icon="location"></i>Aktuellen Standort verwenden</button>
             <div class="pb-nav"><button class="button" type="button" data-booking-next>Weiter</button></div>
@@ -552,7 +553,8 @@
           <article class="panel pb-step" data-booking-step="2" hidden>
             <h3>Schritt 2 - Ziel</h3>
             <label>ZIELADRESSE</label>
-            <div class="input"><i data-icon="flag"></i><input id="targetAddress" placeholder="Ziel eingeben"></div>
+            <div class="input pb-location-field" data-maps-autocomplete="destination"><i data-icon="flag"></i><input id="targetAddress" placeholder="Zielort eingeben" autocomplete="off" aria-autocomplete="list" aria-expanded="false"></div>
+            <div class="pb-autocomplete-prep" data-autocomplete-list="destination" hidden></div>
             <div id="endMapContainer" class="map-container"></div>
             <div class="chips">
               <button type="button" data-preset="home" data-address="Zuhause">Zuhause</button>
@@ -560,6 +562,17 @@
               <button type="button" data-preset="hospital" data-address="Krankenhaus" data-service="medical">Krankenhaus</button>
               <button type="button" data-preset="airport" data-address="Flughafen">Flughafen</button>
             </div>
+
+            <section class="panel pb-route-panel" aria-label="Routenanzeige">
+              <small>GOOGLE MAPS VORBEREITUNG</small>
+              <h4>Route Start - Ziel</h4>
+              <p class="pb-route-note">Google Maps wird erst nach Ihrer Zustimmung geladen.</p>
+              <div id="bookingRouteMapContainer" class="map-container"></div>
+              <div class="pb-route-stats" aria-live="polite">
+                <p><span>Entfernung:</span> <b data-booking-distance>-</b></p>
+                <p><span>Geschätzte Fahrzeit:</span> <b data-booking-duration>-</b></p>
+              </div>
+            </section>
             <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
@@ -680,6 +693,8 @@
           <ul>
             <li><span>Abholort</span><b data-booking-summary-start>-</b></li>
             <li><span>Ziel</span><b data-booking-summary-target>-</b></li>
+            <li><span>Entfernung</span><b data-booking-summary-distance>-</b></li>
+            <li><span>Fahrzeit</span><b data-booking-summary-duration>-</b></li>
             <li><span>Datum</span><b data-booking-summary-date>-</b></li>
             <li><span>Uhrzeit</span><b data-booking-summary-time>-</b></li>
             <li><span>Fahrtart</span><b data-booking-summary-service>Taxi</b></li>

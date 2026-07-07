@@ -75,9 +75,17 @@
   let addressConfigCache=null;
   let streetDirectoryCache=null;
   let mapContainers={};
+  const bookingRouteState={
+    distanceText:'-',
+    durationText:'-',
+    distanceKm:null,
+    durationMin:null,
+    source:'demo'
+  };
   const CONSENT_STORAGE_KEY='taxiGermersheimCookieConsent';
   const CONSENT_ALL='all';
   const CONSENT_NECESSARY='necessary';
+  const GOOGLE_MAPS_API_KEY='YOUR_GOOGLE_MAPS_API_KEY';
   const CONTACT_SERVICE_CONFIG={
     // Set provider to 'formspree' or 'emailjs' when real transport is connected.
     provider:null,
@@ -761,11 +769,177 @@
     const defaultQuery='Taxi Germersheim GmbH Friedrich-Ebert-Strasse 8 76726 Germersheim';
     if(elementId==='startMapContainer') return $('#startAddress')?.value?.trim() || defaultQuery;
     if(elementId==='endMapContainer') return $('#targetAddress')?.value?.trim() || defaultQuery;
+    if(elementId==='bookingRouteMapContainer'){
+      const start=$('#startAddress')?.value?.trim() || defaultQuery;
+      const target=$('#targetAddress')?.value?.trim() || defaultQuery;
+      return `${start} -> ${target}`;
+    }
     return defaultQuery;
   }
+
+  function hasGoogleMapsApiKey(){
+    const key=String(GOOGLE_MAPS_API_KEY || '').trim();
+    return !!key && key!=='YOUR_GOOGLE_MAPS_API_KEY';
+  }
+
+  let googleMapsScriptPromise=null;
+  function loadGoogleMapsApiOnce(){
+    if(!hasGoogleMapsApiKey()) return Promise.resolve(false);
+    if(window.google?.maps) return Promise.resolve(true);
+    if(googleMapsScriptPromise) return googleMapsScriptPromise;
+
+    googleMapsScriptPromise=new Promise(resolve=>{
+      const script=document.createElement('script');
+      script.async=true;
+      script.defer=true;
+      script.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&libraries=places`;
+      script.onload=()=>resolve(true);
+      script.onerror=()=>resolve(false);
+      document.head.appendChild(script);
+    });
+    return googleMapsScriptPromise;
+  }
+
+  async function initBookingPlacesAutocomplete(){
+    // Vorbereitung fuer spaetere Places-Integration (derzeit ohne Bindung in der Demo).
+    const loaded=await loadGoogleMapsApiOnce();
+    if(!loaded) return false;
+    return true;
+  }
+
+  async function requestDirectionsRoute(_origin,_destination){
+    // Vorbereitung fuer spaetere Directions API Anbindung.
+    return null;
+  }
+
+  async function requestDistanceMatrix(_origin,_destination){
+    // Vorbereitung fuer spaetere Distance Matrix API Anbindung.
+    return null;
+  }
+
+  function getGoogleMapsEmbedRouteUrl(origin,destination){
+    const start=origin || 'Germersheim';
+    const target=destination || 'Germersheim';
+    if(hasGoogleMapsApiKey()){
+      return `https://www.google.com/maps/embed/v1/directions?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&origin=${encodeURIComponent(start)}&destination=${encodeURIComponent(target)}&mode=driving`;
+    }
+    return `https://www.google.com/maps?output=embed&saddr=${encodeURIComponent(start)}&daddr=${encodeURIComponent(target)}`;
+  }
+
   function getMapEmbedUrl(elementId){
+    if(elementId==='bookingRouteMapContainer'){
+      const start=$('#startAddress')?.value?.trim() || 'Germersheim';
+      const target=$('#targetAddress')?.value?.trim() || 'Germersheim';
+      return getGoogleMapsEmbedRouteUrl(start,target);
+    }
     const query=getMapQueryForContainer(elementId);
     return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+  }
+
+  function lookupDemoCoordinate(address){
+    const value=String(address || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .replace(/ß/g,'ss')
+      .replace(/[^a-z0-9\s-]/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
+    const hints=[
+      {keys:['germersheim','bahnhof germersheim','friedrich-ebert'],lat:49.2238,lon:8.3668},
+      {keys:['sondernheim'],lat:49.1992,lon:8.3396},
+      {keys:['speyer'],lat:49.3173,lon:8.4311},
+      {keys:['landau'],lat:49.1982,lon:8.1166},
+      {keys:['karlsruhe'],lat:49.0069,lon:8.4037},
+      {keys:['mannheim'],lat:49.4875,lon:8.4660},
+      {keys:['heidelberg'],lat:49.3988,lon:8.6724},
+      {keys:['flughafen frankfurt','frankfurt terminal'],lat:50.0379,lon:8.5622},
+      {keys:['flughafen','rheinmuenster','baden-baden'],lat:48.7794,lon:8.0805},
+      {keys:['krankenhaus'],lat:49.2143,lon:8.3624}
+    ];
+
+    const matched=hints.find(entry=>entry.keys.some(key=>value.includes(key)));
+    if(matched) return {lat:matched.lat,lon:matched.lon};
+
+    const baseLat=49.2238;
+    const baseLon=8.3668;
+    let hash=0;
+    for(let i=0;i<value.length;i+=1) hash=(hash*31 + value.charCodeAt(i)) % 100000;
+    return {
+      lat:baseLat + ((hash % 700) / 10000),
+      lon:baseLon + (((Math.floor(hash / 7) % 700) - 350) / 10000)
+    };
+  }
+
+  function calculateDistanceKm(a,b){
+    const toRad=value=>(value*Math.PI)/180;
+    const radius=6371;
+    const dLat=toRad(b.lat-a.lat);
+    const dLon=toRad(b.lon-a.lon);
+    const lat1=toRad(a.lat);
+    const lat2=toRad(b.lat);
+    const h=Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+    return 2*radius*Math.asin(Math.sqrt(h));
+  }
+
+  function estimateRouteMetrics(origin,destination){
+    if(!origin || !destination) return null;
+    const from=lookupDemoCoordinate(origin);
+    const to=lookupDemoCoordinate(destination);
+    const distance=Math.max(1,calculateDistanceKm(from,to));
+    const avgSpeedKmH=42;
+    const minutes=Math.max(4,Math.round((distance/avgSpeedKmH)*60));
+    return {
+      distanceKm:distance,
+      durationMin:minutes,
+      source:'demo'
+    };
+  }
+
+  function formatDistanceText(distanceKm){
+    if(!Number.isFinite(distanceKm)) return '-';
+    return `${distanceKm.toFixed(1).replace('.',',')} km`;
+  }
+
+  function formatDurationText(durationMin){
+    if(!Number.isFinite(durationMin)) return '-';
+    return `${Math.round(durationMin)} min`;
+  }
+
+  function syncBookingRouteMetrics(){
+    const start=$('#startAddress')?.value?.trim() || '';
+    const target=$('#targetAddress')?.value?.trim() || '';
+    const distanceNode=$('[data-booking-distance]');
+    const durationNode=$('[data-booking-duration]');
+    const summaryDistanceNode=$('[data-booking-summary-distance]');
+    const summaryDurationNode=$('[data-booking-summary-duration]');
+
+    if(!start || !target){
+      bookingRouteState.distanceText='-';
+      bookingRouteState.durationText='-';
+      bookingRouteState.distanceKm=null;
+      bookingRouteState.durationMin=null;
+      if(distanceNode) distanceNode.textContent='-';
+      if(durationNode) durationNode.textContent='-';
+      if(summaryDistanceNode) summaryDistanceNode.textContent='-';
+      if(summaryDurationNode) summaryDurationNode.textContent='-';
+      return;
+    }
+
+    const metrics=estimateRouteMetrics(start,target);
+    const distanceText=formatDistanceText(metrics?.distanceKm);
+    const durationText=formatDurationText(metrics?.durationMin);
+
+    bookingRouteState.distanceText=distanceText;
+    bookingRouteState.durationText=durationText;
+    bookingRouteState.distanceKm=metrics?.distanceKm || null;
+    bookingRouteState.durationMin=metrics?.durationMin || null;
+    bookingRouteState.source=metrics?.source || 'demo';
+
+    if(distanceNode) distanceNode.textContent=distanceText;
+    if(durationNode) durationNode.textContent=durationText;
+    if(summaryDistanceNode) summaryDistanceNode.textContent=distanceText;
+    if(summaryDurationNode) summaryDurationNode.textContent=durationText;
   }
   function getStoredCookieConsent(){
     try{
@@ -810,7 +984,7 @@
     container.innerHTML='';
     const box=document.createElement('div');
     box.className='map-consent-placeholder';
-    box.innerHTML='<p>Google Maps wird erst geladen, wenn externe Dienste akzeptiert wurden.</p><button type="button" class="map-consent-btn" data-map-action="load">Google Maps laden</button>';
+    box.innerHTML='<p>Google Maps wird erst nach Ihrer Zustimmung geladen.</p><button type="button" class="map-consent-btn" data-map-action="load">Google Maps laden</button>';
     container.appendChild(box);
   }
   function loadMapIntoContainer(container,elementId){
@@ -844,6 +1018,7 @@
     const elementId=container.id;
     if(!elementId) return;
     loadMapIntoContainer(container,elementId);
+    if(elementId==='bookingRouteMapContainer') syncBookingRouteMetrics();
   }
   function initCookieBanner(){
     const banner=$('#cookieBanner');
@@ -1153,6 +1328,7 @@
       if(hasVoucher) voucherHint.textContent='Gutschein-Guthaben verfuegbar.';
     }
 
+    syncBookingRouteMetrics();
     syncBookingRequestForm();
   }
 
@@ -1367,9 +1543,9 @@
 
   function handleGlobalInput(e){
     validate();
+    syncBookingSummary();
     if(!hasExternalConsent()) return;
     if(e.target.id==='startAddress' || e.target.id==='targetAddress') refreshMapContainers();
-    syncBookingSummary();
   }
 
   let userLocation=null;
@@ -5081,6 +5257,7 @@
     validate();
     initMapContainer('startMapContainer');
     initMapContainer('endMapContainer');
+    initMapContainer('bookingRouteMapContainer');
     setTimeout(hideSplash,1200);
     initMedicalAssistant();
     initMedicalBookingScroll();
