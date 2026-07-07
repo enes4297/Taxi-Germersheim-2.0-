@@ -2054,6 +2054,109 @@
       });
     }
   }
+  function initRewardsVipStatus(){
+    const root=$('#rewards.rewards-v2 [data-rewards-vip-status]');
+    if(!root) return;
+
+    const storageKey='taxiRewardsVipStatusState';
+    const levelOrder=['bronze','silber','gold','platin','legend'];
+    const levelLabel={
+      bronze:'Bronze',
+      silber:'Silber',
+      gold:'Gold',
+      platin:'Platin',
+      legend:'Legend'
+    };
+    const defaultData={
+      currentLevel:'gold',
+      currentPoints:230,
+      nextLevel:'platin',
+      nextLevelTargetPoints:350
+    };
+
+    function readData(){
+      try{
+        const parsed=JSON.parse(localStorage.getItem(storageKey) || '');
+        if(!parsed || typeof parsed!=='object') return defaultData;
+        return {
+          currentLevel:typeof parsed.currentLevel==='string' ? parsed.currentLevel.toLowerCase() : defaultData.currentLevel,
+          currentPoints:Number.isFinite(Number(parsed.currentPoints)) ? Number(parsed.currentPoints) : defaultData.currentPoints,
+          nextLevel:typeof parsed.nextLevel==='string' ? parsed.nextLevel.toLowerCase() : defaultData.nextLevel,
+          nextLevelTargetPoints:Number.isFinite(Number(parsed.nextLevelTargetPoints)) ? Number(parsed.nextLevelTargetPoints) : defaultData.nextLevelTargetPoints
+        };
+      }catch(_err){
+        return defaultData;
+      }
+    }
+
+    function writeSeedIfMissing(data){
+      try{
+        if(!localStorage.getItem(storageKey)) localStorage.setItem(storageKey,JSON.stringify(data));
+      }catch(_err){
+        // localStorage optional in demo mode.
+      }
+    }
+
+    function text(selector,value){
+      const node=$(selector,root);
+      if(node) node.textContent=String(value);
+    }
+
+    const rawData=readData();
+    writeSeedIfMissing(rawData);
+
+    const currentLevel=levelOrder.includes(rawData.currentLevel) ? rawData.currentLevel : defaultData.currentLevel;
+    const currentIndex=Math.max(0,levelOrder.indexOf(currentLevel));
+    const fallbackNext=levelOrder[Math.min(levelOrder.length-1,currentIndex+1)];
+    const nextLevel=levelOrder.includes(rawData.nextLevel) ? rawData.nextLevel : fallbackNext;
+    const currentPoints=Math.max(0,Math.round(Number(rawData.currentPoints) || 0));
+    const nextTarget=Math.max(currentPoints,Math.round(Number(rawData.nextLevelTargetPoints) || 0));
+    const remaining=Math.max(0,nextTarget-currentPoints);
+    const progress=nextTarget>0 ? Math.max(0,Math.min(100,(currentPoints/nextTarget)*100)) : 0;
+
+    text('[data-vip-current]',levelLabel[currentLevel] || 'Gold');
+    text('[data-vip-next]',levelLabel[nextLevel] || 'Platin');
+    text('[data-vip-remaining]',`Noch ${remaining} Punkte bis ${levelLabel[nextLevel] || 'Platin'}`);
+
+    const progressBar=$('.rv2-vip-progress-bar',root);
+    const progressFill=$('[data-vip-progress-fill]',root);
+    if(progressBar){
+      progressBar.setAttribute('aria-valuemin','0');
+      progressBar.setAttribute('aria-valuemax',String(nextTarget));
+      progressBar.setAttribute('aria-valuenow',String(Math.min(currentPoints,nextTarget)));
+      progressBar.style.setProperty('--vip-progress',`${progress.toFixed(2)}%`);
+      progressBar.setAttribute('aria-label',`VIP Fortschritt bis ${levelLabel[nextLevel] || 'Platin'}`);
+    }
+    if(progressFill) progressFill.style.width=`${progress.toFixed(2)}%`;
+
+    const levelNodes=$$('[data-vip-level]',root);
+    levelNodes.forEach(node=>{
+      const level=node.dataset.vipLevel;
+      const index=levelOrder.indexOf(level || '');
+      if(index<0){
+        node.removeAttribute('data-vip-state');
+        return;
+      }
+      if(index<currentIndex) node.dataset.vipState='passed';
+      else if(index===currentIndex) node.dataset.vipState='current';
+      else node.dataset.vipState='upcoming';
+    });
+
+    const nextIndex=levelOrder.indexOf(nextLevel);
+    const benefitCards=$$('[data-vip-tier]',root);
+    benefitCards.forEach(card=>{
+      const tier=card.dataset.vipTier;
+      const index=levelOrder.indexOf(tier || '');
+      if(index<0){
+        card.removeAttribute('data-vip-state');
+        return;
+      }
+      if(index===currentIndex) card.dataset.vipState='current';
+      else if(index===nextIndex && nextIndex!==currentIndex) card.dataset.vipState='next';
+      else if(index<currentIndex) card.dataset.vipState='passed';
+      else card.dataset.vipState='locked';
+    });
+  }
   function initRewardsMysteryBox(){
     const root=$('#rewards.rewards-v2 [data-rewards-mystery-box]');
     if(!root) return;
@@ -3014,6 +3117,7 @@
     initRewardsWheel();
     initRewardsVoucherBalance();
     initRewardsCustomerDashboard();
+    initRewardsVipStatus();
     initRewardsMysteryBox();
     initRewardsDailyStreak();
     initRewardsDailyMissions();
