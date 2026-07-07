@@ -86,6 +86,11 @@
   const CONSENT_ALL='all';
   const CONSENT_NECESSARY='necessary';
   const GOOGLE_MAPS_API_KEY='YOUR_GOOGLE_MAPS_API_KEY';
+  const BOOKING_MAP_THEME_PRESET='dark-prepared';
+  const BOOKING_MARKER_PRESET={
+    start:'marker-start-prepared',
+    target:'marker-target-prepared'
+  };
   const CONTACT_SERVICE_CONFIG={
     // Set provider to 'formspree' or 'emailjs' when real transport is connected.
     provider:null,
@@ -906,13 +911,34 @@
     return `${Math.round(durationMin)} min`;
   }
 
+  function getEstimatedRewardPoints(){
+    return bookingStepState.service==='medical' ? 20 : bookingStepState.service==='airport' ? 18 : bookingStepState.service==='wheelchair' ? 17 : 15;
+  }
+
+  function applyRouteMapPresentationState(container){
+    if(!container) return;
+    container.dataset.mapTheme=BOOKING_MAP_THEME_PRESET;
+    container.dataset.mapStartMarker=BOOKING_MARKER_PRESET.start;
+    container.dataset.mapTargetMarker=BOOKING_MARKER_PRESET.target;
+  }
+
   function syncBookingRouteMetrics(){
     const start=$('#startAddress')?.value?.trim() || '';
     const target=$('#targetAddress')?.value?.trim() || '';
+    const startPreview=$('#bookingStartPreview');
     const distanceNode=$('[data-booking-distance]');
     const durationNode=$('[data-booking-duration]');
+    const serviceNode=$('[data-booking-route-service]');
+    const pointsNode=$('[data-booking-route-points]');
+    const yumakHintNode=$('[data-booking-yumak-hint]');
     const summaryDistanceNode=$('[data-booking-summary-distance]');
     const summaryDurationNode=$('[data-booking-summary-duration]');
+    const points=getEstimatedRewardPoints();
+    const routeService=services[bookingStepState.service]?.[0] || 'Normale Taxifahrt';
+
+    if(startPreview) startPreview.value=start || '-';
+    if(serviceNode) serviceNode.textContent=routeService;
+    if(pointsNode) pointsNode.textContent=`ca. ${points}`;
 
     if(!start || !target){
       bookingRouteState.distanceText='-';
@@ -923,6 +949,7 @@
       if(durationNode) durationNode.textContent='-';
       if(summaryDistanceNode) summaryDistanceNode.textContent='-';
       if(summaryDurationNode) summaryDurationNode.textContent='-';
+      if(yumakHintNode) yumakHintNode.textContent=`Perfekt! Sobald Start und Ziel gesetzt sind, zeigt Yumak dir Dauer und ca. ${points} Punkte an.`;
       return;
     }
 
@@ -940,6 +967,7 @@
     if(durationNode) durationNode.textContent=durationText;
     if(summaryDistanceNode) summaryDistanceNode.textContent=distanceText;
     if(summaryDurationNode) summaryDurationNode.textContent=durationText;
+    if(yumakHintNode) yumakHintNode.textContent=`Perfekt! Deine Fahrt dauert ungefaehr ${durationText} und bringt dir ca. ${points} Punkte.`;
   }
   function getStoredCookieConsent(){
     try{
@@ -989,6 +1017,7 @@
   }
   function loadMapIntoContainer(container,elementId){
     if(!container) return;
+    if(elementId==='bookingRouteMapContainer') applyRouteMapPresentationState(container);
     const iframe=document.createElement('iframe');
     iframe.className='map-embed-frame';
     iframe.loading='lazy';
@@ -1308,7 +1337,7 @@
       const showRewards=start!=='-' && target!=='-';
       rewardsHint.hidden=!showRewards;
       if(showRewards){
-        const points=bookingStepState.service==='medical' ? 20 : bookingStepState.service==='airport' ? 18 : bookingStepState.service==='wheelchair' ? 17 : 15;
+        const points=getEstimatedRewardPoints();
         rewardsHint.textContent=`Mit dieser Fahrt erhaeltst du ca. ${points} Punkte.`;
       }
     }
@@ -1405,6 +1434,7 @@
     const timeField=$('#bookingTime');
     if(dateField && !dateField.value) dateField.valueAsDate=new Date();
     if(timeField && !timeField.value) timeField.value='12:00';
+    applyRouteMapPresentationState($('#bookingRouteMapContainer'));
 
     showBookingStep(1);
     syncBookingSummary();
@@ -1468,6 +1498,7 @@
       $('#targetAddress').value=chip.dataset.address;
       if(chip.dataset.service) setService(chip.dataset.service);
       validate();
+      if(hasExternalConsent()) refreshMapContainers();
       return;
     }
     chip.classList.toggle('active');
@@ -5255,8 +5286,6 @@
     setService('taxi');
     initPremiumBookingFlow();
     validate();
-    initMapContainer('startMapContainer');
-    initMapContainer('endMapContainer');
     initMapContainer('bookingRouteMapContainer');
     setTimeout(hideSplash,1200);
     initMedicalAssistant();
