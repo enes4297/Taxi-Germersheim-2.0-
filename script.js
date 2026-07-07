@@ -828,12 +828,20 @@
 
   async function requestDirectionsRoute(_origin,_destination){
     // Vorbereitung fuer spaetere Directions API Anbindung.
-    return null;
+    const travelMode=(window.google?.maps?.TravelMode?.DRIVING) || 'DRIVING';
+    return {
+      travelMode,
+      routingPreference:'DRIVING'
+    };
   }
 
   async function requestDistanceMatrix(_origin,_destination){
     // Vorbereitung fuer spaetere Distance Matrix API Anbindung.
-    return null;
+    const travelMode=(window.google?.maps?.TravelMode?.DRIVING) || 'DRIVING';
+    return {
+      travelMode,
+      unitSystem:'METRIC'
+    };
   }
 
   function getGoogleMapsEmbedRouteUrl(origin,destination){
@@ -842,7 +850,7 @@
     if(hasGoogleMapsApiKey()){
       return `https://www.google.com/maps/embed/v1/directions?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&origin=${encodeURIComponent(start)}&destination=${encodeURIComponent(target)}&mode=driving`;
     }
-    return `https://www.google.com/maps?output=embed&saddr=${encodeURIComponent(start)}&daddr=${encodeURIComponent(target)}`;
+    return `https://www.google.com/maps?output=embed&saddr=${encodeURIComponent(start)}&daddr=${encodeURIComponent(target)}&dirflg=d&travelmode=driving`;
   }
 
   function getMapEmbedUrl(elementId){
@@ -943,17 +951,21 @@
     const distanceNode=$('[data-booking-distance]');
     const durationNode=$('[data-booking-duration]');
     const serviceNode=$('[data-booking-route-service]');
+    const routeModeNode=$('[data-booking-route-mode]');
     const pointsNode=$('[data-booking-route-points]');
     const yumakHintNode=$('[data-booking-yumak-hint]');
     const summaryDistanceNode=$('[data-booking-summary-distance]');
     const summaryDurationNode=$('[data-booking-summary-duration]');
+    const summaryRouteModeNode=$('[data-booking-summary-route-mode]');
     const summaryPointsNode=$('[data-booking-summary-points]');
     const points=getEstimatedRewardPoints();
     const routeService=services[bookingStepState.service]?.[0] || 'Normale Taxifahrt';
 
     if(startPreview) startPreview.value=start || '-';
     if(serviceNode) serviceNode.textContent=routeService;
+    if(routeModeNode) routeModeNode.textContent='Autofahrt';
     if(pointsNode) pointsNode.textContent=`ca. ${points}`;
+    if(summaryRouteModeNode) summaryRouteModeNode.textContent='Autofahrt';
     if(summaryPointsNode) summaryPointsNode.textContent=`ca. ${points}`;
 
     if(!start || !target){
