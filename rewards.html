@@ -1101,6 +1101,48 @@
         <p class="rv2-credit-note">Gutscheine werden Ihrem Kundenkonto gutgeschrieben und können bei Fahrten angerechnet werden.</p>
       </section>
 
+      <section class="rv2-ride-demo" aria-label="Demo-Fahrt abschliessen" data-rewards-booking-demo>
+        <header class="rv2-section-head">
+          <h3>Demo-Fahrt abschliessen</h3>
+          <small>Booking Rewards Integration V6.0</small>
+        </header>
+
+        <form class="rv2-ride-form" data-ride-demo-form>
+          <div class="rv2-ride-grid">
+            <label>Kunde<input type="text" value="Max Mustermann" data-ride-customer></label>
+            <label>Fahrtart
+              <select data-ride-type>
+                <option value="taxi">Normale Taxifahrt</option>
+                <option value="medical">Krankenfahrt</option>
+                <option value="wheelchair">Rollstuhlfahrt</option>
+                <option value="airport">Flughafentransfer</option>
+              </select>
+            </label>
+            <label>Fahrpreis<input type="number" min="0" step="0.01" value="32" data-ride-fare></label>
+            <label>Gutschein anrechnen<input type="number" min="0" step="0.01" value="15" data-ride-voucher-apply></label>
+            <label>Punkte gutschreiben<input type="number" min="0" step="1" value="10" data-ride-points></label>
+            <label>Restbetrag
+              <output data-ride-rest>17,00 EUR</output>
+            </label>
+          </div>
+
+          <div class="rv2-ride-meta">
+            <p>Verfuegbares Gutschein-Guthaben: <b data-ride-voucher-available>0,00 EUR</b></p>
+            <p>Maximal anrechenbar fuer diese Fahrt: <b data-ride-voucher-max>0,00 EUR</b></p>
+          </div>
+
+          <button class="button rv2-ride-submit" type="submit">Fahrt abschliessen</button>
+          <p class="rv2-ride-status" data-ride-status>Demo bereit: Fahrten werden lokal gespeichert und live mit Rewards verbunden.</p>
+        </form>
+
+        <article class="rv2-ride-history" aria-label="Fahrt-Historie">
+          <h4>Fahrt-Historie</h4>
+          <ul data-ride-history>
+            <li><span>Heute - Taxifahrt</span><b>32,00 EUR | Gutschein 15,00 EUR | +10 Punkte</b></li>
+          </ul>
+        </article>
+      </section>
+
       <div class="rv2-toast-stack" data-rewards-toast-stack aria-live="polite" aria-atomic="false"></div>
     </section>
   </main>
