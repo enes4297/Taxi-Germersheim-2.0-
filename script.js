@@ -2054,6 +2054,187 @@
       });
     }
   }
+  function initRewardsMysteryBox(){
+    const root=$('#rewards.rewards-v2 [data-rewards-mystery-box]');
+    if(!root) return;
+
+    const statusNode=$('[data-mystery-status]',root);
+    const noteNode=$('[data-mystery-note]',root);
+    const openButton=$('[data-mystery-open]',root);
+    const countdownNode=$('[data-mystery-countdown]',root);
+    const resultCard=$('[data-mystery-result]',root);
+    const resultIcon=$('[data-mystery-result-icon]',root);
+    const resultTitle=$('[data-mystery-result-title]',root);
+    const resultText=$('[data-mystery-result-text]',root);
+    const confettiHost=$('[data-mystery-confetti]',root);
+    if(!openButton || !statusNode || !noteNode || !countdownNode || !resultCard || !resultIcon || !resultTitle || !resultText) return;
+
+    const storageKey='taxiRewardsMysteryBoxState';
+    let countdownTimer=0;
+
+    const rewards=[
+      {id:'points-25',icon:'⭐',title:'+25 Punkte',text:'Du hast 25 Punkte für dein Rewards-Konto erhalten.',win:true},
+      {id:'points-50',icon:'🌟',title:'+50 Punkte',text:'Starker Treffer: 50 Bonuspunkte sind vorgemerkt.',win:true},
+      {id:'voucher-5',icon:'🎟️',title:'5 € Gutschein-Guthaben',text:'5 € Gutschein-Guthaben wurde als Demo-Belohnung freigeschaltet.',win:true},
+      {id:'extra-spin',icon:'🔄',title:'Extra-Dreh',text:'Du hast einen Extra-Dreh als Mystery-Bonus erhalten.',win:true},
+      {id:'secret-badge',icon:'🏆',title:'Geheimes Abzeichen',text:'Ein geheimes Abzeichen wurde im Demo-System markiert.',win:true},
+      {id:'no-win',icon:'🫶',title:'Trostpreis',text:'Heute kein Hauptgewinn - morgen wartet die nächste Box.',win:false}
+    ];
+
+    function getTodayYmd(){
+      const now=new Date();
+      const year=now.getFullYear();
+      const month=String(now.getMonth()+1).padStart(2,'0');
+      const day=String(now.getDate()).padStart(2,'0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function getSecondsUntilTomorrow(){
+      const now=new Date();
+      const nextMidnight=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,0,0);
+      return Math.max(0,Math.floor((nextMidnight.getTime()-now.getTime())/1000));
+    }
+
+    function formatHms(totalSeconds){
+      const sec=Math.max(0,totalSeconds|0);
+      const h=Math.floor(sec/3600);
+      const m=Math.floor((sec%3600)/60);
+      const s=sec%60;
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    function readState(){
+      try{
+        const parsed=JSON.parse(localStorage.getItem(storageKey) || '');
+        if(!parsed || typeof parsed!=='object') return {lastOpenedDate:'',lastRewardId:''};
+        return {
+          lastOpenedDate:String(parsed.lastOpenedDate || ''),
+          lastRewardId:String(parsed.lastRewardId || '')
+        };
+      }catch(_err){
+        return {lastOpenedDate:'',lastRewardId:''};
+      }
+    }
+
+    function writeState(state){
+      try{
+        localStorage.setItem(storageKey,JSON.stringify(state));
+      }catch(_err){
+        // Demo mode: ignore storage errors.
+      }
+    }
+
+    function stopCountdown(){
+      if(!countdownTimer) return;
+      clearInterval(countdownTimer);
+      countdownTimer=0;
+    }
+
+    function updateCountdown(){
+      countdownNode.textContent=`Morgen wieder verfügbar in ${formatHms(getSecondsUntilTomorrow())}`;
+    }
+
+    function showResultById(rewardId){
+      const reward=rewards.find(entry=>entry.id===rewardId);
+      if(!reward) return;
+
+      resultIcon.textContent=reward.icon;
+      resultTitle.textContent=reward.title;
+      resultText.textContent=reward.text;
+      resultCard.hidden=false;
+      resultCard.classList.remove('is-visible');
+      requestAnimationFrame(()=>resultCard.classList.add('is-visible'));
+    }
+
+    function createConfettiBurst(isWin){
+      if(!confettiHost || !isWin) return;
+      confettiHost.innerHTML='';
+      const colors=['#ffd96a','#fff1c7','#ffffff','#c4ffda'];
+      const pieces=16;
+
+      for(let i=0;i<pieces;i++){
+        const node=document.createElement('span');
+        node.className='rv2-mystery-piece';
+        node.style.background=colors[Math.floor(Math.random()*colors.length)];
+        node.style.setProperty('--x',`${Math.round((Math.random()-.5)*180)}px`);
+        node.style.setProperty('--y',`${Math.round(70+Math.random()*90)}px`);
+        node.style.setProperty('--rot',`${Math.round(180+Math.random()*260)}deg`);
+        node.style.setProperty('--dur',`${Math.round(900+Math.random()*650)}ms`);
+        confettiHost.append(node);
+        setTimeout(()=>node.remove(),1700);
+      }
+    }
+
+    function applyAvailability(){
+      const today=getTodayYmd();
+      const state=readState();
+      const openedToday=state.lastOpenedDate===today;
+      const hardLocked=root.dataset.mysteryState==='locked';
+
+      if(hardLocked){
+        root.dataset.mysteryState='locked';
+        statusNode.textContent='Gesperrt';
+        noteNode.textContent='Diese Mystery Box wird bald freigeschaltet.';
+        openButton.disabled=true;
+        countdownNode.hidden=true;
+        stopCountdown();
+        return;
+      }
+
+      if(openedToday){
+        root.dataset.mysteryState='opened';
+        statusNode.textContent='Bereits geöffnet';
+        noteNode.textContent='Morgen wieder verfügbar';
+        openButton.disabled=true;
+        countdownNode.hidden=false;
+        updateCountdown();
+        if(!countdownTimer){
+          countdownTimer=window.setInterval(()=>{
+            if(readState().lastOpenedDate!==getTodayYmd()){
+              stopCountdown();
+              applyAvailability();
+              return;
+            }
+            updateCountdown();
+          },1000);
+        }
+        if(state.lastRewardId) showResultById(state.lastRewardId);
+        return;
+      }
+
+      stopCountdown();
+      root.dataset.mysteryState='available';
+      statusNode.textContent='Verfügbar';
+      noteNode.textContent='Öffne deine Box und entdecke eine Überraschung.';
+      openButton.disabled=false;
+      countdownNode.hidden=true;
+    }
+
+    openButton.addEventListener('click',()=>{
+      if(openButton.disabled) return;
+
+      root.classList.add('is-opening');
+      openButton.disabled=true;
+
+      setTimeout(()=>{
+        root.classList.remove('is-opening');
+        const reward=rewards[Math.floor(Math.random()*rewards.length)];
+
+        resultIcon.textContent=reward.icon;
+        resultTitle.textContent=reward.title;
+        resultText.textContent=reward.text;
+        resultCard.hidden=false;
+        resultCard.classList.remove('is-visible');
+        requestAnimationFrame(()=>resultCard.classList.add('is-visible'));
+        createConfettiBurst(reward.win);
+
+        writeState({lastOpenedDate:getTodayYmd(),lastRewardId:reward.id});
+        applyAvailability();
+      },520);
+    });
+
+    applyAvailability();
+  }
   function initRewardsDailyStreak(){
     const root=$('#rewards.rewards-v2 [data-rewards-daily-streak]');
     if(!root) return;
@@ -2703,6 +2884,7 @@
     initRewardsWheel();
     initRewardsVoucherBalance();
     initRewardsCustomerDashboard();
+    initRewardsMysteryBox();
     initRewardsDailyStreak();
     initRewardsDailyMissions();
     initRewardsWeeklyMissions();
