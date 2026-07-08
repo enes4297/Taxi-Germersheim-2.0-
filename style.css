@@ -74,6 +74,19 @@ body:before{content:'';position:fixed;inset:0;background:radial-gradient(circle 
 .booking-premium .pb-vehicle-card .button{width:100%;height:52px;transition:transform .25s ease,box-shadow .25s ease,background .25s ease,border-color .25s ease}
 .booking-premium .pb-vehicle-card.is-selected .button{box-shadow:0 10px 28px rgba(255,217,106,.12)}
 
+.booking-premium .pb-fare-overview{margin-top:16px;border-color:rgba(255,217,106,.34);background:linear-gradient(155deg,rgba(19,20,26,.98),rgba(8,9,12,.99))}
+.booking-premium .pb-fare-overview h4{margin:0 0 8px;font-family:var(--serif);font-size:29px;line-height:1.04;color:#fff}
+.booking-premium .pb-fare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;margin-top:14px}
+.booking-premium .pb-fare-grid p{margin:0;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);display:grid;gap:6px}
+.booking-premium .pb-fare-grid span{color:var(--muted);font-size:13px;font-weight:800;letter-spacing:.03em}
+.booking-premium .pb-fare-grid b{color:#fff;font-size:17px;line-height:1.35}
+.booking-premium .pb-fare-price-box{margin-top:16px;padding:18px 18px 20px;border-radius:20px;background:linear-gradient(150deg,rgba(255,217,106,.12),rgba(255,255,255,.05));border:1px solid rgba(255,217,106,.34);box-shadow:0 18px 40px rgba(0,0,0,.24)}
+.booking-premium .pb-fare-price-box span{display:block;color:var(--gold);font-size:14px;font-weight:900;letter-spacing:.04em;margin-bottom:8px}
+.booking-premium .pb-fare-price-box strong{display:block;font-family:var(--serif);font-size:42px;line-height:1;color:#ffe8a6}
+.booking-premium .pb-fare-rewards-note,.booking-premium .pb-fare-voucher-note{margin:12px 0 0;padding:12px 14px;border-radius:16px;font-size:14px;line-height:1.5}
+.booking-premium .pb-fare-rewards-note{background:rgba(255,217,106,.08);border:1px solid rgba(255,217,106,.24);color:#ffe8a6;font-weight:840}
+.booking-premium .pb-fare-voucher-note{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#fff}
+
 .booking-premium .pb-summary{position:sticky;top:82px;border-color:rgba(255,217,106,.3);background:linear-gradient(160deg,rgba(17,18,23,.98),rgba(7,8,11,.98))}
 .booking-premium .pb-summary h3{margin:0 0 14px;font-family:var(--serif);font-size:28px;line-height:1.08}
 .booking-premium .pb-summary ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
@@ -103,6 +116,9 @@ body:before{content:'';position:fixed;inset:0;background:radial-gradient(circle 
   .booking-premium .pb-route-panel .map-container{height:260px}
   .booking-premium .pb-vehicle-panel h4{font-size:22px}
   .booking-premium .pb-vehicle-grid{grid-template-columns:1fr}
+  .booking-premium .pb-fare-overview h4{font-size:23px}
+  .booking-premium .pb-fare-grid{grid-template-columns:1fr}
+  .booking-premium .pb-fare-price-box strong{font-size:34px}
   .booking-premium .pb-route-stats p{font-size:14px}
   .booking-premium .pb-yumak-route-card p{font-size:13px}
   .booking-premium .pb-step-feedback{font-size:12px}
@@ -3999,4 +4015,241 @@ radial-gradient(circle at 66% 78%,rgba(255,224,133,.17),transparent 27%)}
 @keyframes rv2ConfettiFall{
   0%{transform:translate3d(var(--x),-12%,0) rotate(0deg);opacity:1}
   100%{transform:translate3d(calc(var(--x) + var(--drift,0px)),110%,0) rotate(var(--rot,560deg));opacity:0}
+}
+
+/* V9.0 Premium UI Polish */
+:root{
+  --ui-card-radius:24px;
+  --ui-card-radius-sm:18px;
+  --ui-card-shadow:0 18px 42px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.04);
+  --ui-card-shadow-hover:0 24px 54px rgba(0,0,0,.36),0 0 24px rgba(255,217,106,.10);
+  --ui-space-1:10px;
+  --ui-space-2:14px;
+  --ui-space-3:18px;
+  --ui-space-4:24px;
+  --ui-focus:0 0 0 1px rgba(255,217,106,.72),0 0 0 4px rgba(255,217,106,.20);
+  --ui-button-height:52px;
+  --ui-icon-size:1.18rem;
+}
+
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+
+/* Einheitliche Kartenwirkung */
+.feature-card,
+.service-premium-card,
+.fleet-card,
+.account-card,
+.legal-card,
+.privacy-card,
+.review-card,
+.panel,
+.selected,
+.extra,
+.notfound-hero,
+.booking-premium .pb-summary,
+.booking-premium .pb-route-panel,
+.booking-premium .pb-vehicle-card,
+.booking-premium .pb-fare-overview,
+.booking-premium .pb-yumak-route-card,
+.booking-premium .pb-route-stats{
+  border-radius:var(--ui-card-radius)!important;
+  box-shadow:var(--ui-card-shadow)!important;
+}
+
+.feature-card:hover,
+.service-premium-card:hover,
+.fleet-card:hover,
+.account-card:hover,
+.legal-card:hover,
+.privacy-card:hover,
+.review-card:hover,
+.booking-premium .pb-vehicle-card:hover{
+  box-shadow:var(--ui-card-shadow-hover)!important;
+}
+
+/* Buttons: Primary Gold, Secondary Schwarz */
+.button{
+  min-height:var(--ui-button-height);
+  border-radius:999px;
+  font-weight:880;
+  letter-spacing:.015em;
+  transition:transform .2s ease,opacity .2s ease,filter .2s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease;
+}
+
+.button.primary,
+.button:not(.secondary):not(.outline):not(.nav-book-btn):not(.services-cta):not(.fleet-request-btn):not(.account-badge-link){
+  border-color:rgba(255,217,106,.52);
+  background:linear-gradient(135deg,#ffe8a8,#d6a340);
+  color:#13110b;
+  box-shadow:0 10px 24px rgba(255,217,106,.20);
+}
+
+.button.secondary{
+  border-color:rgba(255,255,255,.22);
+  background:linear-gradient(140deg,rgba(20,20,24,.96),rgba(10,10,14,.96));
+  color:#fff;
+  box-shadow:0 12px 26px rgba(0,0,0,.28);
+}
+
+.button:hover{
+  transform:translateY(-1px);
+  box-shadow:0 0 0 1px rgba(255,231,167,.24),0 14px 30px rgba(255,217,106,.22);
+}
+
+.button:active{
+  transform:scale(.985);
+}
+
+.button:disabled,
+.button[aria-disabled="true"]{
+  filter:grayscale(.35) saturate(.72);
+  opacity:.56;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+.button[aria-busy="true"],
+.button.is-loading{
+  position:relative;
+  pointer-events:none;
+}
+
+.button[aria-busy="true"]::after,
+.button.is-loading::after{
+  content:"";
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  border:2px solid currentColor;
+  border-right-color:transparent;
+  margin-left:8px;
+  animation:v9Spin .7s linear infinite;
+}
+
+/* Einheitliche Abstaende */
+.screen.active > section,
+.screen.active > article,
+.screen.active > header + section,
+.screen.active > header + article{
+  margin-bottom:var(--ui-space-4);
+}
+
+.fleet-grid,
+.account-grid,
+.legal-grid,
+.privacy-grid,
+.reviews-preview-grid,
+.services-cards{
+  gap:var(--ui-space-3)!important;
+}
+
+/* Typografie */
+h1{font-size:clamp(2rem,4.4vw,3.9rem);line-height:1.04;letter-spacing:-.02em}
+h2{font-size:clamp(1.5rem,3.2vw,2.35rem);line-height:1.08;letter-spacing:-.015em}
+h3{font-size:clamp(1.2rem,2.2vw,1.7rem);line-height:1.14}
+p,li{line-height:1.62}
+
+/* Icons: currentColor + flexible Groesse ueber Variable */
+[data-icon],
+.fleet-spec-icon,
+.icon-badge,
+.service i,
+.outline i,
+.reward > i,
+.footer-contact i,
+.footer-cta-primary i,
+.footer-cta-secondary i,
+.footer-contact-link i{
+  --icon-size:var(--ui-icon-size);
+  width:var(--icon-size)!important;
+  height:var(--icon-size)!important;
+  min-width:var(--icon-size)!important;
+  min-height:var(--icon-size)!important;
+  color:currentColor;
+  flex:0 0 var(--icon-size)!important;
+}
+
+[data-icon] svg,
+i svg,
+span svg,
+.fleet-spec-icon svg,
+.outline svg,
+button svg,
+button [data-icon] svg,
+#locationBtn svg{
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  stroke:currentColor!important;
+  fill:none!important;
+}
+
+/* Loading/Skeleton Vorbereitung */
+.skeleton,
+[data-skeleton="true"]{
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.11);
+}
+
+.skeleton::after,
+[data-skeleton="true"]::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  transform:translateX(-100%);
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.18),transparent);
+  animation:v9Skeleton 1.25s ease-in-out infinite;
+}
+
+/* Focus */
+input,
+textarea,
+select,
+button,
+a,
+[tabindex]{
+  outline:none;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible{
+  box-shadow:var(--ui-focus);
+}
+
+/* Mobile Robustheit */
+@media(max-width:860px){
+  .button{min-height:54px}
+  .services-cards,
+  .reviews-preview-grid,
+  .fleet-grid,
+  .account-grid,
+  .legal-grid,
+  .privacy-grid{grid-template-columns:1fr!important}
+}
+
+@media(max-width:740px){
+  .app{padding-left:16px!important;padding-right:16px!important}
+  .button,
+  .services-cta,
+  .fleet-request-btn{width:100%}
+}
+
+@keyframes v9Spin{
+  to{transform:rotate(360deg)}
+}
+
+@keyframes v9Skeleton{
+  to{transform:translateX(100%)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }

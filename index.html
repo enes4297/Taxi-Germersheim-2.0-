@@ -35,11 +35,11 @@
           <div class="nav-item nav-item-services">
             <button type="button" class="nav-trigger" data-nav-toggle="services" aria-expanded="false">Leistungen <span>▼</span></button>
             <div class="nav-dropdown" aria-label="Leistungen">
-              <button type="button" data-go="booking" data-service="taxi"><span>🚖</span><b>Taxi</b></button>
-              <button type="button" data-go="medical"><span>🏥</span><b>Krankenfahrten</b></button>
-              <button type="button" data-go="booking" data-service="wheelchair"><span>♿</span><b>Rollstuhlfahrten</b></button>
-              <button type="button" data-go="booking" data-service="airport"><span>✈</span><b>Flughafentransfer</b></button>
-              <button type="button" data-go="booking"><span>📦</span><b>Kurierfahrten</b></button>
+              <button type="button" data-go="booking" data-service="taxi"><i data-icon="taxi"></i><b>Taxi</b></button>
+              <button type="button" data-go="medical"><i data-icon="medical"></i><b>Krankenfahrten</b></button>
+              <button type="button" data-go="booking" data-service="wheelchair"><i data-icon="wheelchair"></i><b>Rollstuhlfahrten</b></button>
+              <button type="button" data-go="booking" data-service="airport"><i data-icon="airport"></i><b>Flughafentransfer</b></button>
+              <button type="button" data-go="booking"><i data-icon="luggage"></i><b>Kurierfahrten</b></button>
             </div>
           </div>
           <a href="flotte.html">Fahrzeugflotte</a>
@@ -620,6 +620,29 @@
                   <button class="button" type="button" data-vehicle-select="wheelchair">Als Wunschfahrzeug auswählen</button>
                 </article>
               </div>
+            </section>
+
+            <section class="panel pb-fare-overview" data-booking-fare-overview hidden aria-label="Fahrtübersicht">
+              <small>FAHRTÜBERSICHT</small>
+              <h4>Unverbindliche Preisvorschau</h4>
+              <p class="pb-route-note">Der endgültige Fahrpreis kann je nach Verkehr, Wartezeit oder Streckenänderung abweichen.</p>
+
+              <div class="pb-fare-grid">
+                <p><span>📍 Entfernung</span><b data-fare-distance>-</b></p>
+                <p><span>🕒 Fahrzeit</span><b data-fare-duration>-</b></p>
+                <p><span>🚖 Fahrtart</span><b data-fare-service>Taxi</b></p>
+                <p><span>👥 Fahrgäste</span><b data-fare-passengers>1</b></p>
+                <p><span>🚐 Fahrzeugwunsch</span><b data-fare-vehicle>Kein Wunsch gespeichert</b></p>
+                <p><span>⭐ Rewards-Punkte</span><b data-fare-points>ca. 15</b></p>
+              </div>
+
+              <div class="pb-fare-price-box">
+                <span>💶 Geschätzter Fahrpreis</span>
+                <strong data-fare-price>Bitte Fahrzeug wählen</strong>
+              </div>
+
+              <p class="pb-fare-rewards-note" data-fare-rewards-note>Mit dieser Fahrt erhältst du voraussichtlich ca. 15 Punkte.</p>
+              <p class="pb-fare-voucher-note" data-fare-voucher-note hidden>Gutschein-Guthaben kann bei dieser Fahrt eingelöst werden.</p>
             </section>
             <p class="pb-step-feedback" data-booking-step-feedback hidden></p>
             <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
