@@ -950,6 +950,22 @@
     return Number(price.toFixed(2));
   }
 
+  function getFallbackFareEstimate(distanceKm){
+    const estimates=Object.keys(bookingVehicleCatalog)
+      .map(key=>calculateVehicleEstimate(distanceKm,key))
+      .filter(value=>Number.isFinite(value));
+    if(!estimates.length) return null;
+    return Math.min(...estimates);
+  }
+
+  function getFarePreviewText(distanceKm){
+    if(bookingStepState.selectedVehicle){
+      return formatPriceText(calculateVehicleEstimate(distanceKm,bookingStepState.selectedVehicle));
+    }
+    const fallback=getFallbackFareEstimate(distanceKm);
+    return Number.isFinite(fallback) ? `ab ${formatPriceText(fallback)}` : 'Bitte Fahrzeug wählen';
+  }
+
   function syncVehiclePriceCards(distanceKm){
     Object.keys(bookingVehicleCatalog).forEach(key=>{
       const node=$(`[data-vehicle-price="${key}"]`);
@@ -965,11 +981,11 @@
     const statusNode=$('[data-booking-summary-vehicle-status]');
     const priceNode=$('[data-booking-summary-price]');
     const vehicle=bookingVehicleCatalog[bookingStepState.selectedVehicle] || null;
-    const price=calculateVehicleEstimate(bookingRouteState.distanceKm,bookingStepState.selectedVehicle);
+    const priceText=getFarePreviewText(bookingRouteState.distanceKm);
 
     if(vehicleNode) vehicleNode.textContent=vehicle ? vehicle.label : 'Kein Wunsch gespeichert';
     if(statusNode) statusNode.textContent=vehicle ? vehicle.status : 'Bitte Wunsch wählen';
-    if(priceNode) priceNode.textContent=vehicle ? formatPriceText(price) : 'Bitte Fahrzeug wählen';
+    if(priceNode) priceNode.textContent=priceText;
 
     $$('[data-vehicle-card]').forEach(card=>{
       const selected=card.dataset.vehicleCard===bookingStepState.selectedVehicle;
@@ -990,7 +1006,7 @@
   function setSelectedVehicle(vehicleKey){
     if(!bookingVehicleCatalog[vehicleKey]) return;
     bookingStepState.selectedVehicle=vehicleKey;
-    syncVehicleSelectionSummary();
+    syncBookingSummary();
   }
 
   function applyRouteMapPresentationState(container){
@@ -1015,8 +1031,19 @@
     const summaryRouteModeNode=$('[data-booking-summary-route-mode]');
     const summaryPointsNode=$('[data-booking-summary-points]');
     const vehiclePanel=$('[data-booking-vehicle-panel]');
+    const fareOverview=$('[data-booking-fare-overview]');
+    const fareDistanceNode=$('[data-fare-distance]');
+    const fareDurationNode=$('[data-fare-duration]');
+    const fareServiceNode=$('[data-fare-service]');
+    const farePassengersNode=$('[data-fare-passengers]');
+    const fareVehicleNode=$('[data-fare-vehicle]');
+    const farePointsNode=$('[data-fare-points]');
+    const farePriceNode=$('[data-fare-price]');
+    const fareRewardsNote=$('[data-fare-rewards-note]');
+    const fareVoucherNote=$('[data-fare-voucher-note]');
     const points=getEstimatedRewardPoints();
     const routeService=services[bookingStepState.service]?.[0] || 'Normale Taxifahrt';
+    const passengersText=String($('#bookingPassengers')?.value || '1');
 
     if(startPreview) startPreview.value=start || '-';
     if(serviceNode) serviceNode.textContent=routeService;
@@ -1024,6 +1051,9 @@
     if(pointsNode) pointsNode.textContent=`ca. ${points}`;
     if(summaryRouteModeNode) summaryRouteModeNode.textContent='Autofahrt';
     if(summaryPointsNode) summaryPointsNode.textContent=`ca. ${points}`;
+    if(fareServiceNode) fareServiceNode.textContent=routeService;
+    if(farePassengersNode) farePassengersNode.textContent=passengersText;
+    if(farePointsNode) farePointsNode.textContent=`ca. ${points}`;
 
     if(!start || !target){
       bookingRouteState.distanceText='-';
@@ -1036,8 +1066,15 @@
       if(summaryDistanceNode) summaryDistanceNode.textContent='-';
       if(summaryDurationNode) summaryDurationNode.textContent='-';
       if(vehiclePanel) vehiclePanel.hidden=true;
+      if(fareOverview) fareOverview.hidden=true;
       syncVehiclePriceCards(null);
       syncVehicleSelectionSummary();
+      if(fareDistanceNode) fareDistanceNode.textContent='-';
+      if(fareDurationNode) fareDurationNode.textContent='-';
+      if(fareVehicleNode) fareVehicleNode.textContent='Kein Wunsch gespeichert';
+      if(farePriceNode) farePriceNode.textContent='Bitte Fahrzeug wählen';
+      if(fareRewardsNote) fareRewardsNote.textContent=`Mit dieser Fahrt erhältst du voraussichtlich ca. ${points} Punkte.`;
+      if(fareVoucherNote) fareVoucherNote.hidden=true;
       if(yumakHintNode) yumakHintNode.textContent='Perfekt! Das sind ungefaehr 7,5 km und 11 Minuten.';
       return;
     }
@@ -1057,8 +1094,24 @@
     if(summaryDistanceNode) summaryDistanceNode.textContent=distanceText;
     if(summaryDurationNode) summaryDurationNode.textContent=durationText;
     if(vehiclePanel) vehiclePanel.hidden=false;
+    if(fareOverview) fareOverview.hidden=false;
     syncVehiclePriceCards(metrics?.distanceKm);
     syncVehicleSelectionSummary();
+    if(fareDistanceNode) fareDistanceNode.textContent=distanceText;
+    if(fareDurationNode) fareDurationNode.textContent=durationText;
+    if(fareVehicleNode) fareVehicleNode.textContent=bookingVehicleCatalog[bookingStepState.selectedVehicle]?.label || 'Kein Wunsch gespeichert';
+    if(farePriceNode) farePriceNode.textContent=getFarePreviewText(metrics?.distanceKm);
+    if(fareRewardsNote) fareRewardsNote.textContent=`Mit dieser Fahrt erhältst du voraussichtlich ca. ${points} Punkte.`;
+    if(fareVoucherNote){
+      let hasVoucher=false;
+      try{
+        const raw=localStorage.getItem('taxiRewardsEngineState');
+        if(raw) hasVoucher=Number(JSON.parse(raw)?.voucherBalance || 0)>0;
+      }catch(_err){
+        hasVoucher=false;
+      }
+      fareVoucherNote.hidden=!hasVoucher;
+    }
     if(yumakHintNode){
       if(bookingStepState.service==='medical') yumakHintNode.textContent='Fuer Krankenfahrten helfen wir dir gerne bei Fragen zur Kostenuebernahme.';
       else if(bookingStepState.service==='airport') yumakHintNode.textContent='Plane bitte genug Zeit fuer Check-in und Gepaeck ein.';
