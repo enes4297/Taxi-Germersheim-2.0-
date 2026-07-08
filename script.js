@@ -937,6 +937,48 @@
     return bookingStepState.service==='medical' ? 20 : bookingStepState.service==='airport' ? 18 : bookingStepState.service==='wheelchair' ? 17 : 15;
   }
 
+  function formatPriceText(value){
+    if(!Number.isFinite(value)) return 'Bitte Fahrzeug wählen';
+    return `${value.toFixed(2).replace('.',',')} EUR`;
+  }
+
+  function calculateVehicleEstimate(distanceKm,vehicleKey){
+    const vehicle=bookingVehicleCatalog[vehicleKey];
+    if(!vehicle || !Number.isFinite(distanceKm)) return null;
+    const serviceFactor=bookingStepState.service==='airport' ? 1.12 : bookingStepState.service==='medical' ? 1.08 : bookingStepState.service==='wheelchair' ? 1.15 : 1;
+    const price=Math.max(vehicle.minimum,vehicle.baseFare + (distanceKm * vehicle.perKm * serviceFactor));
+    return Number(price.toFixed(2));
+  }
+
+  function syncVehiclePriceCards(distanceKm){
+    Object.keys(bookingVehicleCatalog).forEach(key=>{
+      const node=$(`[data-vehicle-price="${key}"]`);
+      if(!node) return;
+      const price=calculateVehicleEstimate(distanceKm,key);
+      node.textContent=`Geschätzter Preis: ab ${formatPriceText(price)}`;
+    });
+  }
+
+  function syncVehicleSelectionSummary(){
+    const vehicleNode=$('[data-booking-summary-vehicle]');
+    const priceNode=$('[data-booking-summary-price]');
+    const vehicle=bookingVehicleCatalog[bookingStepState.selectedVehicle] || null;
+    const price=calculateVehicleEstimate(bookingRouteState.distanceKm,bookingStepState.selectedVehicle);
+
+    if(vehicleNode) vehicleNode.textContent=vehicle ? vehicle.label : 'Noch nicht gewählt';
+    if(priceNode) priceNode.textContent=vehicle ? formatPriceText(price) : 'Bitte Fahrzeug wählen';
+
+    $$('[data-vehicle-card]').forEach(card=>{
+      card.classList.toggle('is-selected',card.dataset.vehicleCard===bookingStepState.selectedVehicle);
+    });
+  }
+
+  function setSelectedVehicle(vehicleKey){
+    if(!bookingVehicleCatalog[vehicleKey]) return;
+    bookingStepState.selectedVehicle=vehicleKey;
+    syncVehicleSelectionSummary();
+  }
+
   function applyRouteMapPresentationState(container){
     if(!container) return;
     container.dataset.mapTheme=BOOKING_MAP_THEME_PRESET;
@@ -958,6 +1000,7 @@
     const summaryDurationNode=$('[data-booking-summary-duration]');
     const summaryRouteModeNode=$('[data-booking-summary-route-mode]');
     const summaryPointsNode=$('[data-booking-summary-points]');
+    const vehiclePanel=$('[data-booking-vehicle-panel]');
     const points=getEstimatedRewardPoints();
     const routeService=services[bookingStepState.service]?.[0] || 'Normale Taxifahrt';
 
@@ -973,10 +1016,14 @@
       bookingRouteState.durationText='-';
       bookingRouteState.distanceKm=null;
       bookingRouteState.durationMin=null;
+      bookingStepState.selectedVehicle='';
       if(distanceNode) distanceNode.textContent='-';
       if(durationNode) durationNode.textContent='-';
       if(summaryDistanceNode) summaryDistanceNode.textContent='-';
       if(summaryDurationNode) summaryDurationNode.textContent='-';
+      if(vehiclePanel) vehiclePanel.hidden=true;
+      syncVehiclePriceCards(null);
+      syncVehicleSelectionSummary();
       if(yumakHintNode) yumakHintNode.textContent='Perfekt! Das sind ungefaehr 7,5 km und 11 Minuten.';
       return;
     }
@@ -995,6 +1042,9 @@
     if(durationNode) durationNode.textContent=durationText;
     if(summaryDistanceNode) summaryDistanceNode.textContent=distanceText;
     if(summaryDurationNode) summaryDurationNode.textContent=durationText;
+    if(vehiclePanel) vehiclePanel.hidden=false;
+    syncVehiclePriceCards(metrics?.distanceKm);
+    syncVehicleSelectionSummary();
     if(yumakHintNode){
       if(bookingStepState.service==='medical') yumakHintNode.textContent='Fuer Krankenfahrten helfen wir dir gerne bei Fragen zur Kostenuebernahme.';
       else if(bookingStepState.service==='airport') yumakHintNode.textContent='Plane bitte genug Zeit fuer Check-in und Gepaeck ein.';
@@ -1290,7 +1340,14 @@
   const bookingStepState={
     current:1,
     total:7,
-    service:'taxi'
+    service:'taxi',
+    selectedVehicle:''
+  };
+
+  const bookingVehicleCatalog={
+    limousine:{label:'Taxi Limousine',baseFare:4.8,perKm:2.2,minimum:12.5},
+    van:{label:'Großraumtaxi',baseFare:7.4,perKm:2.85,minimum:18.5},
+    wheelchair:{label:'Rollstuhlfahrzeug',baseFare:8.4,perKm:3.1,minimum:21.5}
   };
 
   function getBookingRoot(){
@@ -1577,6 +1634,12 @@
     const serviceSelect=e.target.closest('[data-service-select]');
     if(serviceSelect){
       setService(serviceSelect.dataset.serviceSelect);
+      return;
+    }
+
+    const vehicleSelect=e.target.closest('[data-vehicle-select]');
+    if(vehicleSelect){
+      setSelectedVehicle(vehicleSelect.dataset.vehicleSelect);
       return;
     }
 
