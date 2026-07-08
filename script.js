@@ -38,8 +38,8 @@
     {title:'Klinikum Landau-Südliche Weinstraße',street:'Bodelschwinghstraße 11',postalCode:'76829',city:'Landau',group:'wichtige Kliniken',type:'clinic',scope:'destination'},
     {title:'Universitätsklinikum Mannheim',street:'Theodor-Kutzer-Ufer 1-3',postalCode:'68167',city:'Mannheim',group:'wichtige Kliniken',type:'clinic',scope:'destination'},
     {title:'Städtisches Klinikum Karlsruhe',street:'Moltkestraße 90',postalCode:'76133',city:'Karlsruhe',group:'Krankenhäuser',type:'clinic',scope:'destination'},
-    {title:'Nierenzentrum Germersheim',street:'Josef-Probst-Strasse 5',postalCode:'76726',city:'Germersheim',group:'Dialysezentren',type:'clinic',scope:'destination'},
-    {title:'Dialysezentrum Speyer',street:'Iggelheimer Strasse 26',postalCode:'67346',city:'Speyer',group:'Dialysezentren',type:'clinic',scope:'destination'},
+    {title:'Nierenzentrum Germersheim',street:'Josef-Probst-Straße 5',postalCode:'76726',city:'Germersheim',group:'Dialysezentren',type:'clinic',scope:'destination'},
+    {title:'Dialysezentrum Speyer',street:'Iggelheimer Straße 26',postalCode:'67346',city:'Speyer',group:'Dialysezentren',type:'clinic',scope:'destination'},
     {title:'Bahnhof Germersheim',street:'Bahnhofstrasse 23',postalCode:'76726',city:'Germersheim',group:'Bahnhöfe',type:'station',scope:'both'},
     {title:'Hauptbahnhof Speyer',street:'Bahnhofstrasse 1',postalCode:'67346',city:'Speyer',group:'Bahnhöfe',type:'station',scope:'both'},
     {title:'Mannheim Hauptbahnhof',street:'Willy-Brandt-Platz 17',postalCode:'68161',city:'Mannheim',group:'Bahnhöfe',type:'station',scope:'both'},
@@ -50,26 +50,26 @@
     {title:'Lingenfeld',postalCode:'67360',city:'Lingenfeld',group:'Ort',type:'city',scope:'both'},
     {title:'Speyer',postalCode:'67346',city:'Speyer',group:'Ort',type:'city',scope:'both'},
     {title:'Heidelberg',postalCode:'69115',city:'Heidelberg',group:'Ort',type:'city',scope:'both'},
-    {street:'Hauptstrasse 12',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Hauptstraße 12',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'street',scope:'both'},
     {street:'Luitpoldplatz 3',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'street',scope:'both'},
-    {street:'Kirchstrasse 8',postalCode:'76726',city:'Sondernheim',group:'Adresse',type:'street',scope:'both'},
-    {street:'Lingenfelder Strasse 4',postalCode:'67360',city:'Lingenfeld',group:'Adresse',type:'street',scope:'both'},
-    {street:'Karlstrasse 17',postalCode:'76756',city:'Bellheim',group:'Adresse',type:'street',scope:'both'},
-    {street:'Schulstrasse 6',postalCode:'76771',city:'Hördt',group:'Adresse',type:'street',scope:'both'},
-    {street:'Germersheimer Strasse 22',postalCode:'76761',city:'Rülzheim',group:'Adresse',type:'street',scope:'both'},
-    {street:'Rheinzaberner Strasse 14',postalCode:'76773',city:'Kuhardt',group:'Adresse',type:'street',scope:'both'},
-    {street:'Hafenstrasse 9',postalCode:'76774',city:'Leimersheim',group:'Adresse',type:'street',scope:'both'},
-    {street:'Lange Strasse 11',postalCode:'76777',city:'Neupotz',group:'Adresse',type:'street',scope:'both'},
-    {street:'Jockgrimer Strasse 27',postalCode:'76764',city:'Rheinzabern',group:'Adresse',type:'street',scope:'both'},
-    {street:'Bahnhofstrasse 19',postalCode:'76751',city:'Jockgrim',group:'Adresse',type:'street',scope:'both'},
-    {street:'Mozartstrasse 5',postalCode:'76744',city:'Wörth am Rhein',group:'Adresse',type:'street',scope:'both'},
+    {street:'Kirchstraße 8',postalCode:'76726',city:'Sondernheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Lingenfelder Straße 4',postalCode:'67360',city:'Lingenfeld',group:'Adresse',type:'street',scope:'both'},
+    {street:'Karlstraße 17',postalCode:'76756',city:'Bellheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Schulstraße 6',postalCode:'76771',city:'Hördt',group:'Adresse',type:'street',scope:'both'},
+    {street:'Germersheimer Straße 22',postalCode:'76761',city:'Rülzheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Rheinzaberner Straße 14',postalCode:'76773',city:'Kuhardt',group:'Adresse',type:'street',scope:'both'},
+    {street:'Hafenstraße 9',postalCode:'76774',city:'Leimersheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Lange Straße 11',postalCode:'76777',city:'Neupotz',group:'Adresse',type:'street',scope:'both'},
+    {street:'Jockgrimer Straße 27',postalCode:'76764',city:'Rheinzabern',group:'Adresse',type:'street',scope:'both'},
+    {street:'Bahnhofstraße 19',postalCode:'76751',city:'Jockgrim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Mozartstraße 5',postalCode:'76744',city:'Wörth am Rhein',group:'Adresse',type:'street',scope:'both'},
     {street:'Adenauerpark 2',postalCode:'67346',city:'Speyer',group:'Adresse',type:'street',scope:'both'},
-    {street:'Queichheimer Hauptstrasse 18',postalCode:'76829',city:'Landau',group:'Adresse',type:'street',scope:'both'},
+    {street:'Queichheimer Hauptstraße 18',postalCode:'76829',city:'Landau',group:'Adresse',type:'street',scope:'both'},
     {street:'Kaiserallee 31',postalCode:'76133',city:'Karlsruhe',group:'Adresse',type:'street',scope:'both'},
     {street:'Augustaanlage 42',postalCode:'68165',city:'Mannheim',group:'Adresse',type:'street',scope:'both'},
-    {street:'Bergheimer Strasse 55',postalCode:'69115',city:'Heidelberg',group:'Adresse',type:'street',scope:'both'},
-    {street:'Friedrich-Ebert-Strasse 7',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'street',scope:'both'},
-    {street:'Friedrichstrasse 24',postalCode:'67346',city:'Speyer',group:'Adresse',type:'street',scope:'both'},
+    {street:'Bergheimer Straße 55',postalCode:'69115',city:'Heidelberg',group:'Adresse',type:'street',scope:'both'},
+    {street:'Friedrich-Ebert-Straße 7',postalCode:'76726',city:'Germersheim',group:'Adresse',type:'street',scope:'both'},
+    {street:'Friedrichstraße 24',postalCode:'67346',city:'Speyer',group:'Adresse',type:'street',scope:'both'},
     {street:'Friedrich-Ebert-Anlage 16',postalCode:'69117',city:'Heidelberg',group:'Adresse',type:'street',scope:'both'}
   ];
   let addressConfigCache=null;
@@ -425,7 +425,7 @@
         const rideCount=draft.rides.totalCount;
         draft.missions=draft.missions && typeof draft.missions==='object' ? draft.missions : {};
         draft.missions['daily-first-ride']={status:'done',completedAt:Date.now(),title:'Erste Fahrt heute',reward:'+10 Punkte'};
-        draft.missions['first-ride']={status:'done',completedAt:Date.now(),title:'Erste Fahrt abschliessen',reward:'+50 Punkte'};
+        draft.missions['first-ride']={status:'done',completedAt:Date.now(),title:'Erste Fahrt abschließen',reward:'+50 Punkte'};
         draft.missions['five-rides']={status:rideCount>=5 ? 'done' : 'active',current:Math.min(5,rideCount),target:5,title:'5 Fahrten sammeln',reward:'Abzeichen Stammkunde'};
         if(rideType==='medical') draft.missions['medical-booking']={status:'done',completedAt:Date.now(),title:'Krankenfahrt buchen',reward:'+30 Punkte'};
         if(rideType==='airport') draft.missions['airport-first']={status:'done',completedAt:Date.now(),title:'Erster Flughafentransfer',reward:'+100 Punkte'};
@@ -771,7 +771,7 @@
     return scored;
   }
   function getMapQueryForContainer(elementId){
-    const defaultQuery='Taxi Germersheim GmbH Friedrich-Ebert-Strasse 8 76726 Germersheim';
+    const defaultQuery='Taxi Germersheim GmbH Friedrich-Ebert-Straße 8 76726 Germersheim';
     if(elementId==='startMapContainer') return $('#startAddress')?.value?.trim() || defaultQuery;
     if(elementId==='endMapContainer') return $('#targetAddress')?.value?.trim() || defaultQuery;
     if(elementId==='bookingRouteMapContainer'){
@@ -1075,7 +1075,7 @@
       if(farePriceNode) farePriceNode.textContent='Bitte Fahrzeug wählen';
       if(fareRewardsNote) fareRewardsNote.textContent=`Mit dieser Fahrt erhältst du voraussichtlich ca. ${points} Punkte.`;
       if(fareVoucherNote) fareVoucherNote.hidden=true;
-      if(yumakHintNode) yumakHintNode.textContent='Perfekt! Das sind ungefaehr 7,5 km und 11 Minuten.';
+      if(yumakHintNode) yumakHintNode.textContent='Perfekt! Das sind ungefähr 7,5 km und 11 Minuten.';
       return;
     }
 
@@ -1113,9 +1113,9 @@
       fareVoucherNote.hidden=!hasVoucher;
     }
     if(yumakHintNode){
-      if(bookingStepState.service==='medical') yumakHintNode.textContent='Fuer Krankenfahrten helfen wir dir gerne bei Fragen zur Kostenuebernahme.';
-      else if(bookingStepState.service==='airport') yumakHintNode.textContent='Plane bitte genug Zeit fuer Check-in und Gepaeck ein.';
-      else yumakHintNode.textContent=`Perfekt! Das sind ungefaehr ${distanceText} und ${durationText}.`;
+      if(bookingStepState.service==='medical') yumakHintNode.textContent='Für Krankenfahrten helfen wir dir gerne bei Fragen zur Kostenübernahme.';
+      else if(bookingStepState.service==='airport') yumakHintNode.textContent='Plane bitte genug Zeit für Check-in und Gepäck ein.';
+      else yumakHintNode.textContent=`Perfekt! Das sind ungefähr ${distanceText} und ${durationText}.`;
     }
   }
   function getStoredCookieConsent(){
@@ -1531,7 +1531,7 @@
       rewardsHint.hidden=!showRewards;
       if(showRewards){
         const points=getEstimatedRewardPoints();
-        rewardsHint.textContent=`Mit dieser Fahrt erhaeltst du ca. ${points} Punkte.`;
+        rewardsHint.textContent=`Mit dieser Fahrt erhältst du ca. ${points} Punkte.`;
       }
     }
 
@@ -1547,7 +1547,7 @@
         hasVoucher=false;
       }
       voucherHint.hidden=!hasVoucher;
-      if(hasVoucher) voucherHint.textContent='Gutschein-Guthaben verfuegbar.';
+      if(hasVoucher) voucherHint.textContent='Gutschein-Guthaben verfügbar.';
     }
 
     syncBookingRouteMetrics();
@@ -1630,10 +1630,88 @@
     if(timeField && !timeField.value) timeField.value='12:00';
     applyRouteMapPresentationState($('#bookingRouteMapContainer'));
     initBookingPlacesAutocomplete();
+    renderBookingFavoriteAddresses();
     updateBookingScheduleVisibility();
 
     showBookingStep(1);
     syncBookingSummary();
+  }
+
+  const CUSTOMER_ACCOUNT_STORAGE_KEY='taxiCustomerAccountDemoState';
+
+  function getDefaultFavoriteAddresses(){
+    return [
+      {id:'addr-home',label:'Zuhause',value:'Germersheim Zentrum'},
+      {id:'addr-work',label:'Arbeit',value:'Industriegebiet Sued'},
+      {id:'addr-station',label:'Bahnhof Germersheim',value:'Bahnhofstrasse 23, 76726 Germersheim'},
+      {id:'addr-hospital',label:'Krankenhaus',value:'Asklepios Suedpfalzklinik Germersheim'},
+      {id:'addr-airport',label:'Flughafen Frankfurt',value:'Flughafen Frankfurt Terminal 1'}
+    ];
+  }
+
+  function normalizeFavoriteAddresses(list){
+    if(!Array.isArray(list) || !list.length) return getDefaultFavoriteAddresses();
+    return list
+      .map((item,index)=>({
+        id:String(item?.id || `addr-custom-${index+1}`),
+        label:String(item?.label || 'Adresse').trim(),
+        value:String(item?.value || '').trim()
+      }))
+      .filter(item=>item.value.length>0);
+  }
+
+  function readCustomerAccountDemoState(){
+    try{
+      const parsed=JSON.parse(localStorage.getItem(CUSTOMER_ACCOUNT_STORAGE_KEY) || '');
+      return parsed && typeof parsed==='object' ? parsed : null;
+    }catch(_err){
+      return null;
+    }
+  }
+
+  function readCustomerFavoriteAddresses(){
+    const state=readCustomerAccountDemoState();
+    return normalizeFavoriteAddresses(state?.favoriteAddresses);
+  }
+
+  function writeCustomerFavoriteAddresses(addresses){
+    const safeAddresses=normalizeFavoriteAddresses(addresses);
+    const state=readCustomerAccountDemoState() || {};
+    try{
+      localStorage.setItem(CUSTOMER_ACCOUNT_STORAGE_KEY,JSON.stringify({...state,favoriteAddresses:safeAddresses}));
+    }catch(_err){
+      // Keep demo mode resilient when storage is unavailable.
+    }
+  }
+
+  function renderBookingFavoriteAddresses(){
+    const lists=$$('[data-booking-favorites-list]');
+    if(!lists.length) return;
+    const favorites=readCustomerFavoriteAddresses();
+    lists.forEach(list=>{
+      const targetRole=String(list.dataset.bookingFavoritesList || '').trim().toLowerCase();
+      list.innerHTML='';
+      favorites.forEach(item=>{
+        const button=document.createElement('button');
+        button.type='button';
+        button.className='button secondary pb-favorite-button';
+        button.dataset.bookingFavoriteSelect='true';
+        button.dataset.favoriteTarget=targetRole || 'destination';
+        button.dataset.favoriteValue=item.value;
+        button.dataset.favoriteLabel=item.label;
+
+        const label=document.createElement('span');
+        label.className='pb-favorite-label';
+        label.textContent=item.label;
+
+        const value=document.createElement('small');
+        value.className='pb-favorite-value';
+        value.textContent=item.value;
+
+        button.append(label,value);
+        list.append(button);
+      });
+    });
   }
 
   function handleBookingEnterSubmit(target){
@@ -1751,6 +1829,29 @@
     const nextButton=e.target.closest('[data-booking-next]');
     if(nextButton){
       handleBookingStepAction('next');
+      return;
+    }
+
+    const favoriteBookingButton=e.target.closest('[data-booking-favorite-select]');
+    if(favoriteBookingButton){
+      const targetRole=String(favoriteBookingButton.dataset.favoriteTarget || 'destination').trim().toLowerCase();
+      const value=String(favoriteBookingButton.dataset.favoriteValue || '').trim();
+      if(!value) return;
+
+      const startField=$('#startAddress');
+      const targetField=$('#targetAddress');
+      if(targetRole==='pickup' && startField) startField.value=value;
+      if(targetRole==='destination' && targetField) targetField.value=value;
+
+      saveBookingBridgeState({
+        pickup:startField?.value?.trim() || '',
+        destination:targetField?.value?.trim() || ''
+      });
+
+      validate();
+      syncBookingSummary();
+      if((startField?.value?.trim() || '') && (targetField?.value?.trim() || '')) syncBookingRouteMetrics();
+      if(hasExternalConsent()) refreshMapContainers();
       return;
     }
 
@@ -2510,7 +2611,7 @@
           {key:'points-50',icon:'⭐',label:'50 Punkte',desc:'Bonus',message:'Du hast 50 Punkte gewonnen.',win:true,effect:'points'},
           {key:'voucher',icon:'🎁',label:'5 €',desc:'Gutschein',message:'Du hast einen 5 EUR Gutschein gewonnen.',win:true,effect:'voucher'},
           {key:'free-ride',icon:'🚕',label:'Freifahrt',desc:'Los',message:'Du hast ein Freifahrt-Los gewonnen.',win:true,effect:'free-ride'},
-          {key:'no-win',icon:'❌',label:'Niete',desc:'Kein Gewinn',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false,effect:'no-win'},
+          {key:'no-win',icon:'❌',label:'Niete',desc:'Kein Gewinn',message:'Heute leider kein Gewinn. Morgen wartet die nächste Chance.',win:false,effect:'no-win'},
           {key:'extra-spin',icon:'🔄',label:'Extra Dreh',desc:'Chance',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
           {key:'mystery',icon:'🎁',label:'Geheim',desc:'Preis',message:'Du hast einen Geheimpreis gewonnen.',win:true,effect:'mystery'}
         ]
@@ -4982,7 +5083,7 @@
       voucher:'Gutschein gewonnen. Sehr stark, das zahlt sich aus.',
       'free-ride':'Freifahrt gesichert. Das ist Premium-Level.',
       mystery:'Geheimpreis! Das war eine besondere Landung.',
-      surprised:'Extra-Dreh! Ueberraschung, wir legen direkt nach.',
+      surprised:'Extra-Dreh! Überraschung, wir legen direkt nach.',
       'no-win':'Heute ohne Gewinn, aber wir bleiben dran.'
     };
 
@@ -5298,7 +5399,7 @@
     });
     document.addEventListener('reward.login',()=>{
       setReaction('points');
-      showTipText('Daily Check-in sitzt. Serie laeuft!');
+      showTipText('Daily Check-in sitzt. Serie läuft!');
       queueAutoTip();
     });
     document.addEventListener('reward.badge',()=>{
@@ -5471,12 +5572,7 @@
         {date:'12.06.2026',rideType:'Krankenfahrt',start:'Germersheim Nord',destination:'Dialysezentrum Speyer',price:48,pointsEarned:12,voucherUsed:false},
         {date:'04.06.2026',rideType:'Taxifahrt',start:'Bahnhof Germersheim',destination:'Innenstadt Germersheim',price:14.8,pointsEarned:10,voucherUsed:false}
       ],
-      favoriteAddresses:[
-        {label:'Zuhause',value:'Germersheim Zentrum'},
-        {label:'Arbeit',value:'Industriegebiet Sued'},
-        {label:'Bahnhof Germersheim',value:'Bahnhofstrasse 23, 76726 Germersheim'},
-        {label:'Krankenhaus',value:'Asklepios Suedpfalzklinik Germersheim'}
-      ],
+      favoriteAddresses:getDefaultFavoriteAddresses(),
       invoices:[
         {id:'RG-2026-0184',date:'18.06.2026',amount:126.5,status:'bezahlt'},
         {id:'RG-2026-0171',date:'12.06.2026',amount:48,status:'offen'},
@@ -5484,8 +5580,8 @@
       ],
       notifications:[
         {title:'Neue Punkte erhalten',text:'+18 Punkte wurden Ihrer letzten Fahrt gutgeschrieben.'},
-        {title:'Gutschein verfuegbar',text:'Ein neuer 5 EUR Gutschein steht fuer die naechste Fahrt bereit.'},
-        {title:'Fahrt bestaetigt',text:'Ihre geplante Fahrt am 20.06.2026 wurde bestaetigt.'},
+        {title:'Gutschein verfügbar',text:'Ein neuer 5 EUR Gutschein steht für die nächste Fahrt bereit.'},
+        {title:'Fahrt bestätigt',text:'Ihre geplante Fahrt am 20.06.2026 wurde bestätigt.'},
         {title:'Neues Abzeichen',text:'Abzeichen "Flughafen-Profi" wurde freigeschaltet.'}
       ],
       settings:{
@@ -5505,7 +5601,7 @@
       return {
         profile:{...DEFAULT_STATE.profile,...(data.profile && typeof data.profile==='object' ? data.profile : {})},
         rideHistory:Array.isArray(data.rideHistory) && data.rideHistory.length ? data.rideHistory : DEFAULT_STATE.rideHistory.slice(),
-        favoriteAddresses:Array.isArray(data.favoriteAddresses) && data.favoriteAddresses.length ? data.favoriteAddresses : DEFAULT_STATE.favoriteAddresses.slice(),
+        favoriteAddresses:normalizeFavoriteAddresses(data.favoriteAddresses),
         invoices:Array.isArray(data.invoices) && data.invoices.length ? data.invoices : DEFAULT_STATE.invoices.slice(),
         notifications:Array.isArray(data.notifications) && data.notifications.length ? data.notifications : DEFAULT_STATE.notifications.slice(),
         settings:{...DEFAULT_STATE.settings,...(data.settings && typeof data.settings==='object' ? data.settings : {})}
@@ -5599,11 +5695,49 @@
         addressList.innerHTML='';
         state.favoriteAddresses.forEach(item=>{
           const li=document.createElement('li');
+          li.className='account-favorite-item';
+
+          const top=document.createElement('div');
+          top.className='account-favorite-top';
           const left=document.createElement('span');
           const right=document.createElement('b');
           left.textContent=String(item?.label || 'Adresse');
           right.textContent=String(item?.value || '-');
-          li.append(left,right);
+          top.append(left,right);
+
+          const actions=document.createElement('div');
+          actions.className='account-favorite-actions';
+
+          const editButton=document.createElement('button');
+          editButton.type='button';
+          editButton.className='button secondary';
+          editButton.dataset.accountAddressAction='edit';
+          editButton.dataset.addressId=String(item?.id || '');
+          editButton.textContent='Bearbeiten';
+
+          const removeButton=document.createElement('button');
+          removeButton.type='button';
+          removeButton.className='button secondary';
+          removeButton.dataset.accountAddressAction='delete';
+          removeButton.dataset.addressId=String(item?.id || '');
+          removeButton.textContent='Löschen';
+
+          const pickupButton=document.createElement('button');
+          pickupButton.type='button';
+          pickupButton.className='button';
+          pickupButton.dataset.accountAddressAction='pickup';
+          pickupButton.dataset.addressId=String(item?.id || '');
+          pickupButton.textContent='Als Abholort verwenden';
+
+          const destinationButton=document.createElement('button');
+          destinationButton.type='button';
+          destinationButton.className='button';
+          destinationButton.dataset.accountAddressAction='destination';
+          destinationButton.dataset.addressId=String(item?.id || '');
+          destinationButton.textContent='Als Ziel verwenden';
+
+          actions.append(editButton,removeButton,pickupButton,destinationButton);
+          li.append(top,actions);
           addressList.append(li);
         });
       }
@@ -5649,7 +5783,7 @@
           const title=document.createElement('strong');
           const text=document.createElement('p');
           title.textContent=String(item?.title || 'Hinweis');
-          text.textContent=String(item?.text || 'Keine Details verfuegbar.');
+          text.textContent=String(item?.text || 'Keine Details verfügbar.');
           copy.append(title,text);
 
           li.append(dot,copy);
@@ -5667,6 +5801,32 @@
       if(notifyInput) notifyInput.checked=Boolean(state.settings.notificationsEnabled);
     }
 
+    let editingAddressId='';
+
+    function setFavoriteStatus(message){
+      const node=$('[data-account-field="favoritesStatus"]',root);
+      if(node) node.textContent=message;
+    }
+
+    function applyAddressToBooking(role,address){
+      const text=String(address || '').trim();
+      if(!text) return;
+      if(role==='pickup') saveBookingBridgeState({pickup:text});
+      if(role==='destination') saveBookingBridgeState({destination:text});
+
+      const startField=$('#startAddress');
+      const targetField=$('#targetAddress');
+      if(role==='pickup' && startField) startField.value=text;
+      if(role==='destination' && targetField) targetField.value=text;
+
+      if(startField || targetField){
+        validate();
+        syncBookingSummary();
+        if((startField?.value?.trim() || '') && (targetField?.value?.trim() || '')) syncBookingRouteMetrics();
+        if(hasExternalConsent()) refreshMapContainers();
+      }
+    }
+
     const state=readState();
     writeState(state);
     render(state);
@@ -5679,15 +5839,73 @@
         const value=String(customAddressInput.value || '').trim();
         if(value.length<4) return;
         const next=readState();
-        const customCount=next.favoriteAddresses.filter(item=>String(item?.label || '').toLowerCase().startsWith('eigene adresse')).length;
-        next.favoriteAddresses.unshift({
-          label:customCount>0 ? `Eigene Adresse ${customCount+1}` : 'Eigene Adresse',
-          value
-        });
+        const submitButton=$('[data-account-field="addressSubmitButton"]',root);
+
+        if(editingAddressId){
+          next.favoriteAddresses=next.favoriteAddresses.map(item=>{
+            if(String(item?.id || '')!==editingAddressId) return item;
+            return {...item,value};
+          });
+          setFavoriteStatus('Adresse aktualisiert.');
+        }else{
+          const customCount=next.favoriteAddresses.filter(item=>String(item?.label || '').toLowerCase().startsWith('eigene adresse')).length;
+          next.favoriteAddresses.unshift({
+            id:`addr-custom-${Date.now()}`,
+            label:customCount>0 ? `Eigene Adresse ${customCount+1}` : 'Eigene Adresse',
+            value
+          });
+          setFavoriteStatus('Adresse gespeichert.');
+        }
+
         next.favoriteAddresses=next.favoriteAddresses.slice(0,8);
         writeState(next);
+        writeCustomerFavoriteAddresses(next.favoriteAddresses);
         customAddressInput.value='';
+        editingAddressId='';
+        if(submitButton) submitButton.textContent='Adresse speichern';
         render(next);
+        renderBookingFavoriteAddresses();
+      });
+    }
+
+    const favoritesList=$('[data-account-field="favoriteAddresses"]',root);
+    if(favoritesList){
+      favoritesList.addEventListener('click',event=>{
+        const button=event.target.closest('[data-account-address-action]');
+        if(!button) return;
+        const action=String(button.dataset.accountAddressAction || '').trim().toLowerCase();
+        const addressId=String(button.dataset.addressId || '').trim();
+        if(!action || !addressId) return;
+
+        const next=readState();
+        const entry=next.favoriteAddresses.find(item=>String(item?.id || '')===addressId);
+        if(!entry) return;
+
+        if(action==='edit'){
+          const submitButton=$('[data-account-field="addressSubmitButton"]',root);
+          if(customAddressInput) customAddressInput.value=String(entry.value || '');
+          editingAddressId=addressId;
+          if(submitButton) submitButton.textContent='Adresse aktualisieren';
+          customAddressInput?.focus();
+          setFavoriteStatus(`Bearbeiten aktiv: ${String(entry.label || 'Adresse')}`);
+          return;
+        }
+
+        if(action==='delete'){
+          next.favoriteAddresses=next.favoriteAddresses.filter(item=>String(item?.id || '')!==addressId);
+          if(!next.favoriteAddresses.length) next.favoriteAddresses=getDefaultFavoriteAddresses();
+          writeState(next);
+          writeCustomerFavoriteAddresses(next.favoriteAddresses);
+          render(next);
+          renderBookingFavoriteAddresses();
+          setFavoriteStatus('Adresse gelöscht.');
+          return;
+        }
+
+        if(action==='pickup' || action==='destination'){
+          applyAddressToBooking(action,String(entry.value || ''));
+          setFavoriteStatus(action==='pickup' ? 'Adresse als Abholort gespeichert.' : 'Adresse als Ziel gespeichert.');
+        }
       });
     }
 

@@ -517,7 +517,7 @@
       <article class="panel intro">
         <small>TAXI GERMERSHEIM GMBH</small>
         <h1>Premium Booking Experience</h1>
-        <p>Schritt fuer Schritt zur Buchung. Schnell, klar und mobil optimiert.</p>
+        <p>Schritt für Schritt zur Buchung. Schnell, klar und mobil optimiert.</p>
       </article>
 
       <div class="pb-progress">
@@ -533,9 +533,9 @@
         <button type="button" data-booking-step-goto="2">Ziel</button>
         <button type="button" data-booking-step-goto="3">Fahrtart</button>
         <button type="button" data-booking-step-goto="4">Datum & Uhrzeit</button>
-        <button type="button" data-booking-step-goto="5">Fahrgaeste</button>
+        <button type="button" data-booking-step-goto="5">Fahrgäste</button>
         <button type="button" data-booking-step-goto="6">Optionen</button>
-        <button type="button" data-booking-step-goto="7">Uebersicht</button>
+        <button type="button" data-booking-step-goto="7">Übersicht</button>
       </div>
 
       <section class="pb-shell" aria-label="Premium Buchung">
@@ -545,6 +545,10 @@
             <label>STARTADRESSE</label>
             <div class="input pb-location-field" data-maps-autocomplete="pickup"><i data-icon="pin"></i><input id="startAddress" placeholder="Abholort eingeben" autocomplete="off" aria-autocomplete="list" aria-expanded="false"></div>
             <div class="pb-autocomplete-prep" data-autocomplete-list="pickup" hidden></div>
+            <section class="pb-favorites" aria-label="Lieblingsadressen Abholort" data-booking-favorites="pickup">
+              <p class="pb-favorites-title">Lieblingsadressen</p>
+              <div class="pb-favorites-list" data-booking-favorites-list="pickup"></div>
+            </section>
             <div id="startMapContainer" class="map-container"></div>
             <button class="outline" type="button" id="locationBtn"><i data-icon="location"></i>Aktuellen Standort verwenden</button>
             <p class="pb-step-feedback" data-booking-step-feedback hidden></p>
@@ -558,6 +562,10 @@
             <label>ZIELADRESSE</label>
             <div class="input pb-location-field" data-maps-autocomplete="destination"><i data-icon="flag"></i><input id="targetAddress" placeholder="Zielort eingeben" autocomplete="off" aria-autocomplete="list" aria-expanded="false"></div>
             <div class="pb-autocomplete-prep" data-autocomplete-list="destination" hidden></div>
+            <section class="pb-favorites" aria-label="Lieblingsadressen Ziel" data-booking-favorites="destination">
+              <p class="pb-favorites-title">Lieblingsadressen</p>
+              <div class="pb-favorites-list" data-booking-favorites-list="destination"></div>
+            </section>
             <div class="chips">
               <button type="button" data-preset="home" data-address="Zuhause">Zuhause</button>
               <button type="button" data-preset="work" data-address="Arbeit">Arbeit</button>
@@ -578,7 +586,7 @@
                 <p><span>Rewards-Punkte:</span> <b data-booking-route-points>ca. 15</b></p>
                 <p class="pb-route-fare-note">Fahrpreis wird nach Bestätigung berechnet.</p>
               </div>
-              <article class="pb-yumak-route-card" aria-live="polite"><p data-booking-yumak-hint>Perfekt! Das sind ungefaehr 7,5 km und 11 Minuten.</p></article>
+              <article class="pb-yumak-route-card" aria-live="polite"><p data-booking-yumak-hint>Perfekt! Das sind ungefähr 7,5 km und 11 Minuten.</p></article>
             </section>
 
             <section class="panel pb-vehicle-panel" data-booking-vehicle-panel hidden aria-label="Fahrzeugwunsch">
@@ -645,18 +653,18 @@
               <p class="pb-fare-voucher-note" data-fare-voucher-note hidden>Gutschein-Guthaben kann bei dieser Fahrt eingelöst werden.</p>
             </section>
             <p class="pb-step-feedback" data-booking-step-feedback hidden></p>
-            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurück</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
           <article class="panel pb-step" data-booking-step="3" hidden>
             <h3>Schritt 3 - Fahrtart</h3>
-            <article class="panel selected"><small>GEWAEHLTER FAHRTTYP</small><h2 id="selectedTitle">Normale Taxifahrt</h2></article>
+            <article class="panel selected"><small>GEWÄHLTER FAHRTTYP</small><h2 id="selectedTitle">Normale Taxifahrt</h2></article>
             <div id="serviceLabel" class="service-label">NORMALE TAXIFAHRT</div>
             <div class="trip-grid">
               <button class="active" data-trip="oneway" type="button"><i data-icon="right"></i><b>Hinfahrt</b></button>
-              <button data-trip="return" type="button"><i data-icon="left"></i><b>Rueckfahrt</b></button>
-              <button data-trip="round" type="button"><i data-icon="round"></i><b>Hin- & Rueckfahrt</b></button>
-              <button data-trip="repeat" type="button"><i data-icon="repeat"></i><b>Regelmaessig</b></button>
+              <button data-trip="return" type="button"><i data-icon="left"></i><b>Rückfahrt</b></button>
+              <button data-trip="round" type="button"><i data-icon="round"></i><b>Hin- & Rückfahrt</b></button>
+              <button data-trip="repeat" type="button"><i data-icon="repeat"></i><b>Regelmäßig</b></button>
             </div>
             <label>FAHRTTYP</label>
             <div class="type-grid">
@@ -665,12 +673,12 @@
               <button data-service-select="wheelchair" type="button"><i data-icon="wheelchair"></i><b>Rollstuhl</b></button>
               <button data-service-select="airport" type="button"><i data-icon="airport"></i><b>Flughafentransfer</b></button>
             </div>
-            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurück</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
           <article class="panel pb-step" data-booking-step="4" hidden>
             <h3>Schritt 4 - Datum & Uhrzeit</h3>
-            <div class="toggle"><button type="button" class="active">Jetzt fahren</button><button type="button">Fuer spaeter planen</button></div>
+            <div class="toggle"><button type="button" class="active">Jetzt fahren</button><button type="button">Für später planen</button></div>
             <label>DATUM</label>
             <div class="input"><i data-icon="booking"></i><input id="bookingDate" type="date"></div>
             <div data-booking-time-fields hidden>
@@ -678,14 +686,14 @@
               <div class="input"><i data-icon="round"></i><input id="bookingTime" type="time"></div>
             </div>
             <p class="pb-step-feedback" data-booking-step-feedback hidden></p>
-            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurück</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
           <article class="panel pb-step" data-booking-step="5" hidden>
             <h3>Schritt 5 - Fahrgastanzahl</h3>
-            <label>ANZAHL FAHRGAESTE</label>
+            <label>ANZAHL FAHRGÄSTE</label>
             <div class="input"><i data-icon="passengers"></i><input id="bookingPassengers" type="number" min="1" max="8" value="1"></div>
-            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurück</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
           <article class="panel pb-step" data-booking-step="6" hidden>
@@ -699,23 +707,23 @@
               <button type="button"><span aria-hidden="true">🐶</span>Haustier</button>
               <button type="button"><span aria-hidden="true">👶</span>Kindersitz</button>
               <button type="button"><span aria-hidden="true">💳</span>Kartenzahlung</button>
-              <button type="button"><span aria-hidden="true">🧳</span>Viel Gepaeck</button>
+              <button type="button"><span aria-hidden="true">🧳</span>Viel Gepäck</button>
             </div>
             <label>NAME</label><div class="input"><i data-icon="user"></i><input id="customerName" placeholder="Ihr Name"></div>
-            <label>TELEFONNUMMER</label><div class="input"><i data-icon="phone"></i><input id="customerPhone" type="tel" placeholder="Fuer Rueckfragen"></div>
-            <label>NOTIZ OPTIONAL</label><textarea id="bookingNote" placeholder="z. B. Rollstuhl, Gepaeck, Krankenkasse, Abholhinweis"></textarea>
-            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
+            <label>TELEFONNUMMER</label><div class="input"><i data-icon="phone"></i><input id="customerPhone" type="tel" placeholder="Für Rückfragen"></div>
+            <label>NOTIZ OPTIONAL</label><textarea id="bookingNote" placeholder="z. B. Rollstuhl, Gepäck, Krankenkasse, Abholhinweis"></textarea>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurück</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
           <article class="panel pb-step" data-booking-step="7" hidden>
-            <h3>Schritt 7 - Uebersicht</h3>
-            <article class="yumak-info"><i data-icon="yumak"></i><span><b>Yumak prueft mit.</b><small>Finale Datenkontrolle vor der Anfrage.</small></span></article>
-            <div class="actions"><button id="sendRequest" type="button">Fahrtanfrage nicht moeglich</button><a href="tel:072743567"><i data-icon="phone"></i>Jetzt anrufen</a></div>
+            <h3>Schritt 7 - Übersicht</h3>
+            <article class="yumak-info"><i data-icon="yumak"></i><span><b>Yumak prüft mit.</b><small>Finale Datenkontrolle vor der Anfrage.</small></span></article>
+            <div class="actions"><button id="sendRequest" type="button">Fahrtanfrage nicht möglich</button><a href="tel:072743567"><i data-icon="phone"></i>Jetzt anrufen</a></div>
 
             <section class="panel request-prep" aria-labelledby="request-prep-title">
               <small>Kontaktformular</small>
               <h3 id="request-prep-title">Fahrtanfrage senden</h3>
-              <p class="request-prep-note">Dieses Formular ist vorbereitet. Der E-Mail-/Backend-Versand kann spaeter per Formspree, Netlify Forms, EmailJS oder eigenem Server angebunden werden.</p>
+              <p class="request-prep-note">Dieses Formular ist vorbereitet. Der E-Mail-/Backend-Versand kann später per Formspree, Netlify Forms, EmailJS oder eigenem Server angebunden werden.</p>
 
               <form id="contactRequestForm" class="request-form" novalidate>
                 <div class="request-grid">
@@ -744,12 +752,12 @@
                   <input id="requestPassengers" name="passengers" type="number" min="1" max="8" value="1" required>
 
                   <label for="requestMessage">Nachricht / Besonderheiten</label>
-                  <textarea id="requestMessage" name="message" rows="4" placeholder="z. B. Kindersitz, Rollstuhl, zusaetzliche Hinweise"></textarea>
+                  <textarea id="requestMessage" name="message" rows="4" placeholder="z. B. Kindersitz, Rollstuhl, zusätzliche Hinweise"></textarea>
                 </div>
 
                 <label class="request-consent">
                   <input id="requestPrivacy" name="privacy" type="checkbox" required>
-                  <span>Ich habe die Datenschutzerklaerung gelesen und stimme der Verarbeitung meiner Angaben zur Bearbeitung meiner Anfrage zu.</span>
+                  <span>Ich habe die Datenschutzerklärung gelesen und stimme der Verarbeitung meiner Angaben zur Bearbeitung meiner Anfrage zu.</span>
                 </label>
 
                 <div class="request-actions">
@@ -758,7 +766,7 @@
                 </div>
               </form>
             </section>
-            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button></div>
+            <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurück</button></div>
           </article>
         </div>
 
@@ -782,9 +790,9 @@
           </ul>
           <p class="pb-summary-vehicle-note">Die endgültige Fahrzeugzuteilung erfolgt nach Verfügbarkeit.</p>
           <p class="pb-summary-fare-note">Fahrpreis wird nach Bestätigung berechnet.</p>
-          <p class="pb-rewards-hint" data-booking-rewards-hint hidden>Mit dieser Fahrt erhaeltst du ca. 15 Punkte.</p>
-          <p class="pb-voucher-hint" data-booking-voucher-hint hidden>Gutschein-Guthaben verfuegbar.</p>
-          <p class="pb-future-note">Vorbereitet fuer Google Maps, Fahrerzuweisung, Live-Status, Preisberechnung und Backend.</p>
+          <p class="pb-rewards-hint" data-booking-rewards-hint hidden>Mit dieser Fahrt erhältst du ca. 15 Punkte.</p>
+          <p class="pb-voucher-hint" data-booking-voucher-hint hidden>Gutschein-Guthaben verfügbar.</p>
+          <p class="pb-future-note">Vorbereitet für Google Maps, Fahrerzuweisung, Live-Status, Preisberechnung und Backend.</p>
         </aside>
       </section>
     </section>

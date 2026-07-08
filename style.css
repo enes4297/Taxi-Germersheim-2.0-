@@ -41,6 +41,14 @@ body:before{content:'';position:fixed;inset:0;background:radial-gradient(circle 
 .booking-premium .pb-location-field input::placeholder{color:rgba(255,255,255,.56)}
 .booking-premium .pb-start-preview input{color:rgba(255,255,255,.86)}
 
+.booking-premium .pb-favorites{margin-top:10px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12)}
+.booking-premium .pb-favorites-title{margin:0 0 10px;color:rgba(255,255,255,.72);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:900}
+.booking-premium .pb-favorites-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.booking-premium .pb-favorite-button{min-height:54px;border-radius:12px;display:grid;justify-items:start;align-content:center;gap:2px;padding:8px 10px;text-align:left;border:1px solid rgba(255,217,106,.26);background:linear-gradient(145deg,rgba(255,217,106,.10),rgba(255,255,255,.03));color:#fff;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease}
+.booking-premium .pb-favorite-button .pb-favorite-label{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#ffe7ad;font-weight:900}
+.booking-premium .pb-favorite-button .pb-favorite-value{font-size:11px;line-height:1.35;color:rgba(255,255,255,.82)}
+.booking-premium .pb-favorite-button:hover{transform:translateY(-1px);border-color:rgba(255,217,106,.52);background:linear-gradient(145deg,rgba(255,217,106,.16),rgba(255,255,255,.05));box-shadow:0 10px 22px rgba(0,0,0,.22),0 0 0 1px rgba(255,217,106,.2)}
+
 .booking-premium .pb-route-panel{margin-top:16px;border-color:rgba(255,217,106,.3);background:linear-gradient(155deg,rgba(18,19,24,.96),rgba(8,9,12,.98))}
 .booking-premium .pb-route-panel h4{margin:0 0 8px;font-family:var(--serif);font-size:27px;line-height:1.06;color:#fff}
 .booking-premium .pb-route-note{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.5}
@@ -111,6 +119,7 @@ body:before{content:'';position:fixed;inset:0;background:radial-gradient(circle 
   .booking-premium .pb-progress{padding:12px 13px}
   .booking-premium .pb-step h3{font-size:25px}
   .booking-premium .pb-option-grid{grid-template-columns:1fr}
+  .booking-premium .pb-favorites-list{grid-template-columns:1fr}
   .booking-premium [data-booking-step="1"] .map-container{height:220px}
   .booking-premium .pb-route-panel h4{font-size:22px}
   .booking-premium .pb-route-panel .map-container{height:260px}
@@ -2611,6 +2620,14 @@ input:focus,textarea:focus,select:focus,
 #account.account-page .account-inline-input input{height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03);color:#fff;padding:0 12px;font-size:14px}
 #account.account-page .account-inline-input .button{min-height:46px;border-radius:12px;padding:0 14px}
 
+#account.account-page .account-favorites-list{gap:10px}
+#account.account-page .account-favorites-list li.account-favorite-item{grid-template-columns:1fr;gap:10px;padding:12px}
+#account.account-page .account-favorite-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start}
+#account.account-page .account-favorite-top span{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.7)!important}
+#account.account-page .account-favorite-top b{font-size:14px;color:#ffe8a7;text-transform:none;text-align:right}
+#account.account-page .account-favorite-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#account.account-page .account-favorite-actions .button{min-height:40px;border-radius:10px;padding:0 10px;font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+
 #account.account-page .account-invoice-list,#account.account-page .account-notification-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 #account.account-page .account-invoice-list li,#account.account-page .account-notification-list li{display:grid;gap:6px;padding:11px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
 #account.account-page .account-invoice-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -2658,6 +2675,9 @@ input:focus,textarea:focus,select:focus,
   #account.account-page .account-history-head{display:none}
   #account.account-page .account-history-list li{grid-template-columns:1fr}
   #account.account-page .account-inline-input{grid-template-columns:1fr}
+  #account.account-page .account-favorite-actions{grid-template-columns:1fr}
+  #account.account-page .account-favorite-top{grid-template-columns:1fr}
+  #account.account-page .account-favorite-top b{text-align:left}
 }
 
 @media(max-width:420px){

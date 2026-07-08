@@ -67,7 +67,7 @@
             <li><span>Punkte</span><b data-account-field="points">230</b></li>
             <li><span>Gutschein-Guthaben</span><b data-account-field="voucherBalance">15,00 EUR</b></li>
           </ul>
-          <p class="account-card-note">Struktur vorbereitet fuer spaetere Profil-API und Authentifizierung.</p>
+            <p class="account-card-note">Struktur vorbereitet für spätere Profil-API und Authentifizierung.</p>
         </article>
 
         <article class="account-card account-card-wide" data-account-card="ride-history">
@@ -90,15 +90,16 @@
         <article class="account-card" data-account-card="favorite-addresses">
           <div class="account-card-head">
             <h3>Lieblingsadressen</h3>
-            <small>Schnellauswahl fuer Buchungen</small>
+            <small>Schnellauswahl für Buchungen</small>
           </div>
-          <ul class="account-list" data-account-field="favoriteAddresses" aria-label="Lieblingsadressen"></ul>
+          <ul class="account-list account-favorites-list" data-account-field="favoriteAddresses" aria-label="Lieblingsadressen"></ul>
           <form class="account-inline-form" data-account-action="add-address">
-            <label for="accountCustomAddress">Eigene Adresse hinzufuegen</label>
+            <label for="accountCustomAddress">Eigene Adresse hinzufügen</label>
             <div class="account-inline-input">
-              <input id="accountCustomAddress" name="accountCustomAddress" type="text" placeholder="z. B. Karl-Friedrich-Strasse 12, Germersheim" maxlength="120">
-              <button class="button secondary" type="submit">Adresse speichern</button>
+              <input id="accountCustomAddress" name="accountCustomAddress" type="text" placeholder="z. B. Karl-Friedrich-Straße 12, Germersheim" maxlength="120">
+              <button class="button secondary" type="submit" data-account-field="addressSubmitButton">Adresse speichern</button>
             </div>
+            <p class="account-settings-status" data-account-field="favoritesStatus">Bearbeiten, Löschen oder direkt für Abholort/Ziel übernehmen.</p>
           </form>
         </article>
 
@@ -141,7 +142,7 @@
             </label>
 
             <button class="button" type="submit">Einstellungen speichern</button>
-            <p class="account-settings-status" data-account-field="settingsStatus">Aenderungen werden lokal im Browser gespeichert.</p>
+            <p class="account-settings-status" data-account-field="settingsStatus">Änderungen werden lokal im Browser gespeichert.</p>
           </form>
         </article>
       </section>
