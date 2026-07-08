@@ -91,6 +91,18 @@
     start:'marker-start-prepared',
     target:'marker-target-prepared'
   };
+  const BOOKING_REBOOK_STORAGE_KEY='taxiBookingRebookState';
+  const RIDE_TRACKING_STORAGE_KEY='taxiCurrentRideTrackingState';
+  const RIDE_TRACKING_STEPS=[
+    {label:'Anfrage eingegangen',detail:'Ihre Buchung wurde erfasst und im System vorbereitet.'},
+    {label:'Disposition prüft',detail:'Unser Team prüft Fahrzeug, Route und Verfügbarkeit.'},
+    {label:'Fahrer zugewiesen',detail:'Ein Fahrer wurde Ihrer Fahrt fest zugeordnet.'},
+    {label:'Fahrer unterwegs',detail:'Ihr Fahrer ist auf dem Weg zum Abholort.'},
+    {label:'Fahrer angekommen',detail:'Der Fahrer wartet am angegebenen Treffpunkt.'},
+    {label:'Fahrt läuft',detail:'Die Fahrt ist gestartet und wird live als Demo verfolgt.'},
+    {label:'Fahrt abgeschlossen',detail:'Die Fahrt wurde abgeschlossen und kann bewertet werden.'}
+  ];
+  const RIDE_TRACKING_STAGE_TIMINGS=[0,18000,36000,56000,76000,96000,118000];
   const CONTACT_SERVICE_CONFIG={
     // Set provider to 'formspree' or 'emailjs' when real transport is connected.
     provider:null,
@@ -118,6 +130,157 @@
     }catch(_err){
       // localStorage optional in demo mode.
     }
+  }
+
+  function writeBookingRebookState(partial){
+    try{
+      const next={
+        pickup:String(partial?.pickup || '').trim(),
+        destination:String(partial?.destination || '').trim(),
+        rideType:String(partial?.rideType || '').trim().toLowerCase(),
+        createdAt:Date.now()
+      };
+      localStorage.setItem(BOOKING_REBOOK_STORAGE_KEY,JSON.stringify(next));
+    }catch(_err){
+      // localStorage optional in demo mode.
+    }
+  }
+
+  function consumeBookingRebookState(maxAgeMs=30*60*1000){
+    try{
+      const raw=localStorage.getItem(BOOKING_REBOOK_STORAGE_KEY);
+      if(!raw) return null;
+      localStorage.removeItem(BOOKING_REBOOK_STORAGE_KEY);
+      const parsed=JSON.parse(raw);
+      if(!parsed || typeof parsed!=='object') return null;
+
+      const pickup=String(parsed.pickup || '').trim();
+      const destination=String(parsed.destination || '').trim();
+      const rideType=String(parsed.rideType || '').trim().toLowerCase();
+      const createdAt=Number(parsed.createdAt || 0);
+      if(!pickup || !destination) return null;
+      if(createdAt && Date.now()-createdAt>maxAgeMs) return null;
+      return {pickup,destination,rideType};
+    }catch(_err){
+      return null;
+    }
+  }
+
+  function getRideDriverPreset(rideType){
+    const key=String(rideType || 'taxi').trim().toLowerCase();
+    if(key==='medical') return {driverName:'Sabine Hoffmann',vehicleType:'Mercedes V-Klasse',licensePlate:'GER-MH 612',phone:'07274 3567',baseEtaMinutes:11};
+    if(key==='airport') return {driverName:'Michael Becker',vehicleType:'Mercedes E-Klasse',licensePlate:'GER-TG 247',phone:'07274 3567',baseEtaMinutes:14};
+    if(key==='wheelchair') return {driverName:'Ali Demir',vehicleType:'Rollstuhlfahrzeug',licensePlate:'GER-RF 118',phone:'07274 3567',baseEtaMinutes:13};
+    return {driverName:'Julia Schneider',vehicleType:'Taxi Limousine',licensePlate:'GER-TX 401',phone:'07274 3567',baseEtaMinutes:9};
+  }
+
+  function buildRideTrackingState(partial){
+    const driverPreset=getRideDriverPreset(partial?.rideType);
+    return {
+      id:String(partial?.id || `ride-track-${Date.now()}`),
+      customerName:String(partial?.customerName || 'Max Mustermann').trim() || 'Max Mustermann',
+      pickup:String(partial?.pickup || 'Germersheim Zentrum').trim() || 'Germersheim Zentrum',
+      destination:String(partial?.destination || 'Speyer').trim() || 'Speyer',
+      rideType:String(partial?.rideType || 'taxi').trim().toLowerCase() || 'taxi',
+      createdAt:Number(partial?.createdAt || Date.now()),
+      statusIndex:Math.max(0,Math.min(RIDE_TRACKING_STEPS.length-1,Number(partial?.statusIndex ?? 0) || 0)),
+      simulationEnabled:partial?.simulationEnabled!==false,
+      ratingSubmitted:Boolean(partial?.ratingSubmitted),
+      driverName:String(partial?.driverName || driverPreset.driverName).trim() || driverPreset.driverName,
+      vehicleType:String(partial?.vehicleType || driverPreset.vehicleType).trim() || driverPreset.vehicleType,
+      licensePlate:String(partial?.licensePlate || driverPreset.licensePlate).trim() || driverPreset.licensePlate,
+      phone:String(partial?.phone || driverPreset.phone).trim() || driverPreset.phone,
+      baseEtaMinutes:Math.max(1,Math.round(Number(partial?.baseEtaMinutes || driverPreset.baseEtaMinutes) || driverPreset.baseEtaMinutes))
+    };
+  }
+
+  function getDefaultRideTrackingState(){
+    return buildRideTrackingState({
+      customerName:'Max Mustermann',
+      pickup:'Germersheim Zentrum',
+      destination:'Speyer Zentrum',
+      rideType:'taxi',
+      createdAt:Date.now()-42000,
+      statusIndex:2,
+      simulationEnabled:true
+    });
+  }
+
+  function writeRideTrackingState(next){
+    try{
+      localStorage.setItem(RIDE_TRACKING_STORAGE_KEY,JSON.stringify(buildRideTrackingState(next)));
+      document.dispatchEvent(new CustomEvent('ride-tracking:update'));
+    }catch(_err){
+      // localStorage optional in demo mode.
+    }
+  }
+
+  function readRideTrackingState(seedIfMissing=false){
+    try{
+      const raw=localStorage.getItem(RIDE_TRACKING_STORAGE_KEY);
+      if(!raw){
+        if(!seedIfMissing) return null;
+        const seeded=getDefaultRideTrackingState();
+        writeRideTrackingState(seeded);
+        return seeded;
+      }
+      const parsed=JSON.parse(raw);
+      return buildRideTrackingState(parsed);
+    }catch(_err){
+      if(!seedIfMissing) return null;
+      const seeded=getDefaultRideTrackingState();
+      writeRideTrackingState(seeded);
+      return seeded;
+    }
+  }
+
+  function resolveRideTrackingSnapshot(seedIfMissing=false){
+    const base=readRideTrackingState(seedIfMissing);
+    if(!base) return null;
+    let activeIndex=Math.max(0,Math.min(RIDE_TRACKING_STEPS.length-1,Number(base.statusIndex || 0)));
+
+    if(base.simulationEnabled){
+      const elapsed=Math.max(0,Date.now()-Math.max(0,Number(base.createdAt || Date.now())));
+      for(let i=RIDE_TRACKING_STAGE_TIMINGS.length-1;i>=0;i--){
+        if(elapsed>=RIDE_TRACKING_STAGE_TIMINGS[i]){
+          activeIndex=i;
+          break;
+        }
+      }
+    }
+
+    const statusMeta=RIDE_TRACKING_STEPS[activeIndex] || RIDE_TRACKING_STEPS[0];
+    const arrivalText=activeIndex<4 ? `${Math.max(1,base.baseEtaMinutes-activeIndex*2)} Min.` : activeIndex===4 ? 'Jetzt angekommen' : activeIndex===5 ? 'Fahrt läuft' : 'Abgeschlossen';
+    return {
+      ...base,
+      activeIndex,
+      isCompleted:activeIndex>=RIDE_TRACKING_STEPS.length-1,
+      statusLabel:statusMeta.label,
+      statusDetail:statusMeta.detail,
+      route:`${base.pickup} → ${base.destination}`,
+      arrivalText,
+      steps:RIDE_TRACKING_STEPS.map((step,index)=>({
+        ...step,
+        index,
+        isComplete:index<activeIndex,
+        isActive:index===activeIndex
+      }))
+    };
+  }
+
+  function createRideTrackingStateFromBooking(payload){
+    const next=buildRideTrackingState({
+      customerName:String(payload?.name || 'Max Mustermann').trim() || 'Max Mustermann',
+      pickup:String(payload?.pickup || '').trim(),
+      destination:String(payload?.destination || '').trim(),
+      rideType:String(payload?.rideType || 'taxi').trim().toLowerCase() || 'taxi',
+      createdAt:Date.now(),
+      statusIndex:0,
+      simulationEnabled:true,
+      ratingSubmitted:false
+    });
+    writeRideTrackingState(next);
+    return next;
   }
 
   function handleRewardEvent(type,payload){
@@ -1354,15 +1517,28 @@
         await sendContactRequest(payload);
         saveBookingBridgeState({
           customer:payload.name,
+          rideType:bookingStepState.service,
           pickup:payload.pickup,
           destination:payload.destination
         });
+        createRideTrackingStateFromBooking({...payload,rideType:bookingStepState.service});
         form.reset();
         syncFormState();
-        setStatus('Ihre Anfrage wurde erfolgreich gesendet.',false);
+        setStatus('Ihre Anfrage wurde erfolgreich gesendet. Ihre aktuelle Fahrt wird jetzt vorbereitet.',false);
+        show('ride-status');
       }catch(error){
         if(error?.message==='not_configured'){
-          setStatus('Der Versanddienst ist noch nicht verbunden. Bitte rufen Sie uns an oder schreiben Sie per WhatsApp.',true);
+          saveBookingBridgeState({
+            customer:payload.name,
+            rideType:bookingStepState.service,
+            pickup:payload.pickup,
+            destination:payload.destination
+          });
+          createRideTrackingStateFromBooking({...payload,rideType:bookingStepState.service});
+          form.reset();
+          syncFormState();
+          setStatus('Demo-Anfrage vorbereitet. Ihre aktuelle Fahrt wird jetzt angezeigt.',false);
+          show('ride-status');
         }else{
           setStatus('Der Versand konnte nicht abgeschlossen werden. Bitte rufen Sie uns an oder schreiben Sie per WhatsApp.',true);
         }
@@ -1633,7 +1809,21 @@
     renderBookingFavoriteAddresses();
     updateBookingScheduleVisibility();
 
-    showBookingStep(1);
+    const pendingRebook=consumeBookingRebookState();
+    if(pendingRebook){
+      const startField=$('#startAddress');
+      const targetField=$('#targetAddress');
+      if(startField) startField.value=pendingRebook.pickup;
+      if(targetField) targetField.value=pendingRebook.destination;
+      if(pendingRebook.rideType && services[pendingRebook.rideType]) setService(pendingRebook.rideType);
+      saveBookingBridgeState({
+        pickup:pendingRebook.pickup,
+        destination:pendingRebook.destination,
+        rideType:pendingRebook.rideType || bookingStepState.service
+      });
+    }
+
+    showBookingStep(pendingRebook ? 2 : 1);
     syncBookingSummary();
   }
 
@@ -5568,15 +5758,15 @@
         voucherBalance:15
       },
       rideHistory:[
-        {date:'18.06.2026',rideType:'Flughafentransfer',start:'Germersheim Zentrum',destination:'Frankfurt Flughafen Terminal 1',price:126.5,pointsEarned:18,voucherUsed:true},
-        {date:'12.06.2026',rideType:'Krankenfahrt',start:'Germersheim Nord',destination:'Dialysezentrum Speyer',price:48,pointsEarned:12,voucherUsed:false},
-        {date:'04.06.2026',rideType:'Taxifahrt',start:'Bahnhof Germersheim',destination:'Innenstadt Germersheim',price:14.8,pointsEarned:10,voucherUsed:false}
+        {id:'ride-2026-06-18-airport',date:'18.06.2026',rideType:'Flughafentransfer',rideTypeKey:'airport',start:'Germersheim Zentrum',destination:'Frankfurt Flughafen Terminal 1',price:126.5,pointsEarned:18,voucherUsed:true},
+        {id:'ride-2026-06-12-medical',date:'12.06.2026',rideType:'Krankenfahrt',rideTypeKey:'medical',start:'Germersheim Nord',destination:'Dialysezentrum Speyer',price:48,pointsEarned:12,voucherUsed:false},
+        {id:'ride-2026-06-04-taxi',date:'04.06.2026',rideType:'Taxifahrt',rideTypeKey:'taxi',start:'Bahnhof Germersheim',destination:'Innenstadt Germersheim',price:14.8,pointsEarned:10,voucherUsed:false}
       ],
       favoriteAddresses:getDefaultFavoriteAddresses(),
       invoices:[
-        {id:'RG-2026-0184',date:'18.06.2026',amount:126.5,status:'bezahlt'},
-        {id:'RG-2026-0171',date:'12.06.2026',amount:48,status:'offen'},
-        {id:'RG-2026-0163',date:'04.06.2026',amount:14.8,status:'angefragt'}
+        {id:'RG-2026-0184',date:'18.06.2026',route:'Germersheim Zentrum -> Frankfurt Flughafen Terminal 1',amount:126.5,status:'bezahlt'},
+        {id:'RG-2026-0171',date:'12.06.2026',route:'Germersheim Nord -> Dialysezentrum Speyer',amount:48,status:'offen'},
+        {id:'RG-2026-0163',date:'04.06.2026',route:'Bahnhof Germersheim -> Innenstadt Germersheim',amount:14.8,status:'angefragt'}
       ],
       notifications:[
         {title:'Neue Punkte erhalten',text:'+18 Punkte wurden Ihrer letzten Fahrt gutgeschrieben.'},
@@ -5585,10 +5775,16 @@
         {title:'Neues Abzeichen',text:'Abzeichen "Flughafen-Profi" wurde freigeschaltet.'}
       ],
       settings:{
+        displayName:'Max Mustermann',
         phone:'07274 3567',
-        email:'max.mustermann@example.com',
-        privacyAccepted:true,
-        notificationsEnabled:true
+        email:'demo@taxi-germersheim.de',
+        language:'de',
+        notifications:{
+          rideUpdates:true,
+          rewardsUpdates:true,
+          vouchers:true,
+          emailNotifications:true
+        }
       }
     };
 
@@ -5598,13 +5794,84 @@
 
     function mergeDefaults(base){
       const data=base && typeof base==='object' ? base : {};
+
+      function resolveRideTypeKey(raw){
+        const value=String(raw || '').trim().toLowerCase();
+        if(!value) return 'taxi';
+        if(value==='taxi' || value.includes('taxi')) return 'taxi';
+        if(value==='medical' || value.includes('kranken')) return 'medical';
+        if(value==='wheelchair' || value.includes('rollstuhl')) return 'wheelchair';
+        if(value==='airport' || value.includes('flughafen')) return 'airport';
+        return 'taxi';
+      }
+
+      function normalizeRideHistory(list){
+        if(!Array.isArray(list) || !list.length) return DEFAULT_STATE.rideHistory.slice();
+        return list.map((item,index)=>{
+          const rideTypeLabel=String(item?.rideType || '').trim() || 'Taxifahrt';
+          const rideTypeKey=resolveRideTypeKey(item?.rideTypeKey || rideTypeLabel);
+          return {
+            id:String(item?.id || `ride-${index+1}`),
+            date:String(item?.date || '-').trim() || '-',
+            start:String(item?.start || '-').trim() || '-',
+            destination:String(item?.destination || '-').trim() || '-',
+            rideType:rideTypeLabel,
+            rideTypeKey,
+            price:Number.isFinite(Number(item?.price)) ? Number(item.price) : 0,
+            pointsEarned:Math.max(0,Math.round(Number(item?.pointsEarned) || 0)),
+            voucherUsed:Boolean(item?.voucherUsed)
+          };
+        });
+      }
+
+      function sanitizeSettingText(value,maxLength){
+        return String(value || '').trim().slice(0,maxLength);
+      }
+
+      function normalizeLanguage(value){
+        const lang=String(value || '').trim().toLowerCase();
+        return lang==='en' || lang==='tr' ? lang : 'de';
+      }
+
+      function normalizeSettings(raw){
+        const source=raw && typeof raw==='object' ? raw : {};
+        const sourceNotifications=source.notifications && typeof source.notifications==='object' ? source.notifications : {};
+        return {
+          displayName:sanitizeSettingText(source.displayName || DEFAULT_STATE.settings.displayName,80) || DEFAULT_STATE.settings.displayName,
+          phone:sanitizeSettingText(source.phone || DEFAULT_STATE.settings.phone,40) || DEFAULT_STATE.settings.phone,
+          email:sanitizeSettingText(source.email || DEFAULT_STATE.settings.email,120) || DEFAULT_STATE.settings.email,
+          language:normalizeLanguage(source.language || DEFAULT_STATE.settings.language),
+          notifications:{
+            rideUpdates:sourceNotifications.rideUpdates===undefined ? DEFAULT_STATE.settings.notifications.rideUpdates : Boolean(sourceNotifications.rideUpdates),
+            rewardsUpdates:sourceNotifications.rewardsUpdates===undefined ? DEFAULT_STATE.settings.notifications.rewardsUpdates : Boolean(sourceNotifications.rewardsUpdates),
+            vouchers:sourceNotifications.vouchers===undefined ? DEFAULT_STATE.settings.notifications.vouchers : Boolean(sourceNotifications.vouchers),
+            emailNotifications:sourceNotifications.emailNotifications===undefined ? DEFAULT_STATE.settings.notifications.emailNotifications : Boolean(sourceNotifications.emailNotifications)
+          }
+        };
+      }
+
+      function normalizeInvoices(list){
+        if(!Array.isArray(list) || !list.length) return DEFAULT_STATE.invoices.slice();
+        return list.map((item,index)=>{
+          const statusRaw=String(item?.status || 'offen').trim().toLowerCase();
+          const status=statusRaw==='bezahlt' || statusRaw==='angefragt' ? statusRaw : 'offen';
+          return {
+            id:String(item?.id || `RG-DEMO-${index+1}`).trim(),
+            date:String(item?.date || '-').trim() || '-',
+            route:String(item?.route || '-').trim() || '-',
+            amount:Number.isFinite(Number(item?.amount)) ? Number(item.amount) : 0,
+            status
+          };
+        });
+      }
+
       return {
         profile:{...DEFAULT_STATE.profile,...(data.profile && typeof data.profile==='object' ? data.profile : {})},
-        rideHistory:Array.isArray(data.rideHistory) && data.rideHistory.length ? data.rideHistory : DEFAULT_STATE.rideHistory.slice(),
+        rideHistory:normalizeRideHistory(data.rideHistory),
         favoriteAddresses:normalizeFavoriteAddresses(data.favoriteAddresses),
-        invoices:Array.isArray(data.invoices) && data.invoices.length ? data.invoices : DEFAULT_STATE.invoices.slice(),
+        invoices:normalizeInvoices(data.invoices),
         notifications:Array.isArray(data.notifications) && data.notifications.length ? data.notifications : DEFAULT_STATE.notifications.slice(),
-        settings:{...DEFAULT_STATE.settings,...(data.settings && typeof data.settings==='object' ? data.settings : {})}
+        settings:normalizeSettings(data.settings)
       };
     }
 
@@ -5672,19 +5939,55 @@
       if(pointsNode) pointsNode.textContent=String(Math.max(0,Math.round(Number(state.profile.points) || 0)));
       if(voucherNode) voucherNode.textContent=toEuro(state.profile.voucherBalance);
 
+      const rideSnapshot=resolveRideTrackingSnapshot(true);
+      const currentRideBadge=$('[data-account-field="currentRideBadge"]',root);
+      const currentRideRoute=$('[data-account-field="currentRideRoute"]',root);
+      const currentRideEta=$('[data-account-field="currentRideEta"]',root);
+      const currentRideDriver=$('[data-account-field="currentRideDriver"]',root);
+      const currentRideVehicle=$('[data-account-field="currentRideVehicle"]',root);
+      const currentRidePlate=$('[data-account-field="currentRidePlate"]',root);
+      const currentRideStep=$('[data-account-field="currentRideStep"]',root);
+      const currentRidePhoneButton=$('[data-account-field="currentRidePhoneButton"]',root);
+      const currentRideNote=$('[data-account-field="currentRideNote"]',root);
+      if(rideSnapshot){
+        if(currentRideBadge) currentRideBadge.textContent=`Status: ${rideSnapshot.statusLabel}`;
+        if(currentRideRoute) currentRideRoute.textContent=rideSnapshot.route;
+        if(currentRideEta) currentRideEta.textContent=`Voraussichtliche Ankunft: ${rideSnapshot.arrivalText}`;
+        if(currentRideDriver) currentRideDriver.textContent=rideSnapshot.driverName;
+        if(currentRideVehicle) currentRideVehicle.textContent=rideSnapshot.vehicleType;
+        if(currentRidePlate) currentRidePlate.textContent=rideSnapshot.licensePlate;
+        if(currentRideStep) currentRideStep.textContent=rideSnapshot.statusLabel;
+        if(currentRidePhoneButton){
+          currentRidePhoneButton.setAttribute('href',`tel:${rideSnapshot.phone}`);
+          currentRidePhoneButton.textContent='Fahrer anrufen';
+        }
+        if(currentRideNote) currentRideNote.textContent=rideSnapshot.isCompleted ? 'Fahrt abgeschlossen. Tracking öffnen, Bewertung senden oder erneut buchen.' : 'Status wird als Demo automatisch über lokalen Speicher simuliert.';
+      }
+
       const historyList=$('[data-account-field="rideHistory"]',root);
       if(historyList){
         historyList.innerHTML='';
         state.rideHistory.forEach(entry=>{
           const li=document.createElement('li');
+          const rebookWrap=document.createElement('div');
+          rebookWrap.className='account-history-action';
+
+          const rebookButton=document.createElement('button');
+          rebookButton.type='button';
+          rebookButton.className='button secondary account-history-rebook';
+          rebookButton.dataset.accountRideAction='rebook';
+          rebookButton.dataset.rideId=String(entry?.id || '');
+          rebookButton.textContent='Erneut buchen';
+          rebookWrap.append(rebookButton);
+
           li.append(
             createHistoryCell('Datum',entry?.date || '-'),
-            createHistoryCell('Fahrtart',entry?.rideType || '-'),
-            createHistoryCell('Start',entry?.start || '-'),
+            createHistoryCell('Abholort',entry?.start || '-'),
             createHistoryCell('Ziel',entry?.destination || '-'),
+            createHistoryCell('Fahrtart',entry?.rideType || '-'),
             createHistoryCell('Preis',toEuro(entry?.price)),
             createHistoryCell('Punkte',`+${Math.max(0,Math.round(Number(entry?.pointsEarned) || 0))}`),
-            createHistoryCell('Gutschein',entry?.voucherUsed ? 'Ja' : 'Nein')
+            rebookWrap
           );
           historyList.append(li);
         });
@@ -5765,7 +6068,37 @@
           meta.className='account-invoice-meta';
           meta.textContent=`${String(item?.date || '-')} • ${toEuro(item?.amount)}`;
 
-          li.append(top,meta);
+          const route=document.createElement('p');
+          route.className='account-invoice-route';
+          route.append(Object.assign(document.createElement('b'),{textContent:'Fahrtstrecke'}),document.createTextNode(String(item?.route || '-')));
+
+          const actions=document.createElement('div');
+          actions.className='account-invoice-actions';
+
+          const viewButton=document.createElement('button');
+          viewButton.type='button';
+          viewButton.className='button secondary';
+          viewButton.dataset.accountInvoiceAction='view';
+          viewButton.dataset.invoiceId=String(item?.id || '');
+          viewButton.textContent='Anzeigen';
+
+          const pdfButton=document.createElement('button');
+          pdfButton.type='button';
+          pdfButton.className='button secondary';
+          pdfButton.dataset.accountInvoiceAction='pdf';
+          pdfButton.dataset.invoiceId=String(item?.id || '');
+          pdfButton.textContent='PDF vorbereiten';
+
+          const emailButton=document.createElement('button');
+          emailButton.type='button';
+          emailButton.className='button secondary';
+          emailButton.dataset.accountInvoiceAction='email';
+          emailButton.dataset.invoiceId=String(item?.id || '');
+          emailButton.textContent='Per E-Mail anfragen';
+
+          actions.append(viewButton,pdfButton,emailButton);
+
+          li.append(top,meta,route,actions);
           invoiceList.append(li);
         });
       }
@@ -5791,20 +6124,33 @@
         });
       }
 
+      const displayNameInput=$('[data-account-setting="displayName"]',root);
       const phoneInput=$('[data-account-setting="phone"]',root);
       const emailInput=$('[data-account-setting="email"]',root);
-      const privacyInput=$('[data-account-setting="privacyAccepted"]',root);
-      const notifyInput=$('[data-account-setting="notificationsEnabled"]',root);
+      const languageInput=$('[data-account-setting="language"]',root);
+      const notifyRideInput=$('[data-account-setting="notifyRideUpdates"]',root);
+      const notifyRewardsInput=$('[data-account-setting="notifyRewardsUpdates"]',root);
+      const notifyVouchersInput=$('[data-account-setting="notifyVouchers"]',root);
+      const notifyEmailInput=$('[data-account-setting="notifyEmail"]',root);
+      if(displayNameInput) displayNameInput.value=String(state.settings.displayName || DEFAULT_STATE.settings.displayName);
       if(phoneInput) phoneInput.value=String(state.settings.phone || '');
       if(emailInput) emailInput.value=String(state.settings.email || '');
-      if(privacyInput) privacyInput.checked=Boolean(state.settings.privacyAccepted);
-      if(notifyInput) notifyInput.checked=Boolean(state.settings.notificationsEnabled);
+      if(languageInput) languageInput.value=String(state.settings.language || 'de');
+      if(notifyRideInput) notifyRideInput.checked=Boolean(state.settings.notifications?.rideUpdates);
+      if(notifyRewardsInput) notifyRewardsInput.checked=Boolean(state.settings.notifications?.rewardsUpdates);
+      if(notifyVouchersInput) notifyVouchersInput.checked=Boolean(state.settings.notifications?.vouchers);
+      if(notifyEmailInput) notifyEmailInput.checked=Boolean(state.settings.notifications?.emailNotifications);
     }
 
     let editingAddressId='';
 
     function setFavoriteStatus(message){
       const node=$('[data-account-field="favoritesStatus"]',root);
+      if(node) node.textContent=message;
+    }
+
+    function setInvoiceStatus(message){
+      const node=$('[data-account-field="invoiceStatus"]',root);
       if(node) node.textContent=message;
     }
 
@@ -5825,6 +6171,37 @@
         if((startField?.value?.trim() || '') && (targetField?.value?.trim() || '')) syncBookingRouteMetrics();
         if(hasExternalConsent()) refreshMapContainers();
       }
+    }
+
+    function resolveRideTypeKey(raw){
+      const value=String(raw || '').trim().toLowerCase();
+      if(!value) return 'taxi';
+      if(value==='taxi' || value.includes('taxi')) return 'taxi';
+      if(value==='medical' || value.includes('kranken')) return 'medical';
+      if(value==='wheelchair' || value.includes('rollstuhl')) return 'wheelchair';
+      if(value==='airport' || value.includes('flughafen')) return 'airport';
+      return 'taxi';
+    }
+
+    function rebookRide(entry){
+      const pickup=String(entry?.start || '').trim();
+      const destination=String(entry?.destination || '').trim();
+      if(!pickup || !destination || pickup==='-' || destination==='-'){
+        setFavoriteStatus('Rebooking nicht möglich: Abholort oder Ziel fehlt.');
+        return;
+      }
+
+      const rideType=resolveRideTypeKey(entry?.rideTypeKey || entry?.rideType);
+      writeBookingRebookState({pickup,destination,rideType});
+      saveBookingBridgeState({pickup,destination,rideType});
+      window.location.href='index.html?page=booking';
+    }
+
+    function rebookCurrentRide(snapshot){
+      if(!snapshot) return;
+      writeBookingRebookState({pickup:snapshot.pickup,destination:snapshot.destination,rideType:snapshot.rideType});
+      saveBookingBridgeState({pickup:snapshot.pickup,destination:snapshot.destination,rideType:snapshot.rideType});
+      window.location.href='index.html?page=booking';
     }
 
     const state=readState();
@@ -5909,29 +6286,251 @@
       });
     }
 
+    const invoiceList=$('[data-account-field="invoices"]',root);
+    if(invoiceList){
+      invoiceList.addEventListener('click',event=>{
+        const button=event.target.closest('[data-account-invoice-action]');
+        if(!button) return;
+
+        const action=String(button.dataset.accountInvoiceAction || '').trim().toLowerCase();
+        const invoiceId=String(button.dataset.invoiceId || '').trim();
+        if(!action || !invoiceId) return;
+
+        const next=readState();
+        const entry=next.invoices.find(item=>String(item?.id || '')===invoiceId);
+        if(!entry) return;
+
+        if(action==='view'){
+          setInvoiceStatus(`Demo-Ansicht vorbereitet: ${entry.id} | ${entry.date} | ${entry.route} | ${toEuro(entry.amount)}.`);
+          return;
+        }
+
+        if(action==='pdf'){
+          setInvoiceStatus(`PDF-Vorbereitung als Demo markiert für ${entry.id}. Es wird keine echte PDF erstellt.`);
+          return;
+        }
+
+        if(action==='email'){
+          if(entry.status!=='angefragt') entry.status='angefragt';
+          writeState(next);
+          render(next);
+          setInvoiceStatus(`E-Mail-Anfrage als Demo gespeichert für ${entry.id}. Es wird keine echte E-Mail gesendet.`);
+        }
+      });
+    }
+
+    const historyList=$('[data-account-field="rideHistory"]',root);
+    if(historyList){
+      historyList.addEventListener('click',event=>{
+        const button=event.target.closest('[data-account-ride-action="rebook"]');
+        if(!button) return;
+
+        const rideId=String(button.dataset.rideId || '').trim();
+        if(!rideId) return;
+
+        const next=readState();
+        const entry=next.rideHistory.find(item=>String(item?.id || '')===rideId);
+        if(!entry) return;
+        rebookRide(entry);
+      });
+    }
+
     const settingsForm=$('[data-account-action="save-settings"]',root);
     const settingsStatus=$('[data-account-field="settingsStatus"]',root);
+    const settingsResetButton=$('[data-account-action="reset-settings"]',root);
+    const settingsExportButton=$('[data-account-action="export-data"]',root);
+    const settingsDeleteButton=$('[data-account-action="delete-account"]',root);
+
+    function setSettingsStatus(message){
+      if(settingsStatus) settingsStatus.textContent=message;
+    }
+
+    function sanitizeSettingText(value,maxLength){
+      return String(value || '').trim().slice(0,maxLength);
+    }
+
+    function normalizeLanguage(value){
+      const lang=String(value || '').trim().toLowerCase();
+      return lang==='en' || lang==='tr' ? lang : 'de';
+    }
+
+    function buildSettingsFromInputs(){
+      const displayNameInput=$('[data-account-setting="displayName"]',root);
+      const phoneInput=$('[data-account-setting="phone"]',root);
+      const emailInput=$('[data-account-setting="email"]',root);
+      const languageInput=$('[data-account-setting="language"]',root);
+      const notifyRideInput=$('[data-account-setting="notifyRideUpdates"]',root);
+      const notifyRewardsInput=$('[data-account-setting="notifyRewardsUpdates"]',root);
+      const notifyVouchersInput=$('[data-account-setting="notifyVouchers"]',root);
+      const notifyEmailInput=$('[data-account-setting="notifyEmail"]',root);
+
+      return {
+        displayName:sanitizeSettingText(displayNameInput?.value || DEFAULT_STATE.settings.displayName,80) || DEFAULT_STATE.settings.displayName,
+        phone:sanitizeSettingText(phoneInput?.value || DEFAULT_STATE.settings.phone,40) || DEFAULT_STATE.settings.phone,
+        email:sanitizeSettingText(emailInput?.value || DEFAULT_STATE.settings.email,120) || DEFAULT_STATE.settings.email,
+        language:normalizeLanguage(languageInput?.value || DEFAULT_STATE.settings.language),
+        notifications:{
+          rideUpdates:Boolean(notifyRideInput?.checked),
+          rewardsUpdates:Boolean(notifyRewardsInput?.checked),
+          vouchers:Boolean(notifyVouchersInput?.checked),
+          emailNotifications:Boolean(notifyEmailInput?.checked)
+        }
+      };
+    }
+
     if(settingsForm){
       settingsForm.addEventListener('submit',event=>{
         event.preventDefault();
         const next=readState();
-        const phoneInput=$('[data-account-setting="phone"]',root);
-        const emailInput=$('[data-account-setting="email"]',root);
-        const privacyInput=$('[data-account-setting="privacyAccepted"]',root);
-        const notifyInput=$('[data-account-setting="notificationsEnabled"]',root);
-
-        next.settings.phone=String(phoneInput?.value || '').trim();
-        next.settings.email=String(emailInput?.value || '').trim();
-        next.settings.privacyAccepted=Boolean(privacyInput?.checked);
-        next.settings.notificationsEnabled=Boolean(notifyInput?.checked);
+        next.settings=buildSettingsFromInputs();
+        next.profile.name=next.settings.displayName || DEFAULT_STATE.profile.name;
 
         writeState(next);
         render(next);
-        if(settingsStatus){
-          settingsStatus.textContent=`Einstellungen lokal gespeichert (${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}).`;
-        }
+        setSettingsStatus(`Einstellungen lokal gespeichert (${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}).`);
       });
     }
+
+    if(settingsResetButton){
+      settingsResetButton.addEventListener('click',()=>{
+        const next=readState();
+        next.settings=JSON.parse(JSON.stringify(DEFAULT_STATE.settings));
+        next.profile.name=DEFAULT_STATE.profile.name;
+        writeState(next);
+        render(next);
+        setSettingsStatus('Einstellungen auf Demo-Standard zurückgesetzt.');
+      });
+    }
+
+    if(settingsExportButton){
+      settingsExportButton.addEventListener('click',()=>{
+        const current=readState();
+        const exportPayload={
+          exportType:'taxi-customer-account-demo',
+          exportedAt:new Date().toISOString(),
+          profile:{
+            name:String(current.profile?.name || DEFAULT_STATE.profile.name),
+            memberSince:String(current.profile?.memberSince || DEFAULT_STATE.profile.memberSince),
+            customerStatus:String(current.profile?.customerStatus || DEFAULT_STATE.profile.customerStatus)
+          },
+          settings:current.settings,
+          rideHistory:current.rideHistory
+        };
+
+        const blob=new Blob([JSON.stringify(exportPayload,null,2)],{type:'application/json;charset=utf-8'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url;
+        a.download=`taxi-account-demo-export-${Date.now()}.json`;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setSettingsStatus('Demo-Datenexport wurde lokal erstellt.');
+      });
+    }
+
+    if(settingsDeleteButton){
+      settingsDeleteButton.addEventListener('click',()=>{
+        const next=mergeDefaults(null);
+        writeState(next);
+        render(next);
+        setSettingsStatus('Demo-Konto wurde lokal zurückgesetzt (keine echte Löschung).');
+      });
+    }
+
+  }
+
+  function initRideStatusTracking(){
+    const root=$('#ride-status.ride-status-page');
+    if(!root) return;
+
+    const timeline=$('[data-ride-track-timeline]',root);
+    const badge=$('[data-ride-track-badge]',root);
+    const summary=$('[data-ride-track-summary]',root);
+    const routeNode=$('[data-ride-track-route]',root);
+    const driverNameNode=$('[data-ride-track-driver-name]',root);
+    const vehicleNode=$('[data-ride-track-vehicle]',root);
+    const plateNode=$('[data-ride-track-plate]',root);
+    const etaNode=$('[data-ride-track-eta]',root);
+    const phoneNode=$('[data-ride-track-phone]',root);
+    const completeNode=$('[data-ride-track-complete]',root);
+    const feedbackNode=$('[data-ride-track-feedback]',root);
+    let timerId=0;
+
+    function setFeedback(message){
+      if(!feedbackNode) return;
+      feedbackNode.textContent=message;
+      feedbackNode.hidden=!message;
+    }
+
+    function renderRideStatus(){
+      const snapshot=resolveRideTrackingSnapshot(true);
+      if(!snapshot || !timeline) return;
+
+      if(badge) badge.textContent=snapshot.statusLabel;
+      if(summary) summary.textContent=`${snapshot.customerName}, Ihre Fahrt von ${snapshot.pickup} nach ${snapshot.destination} befindet sich aktuell im Status „${snapshot.statusLabel}“.`;
+      if(routeNode) routeNode.textContent=snapshot.route;
+      if(driverNameNode) driverNameNode.textContent=snapshot.driverName;
+      if(vehicleNode) vehicleNode.textContent=snapshot.vehicleType;
+      if(plateNode) plateNode.textContent=snapshot.licensePlate;
+      if(etaNode) etaNode.textContent=snapshot.arrivalText;
+      if(phoneNode) phoneNode.setAttribute('href',`tel:${snapshot.phone}`);
+      if(completeNode) completeNode.hidden=!snapshot.isCompleted;
+
+      timeline.innerHTML='';
+      snapshot.steps.forEach(step=>{
+        const li=document.createElement('li');
+        if(step.isComplete) li.classList.add('is-complete');
+        if(step.isActive) li.classList.add('is-active');
+
+        const dot=document.createElement('span');
+        dot.className='ride-track-dot';
+        dot.setAttribute('aria-hidden','true');
+
+        const copy=document.createElement('div');
+        copy.className='ride-track-step';
+        const title=document.createElement('strong');
+        title.textContent=step.label;
+        const detail=document.createElement('small');
+        detail.textContent=step.detail;
+        copy.append(title,detail);
+
+        li.append(dot,copy);
+        timeline.append(li);
+      });
+    }
+
+    renderRideStatus();
+    document.addEventListener('ride-tracking:update',renderRideStatus);
+    timerId=window.setInterval(renderRideStatus,10000);
+
+    root.addEventListener('click',event=>{
+      const actionButton=event.target.closest('[data-current-ride-action]');
+      if(!actionButton) return;
+
+      const action=String(actionButton.dataset.currentRideAction || '').trim().toLowerCase();
+      const snapshot=resolveRideTrackingSnapshot(true);
+      if(!snapshot) return;
+
+      if(action==='rate'){
+        writeRideTrackingState({...snapshot,ratingSubmitted:true});
+        setFeedback('Danke. Ihre Bewertung ist als Demo vorgemerkt und wird später mit dem Kundenkonto verbunden.');
+        renderRideStatus();
+        return;
+      }
+
+      if(action==='rebook'){
+        writeBookingRebookState({pickup:snapshot.pickup,destination:snapshot.destination,rideType:snapshot.rideType});
+        saveBookingBridgeState({pickup:snapshot.pickup,destination:snapshot.destination,rideType:snapshot.rideType});
+        window.location.href='index.html?page=booking';
+        return;
+      }
+    });
+
+    window.addEventListener('beforeunload',()=>{
+      if(timerId) clearInterval(timerId);
+    },{once:true});
   }
   function hideSplash(){
     const splash=document.getElementById('splash');
@@ -5955,6 +6554,7 @@
     initFaqCenter();
     initCookieBanner();
     initContactRequestForm();
+    initRideStatusTracking();
     initCustomerAccountRewardsBridge();
     initRewardsEngine();
     initRewardsWheel();

@@ -70,6 +70,28 @@
             <p class="account-card-note">Struktur vorbereitet für spätere Profil-API und Authentifizierung.</p>
         </article>
 
+        <article class="account-card" data-account-card="current-ride">
+          <div class="account-card-head">
+            <h3>Meine aktuelle Fahrt</h3>
+            <small data-account-field="currentRideBadge">Status: Anfrage eingegangen</small>
+          </div>
+          <div class="account-current-ride-head">
+            <strong data-account-field="currentRideRoute">Germersheim Zentrum → Speyer</strong>
+            <span data-account-field="currentRideEta">Voraussichtliche Ankunft: 12 Min.</span>
+          </div>
+          <ul class="account-list account-current-ride-list" aria-label="Aktuelle Fahrt Übersicht">
+            <li><span>Fahrer</span><b data-account-field="currentRideDriver">Michael Becker</b></li>
+            <li><span>Fahrzeug</span><b data-account-field="currentRideVehicle">Mercedes E-Klasse</b></li>
+            <li><span>Kennzeichen</span><b data-account-field="currentRidePlate">GER-TG 247</b></li>
+            <li><span>Nächster Schritt</span><b data-account-field="currentRideStep">Fahrer zugewiesen</b></li>
+          </ul>
+          <div class="account-current-ride-actions">
+            <a class="button" href="index.html?page=ride-status">Tracking öffnen</a>
+            <a class="button secondary" href="tel:072743567" data-account-field="currentRidePhoneButton">Fahrer anrufen</a>
+          </div>
+          <p class="account-card-note" data-account-field="currentRideNote">Status wird als Demo automatisch über lokalen Speicher simuliert.</p>
+        </article>
+
         <article class="account-card account-card-wide" data-account-card="ride-history">
           <div class="account-card-head">
             <h3>Fahrtenhistorie</h3>
@@ -77,12 +99,12 @@
           </div>
           <div class="account-history-head" aria-hidden="true">
             <span>Datum</span>
-            <span>Fahrtart</span>
-            <span>Start</span>
+            <span>Abholort</span>
             <span>Ziel</span>
+            <span>Fahrtart</span>
             <span>Preis</span>
             <span>Punkte</span>
-            <span>Gutschein</span>
+            <span>Aktion</span>
           </div>
           <ul class="account-history-list" data-account-field="rideHistory" aria-label="Fahrtenhistorie"></ul>
         </article>
@@ -105,10 +127,11 @@
 
         <article class="account-card" data-account-card="invoices">
           <div class="account-card-head">
-            <h3>Rechnungen / Belege</h3>
-            <small>Demo-Liste mit Status</small>
+            <h3>Rechnungen & Belege</h3>
+            <small>Demo-Liste für spätere Konto-Belege</small>
           </div>
           <ul class="account-invoice-list" data-account-field="invoices" aria-label="Rechnungen und Belege"></ul>
+          <p class="account-settings-status" data-account-field="invoiceStatus">Anzeigen, PDF vorbereiten und per E-Mail anfragen sind als Demo vorbereitet.</p>
         </article>
 
         <article class="account-card" data-account-card="notifications">
@@ -122,27 +145,70 @@
         <article class="account-card" data-account-card="settings">
           <div class="account-card-head">
             <h3>Einstellungen</h3>
-            <small>Kontakt und Datenschutz</small>
+            <small>Profil, Benachrichtigungen und Datenschutz</small>
           </div>
           <form class="account-settings-form" data-account-action="save-settings" aria-label="Konto Einstellungen">
-            <label for="accountPhone">Telefonnummer</label>
-            <input id="accountPhone" name="phone" type="tel" data-account-setting="phone" placeholder="07274 3567">
+            <section class="account-settings-group" aria-label="Profil Einstellungen">
+              <h4>Profil</h4>
+              <div class="account-settings-grid">
+                <label for="accountDisplayName">Name</label>
+                <input id="accountDisplayName" name="displayName" type="text" data-account-setting="displayName" placeholder="Max Mustermann" maxlength="80" autocomplete="name">
 
-            <label for="accountEmail">E-Mail</label>
-            <input id="accountEmail" name="email" type="email" data-account-setting="email" placeholder="name@beispiel.de">
+                <label for="accountPhone">Telefonnummer</label>
+                <input id="accountPhone" name="phone" type="tel" data-account-setting="phone" placeholder="07274 3567" maxlength="40" autocomplete="tel">
 
-            <label class="account-checkbox-row" for="accountPrivacy">
-              <input id="accountPrivacy" name="privacyAccepted" type="checkbox" data-account-setting="privacyAccepted">
-              <span>Datenschutz akzeptiert</span>
-            </label>
+                <label for="accountEmail">E-Mail</label>
+                <input id="accountEmail" name="email" type="email" data-account-setting="email" placeholder="demo@taxi-germersheim.de" maxlength="120" autocomplete="email">
 
-            <label class="account-checkbox-row" for="accountNotify">
-              <input id="accountNotify" name="notificationsEnabled" type="checkbox" data-account-setting="notificationsEnabled">
-              <span>Benachrichtigungen aktivieren</span>
-            </label>
+                <label for="accountLanguage">Bevorzugte Sprache</label>
+                <select id="accountLanguage" name="language" data-account-setting="language">
+                  <option value="de">Deutsch</option>
+                  <option value="en">Englisch</option>
+                  <option value="tr">Türkisch</option>
+                </select>
+              </div>
+            </section>
 
-            <button class="button" type="submit">Einstellungen speichern</button>
-            <p class="account-settings-status" data-account-field="settingsStatus">Änderungen werden lokal im Browser gespeichert.</p>
+            <section class="account-settings-group" aria-label="Benachrichtigungseinstellungen">
+              <h4>Benachrichtigungen</h4>
+              <div class="account-settings-toggle-grid">
+                <label class="account-checkbox-row" for="accountNotifyRideUpdates">
+                  <input id="accountNotifyRideUpdates" name="notifyRideUpdates" type="checkbox" data-account-setting="notifyRideUpdates">
+                  <span>Fahrt-Updates</span>
+                </label>
+
+                <label class="account-checkbox-row" for="accountNotifyRewardsUpdates">
+                  <input id="accountNotifyRewardsUpdates" name="notifyRewardsUpdates" type="checkbox" data-account-setting="notifyRewardsUpdates">
+                  <span>Rewards-Updates</span>
+                </label>
+
+                <label class="account-checkbox-row" for="accountNotifyVouchers">
+                  <input id="accountNotifyVouchers" name="notifyVouchers" type="checkbox" data-account-setting="notifyVouchers">
+                  <span>Gutscheine</span>
+                </label>
+
+                <label class="account-checkbox-row" for="accountNotifyEmail">
+                  <input id="accountNotifyEmail" name="notifyEmail" type="checkbox" data-account-setting="notifyEmail">
+                  <span>E-Mail-Benachrichtigungen</span>
+                </label>
+              </div>
+            </section>
+
+            <section class="account-settings-group" aria-label="Datenschutzbereich">
+              <h4>Datenschutz</h4>
+              <p class="account-settings-note">Demo-Modus: Aktionen sind vorbereitet und werden nur lokal simuliert.</p>
+              <div class="account-settings-privacy-actions">
+                <button class="button secondary" type="button" data-account-action="export-data">Daten exportieren</button>
+                <button class="button secondary" type="button" data-account-action="delete-account">Konto löschen (Demo)</button>
+                <a class="button secondary" href="datenschutz.html" target="_blank" rel="noreferrer">Datenschutzerklärung öffnen</a>
+              </div>
+            </section>
+
+            <div class="account-settings-submit-actions">
+              <button class="button" type="submit">Änderungen speichern</button>
+              <button class="button secondary" type="button" data-account-action="reset-settings">Zurücksetzen</button>
+            </div>
+            <p class="account-settings-status" data-account-field="settingsStatus">Nur Demo-Werte werden lokal im Browser gespeichert.</p>
           </form>
         </article>
       </section>

@@ -110,9 +110,39 @@ body:before{content:'';position:fixed;inset:0;background:radial-gradient(circle 
 
 .booking-premium .request-prep{margin-top:14px}
 
+.ride-status-page{display:none;padding:8px 0 24px}
+.ride-status-page.active{display:block}
+.ride-status-page .ride-track-hero p{max-width:760px;line-height:1.7}
+.ride-track-layout{display:grid;grid-template-columns:minmax(0,1.15fr) 360px;gap:18px;align-items:start}
+.ride-track-panel,.ride-track-side{display:grid;gap:14px}
+.ride-track-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ride-track-panel-head h3,.ride-track-side h3{margin:0;font-family:var(--serif);font-size:30px;line-height:1.05}
+.ride-track-badge{display:inline-flex;align-items:center;min-height:34px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,217,106,.32);background:rgba(255,217,106,.1);color:#ffe8a7;font-size:12px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
+.ride-track-timeline{list-style:none;margin:0;padding:0 0 0 8px;display:grid;gap:10px}
+.ride-track-timeline li{position:relative;display:grid;grid-template-columns:34px minmax(0,1fr);gap:14px;align-items:start;padding:0 0 0 10px}
+.ride-track-timeline li:not(:last-child):after{content:'';position:absolute;left:16px;top:34px;bottom:-18px;width:2px;background:rgba(255,255,255,.12)}
+.ride-track-dot{width:16px;height:16px;border-radius:50%;margin-top:5px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);box-shadow:0 0 0 5px rgba(255,255,255,.02)}
+.ride-track-step{display:grid;gap:4px;padding:12px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
+.ride-track-step strong{font-size:15px;line-height:1.35;color:#fff}
+.ride-track-step small{margin:0;color:rgba(255,255,255,.68)!important;font-size:12px;line-height:1.5;letter-spacing:0;text-transform:none}
+.ride-track-timeline li.is-complete .ride-track-dot{border-color:rgba(255,217,106,.52);background:linear-gradient(135deg,#ffe47d,#d5a437);box-shadow:0 0 0 6px rgba(255,217,106,.12)}
+.ride-track-timeline li.is-complete .ride-track-step{border-color:rgba(255,217,106,.22);background:rgba(255,217,106,.06)}
+.ride-track-timeline li.is-active .ride-track-dot{border-color:rgba(255,217,106,.9);background:#ffe47d;box-shadow:0 0 0 7px rgba(255,217,106,.18),0 0 26px rgba(255,217,106,.16)}
+.ride-track-timeline li.is-active .ride-track-step{border-color:rgba(255,217,106,.42);background:linear-gradient(150deg,rgba(255,217,106,.12),rgba(255,255,255,.04))}
+.ride-track-driver-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ride-track-driver-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start;min-height:42px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
+.ride-track-driver-list span{color:rgba(255,255,255,.72);font-size:13px;line-height:1.4}
+.ride-track-driver-list b{color:#ffe8a7;font-size:13px;letter-spacing:.03em;text-transform:uppercase;text-align:right}
+.ride-track-side-actions,.ride-track-complete-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ride-track-side-actions .button,.ride-track-complete-actions .button{min-height:46px;border-radius:12px}
+.ride-track-complete{display:grid;gap:10px;padding:12px;border-radius:16px;border:1px solid rgba(255,217,106,.24);background:rgba(255,217,106,.07)}
+.ride-track-complete-note{margin:0;color:#ffe8a7!important;font-size:13px;line-height:1.55}
+.ride-track-feedback{margin:0;padding:11px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:13px;line-height:1.5}
+
 @media(max-width:1080px){
   .booking-premium .pb-shell{grid-template-columns:1fr}
   .booking-premium .pb-summary{position:static;top:auto}
+  .ride-track-layout{grid-template-columns:1fr}
 }
 
 @media(max-width:740px){
@@ -132,6 +162,13 @@ body:before{content:'';position:fixed;inset:0;background:radial-gradient(circle 
   .booking-premium .pb-yumak-route-card p{font-size:13px}
   .booking-premium .pb-step-feedback{font-size:12px}
   .booking-premium .pb-summary li{grid-template-columns:100px 1fr}
+  .ride-track-panel-head{grid-template-columns:1fr;display:grid}
+  .ride-track-panel-head h3,.ride-track-side h3{font-size:25px}
+  .ride-track-timeline li{grid-template-columns:28px minmax(0,1fr);gap:10px;padding-left:4px}
+  .ride-track-timeline li:not(:last-child):after{left:13px}
+  .ride-track-driver-list li{grid-template-columns:1fr}
+  .ride-track-driver-list b{text-align:left}
+  .ride-track-side-actions,.ride-track-complete-actions{grid-template-columns:1fr}
 }
 .panel,.selected,.extra{border-radius:28px;padding:24px;margin-bottom:16px;border-color:rgba(255,217,106,.22)}.panel small,.selected small{display:block;color:var(--gold);font-weight:950;letter-spacing:.18em;font-size:12px;margin-bottom:10px}.panel h1,.selected h2{font-family:var(--serif);font-size:38px;line-height:1;margin:0 0 12px}.panel p{color:var(--muted);font-size:19px;line-height:1.35;margin:0}.selected h2{font-size:34px;margin:0}.service-label{height:54px;border-radius:999px;border:1px solid rgba(255,217,106,.35);background:rgba(255,217,106,.09);display:grid;place-items:center;color:var(--gold);font-weight:950;letter-spacing:.18em;margin:0 0 16px}
 .trip-grid,.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}.trip-grid button,.type-grid button{height:78px;border-radius:24px;background:linear-gradient(145deg,rgba(20,21,27,.96),rgba(8,9,12,.96));border:1px solid rgba(255,255,255,.10);display:grid;grid-template-columns:34px 1fr;align-items:center;gap:10px;padding:0 14px;text-align:left;color:#fff;overflow:hidden}.trip-grid i,.type-grid i{width:30px;height:30px;border-radius:12px;display:grid;place-items:center;color:var(--gold);padding:6px;background:rgba(255,217,106,.07);border:1px solid rgba(255,217,106,.20)}.trip-grid .active,.type-grid .active{background:linear-gradient(135deg,#ffe47d,#d5a437);color:#111}.trip-grid .active i,.type-grid .active i{color:#111}.trip-grid b,.type-grid b{font-size:16px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.type-grid button{height:92px;grid-template-columns:46px 1fr}
@@ -2603,16 +2640,24 @@ input:focus,textarea:focus,select:focus,
 
 #account.account-page .account-card-wide{grid-column:span 12}
 #account.account-page .account-card-note{margin:0;color:rgba(255,255,255,.72)!important;font-size:13px;line-height:1.55}
+#account.account-page .account-current-ride-head{display:grid;gap:6px}
+#account.account-page .account-current-ride-head strong{font-size:20px;line-height:1.2;font-family:var(--serif);color:#fff}
+#account.account-page .account-current-ride-head span{color:#ffe8a7!important;font-size:13px;line-height:1.5}
+#account.account-page .account-current-ride-list li b{text-transform:none;text-align:right}
+#account.account-page .account-current-ride-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#account.account-page .account-current-ride-actions .button{min-height:44px;border-radius:12px}
 #account.account-page .account-profile-kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 #account.account-page .account-profile-kpis li{grid-template-columns:1fr;align-content:start;min-height:78px;padding:12px}
 #account.account-page .account-profile-kpis li b{font-size:15px}
 
-#account.account-page .account-history-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
+#account.account-page .account-history-head{display:grid;grid-template-columns:1.05fr 1.4fr 1.4fr 1.1fr .9fr .8fr auto;gap:8px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
 #account.account-page .account-history-head span{color:rgba(255,255,255,.62)!important;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:900;line-height:1.4}
 #account.account-page .account-history-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-#account.account-page .account-history-list li{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:start;min-height:42px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
+#account.account-page .account-history-list li{display:grid;grid-template-columns:1.05fr 1.4fr 1.4fr 1.1fr .9fr .8fr auto;gap:8px;align-items:start;min-height:42px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
 #account.account-page .account-history-list span{color:#fff;font-size:13px;line-height:1.45;word-break:break-word}
 #account.account-page .account-history-list span b{display:block;color:#ffe8a7;font-size:10px;line-height:1.25;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+#account.account-page .account-history-action{display:flex;justify-content:flex-end;align-items:center}
+#account.account-page .account-history-rebook{min-height:36px;padding:0 12px;border-radius:10px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
 
 #account.account-page .account-inline-form{display:grid;gap:8px}
 #account.account-page .account-inline-form label{margin:0;color:rgba(255,255,255,.76);font-size:12px;letter-spacing:.05em;text-transform:uppercase}
@@ -2637,6 +2682,10 @@ input:focus,textarea:focus,select:focus,
 #account.account-page .account-invoice-status.is-open{border:1px solid rgba(255,224,143,.42);background:rgba(193,146,36,.2);color:#ffeec3}
 #account.account-page .account-invoice-status.is-requested{border:1px solid rgba(184,204,255,.4);background:rgba(78,116,190,.22);color:#deebff}
 #account.account-page .account-invoice-meta{margin:0;color:rgba(255,255,255,.74)!important;font-size:12px;line-height:1.45}
+#account.account-page .account-invoice-route{margin:0;color:#fff!important;font-size:13px;line-height:1.5}
+#account.account-page .account-invoice-route b{color:#ffe8a7;font-size:10px;line-height:1.25;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+#account.account-page .account-invoice-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#account.account-page .account-invoice-actions .button{min-height:40px;border-radius:10px;padding:0 10px;font-size:11px;letter-spacing:.05em;text-transform:uppercase}
 
 #account.account-page .account-notification-list li{grid-template-columns:auto minmax(0,1fr);align-items:start;column-gap:10px}
 #account.account-page .account-notification-dot{width:12px;height:12px;margin-top:3px;border-radius:50%;background:linear-gradient(135deg,#ffe8a8,#d7a640);box-shadow:0 0 0 1px rgba(255,217,106,.3),0 0 12px rgba(255,217,106,.26)}
@@ -2646,11 +2695,22 @@ input:focus,textarea:focus,select:focus,
 #account.account-page .account-settings-form{display:grid;gap:10px}
 #account.account-page .account-settings-form label{margin:0;color:rgba(255,255,255,.74)!important;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
 #account.account-page .account-settings-form input[type='tel'],
-#account.account-page .account-settings-form input[type='email']{height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03);color:#fff;padding:0 12px;font-size:14px}
+#account.account-page .account-settings-form input[type='email'],
+#account.account-page .account-settings-form input[type='text'],
+#account.account-page .account-settings-form select{height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03);color:#fff;padding:0 12px;font-size:14px}
+#account.account-page .account-settings-form select option{color:#0e0f13;background:#16171d}
+#account.account-page .account-settings-group{display:grid;gap:10px;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.02)}
+#account.account-page .account-settings-group h4{margin:0;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#ffe8a7}
+#account.account-page .account-settings-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:10px;row-gap:8px;align-items:center}
+#account.account-page .account-settings-toggle-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 #account.account-page .account-checkbox-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);cursor:pointer}
 #account.account-page .account-checkbox-row input{width:18px;height:18px;accent-color:#d6a340}
 #account.account-page .account-checkbox-row span{font-size:13px;line-height:1.4;color:#fff}
-#account.account-page .account-settings-form .button{margin-top:4px;width:100%;min-height:46px;border-radius:12px}
+#account.account-page .account-settings-note{margin:0;color:rgba(255,255,255,.72)!important;font-size:12px;line-height:1.5}
+#account.account-page .account-settings-privacy-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#account.account-page .account-settings-privacy-actions .button{min-height:42px;border-radius:10px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;text-align:center;justify-content:center;display:inline-flex;align-items:center}
+#account.account-page .account-settings-submit-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#account.account-page .account-settings-submit-actions .button{margin-top:0;min-height:46px;border-radius:12px}
 #account.account-page .account-settings-status{margin:0;color:rgba(255,255,255,.72)!important;font-size:12px;line-height:1.5}
 
 @media(max-width:1100px){
@@ -2674,10 +2734,18 @@ input:focus,textarea:focus,select:focus,
   #account.account-page .account-list li b{text-align:left}
   #account.account-page .account-history-head{display:none}
   #account.account-page .account-history-list li{grid-template-columns:1fr}
+  #account.account-page .account-current-ride-actions{grid-template-columns:1fr}
+  #account.account-page .account-history-action{justify-content:flex-start}
+  #account.account-page .account-history-rebook{width:100%;min-height:42px}
   #account.account-page .account-inline-input{grid-template-columns:1fr}
   #account.account-page .account-favorite-actions{grid-template-columns:1fr}
   #account.account-page .account-favorite-top{grid-template-columns:1fr}
   #account.account-page .account-favorite-top b{text-align:left}
+  #account.account-page .account-invoice-actions{grid-template-columns:1fr}
+  #account.account-page .account-settings-grid{grid-template-columns:1fr}
+  #account.account-page .account-settings-toggle-grid{grid-template-columns:1fr}
+  #account.account-page .account-settings-privacy-actions{grid-template-columns:1fr}
+  #account.account-page .account-settings-submit-actions{grid-template-columns:1fr}
 }
 
 @media(max-width:420px){
