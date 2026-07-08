@@ -47,13 +47,13 @@
         <p>Diese erste Version ist als hochwertiges Design- und Struktur-Fundament vorbereitet. Registrierung, Login und Datenanbindung folgen in einem späteren Schritt.</p>
       </article>
 
-      <p class="account-maintenance-note">Strukturhinweis: Jede Karte kann später direkt über data-account-card und data-account-field mit echten Datenquellen verbunden werden.</p>
+      <p class="account-maintenance-note">Demo-Modus aktiv: Keine echte Anmeldung und keine Datenbank. Alle Einträge werden lokal gespeichert und sind für spätere Backend-Anbindung vorbereitet.</p>
 
       <section class="account-grid" aria-label="Kundenkonto Dashboard">
-        <article class="account-card account-card-profile" data-account-card="profile">
+        <article class="account-card account-card-profile" data-account-card="profile-dashboard">
           <div class="account-card-head">
-            <h3>Profil</h3>
-            <small>Status: Platzhalter</small>
+            <h3>Profil-Dashboard</h3>
+            <small data-account-field="statusBadge">Status: Premium Kunde</small>
           </div>
           <div class="account-profile-wrap">
             <img class="account-avatar" src="assets/icons/account-avatar-placeholder.svg" alt="Profilbild Platzhalter" loading="lazy" data-account-field="profileImage">
@@ -62,76 +62,87 @@
               <span data-account-field="memberSince">Mitglied seit: Januar 2026</span>
             </div>
           </div>
-          <div class="account-actions" aria-label="Konto Aktionen">
-            <button class="button" type="button">Anmelden</button>
-            <button class="button" type="button">Registrieren</button>
-            <button class="button" type="button">Später abmelden</button>
-          </div>
-        </article>
-
-        <article class="account-card" data-account-card="rewards">
-          <div class="account-card-head">
-            <h3>Rewards</h3>
-            <small>Vorteilsprogramm</small>
-          </div>
-          <ul class="account-list" aria-label="Rewards Übersicht">
-            <li><span>Rewards-Level</span><b data-account-field="rewardsLevel">Gold</b></li>
+          <ul class="account-list account-profile-kpis" aria-label="Profil Kennzahlen">
+            <li><span>Kundenstatus</span><b data-account-field="customerStatus">Premium Kunde</b></li>
             <li><span>Punkte</span><b data-account-field="points">230</b></li>
+            <li><span>Gutschein-Guthaben</span><b data-account-field="voucherBalance">15,00 EUR</b></li>
           </ul>
+          <p class="account-card-note">Struktur vorbereitet fuer spaetere Profil-API und Authentifizierung.</p>
         </article>
 
-        <article class="account-card" data-account-card="badges">
+        <article class="account-card account-card-wide" data-account-card="ride-history">
           <div class="account-card-head">
-            <h3>Abzeichen</h3>
-            <small>Erreichte Meilensteine</small>
+            <h3>Fahrtenhistorie</h3>
+            <small>Letzte Fahrten im Demo-Konto</small>
           </div>
-          <p class="account-badge-intro">6 von 14 Abzeichen freigeschaltet. Die vollständige Übersicht liegt im Rewards-Bereich.</p>
-          <div class="account-badges" data-account-field="badges">
-            <span class="is-unlocked">Erste Fahrt</span>
-            <span class="is-unlocked">Stammkunde</span>
-            <span class="is-unlocked">Flughafen-Profi</span>
-            <span class="is-unlocked">Nachtfahrer</span>
-            <span class="is-unlocked">Helfende Hand</span>
-            <span class="is-locked">Germersheim Legend</span>
-            <span class="is-locked is-secret">Geheimnisvolles Abzeichen</span>
+          <div class="account-history-head" aria-hidden="true">
+            <span>Datum</span>
+            <span>Fahrtart</span>
+            <span>Start</span>
+            <span>Ziel</span>
+            <span>Preis</span>
+            <span>Punkte</span>
+            <span>Gutschein</span>
           </div>
-          <a class="button account-badge-link" href="rewards.html">Alle Abzeichen ansehen</a>
+          <ul class="account-history-list" data-account-field="rideHistory" aria-label="Fahrtenhistorie"></ul>
         </article>
 
         <article class="account-card" data-account-card="favorite-addresses">
           <div class="account-card-head">
             <h3>Lieblingsadressen</h3>
-            <small>Schnellauswahl</small>
+            <small>Schnellauswahl fuer Buchungen</small>
           </div>
-          <ul class="account-list" data-account-field="favoriteAddresses" aria-label="Lieblingsadressen">
-            <li><span>Zuhause</span><b>Germersheim Zentrum</b></li>
-            <li><span>Arbeit</span><b>Industriegebiet Süd</b></li>
-            <li><span>Regelziel</span><b>Bahnhof Germersheim</b></li>
-          </ul>
+          <ul class="account-list" data-account-field="favoriteAddresses" aria-label="Lieblingsadressen"></ul>
+          <form class="account-inline-form" data-account-action="add-address">
+            <label for="accountCustomAddress">Eigene Adresse hinzufuegen</label>
+            <div class="account-inline-input">
+              <input id="accountCustomAddress" name="accountCustomAddress" type="text" placeholder="z. B. Karl-Friedrich-Strasse 12, Germersheim" maxlength="120">
+              <button class="button secondary" type="submit">Adresse speichern</button>
+            </div>
+          </form>
         </article>
 
-        <article class="account-card" data-account-card="booking-history">
+        <article class="account-card" data-account-card="invoices">
           <div class="account-card-head">
-            <h3>Buchungshistorie</h3>
-            <small>Letzte Fahrten</small>
+            <h3>Rechnungen / Belege</h3>
+            <small>Demo-Liste mit Status</small>
           </div>
-          <ul class="account-list" data-account-field="bookingHistory" aria-label="Buchungshistorie">
-            <li><span>18.06.2026</span><b>Germersheim → FRA</b></li>
-            <li><span>12.06.2026</span><b>Krankenfahrt Dialyse</b></li>
-            <li><span>04.06.2026</span><b>Bahnhof → Innenstadt</b></li>
-          </ul>
+          <ul class="account-invoice-list" data-account-field="invoices" aria-label="Rechnungen und Belege"></ul>
         </article>
 
-        <article class="account-card" data-account-card="vouchers">
+        <article class="account-card" data-account-card="notifications">
           <div class="account-card-head">
-            <h3>Gutschein-Guthaben</h3>
-            <small>Konto-Gutschrift</small>
+            <h3>Benachrichtigungen</h3>
+            <small>Aktuelle Hinweise im Konto</small>
           </div>
-          <ul class="account-list" data-account-field="vouchers" aria-label="Gutscheine">
-            <li><span>Verfügbares Guthaben</span><b>15 €</b></li>
-            <li><span>Anrechnung nächste Fahrt</span><b>Bis Fahrpreis-Höhe</b></li>
-            <li><span>Hinweis</span><b>Manuelle Anrechnung</b></li>
-          </ul>
+          <ul class="account-notification-list" data-account-field="notifications" aria-label="Benachrichtigungen"></ul>
+        </article>
+
+        <article class="account-card" data-account-card="settings">
+          <div class="account-card-head">
+            <h3>Einstellungen</h3>
+            <small>Kontakt und Datenschutz</small>
+          </div>
+          <form class="account-settings-form" data-account-action="save-settings" aria-label="Konto Einstellungen">
+            <label for="accountPhone">Telefonnummer</label>
+            <input id="accountPhone" name="phone" type="tel" data-account-setting="phone" placeholder="07274 3567">
+
+            <label for="accountEmail">E-Mail</label>
+            <input id="accountEmail" name="email" type="email" data-account-setting="email" placeholder="name@beispiel.de">
+
+            <label class="account-checkbox-row" for="accountPrivacy">
+              <input id="accountPrivacy" name="privacyAccepted" type="checkbox" data-account-setting="privacyAccepted">
+              <span>Datenschutz akzeptiert</span>
+            </label>
+
+            <label class="account-checkbox-row" for="accountNotify">
+              <input id="accountNotify" name="notificationsEnabled" type="checkbox" data-account-setting="notificationsEnabled">
+              <span>Benachrichtigungen aktivieren</span>
+            </label>
+
+            <button class="button" type="submit">Einstellungen speichern</button>
+            <p class="account-settings-status" data-account-field="settingsStatus">Aenderungen werden lokal im Browser gespeichert.</p>
+          </form>
         </article>
       </section>
     </section>

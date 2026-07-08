@@ -5457,61 +5457,261 @@
     const root=$('#account.account-page');
     if(!root) return;
 
-    let snapshot=null;
-    try{
-      snapshot=JSON.parse(localStorage.getItem('taxiRewardsEngineState') || '');
-    }catch(_err){
-      snapshot=null;
-    }
-    const points=Math.max(0,Math.round(Number(snapshot?.points) || 230));
-    const level=String(snapshot?.level?.label || 'Gold');
-    let voucherBalance=Math.max(0,Number(snapshot?.voucherBalance) || 15);
-    let rides=Array.isArray(snapshot?.rides?.history) ? snapshot.rides.history.slice(0,3) : [];
-
-    try{
-      const adminState=JSON.parse(localStorage.getItem('taxiRewardsAdminSettlementState') || '');
-      if(adminState && typeof adminState==='object'){
-        const customers=adminState.customers && typeof adminState.customers==='object' ? adminState.customers : {};
-        const maxCustomer=customers['cust-max'];
-        if(maxCustomer && typeof maxCustomer==='object'){
-          const balance=Number(maxCustomer.voucherBalance);
-          if(Number.isFinite(balance)) voucherBalance=Math.max(0,balance);
-        }
-        const settlements=Array.isArray(adminState.settlements) ? adminState.settlements : [];
-        if(settlements.length){
-          rides=settlements.slice(0,3).map(entry=>({
-            timestamp:entry.timestamp,
-            rideType:entry.rideType,
-            fare:entry.fare
-          }));
-        }
+    const STORAGE_KEY='taxiCustomerAccountDemoState';
+    const DEFAULT_STATE={
+      profile:{
+        name:'Max Mustermann',
+        memberSince:'Januar 2026',
+        customerStatus:'Premium Kunde',
+        points:230,
+        voucherBalance:15
+      },
+      rideHistory:[
+        {date:'18.06.2026',rideType:'Flughafentransfer',start:'Germersheim Zentrum',destination:'Frankfurt Flughafen Terminal 1',price:126.5,pointsEarned:18,voucherUsed:true},
+        {date:'12.06.2026',rideType:'Krankenfahrt',start:'Germersheim Nord',destination:'Dialysezentrum Speyer',price:48,pointsEarned:12,voucherUsed:false},
+        {date:'04.06.2026',rideType:'Taxifahrt',start:'Bahnhof Germersheim',destination:'Innenstadt Germersheim',price:14.8,pointsEarned:10,voucherUsed:false}
+      ],
+      favoriteAddresses:[
+        {label:'Zuhause',value:'Germersheim Zentrum'},
+        {label:'Arbeit',value:'Industriegebiet Sued'},
+        {label:'Bahnhof Germersheim',value:'Bahnhofstrasse 23, 76726 Germersheim'},
+        {label:'Krankenhaus',value:'Asklepios Suedpfalzklinik Germersheim'}
+      ],
+      invoices:[
+        {id:'RG-2026-0184',date:'18.06.2026',amount:126.5,status:'bezahlt'},
+        {id:'RG-2026-0171',date:'12.06.2026',amount:48,status:'offen'},
+        {id:'RG-2026-0163',date:'04.06.2026',amount:14.8,status:'angefragt'}
+      ],
+      notifications:[
+        {title:'Neue Punkte erhalten',text:'+18 Punkte wurden Ihrer letzten Fahrt gutgeschrieben.'},
+        {title:'Gutschein verfuegbar',text:'Ein neuer 5 EUR Gutschein steht fuer die naechste Fahrt bereit.'},
+        {title:'Fahrt bestaetigt',text:'Ihre geplante Fahrt am 20.06.2026 wurde bestaetigt.'},
+        {title:'Neues Abzeichen',text:'Abzeichen "Flughafen-Profi" wurde freigeschaltet.'}
+      ],
+      settings:{
+        phone:'07274 3567',
+        email:'max.mustermann@example.com',
+        privacyAccepted:true,
+        notificationsEnabled:true
       }
-    }catch(_err){
-      // Keep engine values if admin snapshot is not available.
+    };
+
+    function toEuro(value){
+      return `${Number(Math.max(0,Number(value) || 0)).toFixed(2).replace('.',',')} EUR`;
     }
 
-    const pointsNode=$('[data-account-field="points"]',root);
-    if(pointsNode) pointsNode.textContent=String(points);
-    const levelNode=$('[data-account-field="rewardsLevel"]',root);
-    if(levelNode) levelNode.textContent=level;
+    function mergeDefaults(base){
+      const data=base && typeof base==='object' ? base : {};
+      return {
+        profile:{...DEFAULT_STATE.profile,...(data.profile && typeof data.profile==='object' ? data.profile : {})},
+        rideHistory:Array.isArray(data.rideHistory) && data.rideHistory.length ? data.rideHistory : DEFAULT_STATE.rideHistory.slice(),
+        favoriteAddresses:Array.isArray(data.favoriteAddresses) && data.favoriteAddresses.length ? data.favoriteAddresses : DEFAULT_STATE.favoriteAddresses.slice(),
+        invoices:Array.isArray(data.invoices) && data.invoices.length ? data.invoices : DEFAULT_STATE.invoices.slice(),
+        notifications:Array.isArray(data.notifications) && data.notifications.length ? data.notifications : DEFAULT_STATE.notifications.slice(),
+        settings:{...DEFAULT_STATE.settings,...(data.settings && typeof data.settings==='object' ? data.settings : {})}
+      };
+    }
 
-    const voucherNode=$('[data-account-card="vouchers"] [data-account-field="vouchers"] li:first-child b',root);
-    if(voucherNode) voucherNode.textContent=`${voucherBalance.toFixed(2).replace('.',',')} EUR`;
+    function readState(){
+      try{
+        const parsed=JSON.parse(localStorage.getItem(STORAGE_KEY) || '');
+        return mergeDefaults(parsed);
+      }catch(_err){
+        return mergeDefaults(null);
+      }
+    }
 
-    const bookingList=$('[data-account-field="bookingHistory"]',root);
-    if(bookingList && rides.length){
-      bookingList.innerHTML='';
-      rides.forEach(entry=>{
-        const li=document.createElement('li');
-        const dateSpan=document.createElement('span');
-        const textBold=document.createElement('b');
-        const date=new Date(Number(entry.timestamp) || Date.now());
-        dateSpan.textContent=date.toLocaleDateString('de-DE');
-        const rideType=String(entry.rideType || 'taxi').toLowerCase();
-        const rideLabel=rideType==='medical' ? 'Krankenfahrt' : rideType==='airport' ? 'Flughafentransfer' : rideType==='wheelchair' ? 'Rollstuhlfahrt' : 'Taxifahrt';
-        textBold.textContent=`${rideLabel} - ${Number(entry.fare || 0).toFixed(2).replace('.',',')} EUR`;
-        li.append(dateSpan,textBold);
-        bookingList.append(li);
+    function writeState(next){
+      try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(next)); }catch(_err){}
+    }
+
+    function resolveRewardsSnapshot(){
+      let points=Math.max(0,Math.round(Number(DEFAULT_STATE.profile.points) || 0));
+      let voucherBalance=Math.max(0,Number(DEFAULT_STATE.profile.voucherBalance) || 0);
+
+      try{
+        const snapshot=JSON.parse(localStorage.getItem('taxiRewardsEngineState') || '');
+        points=Math.max(0,Math.round(Number(snapshot?.points) || points));
+        voucherBalance=Math.max(0,Number(snapshot?.voucherBalance) || voucherBalance);
+      }catch(_err){
+        // Keep account defaults when rewards state is unavailable.
+      }
+
+      try{
+        const adminState=JSON.parse(localStorage.getItem('taxiRewardsAdminSettlementState') || '');
+        const customers=adminState && typeof adminState==='object' && adminState.customers && typeof adminState.customers==='object' ? adminState.customers : null;
+        const maxCustomer=customers ? customers['cust-max'] : null;
+        const balance=Number(maxCustomer?.voucherBalance);
+        if(Number.isFinite(balance)) voucherBalance=Math.max(0,balance);
+      }catch(_err){
+        // Keep current voucher balance if admin snapshot cannot be parsed.
+      }
+
+      return {points,voucherBalance};
+    }
+
+    function createHistoryCell(label,value){
+      const span=document.createElement('span');
+      const tag=document.createElement('b');
+      tag.textContent=label;
+      span.append(tag,document.createTextNode(String(value || '-')));
+      return span;
+    }
+
+    function render(state){
+      const rewards=resolveRewardsSnapshot();
+      state.profile.points=rewards.points;
+      state.profile.voucherBalance=rewards.voucherBalance;
+
+      const profileName=$('[data-account-field="name"]',root);
+      const memberSince=$('[data-account-field="memberSince"]',root);
+      const statusBadge=$('[data-account-field="statusBadge"]',root);
+      const customerStatus=$('[data-account-field="customerStatus"]',root);
+      const pointsNode=$('[data-account-field="points"]',root);
+      const voucherNode=$('[data-account-field="voucherBalance"]',root);
+      if(profileName) profileName.textContent=String(state.profile.name || DEFAULT_STATE.profile.name);
+      if(memberSince) memberSince.textContent=`Mitglied seit: ${String(state.profile.memberSince || DEFAULT_STATE.profile.memberSince)}`;
+      if(statusBadge) statusBadge.textContent=`Status: ${String(state.profile.customerStatus || DEFAULT_STATE.profile.customerStatus)}`;
+      if(customerStatus) customerStatus.textContent=String(state.profile.customerStatus || DEFAULT_STATE.profile.customerStatus);
+      if(pointsNode) pointsNode.textContent=String(Math.max(0,Math.round(Number(state.profile.points) || 0)));
+      if(voucherNode) voucherNode.textContent=toEuro(state.profile.voucherBalance);
+
+      const historyList=$('[data-account-field="rideHistory"]',root);
+      if(historyList){
+        historyList.innerHTML='';
+        state.rideHistory.forEach(entry=>{
+          const li=document.createElement('li');
+          li.append(
+            createHistoryCell('Datum',entry?.date || '-'),
+            createHistoryCell('Fahrtart',entry?.rideType || '-'),
+            createHistoryCell('Start',entry?.start || '-'),
+            createHistoryCell('Ziel',entry?.destination || '-'),
+            createHistoryCell('Preis',toEuro(entry?.price)),
+            createHistoryCell('Punkte',`+${Math.max(0,Math.round(Number(entry?.pointsEarned) || 0))}`),
+            createHistoryCell('Gutschein',entry?.voucherUsed ? 'Ja' : 'Nein')
+          );
+          historyList.append(li);
+        });
+      }
+
+      const addressList=$('[data-account-field="favoriteAddresses"]',root);
+      if(addressList){
+        addressList.innerHTML='';
+        state.favoriteAddresses.forEach(item=>{
+          const li=document.createElement('li');
+          const left=document.createElement('span');
+          const right=document.createElement('b');
+          left.textContent=String(item?.label || 'Adresse');
+          right.textContent=String(item?.value || '-');
+          li.append(left,right);
+          addressList.append(li);
+        });
+      }
+
+      const invoiceList=$('[data-account-field="invoices"]',root);
+      if(invoiceList){
+        invoiceList.innerHTML='';
+        state.invoices.forEach(item=>{
+          const li=document.createElement('li');
+          const top=document.createElement('div');
+          top.className='account-invoice-top';
+
+          const title=document.createElement('strong');
+          title.textContent=String(item?.id || 'RG-0000');
+
+          const status=document.createElement('span');
+          const statusRaw=String(item?.status || 'offen').toLowerCase();
+          const statusLabel=statusRaw==='bezahlt' ? 'Bezahlt' : statusRaw==='angefragt' ? 'Angefragt' : 'Offen';
+          const statusClass=statusRaw==='bezahlt' ? 'is-paid' : statusRaw==='angefragt' ? 'is-requested' : 'is-open';
+          status.className=`account-invoice-status ${statusClass}`;
+          status.textContent=statusLabel;
+          top.append(title,status);
+
+          const meta=document.createElement('p');
+          meta.className='account-invoice-meta';
+          meta.textContent=`${String(item?.date || '-')} • ${toEuro(item?.amount)}`;
+
+          li.append(top,meta);
+          invoiceList.append(li);
+        });
+      }
+
+      const notificationList=$('[data-account-field="notifications"]',root);
+      if(notificationList){
+        notificationList.innerHTML='';
+        state.notifications.forEach(item=>{
+          const li=document.createElement('li');
+          const dot=document.createElement('span');
+          dot.className='account-notification-dot';
+
+          const copy=document.createElement('div');
+          copy.className='account-notification-copy';
+          const title=document.createElement('strong');
+          const text=document.createElement('p');
+          title.textContent=String(item?.title || 'Hinweis');
+          text.textContent=String(item?.text || 'Keine Details verfuegbar.');
+          copy.append(title,text);
+
+          li.append(dot,copy);
+          notificationList.append(li);
+        });
+      }
+
+      const phoneInput=$('[data-account-setting="phone"]',root);
+      const emailInput=$('[data-account-setting="email"]',root);
+      const privacyInput=$('[data-account-setting="privacyAccepted"]',root);
+      const notifyInput=$('[data-account-setting="notificationsEnabled"]',root);
+      if(phoneInput) phoneInput.value=String(state.settings.phone || '');
+      if(emailInput) emailInput.value=String(state.settings.email || '');
+      if(privacyInput) privacyInput.checked=Boolean(state.settings.privacyAccepted);
+      if(notifyInput) notifyInput.checked=Boolean(state.settings.notificationsEnabled);
+    }
+
+    const state=readState();
+    writeState(state);
+    render(state);
+
+    const addAddressForm=$('[data-account-action="add-address"]',root);
+    const customAddressInput=$('#accountCustomAddress',root);
+    if(addAddressForm && customAddressInput){
+      addAddressForm.addEventListener('submit',event=>{
+        event.preventDefault();
+        const value=String(customAddressInput.value || '').trim();
+        if(value.length<4) return;
+        const next=readState();
+        const customCount=next.favoriteAddresses.filter(item=>String(item?.label || '').toLowerCase().startsWith('eigene adresse')).length;
+        next.favoriteAddresses.unshift({
+          label:customCount>0 ? `Eigene Adresse ${customCount+1}` : 'Eigene Adresse',
+          value
+        });
+        next.favoriteAddresses=next.favoriteAddresses.slice(0,8);
+        writeState(next);
+        customAddressInput.value='';
+        render(next);
+      });
+    }
+
+    const settingsForm=$('[data-account-action="save-settings"]',root);
+    const settingsStatus=$('[data-account-field="settingsStatus"]',root);
+    if(settingsForm){
+      settingsForm.addEventListener('submit',event=>{
+        event.preventDefault();
+        const next=readState();
+        const phoneInput=$('[data-account-setting="phone"]',root);
+        const emailInput=$('[data-account-setting="email"]',root);
+        const privacyInput=$('[data-account-setting="privacyAccepted"]',root);
+        const notifyInput=$('[data-account-setting="notificationsEnabled"]',root);
+
+        next.settings.phone=String(phoneInput?.value || '').trim();
+        next.settings.email=String(emailInput?.value || '').trim();
+        next.settings.privacyAccepted=Boolean(privacyInput?.checked);
+        next.settings.notificationsEnabled=Boolean(notifyInput?.checked);
+
+        writeState(next);
+        render(next);
+        if(settingsStatus){
+          settingsStatus.textContent=`Einstellungen lokal gespeichert (${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}).`;
+        }
       });
     }
   }
