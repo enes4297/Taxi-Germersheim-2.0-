@@ -547,6 +547,7 @@
             <div class="pb-autocomplete-prep" data-autocomplete-list="pickup" hidden></div>
             <div id="startMapContainer" class="map-container"></div>
             <button class="outline" type="button" id="locationBtn"><i data-icon="location"></i>Aktuellen Standort verwenden</button>
+            <p class="pb-step-feedback" data-booking-step-feedback hidden></p>
             <div class="pb-nav"><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
@@ -620,6 +621,7 @@
                 </article>
               </div>
             </section>
+            <p class="pb-step-feedback" data-booking-step-feedback hidden></p>
             <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
@@ -648,8 +650,11 @@
             <div class="toggle"><button type="button" class="active">Jetzt fahren</button><button type="button">Fuer spaeter planen</button></div>
             <label>DATUM</label>
             <div class="input"><i data-icon="booking"></i><input id="bookingDate" type="date"></div>
-            <label>UHRZEIT</label>
-            <div class="input"><i data-icon="round"></i><input id="bookingTime" type="time"></div>
+            <div data-booking-time-fields hidden>
+              <label>UHRZEIT</label>
+              <div class="input"><i data-icon="round"></i><input id="bookingTime" type="time"></div>
+            </div>
+            <p class="pb-step-feedback" data-booking-step-feedback hidden></p>
             <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
