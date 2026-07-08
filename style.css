@@ -2592,6 +2592,50 @@ input:focus,textarea:focus,select:focus,
 #account.account-page .account-badge-link{justify-self:start;min-height:44px;padding:0 16px;border-radius:12px;font-size:12px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;border:1px solid rgba(255,217,106,.28);background:rgba(255,217,106,.08);color:#ffe9ae}
 #account.account-page .account-badge-link:hover{background:rgba(255,217,106,.14);border-color:rgba(255,217,106,.44)}
 
+#account.account-page .account-card-wide{grid-column:span 12}
+#account.account-page .account-card-note{margin:0;color:rgba(255,255,255,.72)!important;font-size:13px;line-height:1.55}
+#account.account-page .account-profile-kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#account.account-page .account-profile-kpis li{grid-template-columns:1fr;align-content:start;min-height:78px;padding:12px}
+#account.account-page .account-profile-kpis li b{font-size:15px}
+
+#account.account-page .account-history-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
+#account.account-page .account-history-head span{color:rgba(255,255,255,.62)!important;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:900;line-height:1.4}
+#account.account-page .account-history-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+#account.account-page .account-history-list li{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:start;min-height:42px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
+#account.account-page .account-history-list span{color:#fff;font-size:13px;line-height:1.45;word-break:break-word}
+#account.account-page .account-history-list span b{display:block;color:#ffe8a7;font-size:10px;line-height:1.25;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+
+#account.account-page .account-inline-form{display:grid;gap:8px}
+#account.account-page .account-inline-form label{margin:0;color:rgba(255,255,255,.76);font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+#account.account-page .account-inline-input{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+#account.account-page .account-inline-input input{height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03);color:#fff;padding:0 12px;font-size:14px}
+#account.account-page .account-inline-input .button{min-height:46px;border-radius:12px;padding:0 14px}
+
+#account.account-page .account-invoice-list,#account.account-page .account-notification-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+#account.account-page .account-invoice-list li,#account.account-page .account-notification-list li{display:grid;gap:6px;padding:11px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
+#account.account-page .account-invoice-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#account.account-page .account-invoice-top strong{font-size:14px;color:#fff}
+#account.account-page .account-invoice-status{display:inline-flex;align-items:center;min-height:24px;padding:0 10px;border-radius:999px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:900}
+#account.account-page .account-invoice-status.is-paid{border:1px solid rgba(120,241,168,.36);background:rgba(50,154,89,.2);color:#d8ffe8}
+#account.account-page .account-invoice-status.is-open{border:1px solid rgba(255,224,143,.42);background:rgba(193,146,36,.2);color:#ffeec3}
+#account.account-page .account-invoice-status.is-requested{border:1px solid rgba(184,204,255,.4);background:rgba(78,116,190,.22);color:#deebff}
+#account.account-page .account-invoice-meta{margin:0;color:rgba(255,255,255,.74)!important;font-size:12px;line-height:1.45}
+
+#account.account-page .account-notification-list li{grid-template-columns:auto minmax(0,1fr);align-items:start;column-gap:10px}
+#account.account-page .account-notification-dot{width:12px;height:12px;margin-top:3px;border-radius:50%;background:linear-gradient(135deg,#ffe8a8,#d7a640);box-shadow:0 0 0 1px rgba(255,217,106,.3),0 0 12px rgba(255,217,106,.26)}
+#account.account-page .account-notification-copy strong{display:block;font-size:14px;color:#fff;line-height:1.35}
+#account.account-page .account-notification-copy p{margin:2px 0 0;color:rgba(255,255,255,.74)!important;font-size:12px;line-height:1.45}
+
+#account.account-page .account-settings-form{display:grid;gap:10px}
+#account.account-page .account-settings-form label{margin:0;color:rgba(255,255,255,.74)!important;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+#account.account-page .account-settings-form input[type='tel'],
+#account.account-page .account-settings-form input[type='email']{height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03);color:#fff;padding:0 12px;font-size:14px}
+#account.account-page .account-checkbox-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);cursor:pointer}
+#account.account-page .account-checkbox-row input{width:18px;height:18px;accent-color:#d6a340}
+#account.account-page .account-checkbox-row span{font-size:13px;line-height:1.4;color:#fff}
+#account.account-page .account-settings-form .button{margin-top:4px;width:100%;min-height:46px;border-radius:12px}
+#account.account-page .account-settings-status{margin:0;color:rgba(255,255,255,.72)!important;font-size:12px;line-height:1.5}
+
 @media(max-width:1100px){
   #account.account-page .account-hero{padding:38px 34px 34px}
   #account.account-page .account-hero h1{font-size:46px}
@@ -2608,9 +2652,12 @@ input:focus,textarea:focus,select:focus,
   #account.account-page .account-card,#account.account-page .account-card-profile{grid-column:auto;min-height:0;padding:20px}
   #account.account-page .account-card-head h3{font-size:29px}
   #account.account-page .account-profile-wrap{align-items:flex-start}
-  #account.account-page .account-actions{grid-template-columns:1fr}
+  #account.account-page .account-profile-kpis{grid-template-columns:1fr}
   #account.account-page .account-list li{grid-template-columns:1fr}
   #account.account-page .account-list li b{text-align:left}
+  #account.account-page .account-history-head{display:none}
+  #account.account-page .account-history-list li{grid-template-columns:1fr}
+  #account.account-page .account-inline-input{grid-template-columns:1fr}
 }
 
 @media(max-width:420px){
