@@ -959,17 +959,31 @@
     });
   }
 
+  // Keep exactly one Wunschfahrzeug active and mirror that state into buttons, badges and the live summary.
   function syncVehicleSelectionSummary(){
     const vehicleNode=$('[data-booking-summary-vehicle]');
+    const statusNode=$('[data-booking-summary-vehicle-status]');
     const priceNode=$('[data-booking-summary-price]');
     const vehicle=bookingVehicleCatalog[bookingStepState.selectedVehicle] || null;
     const price=calculateVehicleEstimate(bookingRouteState.distanceKm,bookingStepState.selectedVehicle);
 
-    if(vehicleNode) vehicleNode.textContent=vehicle ? vehicle.label : 'Noch nicht gewählt';
+    if(vehicleNode) vehicleNode.textContent=vehicle ? vehicle.label : 'Kein Wunsch gespeichert';
+    if(statusNode) statusNode.textContent=vehicle ? vehicle.status : 'Bitte Wunsch wählen';
     if(priceNode) priceNode.textContent=vehicle ? formatPriceText(price) : 'Bitte Fahrzeug wählen';
 
     $$('[data-vehicle-card]').forEach(card=>{
-      card.classList.toggle('is-selected',card.dataset.vehicleCard===bookingStepState.selectedVehicle);
+      const selected=card.dataset.vehicleCard===bookingStepState.selectedVehicle;
+      card.classList.toggle('is-selected',selected);
+    });
+
+    $$('[data-vehicle-select]').forEach(button=>{
+      const selected=button.dataset.vehicleSelect===bookingStepState.selectedVehicle;
+      button.textContent=selected ? '✓ Wunsch gespeichert' : 'Als Wunschfahrzeug auswählen';
+      button.setAttribute('aria-pressed',selected ? 'true' : 'false');
+    });
+
+    $$('[data-vehicle-saved]').forEach(node=>{
+      node.hidden=node.dataset.vehicleSaved!==bookingStepState.selectedVehicle;
     });
   }
 
@@ -1344,10 +1358,11 @@
     selectedVehicle:''
   };
 
+  // Premium vehicle wish cards use static availability today and keep demo pricing for later backend integration.
   const bookingVehicleCatalog={
-    limousine:{label:'Taxi Limousine',baseFare:4.8,perKm:2.2,minimum:12.5},
-    van:{label:'Großraumtaxi',baseFare:7.4,perKm:2.85,minimum:18.5},
-    wheelchair:{label:'Rollstuhlfahrzeug',baseFare:8.4,perKm:3.1,minimum:21.5}
+    limousine:{label:'Limousine',baseFare:4.8,perKm:2.2,minimum:12.5,status:'Wunsch gespeichert'},
+    van:{label:'Großraumtaxi',baseFare:7.4,perKm:2.85,minimum:18.5,status:'Wunsch gespeichert'},
+    wheelchair:{label:'Rollstuhlfahrzeug',baseFare:8.4,perKm:3.1,minimum:21.5,status:'Wunsch gespeichert'}
   };
 
   function getBookingRoot(){
