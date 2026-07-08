@@ -797,6 +797,54 @@
       </section>
     </section>
 
+    <section id="ride-status" class="screen simple ride-status-page">
+      <header class="page-head"><button data-go="booking" type="button">‹</button><h2>Meine aktuelle Fahrt</h2><i></i></header>
+
+      <article class="panel ride-track-hero">
+        <small>LIVE-STATUS</small>
+        <h1>Meine aktuelle Fahrt</h1>
+        <p data-ride-track-summary>Ihre Anfrage wurde vorbereitet. Der aktuelle Status wird als Demo lokal aktualisiert.</p>
+      </article>
+
+      <section class="ride-track-layout" aria-label="Statusverfolgung aktuelle Fahrt">
+        <article class="panel ride-track-panel">
+          <div class="ride-track-panel-head">
+            <div>
+              <small>STATUS-TIMELINE</small>
+              <h3>Fahrtstatus</h3>
+            </div>
+            <span class="ride-track-badge" data-ride-track-badge>Anfrage eingegangen</span>
+          </div>
+
+          <ol class="ride-track-timeline" data-ride-track-timeline aria-label="Fahrtstatus Timeline"></ol>
+
+          <div class="ride-track-complete" data-ride-track-complete hidden>
+            <p class="ride-track-complete-note">Ihre Fahrt ist abgeschlossen. Rewards-Vorteile und Bewertung werden als nächste Schritte vorbereitet.</p>
+            <div class="ride-track-complete-actions">
+              <button class="button" type="button" data-current-ride-action="rate">Fahrt bewerten</button>
+              <button class="button secondary" type="button" data-current-ride-action="rebook">Erneut buchen</button>
+            </div>
+          </div>
+          <p class="ride-track-feedback" data-ride-track-feedback hidden></p>
+        </article>
+
+        <aside class="panel ride-track-side">
+          <small>FAHRERINFORMATIONEN</small>
+          <h3 data-ride-track-route>Germersheim Zentrum → Speyer</h3>
+          <ul class="ride-track-driver-list">
+            <li><span>Fahrername</span><b data-ride-track-driver-name>Michael Becker</b></li>
+            <li><span>Fahrzeugtyp</span><b data-ride-track-vehicle>Mercedes E-Klasse</b></li>
+            <li><span>Kennzeichen</span><b data-ride-track-plate>GER-TG 247</b></li>
+            <li><span>Voraussichtliche Ankunft</span><b data-ride-track-eta>12 Min.</b></li>
+          </ul>
+          <div class="ride-track-side-actions">
+            <a class="button" href="tel:072743567" data-ride-track-phone>Fahrer anrufen</a>
+            <a class="button secondary" href="kundenkonto.html">Zum Kundenkonto</a>
+          </div>
+        </aside>
+      </section>
+    </section>
+
     <section id="yumak" class="screen simple"><header class="page-head"><button data-go="home">‹</button><h2>Yumak</h2><i></i></header><article class="panel yumak-greeting"><img class="yumak-img" src="assets/yumak/yumak-neutral.svg" onerror="this.src='yumak.png'"><h1>Hallo, ich bin Yumak 🐾</h1><p>Ich helfe dir später beim Buchen, Sammeln von Abzeichen und bei Fragen rund um Taxi Germersheim.</p></article><div class="yumak-features"><button class="yumak-card" data-go="booking" type="button"><i data-icon="booking"></i><div class="yumak-card-body"><b>Fahrt buchen</b><small>Ich helfe dir bei deiner Fahrt und beantworte Fragen.</small></div><span class="yumak-card-action">Fahrt starten</span></button><button class="yumak-card" data-go="rewards" type="button"><i data-icon="rewards"></i><div class="yumak-card-body"><b>Rewards</b><small>Erfahre mehr über Abzeichen, Punkte und Belohnungen.</small></div><span class="yumak-card-action">Rewards ansehen</span></button><button class="yumak-card" type="button"><i data-icon="phone"></i><div class="yumak-card-body"><b>Hilfe</b><small>24/7 Hilfe zu Buchung, Krankenfahrten und Unternehmen.</small></div><span class="yumak-card-action">Hilfe öffnen</span></button></div></section>
     <section id="rewards" class="screen rewards-page rewards-v2">
       <header class="page-head"><button data-go="home" type="button">‹</button><h2>Rewards</h2><i></i></header>
