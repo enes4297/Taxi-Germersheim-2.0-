@@ -579,6 +579,44 @@
               </div>
               <article class="pb-yumak-route-card" aria-live="polite"><p data-booking-yumak-hint>Perfekt! Das sind ungefaehr 7,5 km und 11 Minuten.</p></article>
             </section>
+
+            <section class="panel pb-vehicle-panel" data-booking-vehicle-panel hidden aria-label="Fahrzeug auswählen">
+              <small>FAHRZEUG AUSWAEHLEN</small>
+              <h4>Ihr Fahrzeug fuer diese Strecke</h4>
+              <p class="pb-route-note">Demo-Preise basieren auf der berechneten Strecke und sind fuer spaetere Backend-Anbindung vorbereitet.</p>
+              <div class="pb-vehicle-grid">
+                <article class="pb-vehicle-card" data-vehicle-card="limousine">
+                  <div class="pb-vehicle-head"><h5>Taxi Limousine</h5><span>1-4 Personen</span></div>
+                  <ul class="pb-vehicle-features">
+                    <li>Gepaeck: 2 Koffer</li>
+                    <li>Klimaanlage</li>
+                    <li>Kartenzahlung</li>
+                  </ul>
+                  <strong data-vehicle-price="limousine">Geschätzter Preis: ab 0,00 EUR</strong>
+                  <button class="button" type="button" data-vehicle-select="limousine">Auswählen</button>
+                </article>
+                <article class="pb-vehicle-card" data-vehicle-card="van">
+                  <div class="pb-vehicle-head"><h5>Großraumtaxi</h5><span>1-8 Personen</span></div>
+                  <ul class="pb-vehicle-features">
+                    <li>Gepaeck: 5 Koffer</li>
+                    <li>Klimaanlage</li>
+                    <li>Kartenzahlung</li>
+                  </ul>
+                  <strong data-vehicle-price="van">Geschätzter Preis: ab 0,00 EUR</strong>
+                  <button class="button" type="button" data-vehicle-select="van">Auswählen</button>
+                </article>
+                <article class="pb-vehicle-card" data-vehicle-card="wheelchair">
+                  <div class="pb-vehicle-head"><h5>Rollstuhlfahrzeug</h5><span>1-4 Personen</span></div>
+                  <ul class="pb-vehicle-features">
+                    <li>Gepaeck: 2 Koffer</li>
+                    <li>Klimaanlage</li>
+                    <li>Kartenzahlung</li>
+                  </ul>
+                  <strong data-vehicle-price="wheelchair">Geschätzter Preis: ab 0,00 EUR</strong>
+                  <button class="button" type="button" data-vehicle-select="wheelchair">Auswählen</button>
+                </article>
+              </div>
+            </section>
             <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurueck</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
@@ -705,7 +743,9 @@
             <li><span>Datum</span><b data-booking-summary-date>-</b></li>
             <li><span>Uhrzeit</span><b data-booking-summary-time>-</b></li>
             <li><span>Fahrtart</span><b data-booking-summary-service>Taxi</b></li>
+            <li><span>Fahrzeug</span><b data-booking-summary-vehicle>Noch nicht gewählt</b></li>
             <li><span>Rewards-Punkte</span><b data-booking-summary-points>ca. 15</b></li>
+            <li><span>Geschätzter Preis</span><b data-booking-summary-price>Bitte Fahrzeug wählen</b></li>
             <li><span>Optionen</span><b data-booking-summary-options>Keine</b></li>
           </ul>
           <p class="pb-summary-fare-note">Fahrpreis wird nach Bestätigung berechnet.</p>
