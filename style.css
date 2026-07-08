@@ -44,6 +44,7 @@ body:before{content:'';position:fixed;inset:0;background:radial-gradient(circle 
 .booking-premium .pb-route-panel{margin-top:16px;border-color:rgba(255,217,106,.3);background:linear-gradient(155deg,rgba(18,19,24,.96),rgba(8,9,12,.98))}
 .booking-premium .pb-route-panel h4{margin:0 0 8px;font-family:var(--serif);font-size:27px;line-height:1.06;color:#fff}
 .booking-premium .pb-route-note{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.5}
+.booking-premium .pb-step-feedback{margin:10px 0 0;color:#ffd6a3;font-size:13px;line-height:1.45;padding:10px 12px;border-radius:14px;background:rgba(255,214,163,.08);border:1px solid rgba(255,214,163,.18)}
 .booking-premium .pb-route-panel .map-container{height:340px;margin:10px 0 12px;border-color:rgba(255,217,106,.35);box-shadow:0 24px 46px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.04)}
 .booking-premium .pb-route-stats{display:grid;gap:6px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.11);margin-top:12px}
 .booking-premium .pb-route-stats p{margin:0;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:15px;color:#fff}
@@ -104,6 +105,7 @@ body:before{content:'';position:fixed;inset:0;background:radial-gradient(circle 
   .booking-premium .pb-vehicle-grid{grid-template-columns:1fr}
   .booking-premium .pb-route-stats p{font-size:14px}
   .booking-premium .pb-yumak-route-card p{font-size:13px}
+  .booking-premium .pb-step-feedback{font-size:12px}
   .booking-premium .pb-summary li{grid-template-columns:100px 1fr}
 }
 .panel,.selected,.extra{border-radius:28px;padding:24px;margin-bottom:16px;border-color:rgba(255,217,106,.22)}.panel small,.selected small{display:block;color:var(--gold);font-weight:950;letter-spacing:.18em;font-size:12px;margin-bottom:10px}.panel h1,.selected h2{font-family:var(--serif);font-size:38px;line-height:1;margin:0 0 12px}.panel p{color:var(--muted);font-size:19px;line-height:1.35;margin:0}.selected h2{font-size:34px;margin:0}.service-label{height:54px;border-radius:999px;border:1px solid rgba(255,217,106,.35);background:rgba(255,217,106,.09);display:grid;place-items:center;color:var(--gold);font-weight:950;letter-spacing:.18em;margin:0 0 16px}

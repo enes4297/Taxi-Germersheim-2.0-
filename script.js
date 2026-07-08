@@ -1380,6 +1380,42 @@
     return date.toLocaleDateString('de-DE');
   }
 
+  function getActiveBookingStep(){
+    return $('[data-booking-step].is-active');
+  }
+
+  function setBookingStepFeedback(step,message){
+    const panel=getBookingStepPanel(step);
+    const feedback=$('[data-booking-step-feedback]',panel);
+    if(!feedback) return;
+    feedback.textContent=message;
+    feedback.hidden=!message;
+  }
+
+  function clearBookingStepFeedback(step){
+    const panel=typeof step==='number' ? getBookingStepPanel(step) : step;
+    const feedback=$('[data-booking-step-feedback]',panel || document);
+    if(!feedback) return;
+    feedback.textContent='';
+    feedback.hidden=true;
+  }
+
+  function isLaterPlanSelected(){
+    const buttons=$$('.toggle button');
+    return !!buttons[1]?.classList.contains('active');
+  }
+
+  function updateBookingScheduleVisibility(){
+    const timeFields=$('[data-booking-time-fields]');
+    if(!timeFields) return;
+    timeFields.hidden=!isLaterPlanSelected();
+  }
+
+  function getBookingTimeSummaryText(timeValue){
+    if(!isLaterPlanSelected()) return 'So schnell wie möglich';
+    return timeValue || '-';
+  }
+
   function collectBookingOptions(){
     return $$('.pb-option-grid button.active').map(button=>button.textContent.trim()).filter(Boolean);
   }
@@ -1433,7 +1469,7 @@
     if(startNode) startNode.textContent=start;
     if(targetNode) targetNode.textContent=target;
     if(dateNode) dateNode.textContent=formatBookingDate(date);
-    if(timeNode) timeNode.textContent=time || '-';
+    if(timeNode) timeNode.textContent=getBookingTimeSummaryText(time);
     if(serviceNode) serviceNode.textContent=serviceName;
     if(optionsNode) optionsNode.textContent=options.length ? options.join(', ') : 'Keine';
 
@@ -1490,6 +1526,7 @@
       const active=panelStep===normalized;
       panel.classList.toggle('is-active',active);
       panel.hidden=!active;
+      clearBookingStepFeedback(panel);
     });
     updateBookingProgress();
     syncBookingSummary();
@@ -1502,11 +1539,9 @@
     const time=$('#bookingTime')?.value || '';
     const phone=$('#customerPhone')?.value?.trim() || '';
     const passengers=Number($('#bookingPassengers')?.value || 1);
-    const plannedButton=$$('.toggle button')[1];
-
     if(step===1) return !!start;
     if(step===2) return !!target;
-    if(step===4 && plannedButton?.classList.contains('active')) return !!date && !!time;
+    if(step===4 && isLaterPlanSelected()) return !!date && !!time;
     if(step===5) return passengers>=1;
     if(step===6) return !!phone;
     return true;
@@ -1515,9 +1550,11 @@
   function handleBookingStepAction(action){
     if(action==='next'){
       if(!isBookingStepValid(bookingStepState.current)){
-        alert('Bitte fuellen Sie die erforderlichen Felder in diesem Schritt aus.');
+        const message=bookingStepState.current===1 ? 'Bitte geben Sie einen gültigen Abholort ein.' : bookingStepState.current===2 ? 'Bitte geben Sie ein gültiges Ziel ein.' : bookingStepState.current===4 ? 'Bitte wählen Sie Datum und Uhrzeit für die geplante Fahrt.' : 'Bitte fuellen Sie die erforderlichen Felder in diesem Schritt aus.';
+        setBookingStepFeedback(bookingStepState.current,message);
         return true;
       }
+      clearBookingStepFeedback(bookingStepState.current);
       showBookingStep(bookingStepState.current+1);
       return true;
     }
@@ -1540,9 +1577,44 @@
     if(timeField && !timeField.value) timeField.value='12:00';
     applyRouteMapPresentationState($('#bookingRouteMapContainer'));
     initBookingPlacesAutocomplete();
+    updateBookingScheduleVisibility();
 
     showBookingStep(1);
     syncBookingSummary();
+  }
+
+  function handleBookingEnterSubmit(target){
+    if(target?.id==='startAddress'){
+      if(!$('#startAddress')?.value?.trim()){
+        setBookingStepFeedback(1,'Bitte geben Sie einen gültigen Abholort ein.');
+        return true;
+      }
+      clearBookingStepFeedback(1);
+      showBookingStep(2);
+      return true;
+    }
+
+    if(target?.id==='targetAddress'){
+      const hasStart=!!$('#startAddress')?.value?.trim();
+      const hasTarget=!!$('#targetAddress')?.value?.trim();
+      if(!hasStart || !hasTarget){
+        setBookingStepFeedback(2,'Bitte geben Sie Abholort und Ziel vollständig ein.');
+        return true;
+      }
+      clearBookingStepFeedback(2);
+      syncBookingSummary();
+      if(hasExternalConsent()) refreshMapContainers();
+      showBookingStep(3);
+      return true;
+    }
+
+    return false;
+  }
+
+  function handleGlobalKeydown(e){
+    if(e.key!=='Enter') return;
+    if(e.target instanceof HTMLTextAreaElement) return;
+    if(handleBookingEnterSubmit(e.target)) e.preventDefault();
   }
 
   function validate(){
@@ -1667,6 +1739,9 @@
     const toggleButton=e.target.closest('.toggle button');
     if(toggleButton){
       setSingleActive('.toggle button',toggleButton);
+      updateBookingScheduleVisibility();
+      clearBookingStepFeedback(4);
+      syncBookingSummary();
       return;
     }
 
@@ -1684,6 +1759,9 @@
   }
 
   function handleGlobalInput(e){
+    if(e.target.id==='startAddress') clearBookingStepFeedback(1);
+    if(e.target.id==='targetAddress') clearBookingStepFeedback(2);
+    if(e.target.id==='bookingDate' || e.target.id==='bookingTime') clearBookingStepFeedback(4);
     validate();
     syncBookingSummary();
     if(!hasExternalConsent()) return;
@@ -5433,6 +5511,7 @@
     // Single delegation point keeps interaction logic centralized and avoids many per-node listeners.
     document.addEventListener('click',e=>handleGlobalClick(e,nav));
     document.addEventListener('input',handleGlobalInput,true);
+    document.addEventListener('keydown',handleGlobalKeydown,true);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
