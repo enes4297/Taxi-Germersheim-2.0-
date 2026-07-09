@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Einstellungen</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html">Dashboard</a>
+        <a class="admin-nav-item" href="index.html">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
+        <a class="admin-nav-item" href="schichtplanung.html">Schichtplanung</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Rewards</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
+        <a class="admin-nav-item is-active" href="einstellungen.html" aria-current="page">Einstellungen</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Admin Einstellungen</h1>
+          <p>Unternehmensprofil, Benachrichtigungen und Systemstatus mit Demo-Daten</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b>0</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Admin</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="settings-grid" aria-label="Admin Einstellungen">
+        <article class="admin-panel settings-card" data-settings-roles="Chef" data-settings-section="company">
+          <div class="admin-panel-head">
+            <h2>Unternehmensprofil</h2>
+          </div>
+          <dl class="settings-info-list">
+            <div>
+              <dt>Firma</dt>
+              <dd>Taxi Germersheim GmbH</dd>
+            </div>
+            <div>
+              <dt>Adresse</dt>
+              <dd>Friedrich-Ebert-Str. 8</dd>
+            </div>
+            <div>
+              <dt>PLZ / Ort</dt>
+              <dd>76726 Germersheim</dd>
+            </div>
+            <div>
+              <dt>Telefon</dt>
+              <dd>07274 - 3567</dd>
+            </div>
+            <div>
+              <dt>E-Mail</dt>
+              <dd>info@taxigermersheim.de</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="admin-panel settings-card" data-settings-roles="Chef" data-settings-section="contact">
+          <div class="admin-panel-head">
+            <h2>Kontaktdaten</h2>
+          </div>
+          <form class="settings-form" data-settings-contact-form>
+            <label class="settings-field">
+              <span>Firmenname</span>
+              <input type="text" name="company" value="Taxi Germersheim GmbH" autocomplete="off">
+            </label>
+            <label class="settings-field">
+              <span>Straße</span>
+              <input type="text" name="street" value="Friedrich-Ebert-Str. 8" autocomplete="off">
+            </label>
+            <label class="settings-field">
+              <span>PLZ / Ort</span>
+              <input type="text" name="city" value="76726 Germersheim" autocomplete="off">
+            </label>
+            <label class="settings-field">
+              <span>Telefon</span>
+              <input type="text" name="phone" value="07274 - 3567" autocomplete="off">
+            </label>
+            <label class="settings-field">
+              <span>E-Mail</span>
+              <input type="email" name="email" value="info@taxigermersheim.de" autocomplete="off">
+            </label>
+            <div class="settings-form-actions">
+              <button class="admin-btn" type="submit">Speichern</button>
+              <p class="settings-demo-note" data-settings-save-note>Demo - keine echten Änderungen gespeichert</p>
+            </div>
+          </form>
+        </article>
+
+        <article class="admin-panel settings-card" data-settings-roles="Chef" data-settings-section="availability">
+          <div class="admin-panel-head">
+            <h2>Öffnungszeiten / Verfügbarkeit</h2>
+          </div>
+          <ul class="settings-hours-list">
+            <li><strong>Montag - Freitag</strong><span>05:00 - 23:00 Uhr</span></li>
+            <li><strong>Samstag</strong><span>06:00 - 02:00 Uhr</span></li>
+            <li><strong>Sonntag</strong><span>07:00 - 22:00 Uhr</span></li>
+            <li><strong>Krankenfahrten</strong><span>24/7 Notfallannahme (Demo)</span></li>
+          </ul>
+        </article>
+
+        <article class="admin-panel settings-card" data-settings-roles="Chef" data-settings-section="admins">
+          <div class="admin-panel-head">
+            <h2>Admin-Benutzer Demo</h2>
+          </div>
+          <div class="settings-users-list">
+            <article class="settings-user-item">
+              <strong>Chef</strong>
+              <span>Rolle: Vollzugriff</span>
+              <small>Letzter Login Demo: Heute, 07:12</small>
+            </article>
+            <article class="settings-user-item">
+              <strong>Disposition</strong>
+              <span>Rolle: Fahrten, Fahrer, Fahrzeuge, Schichten</span>
+              <small>Letzter Login Demo: Heute, 06:58</small>
+            </article>
+            <article class="settings-user-item">
+              <strong>Buchhaltung</strong>
+              <span>Rolle: Rechnungen, Kunden</span>
+              <small>Letzter Login Demo: Heute, 08:04</small>
+            </article>
+            <article class="settings-user-item">
+              <strong>Fahrer-Demo</strong>
+              <span>Rolle: Fahrten, Fahrzeuge</span>
+              <small>Letzter Login Demo: Gestern, 22:41</small>
+            </article>
+          </div>
+        </article>
+
+        <article class="admin-panel settings-card" data-settings-roles="Chef,Disposition,Buchhaltung" data-settings-section="notifications">
+          <div class="admin-panel-head">
+            <h2>Benachrichtigungen Demo</h2>
+          </div>
+          <div class="settings-toggle-list" data-settings-toggles>
+            <label class="settings-toggle-item">
+              <span>Neue Buchungen</span>
+              <input type="checkbox" checked>
+              <b aria-hidden="true"></b>
+            </label>
+            <label class="settings-toggle-item">
+              <span>TÜV/Service</span>
+              <input type="checkbox" checked>
+              <b aria-hidden="true"></b>
+            </label>
+            <label class="settings-toggle-item">
+              <span>Rechnungen</span>
+              <input type="checkbox" checked>
+              <b aria-hidden="true"></b>
+            </label>
+            <label class="settings-toggle-item">
+              <span>Schichten</span>
+              <input type="checkbox" checked>
+              <b aria-hidden="true"></b>
+            </label>
+            <label class="settings-toggle-item">
+              <span>Fahrer-Dokumente</span>
+              <input type="checkbox" checked>
+              <b aria-hidden="true"></b>
+            </label>
+          </div>
+          <p class="settings-demo-note" data-settings-toggle-note>Demo - keine echten Änderungen gespeichert</p>
+        </article>
+
+        <article class="admin-panel settings-card" data-settings-roles="Chef,Disposition,Buchhaltung,Fahrer" data-settings-section="status">
+          <div class="admin-panel-head">
+            <h2>Systemstatus Demo</h2>
+          </div>
+          <ul class="settings-status-list">
+            <li><span>Website</span><strong class="settings-status-pill is-online">online</strong></li>
+            <li><span>Admin</span><strong class="settings-status-pill is-online">online</strong></li>
+            <li><span>Demo-Daten</span><strong class="settings-status-pill is-warning">aktiv</strong></li>
+            <li><span>Backend</span><strong class="settings-status-pill is-offline">nicht verbunden</strong></li>
+          </ul>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="einstellungen.js"></script>
+</body>
+</html>

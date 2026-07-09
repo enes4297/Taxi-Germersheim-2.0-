@@ -1,26 +1,30 @@
-// Nur Demo-Login. Kein echter Zugriffsschutz ohne Backend.
+// Nur Demo-Rollen. Kein echter Zugriffsschutz ohne Backend.
 (() => {
-  const STORAGE_KEY = "taxiAdminDemoSession";
-  const SESSION_TOKEN = "demo-auth-v1";
-  const DEMO_USERNAME = "admin";
-  const DEMO_PASSWORD = "Taxi2026!";
+  const KEY_LOGGED_IN = "demoAdminLoggedIn";
+  const KEY_USER = "demoAdminUser";
+  const KEY_ROLE = "demoAdminRole";
+  const LEGACY_STORAGE_KEY = "taxiAdminDemoSession";
+
+  const DEMO_USERS = {
+    admin: { password: "Taxi2026!", role: "Chef" },
+    dispo: { password: "Dispo2026!", role: "Disposition" },
+    billing: { password: "Rechnung2026!", role: "Buchhaltung" },
+    fahrer: { password: "Fahrer2026!", role: "Fahrer" }
+  };
 
   function readSession() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
+    const loggedIn = localStorage.getItem(KEY_LOGGED_IN);
+    const user = localStorage.getItem(KEY_USER);
+    const role = localStorage.getItem(KEY_ROLE);
+    if (loggedIn !== "true" || !user || !role) return null;
+    return { loggedIn, user, role };
   }
 
   function isValidSession(session) {
-    return Boolean(
-      session
-      && session.username === DEMO_USERNAME
-      && session.token === SESSION_TOKEN
-    );
+    if (!session || session.loggedIn !== "true") return false;
+    const user = DEMO_USERS[session.user];
+    if (!user) return false;
+    return user.role === session.role;
   }
 
   function setError(message) {
@@ -31,14 +35,20 @@
     errorNode.textContent = message;
   }
 
-  function createDemoSession(username) {
-    const payload = {
-      username,
-      token: SESSION_TOKEN,
-      loginAt: new Date().toISOString()
-    };
+  function createDemoSession(username, role) {
+    localStorage.setItem(KEY_LOGGED_IN, "true");
+    localStorage.setItem(KEY_USER, username);
+    localStorage.setItem(KEY_ROLE, role);
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    localStorage.setItem(
+      LEGACY_STORAGE_KEY,
+      JSON.stringify({
+        username,
+        role,
+        token: "demo-auth-v2",
+        loginAt: new Date().toISOString()
+      })
+    );
   }
 
   function redirectToAdmin() {
@@ -55,14 +65,15 @@
       const formData = new FormData(form);
       const username = String(formData.get("username") || "").trim();
       const password = String(formData.get("password") || "");
+      const user = DEMO_USERS[username];
 
-      if (username !== DEMO_USERNAME || password !== DEMO_PASSWORD) {
+      if (!user || user.password !== password) {
         setError("Login fehlgeschlagen. Bitte Demo-Zugang prüfen.");
         return;
       }
 
       setError("");
-      createDemoSession(username);
+      createDemoSession(username, user.role);
       redirectToAdmin();
     });
   }

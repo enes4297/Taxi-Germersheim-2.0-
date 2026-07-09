@@ -314,9 +314,10 @@
     const visibleInvoices = getVisibleInvoices();
     if (!visibleInvoices.length) {
       grid.innerHTML = `
-        <article class="billing-empty">
-          <strong>Keine Rechnungen gefunden.</strong>
-          <p>Bitte Suche oder Filter anpassen.</p>
+        <article class="billing-empty admin-empty-state">
+          <strong>🧾 Keine Einträge gefunden</strong>
+          <p>Keine Einträge gefunden.</p>
+          <button class="admin-btn admin-btn-secondary admin-empty-reset" type="button" data-billing-reset>Filter zurücksetzen</button>
         </article>
       `;
       return;
@@ -352,6 +353,19 @@
     if (!grid) return;
 
     grid.addEventListener("click", (event) => {
+      const resetButton = event.target.closest("[data-billing-reset]");
+      if (resetButton) {
+        state.activeFilter = "Alle";
+        state.searchTerm = "";
+        const searchInput = document.querySelector("[data-billing-search]");
+        if (searchInput) searchInput.value = "";
+        document.querySelectorAll("[data-billing-filter]").forEach((item) => {
+          item.classList.toggle("is-active", (item.getAttribute("data-billing-filter") || "") === "Alle");
+        });
+        renderInvoices();
+        return;
+      }
+
       const button = event.target.closest("[data-billing-action]");
       if (!button) return;
 

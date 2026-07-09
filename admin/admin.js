@@ -301,9 +301,10 @@
     const visibleRides = getVisibleRides();
     if (!visibleRides.length) {
       rideGrid.innerHTML = `
-        <article class="ride-empty">
-          <strong>Keine Fahrten gefunden.</strong>
-          <p>Bitte Suche oder Filter anpassen.</p>
+        <article class="admin-empty-state ride-empty">
+          <strong>🚕 Keine Einträge gefunden</strong>
+          <p>Keine Einträge gefunden.</p>
+          <button class="admin-btn admin-btn-secondary admin-empty-reset" type="button" data-ride-reset>Filter zurücksetzen</button>
         </article>
       `;
       return;
@@ -391,6 +392,19 @@
 
   function bindActions() {
     document.addEventListener("click", (event) => {
+      const resetButton = event.target.closest("[data-ride-reset]");
+      if (resetButton) {
+        state.activeFilter = "Alle";
+        state.searchTerm = "";
+        const searchInput = document.querySelector("[data-ride-search]");
+        if (searchInput) searchInput.value = "";
+        document.querySelectorAll("[data-ride-filter]").forEach((item) => {
+          item.classList.toggle("is-active", (item.getAttribute("data-ride-filter") || "") === "Alle");
+        });
+        renderRides();
+        return;
+      }
+
       const button = event.target.closest("[data-ride-action]");
       if (!button) return;
 
