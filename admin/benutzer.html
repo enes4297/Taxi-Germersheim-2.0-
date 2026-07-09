@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Benutzerverwaltung</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="admin-nav-item" href="index.html">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item" href="live-karte.html">Live-Karte</a>
+        <a class="admin-nav-item" href="werkstatt.html">Werkstatt</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
+        <a class="admin-nav-item" href="schichtplanung.html">Schichtplanung</a>
+        <a class="admin-nav-item" href="dokumente.html">Dokumente</a>
+        <a class="admin-nav-item" href="statistiken.html">Statistiken</a>
+        <a class="admin-nav-item" href="einstellungen.html">Einstellungen</a>
+        <a class="admin-nav-item is-active" href="benutzer.html" aria-current="page">Benutzer</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Admin User Management</h1>
+          <p>Demo-Verwaltung interner Benutzerrollen und Zugriffe</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b>0</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Admin</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-panel user-overview" aria-label="Benutzer Dashboard">
+        <div class="admin-panel-head">
+          <h2>Benutzer Dashboard</h2>
+        </div>
+        <div class="user-overview-grid">
+          <article class="user-overview-card">
+            <small>👥 Benutzer gesamt</small>
+            <strong data-user-stat="total">0</strong>
+          </article>
+          <article class="user-overview-card is-active">
+            <small>✅ Aktiv</small>
+            <strong data-user-stat="active">0</strong>
+          </article>
+          <article class="user-overview-card is-locked">
+            <small>🔒 Gesperrt</small>
+            <strong data-user-stat="locked">0</strong>
+          </article>
+          <article class="user-overview-card">
+            <small>🧭 Rollen</small>
+            <strong data-user-stat="roles">0</strong>
+          </article>
+          <article class="user-overview-card">
+            <small>🕒 Letzter Login Demo</small>
+            <strong data-user-stat="lastLogin">-</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="admin-panel user-roles-panel" aria-label="Rollenkatalog">
+        <div class="admin-panel-head">
+          <h2>Verfügbare Rollen</h2>
+        </div>
+        <div class="user-role-tags" data-user-role-tags></div>
+      </section>
+
+      <section class="user-grid" aria-label="Benutzerübersicht" data-user-grid></section>
+
+      <div class="admin-modal" data-user-modal hidden>
+        <div class="admin-modal-backdrop" data-user-modal-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="user-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="user-modal-title" data-user-modal-title>Benutzerdetails</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-user-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-user-modal-body></div>
+          <footer class="admin-modal-foot">
+            <button class="admin-btn admin-btn-secondary" type="button" data-user-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="benutzer.js"></script>
+</body>
+</html>

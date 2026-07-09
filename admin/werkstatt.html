@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Werkstatt</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="admin-nav-item" href="index.html">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item is-active" href="werkstatt.html" aria-current="page">Werkstatt</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
+        <a class="admin-nav-item" href="schichtplanung.html">Schichtplanung</a>
+        <a class="admin-nav-item" href="dokumente.html">Dokumente</a>
+        <a class="admin-nav-item" href="statistiken.html">Statistiken</a>
+        <a class="admin-nav-item" href="einstellungen.html">Einstellungen</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Maintenance & Workshop</h1>
+          <p>Wartung, Reifen, Schäden und Werkstatttermine mit Demo-Daten</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b>0</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Admin</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-panel workshop-overview" aria-label="Werkstatt-Dashboard">
+        <div class="admin-panel-head">
+          <h2>Werkstatt-Dashboard</h2>
+        </div>
+        <div class="workshop-overview-grid">
+          <article class="workshop-overview-card">
+            <small>🛠️ Offene Wartungen</small>
+            <strong data-workshop-stat="openMaintenance">0</strong>
+          </article>
+          <article class="workshop-overview-card">
+            <small>🚗 Fahrzeuge in Werkstatt</small>
+            <strong data-workshop-stat="inWorkshop">0</strong>
+          </article>
+          <article class="workshop-overview-card is-warning">
+            <small>⏳ Service bald fällig</small>
+            <strong data-workshop-stat="serviceSoon">0</strong>
+          </article>
+          <article class="workshop-overview-card is-warning">
+            <small>📅 TÜV bald fällig</small>
+            <strong data-workshop-stat="tuvSoon">0</strong>
+          </article>
+          <article class="workshop-overview-card is-warning">
+            <small>🛞 Reifenthemen</small>
+            <strong data-workshop-stat="tireTopics">0</strong>
+          </article>
+          <article class="workshop-overview-card is-overdue">
+            <small>⚠️ Schäden offen</small>
+            <strong data-workshop-stat="damageOpen">0</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="admin-panel workshop-tools" aria-label="Werkstatt Suche und Filter">
+        <div class="workshop-search-wrap">
+          <label class="driver-label" for="workshop-search-input">Werkstattfall suchen</label>
+          <input
+            id="workshop-search-input"
+            class="driver-search-input"
+            type="search"
+            placeholder="Fahrzeug, Kennzeichen, Thema oder Werkstatt suchen..."
+            autocomplete="off"
+            data-workshop-search
+          >
+        </div>
+
+        <div class="workshop-filter-group" role="group" aria-label="Werkstattfälle filtern">
+          <button class="workshop-filter-btn is-active" type="button" data-workshop-filter="Alle">Alle</button>
+          <button class="workshop-filter-btn" type="button" data-workshop-filter="Offen">Offen</button>
+          <button class="workshop-filter-btn" type="button" data-workshop-filter="Geplant">Geplant</button>
+          <button class="workshop-filter-btn" type="button" data-workshop-filter="In Arbeit">In Arbeit</button>
+          <button class="workshop-filter-btn" type="button" data-workshop-filter="Kritisch">Kritisch</button>
+          <button class="workshop-filter-btn" type="button" data-workshop-filter="Reifen">Reifen</button>
+          <button class="workshop-filter-btn" type="button" data-workshop-filter="TÜV">TÜV</button>
+          <button class="workshop-filter-btn" type="button" data-workshop-filter="Schäden">Schäden</button>
+        </div>
+      </section>
+
+      <section class="workshop-grid" aria-label="Werkstattübersicht" data-workshop-grid></section>
+
+      <div class="admin-modal" data-workshop-modal hidden>
+        <div class="admin-modal-backdrop" data-workshop-modal-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="workshop-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="workshop-modal-title" data-workshop-modal-title>Werkstattdetails</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-workshop-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-workshop-modal-body></div>
+          <footer class="admin-modal-foot">
+            <button class="admin-btn admin-btn-secondary" type="button" data-workshop-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="werkstatt.js"></script>
+</body>
+</html>

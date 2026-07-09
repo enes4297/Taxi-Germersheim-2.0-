@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Export & Backup</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="admin-nav-item" href="index.html">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item" href="live-karte.html">Live-Karte</a>
+        <a class="admin-nav-item" href="werkstatt.html">Werkstatt</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
+        <a class="admin-nav-item" href="schichtplanung.html">Schichtplanung</a>
+        <a class="admin-nav-item" href="dokumente.html">Dokumente</a>
+        <a class="admin-nav-item" href="statistiken.html">Statistiken</a>
+        <a class="admin-nav-item" href="einstellungen.html">Einstellungen</a>
+        <a class="admin-nav-item" href="benutzer.html">Benutzer</a>
+        <a class="admin-nav-item" href="verlauf.html">Verlauf</a>
+        <a class="admin-nav-item is-active" href="export-backup.html" aria-current="page">Export & Backup</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Admin Export & Backup</h1>
+          <p>Demo-Bereich fur Exporte, Datensicherung und spateres Backup-Setup</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b>0</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Admin</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-panel export-overview" aria-label="Export und Backup Dashboard">
+        <div class="admin-panel-head">
+          <h2>Export und Backup Dashboard</h2>
+        </div>
+        <div class="export-overview-grid">
+          <article class="export-overview-card">
+            <small>📄 Letzter Export Demo</small>
+            <strong data-export-stat="lastExport">-</strong>
+          </article>
+          <article class="export-overview-card">
+            <small>💾 Letztes Backup Demo</small>
+            <strong data-export-stat="lastBackup">-</strong>
+          </article>
+          <article class="export-overview-card">
+            <small>🧩 Exportierbare Module</small>
+            <strong data-export-stat="modules">0</strong>
+          </article>
+          <article class="export-overview-card is-warning">
+            <small>⏳ Offene Sicherung Demo</small>
+            <strong data-export-stat="pendingBackup">0</strong>
+          </article>
+          <article class="export-overview-card is-info">
+            <small>🖥️ Systemstatus</small>
+            <strong data-export-stat="systemStatus">-</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="export-layout">
+        <article class="admin-panel export-module-panel" aria-label="Export Bereiche">
+          <div class="admin-panel-head">
+            <h2>Export Bereiche</h2>
+          </div>
+          <div class="export-grid" data-export-grid></div>
+        </article>
+
+        <article class="admin-panel backup-panel" aria-label="Backup Bereich">
+          <div class="admin-panel-head">
+            <h2>Backup Bereich Demo</h2>
+          </div>
+          <div class="backup-grid" data-backup-grid></div>
+        </article>
+      </section>
+
+      <div class="admin-modal" data-export-modal hidden>
+        <div class="admin-modal-backdrop" data-export-modal-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="export-modal-title" data-export-modal-title>Export/Backup Hinweis</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-export-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-export-modal-body></div>
+          <footer class="admin-modal-foot">
+            <button class="admin-btn admin-btn-secondary" type="button" data-export-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="export-backup.js"></script>
+</body>
+</html>

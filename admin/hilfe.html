@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Hilfe Center</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="admin-nav-item" href="index.html">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item" href="live-karte.html">Live-Karte</a>
+        <a class="admin-nav-item" href="werkstatt.html">Werkstatt</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
+        <a class="admin-nav-item" href="schichtplanung.html">Schichtplanung</a>
+        <a class="admin-nav-item" href="dokumente.html">Dokumente</a>
+        <a class="admin-nav-item" href="statistiken.html">Statistiken</a>
+        <a class="admin-nav-item" href="einstellungen.html">Einstellungen</a>
+        <a class="admin-nav-item" href="benutzer.html">Benutzer</a>
+        <a class="admin-nav-item" href="verlauf.html">Verlauf</a>
+        <a class="admin-nav-item" href="export-backup.html">Export & Backup</a>
+        <a class="admin-nav-item is-active" href="hilfe.html" aria-current="page">Hilfe</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Admin Help Center</h1>
+          <p>Handbuch und Hilfeartikel fur den Demo-Admin-Bereich</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b>0</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Admin</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-panel help-tools" aria-label="Hilfe Suche">
+        <div class="help-search-wrap">
+          <label class="driver-label" for="help-search-input">Hilfe suchen</label>
+          <input
+            id="help-search-input"
+            class="driver-search-input"
+            type="search"
+            placeholder="Hilfe durchsuchen..."
+            autocomplete="off"
+            data-help-search
+          >
+        </div>
+      </section>
+
+      <section class="help-grid" aria-label="Hilfethemen" data-help-grid></section>
+
+      <section class="admin-panel help-faq-panel" aria-label="FAQ Bereich">
+        <div class="admin-panel-head">
+          <h2>FAQ</h2>
+        </div>
+        <div class="help-faq-list" data-help-faq-list></div>
+      </section>
+
+      <div class="admin-modal" data-help-modal hidden>
+        <div class="admin-modal-backdrop" data-help-modal-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="help-modal-title" data-help-modal-title>Anleitung</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-help-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-help-modal-body></div>
+          <footer class="admin-modal-foot">
+            <button class="admin-btn admin-btn-secondary" type="button" data-help-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="hilfe.js"></script>
+</body>
+</html>
