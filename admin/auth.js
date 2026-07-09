@@ -11,26 +11,34 @@
     admin: { role: "Chef" },
     dispo: { role: "Disposition" },
     billing: { role: "Buchhaltung" },
-    fahrer: { role: "Fahrer" }
+    fahrer: { role: "Fahrer" },
+    werkstatt: { role: "Werkstatt" }
   };
 
   const ROLE_NAV_ACCESS = {
-    Chef: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Kunden", "Rechnungen", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen"],
-    Disposition: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Kunden", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen"],
-    Buchhaltung: ["Dashboard", "Fahrten", "Kunden", "Rechnungen", "Dokumente", "Statistiken", "Einstellungen"],
-    Fahrer: ["Dashboard", "Fahrten", "Fahrzeuge", "Dokumente", "Statistiken", "Einstellungen"]
+    Chef: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Live-Karte", "Werkstatt", "Kunden", "Rechnungen", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen", "Benutzer", "Verlauf", "Export & Backup", "Hilfe"],
+    Disposition: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Live-Karte", "Werkstatt", "Kunden", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen", "Verlauf", "Export & Backup", "Hilfe"],
+    Buchhaltung: ["Dashboard", "Fahrten", "Werkstatt", "Kunden", "Rechnungen", "Dokumente", "Statistiken", "Einstellungen", "Verlauf", "Export & Backup", "Hilfe"],
+    Fahrer: ["Dashboard", "Fahrten", "Fahrzeuge", "Live-Karte", "Werkstatt", "Dokumente", "Statistiken", "Einstellungen", "Verlauf", "Hilfe"],
+    Werkstatt: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Live-Karte", "Werkstatt", "Kunden", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen"]
   };
 
   const ROLE_PAGE_ACCESS = {
     "index.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"],
     "fahrer.html": ["Chef", "Disposition"],
     "fahrzeuge.html": ["Chef", "Disposition", "Fahrer"],
+    "live-karte.html": ["Chef", "Disposition", "Fahrer", "Werkstatt"],
+    "werkstatt.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt"],
     "kunden.html": ["Chef", "Disposition", "Buchhaltung"],
     "rechnungen.html": ["Chef", "Buchhaltung"],
     "schichtplanung.html": ["Chef", "Disposition"],
     "dokumente.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"],
     "statistiken.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"],
-    "einstellungen.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"]
+    "einstellungen.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"],
+    "benutzer.html": ["Chef"],
+    "verlauf.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"],
+    "export-backup.html": ["Chef", "Disposition", "Buchhaltung"],
+    "hilfe.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"]
   };
 
   // Nur Demo-Benachrichtigungen ohne Backend.
@@ -112,12 +120,18 @@
     { key: "Fahrten", href: "index.html", label: "Fahrten" },
     { key: "Fahrer", href: "fahrer.html", label: "Fahrer" },
     { key: "Fahrzeuge", href: "fahrzeuge.html", label: "Fahrzeuge" },
+    { key: "Live-Karte", href: "live-karte.html", label: "Live-Karte" },
+    { key: "Werkstatt", href: "werkstatt.html", label: "Werkstatt" },
     { key: "Kunden", href: "kunden.html", label: "Kunden" },
     { key: "Rechnungen", href: "rechnungen.html", label: "Rechnungen" },
     { key: "Schichtplanung", href: "schichtplanung.html", label: "Schichtplanung" },
     { key: "Dokumente", href: "dokumente.html", label: "Dokumente" },
     { key: "Statistiken", href: "statistiken.html", label: "Statistiken" },
-    { key: "Einstellungen", href: "einstellungen.html", label: "Einstellungen" }
+    { key: "Einstellungen", href: "einstellungen.html", label: "Einstellungen" },
+    { key: "Benutzer", href: "benutzer.html", label: "Benutzer" },
+    { key: "Verlauf", href: "verlauf.html", label: "Verlauf" },
+    { key: "Export & Backup", href: "export-backup.html", label: "Export & Backup" },
+    { key: "Hilfe", href: "hilfe.html", label: "Hilfe" }
   ];
 
   function normalizePath(pathname) {
@@ -190,7 +204,13 @@
     window.location.replace("login.html");
   }
 
-  function redirectToDashboardWithNotice() {
+  function redirectToDashboardWithNotice(fileName) {
+    if (fileName === "benutzer.html") {
+      localStorage.setItem(KEY_NOTICE, "Diese Seite ist nur für Chef-Administratoren freigegeben.");
+      window.location.replace("index.html");
+      return;
+    }
+
     localStorage.setItem(KEY_NOTICE, "Demo-Berechtigung: Diese Seite ist für deine Rolle nicht freigegeben.");
     window.location.replace("index.html");
   }
@@ -207,12 +227,18 @@
     if (fileName === "index.html") return "Fahrten";
     if (fileName === "fahrer.html") return "Fahrer";
     if (fileName === "fahrzeuge.html") return "Fahrzeuge";
+    if (fileName === "live-karte.html") return "Live-Karte";
+    if (fileName === "werkstatt.html") return "Werkstatt";
     if (fileName === "kunden.html") return "Kunden";
     if (fileName === "rechnungen.html") return "Rechnungen";
     if (fileName === "schichtplanung.html") return "Schichtplanung";
     if (fileName === "dokumente.html") return "Dokumente";
     if (fileName === "statistiken.html") return "Statistiken";
     if (fileName === "einstellungen.html") return "Einstellungen";
+    if (fileName === "benutzer.html") return "Benutzer";
+    if (fileName === "verlauf.html") return "Verlauf";
+    if (fileName === "export-backup.html") return "Export & Backup";
+    if (fileName === "hilfe.html") return "Hilfe";
     return "";
   }
 
@@ -604,7 +630,7 @@
     }
 
     if (!canAccessPage(session.role, fileName)) {
-      redirectToDashboardWithNotice();
+      redirectToDashboardWithNotice(fileName);
       return { role: session.role, user: session.user, protected: true };
     }
 
