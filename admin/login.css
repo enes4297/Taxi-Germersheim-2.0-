@@ -1,0 +1,108 @@
+/* Nur Demo-Login. Kein echter Zugriffsschutz ohne Backend. */
+
+.admin-login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.admin-login-card {
+  width: min(460px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 20px;
+  background: linear-gradient(145deg, rgba(16, 17, 22, 0.96), rgba(9, 10, 13, 0.96));
+  box-shadow: 0 22px 40px rgba(0, 0, 0, 0.35);
+  display: grid;
+  gap: 14px;
+}
+
+.admin-login-brand {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-login-brand img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 217, 106, 0.26);
+  background: rgba(255, 217, 106, 0.08);
+  padding: 6px;
+}
+
+.admin-login-brand strong {
+  display: block;
+  font-size: 20px;
+}
+
+.admin-login-brand small {
+  color: var(--gold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.admin-login-head h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.admin-login-head p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.admin-login-form {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-login-form label {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-login-form input {
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0 14px;
+  outline: none;
+}
+
+.admin-login-form input:focus {
+  border-color: rgba(255, 217, 106, 0.44);
+  box-shadow: 0 0 0 3px rgba(255, 217, 106, 0.14);
+}
+
+.admin-login-error {
+  margin: 2px 0 0;
+  min-height: 22px;
+  color: #ffb1b1;
+  font-size: 13px;
+}
+
+.admin-login-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .admin-login-card {
+    padding: 16px;
+  }
+
+  .admin-login-head h1 {
+    font-size: 24px;
+  }
+}

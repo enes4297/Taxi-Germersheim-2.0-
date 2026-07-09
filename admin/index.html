@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Taxi Germersheim - Dispatcher Dashboard</title>
+  <title>Taxi Germersheim - Fahrtenmanagement</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
   <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -19,29 +20,30 @@
       </div>
 
       <nav class="admin-nav">
-        <a class="admin-nav-item is-active" href="index.html" aria-current="page">Dashboard</a>
-        <a class="admin-nav-item" href="#" aria-disabled="true">Fahrten</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Dashboard</a>
+        <a class="admin-nav-item is-active" href="index.html" aria-current="page">Fahrten</a>
         <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
         <a class="admin-nav-item" href="#" aria-disabled="true">Kunden</a>
         <a class="admin-nav-item" href="#" aria-disabled="true">Rewards</a>
         <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
         <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
         <a class="admin-nav-item" href="#" aria-disabled="true">Einstellungen</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
       </nav>
     </aside>
 
     <main class="admin-main">
       <header class="admin-topbar">
         <div class="admin-topbar-title">
-          <h1>Dispatcher Dashboard</h1>
-          <p>Phase 1 - Demo ohne Login, Datenbank oder Backend</p>
+          <h1>Fahrtenmanagement</h1>
+          <p>Interner Fahrtenbereich mit Demo-Daten, ohne Backend</p>
         </div>
 
         <div class="admin-topbar-actions">
           <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
           <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
             <span>🔔</span>
-            <b data-admin-notification-count>3</b>
+            <b data-ride-alert-count>7</b>
           </button>
           <button class="admin-user" type="button" aria-label="Benutzer">
             <span>Disponent</span>
@@ -50,58 +52,78 @@
         </div>
       </header>
 
-      <section class="admin-stats" aria-label="Kennzahlen">
-        <article class="stat-card">
-          <small>🚖 Offene Fahrten</small>
-          <strong data-stat="openRides">0</strong>
-        </article>
-        <article class="stat-card">
-          <small>🚕 Fahrer unterwegs</small>
-          <strong data-stat="driversOnRoute">0</strong>
-        </article>
-        <article class="stat-card">
-          <small>✅ Abgeschlossene Fahrten</small>
-          <strong data-stat="completedRides">0</strong>
-        </article>
-        <article class="stat-card">
-          <small>📞 Neue Anfragen</small>
-          <strong data-stat="newRequests">0</strong>
-        </article>
-        <article class="stat-card">
-          <small>⭐ Heute verdiente Rewards</small>
-          <strong data-stat="todayRewards">0</strong>
-        </article>
-        <article class="stat-card">
-          <small>💶 Tagesumsatz (Demo)</small>
-          <strong data-stat="todayRevenue">0,00 EUR</strong>
-        </article>
-      </section>
-
-      <section class="admin-panel" aria-label="Heutige Fahrten">
+      <section class="admin-panel ride-overview" aria-label="Fahrten-Dashboard">
         <div class="admin-panel-head">
-          <h2>Heutige Fahrten</h2>
-          <div class="admin-panel-actions">
-            <button class="admin-btn" type="button">Aktualisieren</button>
-            <button class="admin-btn admin-btn-secondary" type="button">Neue Fahrt</button>
-          </div>
+          <h2>Fahrten-Dashboard</h2>
         </div>
-
-        <div class="admin-table-wrap">
-          <table class="admin-table" aria-label="Fahrtentabelle">
-            <thead>
-              <tr>
-                <th>Zeit</th>
-                <th>Kunde</th>
-                <th>Start</th>
-                <th>Ziel</th>
-                <th>Status</th>
-                <th>Fahrer</th>
-              </tr>
-            </thead>
-            <tbody data-admin-rides></tbody>
-          </table>
+        <div class="ride-overview-grid">
+          <article class="ride-overview-card">
+            <small>🗓️ Fahrten heute</small>
+            <strong data-ride-stat="today">0</strong>
+          </article>
+          <article class="ride-overview-card is-open">
+            <small>📥 Offen</small>
+            <strong data-ride-stat="open">0</strong>
+          </article>
+          <article class="ride-overview-card is-confirmed">
+            <small>✅ Bestätigt</small>
+            <strong data-ride-stat="confirmed">0</strong>
+          </article>
+          <article class="ride-overview-card is-onroute">
+            <small>🚕 Unterwegs</small>
+            <strong data-ride-stat="onRoute">0</strong>
+          </article>
+          <article class="ride-overview-card is-completed">
+            <small>🏁 Abgeschlossen</small>
+            <strong data-ride-stat="completed">0</strong>
+          </article>
+          <article class="ride-overview-card is-cancelled">
+            <small>❌ Storniert</small>
+            <strong data-ride-stat="cancelled">0</strong>
+          </article>
         </div>
       </section>
+
+      <section class="admin-panel ride-tools" aria-label="Fahrten Suche und Filter">
+        <div class="ride-search-wrap">
+          <label class="driver-label" for="ride-search-input">Fahrt suchen</label>
+          <input
+            id="ride-search-input"
+            class="driver-search-input"
+            type="search"
+            placeholder="Kunde, Fahrer, Fahrzeug, Start oder Ziel suchen..."
+            autocomplete="off"
+            data-ride-search
+          >
+        </div>
+
+        <div class="ride-filter-group" role="group" aria-label="Fahrten filtern">
+          <button class="ride-filter-btn is-active" type="button" data-ride-filter="Alle">Alle</button>
+          <button class="ride-filter-btn" type="button" data-ride-filter="Offen">Offen</button>
+          <button class="ride-filter-btn" type="button" data-ride-filter="Bestätigt">Bestätigt</button>
+          <button class="ride-filter-btn" type="button" data-ride-filter="Unterwegs">Unterwegs</button>
+          <button class="ride-filter-btn" type="button" data-ride-filter="Abgeschlossen">Abgeschlossen</button>
+          <button class="ride-filter-btn" type="button" data-ride-filter="Storniert">Storniert</button>
+          <button class="ride-filter-btn" type="button" data-ride-filter="Krankenfahrt">Krankenfahrt</button>
+          <button class="ride-filter-btn" type="button" data-ride-filter="Flughafen">Flughafen</button>
+        </div>
+      </section>
+
+      <section class="ride-grid" aria-label="Fahrtenübersicht" data-ride-grid></section>
+
+      <div class="admin-modal" data-ride-modal hidden>
+        <div class="admin-modal-backdrop" data-ride-modal-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="ride-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="ride-modal-title" data-ride-modal-title>Fahrtdetails</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-ride-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-ride-modal-body></div>
+          <footer class="admin-modal-foot">
+            <button class="admin-btn driver-btn-muted" type="button" data-ride-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
     </main>
   </div>
 

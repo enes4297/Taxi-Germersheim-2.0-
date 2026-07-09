@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Schichtplanung</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="schichtplanung.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="#" aria-disabled="true">Dashboard</a>
+        <a class="admin-nav-item" href="index.html">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
+        <a class="admin-nav-item is-active" href="schichtplanung.html" aria-current="page">Schichtplanung</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Rewards</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Shift & Dispatch Planning</h1>
+          <p>Schichten und Fahrzeugzuordnung im Tagesbetrieb, nur Demo-Daten</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b data-shift-alert-count>4</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Disposition</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-panel shift-overview" aria-label="Schicht Dashboard">
+        <div class="admin-panel-head">
+          <h2>Schicht-Dashboard</h2>
+        </div>
+        <div class="shift-overview-grid">
+          <article class="shift-overview-card">
+            <small>👥 Fahrer heute</small>
+            <strong data-shift-stat="driversToday">0</strong>
+          </article>
+          <article class="shift-overview-card is-available">
+            <small>🚕 Fahrzeuge verfügbar</small>
+            <strong data-shift-stat="vehiclesAvailable">0</strong>
+          </article>
+          <article class="shift-overview-card is-early">
+            <small>🌅 Frühschicht</small>
+            <strong data-shift-stat="early">0</strong>
+          </article>
+          <article class="shift-overview-card is-late">
+            <small>🌆 Spätschicht</small>
+            <strong data-shift-stat="late">0</strong>
+          </article>
+          <article class="shift-overview-card is-night">
+            <small>🌙 Nachtschicht</small>
+            <strong data-shift-stat="night">0</strong>
+          </article>
+          <article class="shift-overview-card is-warning">
+            <small>⚠️ Fehlende Besetzungen</small>
+            <strong data-shift-stat="missingAssignments">0</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="admin-panel shift-timeline-panel" aria-label="Tagesübersicht Zeitachse">
+        <div class="admin-panel-head">
+          <h2>Tagesübersicht</h2>
+        </div>
+        <div class="shift-timeline" data-shift-timeline></div>
+      </section>
+
+      <section class="admin-panel shift-tools" aria-label="Schicht Filter und Suche">
+        <div class="shift-search-wrap">
+          <label class="driver-label" for="shift-search-input">Suche</label>
+          <input
+            id="shift-search-input"
+            class="driver-search-input"
+            type="search"
+            placeholder="Fahrer, Fahrzeug oder Kennzeichen suchen..."
+            autocomplete="off"
+            data-shift-search
+          >
+        </div>
+
+        <div class="shift-filter-group" role="group" aria-label="Schichtstatus filtern">
+          <button class="shift-filter-btn is-active" type="button" data-shift-filter="Alle">Alle</button>
+          <button class="shift-filter-btn" type="button" data-shift-filter="Früh">Früh</button>
+          <button class="shift-filter-btn" type="button" data-shift-filter="Spät">Spät</button>
+          <button class="shift-filter-btn" type="button" data-shift-filter="Nacht">Nacht</button>
+          <button class="shift-filter-btn" type="button" data-shift-filter="Frei">Frei</button>
+          <button class="shift-filter-btn" type="button" data-shift-filter="Urlaub">Urlaub</button>
+          <button class="shift-filter-btn" type="button" data-shift-filter="Krank">Krank</button>
+        </div>
+      </section>
+
+      <section class="shift-layout">
+        <section class="shift-driver-grid" aria-label="Fahrerkarten" data-shift-driver-grid></section>
+
+        <section class="admin-panel shift-side-panel" aria-label="Dispatch Hinweise und Fahrzeugzuordnung">
+          <div class="shift-side-block">
+            <h3>Warnungen</h3>
+            <div class="shift-warning-list" data-shift-warning-list></div>
+          </div>
+
+          <div class="shift-side-block">
+            <h3>Fahrzeugzuordnung</h3>
+            <div class="shift-mapping-list" data-shift-mapping-list></div>
+          </div>
+        </section>
+      </section>
+
+      <div class="admin-modal" data-shift-modal hidden>
+        <div class="admin-modal-backdrop" data-shift-modal-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="shift-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="shift-modal-title" data-shift-modal-title>Schichtdetails</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-shift-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-shift-modal-body></div>
+          <footer class="admin-modal-foot">
+            <button class="admin-btn" type="button" data-shift-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="schichtplanung.js"></script>
+</body>
+</html>

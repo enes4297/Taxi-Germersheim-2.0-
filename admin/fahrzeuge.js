@@ -154,6 +154,13 @@
     return Math.ceil(diffMs / 86400000);
   }
 
+  function shiftDate(dateValue, daysShift) {
+    const date = new Date(`${dateValue}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return dateValue;
+    date.setDate(date.getDate() + daysShift);
+    return date.toISOString().slice(0, 10);
+  }
+
   function normalizeVehicle(rawVehicle) {
     const nextServiceInDays = daysUntil(rawVehicle.nextService);
     const tuvInDays = daysUntil(rawVehicle.tuvDate);
@@ -163,6 +170,11 @@
       category: resolveVehicleCategory(rawVehicle),
       nextServiceInDays,
       tuvInDays,
+      history: {
+        lastService: shiftDate(rawVehicle.nextService, -95),
+        lastHu: shiftDate(rawVehicle.tuvDate, -180),
+        lastDriverChange: shiftDate(rawVehicle.nextService, -24)
+      },
       isServiceDueSoon: nextServiceInDays >= 0 && nextServiceInDays <= 30,
       isTuvDueSoon: tuvInDays >= 0 && tuvInDays <= 45
     };
@@ -170,9 +182,7 @@
 
   function resolveVehicleCategory(vehicle) {
     const typeText = normalizeText(vehicle.type);
-    const hintText = normalizeText(vehicle.hint);
-
-    if (hintText.includes("ersetzt") || hintText.includes("ersatz")) return "Ersatz bald";
+    if (typeText.includes("kompakt")) return "Kompakt";
     if (typeText.includes("rollstuhl")) return "Rollstuhl";
     if (typeText.includes("grossraum") || typeText.includes("großraum")) return "Großraum";
     if (typeText.includes("elektro")) return "Elektro";
@@ -296,6 +306,7 @@
       total: vehicles.length,
       available: vehicles.filter((vehicle) => vehicle.status === "Verfügbar").length,
       onRoute: vehicles.filter((vehicle) => vehicle.status === "Unterwegs").length,
+      pause: vehicles.filter((vehicle) => vehicle.status === "Pause").length,
       workshop: vehicles.filter((vehicle) => vehicle.status === "Werkstatt").length,
       tuvDue: vehicles.filter((vehicle) => vehicle.isTuvDueSoon).length,
       serviceDue: vehicles.filter((vehicle) => vehicle.isServiceDueSoon).length
@@ -303,6 +314,11 @@
 
     Object.entries(stats).forEach(([key, value]) => {
       const node = document.querySelector(`[data-vehicle-stat="${key}"]`);
+      if (node) node.textContent = String(value);
+    });
+
+    Object.entries(stats).forEach(([key, value]) => {
+      const node = document.querySelector(`[data-fleet-today="${key}"]`);
       if (node) node.textContent = String(value);
     });
   }
@@ -324,9 +340,42 @@
   function createDriverNode(vehicle) {
     const driverNode = document.createElement("span");
     const hasDriver = vehicle.currentDriver && vehicle.currentDriver !== "-";
-    driverNode.className = `vehicle-driver-chip ${hasDriver ? "is-active" : "is-idle"}`;
+    const statusClassMap = {
+      "Verfügbar": "is-available",
+      Unterwegs: "is-onroute",
+      Pause: "is-pause",
+      Werkstatt: "is-workshop"
+    };
+    const statusClass = hasDriver ? statusClassMap[vehicle.status] || "is-idle" : "is-idle";
+    driverNode.className = `vehicle-driver-chip ${statusClass}`;
     driverNode.innerHTML = `<span class="vehicle-driver-dot" aria-hidden="true"></span><span>${vehicle.currentDriver}</span>`;
     return driverNode;
+  }
+
+  function createMaintenanceNode(vehicle) {
+    const box = document.createElement("div");
+    box.className = "vehicle-maintenance-box";
+
+    const serviceMeta = getCountdownMeta(vehicle.nextServiceInDays);
+    const serviceItem = document.createElement("div");
+    serviceItem.className = "vehicle-maintenance-item";
+    serviceItem.innerHTML = `
+      <span class="vehicle-maintenance-label">✓ Service</span>
+      <span class="vehicle-maintenance-date">${formatDate(vehicle.nextService)}</span>
+      <span class="vehicle-countdown ${serviceMeta.className}">${serviceMeta.label}</span>
+    `;
+
+    const tuvMeta = getCountdownMeta(vehicle.tuvInDays);
+    const tuvItem = document.createElement("div");
+    tuvItem.className = "vehicle-maintenance-item";
+    tuvItem.innerHTML = `
+      <span class="vehicle-maintenance-label">✓ TÜV</span>
+      <span class="vehicle-maintenance-date">${formatDate(vehicle.tuvDate)}</span>
+      <span class="vehicle-countdown ${tuvMeta.className}">${tuvMeta.label}</span>
+    `;
+
+    box.append(serviceItem, tuvItem);
+    return box;
   }
 
   function createCountdownNode(prefix, days) {
@@ -340,8 +389,9 @@
   function createTireNode(tireStatus) {
     const tire = document.createElement("span");
     const meta = getTireMeta(tireStatus);
+    const emoji = meta.className === "is-good" ? "🟢" : meta.className === "is-medium" ? "🟡" : "🔴";
     tire.className = `vehicle-tire-status ${meta.className}`;
-    tire.innerHTML = `<span class="vehicle-tire-dot" aria-hidden="true"></span><span>${meta.label}</span>`;
+    tire.innerHTML = `<span class="vehicle-tire-dot" aria-hidden="true"></span><span>${emoji} ${meta.label}</span>`;
     return tire;
   }
 
@@ -382,8 +432,7 @@
           <div><dt>Sitzplätze</dt><dd>${vehicle.seats}</dd></div>
           <div><dt>Aktueller Fahrer</dt><dd class="vehicle-driver-slot"></dd></div>
           <div><dt>Kilometerstand</dt><dd>${formatKm(vehicle.odometerKm)}</dd></div>
-          <div><dt>Nächster Service</dt><dd class="vehicle-service-slot">${formatDate(vehicle.nextService)}</dd></div>
-          <div><dt>TÜV</dt><dd class="vehicle-tuv-slot">${formatDate(vehicle.tuvDate)}</dd></div>
+          <div class="vehicle-maintenance-row"><dt>Wartung</dt><dd class="vehicle-maintenance-slot"></dd></div>
           <div><dt>Versicherung</dt><dd>${formatDate(vehicle.insuranceUntil)}</dd></div>
           <div><dt>Reifenstatus</dt><dd class="vehicle-tire-slot"></dd></div>
         </dl>
@@ -408,17 +457,8 @@
       const tireSlot = card.querySelector(".vehicle-tire-slot");
       if (tireSlot) tireSlot.append(createTireNode(vehicle.tireStatus));
 
-      const serviceSlot = card.querySelector(".vehicle-service-slot");
-      if (serviceSlot) {
-        serviceSlot.append(document.createTextNode(" "));
-        serviceSlot.append(createCountdownNode("Service", vehicle.nextServiceInDays));
-      }
-
-      const tuvSlot = card.querySelector(".vehicle-tuv-slot");
-      if (tuvSlot) {
-        tuvSlot.append(document.createTextNode(" "));
-        tuvSlot.append(createCountdownNode("TÜV", vehicle.tuvInDays));
-      }
+      const maintenanceSlot = card.querySelector(".vehicle-maintenance-slot");
+      if (maintenanceSlot) maintenanceSlot.append(createMaintenanceNode(vehicle));
 
       grid.append(card);
     });
@@ -499,6 +539,14 @@
         <div><dt>Reifenstatus</dt><dd>${vehicle.tireStatus}</dd></div>
         <div><dt>Hinweis</dt><dd>${vehicle.hint || "-"}</dd></div>
       </dl>
+      <div class="vehicle-modal-history">
+        <strong>Fahrzeughistorie (Demo)</strong>
+        <ul>
+          <li>Letzter Service: ${formatDate(vehicle.history.lastService)}</li>
+          <li>Letzte HU: ${formatDate(vehicle.history.lastHu)}</li>
+          <li>Letzter Fahrerwechsel: ${formatDate(vehicle.history.lastDriverChange)}</li>
+        </ul>
+      </div>
       <p class="vehicle-modal-note">Demo-Daten – später Backend-Anbindung möglich</p>
     `;
   }

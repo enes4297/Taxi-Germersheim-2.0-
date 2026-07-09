@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Admin Login</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <main class="admin-login-shell">
+    <section class="admin-login-card" aria-label="Admin Login">
+      <div class="admin-login-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Taxi Germersheim</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <header class="admin-login-head">
+        <h1>Admin Login</h1>
+        <p>Interner Bereich</p>
+      </header>
+
+      <form class="admin-login-form" data-login-form novalidate>
+        <label for="admin-username">Benutzername</label>
+        <input id="admin-username" name="username" type="text" autocomplete="username" required>
+
+        <label for="admin-password">Passwort</label>
+        <input id="admin-password" name="password" type="password" autocomplete="current-password" required>
+
+        <p class="admin-login-error" data-login-error hidden></p>
+
+        <button class="admin-btn" type="submit">Login</button>
+      </form>
+
+      <p class="admin-login-hint">Demo-Login ohne Backend</p>
+    </section>
+  </main>
+
+  <script src="login.js"></script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Rechnungsmanagement</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="#" aria-disabled="true">Dashboard</a>
+        <a class="admin-nav-item" href="index.html">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item is-active" href="rechnungen.html" aria-current="page">Rechnungen</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Rewards</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Einstellungen</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Billing Management</h1>
+          <p>Interne Rechnungsverwaltung mit Demo-Daten, ohne Backend</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b data-billing-alert-count>6</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Disposition</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-panel billing-overview" aria-label="Rechnungs-Dashboard">
+        <div class="admin-panel-head">
+          <h2>Rechnungs-Dashboard</h2>
+        </div>
+        <div class="billing-overview-grid">
+          <article class="billing-overview-card">
+            <small>📄 Rechnungen gesamt</small>
+            <strong data-billing-stat="total">0</strong>
+          </article>
+          <article class="billing-overview-card is-open">
+            <small>📥 Offen</small>
+            <strong data-billing-stat="open">0</strong>
+          </article>
+          <article class="billing-overview-card is-paid">
+            <small>✅ Bezahlt</small>
+            <strong data-billing-stat="paid">0</strong>
+          </article>
+          <article class="billing-overview-card is-overdue">
+            <small>⏰ Überfällig</small>
+            <strong data-billing-stat="overdue">0</strong>
+          </article>
+          <article class="billing-overview-card is-medical">
+            <small>🏥 Krankenkasse</small>
+            <strong data-billing-stat="medical">0</strong>
+          </article>
+          <article class="billing-overview-card is-company">
+            <small>🏢 Firmenkunden</small>
+            <strong data-billing-stat="company">0</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="admin-panel billing-tools" aria-label="Rechnungen Suche und Filter">
+        <div class="billing-search-wrap">
+          <label class="driver-label" for="billing-search-input">Rechnung suchen</label>
+          <input
+            id="billing-search-input"
+            class="driver-search-input"
+            type="search"
+            placeholder="Rechnung, Kunde, Firma oder Betrag suchen..."
+            autocomplete="off"
+            data-billing-search
+          >
+        </div>
+
+        <div class="billing-filter-group" role="group" aria-label="Rechnungen filtern">
+          <button class="billing-filter-btn is-active" type="button" data-billing-filter="Alle">Alle</button>
+          <button class="billing-filter-btn" type="button" data-billing-filter="Offen">Offen</button>
+          <button class="billing-filter-btn" type="button" data-billing-filter="Bezahlt">Bezahlt</button>
+          <button class="billing-filter-btn" type="button" data-billing-filter="Überfällig">Überfällig</button>
+          <button class="billing-filter-btn" type="button" data-billing-filter="Krankenkasse">Krankenkasse</button>
+          <button class="billing-filter-btn" type="button" data-billing-filter="Firmenkunden">Firmenkunden</button>
+          <button class="billing-filter-btn" type="button" data-billing-filter="In Prüfung">In Prüfung</button>
+        </div>
+      </section>
+
+      <section class="billing-grid" aria-label="Rechnungsübersicht" data-billing-grid></section>
+
+      <div class="admin-modal" data-billing-modal hidden>
+        <div class="admin-modal-backdrop" data-billing-modal-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="billing-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="billing-modal-title" data-billing-modal-title>Rechnungsdetails</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-billing-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-billing-modal-body></div>
+          <footer class="admin-modal-foot">
+            <button class="admin-btn driver-btn-muted" type="button" data-billing-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="rechnungen.js"></script>
+</body>
+</html>
