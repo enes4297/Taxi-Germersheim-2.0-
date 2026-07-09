@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Fahrzeugverwaltung</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html">Dashboard</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Kunden</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Rewards</a>
+        <a class="admin-nav-item is-active" href="fahrzeuge.html" aria-current="page">Fahrzeuge</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Einstellungen</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Fahrzeugverwaltung</h1>
+          <p>Interne Flottensteuerung - Demo-Modul ohne Backend</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b data-vehicle-alert-count>4</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Disposition</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-stats" aria-label="Fahrzeugstatistik">
+        <article class="stat-card">
+          <small>🚘 Fahrzeuge gesamt</small>
+          <strong data-vehicle-stat="total">0</strong>
+        </article>
+        <article class="stat-card">
+          <small>🟢 Verfügbar</small>
+          <strong data-vehicle-stat="available">0</strong>
+        </article>
+        <article class="stat-card">
+          <small>🔵 Unterwegs</small>
+          <strong data-vehicle-stat="onRoute">0</strong>
+        </article>
+        <article class="stat-card">
+          <small>🔧 Werkstatt</small>
+          <strong data-vehicle-stat="workshop">0</strong>
+        </article>
+        <article class="stat-card">
+          <small>⚠️ TÜV bald fällig</small>
+          <strong data-vehicle-stat="tuvDue">0</strong>
+        </article>
+        <article class="stat-card">
+          <small>🛠️ Service bald fällig</small>
+          <strong data-vehicle-stat="serviceDue">0</strong>
+        </article>
+      </section>
+
+      <section class="admin-panel vehicle-tools" aria-label="Fahrzeugfilter">
+        <div class="vehicle-filter-group" role="group" aria-label="Fahrzeugstatus filtern">
+          <button class="vehicle-filter-btn is-active" type="button" data-vehicle-filter="Alle">Alle</button>
+          <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Verfügbar">Verfügbar</button>
+          <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Unterwegs">Unterwegs</button>
+          <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Werkstatt">Werkstatt</button>
+          <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Service fällig">Service fällig</button>
+          <button class="vehicle-filter-btn" type="button" data-vehicle-filter="TÜV fällig">TÜV fällig</button>
+        </div>
+      </section>
+
+      <section class="vehicle-grid" aria-label="Fahrzeugkarten" data-vehicle-grid></section>
+
+      <section class="admin-panel" aria-label="Fahrzeugtabelle">
+        <div class="admin-panel-head">
+          <h2>Fahrzeuge im Überblick</h2>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table vehicle-table" aria-label="Fahrzeugliste Tabelle">
+            <thead>
+              <tr>
+                <th>Fahrzeug</th>
+                <th>Kennzeichen</th>
+                <th>Typ</th>
+                <th>Status</th>
+                <th>Fahrer</th>
+                <th>Service</th>
+                <th>TÜV</th>
+                <th>KM</th>
+              </tr>
+            </thead>
+            <tbody data-vehicle-table></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="fahrzeuge.js"></script>
+</body>
+</html>

@@ -129,11 +129,10 @@
   }
 
   function bindUi() {
-    const buttons = document.querySelectorAll(".admin-nav-item");
-    buttons.forEach((button) => {
-      button.addEventListener("click", () => {
-        buttons.forEach((b) => b.classList.remove("is-active"));
-        button.classList.add("is-active");
+    const navItems = document.querySelectorAll(".admin-nav-item[aria-disabled='true']");
+    navItems.forEach((item) => {
+      item.addEventListener("click", (event) => {
+        event.preventDefault();
       });
     });
   }
