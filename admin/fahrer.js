@@ -328,8 +328,8 @@
 
     if (!visibleDrivers.length) {
       const empty = document.createElement("article");
-      empty.className = "driver-empty";
-      empty.innerHTML = "<strong>Keine Fahrer gefunden.</strong><p>Bitte Suche oder Filter anpassen.</p>";
+      empty.className = "driver-empty admin-empty-state";
+      empty.innerHTML = "<strong>🧑‍✈️ Keine Einträge gefunden</strong><p>Keine Einträge gefunden.</p><button class='admin-btn admin-btn-secondary admin-empty-reset' type='button' data-driver-reset>Filter zurücksetzen</button>";
       grid.append(empty);
       return;
     }
@@ -413,6 +413,19 @@
     if (!grid) return;
 
     grid.addEventListener("click", (event) => {
+      const resetButton = event.target.closest("[data-driver-reset]");
+      if (resetButton) {
+        state.activeFilter = "Alle";
+        state.searchTerm = "";
+        const searchInput = document.querySelector("[data-driver-search]");
+        if (searchInput) searchInput.value = "";
+        document.querySelectorAll("[data-driver-filter]").forEach((item) => {
+          item.classList.toggle("is-active", (item.getAttribute("data-driver-filter") || "") === "Alle");
+        });
+        renderDrivers();
+        return;
+      }
+
       const button = event.target.closest("[data-driver-action]");
       if (!button) return;
 

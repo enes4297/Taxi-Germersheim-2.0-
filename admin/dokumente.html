@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Dokumente</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="admin-nav-item" href="index.html">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
+        <a class="admin-nav-item" href="schichtplanung.html">Schichtplanung</a>
+        <a class="admin-nav-item is-active" href="dokumente.html" aria-current="page">Dokumente</a>
+        <a class="admin-nav-item" href="statistiken.html">Statistiken</a>
+        <a class="admin-nav-item" href="einstellungen.html">Einstellungen</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Dokumente & Compliance</h1>
+          <p>Interne Verwaltung von Fristen und Nachweisen mit Demo-Daten</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b>0</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Admin</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-panel docs-overview" aria-label="Dokumente Dashboard">
+        <div class="admin-panel-head">
+          <h2>Dokumente Dashboard</h2>
+        </div>
+        <div class="docs-overview-grid">
+          <article class="docs-overview-card">
+            <small>📄 Dokumente gesamt</small>
+            <strong data-doc-stat="total">0</strong>
+          </article>
+          <article class="docs-overview-card is-warning">
+            <small>⏳ Läuft bald ab</small>
+            <strong data-doc-stat="dueSoon">0</strong>
+          </article>
+          <article class="docs-overview-card is-overdue">
+            <small>🚨 Überfällig</small>
+            <strong data-doc-stat="overdue">0</strong>
+          </article>
+          <article class="docs-overview-card">
+            <small>🚗 Fahrzeuge</small>
+            <strong data-doc-stat="vehicles">0</strong>
+          </article>
+          <article class="docs-overview-card">
+            <small>🧑 Fahrer</small>
+            <strong data-doc-stat="drivers">0</strong>
+          </article>
+          <article class="docs-overview-card">
+            <small>🏢 Unternehmen</small>
+            <strong data-doc-stat="company">0</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="admin-panel docs-tools" aria-label="Dokumente Suche und Filter">
+        <div class="docs-search-wrap">
+          <label class="driver-label" for="doc-search-input">Dokument suchen</label>
+          <input
+            id="doc-search-input"
+            class="driver-search-input"
+            type="search"
+            placeholder="Dokument, Fahrzeug, Fahrer oder Kennzeichen suchen..."
+            autocomplete="off"
+            data-doc-search
+          >
+        </div>
+
+        <div class="docs-filter-group" role="group" aria-label="Dokumente filtern">
+          <button class="docs-filter-btn is-active" type="button" data-doc-filter="Alle">Alle</button>
+          <button class="docs-filter-btn" type="button" data-doc-filter="Fahrzeuge">Fahrzeuge</button>
+          <button class="docs-filter-btn" type="button" data-doc-filter="Fahrer">Fahrer</button>
+          <button class="docs-filter-btn" type="button" data-doc-filter="Unternehmen">Unternehmen</button>
+          <button class="docs-filter-btn" type="button" data-doc-filter="Bald fällig">Bald fällig</button>
+          <button class="docs-filter-btn" type="button" data-doc-filter="Überfällig">Überfällig</button>
+          <button class="docs-filter-btn" type="button" data-doc-filter="Fehlt">Fehlt</button>
+        </div>
+      </section>
+
+      <section class="docs-grid" aria-label="Dokumentübersicht" data-doc-grid></section>
+
+      <div class="admin-modal" data-doc-modal hidden>
+        <div class="admin-modal-backdrop" data-doc-modal-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="doc-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="doc-modal-title" data-doc-modal-title>Dokumentdetails</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-doc-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-doc-modal-body></div>
+          <footer class="admin-modal-foot">
+            <button class="admin-btn admin-btn-secondary" type="button" data-doc-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="dokumente.js"></script>
+</body>
+</html>

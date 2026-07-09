@@ -91,6 +91,31 @@
   font-size: 13px;
 }
 
+.admin-login-demo-users {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-login-demo-users h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.admin-login-demo-users ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-login-demo-users strong {
+  color: var(--gold);
+}
+
 .admin-login-hint {
   margin: 0;
   color: var(--muted);

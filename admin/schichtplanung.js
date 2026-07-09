@@ -297,9 +297,10 @@
     const visible = getVisibleAssignments();
     if (!visible.length) {
       grid.innerHTML = `
-        <article class="shift-empty">
-          <strong>Keine passenden Schichten gefunden.</strong>
-          <p>Bitte Filter oder Suche anpassen.</p>
+        <article class="shift-empty admin-empty-state">
+          <strong>🕒 Keine Einträge gefunden</strong>
+          <p>Keine Einträge gefunden.</p>
+          <button class="admin-btn admin-btn-secondary admin-empty-reset" type="button" data-shift-reset>Filter zurücksetzen</button>
         </article>
       `;
       return;
@@ -435,6 +436,19 @@
 
   function bindActions() {
     document.addEventListener("click", (event) => {
+      const resetButton = event.target.closest("[data-shift-reset]");
+      if (resetButton) {
+        state.activeFilter = "Alle";
+        state.searchTerm = "";
+        const searchInput = document.querySelector("[data-shift-search]");
+        if (searchInput) searchInput.value = "";
+        document.querySelectorAll("[data-shift-filter]").forEach((item) => {
+          item.classList.toggle("is-active", (item.getAttribute("data-shift-filter") || "") === "Alle");
+        });
+        renderDrivers();
+        return;
+      }
+
       const button = event.target.closest("[data-shift-action]");
       if (!button) return;
 

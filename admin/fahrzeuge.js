@@ -404,8 +404,8 @@
 
     if (!filtered.length) {
       const empty = document.createElement("article");
-      empty.className = "vehicle-empty";
-      empty.innerHTML = "<strong>Keine Fahrzeuge im aktuellen Filter.</strong><p>Bitte Filter anpassen.</p>";
+      empty.className = "vehicle-empty admin-empty-state";
+      empty.innerHTML = "<strong>🚗 Keine Einträge gefunden</strong><p>Keine Einträge gefunden.</p><button class='admin-btn admin-btn-secondary admin-empty-reset' type='button' data-vehicle-reset>Filter zurücksetzen</button>";
       grid.append(empty);
       return;
     }
@@ -624,6 +624,17 @@
     if (!grid) return;
 
     grid.addEventListener("click", (event) => {
+      const resetButton = event.target.closest("[data-vehicle-reset]");
+      if (resetButton) {
+        state.filter = "Alle";
+        state.searchTerm = "";
+        const searchInput = document.querySelector("[data-vehicle-search]");
+        if (searchInput) searchInput.value = "";
+        syncFilterUi();
+        updateVehicleViews();
+        return;
+      }
+
       const button = event.target.closest("[data-vehicle-action]");
       if (!button) return;
 

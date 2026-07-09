@@ -271,8 +271,8 @@
 
     if (!visibleCustomers.length) {
       const empty = document.createElement("article");
-      empty.className = "customer-empty";
-      empty.innerHTML = "<strong>Keine Kunden gefunden.</strong><p>Bitte Suche oder Filter anpassen.</p>";
+      empty.className = "customer-empty admin-empty-state";
+      empty.innerHTML = "<strong>👥 Keine Einträge gefunden</strong><p>Keine Einträge gefunden.</p><button class='admin-btn admin-btn-secondary admin-empty-reset' type='button' data-customer-reset>Filter zurücksetzen</button>";
       grid.append(empty);
       return;
     }
@@ -367,6 +367,19 @@
     if (!grid) return;
 
     grid.addEventListener("click", (event) => {
+      const resetButton = event.target.closest("[data-customer-reset]");
+      if (resetButton) {
+        state.activeFilter = "Alle";
+        state.searchTerm = "";
+        const searchInput = document.querySelector("[data-customer-search]");
+        if (searchInput) searchInput.value = "";
+        document.querySelectorAll("[data-customer-filter]").forEach((item) => {
+          item.classList.toggle("is-active", (item.getAttribute("data-customer-filter") || "") === "Alle");
+        });
+        renderCustomers();
+        return;
+      }
+
       const button = event.target.closest("[data-customer-action]");
       if (!button) return;
 

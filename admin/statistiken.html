@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Statistiken</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="admin-nav-item" href="index.html">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
+        <a class="admin-nav-item" href="schichtplanung.html">Schichtplanung</a>
+        <a class="admin-nav-item is-active" href="statistiken.html" aria-current="page">Statistiken</a>
+        <a class="admin-nav-item" href="einstellungen.html">Einstellungen</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Statistiken & Reports</h1>
+          <p>Professionelle Demo-Auswertungen für Fahrten, Umsatz und Auslastung</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b>0</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Admin</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-panel analytics-toolbar" aria-label="Zeitraumfilter">
+        <div class="admin-panel-head">
+          <h2>Zeitraum</h2>
+        </div>
+        <div class="analytics-filter-group" role="group" aria-label="Zeitraum auswählen">
+          <button class="analytics-filter-btn is-active" type="button" data-analytics-range="Heute">Heute</button>
+          <button class="analytics-filter-btn" type="button" data-analytics-range="7 Tage">7 Tage</button>
+          <button class="analytics-filter-btn" type="button" data-analytics-range="30 Tage">30 Tage</button>
+          <button class="analytics-filter-btn" type="button" data-analytics-range="Monat">Monat</button>
+          <button class="analytics-filter-btn" type="button" data-analytics-range="Jahr">Jahr</button>
+        </div>
+      </section>
+
+      <section class="analytics-kpi-grid" aria-label="Kennzahlen">
+        <article class="admin-panel analytics-kpi-card" data-analytics-scope="rides">
+          <small>🚕 Fahrten heute</small>
+          <strong data-analytics-kpi="ridesToday">0</strong>
+        </article>
+        <article class="admin-panel analytics-kpi-card" data-analytics-scope="revenue">
+          <small>💶 Umsatz heute Demo</small>
+          <strong data-analytics-kpi="revenueToday">0 EUR</strong>
+        </article>
+        <article class="admin-panel analytics-kpi-card" data-analytics-scope="utilization">
+          <small>📊 Auslastung</small>
+          <strong data-analytics-kpi="utilization">0 %</strong>
+        </article>
+        <article class="admin-panel analytics-kpi-card" data-analytics-scope="rides">
+          <small>🛑 Stornierungen</small>
+          <strong data-analytics-kpi="cancellations">0</strong>
+        </article>
+        <article class="admin-panel analytics-kpi-card" data-analytics-scope="rides">
+          <small>⏱️ Ø Wartezeit</small>
+          <strong data-analytics-kpi="avgWait">0 Min</strong>
+        </article>
+        <article class="admin-panel analytics-kpi-card" data-analytics-scope="vehicles">
+          <small>🏆 Top-Fahrzeug</small>
+          <strong data-analytics-kpi="topVehicle">-</strong>
+        </article>
+        <article class="admin-panel analytics-kpi-card" data-analytics-scope="driver-self">
+          <small>🧑 Eigene Leistung Demo</small>
+          <strong data-analytics-self="rides-kpi">0 Fahrten</strong>
+        </article>
+      </section>
+
+      <section class="analytics-charts-grid" aria-label="Diagramm Bereiche">
+        <article class="admin-panel analytics-chart-card" data-analytics-scope="rides">
+          <div class="admin-panel-head">
+            <h2>Fahrten pro Tag</h2>
+          </div>
+          <div class="analytics-bar-list" data-analytics-chart="ridesPerDay"></div>
+        </article>
+
+        <article class="admin-panel analytics-chart-card" data-analytics-scope="revenue">
+          <div class="admin-panel-head">
+            <h2>Umsatz pro Woche</h2>
+          </div>
+          <div class="analytics-bar-list" data-analytics-chart="revenuePerWeek"></div>
+        </article>
+
+        <article class="admin-panel analytics-chart-card" data-analytics-scope="rides">
+          <div class="admin-panel-head">
+            <h2>Fahrttypen-Verteilung</h2>
+          </div>
+          <div class="analytics-share-list" data-analytics-chart="rideTypes"></div>
+        </article>
+
+        <article class="admin-panel analytics-chart-card" data-analytics-scope="vehicles">
+          <div class="admin-panel-head">
+            <h2>Fahrzeuge nach Auslastung</h2>
+          </div>
+          <div class="analytics-bar-list" data-analytics-chart="vehicleLoad"></div>
+        </article>
+
+        <article class="admin-panel analytics-chart-card" data-analytics-scope="drivers">
+          <div class="admin-panel-head">
+            <h2>Fahrerleistung Demo</h2>
+          </div>
+          <div class="analytics-bar-list" data-analytics-chart="driverPerformance"></div>
+        </article>
+
+        <article class="admin-panel analytics-chart-card" data-analytics-scope="driver-self">
+          <div class="admin-panel-head">
+            <h2>Eigene Demo-Statistik</h2>
+          </div>
+          <dl class="analytics-self-list">
+            <div><dt>Fahrten heute</dt><dd data-analytics-self="rides">0</dd></div>
+            <div><dt>Ø Bewertung</dt><dd data-analytics-self="rating">0.0</dd></div>
+            <div><dt>Auslastung</dt><dd data-analytics-self="utilization">0 %</dd></div>
+            <div><dt>Pünktlichkeitsquote</dt><dd data-analytics-self="punctuality">0 %</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="admin-panel analytics-top5-panel" aria-label="Top 5 Tabellen">
+        <div class="admin-panel-head">
+          <h2>Top 5 Demo</h2>
+        </div>
+        <div class="analytics-table-grid">
+          <article class="analytics-table-card" data-analytics-scope="drivers">
+            <h3>Fahrer</h3>
+            <div class="analytics-table-wrap"><table class="analytics-table" data-analytics-table="drivers"></table></div>
+          </article>
+
+          <article class="analytics-table-card" data-analytics-scope="vehicles">
+            <h3>Fahrzeuge</h3>
+            <div class="analytics-table-wrap"><table class="analytics-table" data-analytics-table="vehicles"></table></div>
+          </article>
+
+          <article class="analytics-table-card" data-analytics-scope="customer-types">
+            <h3>Kundenarten</h3>
+            <div class="analytics-table-wrap"><table class="analytics-table" data-analytics-table="customerTypes"></table></div>
+          </article>
+
+          <article class="analytics-table-card" data-analytics-scope="rides">
+            <h3>Fahrttypen</h3>
+            <div class="analytics-table-wrap"><table class="analytics-table" data-analytics-table="rideTypes"></table></div>
+          </article>
+
+          <article class="analytics-table-card" data-analytics-scope="revenue">
+            <h3>Umsatzquellen</h3>
+            <div class="analytics-table-wrap"><table class="analytics-table" data-analytics-table="revenueSources"></table></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="statistiken.js"></script>
+</body>
+</html>
