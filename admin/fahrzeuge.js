@@ -160,11 +160,23 @@
 
     return {
       ...rawVehicle,
+      category: resolveVehicleCategory(rawVehicle),
       nextServiceInDays,
       tuvInDays,
       isServiceDueSoon: nextServiceInDays >= 0 && nextServiceInDays <= 30,
       isTuvDueSoon: tuvInDays >= 0 && tuvInDays <= 45
     };
+  }
+
+  function resolveVehicleCategory(vehicle) {
+    const typeText = normalizeText(vehicle.type);
+    const hintText = normalizeText(vehicle.hint);
+
+    if (hintText.includes("ersetzt") || hintText.includes("ersatz")) return "Ersatz bald";
+    if (typeText.includes("rollstuhl")) return "Rollstuhl";
+    if (typeText.includes("grossraum") || typeText.includes("großraum")) return "Großraum";
+    if (typeText.includes("elektro")) return "Elektro";
+    return "Taxi";
   }
 
   const vehicles = vehicleSource.map(normalizeVehicle);
@@ -210,7 +222,8 @@
       vehicle.name,
       vehicle.plate,
       vehicle.type,
-      vehicle.currentDriver
+      vehicle.currentDriver,
+      vehicle.hint
     ].join(" "));
 
     return haystack.includes(query);
@@ -301,6 +314,21 @@
     return statusNode;
   }
 
+  function createCategoryBadge(category) {
+    const badge = document.createElement("span");
+    badge.className = "vehicle-type-badge";
+    badge.textContent = category;
+    return badge;
+  }
+
+  function createDriverNode(vehicle) {
+    const driverNode = document.createElement("span");
+    const hasDriver = vehicle.currentDriver && vehicle.currentDriver !== "-";
+    driverNode.className = `vehicle-driver-chip ${hasDriver ? "is-active" : "is-idle"}`;
+    driverNode.innerHTML = `<span class="vehicle-driver-dot" aria-hidden="true"></span><span>${vehicle.currentDriver}</span>`;
+    return driverNode;
+  }
+
   function createCountdownNode(prefix, days) {
     const countdown = document.createElement("span");
     const meta = getCountdownMeta(days);
@@ -338,19 +366,21 @@
 
       card.innerHTML = `
         <header class="vehicle-card-head">
-          <div>
+          <div class="vehicle-card-head-main">
             <h2>${vehicle.name}</h2>
             <strong class="vehicle-card-plate">${vehicle.plate}</strong>
             <small>${vehicle.type}</small>
+            <div class="vehicle-type-slot"></div>
             ${vehicle.hint ? `<p class="vehicle-note">${vehicle.hint}</p>` : ""}
           </div>
+          <div class="vehicle-head-status-slot"></div>
         </header>
 
         <dl class="vehicle-meta-list">
           <div><dt>Kennzeichen</dt><dd>${vehicle.plate}</dd></div>
-          <div><dt>Status</dt><dd class="vehicle-status-slot"></dd></div>
+          <div><dt>Kategorie</dt><dd>${vehicle.category}</dd></div>
           <div><dt>Sitzplätze</dt><dd>${vehicle.seats}</dd></div>
-          <div><dt>Aktueller Fahrer</dt><dd>${vehicle.currentDriver}</dd></div>
+          <div><dt>Aktueller Fahrer</dt><dd class="vehicle-driver-slot"></dd></div>
           <div><dt>Kilometerstand</dt><dd>${formatKm(vehicle.odometerKm)}</dd></div>
           <div><dt>Nächster Service</dt><dd class="vehicle-service-slot">${formatDate(vehicle.nextService)}</dd></div>
           <div><dt>TÜV</dt><dd class="vehicle-tuv-slot">${formatDate(vehicle.tuvDate)}</dd></div>
@@ -366,8 +396,14 @@
         </div>
       `;
 
-      const statusSlot = card.querySelector(".vehicle-status-slot");
+      const statusSlot = card.querySelector(".vehicle-head-status-slot");
       if (statusSlot) statusSlot.append(createStatusPill(vehicle.status));
+
+      const categorySlot = card.querySelector(".vehicle-type-slot");
+      if (categorySlot) categorySlot.append(createCategoryBadge(vehicle.category));
+
+      const driverSlot = card.querySelector(".vehicle-driver-slot");
+      if (driverSlot) driverSlot.append(createDriverNode(vehicle));
 
       const tireSlot = card.querySelector(".vehicle-tire-slot");
       if (tireSlot) tireSlot.append(createTireNode(vehicle.tireStatus));
@@ -444,19 +480,24 @@
   }
 
   function buildDetailsModal(vehicle) {
+    const serviceMeta = getCountdownMeta(vehicle.nextServiceInDays);
+    const tuvMeta = getCountdownMeta(vehicle.tuvInDays);
+
     return `
       <dl class="vehicle-modal-list">
         <div><dt>Fahrzeugname</dt><dd>${vehicle.name}</dd></div>
         <div><dt>Kennzeichen</dt><dd>${vehicle.plate}</dd></div>
-        <div><dt>Fahrzeugtyp</dt><dd>${vehicle.type}</dd></div>
+        <div><dt>Typ</dt><dd>${vehicle.type}</dd></div>
+        <div><dt>Kategorie</dt><dd>${vehicle.category}</dd></div>
         <div><dt>Sitzplätze</dt><dd>${vehicle.seats}</dd></div>
         <div><dt>Status</dt><dd>${vehicle.status}</dd></div>
         <div><dt>Aktueller Fahrer</dt><dd>${vehicle.currentDriver}</dd></div>
         <div><dt>Kilometerstand</dt><dd>${formatKm(vehicle.odometerKm)}</dd></div>
-        <div><dt>Nächster Service</dt><dd>${formatDate(vehicle.nextService)}</dd></div>
-        <div><dt>TÜV</dt><dd>${formatDate(vehicle.tuvDate)}</dd></div>
+        <div><dt>Nächster Service</dt><dd>${formatDate(vehicle.nextService)} (${serviceMeta.label})</dd></div>
+        <div><dt>TÜV</dt><dd>${formatDate(vehicle.tuvDate)} (${tuvMeta.label})</dd></div>
         <div><dt>Versicherung</dt><dd>${formatDate(vehicle.insuranceUntil)}</dd></div>
         <div><dt>Reifenstatus</dt><dd>${vehicle.tireStatus}</dd></div>
+        <div><dt>Hinweis</dt><dd>${vehicle.hint || "-"}</dd></div>
       </dl>
       <p class="vehicle-modal-note">Demo-Daten – später Backend-Anbindung möglich</p>
     `;
@@ -466,12 +507,14 @@
     if (action === "assign") {
       return `
         <p class="vehicle-modal-note">Demo: Fahrerzuweisung für ${vehicle.name}. Hier wird später ein Fahrer aus dem Backend ausgewählt.</p>
+        <p class="vehicle-modal-note">Demo-Modul ohne Backend.</p>
       `;
     }
 
     if (action === "service") {
       return `
         <p class="vehicle-modal-note">Demo: Serviceeintrag für ${vehicle.name}. Eingaben werden aktuell nicht gespeichert.</p>
+        <p class="vehicle-modal-note">Demo-Modul ohne Backend.</p>
       `;
     }
 
@@ -487,6 +530,7 @@
         </select>
       </div>
       <p class="vehicle-modal-note">Demo-Modus: Auswahl wird nicht gespeichert.</p>
+      <p class="vehicle-modal-note">Demo-Modul ohne Backend.</p>
     `;
   }
 
