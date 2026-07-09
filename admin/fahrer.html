@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Fahrerverwaltung</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html">Dashboard</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Fahrten</a>
+        <a class="admin-nav-item is-active" href="fahrer.html" aria-current="page">Fahrer</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Kunden</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Rewards</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
+        <a class="admin-nav-item" href="#" aria-disabled="true">Einstellungen</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Fahrerverwaltung</h1>
+          <p>Professioneller Fahrerbereich - nur Demo-Daten, kein Backend</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b>2</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Disposition</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-panel driver-tools" aria-label="Fahrer Suche und Filter">
+        <div class="driver-search-wrap">
+          <label class="driver-label" for="driver-search-input">Fahrer suchen</label>
+          <input
+            id="driver-search-input"
+            class="driver-search-input"
+            type="search"
+            placeholder="Fahrer suchen..."
+            autocomplete="off"
+            data-driver-search
+          >
+        </div>
+
+        <div class="driver-filter-group" role="group" aria-label="Fahrerstatus filtern">
+          <button class="driver-filter-btn is-active" type="button" data-driver-filter="Alle">Alle</button>
+          <button class="driver-filter-btn" type="button" data-driver-filter="Online">Online</button>
+          <button class="driver-filter-btn" type="button" data-driver-filter="Unterwegs">Unterwegs</button>
+          <button class="driver-filter-btn" type="button" data-driver-filter="Pause">Pause</button>
+          <button class="driver-filter-btn" type="button" data-driver-filter="Offline">Offline</button>
+        </div>
+      </section>
+
+      <section class="driver-grid" aria-label="Fahrerliste" data-driver-grid></section>
+    </main>
+  </div>
+
+  <script src="fahrer.js"></script>
+</body>
+</html>
