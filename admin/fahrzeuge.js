@@ -4,130 +4,134 @@
   // Spater kann hier ein API-Array direkt gemappt werden.
   const vehicleSource = [
     {
-      id: "V-101",
-      name: "Mercedes V-Klasse",
-      plate: "GER TG 101",
-      type: "Grossraumtaxi",
-      seats: 7,
+      id: "V-100",
+      name: "Mercedes-Benz E 220 d T-Modell",
+      plate: "GER TX 100",
+      type: "Taxi / Kombi",
+      seats: 4,
       status: "Verfügbar",
       currentDriver: "Max Mustermann",
-      odometerKm: 182450,
-      nextService: "2026-07-18",
-      tuvDate: "2026-08-03",
-      insuranceUntil: "2027-01-31",
+      odometerKm: 198420,
+      nextService: "2026-08-02",
+      tuvDate: "2026-09-11",
+      insuranceUntil: "2027-02-28",
       tireStatus: "Gut"
     },
     {
-      id: "V-204",
-      name: "VW Caddy",
-      plate: "GER TG 204",
-      type: "Krankenfahrt",
-      seats: 5,
+      id: "V-200",
+      name: "VW Touran",
+      plate: "GER TX 200",
+      type: "Taxi / Mehrzweckfahrzeug",
+      seats: 7,
       status: "Unterwegs",
+      hint: "Taxi mit Dachschild",
       currentDriver: "Selin Kara",
-      odometerKm: 129330,
-      nextService: "2026-08-22",
-      tuvDate: "2027-03-10",
+      odometerKm: 167310,
+      nextService: "2026-07-24",
+      tuvDate: "2026-08-15",
       insuranceUntil: "2026-12-31",
       tireStatus: "Mittel"
     },
     {
-      id: "V-307",
-      name: "Mercedes E-Klasse",
-      plate: "GER TG 307",
-      type: "Business",
-      seats: 4,
-      status: "Pause",
-      currentDriver: "Ali Demir",
-      odometerKm: 246120,
-      nextService: "2026-07-26",
-      tuvDate: "2026-10-21",
-      insuranceUntil: "2027-02-14",
-      tireStatus: "Gut"
-    },
-    {
-      id: "V-415",
-      name: "Mercedes Sprinter",
-      plate: "GER TG 415",
-      type: "Rollstuhltaxi",
-      seats: 6,
-      status: "Werkstatt",
-      currentDriver: "-",
-      odometerKm: 301780,
-      nextService: "2026-07-14",
-      tuvDate: "2026-07-28",
-      insuranceUntil: "2026-11-30",
-      tireStatus: "Wechsel noetig"
-    },
-    {
-      id: "V-519",
-      name: "Skoda Octavia",
-      plate: "GER TG 519",
-      type: "Kombi",
-      seats: 4,
+      id: "V-300",
+      name: "VW Touran",
+      plate: "GER TX 300",
+      type: "Taxi / Mehrzweckfahrzeug",
+      seats: 7,
       status: "Verfügbar",
+      hint: "Taxi mit Dachschild",
       currentDriver: "Nora Winter",
-      odometerKm: 98700,
-      nextService: "2026-09-05",
-      tuvDate: "2026-11-19",
-      insuranceUntil: "2027-04-08",
+      odometerKm: 141060,
+      nextService: "2026-07-19",
+      tuvDate: "2026-08-04",
+      insuranceUntil: "2027-01-20",
       tireStatus: "Gut"
     },
     {
-      id: "V-630",
-      name: "Ford Transit",
-      plate: "GER TG 630",
-      type: "Flughafentransfer",
-      seats: 8,
-      status: "Unterwegs",
-      currentDriver: "Michael Braun",
-      odometerKm: 212050,
-      nextService: "2026-07-20",
-      tuvDate: "2026-09-01",
-      insuranceUntil: "2027-01-10",
+      id: "V-400",
+      name: "VW Touran",
+      plate: "GER TX 400",
+      type: "Taxi / Mehrzweckfahrzeug",
+      seats: 7,
+      status: "Pause",
+      hint: "Taxi mit Dachschild",
+      currentDriver: "Ali Demir",
+      odometerKm: 176880,
+      nextService: "2026-08-09",
+      tuvDate: "2026-09-30",
+      insuranceUntil: "2027-03-31",
       tireStatus: "Mittel"
     },
     {
-      id: "V-744",
-      name: "Opel Zafira",
-      plate: "GER TG 744",
-      type: "Familienfahrt",
-      seats: 6,
-      status: "Gesperrt",
-      currentDriver: "-",
-      odometerKm: 278420,
-      nextService: "2026-07-30",
-      tuvDate: "2026-08-12",
-      insuranceUntil: "2026-10-15",
-      tireStatus: "Pruefung offen"
+      id: "V-500",
+      name: "Mercedes-Benz B-Klasse",
+      plate: "GER TX 500",
+      type: "Taxi / Kompakt",
+      seats: 4,
+      status: "Verfügbar",
+      currentDriver: "Sabine Hoffmann",
+      odometerKm: 154730,
+      nextService: "2026-07-16",
+      tuvDate: "2026-08-01",
+      insuranceUntil: "2027-04-15",
+      tireStatus: "Gut"
     },
     {
-      id: "V-808",
-      name: "Toyota Prius+",
-      plate: "GER TG 808",
-      type: "Hybrid",
+      id: "V-600",
+      name: "Mercedes-Benz E-Klasse gelb, Baujahr 2020",
+      plate: "GER TX 600",
+      type: "Taxi / Limousine",
+      seats: 4,
+      status: "Unterwegs",
+      currentDriver: "Michael Braun",
+      odometerKm: 221990,
+      nextService: "2026-07-21",
+      tuvDate: "2026-08-13",
+      insuranceUntil: "2026-12-10",
+      tireStatus: "Mittel"
+    },
+    {
+      id: "V-700",
+      name: "Tesla Model Y",
+      plate: "GER TX 700",
+      type: "Elektro / Firmenfahrzeug",
       seats: 5,
       status: "Verfügbar",
       currentDriver: "Julia Schneider",
-      odometerKm: 165090,
-      nextService: "2026-07-16",
-      tuvDate: "2026-12-09",
+      odometerKm: 90680,
+      nextService: "2026-08-28",
+      tuvDate: "2027-02-11",
       insuranceUntil: "2027-05-31",
       tireStatus: "Gut"
     },
     {
-      id: "V-912",
-      name: "VW Touran",
-      plate: "GER TG 912",
-      type: "Schuelerfahrt",
-      seats: 5,
+      id: "V-800",
+      name: "Mercedes-Benz V-Klasse",
+      plate: "GER TX 800",
+      type: "Großraumtaxi",
+      seats: 7,
+      status: "Verfügbar",
+      currentDriver: "Daniel Klein",
+      odometerKm: 186540,
+      nextService: "2026-07-29",
+      tuvDate: "2026-08-26",
+      insuranceUntil: "2027-03-01",
+      tireStatus: "Gut"
+    },
+    {
+      id: "V-900",
+      name: "Mercedes Sprinter",
+      plate: "Rollstuhl-Fahrzeug / Sprinter",
+      type: "Rollstuhltaxi",
+      seats: 6,
       status: "Werkstatt",
+      hint: "Fahrzeug wird bald ersetzt",
       currentDriver: "-",
-      odometerKm: 233640,
-      nextService: "2026-07-11",
-      tuvDate: "2026-07-25",
-      insuranceUntil: "2026-12-04",
-      tireStatus: "Wechsel noetig"
+      odometerKm: 312460,
+      nextService: "2026-07-12",
+      tuvDate: "2026-07-27",
+      insuranceUntil: "2026-11-30",
+      tireStatus: "Wechsel nötig"
     }
   ];
 
@@ -140,7 +144,8 @@
   };
 
   const state = {
-    filter: "Alle"
+    filter: "Alle",
+    searchTerm: ""
   };
 
   function daysUntil(dateValue) {
@@ -164,6 +169,13 @@
 
   const vehicles = vehicleSource.map(normalizeVehicle);
 
+  function normalizeText(value) {
+    return String(value || "")
+      .toLocaleLowerCase("de-DE")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
   function formatDate(value) {
     const date = new Date(`${value}T00:00:00`);
     if (Number.isNaN(date.getTime())) return value;
@@ -175,19 +187,95 @@
     return `${new Intl.NumberFormat("de-DE").format(Number(value || 0))} km`;
   }
 
-  function getFilteredVehicles() {
+  function matchesFilter(vehicle) {
     switch (state.filter) {
       case "Verfügbar":
       case "Unterwegs":
       case "Werkstatt":
-        return vehicles.filter((vehicle) => vehicle.status === state.filter);
+        return vehicle.status === state.filter;
       case "Service fällig":
-        return vehicles.filter((vehicle) => vehicle.isServiceDueSoon);
+        return vehicle.isServiceDueSoon;
       case "TÜV fällig":
-        return vehicles.filter((vehicle) => vehicle.isTuvDueSoon);
+        return vehicle.isTuvDueSoon;
       default:
-        return vehicles;
+        return true;
     }
+  }
+
+  function matchesSearch(vehicle) {
+    const query = normalizeText(state.searchTerm).trim();
+    if (!query) return true;
+
+    const haystack = normalizeText([
+      vehicle.name,
+      vehicle.plate,
+      vehicle.type,
+      vehicle.currentDriver
+    ].join(" "));
+
+    return haystack.includes(query);
+  }
+
+  function getVisibleVehicles() {
+    return vehicles.filter((vehicle) => matchesFilter(vehicle) && matchesSearch(vehicle));
+  }
+
+  function syncFilterUi() {
+    const filterButtons = document.querySelectorAll("[data-vehicle-filter]");
+    filterButtons.forEach((button) => {
+      const filterValue = button.getAttribute("data-vehicle-filter") || "Alle";
+      button.classList.toggle("is-active", filterValue === state.filter);
+    });
+
+    const statCards = document.querySelectorAll("[data-vehicle-stat-filter]");
+    statCards.forEach((card) => {
+      const filterValue = card.getAttribute("data-vehicle-stat-filter") || "Alle";
+      const isActive = filterValue === state.filter;
+      card.classList.toggle("is-active", isActive);
+      card.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  }
+
+  function setFilter(nextFilter) {
+    state.filter = nextFilter || "Alle";
+    syncFilterUi();
+    updateVehicleViews();
+  }
+
+  function getCountdownMeta(days) {
+    if (days < 0) {
+      return {
+        label: `Überfällig seit ${Math.abs(days)} Tagen`,
+        className: "is-critical"
+      };
+    }
+
+    if (days < 7) {
+      return {
+        label: `Noch ${days} Tage`,
+        className: "is-critical"
+      };
+    }
+
+    if (days < 30) {
+      return {
+        label: `Noch ${days} Tage`,
+        className: "is-warning"
+      };
+    }
+
+    return {
+      label: `Noch ${days} Tage`,
+      className: "is-ok"
+    };
+  }
+
+  function getTireMeta(tireStatus) {
+    const normalized = normalizeText(tireStatus);
+    if (normalized.includes("gut")) return { className: "is-good", label: tireStatus };
+    if (normalized.includes("wechsel")) return { className: "is-critical", label: tireStatus };
+    if (normalized.includes("mittel")) return { className: "is-medium", label: tireStatus };
+    return { className: "is-medium", label: tireStatus };
   }
 
   function renderStats() {
@@ -213,18 +301,27 @@
     return statusNode;
   }
 
-  function createDueBadge(label, isDueSoon) {
-    const badge = document.createElement("span");
-    badge.className = `vehicle-due-badge ${isDueSoon ? "is-due" : "is-ok"}`;
-    badge.textContent = label;
-    return badge;
+  function createCountdownNode(prefix, days) {
+    const countdown = document.createElement("span");
+    const meta = getCountdownMeta(days);
+    countdown.className = `vehicle-countdown ${meta.className}`;
+    countdown.textContent = `${prefix}: ${meta.label}`;
+    return countdown;
+  }
+
+  function createTireNode(tireStatus) {
+    const tire = document.createElement("span");
+    const meta = getTireMeta(tireStatus);
+    tire.className = `vehicle-tire-status ${meta.className}`;
+    tire.innerHTML = `<span class="vehicle-tire-dot" aria-hidden="true"></span><span>${meta.label}</span>`;
+    return tire;
   }
 
   function renderCards() {
     const grid = document.querySelector("[data-vehicle-grid]");
     if (!grid) return;
 
-    const filtered = getFilteredVehicles();
+    const filtered = getVisibleVehicles();
     grid.innerHTML = "";
 
     if (!filtered.length) {
@@ -243,38 +340,48 @@
         <header class="vehicle-card-head">
           <div>
             <h2>${vehicle.name}</h2>
-            <small>${vehicle.type} • ${vehicle.seats} Sitzplätze</small>
+            <strong class="vehicle-card-plate">${vehicle.plate}</strong>
+            <small>${vehicle.type}</small>
+            ${vehicle.hint ? `<p class="vehicle-note">${vehicle.hint}</p>` : ""}
           </div>
         </header>
 
         <dl class="vehicle-meta-list">
           <div><dt>Kennzeichen</dt><dd>${vehicle.plate}</dd></div>
           <div><dt>Status</dt><dd class="vehicle-status-slot"></dd></div>
+          <div><dt>Sitzplätze</dt><dd>${vehicle.seats}</dd></div>
           <div><dt>Aktueller Fahrer</dt><dd>${vehicle.currentDriver}</dd></div>
           <div><dt>Kilometerstand</dt><dd>${formatKm(vehicle.odometerKm)}</dd></div>
-          <div><dt>Nächster Service</dt><dd>${formatDate(vehicle.nextService)}</dd></div>
-          <div><dt>TÜV</dt><dd>${formatDate(vehicle.tuvDate)}</dd></div>
+          <div><dt>Nächster Service</dt><dd class="vehicle-service-slot">${formatDate(vehicle.nextService)}</dd></div>
+          <div><dt>TÜV</dt><dd class="vehicle-tuv-slot">${formatDate(vehicle.tuvDate)}</dd></div>
           <div><dt>Versicherung</dt><dd>${formatDate(vehicle.insuranceUntil)}</dd></div>
-          <div><dt>Reifenstatus</dt><dd>${vehicle.tireStatus}</dd></div>
+          <div><dt>Reifenstatus</dt><dd class="vehicle-tire-slot"></dd></div>
         </dl>
 
-        <div class="vehicle-due-row"></div>
-
         <div class="vehicle-card-actions">
-          <button class="admin-btn vehicle-btn-muted" type="button">Details</button>
-          <button class="admin-btn vehicle-btn-muted" type="button">Fahrer zuweisen</button>
-          <button class="admin-btn vehicle-btn-muted" type="button">Service eintragen</button>
-          <button class="admin-btn" type="button">Status ändern</button>
+          <button class="admin-btn vehicle-btn-muted" type="button" data-vehicle-action="details" data-vehicle-id="${vehicle.id}">Details</button>
+          <button class="admin-btn vehicle-btn-muted" type="button" data-vehicle-action="assign" data-vehicle-id="${vehicle.id}">Fahrer zuweisen</button>
+          <button class="admin-btn vehicle-btn-muted" type="button" data-vehicle-action="service" data-vehicle-id="${vehicle.id}">Service eintragen</button>
+          <button class="admin-btn" type="button" data-vehicle-action="status" data-vehicle-id="${vehicle.id}">Status ändern</button>
         </div>
       `;
 
       const statusSlot = card.querySelector(".vehicle-status-slot");
       if (statusSlot) statusSlot.append(createStatusPill(vehicle.status));
 
-      const dueRow = card.querySelector(".vehicle-due-row");
-      if (dueRow) {
-        dueRow.append(createDueBadge("Service", vehicle.isServiceDueSoon));
-        dueRow.append(createDueBadge("TÜV", vehicle.isTuvDueSoon));
+      const tireSlot = card.querySelector(".vehicle-tire-slot");
+      if (tireSlot) tireSlot.append(createTireNode(vehicle.tireStatus));
+
+      const serviceSlot = card.querySelector(".vehicle-service-slot");
+      if (serviceSlot) {
+        serviceSlot.append(document.createTextNode(" "));
+        serviceSlot.append(createCountdownNode("Service", vehicle.nextServiceInDays));
+      }
+
+      const tuvSlot = card.querySelector(".vehicle-tuv-slot");
+      if (tuvSlot) {
+        tuvSlot.append(document.createTextNode(" "));
+        tuvSlot.append(createCountdownNode("TÜV", vehicle.tuvInDays));
       }
 
       grid.append(card);
@@ -285,7 +392,7 @@
     const table = document.querySelector("[data-vehicle-table]");
     if (!table) return;
 
-    const filtered = getFilteredVehicles();
+    const filtered = getVisibleVehicles();
     table.innerHTML = "";
 
     filtered.forEach((vehicle) => {
@@ -312,15 +419,157 @@
     renderTable();
   }
 
+  function getVehicleById(vehicleId) {
+    return vehicles.find((vehicle) => vehicle.id === vehicleId) || null;
+  }
+
+  function openModal(title, bodyHtml) {
+    const modal = document.querySelector("[data-vehicle-modal]");
+    const modalTitle = document.querySelector("[data-vehicle-modal-title]");
+    const modalBody = document.querySelector("[data-vehicle-modal-body]");
+    if (!modal || !modalTitle || !modalBody) return;
+
+    modalTitle.textContent = title;
+    modalBody.innerHTML = bodyHtml;
+    modal.hidden = false;
+    document.body.classList.add("admin-modal-open");
+  }
+
+  function closeModal() {
+    const modal = document.querySelector("[data-vehicle-modal]");
+    if (!modal) return;
+
+    modal.hidden = true;
+    document.body.classList.remove("admin-modal-open");
+  }
+
+  function buildDetailsModal(vehicle) {
+    return `
+      <dl class="vehicle-modal-list">
+        <div><dt>Fahrzeugname</dt><dd>${vehicle.name}</dd></div>
+        <div><dt>Kennzeichen</dt><dd>${vehicle.plate}</dd></div>
+        <div><dt>Fahrzeugtyp</dt><dd>${vehicle.type}</dd></div>
+        <div><dt>Sitzplätze</dt><dd>${vehicle.seats}</dd></div>
+        <div><dt>Status</dt><dd>${vehicle.status}</dd></div>
+        <div><dt>Aktueller Fahrer</dt><dd>${vehicle.currentDriver}</dd></div>
+        <div><dt>Kilometerstand</dt><dd>${formatKm(vehicle.odometerKm)}</dd></div>
+        <div><dt>Nächster Service</dt><dd>${formatDate(vehicle.nextService)}</dd></div>
+        <div><dt>TÜV</dt><dd>${formatDate(vehicle.tuvDate)}</dd></div>
+        <div><dt>Versicherung</dt><dd>${formatDate(vehicle.insuranceUntil)}</dd></div>
+        <div><dt>Reifenstatus</dt><dd>${vehicle.tireStatus}</dd></div>
+      </dl>
+      <p class="vehicle-modal-note">Demo-Daten – später Backend-Anbindung möglich</p>
+    `;
+  }
+
+  function buildActionModal(vehicle, action) {
+    if (action === "assign") {
+      return `
+        <p class="vehicle-modal-note">Demo: Fahrerzuweisung für ${vehicle.name}. Hier wird später ein Fahrer aus dem Backend ausgewählt.</p>
+      `;
+    }
+
+    if (action === "service") {
+      return `
+        <p class="vehicle-modal-note">Demo: Serviceeintrag für ${vehicle.name}. Eingaben werden aktuell nicht gespeichert.</p>
+      `;
+    }
+
+    return `
+      <div class="vehicle-modal-status-box">
+        <label for="vehicle-status-select">Neuen Status wählen (Demo)</label>
+        <select id="vehicle-status-select">
+          <option>Verfügbar</option>
+          <option>Unterwegs</option>
+          <option>Pause</option>
+          <option>Werkstatt</option>
+          <option>Gesperrt</option>
+        </select>
+      </div>
+      <p class="vehicle-modal-note">Demo-Modus: Auswahl wird nicht gespeichert.</p>
+    `;
+  }
+
   function bindFilters() {
     const filters = document.querySelectorAll("[data-vehicle-filter]");
     filters.forEach((filterButton) => {
       filterButton.addEventListener("click", () => {
-        state.filter = filterButton.getAttribute("data-vehicle-filter") || "Alle";
-        filters.forEach((button) => button.classList.remove("is-active"));
-        filterButton.classList.add("is-active");
-        updateVehicleViews();
+        const nextFilter = filterButton.getAttribute("data-vehicle-filter") || "Alle";
+        setFilter(nextFilter);
       });
+    });
+  }
+
+  function bindStatCards() {
+    const cards = document.querySelectorAll("[data-vehicle-stat-filter]");
+    cards.forEach((card) => {
+      const applyCardFilter = () => {
+        const nextFilter = card.getAttribute("data-vehicle-stat-filter") || "Alle";
+        setFilter(nextFilter);
+      };
+
+      card.addEventListener("click", applyCardFilter);
+      card.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        applyCardFilter();
+      });
+    });
+  }
+
+  function bindSearch() {
+    const searchInput = document.querySelector("[data-vehicle-search]");
+    if (!searchInput) return;
+
+    searchInput.addEventListener("input", (event) => {
+      state.searchTerm = String(event.target.value || "");
+      updateVehicleViews();
+    });
+  }
+
+  function bindCardActions() {
+    const grid = document.querySelector("[data-vehicle-grid]");
+    if (!grid) return;
+
+    grid.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-vehicle-action]");
+      if (!button) return;
+
+      const action = button.getAttribute("data-vehicle-action");
+      const vehicleId = button.getAttribute("data-vehicle-id");
+      const vehicle = getVehicleById(vehicleId);
+      if (!vehicle || !action) return;
+
+      if (action === "details") {
+        openModal(`Details: ${vehicle.name}`, buildDetailsModal(vehicle));
+        return;
+      }
+
+      if (action === "assign") {
+        openModal(`Fahrer zuweisen: ${vehicle.name}`, buildActionModal(vehicle, "assign"));
+        return;
+      }
+
+      if (action === "service") {
+        openModal(`Service eintragen: ${vehicle.name}`, buildActionModal(vehicle, "service"));
+        return;
+      }
+
+      openModal(`Status ändern: ${vehicle.name}`, buildActionModal(vehicle, "status"));
+    });
+  }
+
+  function bindModalClose() {
+    const closeButtons = document.querySelectorAll("[data-vehicle-modal-close]");
+    closeButtons.forEach((button) => {
+      button.addEventListener("click", closeModal);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      const modal = document.querySelector("[data-vehicle-modal]");
+      if (!modal || modal.hidden) return;
+      closeModal();
     });
   }
 
@@ -334,7 +583,12 @@
   }
 
   renderStats();
+  syncFilterUi();
   bindFilters();
+  bindStatCards();
+  bindSearch();
+  bindCardActions();
+  bindModalClose();
   bindDisabledNavItems();
   updateVehicleViews();
 })();

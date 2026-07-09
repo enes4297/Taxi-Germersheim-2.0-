@@ -545,6 +545,20 @@ button {
   gap: 10px;
 }
 
+.vehicle-search-wrap {
+  display: grid;
+  gap: 7px;
+}
+
+.vehicle-stat-card {
+  cursor: pointer;
+}
+
+.vehicle-stat-card.is-active {
+  border-color: rgba(255, 217, 106, 0.46);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.28);
+}
+
 .vehicle-filter-group {
   display: flex;
   align-items: center;
@@ -604,8 +618,30 @@ button {
   font-size: 19px;
 }
 
+.vehicle-card-plate {
+  display: inline-flex;
+  margin-top: 6px;
+  min-height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 217, 106, 0.38);
+  background: rgba(255, 217, 106, 0.1);
+  color: var(--gold);
+  padding: 0 10px;
+  align-items: center;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+
 .vehicle-card-head small {
+  display: block;
+  margin-top: 6px;
   color: var(--muted);
+  font-size: 12px;
+}
+
+.vehicle-note {
+  margin: 8px 0 0;
+  color: #ffe2a2;
   font-size: 12px;
 }
 
@@ -631,37 +667,61 @@ button {
 .vehicle-meta-list dd {
   margin: 0;
   font-size: 14px;
+  overflow-wrap: anywhere;
 }
 
-.vehicle-due-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.vehicle-due-badge {
-  min-height: 28px;
-  border-radius: 999px;
-  padding: 0 10px;
-  border: 1px solid transparent;
+.vehicle-countdown {
   display: inline-flex;
+  min-height: 24px;
+  border-radius: 999px;
+  margin-top: 5px;
+  padding: 0 8px;
+  border: 1px solid transparent;
   align-items: center;
   font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
-.vehicle-due-badge.is-due {
+.vehicle-countdown.is-ok {
+  border-color: rgba(139, 226, 173, 0.4);
+  background: rgba(139, 226, 173, 0.11);
+  color: var(--status-green);
+}
+
+.vehicle-countdown.is-warning {
   border-color: rgba(255, 217, 106, 0.46);
   background: rgba(255, 217, 106, 0.12);
   color: var(--gold);
 }
 
-.vehicle-due-badge.is-ok {
-  border-color: rgba(139, 226, 173, 0.4);
-  background: rgba(139, 226, 173, 0.11);
-  color: var(--status-green);
+.vehicle-countdown.is-critical {
+  border-color: rgba(255, 145, 145, 0.5);
+  background: rgba(255, 145, 145, 0.14);
+  color: #ffb1b1;
+}
+
+.vehicle-tire-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.vehicle-tire-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.vehicle-tire-status.is-good .vehicle-tire-dot {
+  background: var(--status-green);
+}
+
+.vehicle-tire-status.is-medium .vehicle-tire-dot {
+  background: var(--gold);
+}
+
+.vehicle-tire-status.is-critical .vehicle-tire-dot {
+  background: #ff9191;
 }
 
 .vehicle-card-actions {
@@ -726,6 +786,125 @@ button {
   white-space: nowrap;
 }
 
+.vehicle-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.vehicle-table th,
+.vehicle-table td {
+  word-break: break-word;
+}
+
+.admin-modal-open {
+  overflow: hidden;
+}
+
+.admin-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.admin-modal[hidden] {
+  display: none;
+}
+
+.admin-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 7, 0.74);
+}
+
+.admin-modal-dialog {
+  position: relative;
+  width: min(780px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(150deg, rgba(19, 20, 26, 0.98), rgba(9, 10, 14, 0.98));
+  box-shadow: 0 24px 44px rgba(0, 0, 0, 0.42);
+}
+
+.admin-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-modal-head h3 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.admin-modal-body {
+  padding: 14px 16px;
+}
+
+.admin-modal-foot {
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.vehicle-modal-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.vehicle-modal-list div {
+  display: grid;
+  gap: 3px;
+}
+
+.vehicle-modal-list dt {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.vehicle-modal-list dd {
+  margin: 0;
+}
+
+.vehicle-modal-note {
+  margin: 14px 0 0;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--muted);
+}
+
+.vehicle-modal-status-box {
+  display: grid;
+  gap: 7px;
+}
+
+.vehicle-modal-status-box label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.vehicle-modal-status-box select {
+  min-height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0 10px;
+}
+
 @media (max-width: 1200px) {
   .admin-shell {
     grid-template-columns: 1fr;
@@ -756,6 +935,10 @@ button {
   }
 
   .vehicle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vehicle-modal-list {
     grid-template-columns: 1fr;
   }
 }
@@ -798,5 +981,22 @@ button {
 
   .vehicle-card-actions {
     grid-template-columns: 1fr;
+  }
+
+  .vehicle-filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vehicle-filter-btn {
+    width: 100%;
+  }
+
+  .admin-modal {
+    padding: 10px;
+  }
+
+  .admin-modal-head h3 {
+    font-size: 18px;
   }
 }
