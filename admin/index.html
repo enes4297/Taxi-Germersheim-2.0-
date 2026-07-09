@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Dispatcher Dashboard</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <button class="admin-nav-item is-active" type="button">Dashboard</button>
+        <button class="admin-nav-item" type="button">Fahrten</button>
+        <button class="admin-nav-item" type="button">Fahrer</button>
+        <button class="admin-nav-item" type="button">Kunden</button>
+        <button class="admin-nav-item" type="button">Rewards</button>
+        <button class="admin-nav-item" type="button">Fahrzeuge</button>
+        <button class="admin-nav-item" type="button">Statistiken</button>
+        <button class="admin-nav-item" type="button">Einstellungen</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Dispatcher Dashboard</h1>
+          <p>Phase 1 - Demo ohne Login, Datenbank oder Backend</p>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
+            <span>🔔</span>
+            <b data-admin-notification-count>3</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Disponent</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-stats" aria-label="Kennzahlen">
+        <article class="stat-card">
+          <small>🚖 Offene Fahrten</small>
+          <strong data-stat="openRides">0</strong>
+        </article>
+        <article class="stat-card">
+          <small>🚕 Fahrer unterwegs</small>
+          <strong data-stat="driversOnRoute">0</strong>
+        </article>
+        <article class="stat-card">
+          <small>✅ Abgeschlossene Fahrten</small>
+          <strong data-stat="completedRides">0</strong>
+        </article>
+        <article class="stat-card">
+          <small>📞 Neue Anfragen</small>
+          <strong data-stat="newRequests">0</strong>
+        </article>
+        <article class="stat-card">
+          <small>⭐ Heute verdiente Rewards</small>
+          <strong data-stat="todayRewards">0</strong>
+        </article>
+        <article class="stat-card">
+          <small>💶 Tagesumsatz (Demo)</small>
+          <strong data-stat="todayRevenue">0,00 EUR</strong>
+        </article>
+      </section>
+
+      <section class="admin-panel" aria-label="Heutige Fahrten">
+        <div class="admin-panel-head">
+          <h2>Heutige Fahrten</h2>
+          <div class="admin-panel-actions">
+            <button class="admin-btn" type="button">Aktualisieren</button>
+            <button class="admin-btn admin-btn-secondary" type="button">Neue Fahrt</button>
+          </div>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table" aria-label="Fahrtentabelle">
+            <thead>
+              <tr>
+                <th>Zeit</th>
+                <th>Kunde</th>
+                <th>Start</th>
+                <th>Ziel</th>
+                <th>Status</th>
+                <th>Fahrer</th>
+              </tr>
+            </thead>
+            <tbody data-admin-rides></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
