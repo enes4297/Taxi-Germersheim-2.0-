@@ -51,33 +51,45 @@
       </header>
 
       <section class="admin-stats" aria-label="Fahrzeugstatistik">
-        <article class="stat-card">
+        <article class="stat-card vehicle-stat-card is-active" data-vehicle-stat-filter="Alle" role="button" tabindex="0" aria-pressed="true">
           <small>🚘 Fahrzeuge gesamt</small>
           <strong data-vehicle-stat="total">0</strong>
         </article>
-        <article class="stat-card">
+        <article class="stat-card vehicle-stat-card" data-vehicle-stat-filter="Verfügbar" role="button" tabindex="0" aria-pressed="false">
           <small>🟢 Verfügbar</small>
           <strong data-vehicle-stat="available">0</strong>
         </article>
-        <article class="stat-card">
+        <article class="stat-card vehicle-stat-card" data-vehicle-stat-filter="Unterwegs" role="button" tabindex="0" aria-pressed="false">
           <small>🔵 Unterwegs</small>
           <strong data-vehicle-stat="onRoute">0</strong>
         </article>
-        <article class="stat-card">
+        <article class="stat-card vehicle-stat-card" data-vehicle-stat-filter="Werkstatt" role="button" tabindex="0" aria-pressed="false">
           <small>🔧 Werkstatt</small>
           <strong data-vehicle-stat="workshop">0</strong>
         </article>
-        <article class="stat-card">
+        <article class="stat-card vehicle-stat-card" data-vehicle-stat-filter="TÜV fällig" role="button" tabindex="0" aria-pressed="false">
           <small>⚠️ TÜV bald fällig</small>
           <strong data-vehicle-stat="tuvDue">0</strong>
         </article>
-        <article class="stat-card">
+        <article class="stat-card vehicle-stat-card" data-vehicle-stat-filter="Service fällig" role="button" tabindex="0" aria-pressed="false">
           <small>🛠️ Service bald fällig</small>
           <strong data-vehicle-stat="serviceDue">0</strong>
         </article>
       </section>
 
       <section class="admin-panel vehicle-tools" aria-label="Fahrzeugfilter">
+        <div class="vehicle-search-wrap">
+          <label class="driver-label" for="vehicle-search-input">Fahrzeug suchen</label>
+          <input
+            id="vehicle-search-input"
+            class="driver-search-input"
+            type="search"
+            placeholder="Fahrzeug, Kennzeichen oder Fahrer suchen..."
+            autocomplete="off"
+            data-vehicle-search
+          >
+        </div>
+
         <div class="vehicle-filter-group" role="group" aria-label="Fahrzeugstatus filtern">
           <button class="vehicle-filter-btn is-active" type="button" data-vehicle-filter="Alle">Alle</button>
           <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Verfügbar">Verfügbar</button>
@@ -112,6 +124,20 @@
           </table>
         </div>
       </section>
+
+      <div class="admin-modal" data-vehicle-modal hidden>
+        <div class="admin-modal-backdrop" data-vehicle-modal-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="vehicle-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="vehicle-modal-title" data-vehicle-modal-title>Fahrzeugdetails</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-vehicle-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-vehicle-modal-body></div>
+          <footer class="admin-modal-foot">
+            <button class="admin-btn vehicle-btn-muted" type="button" data-vehicle-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
     </main>
   </div>
 
