@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Fahrerverwaltung</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
   <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -27,6 +28,7 @@
         <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
         <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
         <a class="admin-nav-item" href="#" aria-disabled="true">Einstellungen</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
       </nav>
     </aside>
 
@@ -50,6 +52,38 @@
         </div>
       </header>
 
+      <section class="admin-panel driver-overview" aria-label="Fahrer Dashboard">
+        <div class="admin-panel-head">
+          <h2>Fahrer Dashboard</h2>
+        </div>
+        <div class="driver-overview-grid">
+          <article class="driver-overview-card">
+            <small>👥 Fahrer gesamt</small>
+            <strong data-driver-stat="total">0</strong>
+          </article>
+          <article class="driver-overview-card is-active">
+            <small>🟢 Aktiv</small>
+            <strong data-driver-stat="active">0</strong>
+          </article>
+          <article class="driver-overview-card is-onroute">
+            <small>🔵 Unterwegs</small>
+            <strong data-driver-stat="onRoute">0</strong>
+          </article>
+          <article class="driver-overview-card is-pause">
+            <small>🟡 Pause</small>
+            <strong data-driver-stat="pause">0</strong>
+          </article>
+          <article class="driver-overview-card is-alert">
+            <small>🏥 Krank/Urlaub</small>
+            <strong data-driver-stat="sickVacation">0</strong>
+          </article>
+          <article class="driver-overview-card is-idle">
+            <small>🚫 Ohne Fahrzeug</small>
+            <strong data-driver-stat="withoutVehicle">0</strong>
+          </article>
+        </div>
+      </section>
+
       <section class="admin-panel driver-tools" aria-label="Fahrer Suche und Filter">
         <div class="driver-search-wrap">
           <label class="driver-label" for="driver-search-input">Fahrer suchen</label>
@@ -57,7 +91,7 @@
             id="driver-search-input"
             class="driver-search-input"
             type="search"
-            placeholder="Fahrer suchen..."
+            placeholder="Fahrer, Fahrzeug oder Telefonnummer suchen..."
             autocomplete="off"
             data-driver-search
           >
@@ -65,14 +99,29 @@
 
         <div class="driver-filter-group" role="group" aria-label="Fahrerstatus filtern">
           <button class="driver-filter-btn is-active" type="button" data-driver-filter="Alle">Alle</button>
-          <button class="driver-filter-btn" type="button" data-driver-filter="Online">Online</button>
+          <button class="driver-filter-btn" type="button" data-driver-filter="Aktiv">Aktiv</button>
           <button class="driver-filter-btn" type="button" data-driver-filter="Unterwegs">Unterwegs</button>
           <button class="driver-filter-btn" type="button" data-driver-filter="Pause">Pause</button>
-          <button class="driver-filter-btn" type="button" data-driver-filter="Offline">Offline</button>
+          <button class="driver-filter-btn" type="button" data-driver-filter="Krank/Urlaub">Krank/Urlaub</button>
+          <button class="driver-filter-btn" type="button" data-driver-filter="Ohne Fahrzeug">Ohne Fahrzeug</button>
         </div>
       </section>
 
       <section class="driver-grid" aria-label="Fahrerliste" data-driver-grid></section>
+
+      <div class="admin-modal" data-driver-modal hidden>
+        <div class="admin-modal-backdrop" data-driver-modal-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="driver-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="driver-modal-title" data-driver-modal-title>Fahrerdetails</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-driver-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-driver-modal-body></div>
+          <footer class="admin-modal-foot">
+            <button class="admin-btn driver-btn-muted" type="button" data-driver-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
     </main>
   </div>
 

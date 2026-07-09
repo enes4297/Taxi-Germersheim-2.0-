@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Fahrzeugverwaltung</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
   <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -27,6 +28,7 @@
         <a class="admin-nav-item is-active" href="fahrzeuge.html" aria-current="page">Fahrzeuge</a>
         <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
         <a class="admin-nav-item" href="#" aria-disabled="true">Einstellungen</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
       </nav>
     </aside>
 
@@ -97,6 +99,34 @@
           <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Werkstatt">Werkstatt</button>
           <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Service fällig">Service fällig</button>
           <button class="vehicle-filter-btn" type="button" data-vehicle-filter="TÜV fällig">TÜV fällig</button>
+        </div>
+      </section>
+
+      <section class="admin-panel fleet-overview" aria-label="Flotte heute">
+        <div class="admin-panel-head">
+          <h2>Flotte heute</h2>
+        </div>
+        <div class="fleet-overview-grid">
+          <article class="fleet-overview-card">
+            <small>🚘 Fahrzeuge gesamt</small>
+            <strong data-fleet-today="total">0</strong>
+          </article>
+          <article class="fleet-overview-card is-available">
+            <small>🟢 Verfügbar</small>
+            <strong data-fleet-today="available">0</strong>
+          </article>
+          <article class="fleet-overview-card is-onroute">
+            <small>🔵 Unterwegs</small>
+            <strong data-fleet-today="onRoute">0</strong>
+          </article>
+          <article class="fleet-overview-card is-pause">
+            <small>🟡 Pause</small>
+            <strong data-fleet-today="pause">0</strong>
+          </article>
+          <article class="fleet-overview-card is-workshop">
+            <small>🟠 Werkstatt</small>
+            <strong data-fleet-today="workshop">0</strong>
+          </article>
         </div>
       </section>
 

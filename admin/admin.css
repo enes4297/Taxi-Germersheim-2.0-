@@ -348,8 +348,757 @@ button {
   color: var(--status-gray);
 }
 
+.ride-overview {
+  gap: 10px;
+}
+
+.ride-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ride-overview-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 4px;
+}
+
+.ride-overview-card small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.ride-overview-card strong {
+  font-size: 20px;
+  color: var(--gold);
+}
+
+.ride-overview-card.is-open strong {
+  color: var(--gold);
+}
+
+.ride-overview-card.is-confirmed strong {
+  color: var(--status-green);
+}
+
+.ride-overview-card.is-onroute strong {
+  color: var(--status-blue);
+}
+
+.ride-overview-card.is-completed strong {
+  color: var(--status-gray);
+}
+
+.ride-overview-card.is-cancelled strong {
+  color: #ffbe99;
+}
+
+.ride-tools {
+  gap: 12px;
+}
+
+.ride-search-wrap {
+  display: grid;
+  gap: 7px;
+}
+
+.ride-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ride-filter-btn {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.84);
+  padding: 0 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.ride-filter-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 217, 106, 0.35);
+  background: rgba(255, 217, 106, 0.08);
+}
+
+.ride-filter-btn.is-active {
+  border-color: rgba(255, 217, 106, 0.5);
+  background: rgba(255, 217, 106, 0.16);
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.ride-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ride-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  display: grid;
+  gap: 11px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.24);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.ride-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 217, 106, 0.34);
+  box-shadow: 0 22px 36px rgba(0, 0, 0, 0.3);
+}
+
+.ride-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ride-card-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.ride-type-badge {
+  display: inline-flex;
+  margin-top: 6px;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 0 10px;
+  align-items: center;
+  border: 1px solid transparent;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.ride-type-taxi {
+  border-color: rgba(255, 217, 106, 0.44);
+  color: var(--gold);
+  background: rgba(255, 217, 106, 0.12);
+}
+
+.ride-type-medical {
+  border-color: rgba(139, 226, 173, 0.44);
+  color: var(--status-green);
+  background: rgba(139, 226, 173, 0.1);
+}
+
+.ride-type-wheelchair {
+  border-color: rgba(124, 180, 255, 0.45);
+  color: var(--status-blue);
+  background: rgba(124, 180, 255, 0.11);
+}
+
+.ride-type-airport {
+  border-color: rgba(255, 215, 130, 0.45);
+  color: #ffe4b4;
+  background: rgba(255, 215, 130, 0.12);
+}
+
+.ride-type-van {
+  border-color: rgba(212, 163, 58, 0.44);
+  color: #e5bb65;
+  background: rgba(212, 163, 58, 0.12);
+}
+
+.ride-type-school {
+  border-color: rgba(200, 207, 224, 0.44);
+  color: var(--status-gray);
+  background: rgba(200, 207, 224, 0.12);
+}
+
+.ride-type-courier {
+  border-color: rgba(255, 163, 122, 0.44);
+  color: #ffbe99;
+  background: rgba(255, 163, 122, 0.11);
+}
+
+.ride-status-open {
+  border-color: rgba(255, 217, 106, 0.44);
+  background: rgba(255, 217, 106, 0.12);
+  color: var(--gold);
+}
+
+.ride-status-confirmed {
+  border-color: rgba(139, 226, 173, 0.44);
+  background: rgba(139, 226, 173, 0.1);
+  color: var(--status-green);
+}
+
+.ride-status-assigned {
+  border-color: rgba(124, 180, 255, 0.45);
+  background: rgba(124, 180, 255, 0.11);
+  color: var(--status-blue);
+}
+
+.ride-status-onroute {
+  border-color: rgba(124, 180, 255, 0.45);
+  background: rgba(124, 180, 255, 0.14);
+  color: var(--status-blue);
+}
+
+.ride-status-arrived {
+  border-color: rgba(184, 191, 203, 0.45);
+  background: rgba(184, 191, 203, 0.14);
+  color: var(--status-gray);
+}
+
+.ride-status-completed {
+  border-color: rgba(184, 191, 203, 0.44);
+  background: rgba(184, 191, 203, 0.12);
+  color: var(--status-gray);
+}
+
+.ride-status-cancelled {
+  border-color: rgba(255, 163, 122, 0.44);
+  background: rgba(255, 163, 122, 0.11);
+  color: #ffbe99;
+}
+
+.ride-route {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.ride-route-item {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  min-height: 58px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 3px;
+}
+
+.ride-route-item small {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ride-route-item strong {
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.ride-route-arrow {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.ride-meta-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.ride-meta-list div {
+  display: grid;
+  gap: 2px;
+}
+
+.ride-meta-list dt {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ride-meta-list dd {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.ride-note {
+  margin: 0;
+  border: 1px solid rgba(255, 163, 122, 0.44);
+  border-radius: 10px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  color: #ffbe99;
+  background: rgba(255, 163, 122, 0.11);
+  font-size: 12px;
+}
+
+.ride-card-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ride-card-actions .admin-btn {
+  min-height: 44px;
+}
+
+.ride-btn-muted {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ride-empty {
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.ride-empty strong {
+  display: block;
+  color: var(--text);
+}
+
+.ride-empty p {
+  margin: 8px 0 0;
+}
+
+.ride-modal-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ride-modal-list div {
+  display: grid;
+  gap: 3px;
+}
+
+.ride-modal-list dt {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ride-modal-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ride-modal-note {
+  margin: 14px 0 0;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--muted);
+}
+
+.billing-overview {
+  gap: 10px;
+}
+
+.billing-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.billing-overview-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 4px;
+}
+
+.billing-overview-card small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.billing-overview-card strong {
+  font-size: 20px;
+  color: var(--gold);
+}
+
+.billing-overview-card.is-open strong {
+  color: var(--gold);
+}
+
+.billing-overview-card.is-paid strong {
+  color: var(--status-green);
+}
+
+.billing-overview-card.is-overdue strong {
+  color: #ffbe99;
+}
+
+.billing-overview-card.is-medical strong {
+  color: var(--status-blue);
+}
+
+.billing-overview-card.is-company strong {
+  color: var(--status-gray);
+}
+
+.billing-tools {
+  gap: 12px;
+}
+
+.billing-search-wrap {
+  display: grid;
+  gap: 7px;
+}
+
+.billing-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.billing-filter-btn {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.84);
+  padding: 0 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.billing-filter-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 217, 106, 0.35);
+  background: rgba(255, 217, 106, 0.08);
+}
+
+.billing-filter-btn.is-active {
+  border-color: rgba(255, 217, 106, 0.5);
+  background: rgba(255, 217, 106, 0.16);
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.billing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.billing-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.24);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.billing-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 217, 106, 0.34);
+  box-shadow: 0 22px 36px rgba(0, 0, 0, 0.3);
+}
+
+.billing-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.billing-card-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.billing-account-badge {
+  display: inline-flex;
+  margin-top: 6px;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 0 10px;
+  align-items: center;
+  border: 1px solid transparent;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.billing-account-private {
+  border-color: rgba(184, 191, 203, 0.44);
+  color: var(--status-gray);
+  background: rgba(184, 191, 203, 0.1);
+}
+
+.billing-account-medical {
+  border-color: rgba(124, 180, 255, 0.45);
+  color: var(--status-blue);
+  background: rgba(124, 180, 255, 0.11);
+}
+
+.billing-account-company {
+  border-color: rgba(255, 217, 106, 0.44);
+  color: var(--gold);
+  background: rgba(255, 217, 106, 0.12);
+}
+
+.billing-status-open {
+  border-color: rgba(255, 217, 106, 0.44);
+  background: rgba(255, 217, 106, 0.12);
+  color: var(--gold);
+}
+
+.billing-status-paid {
+  border-color: rgba(139, 226, 173, 0.44);
+  background: rgba(139, 226, 173, 0.1);
+  color: var(--status-green);
+}
+
+.billing-status-overdue {
+  border-color: rgba(255, 163, 122, 0.44);
+  background: rgba(255, 163, 122, 0.11);
+  color: #ffbe99;
+}
+
+.billing-status-cancelled {
+  border-color: rgba(184, 191, 203, 0.44);
+  background: rgba(184, 191, 203, 0.12);
+  color: var(--status-gray);
+}
+
+.billing-status-review {
+  border-color: rgba(255, 217, 106, 0.46);
+  background: rgba(255, 217, 106, 0.14);
+  color: var(--gold);
+}
+
+.billing-customer-row {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 11px;
+  min-height: 52px;
+  padding: 8px 10px;
+  display: grid;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.billing-customer-row small {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.billing-customer-row strong {
+  font-size: 14px;
+}
+
+.billing-meta-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.billing-meta-list div {
+  display: grid;
+  gap: 2px;
+}
+
+.billing-meta-list dt {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.billing-meta-list dd {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.billing-amount {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.billing-due-pill {
+  display: inline-flex;
+  min-height: 26px;
+  border-radius: 999px;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  width: fit-content;
+  font-size: 12px;
+}
+
+.billing-due-paid {
+  border-color: rgba(139, 226, 173, 0.44);
+  background: rgba(139, 226, 173, 0.1);
+  color: var(--status-green);
+}
+
+.billing-due-soon {
+  border-color: rgba(255, 217, 106, 0.46);
+  background: rgba(255, 217, 106, 0.12);
+  color: var(--gold);
+}
+
+.billing-due-overdue {
+  border-color: rgba(255, 163, 122, 0.46);
+  background: rgba(255, 163, 122, 0.13);
+  color: #ffbe99;
+}
+
+.billing-note {
+  margin: 0;
+  border: 1px solid rgba(255, 163, 122, 0.44);
+  border-radius: 10px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  color: #ffbe99;
+  background: rgba(255, 163, 122, 0.11);
+  font-size: 12px;
+}
+
+.billing-card-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.billing-card-actions .admin-btn {
+  min-height: 44px;
+}
+
+.billing-btn-muted {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.billing-empty {
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.billing-empty strong {
+  display: block;
+  color: var(--text);
+}
+
+.billing-empty p {
+  margin: 8px 0 0;
+}
+
+.billing-modal-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.billing-modal-list div {
+  display: grid;
+  gap: 3px;
+}
+
+.billing-modal-list dt {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.billing-modal-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.billing-modal-note {
+  margin: 14px 0 0;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--muted);
+}
+
 .driver-tools {
   gap: 12px;
+}
+
+.driver-overview {
+  gap: 10px;
+}
+
+.driver-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.driver-overview-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 4px;
+}
+
+.driver-overview-card small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.driver-overview-card strong {
+  font-size: 20px;
+  color: var(--gold);
+}
+
+.driver-overview-card.is-active strong {
+  color: var(--status-green);
+}
+
+.driver-overview-card.is-onroute strong {
+  color: var(--status-blue);
+}
+
+.driver-overview-card.is-pause strong {
+  color: var(--gold);
+}
+
+.driver-overview-card.is-alert strong {
+  color: #ffbe99;
+}
+
+.driver-overview-card.is-idle strong {
+  color: var(--status-gray);
 }
 
 .driver-search-wrap {
@@ -450,6 +1199,13 @@ button {
   font-size: 18px;
 }
 
+.driver-role {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .driver-status {
   display: inline-flex;
   align-items: center;
@@ -463,7 +1219,7 @@ button {
   border: 1px solid transparent;
 }
 
-.driver-status-online {
+.driver-status-active {
   border-color: rgba(139, 226, 173, 0.44);
   background: rgba(139, 226, 173, 0.1);
   color: var(--status-green);
@@ -487,10 +1243,18 @@ button {
   color: var(--status-gray);
 }
 
+.driver-status-sick,
+.driver-status-vacation {
+  border-color: rgba(255, 163, 122, 0.44);
+  background: rgba(255, 163, 122, 0.1);
+  color: #ffbe99;
+}
+
 .driver-meta-list {
   margin: 0;
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
 }
 
 .driver-meta-list div {
@@ -508,15 +1272,73 @@ button {
 .driver-meta-list dd {
   margin: 0;
   font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.driver-vehicle-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 217, 106, 0.32);
+  background: rgba(255, 217, 106, 0.1);
+  color: var(--gold);
+  min-height: 24px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.driver-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.driver-rating span {
+  color: var(--gold);
+  letter-spacing: 0.08em;
+}
+
+.driver-rating b {
+  font-size: 13px;
+}
+
+.driver-warning-list {
+  display: grid;
+  gap: 6px;
+}
+
+.driver-warning {
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  width: fit-content;
+  font-size: 12px;
+}
+
+.driver-warning.is-warning {
+  border-color: rgba(255, 217, 106, 0.46);
+  background: rgba(255, 217, 106, 0.12);
+  color: var(--gold);
+}
+
+.driver-warning.is-critical {
+  border-color: rgba(255, 145, 145, 0.5);
+  background: rgba(255, 145, 145, 0.14);
+  color: #ffb1b1;
 }
 
 .driver-card-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
 .driver-card-actions .admin-btn {
-  flex: 1;
+  min-height: 44px;
 }
 
 .driver-btn-muted {
@@ -541,8 +1363,387 @@ button {
   margin: 8px 0 0;
 }
 
-.vehicle-tools {
+.customer-overview {
   gap: 10px;
+}
+
+.customer-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.customer-overview-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 4px;
+}
+
+.customer-overview-card small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.customer-overview-card strong {
+  font-size: 20px;
+  color: var(--gold);
+}
+
+.customer-overview-card.is-regular strong {
+  color: var(--gold);
+}
+
+.customer-overview-card.is-medical strong {
+  color: var(--status-green);
+}
+
+.customer-overview-card.is-company strong {
+  color: var(--status-blue);
+}
+
+.customer-overview-card.is-question strong {
+  color: #ffbe99;
+}
+
+.customer-overview-card.is-vip strong {
+  color: #ffdca0;
+}
+
+.customer-tools {
+  gap: 12px;
+}
+
+.customer-search-wrap {
+  display: grid;
+  gap: 7px;
+}
+
+.customer-filter-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.customer-filter-btn {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.84);
+  padding: 0 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.customer-filter-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 217, 106, 0.35);
+  background: rgba(255, 217, 106, 0.08);
+}
+
+.customer-filter-btn.is-active {
+  border-color: rgba(255, 217, 106, 0.5);
+  background: rgba(255, 217, 106, 0.16);
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.customer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.customer-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.24);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.customer-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 217, 106, 0.34);
+  box-shadow: 0 20px 34px rgba(0, 0, 0, 0.28);
+}
+
+.customer-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.customer-card-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.customer-type-badge {
+  display: inline-flex;
+  margin-top: 6px;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 0 10px;
+  align-items: center;
+  border: 1px solid transparent;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.customer-type-private {
+  border-color: rgba(184, 191, 203, 0.44);
+  color: var(--status-gray);
+  background: rgba(184, 191, 203, 0.1);
+}
+
+.customer-type-regular {
+  border-color: rgba(255, 217, 106, 0.44);
+  color: var(--gold);
+  background: rgba(255, 217, 106, 0.12);
+}
+
+.customer-type-medical {
+  border-color: rgba(139, 226, 173, 0.44);
+  color: var(--status-green);
+  background: rgba(139, 226, 173, 0.1);
+}
+
+.customer-type-company {
+  border-color: rgba(124, 180, 255, 0.45);
+  color: var(--status-blue);
+  background: rgba(124, 180, 255, 0.11);
+}
+
+.customer-type-vip {
+  border-color: rgba(255, 215, 130, 0.45);
+  color: #ffe4b4;
+  background: rgba(255, 215, 130, 0.12);
+}
+
+.customer-type-school {
+  border-color: rgba(212, 163, 58, 0.44);
+  color: #e5bb65;
+  background: rgba(212, 163, 58, 0.12);
+}
+
+.customer-rewards {
+  border: 1px solid rgba(255, 217, 106, 0.4);
+  background: rgba(255, 217, 106, 0.1);
+  color: var(--gold);
+  min-height: 30px;
+  border-radius: 999px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.customer-meta-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.customer-meta-list div {
+  display: grid;
+  gap: 2px;
+}
+
+.customer-meta-list dt {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.customer-meta-list dd {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.customer-next-ride {
+  display: inline-flex;
+  border: 1px solid rgba(255, 217, 106, 0.4);
+  border-radius: 10px;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  width: fit-content;
+  color: var(--gold);
+  background: rgba(255, 217, 106, 0.1);
+}
+
+.customer-question {
+  margin: 0;
+  border: 1px solid rgba(255, 163, 122, 0.44);
+  border-radius: 10px;
+  min-height: 30px;
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  color: #ffbe99;
+  background: rgba(255, 163, 122, 0.11);
+  font-size: 12px;
+}
+
+.customer-card-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.customer-card-actions .admin-btn {
+  min-height: 44px;
+}
+
+.customer-btn-muted {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.customer-empty {
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.customer-empty strong {
+  display: block;
+  color: var(--text);
+}
+
+.customer-empty p {
+  margin: 8px 0 0;
+}
+
+.customer-modal-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.customer-modal-list div {
+  display: grid;
+  gap: 3px;
+}
+
+.customer-modal-list dt {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.customer-modal-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.customer-modal-note {
+  margin: 14px 0 0;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--muted);
+}
+
+.driver-modal-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.driver-modal-list div {
+  display: grid;
+  gap: 3px;
+}
+
+.driver-modal-list dt {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.driver-modal-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.driver-modal-note {
+  margin: 14px 0 0;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--muted);
+}
+
+.vehicle-tools {
+  gap: 9px;
+}
+
+.fleet-overview {
+  gap: 10px;
+}
+
+.fleet-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fleet-overview-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 4px;
+}
+
+.fleet-overview-card small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.fleet-overview-card strong {
+  font-size: 22px;
+  color: var(--gold);
+}
+
+.fleet-overview-card.is-available strong {
+  color: var(--status-green);
+}
+
+.fleet-overview-card.is-onroute strong {
+  color: var(--status-blue);
+}
+
+.fleet-overview-card.is-pause strong {
+  color: var(--gold);
+}
+
+.fleet-overview-card.is-workshop strong {
+  color: #ffbe99;
 }
 
 .vehicle-search-wrap {
@@ -599,18 +1800,18 @@ button {
 .vehicle-card {
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 14px;
+  padding: 11px;
   display: grid;
-  gap: 12px;
+  gap: 9px;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.22);
   transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
 .vehicle-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255, 217, 106, 0.34);
-  box-shadow: 0 22px 36px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+  border-color: rgba(255, 217, 106, 0.42);
+  box-shadow: 0 0 0 1px rgba(255, 217, 106, 0.26), 0 18px 30px rgba(0, 0, 0, 0.28);
 }
 
 .vehicle-card-head h2 {
@@ -634,7 +1835,9 @@ button {
 }
 
 .vehicle-head-status-slot .status-pill {
-  min-height: 30px;
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: 12px;
 }
 
 .vehicle-card-plate {
@@ -686,7 +1889,7 @@ button {
   margin: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 10px;
+  gap: 6px 8px;
 }
 
 .vehicle-meta-list div {
@@ -723,8 +1926,52 @@ button {
   background: var(--status-green);
 }
 
+.vehicle-driver-chip.is-available .vehicle-driver-dot {
+  background: var(--status-green);
+}
+
+.vehicle-driver-chip.is-onroute .vehicle-driver-dot {
+  background: var(--status-blue);
+}
+
+.vehicle-driver-chip.is-pause .vehicle-driver-dot {
+  background: var(--gold);
+}
+
+.vehicle-driver-chip.is-workshop .vehicle-driver-dot {
+  background: #ffbe99;
+}
+
 .vehicle-driver-chip.is-idle .vehicle-driver-dot {
   background: var(--status-gray);
+}
+
+.vehicle-maintenance-row {
+  grid-column: 1 / -1;
+}
+
+.vehicle-maintenance-box {
+  display: grid;
+  gap: 6px;
+}
+
+.vehicle-maintenance-item {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 7px 8px;
+  display: grid;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.vehicle-maintenance-label {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.vehicle-maintenance-date {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .vehicle-countdown {
@@ -737,6 +1984,7 @@ button {
   align-items: center;
   font-size: 11px;
   letter-spacing: 0.02em;
+  width: fit-content;
 }
 
 .vehicle-countdown.is-ok {
@@ -948,6 +2196,25 @@ button {
   color: var(--muted);
 }
 
+.vehicle-modal-history {
+  margin-top: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.vehicle-modal-history strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.vehicle-modal-history ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
 .vehicle-modal-status-box {
   display: grid;
   gap: 7px;
@@ -996,8 +2263,40 @@ button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .ride-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ride-overview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .billing-overview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .customer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-overview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .driver-overview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .vehicle-grid {
     grid-template-columns: 1fr;
+  }
+
+  .fleet-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .vehicle-modal-list {
@@ -1033,8 +2332,125 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .driver-card-actions {
+  .ride-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ride-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ride-filter-group {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ride-filter-btn {
+    width: 100%;
+  }
+
+  .billing-filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .billing-filter-btn {
+    width: 100%;
+  }
+
+  .ride-route {
+    grid-template-columns: 1fr;
+  }
+
+  .ride-route-arrow {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+
+  .ride-meta-list {
+    grid-template-columns: 1fr;
+  }
+
+  .ride-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-meta-list {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .ride-modal-list {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-modal-list {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .driver-meta-list {
+    grid-template-columns: 1fr;
+  }
+
+  .driver-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .driver-filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .driver-filter-btn {
+    width: 100%;
+  }
+
+  .driver-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .customer-filter-btn {
+    width: 100%;
+  }
+
+  .customer-meta-list {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-modal-list {
+    grid-template-columns: 1fr;
+  }
+
+  .driver-modal-list {
+    grid-template-columns: 1fr;
   }
 
   .vehicle-meta-list {
@@ -1064,6 +2480,10 @@ button {
 
   .vehicle-filter-btn {
     width: 100%;
+  }
+
+  .fleet-overview-grid {
+    grid-template-columns: 1fr;
   }
 
   .admin-modal {
