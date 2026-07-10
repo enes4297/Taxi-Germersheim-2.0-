@@ -5,390 +5,544 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#050505">
   <title>Mein Konto | Taxi Germersheim GmbH</title>
-  <meta name="description" content="Mein Konto: Premium-Profilansicht mit Demo-Daten, Schnellzugriffen und Einstellungen als Frontend-Vorbereitung.">
+  <meta name="description" content="Mein Konto als moderne Frontend-Vorbereitung fuer spaeteren echten Login.">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="meinkonto.html">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="de_DE">
   <meta property="og:site_name" content="Taxi Germersheim GmbH">
   <meta property="og:title" content="Mein Konto | Taxi Germersheim GmbH">
-  <meta property="og:description" content="Premium-Kontoansicht als Demo ohne Backend und ohne Speicherung.">
+  <meta property="og:description" content="Profil, Favoriten, Einstellungen und Rewards-Kurzansicht als Demo ohne Backend.">
   <meta property="og:url" content="meinkonto.html">
   <meta property="og:image" content="logo.png">
   <link rel="stylesheet" href="style.css">
   <style>
-    #mein-konto.mein-konto-page{
-      display:block;
-      padding:8px 0 28px;
-      animation:meinKontoFade .45s ease;
+    #customer-account.customer-account-page {
+      display: block;
+      padding: 8px 0 26px;
     }
 
-    @keyframes meinKontoFade{
-      from{opacity:0;transform:translateY(8px)}
-      to{opacity:1;transform:translateY(0)}
+    .customer-shell {
+      display: grid;
+      gap: 14px;
     }
 
-    .mein-konto-shell{
-      display:grid;
-      gap:18px;
+    .customer-card {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 24px;
+      padding: 16px;
+      background: linear-gradient(150deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      box-shadow: 0 16px 34px rgba(0,0,0,.24);
+      display: grid;
+      gap: 12px;
     }
 
-    .mein-konto-hero{
-      position:relative;
-      overflow:hidden;
-      padding:26px;
-      border-radius:30px;
-      border:1px solid rgba(255,217,106,.26);
+    .customer-card h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 30px;
+      line-height: 1.03;
+    }
+
+    .customer-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .customer-pill {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,217,106,.3);
+      background: rgba(255,217,106,.1);
+      color: #ffe8a7;
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    .customer-profile {
+      border: 1px solid rgba(255,217,106,.28);
       background:
-        radial-gradient(circle at 80% -10%,rgba(255,217,106,.22),transparent 42%),
-        linear-gradient(150deg,rgba(18,19,24,.98),rgba(8,9,12,.98));
-      box-shadow:0 26px 64px rgba(0,0,0,.28);
+        radial-gradient(circle at 88% -8%, rgba(255,217,106,.2), transparent 38%),
+        linear-gradient(150deg, rgba(20,21,27,.98), rgba(8,9,12,.99));
+      gap: 14px;
+      overflow: hidden;
     }
 
-    .mein-konto-hero:before{
-      content:'';
-      position:absolute;
-      inset:auto -130px -130px auto;
-      width:280px;
-      height:280px;
-      border-radius:50%;
-      background:radial-gradient(circle,rgba(255,217,106,.16),transparent 70%);
-      pointer-events:none;
+    .customer-profile-head {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 12px;
+      align-items: center;
     }
 
-    .mein-konto-hero-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:16px;
-      margin-bottom:20px;
+    .customer-profile-avatar {
+      width: 70px;
+      height: 70px;
+      border-radius: 999px;
+      object-fit: cover;
+      border: 1px solid rgba(255,217,106,.36);
+      background: rgba(255,217,106,.08);
     }
 
-    .mein-konto-badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      min-height:36px;
-      padding:0 14px;
-      border-radius:999px;
-      border:1px solid rgba(255,217,106,.32);
-      background:rgba(255,217,106,.09);
-      color:#ffe8a7;
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:.08em;
-      text-transform:uppercase;
+    .customer-profile-name {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 33px;
+      line-height: 1;
+      letter-spacing: -.02em;
     }
 
-    .mein-konto-hero h1{
-      margin:0;
-      font-family:var(--serif);
-      font-size:52px;
-      line-height:.98;
-      letter-spacing:-.03em;
-      max-width:680px;
+    .customer-profile-meta {
+      margin: 4px 0 0;
+      color: rgba(255,255,255,.76);
+      font-size: 13px;
+      line-height: 1.5;
     }
 
-    .mein-konto-hero p{
-      margin:12px 0 0;
-      color:rgba(255,255,255,.8);
-      font-size:17px;
-      line-height:1.65;
-      max-width:720px;
+    .customer-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 8px;
     }
 
-    .mein-konto-profile{
-      display:grid;
-      grid-template-columns:auto 1fr auto;
-      gap:16px;
-      align-items:center;
-      padding:16px;
-      border-radius:20px;
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(255,255,255,.03);
+    .customer-kpi {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 10px;
+      background: rgba(255,255,255,.03);
+      display: grid;
+      gap: 4px;
     }
 
-    .mein-konto-avatar{
-      width:84px;
-      height:84px;
-      border-radius:24px;
-      object-fit:cover;
-      border:1px solid rgba(255,217,106,.36);
-      background:linear-gradient(140deg,rgba(255,217,106,.14),rgba(255,255,255,.03));
-      box-shadow:0 12px 32px rgba(0,0,0,.28);
+    .customer-kpi span {
+      color: rgba(255,255,255,.68);
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-weight: 800;
     }
 
-    .mein-konto-profile-meta strong{
-      display:block;
-      font-family:var(--serif);
-      font-size:34px;
-      line-height:1.02;
-      margin-bottom:6px;
+    .customer-kpi b {
+      color: #ffe8a7;
+      font-size: 15px;
+      line-height: 1.3;
     }
 
-    .mein-konto-profile-meta span{
-      display:block;
-      color:rgba(255,255,255,.76);
-      font-size:14px;
-      line-height:1.5;
+    .customer-btn {
+      min-height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,217,106,.32);
+      background: rgba(255,217,106,.08);
+      color: #ffe8a7;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 0 12px;
     }
 
-    .mein-konto-kpis{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:10px;
-      min-width:240px;
+    .customer-btn.secondary {
+      border-color: rgba(255,255,255,.18);
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.86);
     }
 
-    .mein-konto-kpi{
-      display:grid;
-      gap:6px;
-      min-height:78px;
-      align-content:start;
-      padding:12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.04);
+    .customer-btn:focus-visible {
+      outline: 2px solid rgba(255,217,106,.52);
+      outline-offset: 2px;
     }
 
-    .mein-konto-kpi span{
-      color:rgba(255,255,255,.68);
-      font-size:12px;
-      letter-spacing:.05em;
-      text-transform:uppercase;
-      font-weight:800;
+    .customer-data-list,
+    .customer-settings-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
     }
 
-    .mein-konto-kpi b{
-      font-size:17px;
-      color:#ffe8a7;
-      line-height:1.3;
+    .customer-data-list li,
+    .customer-settings-list li {
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      background: rgba(255,255,255,.03);
+      padding: 10px;
+      display: grid;
+      gap: 2px;
     }
 
-    .mein-konto-grid{
-      display:grid;
-      grid-template-columns:repeat(12,minmax(0,1fr));
-      gap:14px;
+    .customer-data-list span,
+    .customer-settings-list span {
+      color: rgba(255,255,255,.7);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 800;
     }
 
-    .mein-konto-card{
-      grid-column:span 6;
-      display:grid;
-      gap:12px;
-      align-content:start;
-      min-height:220px;
-      padding:20px;
-      border-radius:24px;
-      border:1px solid rgba(255,255,255,.12);
-      background:linear-gradient(150deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
-      box-shadow:0 16px 42px rgba(0,0,0,.24);
-      transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease;
-      animation:meinKontoRise .55s ease both;
+    .customer-data-list b,
+    .customer-settings-list b {
+      color: #fff;
+      font-size: 14px;
+      line-height: 1.4;
     }
 
-    .mein-konto-card:nth-child(2){animation-delay:.08s}
-    .mein-konto-card:nth-child(3){animation-delay:.13s}
-
-    @keyframes meinKontoRise{
-      from{opacity:0;transform:translateY(12px)}
-      to{opacity:1;transform:translateY(0)}
+    .customer-quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 8px;
     }
 
-    .mein-konto-card:hover{
-      transform:translateY(-4px);
-      border-color:rgba(255,217,106,.28);
-      box-shadow:0 24px 58px rgba(0,0,0,.3);
+    .customer-quick-item {
+      min-height: 88px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+      color: #fff;
+      display: grid;
+      justify-items: start;
+      align-content: center;
+      gap: 6px;
+      text-align: left;
+      padding: 12px;
+      cursor: pointer;
+      transition: transform .2s ease, border-color .2s ease, background .2s ease;
     }
 
-    .mein-konto-card h2{
-      margin:0;
-      font-family:var(--serif);
-      font-size:30px;
-      line-height:1.04;
+    .customer-quick-item:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,217,106,.32);
+      background: rgba(255,217,106,.08);
     }
 
-    .mein-konto-list{
-      list-style:none;
-      margin:0;
-      padding:0;
-      display:grid;
-      gap:8px;
+    .customer-quick-item img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
     }
 
-    .mein-konto-list li{
-      display:grid;
-      grid-template-columns:minmax(0,1fr) auto;
-      gap:8px;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.1);
-      background:rgba(255,255,255,.03);
+    .customer-quick-item strong {
+      font-size: 14px;
+      line-height: 1.35;
     }
 
-    .mein-konto-list span{
-      color:rgba(255,255,255,.78);
-      font-size:13px;
-      line-height:1.4;
+    .customer-favorites-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
     }
 
-    .mein-konto-list b{
-      color:#ffe8a7;
-      font-size:13px;
-      letter-spacing:.02em;
-      text-transform:uppercase;
-      text-align:right;
+    .customer-favorite {
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+      padding: 12px;
+      display: grid;
+      gap: 8px;
     }
 
-    .mein-konto-shortcuts{
-      grid-column:span 12;
+    .customer-favorite-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
     }
 
-    .mein-konto-shortcut-grid{
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:10px;
+    .customer-favorite-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #ffe8a7;
+      font-weight: 800;
     }
 
-    .mein-konto-shortcut{
-      min-height:86px;
-      display:grid;
-      grid-template-columns:46px 1fr;
-      align-items:center;
-      gap:12px;
-      padding:14px;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.03);
-      color:#fff;
-      text-align:left;
-      cursor:pointer;
-      transition:transform .2s ease,border-color .2s ease,background .2s ease;
+    .customer-favorite-tag img {
+      width: 18px;
+      height: 18px;
     }
 
-    .mein-konto-shortcut:hover{
-      transform:translateY(-2px);
-      border-color:rgba(255,217,106,.34);
-      background:rgba(255,217,106,.08);
+    .customer-favorite p {
+      margin: 0;
+      color: rgba(255,255,255,.82);
+      font-size: 13px;
+      line-height: 1.5;
     }
 
-    .mein-konto-shortcut:focus-visible{
-      outline:2px solid rgba(255,217,106,.5);
-      outline-offset:2px;
+    .customer-rewards-overview {
+      display: grid;
+      gap: 10px;
     }
 
-    .mein-konto-shortcut img{
-      width:38px;
-      height:38px;
-      object-fit:contain;
-      filter:drop-shadow(0 0 12px rgba(255,217,106,.2));
+    .customer-progress-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 99px;
+      background: rgba(255,255,255,.14);
+      overflow: hidden;
     }
 
-    .mein-konto-shortcut span{
-      display:block;
-      font-size:15px;
-      line-height:1.35;
-      font-weight:800;
+    .customer-progress-track i {
+      display: block;
+      width: 68%;
+      height: 100%;
+      background: linear-gradient(90deg, #d8a63c, #ffe47d);
     }
 
-    .mein-konto-settings-actions{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:8px;
+    .customer-rewards-meta {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 8px;
     }
 
-    .mein-konto-settings-actions .button{
-      min-height:48px;
-      border-radius:12px;
-      justify-content:center;
-      text-align:center;
-      font-size:13px;
+    .customer-rewards-meta p {
+      margin: 0;
+      padding: 9px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.03);
+      font-size: 12px;
+      line-height: 1.45;
+      color: rgba(255,255,255,.8);
     }
 
-    .mein-konto-settings-note{
-      margin:0;
-      color:#ffe8a7;
-      font-size:12px;
-      line-height:1.5;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,217,106,.24);
-      background:rgba(255,217,106,.08);
+    .customer-rewards-meta b {
+      display: block;
+      color: #ffe8a7;
+      font-size: 14px;
+      margin-top: 3px;
     }
 
-    .mein-konto-status{
-      position:fixed;
-      right:18px;
-      bottom:22px;
-      z-index:40;
-      max-width:320px;
-      min-height:44px;
-      display:flex;
-      align-items:center;
-      padding:10px 14px;
-      border-radius:14px;
-      border:1px solid rgba(255,217,106,.26);
-      background:rgba(9,10,13,.94);
-      color:#ffe8a7;
-      font-size:12px;
-      line-height:1.45;
-      box-shadow:0 14px 36px rgba(0,0,0,.36);
-      opacity:0;
-      transform:translateY(6px);
-      pointer-events:none;
-      transition:opacity .25s ease,transform .25s ease;
+    .customer-actions {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: 1fr;
     }
 
-    .mein-konto-status.is-visible{
-      opacity:1;
-      transform:translateY(0);
+    .customer-note {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #ffe8a7;
+      border: 1px solid rgba(255,217,106,.26);
+      border-radius: 12px;
+      background: rgba(255,217,106,.08);
+      padding: 10px 12px;
     }
 
-    body.mein-konto-dark-preview{
-      filter:saturate(1.08) contrast(1.03);
+    .customer-demo-switch {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(255,255,255,.03);
     }
 
-    @media(max-width:1020px){
-      .mein-konto-profile{
-        grid-template-columns:auto 1fr;
+    .customer-demo-switch-label {
+      display: grid;
+      gap: 2px;
+    }
+
+    .customer-demo-switch-label strong {
+      font-size: 13px;
+      color: #fff;
+    }
+
+    .customer-demo-switch-label span {
+      font-size: 11px;
+      color: rgba(255,255,255,.7);
+    }
+
+    .customer-switch {
+      width: 52px;
+      height: 30px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.08);
+      position: relative;
+      cursor: pointer;
+      flex: 0 0 52px;
+      transition: background .2s ease;
+    }
+
+    .customer-switch i {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      left: 4px;
+      top: 3px;
+      background: #fff;
+      transition: transform .2s ease;
+    }
+
+    body.customer-dark-preview .customer-switch {
+      background: rgba(255,217,106,.24);
+      border-color: rgba(255,217,106,.46);
+    }
+
+    body.customer-dark-preview .customer-switch i {
+      transform: translateX(21px);
+      background: #ffe8a7;
+    }
+
+    .customer-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(4,5,8,.72);
+      backdrop-filter: blur(3px);
+    }
+
+    .customer-modal[hidden] {
+      display: none !important;
+    }
+
+    .customer-modal-card {
+      width: min(560px, 100%);
+      border-radius: 18px;
+      border: 1px solid rgba(255,217,106,.26);
+      background: linear-gradient(160deg, rgba(18,19,25,.98), rgba(9,10,14,.99));
+      box-shadow: 0 24px 54px rgba(0,0,0,.4);
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .customer-modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .customer-modal-head h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 30px;
+      line-height: 1.03;
+    }
+
+    .customer-modal-head p {
+      margin: 4px 0 0;
+      color: rgba(255,255,255,.74);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .customer-modal-close {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      color: #fff;
+      font-size: 21px;
+      cursor: pointer;
+      flex: 0 0 40px;
+    }
+
+    .customer-modal-body {
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+      padding: 12px;
+      color: rgba(255,255,255,.84);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .customer-toast {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      z-index: 90;
+      border-radius: 12px;
+      border: 1px solid rgba(255,217,106,.24);
+      background: rgba(10,11,15,.95);
+      color: #ffe8a7;
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 10px 12px;
+      opacity: 0;
+      transform: translateY(4px);
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .customer-toast.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (min-width: 880px) {
+      .customer-shell {
+        grid-template-columns: repeat(12,minmax(0,1fr));
       }
 
-      .mein-konto-kpis{
-        grid-column:1/-1;
-      }
-    }
-
-    @media(max-width:760px){
-      .mein-konto-hero{padding:22px}
-      .mein-konto-hero h1{font-size:38px}
-      .mein-konto-profile{grid-template-columns:1fr;gap:12px}
-      .mein-konto-profile-meta strong{font-size:30px}
-      .mein-konto-kpis{grid-template-columns:1fr}
-      .mein-konto-grid{grid-template-columns:1fr;gap:12px}
-      .mein-konto-card,.mein-konto-shortcuts{grid-column:auto;min-height:0}
-      .mein-konto-list li{grid-template-columns:1fr}
-      .mein-konto-list b{text-align:left}
-      .mein-konto-shortcut-grid{grid-template-columns:1fr}
-      .mein-konto-shortcut{min-height:92px}
-      .mein-konto-settings-actions{grid-template-columns:1fr}
-      .mein-konto-status{left:14px;right:14px;bottom:14px;max-width:none}
-
-      .site-nav-backdrop{
-        display:block;
-        position:fixed;
-        inset:0;
-        z-index:14;
-        opacity:0;
-        visibility:hidden;
-        pointer-events:none;
-        background:rgba(2,3,5,.5);
-        backdrop-filter:blur(2px);
-        transition:opacity .2s ease;
+      .customer-profile,
+      .customer-quick,
+      .customer-data,
+      .customer-favorites,
+      .customer-settings,
+      .customer-rewards {
+        grid-column: span 6;
       }
 
-      .site-nav-backdrop.is-visible{
-        opacity:1;
-        visibility:visible;
-        pointer-events:auto;
+      .customer-profile,
+      .customer-quick {
+        grid-column: span 12;
+      }
+
+      .customer-profile-head {
+        grid-template-columns: 88px 1fr auto;
+      }
+
+      .customer-profile-avatar {
+        width: 88px;
+        height: 88px;
+      }
+
+      .customer-profile-name {
+        font-size: 44px;
+      }
+
+      .customer-kpi-grid {
+        min-width: 280px;
+      }
+
+      .customer-quick-grid {
+        grid-template-columns: repeat(3,minmax(0,1fr));
+      }
+
+      .customer-favorites-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .customer-actions {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+
+      .customer-toast {
+        left: auto;
+        right: 18px;
+        bottom: 20px;
+        width: min(360px, calc(100vw - 36px));
       }
     }
   </style>
@@ -397,7 +551,7 @@
   <main class="app">
     <header class="topbar">
       <div class="brand"><a href="index.html"><img src="logo.png" alt="Taxi Germersheim GmbH"></a></div>
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen">
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menue oeffnen">
         <span class="menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
       </button>
       <nav class="site-nav">
@@ -405,7 +559,7 @@
         <a href="index.html?page=services">Leistungen</a>
         <a href="flotte.html">Fahrzeugflotte</a>
         <a href="meinkonto.html" class="active">Mein Konto</a>
-        <a href="index.html?page=why">Über uns</a>
+        <a href="index.html?page=why">Ueber uns</a>
         <a href="index.html#kontakt">Kontakt</a>
       </nav>
       <div class="site-nav-backdrop" aria-hidden="true"></div>
@@ -414,92 +568,160 @@
       </div>
     </header>
 
-    <section id="mein-konto" class="mein-konto-page" aria-label="Mein Konto Bereich">
-      <header class="page-head"><a href="index.html" class="page-head-link" aria-label="Zur Startseite">‹</a><h2>Mein Konto</h2><i></i></header>
+    <section id="customer-account" class="customer-account-page" aria-label="Mein Konto Bereich">
+      <header class="page-head"><a href="index.html" class="page-head-link" aria-label="Zur Startseite">&lsaquo;</a><h2>Mein Konto</h2><i></i></header>
 
-      <div class="mein-konto-shell">
-        <article class="mein-konto-hero">
-          <div class="mein-konto-hero-head">
-            <span class="mein-konto-badge">Account Preview</span>
+      <div class="customer-shell">
+        <article class="customer-card customer-profile">
+          <div class="customer-card-head">
+            <span class="customer-pill">Account Demo</span>
+            <button class="customer-btn secondary" type="button" data-demo-open="profile">Bearbeiten</button>
           </div>
-          <h1>Ihre Premium-Kontozentrale</h1>
-          <p>Diese Seite ist bewusst als Frontend-Grundlage vorbereitet. Login, Synchronisierung und echte Kontodaten folgen in einer späteren Phase.</p>
-
-          <div class="mein-konto-profile" aria-label="Profil Kopfbereich">
-            <img class="mein-konto-avatar" src="assets/icons/account-avatar-placeholder.svg" alt="Profilbild Demo" loading="lazy">
-            <div class="mein-konto-profile-meta">
-              <strong>Max Mustermann</strong>
-              <span>Rewards-Level: Gold Mitglied</span>
-              <span>Punkte: 2.340</span>
+          <div class="customer-profile-head">
+            <img class="customer-profile-avatar" src="assets/icons/Profile.svg" alt="Profilbild Platzhalter" loading="lazy">
+            <div>
+              <h1 class="customer-profile-name">Enes Carman</h1>
+              <p class="customer-profile-meta">Mitglied seit: 2026</p>
             </div>
-            <div class="mein-konto-kpis" aria-label="Konto Kennzahlen">
-              <div class="mein-konto-kpi"><span>Status</span><b>Premium</b></div>
-              <div class="mein-konto-kpi"><span>Nächster Level</span><b>Platinum</b></div>
+            <div class="customer-kpi-grid" aria-label="Profil Kennzahlen">
+              <div class="customer-kpi"><span>Rewards Level</span><b>Gold</b></div>
+              <div class="customer-kpi"><span>Punktestand</span><b>2.340 Punkte</b></div>
             </div>
           </div>
         </article>
 
-        <section class="mein-konto-grid" aria-label="Kontobereiche">
-          <article class="mein-konto-card" aria-label="Persönliche Daten">
-            <h2>Profilkarten</h2>
-            <ul class="mein-konto-list">
-              <li><span>Persönliche Daten</span><b>Verifiziert</b></li>
-              <li><span>Telefonnummer</span><b>+49 7274 3567</b></li>
-              <li><span>E-Mail</span><b>max@demo.de</b></li>
-              <li><span>Sprache</span><b>Deutsch</b></li>
-              <li><span>Mitglied seit</span><b>Januar 2026</b></li>
-            </ul>
-          </article>
+        <article class="customer-card customer-data">
+          <div class="customer-card-head">
+            <h2>Persoenliche Daten</h2>
+            <button class="customer-btn secondary" type="button" data-demo-open="data">Daten bearbeiten</button>
+          </div>
+          <ul class="customer-data-list" aria-label="Persoenliche Daten als Demo">
+            <li><span>Vorname</span><b>Enes</b></li>
+            <li><span>Nachname</span><b>Carman</b></li>
+            <li><span>Telefonnummer</span><b>+49 7274 3567</b></li>
+            <li><span>E-Mail-Adresse</span><b>enes@demo.taxi-germersheim.de</b></li>
+            <li><span>Sprache</span><b>Deutsch</b></li>
+            <li><span>Geburtsdatum</span><b>01.01.1993 (Demo)</b></li>
+          </ul>
+          <p class="customer-note">Alle Daten sind Demo-Inhalte ohne echte Speicherung oder Backend-Anbindung.</p>
+        </article>
 
-          <article class="mein-konto-card mein-konto-shortcuts" aria-label="Schnellzugriffe">
-            <h2>Schnellzugriffe</h2>
-            <div class="mein-konto-shortcut-grid">
-              <button class="mein-konto-shortcut" type="button" data-demo-action="Meine Fahrten">
-                <img src="assets/icons/taxi.svg" alt="Fahrten Icon" loading="lazy">
-                <span>Meine Fahrten</span>
-              </button>
-              <button class="mein-konto-shortcut" type="button" data-demo-action="Rewards">
-                <img src="assets/icons/rewards.svg" alt="Rewards Icon" loading="lazy">
-                <span>Rewards</span>
-              </button>
-              <button class="mein-konto-shortcut" type="button" data-demo-action="Gutscheine">
-                <img src="assets/icons/luggage.svg" alt="Gutscheine Icon" loading="lazy">
-                <span>Gutscheine</span>
-              </button>
-              <button class="mein-konto-shortcut" type="button" data-demo-action="Lieblingsorte">
-                <img src="assets/icons/map-pin.svg" alt="Lieblingsorte Icon" loading="lazy">
-                <span>Lieblingsorte</span>
-              </button>
-              <button class="mein-konto-shortcut" type="button" data-demo-action="Benachrichtigungen">
-                <img src="assets/icons/clock.svg" alt="Benachrichtigungen Icon" loading="lazy">
-                <span>Benachrichtigungen</span>
-              </button>
-              <button class="mein-konto-shortcut" type="button" data-demo-action="Hilfe">
-                <img src="assets/icons/user.svg" alt="Hilfe Icon" loading="lazy">
-                <span>Hilfe</span>
-              </button>
-            </div>
-          </article>
+        <article class="customer-card customer-quick">
+          <h2>Schnellzugriffe</h2>
+          <div class="customer-quick-grid" aria-label="Schnellzugriffe">
+            <button class="customer-quick-item" type="button" data-demo-action="Meine Fahrten">
+              <img src="assets/icons/Taxi.svg" alt="Meine Fahrten Icon" loading="lazy">
+              <strong>Meine Fahrten</strong>
+            </button>
+            <a class="customer-quick-item" href="rewards.html" aria-label="Zu Rewards">
+              <img src="assets/icons/Rewards.svg" alt="Rewards Icon" loading="lazy">
+              <strong>Rewards</strong>
+            </a>
+            <button class="customer-quick-item" type="button" data-demo-action="Gutscheine">
+              <img src="assets/icons/Gift%20Voucher.svg" alt="Gutschein Icon" loading="lazy">
+              <strong>Gutscheine</strong>
+            </button>
+            <button class="customer-quick-item" type="button" data-demo-action="Lieblingsorte">
+              <img src="assets/icons/Home.svg" alt="Home Icon" loading="lazy">
+              <strong>Lieblingsorte</strong>
+            </button>
+            <button class="customer-quick-item" type="button" data-demo-action="Benachrichtigungen">
+              <img src="assets/icons/Clock.svg" alt="Benachrichtigungen Icon" loading="lazy">
+              <strong>Benachrichtigungen</strong>
+            </button>
+            <button class="customer-quick-item" type="button" data-demo-action="Hilfe und Kontakt">
+              <img src="assets/icons/Phone.svg" alt="Phone Icon" loading="lazy">
+              <strong>Hilfe und Kontakt</strong>
+            </button>
+          </div>
+        </article>
 
-          <article class="mein-konto-card" aria-label="Einstellungen">
-            <h2>Einstellungen</h2>
-            <ul class="mein-konto-list">
-              <li><span>Sprache</span><b>Deutsch</b></li>
-              <li><span>Dark Mode</span><b>Vorbereitet</b></li>
-              <li><span>Datenschutz</span><b>Verfügbar</b></li>
-              <li><span>Impressum</span><b>Verfügbar</b></li>
-              <li><span>Abmelden</span><b>Demo</b></li>
-            </ul>
-            <div class="mein-konto-settings-actions">
-              <button class="button secondary" type="button" data-demo-action="Sprache wechseln">Sprache wechseln</button>
-              <button class="button secondary" type="button" data-demo-action="Dark Mode">Dark Mode testen</button>
-              <a class="button secondary" href="datenschutz.html">Datenschutz</a>
-              <a class="button secondary" href="impressum.html">Impressum</a>
-              <button class="button secondary" type="button" data-demo-action="Abmelden">Abmelden</button>
+        <article class="customer-card customer-favorites">
+          <div class="customer-card-head">
+            <h2>Lieblingsorte</h2>
+            <button class="customer-btn secondary" type="button" data-demo-open="favorites">Bearbeiten</button>
+          </div>
+          <div class="customer-favorites-grid" aria-label="Lieblingsorte als kompakte Karten">
+            <article class="customer-favorite">
+              <div class="customer-favorite-head">
+                <span class="customer-favorite-tag"><img src="assets/icons/Home.svg" alt="Home Icon" loading="lazy">Zuhause</span>
+                <button class="customer-btn secondary" type="button" data-demo-open="fav-home">Demo</button>
+              </div>
+              <p>Friedrich-Ebert-Strasse 8, 76726 Germersheim</p>
+            </article>
+
+            <article class="customer-favorite">
+              <div class="customer-favorite-head">
+                <span class="customer-favorite-tag"><img src="assets/icons/Location.svg" alt="Location Icon" loading="lazy">Arbeit</span>
+                <button class="customer-btn secondary" type="button" data-demo-open="fav-work">Demo</button>
+              </div>
+              <p>Industriestrasse 12, 76726 Germersheim</p>
+            </article>
+
+            <article class="customer-favorite">
+              <div class="customer-favorite-head">
+                <span class="customer-favorite-tag"><img src="assets/icons/Destination.svg" alt="Medical Icon" loading="lazy">Krankenhaus</span>
+                <button class="customer-btn secondary" type="button" data-demo-open="fav-hospital">Demo</button>
+              </div>
+              <p>Asklepios Suedpfalzklinik, Germersheim</p>
+            </article>
+
+            <article class="customer-favorite">
+              <div class="customer-favorite-head">
+                <span class="customer-favorite-tag"><img src="assets/icons/Route.svg" alt="Airport Icon" loading="lazy">Flughafen</span>
+                <button class="customer-btn secondary" type="button" data-demo-open="fav-airport">Demo</button>
+              </div>
+              <p>Frankfurt Flughafen Terminal 1</p>
+            </article>
+          </div>
+          <p class="customer-note">Vorbereitet fuer spaetere Verknuepfung mit Buchungsfavoriten. Aktuell nur UI-Demo.</p>
+        </article>
+
+        <article class="customer-card customer-settings">
+          <h2>Einstellungen</h2>
+          <ul class="customer-settings-list" aria-label="Einstellungen als Demo">
+            <li><span>Sprache</span><b>Deutsch</b></li>
+            <li><span>Benachrichtigungen</span><b>Push und E-Mail vorbereitet</b></li>
+            <li><span>Datenschutz</span><b>Einsehbar</b></li>
+            <li><span>Impressum</span><b>Einsehbar</b></li>
+            <li><span>Abmelden</span><b>Demo</b></li>
+          </ul>
+
+          <div class="customer-demo-switch" aria-label="Dark Mode Demo Schalter">
+            <div class="customer-demo-switch-label">
+              <strong>Dark Mode (Demo)</strong>
+              <span>Nur vorbereitet, ohne Speicherung</span>
             </div>
-            <p class="mein-konto-settings-note">Demo-Modus: keine Backend-Anbindung, keine Speicherung, keine echten Kontoaktionen.</p>
-          </article>
-        </section>
+            <button class="customer-switch" type="button" data-demo-dark-toggle aria-label="Dark Mode Demo umschalten"><i></i></button>
+          </div>
+
+          <div class="customer-actions">
+            <button class="customer-btn secondary" type="button" data-demo-action="Sprache aendern">Sprache</button>
+            <button class="customer-btn secondary" type="button" data-demo-action="Benachrichtigungen">Benachrichtigungen</button>
+            <a class="customer-btn secondary" href="datenschutz.html">Datenschutz</a>
+            <a class="customer-btn secondary" href="impressum.html">Impressum</a>
+            <button class="customer-btn secondary" type="button" data-demo-action="Abmelden">Abmelden Demo</button>
+            <a class="customer-btn secondary" href="https://wa.me/4972743567?text=Ich%20habe%20eine%20Frage%20zum%20Konto" target="_blank" rel="noreferrer">WhatsApp Hilfe</a>
+          </div>
+        </article>
+
+        <article class="customer-card customer-rewards">
+          <div class="customer-card-head">
+            <h2>Rewards Kurzansicht</h2>
+            <img src="assets/icons/Rewards.svg" alt="Rewards Icon" width="24" height="24" loading="lazy">
+          </div>
+          <div class="customer-rewards-overview">
+            <div class="customer-progress-track" aria-label="Rewards Fortschritt"><i></i></div>
+            <div class="customer-rewards-meta">
+              <p>Aktuelles Level<b>Gold</b></p>
+              <p>Punktestand<b>2.340</b></p>
+              <p>Naechstes Level<b>Platinum</b></p>
+              <p>Fehlend bis naechstes Level<b>1.160 Punkte</b></p>
+            </div>
+            <a class="customer-btn" href="rewards.html">Zu Rewards</a>
+          </div>
+          <p class="customer-note">Die bestehende Rewards-Logik bleibt unveraendert und wird nur verlinkt.</p>
+        </article>
       </div>
     </section>
   </main>
@@ -509,8 +731,8 @@
       <div class="footer-brand">
         <img class="footer-logo" src="logo.png" alt="Taxi Germersheim GmbH">
         <strong>Taxi Germersheim</strong>
-        <p>Sicher. Zuverlässig. Pünktlich.</p>
-        <small>24 Stunden täglich für Sie erreichbar.</small>
+        <p>Sicher. Zuverlaessig. Puenktlich.</p>
+        <small>24 Stunden taeglich fuer Sie erreichbar.</small>
       </div>
 
       <div class="footer-column footer-services">
@@ -525,7 +747,7 @@
       <div class="footer-column footer-contact">
         <strong>Kontakt</strong>
         <a class="footer-cta-primary" href="tel:072743567"><span>Jetzt anrufen: 07274 3567</span></a>
-        <a class="footer-cta-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer"><span>WhatsApp-Nachricht senden</span></a>
+        <a class="footer-cta-secondary" href="https://wa.me/4972743567?text=Ich%20moechte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer"><span>WhatsApp Nachricht senden</span></a>
       </div>
 
       <div class="footer-column footer-quicklinks">
@@ -539,72 +761,136 @@
     </div>
 
     <div class="footer-bottom-line">
-      <p>© 2026 Taxi Germersheim.<br>Alle Rechte vorbehalten.</p>
+      <p>&copy; 2026 Taxi Germersheim.<br>Alle Rechte vorbehalten.</p>
       <div class="footer-bottom-links">
         <a href="datenschutz.html">Datenschutz</a>
         <a href="impressum.html">Impressum</a>
       </div>
     </div>
+
     <div class="footer-bottom" aria-hidden="true"></div>
   </footer>
 
-  <p class="mein-konto-status" data-demo-status aria-live="polite"></p>
+  <section class="customer-modal" data-demo-modal hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Demo bearbeiten">
+    <article class="customer-modal-card">
+      <header class="customer-modal-head">
+        <div>
+          <h3 data-demo-modal-title>Bearbeiten Demo</h3>
+          <p data-demo-modal-subtitle>Diese Funktion ist als Frontend-Demo vorbereitet.</p>
+        </div>
+        <button class="customer-modal-close" type="button" data-demo-modal-close aria-label="Modal schliessen">&times;</button>
+      </header>
+      <div class="customer-modal-body" data-demo-modal-body>
+        Es findet keine Speicherung statt. Die Daten sind fuer eine spaetere Backend-Anbindung vorbereitet.
+      </div>
+      <button class="customer-btn" type="button" data-demo-modal-close>Verstanden</button>
+    </article>
+  </section>
+
+  <p class="customer-toast" data-demo-toast aria-live="polite"></p>
 
   <script>
-    (function(){
-      const toggle=document.querySelector('.menu-toggle');
-      const nav=document.querySelector('.site-nav');
-      const backdrop=document.querySelector('.site-nav-backdrop');
-      const status=document.querySelector('[data-demo-status]');
-      const darkModeBtn=document.querySelector('[data-demo-action="Dark Mode"]');
+    (function () {
+      const nav = document.querySelector('.site-nav');
+      const toggle = document.querySelector('.menu-toggle');
+      const backdrop = document.querySelector('.site-nav-backdrop');
+      const modal = document.querySelector('[data-demo-modal]');
+      const modalTitle = document.querySelector('[data-demo-modal-title]');
+      const modalSubtitle = document.querySelector('[data-demo-modal-subtitle]');
+      const modalBody = document.querySelector('[data-demo-modal-body]');
+      const toast = document.querySelector('[data-demo-toast]');
+      const darkToggle = document.querySelector('[data-demo-dark-toggle]');
 
-      function setStatus(text){
-        if(!status) return;
-        status.textContent=text;
-        status.classList.add('is-visible');
-        window.clearTimeout(setStatus.timer);
-        setStatus.timer=window.setTimeout(function(){
-          status.classList.remove('is-visible');
-        },1800);
+      function showToast(message) {
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add('is-visible');
+        window.clearTimeout(showToast.timer);
+        showToast.timer = window.setTimeout(function () {
+          toast.classList.remove('is-visible');
+        }, 1800);
       }
 
-      if(toggle && nav){
-        toggle.addEventListener('click',function(){
-          const open=nav.classList.toggle('open');
-          toggle.setAttribute('aria-expanded',String(open));
-          if(backdrop) backdrop.classList.toggle('is-visible',open);
-          document.body.classList.toggle('nav-open',open);
+      function openModal(type) {
+        if (!modal) return;
+        const titles = {
+          profile: 'Profil bearbeiten',
+          data: 'Persoenliche Daten bearbeiten',
+          favorites: 'Lieblingsorte bearbeiten',
+          'fav-home': 'Lieblingsort Zuhause',
+          'fav-work': 'Lieblingsort Arbeit',
+          'fav-hospital': 'Lieblingsort Krankenhaus',
+          'fav-airport': 'Lieblingsort Flughafen'
+        };
+
+        const title = titles[type] || 'Bearbeiten Demo';
+        if (modalTitle) modalTitle.textContent = title;
+        if (modalSubtitle) modalSubtitle.textContent = 'Diese Aktion bleibt im Demo-Modus ohne echte Speicherung.';
+        if (modalBody) {
+          modalBody.textContent = 'Frontend ist vorbereitet fuer spaetere Konto-API und Login-Anbindung. Aktuell werden keine Daten gespeichert oder an ein Backend gesendet.';
+        }
+
+        modal.hidden = false;
+        modal.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeModal() {
+        if (!modal) return;
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+      }
+
+      if (toggle && nav) {
+        toggle.addEventListener('click', function () {
+          const open = nav.classList.toggle('open');
+          toggle.setAttribute('aria-expanded', String(open));
+          if (backdrop) {
+            backdrop.classList.toggle('is-visible', open);
+          }
         });
       }
 
-      if(backdrop){
-        backdrop.addEventListener('click',function(){
-          nav.classList.remove('open');
-          toggle && toggle.setAttribute('aria-expanded','false');
+      if (backdrop) {
+        backdrop.addEventListener('click', function () {
+          nav && nav.classList.remove('open');
+          toggle && toggle.setAttribute('aria-expanded', 'false');
           backdrop.classList.remove('is-visible');
-          document.body.classList.remove('nav-open');
         });
       }
 
-      document.querySelectorAll('[data-demo-action]').forEach(function(node){
-        node.addEventListener('click',function(){
-          const action=node.getAttribute('data-demo-action') || 'Aktion';
-          if(action==='Dark Mode'){
-            document.body.classList.toggle('mein-konto-dark-preview');
-            setStatus('Dark Mode Vorschau umgeschaltet (nur Demo).');
-            return;
-          }
-          if(action==='Abmelden'){
-            setStatus('Abmelden ist vorbereitet, aber noch ohne echten Login (Demo).');
-            return;
-          }
-          if(action==='Sprache wechseln'){
-            setStatus('Sprachwechsel ist als UI vorbereitet, ohne Persistenz (Demo).');
-            return;
-          }
-          setStatus(action + ' ist vorbereitet und wird spaeter mit echtem Konto verbunden.');
+      document.querySelectorAll('[data-demo-open]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          openModal(button.getAttribute('data-demo-open'));
         });
       });
+
+      document.querySelectorAll('[data-demo-modal-close]').forEach(function (button) {
+        button.addEventListener('click', closeModal);
+      });
+
+      if (modal) {
+        modal.addEventListener('click', function (event) {
+          if (event.target === modal) closeModal();
+        });
+      }
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') closeModal();
+      });
+
+      document.querySelectorAll('[data-demo-action]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          const action = button.getAttribute('data-demo-action') || 'Funktion';
+          showToast(action + ' ist als Demo vorbereitet.');
+        });
+      });
+
+      if (darkToggle) {
+        darkToggle.addEventListener('click', function () {
+          document.body.classList.toggle('customer-dark-preview');
+          showToast('Dark Mode Vorschau umgeschaltet (nur Demo).');
+        });
+      }
     })();
   </script>
 </body>

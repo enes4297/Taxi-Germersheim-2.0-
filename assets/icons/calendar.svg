@@ -1,11 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
-
-  <rect x="8" y="10" width="32" height="30" rx="4"/>
-  <path d="M16 6v8"/>
-  <path d="M32 6v8"/>
-  <path d="M8 19h32"/>
-  <path d="M16 27h.1"/>
-  <path d="M24 27h.1"/>
-  <path d="M32 27h.1"/>
-
-</svg>
+<?xml version="1.0" encoding="UTF-8"?><svg id="Layer_2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.00342,11.67969c.55225,0,1-.44727,1-1v-4.38086c0-.55273-.44775-1-1-1h-1.93066v-.77539c0-.55273-.44775-1-1-1s-1,.44727-1,1v.77539h-6.14551v-.77539c0-.55273-.44775-1-1-1s-1,.44727-1,1v.77539h-1.93066c-.55225,0-1,.44727-1,1v13.17773c0,.55273.44775,1,1,1h14.00684c.55225,0,1-.44727,1-1v-4.39062c0-.55273-.44775-1-1-1s-1,.44727-1,1v3.39062H5.99658v-6.79688h13.00684ZM18.00342,7.29883v2.38086H5.99658v-2.38086h12.00684Z"/></svg>
