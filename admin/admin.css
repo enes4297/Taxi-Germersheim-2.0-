@@ -250,6 +250,10 @@ button {
   gap: 8px;
 }
 
+.admin-notification-panel[hidden] {
+  display: none !important;
+}
+
 .admin-notification-head {
   display: flex;
   align-items: center;
