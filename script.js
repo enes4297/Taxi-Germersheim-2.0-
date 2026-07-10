@@ -26,6 +26,37 @@
     passengers:'<svg viewBox="0 0 48 48"><circle cx="17" cy="16" r="6"/><path d="M7 42v-3a10 10 0 0 1 20 0v3"/><circle cx="33" cy="18" r="5"/><path d="M29 42v-2a8 8 0 0 1 13 0v2"/></svg>',
     user:'<svg viewBox="0 0 48 48"><circle cx="24" cy="16" r="8"/><path d="M9 42a15 15 0 0 1 30 0"/></svg>'
   };
+  const officialIcons={
+    home:'assets/icons/Home.svg',
+    taxi:'assets/icons/Taxi.svg',
+    van:'assets/icons/Van.svg',
+    wheelchair:'assets/icons/Wheelchair Vehicle.svg',
+    profile:'assets/icons/Profile.svg',
+    user:'assets/icons/Profile.svg',
+    location:'assets/icons/Location.svg',
+    pin:'assets/icons/Location.svg',
+    destination:'assets/icons/Destination.svg',
+    flag:'assets/icons/Destination.svg',
+    route:'assets/icons/Route.svg',
+    booking:'assets/icons/Calendar.svg',
+    calendar:'assets/icons/Calendar.svg',
+    clock:'assets/icons/Clock.svg',
+    phone:'assets/icons/Phone.svg',
+    whatsapp:'assets/icons/WhatsApp.svg',
+    yumak:'assets/icons/WhatsApp.svg',
+    rewards:'assets/icons/Rewards.svg',
+    voucher:'assets/icons/Gift Voucher.svg',
+    luggage:'assets/icons/Gift Voucher.svg',
+    check:'assets/icons/Check Mark.svg',
+    confirm:'assets/icons/Check Mark.svg'
+  };
+
+  function buildOfficialIconMarkup(key){
+    const filePath=officialIcons[key];
+    if(!filePath) return '';
+    const url=encodeURI(filePath).replace(/'/g,'%27');
+    return `<span class="tg-icon-mask" style="--tg-icon-mask:url('${url}')" aria-hidden="true"></span>`;
+  }
   const services={taxi:['Normale Taxifahrt','NORMALE TAXIFAHRT'],medical:['Krankenfahrt','KRANKENFAHRT'],wheelchair:['Rollstuhlfahrt','ROLLSTUHLFAHRT'],airport:['Flughafentransfer','FLUGHAFENTRANSFER']};
   const defaultAddressConfig={
     allowedCities:[
@@ -1557,7 +1588,8 @@
   }
   function inject(){
     $$('[data-icon]').forEach(el=>{
-      el.innerHTML=icons[el.dataset.icon]||'';
+      const key=String(el.dataset.icon||'').trim();
+      el.innerHTML=buildOfficialIconMarkup(key)||icons[key]||'';
     });
   }
   function show(id){

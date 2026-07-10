@@ -15,6 +15,47 @@
   --status-gray: #b8bfcb;
 }
 
+/* Icon cleanup baseline: neutrale, einheitliche Icon-Container */
+.icon,
+.icon-sm,
+.icon-md,
+.icon-lg,
+.icon-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  vertical-align: middle;
+  flex: 0 0 auto;
+}
+
+.icon { width: 20px; height: 20px; }
+.icon-sm { width: 16px; height: 16px; }
+.icon-md { width: 22px; height: 22px; }
+.icon-lg { width: 28px; height: 28px; }
+
+.icon svg,
+.icon-sm svg,
+.icon-md svg,
+.icon-lg svg,
+.icon-placeholder svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon-placeholder {
+  border: 1px dashed rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.03);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -230,6 +271,14 @@ button {
   display: grid;
   place-items: center;
   font-size: 11px;
+}
+
+.admin-inline-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 6px;
 }
 
 .admin-notification-panel {

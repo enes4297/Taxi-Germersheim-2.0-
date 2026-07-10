@@ -1,6 +1,13 @@
 /* Taxi Germersheim GmbH – V4.0 Clean Base */
 :root{--bg:#050505;--panel:#101116;--gold:#ffd96a;--gold2:#d2a33a;--text:#fff;--muted:rgba(255,255,255,.62);--serif:Georgia,'Times New Roman',serif;--sans:-apple-system,BlinkMacSystemFont,'SF Pro Display',Arial,sans-serif}
 *{box-sizing:border-box}html,body{margin:0;max-width:100%;overflow-x:hidden;background:#000;color:var(--text);font-family:var(--sans)}button,input,textarea{font:inherit}button{border:0;color:inherit}a{text-decoration:none;color:inherit}
+
+/* Icon cleanup baseline: neutrale, einheitliche Icon-Container */
+.icon,.icon-sm,.icon-md,.icon-lg,.icon-placeholder{display:inline-flex;align-items:center;justify-content:center;line-height:0;vertical-align:middle;flex:0 0 auto}
+.icon{width:20px;height:20px}.icon-sm{width:16px;height:16px}.icon-md{width:22px;height:22px}.icon-lg{width:28px;height:28px}
+.icon svg,.icon-sm svg,.icon-md svg,.icon-lg svg,.icon-placeholder svg{width:100%;height:100%;display:block;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.icon-placeholder{border:1px dashed rgba(255,255,255,.24);border-radius:8px;color:rgba(255,255,255,.55);background:rgba(255,255,255,.03)}
+
 body{min-height:100vh;background:radial-gradient(circle at 50% 10%,rgba(255,217,106,.12),transparent 35%),#050505}
 body:before{content:'';position:fixed;inset:0;background:radial-gradient(circle at top center,rgba(255,255,255,.06),transparent 35%);opacity:.08;pointer-events:none}
 .app{position:relative;z-index:1;width:100%;max-width:none;margin:0 auto;padding:58px 40px 138px;min-height:100vh}.screen{display:none}.screen.active{display:block;animation:fade .2s ease}@keyframes fade{from{opacity:.25;transform:translateY(8px)}to{opacity:1;transform:0}}
@@ -4318,6 +4325,21 @@ button [data-icon] svg,
   min-height:0!important;
   stroke:currentColor!important;
   fill:none!important;
+}
+
+[data-icon] .tg-icon-mask{
+  display:block;
+  width:100%;
+  height:100%;
+  background-color:currentColor;
+  -webkit-mask-image:var(--tg-icon-mask);
+  mask-image:var(--tg-icon-mask);
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+  -webkit-mask-position:center;
+  mask-position:center;
+  -webkit-mask-size:contain;
+  mask-size:contain;
 }
 
 /* Loading/Skeleton Vorbereitung */
