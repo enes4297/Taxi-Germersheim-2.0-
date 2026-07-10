@@ -5,7 +5,8 @@
   const KEY_USER = "demoAdminUser";
   const KEY_ROLE = "demoAdminRole";
   const KEY_NOTICE = "demoAdminPermissionNotice";
-  const KEY_DEMO_NOTIFICATIONS = "demoAdminNotificationsState";
+  const KEY_DEMO_NOTIFICATIONS = "adminDemoNotificationsReadState";
+  const KEY_DEMO_NOTIFICATIONS_LEGACY = "demoAdminNotificationsState";
   const DEMO_NOTIFICATION_LIMIT = 3;
 
   const DEMO_USERS = {
@@ -365,12 +366,19 @@
 
   function readNotificationStateStore() {
     try {
-      const raw = localStorage.getItem(KEY_DEMO_NOTIFICATIONS);
-      if (!raw) return {};
+      const raw = localStorage.getItem(KEY_DEMO_NOTIFICATIONS) || localStorage.getItem(KEY_DEMO_NOTIFICATIONS_LEGACY);
+      if (!raw) return { byRole: {} };
       const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object" ? parsed : {};
+      if (!parsed || typeof parsed !== "object") return { byRole: {} };
+
+      if (localStorage.getItem(KEY_DEMO_NOTIFICATIONS_LEGACY) && !localStorage.getItem(KEY_DEMO_NOTIFICATIONS)) {
+        writeNotificationStateStore(parsed);
+        localStorage.removeItem(KEY_DEMO_NOTIFICATIONS_LEGACY);
+      }
+
+      return parsed;
     } catch {
-      return {};
+      return { byRole: {} };
     }
   }
 
@@ -499,6 +507,12 @@
       item.read = readIds.has(item.id);
     });
 
+    const state = {
+      role,
+      notifications,
+      openCount: 0
+    };
+
     let panel = topbar.querySelector("[data-admin-notification-panel]");
     if (!panel) {
       panel = document.createElement("section");
@@ -513,6 +527,7 @@
         "</div>",
         '<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-read-all>Alle als gelesen</button>',
         "</header>",
+        '<p class="admin-notification-empty admin-notification-empty-center" data-admin-notification-empty-all hidden>Keine Benachrichtigungen vorhanden</p>',
         '<p class="admin-notification-empty" data-admin-notification-unread-empty hidden>Keine ungelesenen Benachrichtigungen</p>',
         '<div class="admin-notification-list" data-admin-notification-list></div>',
         '<p class="admin-notification-footnote">Demo-Modus: nur lokal gespeichert</p>'
@@ -524,51 +539,63 @@
     const listNode = panel.querySelector("[data-admin-notification-list]");
     const readAllButton = panel.querySelector("[data-admin-notification-read-all]");
     const unreadEmptyNode = panel.querySelector("[data-admin-notification-unread-empty]");
+    const emptyAllNode = panel.querySelector("[data-admin-notification-empty-all]");
     const main = document.querySelector(".admin-main");
 
     function renderNotificationCenter() {
-      const openCount = notifications.filter((item) => !item.read).length;
-      badge.textContent = openCount > 0 ? String(openCount) : "";
-      badge.hidden = openCount === 0;
-      badge.style.display = openCount === 0 ? "none" : "grid";
-      badge.setAttribute("aria-hidden", openCount === 0 ? "true" : "false");
+      state.openCount = state.notifications.filter((item) => !item.read).length;
+      const hasNotifications = state.notifications.length > 0;
+
+      badge.textContent = state.openCount > 0 ? String(state.openCount) : "";
+      badge.hidden = state.openCount === 0;
+      badge.style.display = state.openCount === 0 ? "none" : "grid";
+      badge.setAttribute("aria-hidden", state.openCount === 0 ? "true" : "false");
 
       if (countNode) {
-        countNode.textContent = openCount > 0 ? `${openCount} offen` : "Keine ungelesenen Benachrichtigungen";
+        countNode.textContent = `${state.openCount} offen`;
       }
 
       if (readAllButton) {
-        readAllButton.disabled = openCount === 0;
-        readAllButton.hidden = openCount === 0;
+        const disableReadAll = !hasNotifications || state.openCount === 0;
+        readAllButton.disabled = disableReadAll;
+        readAllButton.hidden = disableReadAll;
       }
 
       if (unreadEmptyNode) {
-        unreadEmptyNode.hidden = openCount > 0;
+        unreadEmptyNode.hidden = !(hasNotifications && state.openCount === 0);
+      }
+
+      if (emptyAllNode) {
+        emptyAllNode.hidden = hasNotifications;
       }
 
       if (listNode) {
-        if (!notifications.length) {
-          listNode.innerHTML = '<p class="admin-notification-empty">Keine Meldungen für diese Rolle.</p>';
+        if (!hasNotifications) {
+          listNode.innerHTML = "";
         } else {
-          listNode.innerHTML = notifications
+          listNode.innerHTML = state.notifications
             .map((item) => {
               const readClass = item.read ? "is-read" : "";
-              const readActionLabel = item.read ? "Gelesen" : "Als gelesen markieren";
-              const readActionState = item.read ? " disabled" : "";
               return [
                 `<article class="admin-notification-item ${typeClassName(item.type)} ${readClass}" data-admin-notification-id="${item.id}">`,
                 '<div class="admin-notification-row">',
+                '<div class="admin-notification-title-wrap">',
+                '<span class="admin-notification-dot" aria-hidden="true"></span>',
                 `<h3>${item.title}</h3>`,
+                "</div>",
                 `<span class="admin-notification-type">${item.type}</span>`,
                 "</div>",
                 `<p>${item.text}</p>`,
                 '<div class="admin-notification-meta">',
-                `<span>${item.time}</span>`,
+                `<span class="admin-notification-time">${item.time}</span>`,
                 `<span class="admin-notification-category">${item.category}</span>`,
+                `<span class="admin-notification-read-state">${item.read ? "✓ Gelesen" : "Ungelesen"}</span>`,
                 "</div>",
                 '<div class="admin-notification-actions">',
-                `<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-action="read" data-admin-notification-id="${item.id}"${readActionState}>${readActionLabel}</button>`,
-                `<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-action="details" data-admin-notification-id="${item.id}">Details öffnen Demo</button>`,
+                item.read
+                  ? '<span class="admin-notification-read-chip">✓ Gelesen</span>'
+                  : `<button class="admin-btn admin-btn-secondary admin-notification-read-btn" type="button" data-admin-notification-action="read" data-admin-notification-id="${item.id}">Als gelesen markieren</button>`,
+                `<button class="admin-btn admin-btn-secondary admin-notification-detail-btn" type="button" data-admin-notification-action="details" data-admin-notification-id="${item.id}">Details Demo</button>`,
                 "</div>",
                 "</article>"
               ].join("");
@@ -577,9 +604,9 @@
         }
       }
 
-      persistReadNotificationIdsForRole(role, notifications);
+      persistReadNotificationIdsForRole(state.role, state.notifications);
 
-      renderDashboardHints(main, notifications);
+      renderDashboardHints(main, state.notifications);
     }
 
     function closePanel() {
@@ -595,13 +622,15 @@
 
     bellButton.addEventListener("click", (event) => {
       event.preventDefault();
+      event.stopPropagation();
       togglePanel();
     });
 
     panel.addEventListener("click", (event) => {
+      event.stopPropagation();
       const readAll = event.target.closest("[data-admin-notification-read-all]");
       if (readAll) {
-        notifications.forEach((item) => {
+        state.notifications.forEach((item) => {
           item.read = true;
         });
         renderNotificationCenter();
@@ -613,7 +642,7 @@
 
       const id = actionBtn.getAttribute("data-admin-notification-id");
       const action = actionBtn.getAttribute("data-admin-notification-action");
-      const item = notifications.find((entry) => entry.id === id);
+      const item = state.notifications.find((entry) => entry.id === id);
       if (!item) return;
 
       if (action === "read") {
@@ -630,18 +659,33 @@
       }
     });
 
-    document.addEventListener("click", (event) => {
-      if (panel.hidden) return;
-      if (event.target.closest("[data-admin-notification-panel]")) return;
-      if (event.target.closest(".admin-notification-trigger")) return;
-      closePanel();
-    });
+    const previousGlobalHandlers = window.__adminNotificationGlobalHandlers;
+    if (previousGlobalHandlers) {
+      document.removeEventListener("pointerdown", previousGlobalHandlers.pointerDown, true);
+      document.removeEventListener("keydown", previousGlobalHandlers.keyDown, true);
+    }
 
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        closePanel();
-      }
-    });
+    const pointerDownHandler = (event) => {
+      if (panel.hidden) return;
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (panel.contains(target)) return;
+      if (bellButton.contains(target)) return;
+      closePanel();
+    };
+
+    const keyDownHandler = (event) => {
+      if (event.key !== "Escape") return;
+      if (panel.hidden) return;
+      closePanel();
+    };
+
+    document.addEventListener("pointerdown", pointerDownHandler, true);
+    document.addEventListener("keydown", keyDownHandler, true);
+    window.__adminNotificationGlobalHandlers = {
+      pointerDown: pointerDownHandler,
+      keyDown: keyDownHandler
+    };
 
     renderNotificationCenter();
   }

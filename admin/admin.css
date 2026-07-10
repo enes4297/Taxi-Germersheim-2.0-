@@ -238,7 +238,7 @@ button {
   top: calc(100% + 10px);
   width: min(470px, calc(100vw - 32px));
   max-height: min(68vh, 620px);
-  overflow: auto;
+  overflow: hidden;
   border-radius: 14px;
   border: 1px solid rgba(255, 217, 106, 0.34);
   background: linear-gradient(160deg, rgba(18, 19, 25, 0.98), rgba(9, 10, 14, 0.99));
@@ -246,7 +246,8 @@ button {
   z-index: 55;
   padding: 12px;
   display: grid;
-  gap: 10px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 8px;
 }
 
 .admin-notification-head {
@@ -254,6 +255,11 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(160deg, rgba(18, 19, 25, 0.98), rgba(9, 10, 14, 0.99));
+  padding-bottom: 4px;
 }
 
 .admin-notification-head-copy {
@@ -262,50 +268,63 @@ button {
 }
 
 .admin-notification-head-copy strong {
-  font-size: 15px;
+  font-size: 16px;
+  letter-spacing: 0.01em;
 }
 
 .admin-notification-head-copy small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .admin-notification-list {
   display: grid;
-  gap: 9px;
+  gap: 8px;
+  overflow: auto;
+  max-height: calc(min(68vh, 620px) - 170px);
+  padding-right: 2px;
 }
 
 .admin-notification-item {
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 10px;
+  padding: 9px;
   display: grid;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .admin-notification-item.is-read {
-  opacity: 0.6;
+  opacity: 0.82;
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .admin-notification-item.is-read .admin-notification-type {
   border-style: dashed;
 }
 
+.admin-notification-item.is-read .admin-notification-dot {
+  background: rgba(139, 226, 173, 0.78);
+  box-shadow: none;
+}
+
 .admin-notification-item.is-info {
-  border-color: rgba(124, 180, 255, 0.45);
+  border-color: rgba(124, 180, 255, 0.56);
 }
 
 .admin-notification-item.is-warning {
-  border-color: rgba(255, 217, 106, 0.44);
+  border-color: rgba(255, 217, 106, 0.58);
 }
 
 .admin-notification-item.is-critical {
-  border-color: rgba(255, 145, 145, 0.48);
+  border-color: rgba(255, 145, 145, 0.62);
 }
 
 .admin-notification-item.is-success {
-  border-color: rgba(139, 226, 173, 0.48);
+  border-color: rgba(139, 226, 173, 0.58);
 }
 
 .admin-notification-row {
@@ -315,57 +334,128 @@ button {
   gap: 8px;
 }
 
+.admin-notification-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-notification-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--gold);
+  box-shadow: 0 0 0 1px rgba(255, 217, 106, 0.25), 0 0 10px rgba(255, 217, 106, 0.24);
+  flex: 0 0 9px;
+}
+
 .admin-notification-row h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-notification-type {
   display: inline-flex;
-  min-height: 24px;
+  min-height: 21px;
   align-items: center;
   border-radius: 999px;
-  padding: 0 8px;
+  padding: 0 7px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .admin-notification-item p {
   margin: 0;
   color: rgba(255, 255, 255, 0.86);
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .admin-notification-meta {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto auto;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
+}
+
+.admin-notification-time {
+  white-space: nowrap;
 }
 
 .admin-notification-category {
   display: inline-flex;
-  min-height: 22px;
+  min-height: 20px;
   border-radius: 999px;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 7px;
   border: 1px solid rgba(255, 217, 106, 0.35);
   background: rgba(255, 217, 106, 0.1);
   color: var(--gold);
 }
 
+.admin-notification-read-state {
+  justify-self: end;
+  display: inline-flex;
+  min-height: 20px;
+  border-radius: 999px;
+  align-items: center;
+  padding: 0 7px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.admin-notification-item.is-read .admin-notification-read-state {
+  border-color: rgba(139, 226, 173, 0.36);
+  color: #a6edc2;
+  background: rgba(139, 226, 173, 0.12);
+}
+
 .admin-notification-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .admin-notification-actions .admin-btn {
-  min-height: 34px;
-  font-size: 12px;
+  min-height: 30px;
+  font-size: 11px;
+  padding: 0 10px;
+}
+
+.admin-notification-read-btn {
+  border-color: rgba(255, 217, 106, 0.3);
+  color: #ffe8a7;
+}
+
+.admin-notification-detail-btn {
+  opacity: 0.88;
+}
+
+.admin-notification-read-chip {
+  min-height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid rgba(139, 226, 173, 0.38);
+  background: rgba(139, 226, 173, 0.12);
+  color: #a5edc2;
+  font-size: 11px;
 }
 
 .admin-notification-actions .admin-btn:disabled {
@@ -378,6 +468,11 @@ button {
   margin: 0;
   color: var(--muted);
   font-size: 12px;
+}
+
+.admin-notification-empty-center {
+  text-align: center;
+  padding: 10px 8px;
 }
 
 .admin-hints-panel {
