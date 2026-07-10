@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Meine Fahrten | Taxi Germersheim</title>
+  <meta name="description" content="Taxi Germersheim - Meine Fahrten und Kundenbenachrichtigungen (Demo)." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="meinefahrten.css" />
+  <link rel="stylesheet" href="auth-demo.css" />
+</head>
+<body>
+  <div class="background" aria-hidden="true"></div>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header>
+    <div class="container nav">
+      <a href="index.html" class="brand" aria-label="Taxi Germersheim Startseite">
+        <span class="brand-logo"><img src="logo.png" alt="Taxi Germersheim Logo" /></span>
+        <span class="brand-text">Taxi Germersheim</span>
+      </a>
+      <nav class="nav-links" aria-label="Hauptnavigation">
+        <a href="index.html">Start</a>
+        <a href="flotte.html">Flotte</a>
+        <a href="meinkonto.html">Mein Konto</a>
+        <a href="meine-fahrten.html" class="active" aria-current="page">Meine Fahrten</a>
+        <a href="wallet-gutscheine.html">Wallet</a>
+        <a href="hilfe-kontakt.html">Hilfe</a>
+        <a href="kunden-einstellungen.html">Einstellungen</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost" href="tel:+497272123456">Anrufen</a>
+        <a class="btn btn-primary" href="index.html#booking">Jetzt buchen</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="customer-rides" class="customer-rides-page">
+    <div class="container customer-rides-shell">
+      <section class="journey-card journey-head" aria-label="Meine Fahrten Intro">
+        <h1>Meine Fahrten</h1>
+        <p>Alle kommenden, vergangenen und stornierten Fahrten auf einen Blick. Diese Ansicht ist als Demo vorbereitet.</p>
+      </section>
+
+      <section class="journey-card journey-notification-wrap" aria-label="Kundenbenachrichtigungen">
+        <div class="journey-notification-head">
+          <h2>Kundenbenachrichtigungen</h2>
+          <span class="journey-pill" id="journeyUnreadBadge">0 ungelesen</span>
+        </div>
+        <div class="journey-notification-list" id="journeyNotificationList"></div>
+        <div class="journey-actions">
+          <button type="button" class="journey-btn" id="journeyMarkAllRead">Alle als gelesen</button>
+        </div>
+      </section>
+
+      <section class="journey-card journey-controls" aria-label="Filter und Suche">
+        <input id="rideSearch" class="journey-search" type="search" placeholder="Suche nach Ziel, Abholung, ID oder Typ" aria-label="Fahrten durchsuchen" />
+        <div class="journey-filter-row" id="rideFilterRow" role="tablist" aria-label="Fahrten filtern">
+          <button type="button" data-filter="all" class="is-active" aria-selected="true">Alle</button>
+          <button type="button" data-filter="kommend" aria-selected="false">Kommende</button>
+          <button type="button" data-filter="vergangen" aria-selected="false">Vergangene</button>
+          <button type="button" data-filter="storniert" aria-selected="false">Stornierte</button>
+        </div>
+      </section>
+
+      <section class="journey-section" data-section="kommend" aria-label="Kommende Fahrten">
+        <div class="journey-section-head">
+          <h2>Kommende Fahrten</h2>
+          <span class="journey-pill" id="kommendCount">0</span>
+        </div>
+        <div class="journey-list" id="kommendList"></div>
+      </section>
+
+      <section class="journey-section" data-section="vergangen" aria-label="Vergangene Fahrten">
+        <div class="journey-section-head">
+          <h2>Vergangene Fahrten</h2>
+          <span class="journey-pill" id="vergangenCount">0</span>
+        </div>
+        <div class="journey-list" id="vergangenList"></div>
+      </section>
+
+      <section class="journey-section" data-section="storniert" aria-label="Stornierte Fahrten">
+        <div class="journey-section-head">
+          <h2>Stornierte Fahrten</h2>
+          <span class="journey-pill" id="storniertCount">0</span>
+        </div>
+        <div class="journey-list" id="storniertList"></div>
+      </section>
+    </div>
+  </main>
+
+  <div class="journey-modal" id="journeyModal" hidden>
+    <article class="journey-modal-card" role="dialog" aria-modal="true" aria-labelledby="journeyModalTitle">
+      <div class="journey-modal-head">
+        <h3 id="journeyModalTitle">Fahrtdetails</h3>
+        <button type="button" class="journey-modal-close" id="journeyModalClose" aria-label="Schliessen">&times;</button>
+      </div>
+      <p class="journey-modal-note">Hinweis: Dies ist eine Demo-Ansicht. Interaktionen sind vorbereitet, aber nicht live angebunden.</p>
+      <div id="journeyModalContent"></div>
+    </article>
+  </div>
+
+  <div class="journey-toast" id="journeyToast" role="status" aria-live="polite"></div>
+
+  <nav class="mobile-nav" aria-label="Mobile Navigation">
+    <a href="index.html" class="mobile-nav-item">
+      <img src="assets/icons/Home.svg" alt="" width="20" height="20" />
+      <span>Start</span>
+    </a>
+    <a href="flotte.html" class="mobile-nav-item">
+      <img src="assets/icons/Taxi.svg" alt="" width="20" height="20" />
+      <span>Flotte</span>
+    </a>
+    <a href="meinkonto.html" class="mobile-nav-item">
+      <img src="assets/icons/Profile.svg" alt="" width="20" height="20" />
+      <span>Konto</span>
+    </a>
+    <a href="meine-fahrten.html" class="mobile-nav-item active" aria-current="page">
+      <img src="assets/icons/Route.svg" alt="" width="20" height="20" />
+      <span>Fahrten</span>
+    </a>
+    <a href="wallet-gutscheine.html" class="mobile-nav-item">
+      <img src="assets/icons/Gift%20Voucher.svg" alt="" width="20" height="20" />
+      <span>Wallet</span>
+    </a>
+    <a href="hilfe-kontakt.html" class="mobile-nav-item">
+      <img src="assets/icons/Phone.svg" alt="" width="20" height="20" />
+      <span>Hilfe</span>
+    </a>
+    <a href="kunden-einstellungen.html" class="mobile-nav-item">
+      <img src="assets/icons/Clock.svg" alt="" width="20" height="20" />
+      <span>Einstellungen</span>
+    </a>
+  </nav>
+
+  <script src="customer-auth-demo.js"></script>
+  <script src="script.js"></script>
+  <script src="customer-journey-demo.js"></script>
+  <script>
+    (function () {
+      if (window.CustomerAuthDemo && window.CustomerAuthDemo.requireLogin({
+        targetSelector: '#customer-rides',
+        pageTitle: 'Meine Fahrten'
+      })) {
+        return;
+      }
+
+      const DEMO = window.CustomerJourneyDemo;
+      if (!DEMO || !Array.isArray(DEMO.rides)) return;
+
+      const STORAGE_KEY = 'tgCustomerJourneyNotificationsRead';
+      const baseRides = DEMO.rides.slice();
+      const baseNotifications = DEMO.customerNotifications.slice();
+
+      const sectionLists = {
+        kommend: document.getElementById('kommendList'),
+        vergangen: document.getElementById('vergangenList'),
+        storniert: document.getElementById('storniertList')
+      };
+
+      const counts = {
+        kommend: document.getElementById('kommendCount'),
+        vergangen: document.getElementById('vergangenCount'),
+        storniert: document.getElementById('storniertCount')
+      };
+
+      const filterRow = document.getElementById('rideFilterRow');
+      const searchInput = document.getElementById('rideSearch');
+
+      const modal = document.getElementById('journeyModal');
+      const modalContent = document.getElementById('journeyModalContent');
+      const modalClose = document.getElementById('journeyModalClose');
+
+      const toast = document.getElementById('journeyToast');
+      const notificationList = document.getElementById('journeyNotificationList');
+      const unreadBadge = document.getElementById('journeyUnreadBadge');
+      const markAllReadBtn = document.getElementById('journeyMarkAllRead');
+
+      let activeFilter = 'all';
+      let query = '';
+      let toastTimer = null;
+
+      function getReadState() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        } catch (error) {
+          return {};
+        }
+      }
+
+      function getCurrentNotifications() {
+        if (typeof DEMO.getCustomerNotifications === 'function') {
+          return DEMO.getCustomerNotifications();
+        }
+        return baseNotifications.slice();
+      }
+
+      function getCurrentRides() {
+        const next = baseRides.slice();
+        if (typeof DEMO.getActiveRide !== 'function') {
+          return next;
+        }
+
+        const liveRide = DEMO.getActiveRide();
+        const index = next.findIndex(function (item) {
+          return item.id === liveRide.id;
+        });
+
+        if (index !== -1) {
+          next[index] = liveRide;
+        } else {
+          next.unshift(liveRide);
+        }
+
+        return next;
+      }
+
+      function saveReadState(state) {
+        const notifications = getCurrentNotifications();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        window.dispatchEvent(new CustomEvent('tg-customer-notifications-updated', {
+          detail: {
+            unread: computeUnreadCount(state),
+            total: notifications.length
+          }
+        }));
+      }
+
+      function computeUnreadCount(state, source) {
+        const notifications = Array.isArray(source) ? source : getCurrentNotifications();
+        return notifications.reduce(function (count, item) {
+          return state[item.id] ? count : count + 1;
+        }, 0);
+      }
+
+      function iconForType(type) {
+        return DEMO.typeIconPath[type] || 'assets/icons/Taxi.svg';
+      }
+
+      function statusIcon(status) {
+        if (status === 'Storniert') return 'assets/icons/Clock.svg';
+        if (status === 'Abgeschlossen') return 'assets/icons/Check%20Mark.svg';
+        return 'assets/icons/Route.svg';
+      }
+
+      function statusClass(status) {
+        if (status === 'Bestaetigt') return 'is-confirmed';
+        if (status === 'Fahrer zugewiesen') return 'is-assigned';
+        if (status === 'Unterwegs') return 'is-driving';
+        if (status === 'Angekommen') return 'is-arrived';
+        if (status === 'Abgeschlossen') return 'is-done';
+        if (status === 'Storniert') return 'is-cancelled';
+        return '';
+      }
+
+      function fmtDate(iso) {
+        const date = new Date(iso + 'T00:00:00');
+        return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      }
+
+      function showToast(message) {
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add('is-visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove('is-visible');
+        }, 1900);
+      }
+
+      function matchesRide(ride) {
+        if (!query) return true;
+        const haystack = [
+          ride.id,
+          ride.pickup,
+          ride.destination,
+          ride.type,
+          ride.status,
+          ride.driver
+        ].join(' ').toLowerCase();
+        return haystack.indexOf(query) !== -1;
+      }
+
+      function createRideCard(ride) {
+        const card = document.createElement('article');
+        card.className = 'journey-ride';
+
+        const isCompleted = ride.status === 'Abgeschlossen';
+        const voucherBadge = isCompleted && ride.voucherStatus === 'Gutschein verwendet'
+          ? '<span class="journey-voucher-badge"><img src="assets/icons/Gift%20Voucher.svg" alt="" />Gutschein verwendet</span>'
+          : '';
+
+        const voucherMeta = isCompleted
+          ? '<div class="journey-meta-item"><b>Gutscheinstatus</b><span>' + (ride.voucherStatus || 'Kein Gutschein') + '</span></div>'
+          : '';
+
+        const actionButtons = [
+          '<button type="button" data-action="detail">Details</button>',
+          '<button type="button" data-action="repeat">Erneut buchen</button>',
+          '<button type="button" data-action="invoice">Rechnung anzeigen</button>',
+          '<button type="button" data-action="support">Support</button>'
+        ];
+
+        const activeRide = typeof DEMO.getActiveRide === 'function' ? DEMO.getActiveRide() : null;
+
+        if (ride.section === 'kommend') {
+          actionButtons.push('<button type="button" data-action="cancel">Stornieren</button>');
+        }
+
+        if (activeRide && ride.id === activeRide.id && ride.section === 'kommend') {
+          actionButtons.push('<button type="button" data-action="track">Fahrt verfolgen</button>');
+        }
+
+        if (isCompleted) {
+          actionButtons.push('<button type="button" data-action="rate">Bewerten</button>');
+        }
+
+        card.innerHTML =
+          '<div class="journey-ride-top">' +
+            '<img class="journey-ride-type" src="' + iconForType(ride.type) + '" alt="" />' +
+            '<div><strong>' + fmtDate(ride.date) + ' • ' + ride.time + '</strong><div class="journey-ride-id">' + ride.id + '</div>' + voucherBadge + '</div>' +
+            '<span class="journey-status ' + statusClass(ride.status) + '"><img src="' + statusIcon(ride.status) + '" alt="" />' + ride.status + '</span>' +
+          '</div>' +
+          '<div class="journey-route">' +
+            '<div class="journey-route-row"><img src="assets/icons/Location.svg" alt="" /><div><b>Abholung</b><span>' + ride.pickup + '</span></div></div>' +
+            '<div class="journey-route-row"><img src="assets/icons/Route.svg" alt="" /><div><b>Ziel</b><span>' + ride.destination + '</span></div></div>' +
+          '</div>' +
+          '<div class="journey-meta">' +
+            '<div class="journey-meta-item"><b>Typ</b><span>' + ride.type + '</span></div>' +
+            '<div class="journey-meta-item"><b>Fahrer</b><span>' + ride.driver + '</span></div>' +
+            '<div class="journey-meta-item"><b>Fahrzeug</b><span>' + ride.vehicle + '</span></div>' +
+            '<div class="journey-meta-item"><b>Zahlungsart</b><span>' + ride.payment + '</span></div>' +
+            '<div class="journey-meta-item"><b>Preis</b><span>' + ride.price + '</span></div>' +
+            voucherMeta +
+          '</div>' +
+          '<div class="journey-actions">' +
+            actionButtons.join('') +
+          '</div>';
+
+        card.querySelector('[data-action="detail"]').addEventListener('click', function () {
+          openRideModal(ride);
+        });
+
+        card.querySelectorAll('[data-action="repeat"], [data-action="invoice"], [data-action="support"], [data-action="cancel"], [data-action="rate"], [data-action="track"]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            if (btn.getAttribute('data-action') === 'track') {
+              window.location.href = 'live-fahrt.html?ride=' + encodeURIComponent(ride.id);
+              return;
+            }
+            const label = btn.textContent || 'Aktion';
+            showToast(label + ' ist als Demo vorbereitet.');
+          });
+        });
+
+        return card;
+      }
+
+      function openRideModal(ride) {
+        if (!modal || !modalContent) return;
+
+        const timeline = DEMO.rideStatusOrder.map(function (step) {
+          const done = ride.statusTimeline.indexOf(step) !== -1;
+          return '<li class="' + (done ? 'is-done' : '') + '">' +
+            '<img src="' + (done ? 'assets/icons/Check%20Mark.svg' : 'assets/icons/Clock.svg') + '" alt="" width="14" height="14" />' +
+            '<span>' + step + '</span>' +
+          '</li>';
+        }).join('');
+
+        const activeRide = typeof DEMO.getActiveRide === 'function' ? DEMO.getActiveRide() : null;
+        const trackButton = activeRide && ride.id === activeRide.id
+          ? '<div class="journey-actions"><a class="journey-btn" href="live-fahrt.html?ride=' + encodeURIComponent(ride.id) + '">Fahrt verfolgen</a></div>'
+          : '';
+
+        modalContent.innerHTML =
+          '<div class="journey-meta">' +
+            '<div class="journey-meta-item"><b>Fahrt-ID</b><span>' + ride.id + '</span></div>' +
+            '<div class="journey-meta-item"><b>Datum</b><span>' + fmtDate(ride.date) + ' • ' + ride.time + '</span></div>' +
+            '<div class="journey-meta-item"><b>Kennzeichen</b><span>' + ride.plate + '</span></div>' +
+            '<div class="journey-meta-item"><b>Zahlung</b><span>' + ride.payment + '</span></div>' +
+            '<div class="journey-meta-item"><b>Gutscheinstatus</b><span>' + (ride.voucherStatus || 'Kein Gutschein') + '</span></div>' +
+            '<div class="journey-meta-item"><b>Gutscheincode</b><span>' + (ride.voucherCode || '-') + '</span></div>' +
+          '</div>' +
+          '<div class="journey-route">' +
+            '<div class="journey-route-row"><img src="assets/icons/Location.svg" alt="" /><div><b>Abholung</b><span>' + ride.pickup + '</span></div></div>' +
+            '<div class="journey-route-row"><img src="assets/icons/Route.svg" alt="" /><div><b>Ziel</b><span>' + ride.destination + '</span></div></div>' +
+            '<div class="journey-route-row"><img src="assets/icons/Destination.svg" alt="" /><div><b>Hinweis</b><span>' + ride.note + '</span></div></div>' +
+          '</div>' +
+          '<h4>Statusverlauf</h4>' +
+          '<ul class="journey-timeline">' + timeline + '</ul>' +
+          trackButton;
+
+        modal.hidden = false;
+        document.body.classList.add('has-open-journey-modal');
+      }
+
+      function closeRideModal() {
+        if (!modal) return;
+        modal.hidden = true;
+        document.body.classList.remove('has-open-journey-modal');
+      }
+
+      function renderNotifications() {
+        if (!notificationList || !unreadBadge) return;
+        const notifications = getCurrentNotifications();
+        const state = getReadState();
+        notificationList.innerHTML = '';
+
+        notifications.forEach(function (item) {
+          const read = Boolean(state[item.id]);
+          const row = document.createElement('article');
+          row.className = 'journey-notification-item' + (read ? ' is-read' : '');
+          const icon = DEMO.notificationIconPath[item.type] || 'assets/icons/Clock.svg';
+
+          row.innerHTML =
+            '<img src="' + icon + '" alt="" />' +
+            '<div class="journey-notification-copy"><b>' + item.title + '</b><p>' + item.text + '</p></div>' +
+            '<div class="journey-notification-meta">' +
+              '<time>' + item.time + '</time>' +
+              '<button type="button" class="journey-btn" data-mark="' + item.id + '">' + (read ? 'Gelesen' : 'Als gelesen') + '</button>' +
+            '</div>';
+
+          const button = row.querySelector('[data-mark]');
+          button.addEventListener('click', function () {
+            const next = getReadState();
+            next[item.id] = true;
+            saveReadState(next);
+            renderNotifications();
+            showToast('Benachrichtigung als gelesen markiert.');
+          });
+
+          notificationList.appendChild(row);
+        });
+
+        const unread = computeUnreadCount(state, notifications);
+        unreadBadge.hidden = unread === 0;
+        unreadBadge.textContent = unread > 0 ? unread + ' ungelesen' : '';
+      }
+
+      function renderRides() {
+        const rides = getCurrentRides();
+        const sections = ['kommend', 'vergangen', 'storniert'];
+        sections.forEach(function (section) {
+          const list = sectionLists[section];
+          const count = counts[section];
+          if (!list || !count) return;
+
+          const filtered = rides.filter(function (ride) {
+            const byFilter = activeFilter === 'all' ? true : ride.section === activeFilter;
+            return byFilter && ride.section === section && matchesRide(ride);
+          });
+
+          list.innerHTML = '';
+          count.textContent = String(filtered.length);
+
+          if (!filtered.length) {
+            const empty = document.createElement('div');
+            empty.className = 'journey-empty';
+            empty.textContent = 'Keine Fahrten fuer diese Auswahl gefunden.';
+            list.appendChild(empty);
+            return;
+          }
+
+          filtered.forEach(function (ride) {
+            list.appendChild(createRideCard(ride));
+          });
+        });
+      }
+
+      filterRow.querySelectorAll('button[data-filter]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          activeFilter = button.getAttribute('data-filter') || 'all';
+          filterRow.querySelectorAll('button[data-filter]').forEach(function (b) {
+            const active = b === button;
+            b.classList.toggle('is-active', active);
+            b.setAttribute('aria-selected', String(active));
+          });
+          renderRides();
+        });
+      });
+
+      searchInput.addEventListener('input', function () {
+        query = searchInput.value.trim().toLowerCase();
+        renderRides();
+      });
+
+      if (modalClose) {
+        modalClose.addEventListener('click', closeRideModal);
+      }
+
+      if (modal) {
+        modal.addEventListener('click', function (event) {
+          if (event.target === modal) closeRideModal();
+        });
+      }
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') closeRideModal();
+      });
+
+      if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', function () {
+          const notifications = getCurrentNotifications();
+          const state = getReadState();
+          notifications.forEach(function (item) {
+            state[item.id] = true;
+          });
+          saveReadState(state);
+          renderNotifications();
+          showToast('Alle Kundenbenachrichtigungen sind als gelesen markiert.');
+        });
+      }
+
+      renderNotifications();
+      renderRides();
+      saveReadState(getReadState());
+      window.addEventListener('tg-customer-live-ride-updated', function () {
+        renderNotifications();
+        renderRides();
+      });
+    })();
+  </script>
+</body>
+</html>

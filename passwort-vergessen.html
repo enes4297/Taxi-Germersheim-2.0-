@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Passwort vergessen | Taxi Germersheim</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="auth-demo.css" />
+</head>
+<body class="auth-page">
+  <main class="auth-shell" aria-labelledby="forgotTitle">
+    <a class="auth-brand" href="index.html">
+      <img src="logo.png" alt="Taxi Germersheim" />
+      <span>Taxi Germersheim</span>
+    </a>
+
+    <header class="auth-head">
+      <h1 id="forgotTitle">Passwort vergessen</h1>
+      <p>Diese Seite simuliert nur den Reset-Prozess. Es wird keine echte E-Mail versendet.</p>
+    </header>
+
+    <form id="forgotForm" class="auth-form" novalidate>
+      <div class="auth-field">
+        <label for="forgotEmail">E-Mail</label>
+        <input id="forgotEmail" name="email" type="email" autocomplete="email" required />
+      </div>
+
+      <p id="forgotError" class="auth-error" aria-live="assertive"></p>
+      <p id="forgotSuccess" class="auth-success" aria-live="polite"></p>
+      <button class="auth-submit" type="submit">Reset-Link simulieren</button>
+    </form>
+
+    <nav class="auth-links" aria-label="Passwort Hilfe Links">
+      <a href="anmelden.html">Zur Anmeldung</a>
+      <a href="registrieren.html">Neues Konto erstellen</a>
+    </nav>
+  </main>
+
+  <script>
+    (function () {
+      var form = document.getElementById("forgotForm");
+      var error = document.getElementById("forgotError");
+      var success = document.getElementById("forgotSuccess");
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        error.textContent = "";
+        success.textContent = "";
+
+        var email = (form.elements.email.value || "").trim();
+        var emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+        if (!emailValid) {
+          error.textContent = "Bitte eine gueltige E-Mail-Adresse eingeben.";
+          return;
+        }
+
+        success.textContent = "Demo-Hinweis: Ein Reset-Link waere jetzt an " + email + " versendet worden.";
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aktive Fahrt | Taxi Germersheim</title>
+  <meta name="description" content="Taxi Germersheim - Aktive Fahrt als hochwertige Live-Demo mit Status, Fahrer, Fahrzeug und Bewertung." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="auth-demo.css" />
+  <link rel="stylesheet" href="live-ride.css" />
+</head>
+<body>
+  <div class="background" aria-hidden="true"></div>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header>
+    <div class="container nav">
+      <a href="index.html" class="brand" aria-label="Taxi Germersheim Startseite">
+        <span class="brand-logo"><img src="logo.png" alt="Taxi Germersheim Logo" /></span>
+        <span class="brand-text">Taxi Germersheim</span>
+      </a>
+      <nav class="nav-links" aria-label="Hauptnavigation">
+        <a href="index.html">Start</a>
+        <a href="flotte.html">Flotte</a>
+        <a href="meinkonto.html">Mein Konto</a>
+        <a href="meine-fahrten.html" class="active" aria-current="page">Aktive Fahrt</a>
+        <a href="hilfe-kontakt.html">Hilfe</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost" href="tel:+497272123456">Anrufen</a>
+        <a class="btn btn-primary" href="index.html#booking">Jetzt buchen</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="live-ride-page" class="live-ride-page">
+    <div class="container live-shell">
+      <section class="live-card live-head" aria-label="Aktive Fahrt Uebersicht">
+        <div class="live-head-top">
+          <h1>Aktive Fahrt</h1>
+          <span class="live-demo-pill">Demo Live Experience</span>
+        </div>
+
+        <div class="live-arrival" id="arrivalBox">
+          <b id="arrivalLabel">Ihr Fahrer ist in ca. 8 Minuten da</b>
+          <small id="arrivalSub">Status wird als Demo simuliert. Keine Echtzeit-Ortung.</small>
+          <div class="live-progress" aria-label="Fortschritt bis zur Fahrtfertigstellung"><i id="arrivalProgress"></i></div>
+          <small id="arrivalUpdate">Letzte Aktualisierung Demo: --:--</small>
+        </div>
+
+        <div class="live-meta-grid" id="rideMetaGrid"></div>
+      </section>
+
+      <section class="live-card live-map-wrap" aria-label="Demo-Live-Karte">
+        <h2>Demo-Live-Karte</h2>
+        <div class="live-map" id="liveMapPanel">
+          <div class="live-map-route">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M 8 82 C 22 76, 36 66, 44 54 C 58 36, 72 28, 92 18"></path>
+            </svg>
+          </div>
+          <span class="live-map-marker pickup"><img src="assets/icons/Location.svg" alt="Abholung" /></span>
+          <span class="live-map-marker destination"><img src="assets/icons/Destination.svg" alt="Ziel" /></span>
+          <span class="live-map-marker vehicle" id="vehicleMarker"><img src="assets/icons/Taxi.svg" alt="Fahrzeug" /></span>
+          <p class="live-map-caption">Demo-Ansicht ohne GPS, ohne neue Kartenkosten und ohne laufende API-Anfragen.</p>
+        </div>
+      </section>
+
+      <section class="live-card live-timeline-wrap" aria-label="Status Timeline">
+        <h2>Status-Timeline</h2>
+        <ul id="statusTimeline" class="live-timeline"></ul>
+      </section>
+
+      <section class="live-card live-driver" aria-label="Fahrerprofil">
+        <div class="live-driver-head">
+          <h2>Ihr Fahrer</h2>
+          <span class="live-demo-pill" id="driverRating">4.9 ★</span>
+        </div>
+
+        <div class="live-driver-inline">
+          <img id="driverImage" src="assets/icons/Profile.svg" alt="Fahrerprofil" />
+          <div>
+            <b id="driverName">-</b>
+            <span id="driverHint">Ihr Fahrer von Taxi Germersheim</span>
+          </div>
+        </div>
+
+        <div class="live-meta-grid">
+          <div class="live-meta-item"><b>Fahrten Demo</b><span id="driverRides">-</span></div>
+          <div class="live-meta-item"><b>Sprachen</b><span id="driverLanguages">-</span></div>
+        </div>
+
+        <div class="live-action-grid">
+          <a class="live-btn" href="tel:+4972743567"><img src="assets/icons/Phone.svg" alt="" /> Zentrale anrufen</a>
+          <button class="live-btn" type="button" data-open-modal="message"><img src="assets/icons/WhatsApp.svg" alt="" /> Nachricht senden</button>
+          <button class="live-btn" type="button" data-open-modal="driver-profile"><img src="assets/icons/Profile.svg" alt="" /> Fahrerprofil oeffnen</button>
+        </div>
+      </section>
+
+      <section class="live-card live-vehicle" aria-label="Fahrzeuganzeige">
+        <div class="live-vehicle-head">
+          <h2>Fahrzeug</h2>
+          <span class="live-demo-pill" id="vehicleCategory">Taxi</span>
+        </div>
+        <div class="live-meta-grid">
+          <div class="live-meta-item"><b>Modell</b><span id="vehicleModel">-</span></div>
+          <div class="live-meta-item"><b>Kennzeichen</b><span id="vehiclePlate">-</span></div>
+          <div class="live-meta-item"><b>Fahrzeugtyp</b><span id="vehicleType">-</span></div>
+          <div class="live-meta-item"><b>Sitzplaetze</b><span id="vehicleSeats">-</span></div>
+          <div class="live-meta-item"><b>Farbe Demo</b><span id="vehicleColor">-</span></div>
+          <div class="live-meta-item"><b>Fahrttyp</b><span id="rideType">-</span></div>
+        </div>
+      </section>
+
+      <section class="live-card live-actions-wrap" aria-label="Fahrtaktionen">
+        <h2>Fahrtaktionen</h2>
+        <p class="live-note">Aktionen wechseln je nach Demo-Status der Fahrt.</p>
+        <div id="contextActions" class="live-action-grid"></div>
+      </section>
+
+      <section class="live-card live-dev-controls" aria-label="Entwickler Demo Steuerung">
+        <h3>Entwickler-Demo-Steuerung</h3>
+        <p>Nur fuer Tests im Frontend: Vorheriger Status, Naechster Status, Reset.</p>
+        <div class="live-dev-row">
+          <button type="button" class="live-btn" id="devPrev">Vorheriger Status</button>
+          <button type="button" class="live-btn" id="devNext">Naechster Status</button>
+          <button type="button" class="live-btn" id="devReset">Demo zuruecksetzen</button>
+        </div>
+      </section>
+
+      <section class="live-bottom-actions" aria-label="Schnellaktionen">
+        <div class="live-bottom-grid">
+          <a class="live-btn primary" href="meine-fahrten.html"><img src="assets/icons/Route.svg" alt="" /> Zu Meine Fahrten</a>
+          <button class="live-btn primary" type="button" data-open-modal="share"><img src="assets/icons/WhatsApp.svg" alt="" /> Fahrt teilen</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <section class="live-modal" id="liveModal" hidden>
+    <article class="live-modal-card" role="dialog" aria-modal="true" aria-labelledby="liveModalTitle">
+      <header class="live-modal-head">
+        <h3 id="liveModalTitle">Demo-Aktion</h3>
+        <button type="button" class="live-modal-close" id="liveModalClose" aria-label="Schliessen">&times;</button>
+      </header>
+      <div id="liveModalBody"></div>
+      <button type="button" class="live-btn primary" id="liveModalOk">Verstanden</button>
+    </article>
+  </section>
+
+  <section class="live-modal" id="shareModal" hidden>
+    <article class="live-modal-card" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
+      <header class="live-modal-head">
+        <h3 id="shareModalTitle">Fahrt teilen (Demo)</h3>
+        <button type="button" class="live-modal-close" data-close-modal="share" aria-label="Schliessen">&times;</button>
+      </header>
+      <div class="live-field">
+        <label for="shareLink">Demo-Link</label>
+        <input id="shareLink" type="text" readonly />
+      </div>
+      <div class="live-action-grid">
+        <button type="button" class="live-btn" id="copyShareLink"><img src="assets/icons/Check%20Mark.svg" alt="" /> Link kopieren</button>
+        <button type="button" class="live-btn" id="shareWhatsappBtn"><img src="assets/icons/WhatsApp.svg" alt="" /> WhatsApp teilen Demo</button>
+      </div>
+      <p class="live-note">Demo-Funktion - kein echter Live-Standort wird geteilt.</p>
+    </article>
+  </section>
+
+  <section class="live-modal" id="ratingModal" hidden>
+    <article class="live-modal-card" role="dialog" aria-modal="true" aria-labelledby="ratingModalTitle">
+      <header class="live-modal-head">
+        <h3 id="ratingModalTitle">Fahrer bewerten</h3>
+        <button type="button" class="live-modal-close" data-close-modal="rating" aria-label="Schliessen">&times;</button>
+      </header>
+      <div class="live-field">
+        <label>Sterne</label>
+        <div class="live-stars" id="ratingStars"></div>
+      </div>
+      <div class="live-field">
+        <label>Auswahlgruende</label>
+        <div class="live-reasons" id="ratingReasons"></div>
+      </div>
+      <div class="live-field">
+        <label for="ratingComment">Kommentar (optional)</label>
+        <textarea id="ratingComment" placeholder="Ihre Demo-Rueckmeldung"></textarea>
+      </div>
+      <button type="button" class="live-btn primary" id="submitRating">Bewertung absenden</button>
+      <p class="live-note">Demo ohne echte Speicherung. Optional kann spaeter Rewards-Hinweis eingeblendet werden.</p>
+    </article>
+  </section>
+
+  <section class="live-modal" id="problemModal" hidden>
+    <article class="live-modal-card" role="dialog" aria-modal="true" aria-labelledby="problemModalTitle">
+      <header class="live-modal-head">
+        <h3 id="problemModalTitle">Problem melden (Demo)</h3>
+        <button type="button" class="live-modal-close" data-close-modal="problem" aria-label="Schliessen">&times;</button>
+      </header>
+      <div class="live-field">
+        <label for="problemCategory">Kategorie</label>
+        <select id="problemCategory">
+          <option value="Fahrer nicht gefunden">Fahrer nicht gefunden</option>
+          <option value="Fahrzeug verspaetet">Fahrzeug verspaetet</option>
+          <option value="Falsches Fahrzeug">Falsches Fahrzeug</option>
+          <option value="Sauberkeit">Sauberkeit</option>
+          <option value="Bezahlung">Bezahlung</option>
+          <option value="Sonstiges">Sonstiges</option>
+        </select>
+      </div>
+      <div class="live-field">
+        <label for="problemDescription">Beschreibung</label>
+        <textarea id="problemDescription" placeholder="Bitte kurz den Fall schildern"></textarea>
+      </div>
+      <div class="live-check">
+        <label><input id="problemCallback" type="checkbox" /> Rueckruf gewuenscht (Demo)</label>
+      </div>
+      <button type="button" class="live-btn primary" id="submitProblem">Meldung abschicken (Demo)</button>
+      <p class="live-note">Es wird keine echte Meldung versendet.</p>
+    </article>
+  </section>
+
+  <p class="live-toast" id="liveToast" role="status" aria-live="polite"></p>
+
+  <nav class="mobile-nav" aria-label="Mobile Navigation">
+    <a href="index.html" class="mobile-nav-item">
+      <img src="assets/icons/Home.svg" alt="" width="20" height="20" />
+      <span>Start</span>
+    </a>
+    <a href="meinkonto.html" class="mobile-nav-item">
+      <img src="assets/icons/Profile.svg" alt="" width="20" height="20" />
+      <span>Konto</span>
+    </a>
+    <a href="meine-fahrten.html" class="mobile-nav-item active" aria-current="page">
+      <img src="assets/icons/Route.svg" alt="" width="20" height="20" />
+      <span>Fahrten</span>
+    </a>
+    <a href="hilfe-kontakt.html" class="mobile-nav-item">
+      <img src="assets/icons/Phone.svg" alt="" width="20" height="20" />
+      <span>Hilfe</span>
+    </a>
+  </nav>
+
+  <script src="customer-auth-demo.js"></script>
+  <script src="script.js"></script>
+  <script src="customer-journey-demo.js"></script>
+  <script>
+    (function () {
+      if (window.CustomerAuthDemo && window.CustomerAuthDemo.requireLogin({
+        targetSelector: '#live-ride-page',
+        pageTitle: 'Aktive Fahrt'
+      })) {
+        return;
+      }
+
+      var DEMO = window.CustomerJourneyDemo || null;
+      if (!DEMO) return;
+
+      var statusFlow = Array.isArray(DEMO.liveRideStatusFlow) ? DEMO.liveRideStatusFlow.slice() : [];
+      var state = DEMO.getLiveState();
+      var activeRide = DEMO.getActiveRide();
+      var activeVehicle = null;
+      var activeDriver = DEMO.demoDriver || {};
+
+      var arrivalLabel = document.getElementById('arrivalLabel');
+      var arrivalSub = document.getElementById('arrivalSub');
+      var arrivalProgress = document.getElementById('arrivalProgress');
+      var arrivalUpdate = document.getElementById('arrivalUpdate');
+      var statusTimeline = document.getElementById('statusTimeline');
+      var rideMetaGrid = document.getElementById('rideMetaGrid');
+      var contextActions = document.getElementById('contextActions');
+      var vehicleMarker = document.getElementById('vehicleMarker');
+
+      var driverName = document.getElementById('driverName');
+      var driverImage = document.getElementById('driverImage');
+      var driverRating = document.getElementById('driverRating');
+      var driverRides = document.getElementById('driverRides');
+      var driverLanguages = document.getElementById('driverLanguages');
+
+      var vehicleModel = document.getElementById('vehicleModel');
+      var vehiclePlate = document.getElementById('vehiclePlate');
+      var vehicleType = document.getElementById('vehicleType');
+      var vehicleSeats = document.getElementById('vehicleSeats');
+      var vehicleColor = document.getElementById('vehicleColor');
+      var vehicleCategory = document.getElementById('vehicleCategory');
+      var rideType = document.getElementById('rideType');
+
+      var liveToast = document.getElementById('liveToast');
+      var toastTimer = null;
+
+      var liveModal = document.getElementById('liveModal');
+      var liveModalTitle = document.getElementById('liveModalTitle');
+      var liveModalBody = document.getElementById('liveModalBody');
+      var liveModalClose = document.getElementById('liveModalClose');
+      var liveModalOk = document.getElementById('liveModalOk');
+
+      var shareModal = document.getElementById('shareModal');
+      var ratingModal = document.getElementById('ratingModal');
+      var problemModal = document.getElementById('problemModal');
+
+      var shareLink = document.getElementById('shareLink');
+      var copyShareLink = document.getElementById('copyShareLink');
+      var shareWhatsappBtn = document.getElementById('shareWhatsappBtn');
+
+      var ratingStars = document.getElementById('ratingStars');
+      var ratingReasons = document.getElementById('ratingReasons');
+      var ratingComment = document.getElementById('ratingComment');
+      var submitRating = document.getElementById('submitRating');
+
+      var problemCategory = document.getElementById('problemCategory');
+      var problemDescription = document.getElementById('problemDescription');
+      var problemCallback = document.getElementById('problemCallback');
+      var submitProblem = document.getElementById('submitProblem');
+
+      var devPrev = document.getElementById('devPrev');
+      var devNext = document.getElementById('devNext');
+      var devReset = document.getElementById('devReset');
+
+      var ratingValue = 0;
+      var reasons = ['Puenktlich', 'Freundlich', 'Sicher gefahren', 'Sauberes Fahrzeug', 'Hilfsbereit'];
+
+      function showToast(message) {
+        if (!liveToast) return;
+        liveToast.textContent = message;
+        liveToast.classList.add('is-visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          liveToast.classList.remove('is-visible');
+        }, 2200);
+      }
+
+      function syncModalLock() {
+        var hasOpen =
+          (liveModal && !liveModal.hidden) ||
+          (shareModal && !shareModal.hidden) ||
+          (ratingModal && !ratingModal.hidden) ||
+          (problemModal && !problemModal.hidden);
+        document.body.classList.toggle('has-open-live-modal', !!hasOpen);
+      }
+
+      function openSimpleModal(title, html) {
+        if (!liveModal || !liveModalBody || !liveModalTitle) return;
+        liveModalTitle.textContent = title;
+        liveModalBody.innerHTML = html;
+        liveModal.hidden = false;
+        syncModalLock();
+      }
+
+      function closeModalByName(name) {
+        if (name === 'share' && shareModal) shareModal.hidden = true;
+        if (name === 'rating' && ratingModal) ratingModal.hidden = true;
+        if (name === 'problem' && problemModal) problemModal.hidden = true;
+        syncModalLock();
+      }
+
+      function closeAllModals() {
+        if (liveModal) liveModal.hidden = true;
+        if (shareModal) shareModal.hidden = true;
+        if (ratingModal) ratingModal.hidden = true;
+        if (problemModal) problemModal.hidden = true;
+        syncModalLock();
+      }
+
+      function formatDate(iso) {
+        var date = new Date((iso || '').slice(0, 10) + 'T00:00:00');
+        return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      }
+
+      function formatLastUpdate(timestamp) {
+        var date = new Date(timestamp || Date.now());
+        return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      function resolveVehicle() {
+        var allVehicles = Array.isArray(DEMO.liveRideVehicles) ? DEMO.liveRideVehicles : [];
+        var found = null;
+        for (var i = 0; i < allVehicles.length; i += 1) {
+          if (allVehicles[i].plate === activeRide.plate) {
+            found = allVehicles[i];
+            break;
+          }
+        }
+        activeVehicle = found || allVehicles[0] || null;
+      }
+
+      function buildRideMeta() {
+        if (!rideMetaGrid) return;
+        rideMetaGrid.innerHTML = '';
+
+        var rows = [
+          { label: 'Abholadresse', value: activeRide.pickup, icon: 'assets/icons/Location.svg' },
+          { label: 'Zieladresse', value: activeRide.destination, icon: 'assets/icons/Destination.svg' },
+          { label: 'Buchungsnummer', value: activeRide.id, icon: 'assets/icons/Calendar.svg' },
+          { label: 'Status', value: activeRide.status, icon: 'assets/icons/Clock.svg' },
+          { label: 'Geplante Abholzeit', value: formatDate(activeRide.date) + ' • ' + activeRide.time, icon: 'assets/icons/Calendar.svg' },
+          { label: 'Geschaetzte Ankunft Demo', value: activeRide.estimatedArrival, icon: 'assets/icons/Clock.svg' },
+          { label: 'Preis', value: activeRide.price, icon: 'assets/icons/Taxi.svg' },
+          { label: 'Zahlungsart', value: activeRide.payment, icon: 'assets/icons/Check%20Mark.svg' },
+          { label: 'Kundenhinweis', value: activeRide.note, icon: 'assets/icons/Route.svg' }
+        ];
+
+        rows.forEach(function (item) {
+          var box = document.createElement('div');
+          box.className = 'live-meta-item';
+          box.innerHTML =
+            '<b><img src="' + item.icon + '" alt="" width="12" height="12" /> ' + item.label + '</b>' +
+            '<span>' + item.value + '</span>';
+          rideMetaGrid.appendChild(box);
+        });
+      }
+
+      function renderDriverVehicle() {
+        if (driverName) driverName.textContent = activeDriver.name || '-';
+        if (driverImage) driverImage.src = activeDriver.image || 'assets/icons/Profile.svg';
+        if (driverRating) driverRating.textContent = String(activeDriver.rating || '4.8') + ' ★';
+        if (driverRides) driverRides.textContent = String(activeDriver.rides || 1000);
+        if (driverLanguages) driverLanguages.textContent = Array.isArray(activeDriver.languages) ? activeDriver.languages.join(', ') : '-';
+
+        if (!activeVehicle) return;
+        if (vehicleModel) vehicleModel.textContent = activeVehicle.model;
+        if (vehiclePlate) vehiclePlate.textContent = activeVehicle.plate;
+        if (vehicleType) vehicleType.textContent = activeVehicle.type;
+        if (vehicleSeats) vehicleSeats.textContent = String(activeVehicle.seats);
+        if (vehicleColor) vehicleColor.textContent = activeVehicle.color;
+        if (vehicleCategory) vehicleCategory.textContent = activeVehicle.category;
+        if (rideType) rideType.textContent = activeRide.type;
+
+        if (vehicleMarker) {
+          var markerIcon = vehicleMarker.querySelector('img');
+          if (markerIcon) markerIcon.src = activeVehicle.icon || 'assets/icons/Taxi.svg';
+        }
+      }
+
+      function renderTimeline() {
+        if (!statusTimeline) return;
+        statusTimeline.innerHTML = '';
+
+        statusFlow.forEach(function (step, index) {
+          var stateLabel = index < state.statusIndex ? 'Erledigt' : (index === state.statusIndex ? 'Aktiv' : 'Ausstehend');
+          var className = index < state.statusIndex ? 'is-done' : (index === state.statusIndex ? 'is-active' : 'is-pending');
+
+          var li = document.createElement('li');
+          li.className = 'live-timeline-item ' + className;
+          li.innerHTML =
+            '<img src="' + step.icon + '" alt="" />' +
+            '<div><b>' + step.title + '</b><span> Demo-Zeit: ' + step.time + '</span></div>' +
+            '<em>' + stateLabel + '</em>';
+          statusTimeline.appendChild(li);
+        });
+      }
+
+      function moveVehicleMarker() {
+        if (!vehicleMarker) return;
+        var positions = [
+          { x: '20%', y: '68%' },
+          { x: '24%', y: '64%' },
+          { x: '34%', y: '57%' },
+          { x: '48%', y: '49%' },
+          { x: '58%', y: '42%' },
+          { x: '72%', y: '32%' },
+          { x: '84%', y: '25%' }
+        ];
+        var pos = positions[Math.max(0, Math.min(positions.length - 1, state.statusIndex))];
+        vehicleMarker.style.setProperty('--vehicle-x', pos.x);
+        vehicleMarker.style.setProperty('--vehicle-y', pos.y);
+      }
+
+      function renderArrival() {
+        if (!arrivalLabel || !arrivalSub || !arrivalProgress || !arrivalUpdate) return;
+
+        var statusKey = statusFlow[state.statusIndex] ? statusFlow[state.statusIndex].key : 'booking_confirmed';
+        var progressPercent = Math.max(4, Math.min(100, Math.round(((state.statusIndex + 1) / statusFlow.length) * 100)));
+
+        if (statusKey === 'vehicle_arrived' || statusKey === 'ride_started' || statusKey === 'ride_completed') {
+          arrivalLabel.textContent = statusKey === 'ride_completed' ? 'Ihre Fahrt ist abgeschlossen' : 'Ihr Fahrer ist angekommen';
+          arrivalSub.textContent = 'Demo-Status ohne GPS-Tracking oder laufende Datenabfrage.';
+        } else {
+          arrivalLabel.textContent = 'Ihr Fahrer ist in ca. 8 Minuten da';
+          arrivalSub.textContent = 'Ankunftszeit ist eine hochwertige Demo-Schaetzung.';
+        }
+
+        arrivalProgress.style.setProperty('--live-progress', String(progressPercent) + '%');
+        arrivalUpdate.textContent = 'Letzte Aktualisierung Demo: ' + formatLastUpdate(state.updatedAt);
+      }
+
+      function buildActionButton(config) {
+        var button = document.createElement(config.href ? 'a' : 'button');
+        button.className = 'live-btn' + (config.primary ? ' primary' : '');
+
+        if (config.href) {
+          button.setAttribute('href', config.href);
+        } else {
+          button.type = 'button';
+          button.setAttribute('data-action', config.action || 'demo');
+        }
+
+        button.innerHTML = '<img src="' + config.icon + '" alt="" /> ' + config.label;
+        return button;
+      }
+
+      function renderContextActions() {
+        if (!contextActions) return;
+        contextActions.innerHTML = '';
+
+        var beforeArrival = state.statusIndex <= 3;
+        var arrived = state.statusIndex === 4;
+        var riding = state.statusIndex === 5;
+        var done = state.statusIndex >= 6;
+
+        var actions = [];
+
+        if (beforeArrival) {
+          actions = [
+            { label: 'Fahrt-Details', icon: 'assets/icons/Route.svg', action: 'details' },
+            { label: 'Zentrale anrufen', icon: 'assets/icons/Phone.svg', href: 'tel:+4972743567' },
+            { label: 'Buchung stornieren Demo', icon: 'assets/icons/Clock.svg', action: 'cancel' },
+            { label: 'Abholhinweis bearbeiten', icon: 'assets/icons/Location.svg', action: 'pickup-note' }
+          ];
+        } else if (arrived) {
+          actions = [
+            { label: 'Ich bin unterwegs zum Fahrzeug', icon: 'assets/icons/Route.svg', action: 'to-vehicle', primary: true },
+            { label: 'Zentrale anrufen', icon: 'assets/icons/Phone.svg', href: 'tel:+4972743567' }
+          ];
+        } else if (riding) {
+          actions = [
+            { label: 'Route ansehen', icon: 'assets/icons/Route.svg', action: 'route' },
+            { label: 'Fahrt teilen Demo', icon: 'assets/icons/WhatsApp.svg', action: 'share', primary: true },
+            { label: 'Hilfe', icon: 'assets/icons/Phone.svg', href: 'hilfe-kontakt.html' }
+          ];
+        } else if (done) {
+          actions = [
+            { label: 'Fahrer bewerten', icon: 'assets/icons/Check%20Mark.svg', action: 'rate', primary: true },
+            { label: 'Trinkgeld Demo', icon: 'assets/icons/Taxi.svg', action: 'tip' },
+            { label: 'Rechnung anzeigen Demo', icon: 'assets/icons/Calendar.svg', action: 'invoice' },
+            { label: 'Erneut buchen', icon: 'assets/icons/Route.svg', href: 'index.html#booking' },
+            { label: 'Problem melden', icon: 'assets/icons/Phone.svg', action: 'problem' }
+          ];
+        }
+
+        actions.forEach(function (item) {
+          contextActions.appendChild(buildActionButton(item));
+        });
+      }
+
+      function renderShare() {
+        if (!shareLink) return;
+        shareLink.value = 'https://demo.taxi-germersheim.de/live/' + encodeURIComponent(activeRide.id);
+      }
+
+      function renderRatingUI() {
+        if (!ratingStars || !ratingReasons) return;
+        ratingStars.innerHTML = '';
+        ratingReasons.innerHTML = '';
+
+        for (var i = 1; i <= 5; i += 1) {
+          var star = document.createElement('button');
+          star.type = 'button';
+          star.className = 'live-star';
+          star.setAttribute('data-star', String(i));
+          star.textContent = '★';
+          ratingStars.appendChild(star);
+        }
+
+        reasons.forEach(function (reason) {
+          var wrap = document.createElement('label');
+          wrap.innerHTML = '<input type="checkbox" value="' + reason + '" /> ' + reason;
+          ratingReasons.appendChild(wrap);
+        });
+      }
+
+      function updateStarSelection() {
+        ratingStars.querySelectorAll('[data-star]').forEach(function (item) {
+          var starNum = Number(item.getAttribute('data-star'));
+          item.classList.toggle('is-active', starNum <= ratingValue);
+        });
+      }
+
+      function updateLiveData() {
+        state = DEMO.getLiveState();
+        activeRide = DEMO.getActiveRide();
+        resolveVehicle();
+        buildRideMeta();
+        renderDriverVehicle();
+        renderTimeline();
+        renderArrival();
+        moveVehicleMarker();
+        renderContextActions();
+        renderShare();
+      }
+
+      function openAction(action) {
+        if (action === 'share') {
+          if (shareModal) shareModal.hidden = false;
+          syncModalLock();
+          return;
+        }
+
+        if (action === 'rate') {
+          if (ratingModal) ratingModal.hidden = false;
+          syncModalLock();
+          return;
+        }
+
+        if (action === 'problem') {
+          if (problemModal) problemModal.hidden = false;
+          syncModalLock();
+          return;
+        }
+
+        if (action === 'driver-profile') {
+          openSimpleModal('Fahrerprofil',
+            '<p><strong>' + (activeDriver.name || '-') + '</strong></p>' +
+            '<p>Bewertung: ' + String(activeDriver.rating || '-') + ' ★</p>' +
+            '<p>Fahrten Demo: ' + String(activeDriver.rides || '-') + '</p>' +
+            '<p>Sprachen: ' + ((activeDriver.languages || []).join(', ') || '-') + '</p>' +
+            '<p>' + (activeDriver.note || 'Ihr Fahrer von Taxi Germersheim') + '</p>'
+          );
+          return;
+        }
+
+        if (action === 'message') {
+          openSimpleModal('Nachricht senden (Demo)', '<p>Diese Funktion ist als Demo vorbereitet. Es wird keine echte Fahrerkommunikation aufgebaut.</p>');
+          return;
+        }
+
+        if (action === 'details') {
+          openSimpleModal('Fahrt-Details',
+            '<p><strong>Fahrt-ID:</strong> ' + activeRide.id + '</p>' +
+            '<p><strong>Abholung:</strong> ' + activeRide.pickup + '</p>' +
+            '<p><strong>Ziel:</strong> ' + activeRide.destination + '</p>' +
+            '<p><strong>Hinweis:</strong> ' + activeRide.note + '</p>'
+          );
+          return;
+        }
+
+        if (action === 'cancel') {
+          openSimpleModal('Buchung stornieren (Demo)', '<p>Storno ist nur als Frontend-Demo vorbereitet. Es erfolgt keine echte Aenderung im Backend.</p>');
+          return;
+        }
+
+        if (action === 'pickup-note') {
+          openSimpleModal('Abholhinweis bearbeiten (Demo)', '<p>Diese Eingabe wird in der Demo nicht dauerhaft gespeichert und nicht an Fahrer uebermittelt.</p>');
+          return;
+        }
+
+        if (action === 'to-vehicle') {
+          showToast('Hinweis gesetzt: Ich bin unterwegs zum Fahrzeug (Demo).');
+          return;
+        }
+
+        if (action === 'route') {
+          openSimpleModal('Route ansehen (Demo)', '<p>Routenansicht ist als Demo simuliert. Keine echte Navigation und keine Live-GPS-Daten.</p>');
+          return;
+        }
+
+        if (action === 'tip') {
+          openSimpleModal('Trinkgeld (Demo)', '<p>Trinkgeld ist als Demo vorbereitet. Keine Zahlungsabwicklung.</p>');
+          return;
+        }
+
+        if (action === 'invoice') {
+          openSimpleModal('Rechnung anzeigen (Demo)', '<p>Rechnung TG-260710-001 waere hier sichtbar. Kein echter Download, keine echte Abrechnung.</p>');
+          return;
+        }
+      }
+
+      document.addEventListener('click', function (event) {
+        var actionButton = event.target.closest('[data-action]');
+        if (actionButton) {
+          event.preventDefault();
+          openAction(actionButton.getAttribute('data-action'));
+          return;
+        }
+
+        var openModalButton = event.target.closest('[data-open-modal]');
+        if (openModalButton) {
+          event.preventDefault();
+          openAction(openModalButton.getAttribute('data-open-modal'));
+          return;
+        }
+
+        var closeModalButton = event.target.closest('[data-close-modal]');
+        if (closeModalButton) {
+          closeModalByName(closeModalButton.getAttribute('data-close-modal'));
+        }
+      });
+
+      if (liveModalClose) liveModalClose.addEventListener('click', closeAllModals);
+      if (liveModalOk) liveModalOk.addEventListener('click', closeAllModals);
+
+      [liveModal, shareModal, ratingModal, problemModal].forEach(function (modal) {
+        if (!modal) return;
+        modal.addEventListener('click', function (event) {
+          if (event.target === modal) {
+            modal.hidden = true;
+            syncModalLock();
+          }
+        });
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          closeAllModals();
+        }
+      });
+
+      if (copyShareLink) {
+        copyShareLink.addEventListener('click', function () {
+          if (!shareLink) return;
+          shareLink.select();
+          var copied = false;
+          try {
+            copied = document.execCommand('copy');
+          } catch (_error) {
+            copied = false;
+          }
+          showToast(copied ? 'Demo-Link kopiert.' : 'Kopieren in dieser Umgebung nicht verfuegbar.');
+        });
+      }
+
+      if (shareWhatsappBtn) {
+        shareWhatsappBtn.addEventListener('click', function () {
+          showToast('WhatsApp teilen ist als Demo markiert, ohne Live-Standort.');
+        });
+      }
+
+      if (ratingStars) {
+        ratingStars.addEventListener('click', function (event) {
+          var star = event.target.closest('[data-star]');
+          if (!star) return;
+          ratingValue = Number(star.getAttribute('data-star')) || 0;
+          updateStarSelection();
+        });
+      }
+
+      if (submitRating) {
+        submitRating.addEventListener('click', function () {
+          if (ratingValue < 1) {
+            showToast('Bitte zuerst Sterne auswaehlen.');
+            return;
+          }
+
+          var selectedReasons = [];
+          ratingReasons.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
+            if (input.checked) selectedReasons.push(input.value);
+          });
+
+          showToast('Vielen Dank! Bewertung als Demo uebernommen. Rewards-Hinweis folgt spaeter optional.');
+          if (ratingComment) ratingComment.value = '';
+          ratingValue = 0;
+          updateStarSelection();
+          ratingReasons.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
+            input.checked = false;
+          });
+          closeModalByName('rating');
+        });
+      }
+
+      if (submitProblem) {
+        submitProblem.addEventListener('click', function () {
+          var category = problemCategory ? problemCategory.value : 'Sonstiges';
+          var wantsCallback = problemCallback && problemCallback.checked;
+          var description = problemDescription ? (problemDescription.value || '').trim() : '';
+
+          if (!description) {
+            showToast('Bitte eine kurze Beschreibung eingeben.');
+            return;
+          }
+
+          showToast('Problem "' + category + '" als Demo erfasst. Rueckruf: ' + (wantsCallback ? 'Ja' : 'Nein') + '.');
+          if (problemDescription) problemDescription.value = '';
+          if (problemCallback) problemCallback.checked = false;
+          closeModalByName('problem');
+        });
+      }
+
+      function setStatusIndex(nextIndex) {
+        DEMO.setLiveState(nextIndex);
+      }
+
+      if (devPrev) {
+        devPrev.addEventListener('click', function () {
+          setStatusIndex(state.statusIndex - 1);
+        });
+      }
+
+      if (devNext) {
+        devNext.addEventListener('click', function () {
+          setStatusIndex(state.statusIndex + 1);
+        });
+      }
+
+      if (devReset) {
+        devReset.addEventListener('click', function () {
+          setStatusIndex(2);
+          showToast('Demo-Status auf "Fahrer zugewiesen" zurueckgesetzt.');
+        });
+      }
+
+      window.addEventListener('tg-customer-live-ride-updated', updateLiveData);
+
+      renderRatingUI();
+      updateLiveData();
+    })();
+  </script>
+</body>
+</html>

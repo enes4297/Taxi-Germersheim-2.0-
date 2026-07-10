@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registrieren | Taxi Germersheim</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="auth-demo.css" />
+</head>
+<body class="auth-page">
+  <main class="auth-shell" aria-labelledby="authRegisterTitle">
+    <a class="auth-brand" href="index.html">
+      <img src="logo.png" alt="Taxi Germersheim" />
+      <span>Taxi Germersheim</span>
+    </a>
+
+    <header class="auth-head">
+      <h1 id="authRegisterTitle">Demo-Konto erstellen</h1>
+      <p>Registrierung fuer das Kundenportal als Frontend-Demo ohne echte Verifizierung oder Backend.</p>
+    </header>
+
+    <form id="registerForm" class="auth-form" novalidate>
+      <div class="onboarding-grid cols-2">
+        <div class="auth-field">
+          <label for="regFirstName">Vorname</label>
+          <input id="regFirstName" name="firstName" type="text" autocomplete="given-name" required />
+        </div>
+        <div class="auth-field">
+          <label for="regLastName">Nachname</label>
+          <input id="regLastName" name="lastName" type="text" autocomplete="family-name" required />
+        </div>
+      </div>
+
+      <div class="auth-field">
+        <label for="regEmail">E-Mail</label>
+        <input id="regEmail" name="email" type="email" autocomplete="email" required />
+      </div>
+
+      <div class="auth-field">
+        <label for="regPhone">Telefon</label>
+        <input id="regPhone" name="phone" type="tel" autocomplete="tel" placeholder="z. B. +49 123 456789" required />
+      </div>
+
+      <div class="auth-field">
+        <label for="regPassword">Passwort</label>
+        <div class="auth-pass-wrap">
+          <input id="regPassword" name="password" type="password" minlength="8" autocomplete="new-password" required />
+          <button class="auth-pass-toggle" type="button" data-target="regPassword" aria-label="Passwort anzeigen">Anzeigen</button>
+        </div>
+      </div>
+
+      <div class="auth-strength" aria-hidden="true"><i id="passwordStrengthBar"></i></div>
+      <ul id="passwordRules" class="auth-rule-list" aria-live="polite">
+        <li data-rule="len">Mindestens 8 Zeichen</li>
+        <li data-rule="upper">Mindestens 1 Grossbuchstabe</li>
+        <li data-rule="number">Mindestens 1 Zahl</li>
+      </ul>
+
+      <div class="auth-field">
+        <label for="regPasswordConfirm">Passwort bestaetigen</label>
+        <input id="regPasswordConfirm" name="passwordConfirm" type="password" minlength="8" autocomplete="new-password" required />
+      </div>
+
+      <label class="auth-check" for="regTerms">
+        <input id="regTerms" name="termsAccepted" type="checkbox" required />
+        <span>Ich akzeptiere die Demo-Nutzungsbedingungen und Datenschutzhinweise.</span>
+      </label>
+
+      <p id="registerError" class="auth-error" aria-live="assertive"></p>
+      <button class="auth-submit" type="submit">Registrieren und einrichten</button>
+    </form>
+
+    <nav class="auth-links" aria-label="Registrierung Hilfslinks">
+      <a href="anmelden.html">Schon ein Konto? Anmelden</a>
+      <a href="index.html">Zur Startseite</a>
+    </nav>
+  </main>
+
+  <script src="customer-auth-demo.js"></script>
+  <script>
+    (function () {
+      var form = document.getElementById("registerForm");
+      var error = document.getElementById("registerError");
+      var passwordInput = document.getElementById("regPassword");
+      var passwordConfirmInput = document.getElementById("regPasswordConfirm");
+      var rulesContainer = document.getElementById("passwordRules");
+      var strengthBar = document.getElementById("passwordStrengthBar");
+
+      if (window.CustomerAuthDemo && window.CustomerAuthDemo.isLoggedIn()) {
+        window.location.replace("meinkonto.html");
+        return;
+      }
+
+      function evaluatePassword(password) {
+        var rules = {
+          len: password.length >= 8,
+          upper: /[A-Z]/.test(password),
+          number: /\d/.test(password)
+        };
+        var score = 0;
+        if (rules.len) score += 34;
+        if (rules.upper) score += 33;
+        if (rules.number) score += 33;
+        return { rules: rules, score: score };
+      }
+
+      function renderPasswordState(password) {
+        var result = evaluatePassword(password);
+        strengthBar.style.setProperty("--auth-strength", String(result.score) + "%");
+
+        Object.keys(result.rules).forEach(function (ruleKey) {
+          var item = rulesContainer.querySelector('[data-rule="' + ruleKey + '"]');
+          if (!item) return;
+          item.classList.toggle("is-ok", !!result.rules[ruleKey]);
+        });
+
+        return result;
+      }
+
+      passwordInput.addEventListener("input", function () {
+        renderPasswordState(passwordInput.value || "");
+      });
+
+      document.querySelectorAll(".auth-pass-toggle").forEach(function (toggle) {
+        toggle.addEventListener("click", function () {
+          var targetId = toggle.getAttribute("data-target");
+          var input = targetId ? document.getElementById(targetId) : null;
+          if (!input) return;
+
+          var visible = input.type === "text";
+          input.type = visible ? "password" : "text";
+          toggle.textContent = visible ? "Anzeigen" : "Verbergen";
+        });
+      });
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        error.textContent = "";
+
+        var firstName = (form.elements.firstName.value || "").trim();
+        var lastName = (form.elements.lastName.value || "").trim();
+        var email = (form.elements.email.value || "").trim();
+        var phone = (form.elements.phone.value || "").trim();
+        var password = (form.elements.password.value || "").trim();
+        var passwordConfirm = (form.elements.passwordConfirm.value || "").trim();
+        var termsAccepted = !!form.elements.termsAccepted.checked;
+
+        if (!firstName || !lastName) {
+          error.textContent = "Bitte Vor- und Nachnamen angeben.";
+          return;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          error.textContent = "Bitte eine gueltige E-Mail-Adresse eingeben.";
+          return;
+        }
+
+        if (phone.length < 6) {
+          error.textContent = "Bitte eine gueltige Telefonnummer eingeben.";
+          return;
+        }
+
+        var passwordState = renderPasswordState(password);
+        if (!(passwordState.rules.len && passwordState.rules.upper && passwordState.rules.number)) {
+          error.textContent = "Das Passwort erfuellt noch nicht alle Regeln.";
+          return;
+        }
+
+        if (password !== passwordConfirm) {
+          error.textContent = "Passwort und Bestaetigung stimmen nicht ueberein.";
+          return;
+        }
+
+        if (!termsAccepted) {
+          error.textContent = "Bitte die Demo-Bedingungen akzeptieren.";
+          return;
+        }
+
+        var profileDraft = {
+          fullName: firstName + " " + lastName,
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          phone: phone,
+          registeredAt: Date.now()
+        };
+
+        sessionStorage.setItem("taxiCustomerDemoRegistrationDraft", JSON.stringify(profileDraft));
+        sessionStorage.setItem("taxiCustomerDemoRegistrationPass", password);
+        window.location.href = "konto-einrichtung.html";
+      });
+    })();
+  </script>
+</body>
+</html>

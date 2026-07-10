@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Anmelden | Taxi Germersheim</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="auth-demo.css" />
+</head>
+<body class="auth-page">
+  <main class="auth-shell" aria-labelledby="authLoginTitle">
+    <a class="auth-brand" href="index.html">
+      <img src="logo.png" alt="Taxi Germersheim" />
+      <span>Taxi Germersheim</span>
+    </a>
+
+    <header class="auth-head">
+      <h1 id="authLoginTitle">Willkommen zurueck</h1>
+      <p>Demo-Login fuer den Kundenbereich. Keine echte Konto-Pruefung und keine Sicherheitsgarantie.</p>
+    </header>
+
+    <p id="authLoginNotice" class="auth-success" aria-live="polite"></p>
+
+    <form id="loginForm" class="auth-form" novalidate>
+      <div class="auth-field">
+        <label for="loginEmail">E-Mail</label>
+        <input id="loginEmail" name="email" type="email" autocomplete="email" required />
+      </div>
+
+      <div class="auth-field">
+        <label for="loginPassword">Passwort</label>
+        <div class="auth-pass-wrap">
+          <input id="loginPassword" name="password" type="password" autocomplete="current-password" minlength="8" required />
+          <button class="auth-pass-toggle" type="button" data-target="loginPassword" aria-label="Passwort anzeigen">Anzeigen</button>
+        </div>
+      </div>
+
+      <div class="auth-inline">
+        <label class="auth-check" for="rememberMe">
+          <input id="rememberMe" name="rememberMe" type="checkbox" />
+          <span>Eingeloggt bleiben (Demo)</span>
+        </label>
+        <a href="passwort-vergessen.html">Passwort vergessen?</a>
+      </div>
+
+      <p id="loginError" class="auth-error" aria-live="assertive"></p>
+      <button class="auth-submit" type="submit">Anmelden</button>
+    </form>
+
+    <nav class="auth-links" aria-label="Login Hilfslinks">
+      <a href="registrieren.html">Neu hier? Jetzt registrieren</a>
+      <a href="index.html">Zur Startseite</a>
+    </nav>
+
+    <p class="auth-note">Testdaten: Jede gueltige E-Mail + Passwort mit mindestens 8 Zeichen.</p>
+  </main>
+
+  <script src="customer-auth-demo.js"></script>
+  <script>
+    (function () {
+      var notice = document.getElementById("authLoginNotice");
+      var error = document.getElementById("loginError");
+      var form = document.getElementById("loginForm");
+      var params = new URLSearchParams(window.location.search);
+
+      if (window.CustomerAuthDemo && window.CustomerAuthDemo.isLoggedIn()) {
+        window.location.replace("meinkonto.html");
+        return;
+      }
+
+      if (params.get("registered") === "1") {
+        notice.textContent = "Registrierung erfolgreich. Bitte jetzt anmelden.";
+      } else if (params.get("loggedOut") === "1") {
+        notice.textContent = "Sie wurden aus dem Demo-Konto abgemeldet.";
+      }
+
+      document.querySelectorAll(".auth-pass-toggle").forEach(function (toggle) {
+        toggle.addEventListener("click", function () {
+          var targetId = toggle.getAttribute("data-target");
+          var input = targetId ? document.getElementById(targetId) : null;
+          if (!input) return;
+
+          var visible = input.type === "text";
+          input.type = visible ? "password" : "text";
+          toggle.textContent = visible ? "Anzeigen" : "Verbergen";
+        });
+      });
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        error.textContent = "";
+
+        var emailInput = form.elements.email;
+        var passwordInput = form.elements.password;
+        var rememberInput = form.elements.rememberMe;
+
+        var email = (emailInput.value || "").trim();
+        var password = (passwordInput.value || "").trim();
+
+        var emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!emailValid) {
+          error.textContent = "Bitte eine gueltige E-Mail-Adresse eingeben.";
+          emailInput.focus();
+          return;
+        }
+
+        if (password.length < 8) {
+          error.textContent = "Das Passwort muss mindestens 8 Zeichen haben.";
+          passwordInput.focus();
+          return;
+        }
+
+        var profile = {
+          fullName: "Demo Kunde",
+          email: email,
+          phone: "+49 7274 000000",
+          avatarColor: "amber",
+          registeredAt: Date.now()
+        };
+
+        window.CustomerAuthDemo.setLoginState(profile, {
+          rememberMe: !!rememberInput.checked,
+          onboardingComplete: true,
+          source: "login"
+        });
+
+        window.location.href = "meinkonto.html";
+      });
+    })();
+  </script>
+</body>
+</html>
