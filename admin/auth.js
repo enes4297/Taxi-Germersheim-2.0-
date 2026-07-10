@@ -491,6 +491,9 @@
     const bellButton = actions.querySelector('button[aria-label="Benachrichtigungen"]');
     if (!bellButton) return;
 
+    if (bellButton.dataset.notificationCenterInitialized === "true") return;
+    bellButton.dataset.notificationCenterInitialized = "true";
+
     bellButton.classList.add("admin-notification-trigger");
     bellButton.setAttribute("aria-haspopup", "true");
     bellButton.setAttribute("aria-expanded", "false");
@@ -519,6 +522,7 @@
       panel.className = "admin-notification-panel";
       panel.setAttribute("data-admin-notification-panel", "");
       panel.hidden = true;
+      panel.setAttribute("aria-hidden", "true");
       panel.innerHTML = [
         '<header class="admin-notification-head">',
         '<div class="admin-notification-head-copy">',
@@ -609,24 +613,39 @@
       renderDashboardHints(main, state.notifications);
     }
 
-    function closePanel() {
+    function isNotificationPanelOpen() {
+      return !panel.hidden;
+    }
+
+    function openNotificationPanel() {
+      panel.hidden = false;
+      panel.setAttribute("aria-hidden", "false");
+      bellButton.setAttribute("aria-expanded", "true");
+    }
+
+    function closeNotificationPanel() {
       panel.hidden = true;
+      panel.setAttribute("aria-hidden", "true");
       bellButton.setAttribute("aria-expanded", "false");
     }
 
-    function togglePanel() {
-      const open = panel.hidden;
-      panel.hidden = !open;
-      bellButton.setAttribute("aria-expanded", String(open));
+    function toggleNotificationPanel() {
+      if (isNotificationPanelOpen()) {
+        closeNotificationPanel();
+        return;
+      }
+      openNotificationPanel();
     }
 
-    bellButton.addEventListener("click", (event) => {
+    const bellClickHandler = (event) => {
       event.preventDefault();
       event.stopPropagation();
-      togglePanel();
-    });
+      toggleNotificationPanel();
+    };
 
-    panel.addEventListener("click", (event) => {
+    bellButton.addEventListener("click", bellClickHandler);
+
+    const panelClickHandler = (event) => {
       event.stopPropagation();
       const readAll = event.target.closest("[data-admin-notification-read-all]");
       if (readAll) {
@@ -657,7 +676,9 @@
         window.alert(`Demo-Details: ${item.title}\n${item.text}`);
         renderNotificationCenter();
       }
-    });
+    };
+
+    panel.addEventListener("click", panelClickHandler);
 
     const previousGlobalHandlers = window.__adminNotificationGlobalHandlers;
     if (previousGlobalHandlers) {
@@ -666,18 +687,18 @@
     }
 
     const pointerDownHandler = (event) => {
-      if (panel.hidden) return;
+      if (!isNotificationPanelOpen()) return;
       const target = event.target;
       if (!(target instanceof Node)) return;
       if (panel.contains(target)) return;
       if (bellButton.contains(target)) return;
-      closePanel();
+      closeNotificationPanel();
     };
 
     const keyDownHandler = (event) => {
-      if (event.key !== "Escape") return;
-      if (panel.hidden) return;
-      closePanel();
+      if (event.key !== "Escape" && event.key !== "Esc") return;
+      if (!isNotificationPanelOpen()) return;
+      closeNotificationPanel();
     };
 
     document.addEventListener("pointerdown", pointerDownHandler, true);
@@ -685,6 +706,15 @@
     window.__adminNotificationGlobalHandlers = {
       pointerDown: pointerDownHandler,
       keyDown: keyDownHandler
+    };
+
+    panel.__adminNotificationHandlers = {
+      bellClickHandler,
+      panelClickHandler,
+      isNotificationPanelOpen,
+      openNotificationPanel,
+      closeNotificationPanel,
+      toggleNotificationPanel
     };
 
     renderNotificationCenter();
