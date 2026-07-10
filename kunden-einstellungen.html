@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Einstellungen | Taxi Germersheim</title>
+  <meta name="description" content="Taxi Germersheim - Kontoeinstellungen und Benachrichtigungseinstellungen als Demo." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="kunden-einstellungen.css" />
+  <link rel="stylesheet" href="auth-demo.css" />
+</head>
+<body>
+  <div class="background" aria-hidden="true"></div>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header>
+    <div class="container nav">
+      <a href="index.html" class="brand" aria-label="Taxi Germersheim Startseite">
+        <span class="brand-logo"><img src="logo.png" alt="Taxi Germersheim Logo" /></span>
+        <span class="brand-text">Taxi Germersheim</span>
+      </a>
+      <nav class="nav-links" aria-label="Hauptnavigation">
+        <a href="index.html">Start</a>
+        <a href="flotte.html">Flotte</a>
+        <a href="meinkonto.html">Mein Konto</a>
+        <a href="meine-fahrten.html">Meine Fahrten</a>
+        <a href="wallet-gutscheine.html">Wallet</a>
+        <a href="hilfe-kontakt.html">Hilfe</a>
+        <a href="kunden-einstellungen.html" class="active" aria-current="page">Einstellungen</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost" href="tel:+497272123456">Anrufen</a>
+        <a class="btn btn-primary" href="index.html#booking">Jetzt buchen</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="customer-settings-page" class="customer-settings-page">
+    <div class="container settings-shell">
+      <section class="settings-card" aria-label="Einstellungen Intro">
+        <h1>Einstellungen</h1>
+        <p class="settings-note">Sprache, Benachrichtigungen, Datenschutz und Kontoaktionen als Frontend-Demo ohne Backend.</p>
+      </section>
+
+      <section class="settings-card" aria-label="Allgemeine Einstellungen">
+        <h2>Allgemein</h2>
+        <div class="settings-row cols-2">
+          <div class="settings-field">
+            <label for="languageSelect">Sprache</label>
+            <select id="languageSelect">
+              <option value="de">Deutsch</option>
+              <option value="en">English</option>
+              <option value="tr">Tuerkce</option>
+            </select>
+          </div>
+          <div class="settings-field">
+            <label>Dark Mode Demo</label>
+            <button type="button" class="settings-btn" id="darkModeToggle">Dark Mode umschalten</button>
+          </div>
+        </div>
+        <p class="settings-note">Demo-Abbildung fuer spaetere Konto-API. Keine serverseitige Speicherung.</p>
+      </section>
+
+      <section class="settings-card" id="notification-settings" aria-label="Benachrichtigungseinstellungen">
+        <h2>Benachrichtigungseinstellungen</h2>
+        <ul class="settings-toggle-list" id="notificationToggleList"></ul>
+      </section>
+
+      <section class="settings-card" aria-label="Datenschutz und Recht">
+        <h2>Datenschutz und Recht</h2>
+        <div class="settings-links">
+          <a class="settings-btn" href="datenschutz.html"><img src="assets/icons/Profile.svg" width="14" height="14" alt="" /> Datenschutz</a>
+          <a class="settings-btn" href="impressum.html"><img src="assets/icons/Home.svg" width="14" height="14" alt="" /> Impressum</a>
+          <button type="button" class="settings-btn" id="cookieSettingsBtn"><img src="assets/icons/Clock.svg" width="14" height="14" alt="" /> Cookie-Einstellungen Demo</button>
+          <span class="settings-note">Nutzungsbedingungen: aktuell nicht als eigene Seite vorhanden.</span>
+        </div>
+      </section>
+
+      <section class="settings-card" aria-label="Kontoaktionen">
+        <h2>Kontoaktionen</h2>
+        <div class="settings-row cols-2">
+          <button type="button" class="settings-btn" id="deleteAccountBtn"><img src="assets/icons/Check%20Mark.svg" width="14" height="14" alt="" /> Konto loeschen Demo</button>
+          <button type="button" class="settings-btn" id="logoutBtn"><img src="assets/icons/Phone.svg" width="14" height="14" alt="" /> Abmelden Demo</button>
+        </div>
+        <p class="settings-note">Demo-Abmeldung ohne Backend. Keine echte Authentifizierung und keine echte Kontoloeschung.</p>
+      </section>
+    </div>
+  </main>
+
+  <section class="settings-modal" id="settingsModal" hidden>
+    <article class="settings-modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+      <header class="settings-modal-head">
+        <h3 id="settingsModalTitle">Demo-Hinweis</h3>
+        <button type="button" class="settings-modal-close" id="settingsModalClose" aria-label="Schliessen">&times;</button>
+      </header>
+      <div id="settingsModalBody"></div>
+      <button type="button" class="settings-btn" id="settingsModalOk">Verstanden</button>
+    </article>
+  </section>
+
+  <section class="settings-modal" id="deleteModal" hidden>
+    <article class="settings-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+      <header class="settings-modal-head">
+        <h3 id="deleteModalTitle">Konto loeschen Demo</h3>
+        <button type="button" class="settings-modal-close" data-close-delete aria-label="Schliessen">&times;</button>
+      </header>
+      <p class="settings-note">Diese Demo-Funktion loescht keine echten Daten.</p>
+      <div class="settings-field">
+        <label for="deleteConfirmInput">Bestaetigungsfeld (LÖSCHEN eingeben)</label>
+        <input id="deleteConfirmInput" type="text" autocomplete="off" />
+      </div>
+      <button type="button" class="settings-btn" id="deleteConfirmBtn" disabled>Konto loeschen (Demo)</button>
+    </article>
+  </section>
+
+  <section class="settings-modal" id="logoutModal" hidden>
+    <article class="settings-modal-card" role="dialog" aria-modal="true" aria-labelledby="logoutModalTitle">
+      <header class="settings-modal-head">
+        <h3 id="logoutModalTitle">Abmelden Demo</h3>
+        <button type="button" class="settings-modal-close" data-close-logout aria-label="Schliessen">&times;</button>
+      </header>
+      <p class="settings-note">Demo-Abmeldung ohne Backend.</p>
+      <button type="button" class="settings-btn" id="logoutConfirmBtn">Abmeldung bestaetigen</button>
+    </article>
+  </section>
+
+  <div class="settings-toast" id="settingsToast" role="status" aria-live="polite"></div>
+
+  <nav class="mobile-nav" aria-label="Mobile Navigation">
+    <a href="index.html" class="mobile-nav-item">
+      <img src="assets/icons/Home.svg" alt="" width="20" height="20" />
+      <span>Start</span>
+    </a>
+    <a href="meinkonto.html" class="mobile-nav-item">
+      <img src="assets/icons/Profile.svg" alt="" width="20" height="20" />
+      <span>Konto</span>
+    </a>
+    <a href="hilfe-kontakt.html" class="mobile-nav-item">
+      <img src="assets/icons/Phone.svg" alt="" width="20" height="20" />
+      <span>Hilfe</span>
+    </a>
+    <a href="kunden-einstellungen.html" class="mobile-nav-item active" aria-current="page">
+      <img src="assets/icons/Clock.svg" alt="" width="20" height="20" />
+      <span>Einstellungen</span>
+    </a>
+  </nav>
+
+  <script src="customer-auth-demo.js"></script>
+  <script src="script.js"></script>
+  <script>
+    (function () {
+      if (window.CustomerAuthDemo && window.CustomerAuthDemo.requireLogin({
+        targetSelector: '#customer-settings-page',
+        pageTitle: 'Einstellungen'
+      })) {
+        return;
+      }
+
+      const SETTINGS_KEY = 'tgCustomerSettingsDemo';
+      const NOTIFICATIONS_KEY = 'tgCustomerNotificationSettingsDemo';
+      const defaultNotifications = {
+        bookingConfirmation: true,
+        driverOnTheWay: true,
+        vehicleArrived: true,
+        rewards: true,
+        vouchers: true,
+        offers: false,
+        whatsappHints: true,
+        emailHints: true
+      };
+
+      const notificationConfig = [
+        { key: 'bookingConfirmation', label: 'Buchungsbestaetigung', icon: 'assets/icons/Check%20Mark.svg' },
+        { key: 'driverOnTheWay', label: 'Fahrer unterwegs', icon: 'assets/icons/Route.svg' },
+        { key: 'vehicleArrived', label: 'Fahrzeug angekommen', icon: 'assets/icons/Location.svg' },
+        { key: 'rewards', label: 'Rewards', icon: 'assets/icons/Rewards.svg' },
+        { key: 'vouchers', label: 'Gutscheine', icon: 'assets/icons/Gift%20Voucher.svg' },
+        { key: 'offers', label: 'Angebote', icon: 'assets/icons/Calendar.svg' },
+        { key: 'whatsappHints', label: 'WhatsApp-Hinweise', icon: 'assets/icons/WhatsApp.svg' },
+        { key: 'emailHints', label: 'E-Mail-Hinweise', icon: 'assets/icons/Profile.svg' }
+      ];
+
+      const languageSelect = document.getElementById('languageSelect');
+      const darkModeToggle = document.getElementById('darkModeToggle');
+      const notificationList = document.getElementById('notificationToggleList');
+      const cookieSettingsBtn = document.getElementById('cookieSettingsBtn');
+      const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+
+      const settingsModal = document.getElementById('settingsModal');
+      const settingsModalTitle = document.getElementById('settingsModalTitle');
+      const settingsModalBody = document.getElementById('settingsModalBody');
+      const settingsModalClose = document.getElementById('settingsModalClose');
+      const settingsModalOk = document.getElementById('settingsModalOk');
+
+      const deleteModal = document.getElementById('deleteModal');
+      const deleteConfirmInput = document.getElementById('deleteConfirmInput');
+      const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+
+      const logoutModal = document.getElementById('logoutModal');
+      const logoutConfirmBtn = document.getElementById('logoutConfirmBtn');
+
+      const toast = document.getElementById('settingsToast');
+      let toastTimer = null;
+
+      function syncBodyModalLock() {
+        const hasOpen =
+          (settingsModal && !settingsModal.hidden) ||
+          (deleteModal && !deleteModal.hidden) ||
+          (logoutModal && !logoutModal.hidden);
+        document.body.classList.toggle('has-open-settings-modal', Boolean(hasOpen));
+      }
+
+      function showToast(message) {
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add('is-visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove('is-visible');
+        }, 1900);
+      }
+
+      function loadJson(key, fallback) {
+        try {
+          return Object.assign({}, fallback, JSON.parse(localStorage.getItem(key) || '{}'));
+        } catch (error) {
+          return Object.assign({}, fallback);
+        }
+      }
+
+      function saveJson(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+      }
+
+      function openSimpleModal(title, bodyHtml) {
+        if (!settingsModal || !settingsModalBody || !settingsModalTitle) return;
+        settingsModalTitle.textContent = title;
+        settingsModalBody.innerHTML = bodyHtml;
+        settingsModal.hidden = false;
+        syncBodyModalLock();
+      }
+
+      function closeSimpleModal() {
+        if (settingsModal) settingsModal.hidden = true;
+        syncBodyModalLock();
+      }
+
+      function renderNotifications() {
+        if (!notificationList) return;
+        const state = loadJson(NOTIFICATIONS_KEY, defaultNotifications);
+        notificationList.innerHTML = '';
+
+        notificationConfig.forEach(function (item) {
+          const row = document.createElement('li');
+          row.className = 'settings-toggle-item';
+          const enabled = Boolean(state[item.key]);
+          row.innerHTML =
+            '<div class="settings-toggle-copy"><b><img src="' + item.icon + '" width="14" height="14" alt="" /> ' + item.label + '</b><span>Nur lokale Demo-Speicherung</span></div>' +
+            '<button type="button" class="settings-switch ' + (enabled ? 'is-on' : '') + '" data-toggle="' + item.key + '"><i></i></button>';
+
+          const toggle = row.querySelector('[data-toggle]');
+          toggle.addEventListener('click', function () {
+            const next = loadJson(NOTIFICATIONS_KEY, defaultNotifications);
+            next[item.key] = !next[item.key];
+            saveJson(NOTIFICATIONS_KEY, next);
+            renderNotifications();
+            showToast('Benachrichtigungseinstellungen als Demo aktualisiert.');
+          });
+
+          notificationList.appendChild(row);
+        });
+      }
+
+      const customerSettings = loadJson(SETTINGS_KEY, {
+        language: 'de',
+        darkMode: false
+      });
+
+      if (languageSelect) {
+        languageSelect.value = customerSettings.language || 'de';
+        languageSelect.addEventListener('change', function () {
+          const next = loadJson(SETTINGS_KEY, { language: 'de', darkMode: false });
+          next.language = languageSelect.value;
+          saveJson(SETTINGS_KEY, next);
+          showToast('Sprache als Demo gespeichert.');
+        });
+      }
+
+      if (customerSettings.darkMode) {
+        document.body.classList.add('customer-dark-preview');
+      }
+
+      if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', function () {
+          document.body.classList.toggle('customer-dark-preview');
+          const next = loadJson(SETTINGS_KEY, { language: 'de', darkMode: false });
+          next.darkMode = document.body.classList.contains('customer-dark-preview');
+          saveJson(SETTINGS_KEY, next);
+          showToast('Dark Mode Demo umgeschaltet.');
+        });
+      }
+
+      if (cookieSettingsBtn) {
+        cookieSettingsBtn.addEventListener('click', function () {
+          openSimpleModal('Cookie-Einstellungen Demo', '<p class="settings-note">Cookie-Consent ist fuer spaetere Integration vorbereitet. Aktuell wird nichts serverseitig gespeichert.</p>');
+        });
+      }
+
+      if (deleteAccountBtn) {
+        deleteAccountBtn.addEventListener('click', function () {
+          if (deleteConfirmInput) deleteConfirmInput.value = '';
+          if (deleteConfirmBtn) deleteConfirmBtn.disabled = true;
+          if (deleteModal) deleteModal.hidden = false;
+          syncBodyModalLock();
+        });
+      }
+
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', function () {
+          if (logoutModal) logoutModal.hidden = false;
+          syncBodyModalLock();
+        });
+      }
+
+      if (deleteConfirmInput && deleteConfirmBtn) {
+        deleteConfirmInput.addEventListener('input', function () {
+          deleteConfirmBtn.disabled = deleteConfirmInput.value.trim() !== 'LÖSCHEN';
+        });
+
+        deleteConfirmBtn.addEventListener('click', function () {
+          if (deleteModal) deleteModal.hidden = true;
+          syncBodyModalLock();
+          showToast('Diese Demo-Funktion loescht keine echten Daten.');
+        });
+      }
+
+      if (logoutConfirmBtn) {
+        logoutConfirmBtn.addEventListener('click', function () {
+          if (logoutModal) logoutModal.hidden = true;
+          syncBodyModalLock();
+          if (window.CustomerAuthDemo) {
+            window.CustomerAuthDemo.logout();
+          }
+          window.location.href = 'anmelden.html?loggedOut=1';
+        });
+      }
+
+      document.querySelectorAll('[data-close-delete]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          if (deleteModal) deleteModal.hidden = true;
+          syncBodyModalLock();
+        });
+      });
+
+      document.querySelectorAll('[data-close-logout]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          if (logoutModal) logoutModal.hidden = true;
+          syncBodyModalLock();
+        });
+      });
+
+      if (settingsModalClose) settingsModalClose.addEventListener('click', closeSimpleModal);
+      if (settingsModalOk) settingsModalOk.addEventListener('click', closeSimpleModal);
+
+      [settingsModal, deleteModal, logoutModal].forEach(function (modal) {
+        if (!modal) return;
+        modal.addEventListener('click', function (event) {
+          if (event.target === modal) {
+            modal.hidden = true;
+            syncBodyModalLock();
+          }
+        });
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        if (settingsModal && !settingsModal.hidden) settingsModal.hidden = true;
+        if (deleteModal && !deleteModal.hidden) deleteModal.hidden = true;
+        if (logoutModal && !logoutModal.hidden) logoutModal.hidden = true;
+        syncBodyModalLock();
+      });
+
+      renderNotifications();
+    })();
+  </script>
+</body>
+</html>

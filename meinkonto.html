@@ -16,6 +16,7 @@
   <meta property="og:url" content="meinkonto.html">
   <meta property="og:image" content="logo.png">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="auth-demo.css">
   <style>
     #customer-account.customer-account-page {
       display: block;
@@ -232,6 +233,19 @@
     .customer-quick-item strong {
       font-size: 14px;
       line-height: 1.35;
+    }
+
+    .customer-quick-meta {
+      font-size: 11px;
+      color: rgba(255,255,255,.72);
+    }
+
+    .customer-quick-meta.is-hidden {
+      display: none;
+    }
+
+    body.has-open-customer-modal {
+      overflow: hidden;
     }
 
     .customer-favorites-grid {
@@ -559,6 +573,10 @@
         <a href="index.html?page=services">Leistungen</a>
         <a href="flotte.html">Fahrzeugflotte</a>
         <a href="meinkonto.html" class="active">Mein Konto</a>
+        <a href="meine-fahrten.html">Meine Fahrten</a>
+        <a href="wallet-gutscheine.html">Wallet</a>
+        <a href="hilfe-kontakt.html">Hilfe & Kontakt</a>
+        <a href="kunden-einstellungen.html">Einstellungen</a>
         <a href="index.html?page=why">Ueber uns</a>
         <a href="index.html#kontakt">Kontakt</a>
       </nav>
@@ -609,30 +627,39 @@
         <article class="customer-card customer-quick">
           <h2>Schnellzugriffe</h2>
           <div class="customer-quick-grid" aria-label="Schnellzugriffe">
-            <button class="customer-quick-item" type="button" data-demo-action="Meine Fahrten">
+            <a class="customer-quick-item" href="meine-fahrten.html" aria-label="Zu Meine Fahrten">
               <img src="assets/icons/Taxi.svg" alt="Meine Fahrten Icon" loading="lazy">
               <strong>Meine Fahrten</strong>
-            </button>
+              <span class="customer-quick-meta" data-upcoming-rides-count>0 kommende Fahrten</span>
+            </a>
             <a class="customer-quick-item" href="rewards.html" aria-label="Zu Rewards">
               <img src="assets/icons/Rewards.svg" alt="Rewards Icon" loading="lazy">
               <strong>Rewards</strong>
             </a>
-            <button class="customer-quick-item" type="button" data-demo-action="Gutscheine">
+            <a class="customer-quick-item" href="wallet-gutscheine.html" aria-label="Zu Wallet und Gutscheinen">
               <img src="assets/icons/Gift%20Voucher.svg" alt="Gutschein Icon" loading="lazy">
               <strong>Gutscheine</strong>
-            </button>
+              <span class="customer-quick-meta" data-active-coupon-count>0 aktiv</span>
+              <span class="customer-quick-meta" data-wallet-balance>0 EUR Guthaben</span>
+            </a>
             <button class="customer-quick-item" type="button" data-demo-action="Lieblingsorte">
               <img src="assets/icons/Home.svg" alt="Home Icon" loading="lazy">
               <strong>Lieblingsorte</strong>
             </button>
-            <button class="customer-quick-item" type="button" data-demo-action="Benachrichtigungen">
+            <a class="customer-quick-item" href="meine-fahrten.html#journeyNotificationList" aria-label="Zu Kundenbenachrichtigungen">
               <img src="assets/icons/Clock.svg" alt="Benachrichtigungen Icon" loading="lazy">
               <strong>Benachrichtigungen</strong>
-            </button>
-            <button class="customer-quick-item" type="button" data-demo-action="Hilfe und Kontakt">
+              <span class="customer-quick-meta" data-unread-notification-count>0 ungelesen</span>
+            </a>
+            <a class="customer-quick-item" href="hilfe-kontakt.html" aria-label="Zu Hilfe und Kontakt">
               <img src="assets/icons/Phone.svg" alt="Phone Icon" loading="lazy">
               <strong>Hilfe und Kontakt</strong>
-            </button>
+            </a>
+            <a class="customer-quick-item" href="kunden-einstellungen.html#notification-settings" aria-label="Zu Einstellungen und Benachrichtigungen">
+              <img src="assets/icons/Profile.svg" alt="Einstellungen Icon" loading="lazy">
+              <strong>Einstellungen</strong>
+              <span class="customer-quick-meta">Benachrichtigungen verwalten</span>
+            </a>
           </div>
         </article>
 
@@ -697,10 +724,11 @@
 
           <div class="customer-actions">
             <button class="customer-btn secondary" type="button" data-demo-action="Sprache aendern">Sprache</button>
-            <button class="customer-btn secondary" type="button" data-demo-action="Benachrichtigungen">Benachrichtigungen</button>
+            <a class="customer-btn secondary" href="kunden-einstellungen.html#notification-settings">Benachrichtigungen</a>
             <a class="customer-btn secondary" href="datenschutz.html">Datenschutz</a>
             <a class="customer-btn secondary" href="impressum.html">Impressum</a>
-            <button class="customer-btn secondary" type="button" data-demo-action="Abmelden">Abmelden Demo</button>
+            <a class="customer-btn secondary" href="kunden-einstellungen.html">Einstellungen</a>
+            <button class="customer-btn secondary" type="button" data-demo-logout>Abmelden</button>
             <a class="customer-btn secondary" href="https://wa.me/4972743567?text=Ich%20habe%20eine%20Frage%20zum%20Konto" target="_blank" rel="noreferrer">WhatsApp Hilfe</a>
           </div>
         </article>
@@ -755,6 +783,10 @@
         <a href="index.html">Startseite</a>
         <a href="flotte.html">Fahrzeugflotte</a>
         <a href="meinkonto.html">Mein Konto</a>
+        <a href="meine-fahrten.html">Meine Fahrten</a>
+        <a href="wallet-gutscheine.html">Wallet & Gutscheine</a>
+        <a href="hilfe-kontakt.html">Hilfe & Kontakt</a>
+        <a href="kunden-einstellungen.html">Einstellungen</a>
         <a href="rewards.html">Rewards</a>
         <a href="index.html?page=booking">Jetzt buchen</a>
       </div>
@@ -789,8 +821,20 @@
 
   <p class="customer-toast" data-demo-toast aria-live="polite"></p>
 
+  <script src="customer-auth-demo.js"></script>
+  <script src="customer-journey-demo.js"></script>
   <script>
     (function () {
+      if (window.CustomerAuthDemo && window.CustomerAuthDemo.requireLogin({
+        targetSelector: '#customer-account',
+        pageTitle: 'Mein Konto'
+      })) {
+        return;
+      }
+
+      const customerProfile = window.CustomerAuthDemo ? window.CustomerAuthDemo.getProfile() : {};
+      const journeyDemo = window.CustomerJourneyDemo || null;
+      const unreadStorageKey = 'tgCustomerJourneyNotificationsRead';
       const nav = document.querySelector('.site-nav');
       const toggle = document.querySelector('.menu-toggle');
       const backdrop = document.querySelector('.site-nav-backdrop');
@@ -800,6 +844,85 @@
       const modalBody = document.querySelector('[data-demo-modal-body]');
       const toast = document.querySelector('[data-demo-toast]');
       const darkToggle = document.querySelector('[data-demo-dark-toggle]');
+      const upcomingCount = document.querySelector('[data-upcoming-rides-count]');
+      const unreadCount = document.querySelector('[data-unread-notification-count]');
+      const activeCouponCount = document.querySelector('[data-active-coupon-count]');
+      const walletBalance = document.querySelector('[data-wallet-balance]');
+
+      const profileName = document.querySelector('.customer-profile-name');
+      const profileMeta = document.querySelector('.customer-profile-meta');
+      const firstNameValue = document.querySelector('.customer-data-list li:nth-child(1) b');
+      const lastNameValue = document.querySelector('.customer-data-list li:nth-child(2) b');
+      const phoneValue = document.querySelector('.customer-data-list li:nth-child(3) b');
+      const emailValue = document.querySelector('.customer-data-list li:nth-child(4) b');
+
+      if (customerProfile && Object.keys(customerProfile).length) {
+        if (profileName) {
+          profileName.textContent = customerProfile.fullName || [customerProfile.firstName, customerProfile.lastName].filter(Boolean).join(' ') || 'Demo Kunde';
+        }
+        if (profileMeta) {
+          const year = customerProfile.registeredAt ? new Date(customerProfile.registeredAt).getFullYear() : new Date().getFullYear();
+          profileMeta.textContent = 'Mitglied seit: ' + String(year);
+        }
+        if (firstNameValue) firstNameValue.textContent = customerProfile.firstName || 'Demo';
+        if (lastNameValue) lastNameValue.textContent = customerProfile.lastName || 'Kunde';
+        if (phoneValue) phoneValue.textContent = customerProfile.phone || '+49 7274 000000';
+        if (emailValue) emailValue.textContent = customerProfile.email || 'demo@taxi-germersheim.de';
+      }
+
+      function getReadState() {
+        try {
+          return JSON.parse(localStorage.getItem(unreadStorageKey) || '{}');
+        } catch (error) {
+          return {};
+        }
+      }
+
+      function updateJourneyCounts() {
+        if (!journeyDemo) return;
+
+        const rides = Array.isArray(journeyDemo.rides) ? journeyDemo.rides.slice() : [];
+        if (typeof journeyDemo.getActiveRide === 'function') {
+          const liveRide = journeyDemo.getActiveRide();
+          const rideIndex = rides.findIndex(function (ride) {
+            return ride.id === liveRide.id;
+          });
+          if (rideIndex !== -1) {
+            rides[rideIndex] = liveRide;
+          }
+        }
+
+        const notifications = typeof journeyDemo.getCustomerNotifications === 'function'
+          ? journeyDemo.getCustomerNotifications()
+          : (Array.isArray(journeyDemo.customerNotifications) ? journeyDemo.customerNotifications : []);
+
+        if (upcomingCount) {
+          const total = rides.filter(function (ride) {
+            return ride.section === 'kommend';
+          }).length;
+          upcomingCount.textContent = total + ' kommende Fahrten';
+        }
+
+        if (unreadCount) {
+          const readState = getReadState();
+          const unread = notifications.reduce(function (sum, item) {
+            return readState[item.id] ? sum : sum + 1;
+          }, 0);
+          unreadCount.textContent = unread + ' ungelesen';
+          unreadCount.classList.toggle('is-hidden', unread === 0);
+        }
+
+        if (activeCouponCount && Array.isArray(journeyDemo.coupons)) {
+          const active = journeyDemo.coupons.filter(function (coupon) {
+            return coupon.status === 'Aktiv' || coupon.status === 'Bald ablaufend';
+          }).length;
+          activeCouponCount.textContent = active + ' aktiv';
+        }
+
+        if (walletBalance && journeyDemo.walletSummary && journeyDemo.walletSummary.balance) {
+          walletBalance.textContent = journeyDemo.walletSummary.balance + ' Guthaben';
+        }
+      }
 
       function showToast(message) {
         if (!toast) return;
@@ -832,12 +955,14 @@
 
         modal.hidden = false;
         modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('has-open-customer-modal');
       }
 
       function closeModal() {
         if (!modal) return;
         modal.hidden = true;
         modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('has-open-customer-modal');
       }
 
       if (toggle && nav) {
@@ -891,6 +1016,15 @@
           showToast('Dark Mode Vorschau umgeschaltet (nur Demo).');
         });
       }
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('welcome') === '1') {
+        showToast('Willkommen! Ihr Demo-Konto wurde erfolgreich eingerichtet.');
+      }
+
+      window.addEventListener('tg-customer-notifications-updated', updateJourneyCounts);
+      window.addEventListener('tg-wallet-coupon-updated', updateJourneyCounts);
+      updateJourneyCounts();
     })();
   </script>
 </body>

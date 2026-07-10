@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wallet & Gutscheine | Taxi Germersheim</title>
+  <meta name="description" content="Taxi Germersheim - Wallet, Gutscheine, Zahlungsmethoden und Rewards-Verknuepfung als Demo." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="wallet-gutscheine.css" />
+  <link rel="stylesheet" href="auth-demo.css" />
+</head>
+<body>
+  <div class="background" aria-hidden="true"></div>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header>
+    <div class="container nav">
+      <a href="index.html" class="brand" aria-label="Taxi Germersheim Startseite">
+        <span class="brand-logo"><img src="logo.png" alt="Taxi Germersheim Logo" /></span>
+        <span class="brand-text">Taxi Germersheim</span>
+      </a>
+      <nav class="nav-links" aria-label="Hauptnavigation">
+        <a href="index.html">Start</a>
+        <a href="flotte.html">Flotte</a>
+        <a href="meinkonto.html">Mein Konto</a>
+        <a href="meine-fahrten.html">Meine Fahrten</a>
+        <a href="wallet-gutscheine.html" class="active" aria-current="page">Wallet</a>
+        <a href="hilfe-kontakt.html">Hilfe</a>
+        <a href="kunden-einstellungen.html">Einstellungen</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost" href="tel:+497272123456">Anrufen</a>
+        <a class="btn btn-primary" href="index.html#booking">Jetzt buchen</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="wallet-page" class="wallet-page">
+    <div class="container wallet-shell">
+      <section class="wallet-card wallet-head" aria-label="Wallet Intro">
+        <h1>Wallet & Gutscheine</h1>
+        <p>Guthaben, Gutscheine, Zahlungsmethoden und Rewards-Verknuepfung in einer kompakten Demo-Ansicht.</p>
+      </section>
+
+      <section class="wallet-card" aria-label="Guthaben Demo">
+        <div class="wallet-balance-core">
+          <span class="wallet-pill"><img src="assets/icons/Profile.svg" width="14" height="14" alt="" /> Konto Wallet</span>
+          <div class="wallet-balance-amount"><img src="assets/icons/Gift%20Voucher.svg" alt="" /> <span id="walletBalanceAmount">0 EUR</span></div>
+          <div class="wallet-mini-grid">
+            <div class="wallet-mini"><b>Letzte Gutschrift</b><span id="walletLastTopup">-</span></div>
+            <div class="wallet-mini"><b>Letzte Verwendung</b><span id="walletLastUse">-</span></div>
+          </div>
+          <p class="wallet-note" id="walletInfoNote">Demo-Guthaben - keine echte Zahlung oder Speicherung</p>
+        </div>
+        <div class="wallet-actions">
+          <button type="button" class="wallet-btn" data-open-modal="balance-history"><img src="assets/icons/Clock.svg" width="14" height="14" alt="" /> Guthaben-Verlauf</button>
+        </div>
+      </section>
+
+      <section class="wallet-card" aria-label="Gutscheincode pruefen">
+        <h2>Gutscheincode</h2>
+        <form class="wallet-code-form" id="voucherCodeForm">
+          <input class="wallet-input" id="voucherCodeInput" type="text" placeholder="Gutscheincode eingeben" aria-label="Gutscheincode eingeben" />
+          <div class="wallet-actions">
+            <button type="submit" class="wallet-btn"><img src="assets/icons/Check%20Mark.svg" width="14" height="14" alt="" /> Code pruefen</button>
+          </div>
+        </form>
+        <p id="voucherCodeFeedback" class="wallet-feedback" aria-live="polite"></p>
+      </section>
+
+      <section class="wallet-card" aria-label="Aktive Gutscheine">
+        <div class="wallet-actions">
+          <h2>Aktive Gutscheine</h2>
+          <span class="wallet-pill" id="activeCouponCount">0 aktiv</span>
+        </div>
+        <div class="wallet-grid cols-2" id="activeCouponList"></div>
+      </section>
+
+      <section class="wallet-card" aria-label="Eingeloeste und abgelaufene Gutscheine">
+        <div class="wallet-actions">
+          <h2>Eingeloest & Historie</h2>
+          <span class="wallet-pill" id="historyCouponCount">0 Eintraege</span>
+        </div>
+        <div class="wallet-grid cols-2" id="historyCouponList"></div>
+      </section>
+
+      <section class="wallet-card" aria-label="Zahlungsmethoden Demo">
+        <h2>Zahlungsmethoden Demo</h2>
+        <p class="wallet-note">Demo - keine Zahlungsabwicklung. Keine echten Zahlungsdaten, keine Kartennummern.</p>
+        <div class="wallet-grid" id="paymentMethodList"></div>
+        <div class="wallet-actions">
+          <button type="button" class="wallet-btn" data-open-modal="payment-add"><img src="assets/icons/Phone.svg" width="14" height="14" alt="" /> Zahlungsmethode hinzufuegen</button>
+        </div>
+      </section>
+
+      <section class="wallet-card" aria-label="Rewards Kurzansicht">
+        <div class="wallet-actions">
+          <h2>Rewards Kurzansicht</h2>
+          <span class="wallet-pill"><img src="assets/icons/Rewards.svg" width="14" height="14" alt="" /> Rewards</span>
+        </div>
+        <div class="wallet-mini-grid">
+          <div class="wallet-mini"><b>Aktuelles Level</b><span id="rewardLevel">-</span></div>
+          <div class="wallet-mini"><b>Punktestand</b><span id="rewardPoints">-</span></div>
+          <div class="wallet-mini"><b>Naechstes Level</b><span id="rewardNext">-</span></div>
+          <div class="wallet-mini"><b>Zuletzt erhalten</b><span id="rewardLastEarned">-</span></div>
+        </div>
+        <div class="wallet-progress" aria-label="Fortschritt zum naechsten Level"><i id="rewardProgressBar"></i></div>
+        <p class="wallet-note" id="rewardHint"></p>
+        <div class="wallet-actions">
+          <a class="wallet-btn" href="rewards.html"><img src="assets/icons/Rewards.svg" width="14" height="14" alt="" /> Zur Rewards-Seite</a>
+          <a class="wallet-btn" href="meine-fahrten.html"><img src="assets/icons/Route.svg" width="14" height="14" alt="" /> Fahrten anzeigen</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="wallet-modal" id="walletModal" hidden>
+    <article class="wallet-modal-card" role="dialog" aria-modal="true" aria-labelledby="walletModalTitle">
+      <div class="wallet-modal-head">
+        <h3 id="walletModalTitle">Demo-Details</h3>
+        <button type="button" class="wallet-modal-close" id="walletModalClose" aria-label="Schliessen">&times;</button>
+      </div>
+      <div id="walletModalBody"></div>
+      <button type="button" class="wallet-btn" id="walletModalOk">Verstanden</button>
+    </article>
+  </div>
+
+  <div class="wallet-toast" id="walletToast" role="status" aria-live="polite"></div>
+
+  <nav class="mobile-nav" aria-label="Mobile Navigation">
+    <a href="index.html" class="mobile-nav-item">
+      <img src="assets/icons/Home.svg" alt="" width="20" height="20" />
+      <span>Start</span>
+    </a>
+    <a href="meinkonto.html" class="mobile-nav-item">
+      <img src="assets/icons/Profile.svg" alt="" width="20" height="20" />
+      <span>Konto</span>
+    </a>
+    <a href="meine-fahrten.html" class="mobile-nav-item">
+      <img src="assets/icons/Route.svg" alt="" width="20" height="20" />
+      <span>Fahrten</span>
+    </a>
+    <a href="wallet-gutscheine.html" class="mobile-nav-item active" aria-current="page">
+      <img src="assets/icons/Gift%20Voucher.svg" alt="" width="20" height="20" />
+      <span>Wallet</span>
+    </a>
+    <a href="hilfe-kontakt.html" class="mobile-nav-item">
+      <img src="assets/icons/Phone.svg" alt="" width="20" height="20" />
+      <span>Hilfe</span>
+    </a>
+    <a href="kunden-einstellungen.html" class="mobile-nav-item">
+      <img src="assets/icons/Clock.svg" alt="" width="20" height="20" />
+      <span>Einstellungen</span>
+    </a>
+  </nav>
+
+  <script src="customer-auth-demo.js"></script>
+  <script src="script.js"></script>
+  <script src="customer-journey-demo.js"></script>
+  <script>
+    (function () {
+      if (window.CustomerAuthDemo && window.CustomerAuthDemo.requireLogin({
+        targetSelector: '#wallet-page',
+        pageTitle: 'Wallet und Gutscheine'
+      })) {
+        return;
+      }
+
+      const DEMO = window.CustomerJourneyDemo;
+      if (!DEMO) return;
+
+      const wallet = DEMO.walletSummary || {};
+      const coupons = Array.isArray(DEMO.coupons) ? DEMO.coupons.slice() : [];
+      const paymentMethods = Array.isArray(DEMO.paymentMethods) ? DEMO.paymentMethods.slice() : [];
+      const rewards = DEMO.rewardsPreview || {};
+
+      const balanceAmount = document.getElementById('walletBalanceAmount');
+      const lastTopup = document.getElementById('walletLastTopup');
+      const lastUse = document.getElementById('walletLastUse');
+      const infoNote = document.getElementById('walletInfoNote');
+
+      const activeList = document.getElementById('activeCouponList');
+      const historyList = document.getElementById('historyCouponList');
+      const activeCount = document.getElementById('activeCouponCount');
+      const historyCount = document.getElementById('historyCouponCount');
+
+      const methodList = document.getElementById('paymentMethodList');
+      const codeForm = document.getElementById('voucherCodeForm');
+      const codeInput = document.getElementById('voucherCodeInput');
+      const codeFeedback = document.getElementById('voucherCodeFeedback');
+
+      const rewardLevel = document.getElementById('rewardLevel');
+      const rewardPoints = document.getElementById('rewardPoints');
+      const rewardNext = document.getElementById('rewardNext');
+      const rewardLastEarned = document.getElementById('rewardLastEarned');
+      const rewardHint = document.getElementById('rewardHint');
+      const rewardProgressBar = document.getElementById('rewardProgressBar');
+
+      const modal = document.getElementById('walletModal');
+      const modalBody = document.getElementById('walletModalBody');
+      const modalClose = document.getElementById('walletModalClose');
+      const modalOk = document.getElementById('walletModalOk');
+      const modalTitle = document.getElementById('walletModalTitle');
+
+      const toast = document.getElementById('walletToast');
+      let toastTimer = null;
+
+      function showToast(message) {
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add('is-visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove('is-visible');
+        }, 1800);
+      }
+
+      function openModal(title, bodyHtml) {
+        if (!modal || !modalBody || !modalTitle) return;
+        modalTitle.textContent = title;
+        modalBody.innerHTML = bodyHtml;
+        modal.hidden = false;
+        document.body.classList.add('has-open-wallet-modal');
+      }
+
+      function closeModal() {
+        if (!modal) return;
+        modal.hidden = true;
+        document.body.classList.remove('has-open-wallet-modal');
+      }
+
+      function statusClass(status) {
+        if (status === 'Aktiv') return 'is-active';
+        if (status === 'Bald ablaufend') return 'is-near';
+        if (status === 'Eingeloest') return 'is-used';
+        return 'is-expired';
+      }
+
+      function statusIcon(status) {
+        if (status === 'Aktiv' || status === 'Bald ablaufend') return 'assets/icons/Gift%20Voucher.svg';
+        if (status === 'Eingeloest') return 'assets/icons/Check%20Mark.svg';
+        return 'assets/icons/Calendar.svg';
+      }
+
+      function renderWalletSummary() {
+        if (balanceAmount) balanceAmount.textContent = wallet.balance || '-';
+        if (lastTopup) lastTopup.textContent = wallet.lastTopup || '-';
+        if (lastUse) lastUse.textContent = wallet.lastUse || '-';
+        if (infoNote) infoNote.textContent = wallet.info || 'Demo-Guthaben - keine echte Zahlung oder Speicherung';
+      }
+
+      function renderCoupons() {
+        if (!activeList || !historyList) return;
+        activeList.innerHTML = '';
+        historyList.innerHTML = '';
+
+        const activeCoupons = coupons.filter(function (item) {
+          return item.status === 'Aktiv' || item.status === 'Bald ablaufend';
+        });
+
+        const historyCoupons = coupons.filter(function (item) {
+          return item.status === 'Eingeloest' || item.status === 'Abgelaufen';
+        });
+
+        activeCoupons.forEach(function (item) {
+          activeList.appendChild(createCouponCard(item));
+        });
+
+        historyCoupons.forEach(function (item) {
+          historyList.appendChild(createCouponCard(item));
+        });
+
+        if (activeCount) activeCount.textContent = activeCoupons.length + ' aktiv';
+        if (historyCount) historyCount.textContent = historyCoupons.length + ' Eintraege';
+
+        window.dispatchEvent(new CustomEvent('tg-wallet-coupon-updated', {
+          detail: {
+            activeCount: activeCoupons.length,
+            total: coupons.length,
+            balance: wallet.balance || '0 EUR'
+          }
+        }));
+      }
+
+      function createCouponCard(item) {
+        const card = document.createElement('article');
+        card.className = 'wallet-coupon';
+        card.innerHTML =
+          '<div class="wallet-coupon-head">' +
+            '<div class="wallet-coupon-title"><b>' + item.title + '</b><span>Wert: ' + item.value + '</span></div>' +
+            '<span class="wallet-status ' + statusClass(item.status) + '"><img src="' + statusIcon(item.status) + '" alt="" />' + item.status + '</span>' +
+          '</div>' +
+          '<div class="wallet-coupon-meta">' +
+            '<div class="wallet-mini"><b>Gueltig bis</b><span>' + item.validUntil + '</span></div>' +
+            '<div class="wallet-mini"><b>Bedingungen</b><span>' + item.conditions + '</span></div>' +
+          '</div>' +
+          '<div class="wallet-actions">' +
+            '<button type="button" class="wallet-btn" data-action="redeem"><img src="assets/icons/Gift%20Voucher.svg" width="14" height="14" alt="" /> Einloesen</button>' +
+            '<button type="button" class="wallet-btn" data-action="details"><img src="assets/icons/Calendar.svg" width="14" height="14" alt="" /> Details</button>' +
+          '</div>';
+
+        const redeem = card.querySelector('[data-action="redeem"]');
+        redeem.addEventListener('click', function () {
+          showToast('Einloesen ist als Demo vorbereitet. Keine echte Verrechnung.');
+        });
+
+        const details = card.querySelector('[data-action="details"]');
+        details.addEventListener('click', function () {
+          openModal('Gutschein-Details',
+            '<ul class="wallet-modal-list">' +
+              '<li><strong>Titel:</strong> ' + item.title + '</li>' +
+              '<li><strong>Wert:</strong> ' + item.value + '</li>' +
+              '<li><strong>Status:</strong> ' + item.status + '</li>' +
+              '<li><strong>Gueltig bis:</strong> ' + item.validUntil + '</li>' +
+              '<li><strong>Bedingungen:</strong> ' + item.conditions + '</li>' +
+              '<li><strong>Hinweis:</strong> Demo ohne echte Speicherung oder Zahlung.</li>' +
+            '</ul>'
+          );
+        });
+
+        return card;
+      }
+
+      function renderPaymentMethods() {
+        if (!methodList) return;
+        methodList.innerHTML = '';
+
+        paymentMethods.forEach(function (item) {
+          const card = document.createElement('article');
+          card.className = 'wallet-method';
+          card.innerHTML =
+            '<div class="wallet-method-top">' +
+              '<div class="wallet-method-name"><img src="assets/icons/Phone.svg" alt="" /><b>' + item.name + '</b></div>' +
+              '<span class="wallet-pill">' + (item.isDefault ? 'Standard' : item.type) + '</span>' +
+            '</div>' +
+            '<small>' + item.note + '</small>' +
+            '<div class="wallet-actions">' +
+              '<button type="button" class="wallet-btn" data-method="set-default"><img src="assets/icons/Check%20Mark.svg" width="14" height="14" alt="" /> Standard festlegen</button>' +
+              '<button type="button" class="wallet-btn" data-method="remove"><img src="assets/icons/Clock.svg" width="14" height="14" alt="" /> Entfernen</button>' +
+            '</div>';
+
+          card.querySelector('[data-method="set-default"]').addEventListener('click', function () {
+            showToast('Standard festlegen ist als Demo vorbereitet.');
+          });
+
+          card.querySelector('[data-method="remove"]').addEventListener('click', function () {
+            showToast('Entfernen ist als Demo vorbereitet.');
+          });
+
+          methodList.appendChild(card);
+        });
+      }
+
+      function renderRewardsPreview() {
+        if (rewardLevel) rewardLevel.textContent = rewards.level || '-';
+        if (rewardPoints) rewardPoints.textContent = String(rewards.points || 0) + ' Punkte';
+        if (rewardNext) rewardNext.textContent = rewards.nextLevel || '-';
+        if (rewardLastEarned) rewardLastEarned.textContent = rewards.lastEarned || '-';
+        if (rewardHint) rewardHint.textContent = rewards.hint || '';
+
+        if (rewardProgressBar) {
+          const points = Number(rewards.points || 0);
+          const toNext = Number(rewards.pointsToNext || 1);
+          const percent = Math.max(4, Math.min(96, Math.round((points / (points + toNext)) * 100)));
+          rewardProgressBar.style.setProperty('--wallet-progress', percent + '%');
+        }
+      }
+
+      if (codeForm) {
+        codeForm.addEventListener('submit', function (event) {
+          event.preventDefault();
+          const value = (codeInput && codeInput.value ? codeInput.value.trim() : '').toUpperCase();
+          if (!value) {
+            codeFeedback.className = 'wallet-feedback is-error';
+            codeFeedback.textContent = 'Bitte zuerst einen Demo-Code eingeben.';
+            return;
+          }
+
+          const success = value.indexOf('TG') === 0 || value.indexOf('YUMAK') !== -1;
+          if (success) {
+            codeFeedback.className = 'wallet-feedback is-success';
+            codeFeedback.textContent = 'Demo-Erfolg: Code erkannt, Einloesung ist vorbereitet.';
+          } else {
+            codeFeedback.className = 'wallet-feedback is-error';
+            codeFeedback.textContent = 'Demo-Fehler: Code ist in dieser Demo nicht verfuegbar.';
+          }
+        });
+      }
+
+      document.querySelectorAll('[data-open-modal]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          const type = button.getAttribute('data-open-modal');
+          if (type === 'balance-history') {
+            openModal('Guthaben-Verlauf Demo',
+              '<ul class="wallet-modal-list">' +
+                '<li>08.07.2026 - Gutschrift +10,00 EUR (Demo)</li>' +
+                '<li>06.07.2026 - Verwendung -5,00 EUR fuer TG-260710-006 (Demo)</li>' +
+                '<li>03.07.2026 - Startguthaben +37,50 EUR (Demo)</li>' +
+              '</ul>'
+            );
+          }
+
+          if (type === 'payment-add') {
+            openModal('Zahlungsmethode hinzufuegen Demo',
+              '<p class="wallet-note">Diese Funktion ist fuer spaetere Payment-API vorbereitet. Aktuell keine Eingabe von Kartendaten.</p>' +
+              '<ul class="wallet-modal-list">' +
+                '<li>Barzahlung aktivierbar</li>' +
+                '<li>EC-Karte im Fahrzeug aktivierbar</li>' +
+                '<li>Kreditkarte und PayPal nur als Demo-Flows</li>' +
+              '</ul>'
+            );
+          }
+        });
+      });
+
+      if (modalClose) modalClose.addEventListener('click', closeModal);
+      if (modalOk) modalOk.addEventListener('click', closeModal);
+
+      if (modal) {
+        modal.addEventListener('click', function (event) {
+          if (event.target === modal) closeModal();
+        });
+      }
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') closeModal();
+      });
+
+      renderWalletSummary();
+      renderCoupons();
+      renderPaymentMethods();
+      renderRewardsPreview();
+    })();
+  </script>
+</body>
+</html>

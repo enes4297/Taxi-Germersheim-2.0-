@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Konto Einrichtung | Taxi Germersheim</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="auth-demo.css" />
+</head>
+<body class="auth-page">
+  <main class="auth-shell" aria-labelledby="setupTitle">
+    <a class="auth-brand" href="index.html">
+      <img src="logo.png" alt="Taxi Germersheim" />
+      <span>Taxi Germersheim</span>
+    </a>
+
+    <header class="auth-head">
+      <h1 id="setupTitle">Ihr Konto einrichten</h1>
+      <p>4-Schritt-Onboarding als Demo. Daten werden nur lokal im Browser gespeichert.</p>
+    </header>
+
+    <p id="setupProgress" class="onboarding-progress" aria-live="polite">Schritt 1 von 4</p>
+
+    <form id="setupForm" class="auth-form" novalidate>
+      <section class="onboarding-step" data-step="1">
+        <h2>Persoenliche Daten</h2>
+        <div class="onboarding-grid cols-2">
+          <div class="auth-field">
+            <label for="setupFirstName">Vorname</label>
+            <input id="setupFirstName" name="firstName" type="text" required />
+          </div>
+          <div class="auth-field">
+            <label for="setupLastName">Nachname</label>
+            <input id="setupLastName" name="lastName" type="text" required />
+          </div>
+        </div>
+      </section>
+
+      <section class="onboarding-step" data-step="2" hidden>
+        <h2>Kontakt und Mobilitaet</h2>
+        <div class="onboarding-grid">
+          <div class="auth-field">
+            <label for="setupPhone">Telefon</label>
+            <input id="setupPhone" name="phone" type="tel" required />
+          </div>
+          <div class="auth-field">
+            <label for="setupDefaultAddress">Bevorzugte Startadresse</label>
+            <input id="setupDefaultAddress" name="defaultAddress" type="text" placeholder="z. B. Bahnhof Germersheim" required />
+          </div>
+        </div>
+      </section>
+
+      <section class="onboarding-step" data-step="3" hidden>
+        <h2>Praeferenzen</h2>
+        <div class="onboarding-grid">
+          <label class="auth-check" for="setupSilentRide">
+            <input id="setupSilentRide" name="silentRide" type="checkbox" />
+            <span>Ruhige Fahrt bevorzugen</span>
+          </label>
+          <label class="auth-check" for="setupInvoiceByMail">
+            <input id="setupInvoiceByMail" name="invoiceByMail" type="checkbox" checked />
+            <span>Rechnung per E-Mail erhalten</span>
+          </label>
+          <label class="auth-check" for="setupPushDeals">
+            <input id="setupPushDeals" name="pushDeals" type="checkbox" checked />
+            <span>Deals und Gutscheine als Hinweis erhalten</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="onboarding-step" data-step="4" hidden>
+        <h2>Abschluss</h2>
+        <p class="auth-note">Mit Abschluss wird Ihr Demo-Konto lokal aktiviert und Sie werden direkt in Mein Konto geleitet.</p>
+        <div class="onboarding-grid">
+          <label class="auth-check" for="setupConsent">
+            <input id="setupConsent" name="consent" type="checkbox" required />
+            <span>Ich habe verstanden, dass dies eine Demo ohne echte Kontosicherheit ist.</span>
+          </label>
+        </div>
+      </section>
+
+      <p id="setupError" class="auth-error" aria-live="assertive"></p>
+
+      <div class="auth-actions">
+        <button id="setupBack" class="auth-btn" type="button">Zurueck</button>
+        <button id="setupNext" class="auth-submit" type="button">Weiter</button>
+        <button id="setupFinish" class="auth-submit" type="submit" hidden>Einrichtung abschliessen</button>
+      </div>
+    </form>
+  </main>
+
+  <script src="customer-auth-demo.js"></script>
+  <script>
+    (function () {
+      var draftRaw = sessionStorage.getItem("taxiCustomerDemoRegistrationDraft");
+      var registrationDraft = null;
+      try {
+        registrationDraft = draftRaw ? JSON.parse(draftRaw) : null;
+      } catch (_error) {
+        registrationDraft = null;
+      }
+
+      if (!registrationDraft) {
+        window.location.replace("registrieren.html");
+        return;
+      }
+
+      var form = document.getElementById("setupForm");
+      var error = document.getElementById("setupError");
+      var progress = document.getElementById("setupProgress");
+      var backButton = document.getElementById("setupBack");
+      var nextButton = document.getElementById("setupNext");
+      var finishButton = document.getElementById("setupFinish");
+      var steps = Array.prototype.slice.call(document.querySelectorAll(".onboarding-step"));
+      var currentStep = 1;
+      var maxStep = 4;
+
+      form.elements.firstName.value = registrationDraft.firstName || "";
+      form.elements.lastName.value = registrationDraft.lastName || "";
+      form.elements.phone.value = registrationDraft.phone || "";
+
+      function renderStep() {
+        steps.forEach(function (step) {
+          var stepIndex = Number(step.getAttribute("data-step"));
+          step.hidden = stepIndex !== currentStep;
+        });
+
+        progress.textContent = "Schritt " + String(currentStep) + " von " + String(maxStep);
+        backButton.disabled = currentStep === 1;
+        nextButton.hidden = currentStep === maxStep;
+        finishButton.hidden = currentStep !== maxStep;
+      }
+
+      function validateCurrentStep() {
+        error.textContent = "";
+
+        if (currentStep === 1) {
+          if (!(form.elements.firstName.value || "").trim() || !(form.elements.lastName.value || "").trim()) {
+            error.textContent = "Bitte Vor- und Nachnamen ausfuellen.";
+            return false;
+          }
+        }
+
+        if (currentStep === 2) {
+          if ((form.elements.phone.value || "").trim().length < 6) {
+            error.textContent = "Bitte eine gueltige Telefonnummer eingeben.";
+            return false;
+          }
+          if (!(form.elements.defaultAddress.value || "").trim()) {
+            error.textContent = "Bitte eine bevorzugte Startadresse angeben.";
+            return false;
+          }
+        }
+
+        if (currentStep === 4) {
+          if (!form.elements.consent.checked) {
+            error.textContent = "Bitte den Demo-Hinweis bestaetigen.";
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      nextButton.addEventListener("click", function () {
+        if (!validateCurrentStep()) return;
+        currentStep = Math.min(maxStep, currentStep + 1);
+        renderStep();
+      });
+
+      backButton.addEventListener("click", function () {
+        error.textContent = "";
+        currentStep = Math.max(1, currentStep - 1);
+        renderStep();
+      });
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        if (!validateCurrentStep()) return;
+
+        var firstName = (form.elements.firstName.value || "").trim();
+        var lastName = (form.elements.lastName.value || "").trim();
+        var phone = (form.elements.phone.value || "").trim();
+        var defaultAddress = (form.elements.defaultAddress.value || "").trim();
+
+        var profile = {
+          fullName: firstName + " " + lastName,
+          firstName: firstName,
+          lastName: lastName,
+          email: registrationDraft.email || "",
+          phone: phone,
+          defaultAddress: defaultAddress,
+          registeredAt: registrationDraft.registeredAt || Date.now()
+        };
+
+        var preferences = {
+          silentRide: !!form.elements.silentRide.checked,
+          invoiceByMail: !!form.elements.invoiceByMail.checked,
+          pushDeals: !!form.elements.pushDeals.checked,
+          onboardingComplete: true,
+          onboardingFinishedAt: Date.now(),
+          source: "registration"
+        };
+
+        window.CustomerAuthDemo.setLoginState(profile, preferences);
+        sessionStorage.removeItem("taxiCustomerDemoRegistrationDraft");
+        sessionStorage.removeItem("taxiCustomerDemoRegistrationPass");
+        window.location.href = "meinkonto.html?welcome=1";
+      });
+
+      renderStep();
+    })();
+  </script>
+</body>
+</html>
