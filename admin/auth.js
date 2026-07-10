@@ -5,6 +5,7 @@
   const KEY_USER = "demoAdminUser";
   const KEY_ROLE = "demoAdminRole";
   const KEY_NOTICE = "demoAdminPermissionNotice";
+  const KEY_DEMO_NOTIFICATIONS = "demoAdminNotificationsState";
   const DEMO_NOTIFICATION_LIMIT = 3;
 
   const DEMO_USERS = {
@@ -362,6 +363,48 @@
     }));
   }
 
+  function readNotificationStateStore() {
+    try {
+      const raw = localStorage.getItem(KEY_DEMO_NOTIFICATIONS);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function writeNotificationStateStore(store) {
+    try {
+      localStorage.setItem(KEY_DEMO_NOTIFICATIONS, JSON.stringify(store));
+    } catch {
+      // Demo-only: ignore storage failures.
+    }
+  }
+
+  function getReadNotificationIdsForRole(role) {
+    const store = readNotificationStateStore();
+    const byRole = store && typeof store.byRole === "object" ? store.byRole : {};
+    const roleIds = byRole[role];
+    if (!Array.isArray(roleIds)) return new Set();
+    return new Set(roleIds.map((value) => String(value || "").trim()).filter(Boolean));
+  }
+
+  function persistReadNotificationIdsForRole(role, notifications) {
+    const store = readNotificationStateStore();
+    if (!store.byRole || typeof store.byRole !== "object") {
+      store.byRole = {};
+    }
+
+    store.byRole[role] = notifications
+      .filter((item) => item.read)
+      .map((item) => String(item.id || "").trim())
+      .filter(Boolean);
+
+    store.updatedAt = new Date().toISOString();
+    writeNotificationStateStore(store);
+  }
+
   function typeClassName(type) {
     const normalized = String(type || "").toLowerCase();
     if (normalized === "warnung") return "is-warning";
@@ -451,6 +494,10 @@
     })();
 
     const notifications = getNotificationsForRole(role);
+    const readIds = getReadNotificationIdsForRole(role);
+    notifications.forEach((item) => {
+      item.read = readIds.has(item.id);
+    });
 
     let panel = topbar.querySelector("[data-admin-notification-panel]");
     if (!panel) {
@@ -466,23 +513,37 @@
         "</div>",
         '<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-read-all>Alle als gelesen</button>',
         "</header>",
+        '<p class="admin-notification-empty" data-admin-notification-unread-empty hidden>Keine ungelesenen Benachrichtigungen</p>',
         '<div class="admin-notification-list" data-admin-notification-list></div>',
-        '<p class="admin-notification-footnote">Demo-Modus: keine Persistenz</p>'
+        '<p class="admin-notification-footnote">Demo-Modus: nur lokal gespeichert</p>'
       ].join("");
       topbar.append(panel);
     }
 
     const countNode = panel.querySelector("[data-admin-notification-open-count]");
     const listNode = panel.querySelector("[data-admin-notification-list]");
+    const readAllButton = panel.querySelector("[data-admin-notification-read-all]");
+    const unreadEmptyNode = panel.querySelector("[data-admin-notification-unread-empty]");
     const main = document.querySelector(".admin-main");
 
     function renderNotificationCenter() {
       const openCount = notifications.filter((item) => !item.read).length;
-      badge.textContent = String(openCount);
+      badge.textContent = openCount > 0 ? String(openCount) : "";
       badge.hidden = openCount === 0;
+      badge.style.display = openCount === 0 ? "none" : "grid";
+      badge.setAttribute("aria-hidden", openCount === 0 ? "true" : "false");
 
       if (countNode) {
-        countNode.textContent = `${openCount} offen`;
+        countNode.textContent = openCount > 0 ? `${openCount} offen` : "Keine ungelesenen Benachrichtigungen";
+      }
+
+      if (readAllButton) {
+        readAllButton.disabled = openCount === 0;
+        readAllButton.hidden = openCount === 0;
+      }
+
+      if (unreadEmptyNode) {
+        unreadEmptyNode.hidden = openCount > 0;
       }
 
       if (listNode) {
@@ -492,6 +553,8 @@
           listNode.innerHTML = notifications
             .map((item) => {
               const readClass = item.read ? "is-read" : "";
+              const readActionLabel = item.read ? "Gelesen" : "Als gelesen markieren";
+              const readActionState = item.read ? " disabled" : "";
               return [
                 `<article class="admin-notification-item ${typeClassName(item.type)} ${readClass}" data-admin-notification-id="${item.id}">`,
                 '<div class="admin-notification-row">',
@@ -504,7 +567,7 @@
                 `<span class="admin-notification-category">${item.category}</span>`,
                 "</div>",
                 '<div class="admin-notification-actions">',
-                `<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-action="read" data-admin-notification-id="${item.id}">Als gelesen markieren</button>`,
+                `<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-action="read" data-admin-notification-id="${item.id}"${readActionState}>${readActionLabel}</button>`,
                 `<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-action="details" data-admin-notification-id="${item.id}">Details öffnen Demo</button>`,
                 "</div>",
                 "</article>"
@@ -513,6 +576,8 @@
             .join("");
         }
       }
+
+      persistReadNotificationIdsForRole(role, notifications);
 
       renderDashboardHints(main, notifications);
     }
@@ -552,6 +617,7 @@
       if (!item) return;
 
       if (action === "read") {
+        if (item.read) return;
         item.read = true;
         renderNotificationCenter();
         return;

@@ -288,6 +288,10 @@ button {
   opacity: 0.6;
 }
 
+.admin-notification-item.is-read .admin-notification-type {
+  border-style: dashed;
+}
+
 .admin-notification-item.is-info {
   border-color: rgba(124, 180, 255, 0.45);
 }
@@ -362,6 +366,11 @@ button {
 .admin-notification-actions .admin-btn {
   min-height: 34px;
   font-size: 12px;
+}
+
+.admin-notification-actions .admin-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .admin-notification-footnote,
