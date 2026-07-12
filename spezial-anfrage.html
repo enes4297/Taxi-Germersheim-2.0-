@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Spezialanfrage | Taxi Germersheim</title>
+  <meta name="description" content="Spezialanfrage als Demo: Krankenfahrt, Serienfahrt, Rollstuhl, Flughafen, Firmen, Schueler und Kurier strukturiert vorbereiten." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="auth-demo.css" />
+  <link rel="stylesheet" href="special-services.css" />
+</head>
+<body>
+  <div class="background" aria-hidden="true"></div>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header>
+    <div class="container nav">
+      <a href="index.html" class="brand" aria-label="Taxi Germersheim Startseite">
+        <span class="brand-logo"><img src="logo.png" alt="Taxi Germersheim Logo" /></span>
+        <span class="brand-text">Taxi Germersheim</span>
+      </a>
+      <nav class="nav-links" aria-label="Hauptnavigation">
+        <a href="index.html">Start</a>
+        <a href="spezialfahrten.html">Spezialfahrten</a>
+        <a href="spezial-anfrage.html" class="active" aria-current="page">Spezialanfrage</a>
+        <a href="meinkonto.html">Mein Konto</a>
+        <a href="hilfe-kontakt.html">Hilfe</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost" href="tel:+497272123456">Anrufen</a>
+        <a class="btn btn-primary" href="index.html#booking">Jetzt buchen</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="special-page" id="specialRequest">
+    <div class="container special-shell">
+      <section class="special-card special-head" aria-label="Spezialanfrage Intro">
+        <span class="special-pill">Demo Anfragefluss</span>
+        <h1 id="specialServiceTitle">Krankenfahrten</h1>
+        <p id="specialServiceDescription">Spezialleistung als strukturierte Demo-Anfrage.</p>
+        <p class="special-note" id="specialServiceNotice">Hinweis wird je nach Leistung aktualisiert.</p>
+      </section>
+
+      <section class="special-card" aria-label="Leistung wechseln">
+        <h2>Leistung waehlen</h2>
+        <div class="special-tabs" id="specialServiceTabs" role="tablist" aria-label="Spezialleistung wechseln">
+          <button class="special-tab" type="button" data-service="medical">Krankenfahrten</button>
+          <button class="special-tab" type="button" data-service="dialysis">Dialyse</button>
+          <button class="special-tab" type="button" data-service="chemo">Chemo/Strahlentherapie</button>
+          <button class="special-tab" type="button" data-service="wheelchair">Rollstuhl</button>
+          <button class="special-tab" type="button" data-service="series">Serienfahrt</button>
+          <button class="special-tab" type="button" data-service="airport">Flughafen</button>
+          <button class="special-tab" type="button" data-service="business">Firmenkonto</button>
+          <button class="special-tab" type="button" data-service="student">Schuelerfahrt</button>
+          <button class="special-tab" type="button" data-service="courier">Kurier</button>
+        </div>
+      </section>
+
+      <section class="special-card" aria-label="Leistungsdetails">
+        <div class="special-service-top">
+          <img id="specialServiceIcon" src="assets/icons/Route.svg" alt="Leistungsicon" />
+          <div>
+            <h2>Leistungsprofil</h2>
+            <p class="special-service-description">Wichtige Vorteile und Eckdaten fuer die gewaehlte Spezialleistung.</p>
+          </div>
+        </div>
+        <ul class="special-benefits" id="specialServiceBenefits"></ul>
+        <div class="special-info-grid" id="specialInfoGrid"></div>
+      </section>
+
+      <section class="special-card" aria-label="Demo Anfrageformular">
+        <h2>Anfrage vorbereiten</h2>
+        <form id="specialServiceForm" class="special-form" novalidate>
+          <div id="specialFormFields" class="special-row cols-2"></div>
+
+          <div class="special-week-summary" id="seriesWeekSummary" hidden></div>
+
+          <div class="special-actions">
+            <a id="bookingBridgeLink" class="special-btn" href="index.html?page=booking">In Buchungsassistent uebernehmen</a>
+            <button id="showSummaryBtn" type="button" class="special-btn primary">Zusammenfassung anzeigen</button>
+          </div>
+        </form>
+
+        <p class="special-success" id="specialSuccessText" aria-live="polite"></p>
+      </section>
+    </div>
+  </main>
+
+  <section class="special-modal" id="specialSummaryModal" hidden>
+    <article class="special-modal-card" role="dialog" aria-modal="true" aria-labelledby="specialSummaryTitle">
+      <header class="special-modal-head">
+        <h3 id="specialSummaryTitle">Anfrage-Zusammenfassung</h3>
+        <button type="button" class="special-modal-close" data-close-special-modal aria-label="Schliessen">&times;</button>
+      </header>
+
+      <p class="special-summary-note">Bitte pruefen Sie alle Angaben. Die Anfrage wird als Demo erfasst und vor echter Bearbeitung telefonisch bestaetigt.</p>
+      <ul class="special-summary-list" id="specialSummaryList"></ul>
+
+      <label class="special-privacy" for="sf-privacy">
+        <input id="sf-privacy" type="checkbox" />
+        <span>Ich bestaetige den Datenschutzhinweis und weiss, dass diese Anfrage nur als Demo erfasst wird.</span>
+      </label>
+      <p class="special-field-error" id="sf-privacy-error"></p>
+
+      <div class="special-actions">
+        <button type="button" class="special-btn" id="editSummaryBtn">Daten bearbeiten</button>
+        <button type="button" class="special-btn primary" id="submitDemoRequestBtn">Anfrage als Demo absenden</button>
+      </div>
+    </article>
+  </section>
+
+  <nav class="mobile-nav" aria-label="Mobile Navigation">
+    <a href="index.html" class="mobile-nav-item"><img src="assets/icons/Home.svg" alt="" width="20" height="20" /><span>Start</span></a>
+    <a href="spezialfahrten.html" class="mobile-nav-item"><img src="assets/icons/Route.svg" alt="" width="20" height="20" /><span>Spezial</span></a>
+    <a href="spezial-anfrage.html" class="mobile-nav-item active" aria-current="page"><img src="assets/icons/Calendar.svg" alt="" width="20" height="20" /><span>Anfrage</span></a>
+    <a href="meinkonto.html" class="mobile-nav-item"><img src="assets/icons/Profile.svg" alt="" width="20" height="20" /><span>Konto</span></a>
+  </nav>
+
+  <script src="customer-auth-demo.js"></script>
+  <script src="script.js"></script>
+  <script src="special-services.js"></script>
+</body>
+</html>
