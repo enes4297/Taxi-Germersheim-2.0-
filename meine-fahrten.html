@@ -253,6 +253,14 @@
         return '';
       }
 
+      function serviceTagLabel(ride) {
+        if (ride.demoServiceTag) return ride.demoServiceTag;
+        if (ride.type === 'Krankenfahrt') return 'Krankenfahrt';
+        if (ride.type === 'Rollstuhlfahrt') return 'Rollstuhlfahrt';
+        if (ride.type === 'Flughafenfahrt') return 'Flughafen';
+        return '';
+      }
+
       function fmtDate(iso) {
         const date = new Date(iso + 'T00:00:00');
         return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -275,6 +283,7 @@
           ride.pickup,
           ride.destination,
           ride.type,
+          ride.demoServiceTag,
           ride.status,
           ride.driver
         ].join(' ').toLowerCase();
@@ -292,6 +301,11 @@
 
         const voucherMeta = isCompleted
           ? '<div class="journey-meta-item"><b>Gutscheinstatus</b><span>' + (ride.voucherStatus || 'Kein Gutschein') + '</span></div>'
+          : '';
+
+        const serviceTag = serviceTagLabel(ride);
+        const serviceBadge = serviceTag
+          ? '<span class="journey-service-badge"><img src="assets/icons/Check%20Mark.svg" alt="" />' + serviceTag + '</span>'
           : '';
 
         const actionButtons = [
@@ -318,7 +332,7 @@
         card.innerHTML =
           '<div class="journey-ride-top">' +
             '<img class="journey-ride-type" src="' + iconForType(ride.type) + '" alt="" />' +
-            '<div><strong>' + fmtDate(ride.date) + ' • ' + ride.time + '</strong><div class="journey-ride-id">' + ride.id + '</div>' + voucherBadge + '</div>' +
+            '<div><strong>' + fmtDate(ride.date) + ' • ' + ride.time + '</strong><div class="journey-ride-id">' + ride.id + '</div>' + serviceBadge + voucherBadge + '</div>' +
             '<span class="journey-status ' + statusClass(ride.status) + '"><img src="' + statusIcon(ride.status) + '" alt="" />' + ride.status + '</span>' +
           '</div>' +
           '<div class="journey-route">' +
@@ -367,6 +381,7 @@
         }).join('');
 
         const activeRide = typeof DEMO.getActiveRide === 'function' ? DEMO.getActiveRide() : null;
+        const serviceTag = serviceTagLabel(ride);
         const trackButton = activeRide && ride.id === activeRide.id
           ? '<div class="journey-actions"><a class="journey-btn" href="live-fahrt.html?ride=' + encodeURIComponent(ride.id) + '">Fahrt verfolgen</a></div>'
           : '';
@@ -377,6 +392,7 @@
             '<div class="journey-meta-item"><b>Datum</b><span>' + fmtDate(ride.date) + ' • ' + ride.time + '</span></div>' +
             '<div class="journey-meta-item"><b>Kennzeichen</b><span>' + ride.plate + '</span></div>' +
             '<div class="journey-meta-item"><b>Zahlung</b><span>' + ride.payment + '</span></div>' +
+            '<div class="journey-meta-item"><b>Demo-Kennzeichnung</b><span>' + (serviceTag || '-') + '</span></div>' +
             '<div class="journey-meta-item"><b>Gutscheinstatus</b><span>' + (ride.voucherStatus || 'Kein Gutschein') + '</span></div>' +
             '<div class="journey-meta-item"><b>Gutscheincode</b><span>' + (ride.voucherCode || '-') + '</span></div>' +
           '</div>' +

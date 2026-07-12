@@ -23,6 +23,7 @@
       plate: "GER TG 247",
       price: "18,40 EUR",
       payment: "Karte",
+      demoServiceTag: "Serienfahrt",
       note: "Abholung vorne am Haupteingang.",
       statusTimeline: ["Bestaetigt"]
     },
@@ -40,6 +41,7 @@
       plate: "GER TG 512",
       price: "132,00 EUR",
       payment: "Rechnung",
+      demoServiceTag: "Flughafen",
       note: "Bitte 10 Min. vor Abfahrt bereit sein.",
       statusTimeline: ["Bestaetigt", "Fahrer zugewiesen"]
     },
@@ -57,6 +59,7 @@
       plate: "GER TG 338",
       price: "74,50 EUR",
       payment: "Krankenkasse",
+      demoServiceTag: "Krankenfahrt",
       note: "Verordnung liegt als Demo vor.",
       statusTimeline: ["Bestaetigt", "Fahrer zugewiesen", "Unterwegs"]
     },
@@ -91,6 +94,7 @@
       plate: "GER TG 901",
       price: "96,00 EUR",
       payment: "Krankenkasse",
+      demoServiceTag: "Rollstuhlfahrt",
       note: "Rampe und Sicherung vorbereitet.",
       statusTimeline: ["Bestaetigt"]
     },
@@ -127,6 +131,7 @@
       plate: "GER TG 277",
       price: "119,00 EUR",
       payment: "Rechnung",
+      demoServiceTag: "Firmenfahrt",
       voucherStatus: "Kein Gutschein",
       voucherCode: "-",
       note: "Rueckfahrt aus Gruppenfahrt.",
