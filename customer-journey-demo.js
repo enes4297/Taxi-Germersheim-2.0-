@@ -19,8 +19,8 @@
       type: "Taxi",
       status: "Bestaetigt",
       driver: "M. Becker",
-      vehicle: "Mercedes E-Klasse",
-      plate: "GER TG 247",
+      vehicle: "Mercedes-Benz E 220 d T-Modell",
+      plate: "GER TX 100",
       price: "18,40 EUR",
       payment: "Karte",
       demoServiceTag: "Serienfahrt",
@@ -37,8 +37,8 @@
       type: "Flughafenfahrt",
       status: "Fahrer zugewiesen",
       driver: "S. Keller",
-      vehicle: "Mercedes V-Klasse",
-      plate: "GER TG 512",
+      vehicle: "Mercedes-Benz V-Klasse",
+      plate: "GER TX 800",
       price: "132,00 EUR",
       payment: "Rechnung",
       demoServiceTag: "Flughafen",
@@ -55,8 +55,8 @@
       type: "Krankenfahrt",
       status: "Unterwegs",
       driver: "T. Wagner",
-      vehicle: "VW Caddy",
-      plate: "GER TG 338",
+      vehicle: "VW Touran",
+      plate: "GER TX 200",
       price: "74,50 EUR",
       payment: "Krankenkasse",
       demoServiceTag: "Krankenfahrt",
@@ -73,8 +73,8 @@
       type: "Grossraumtaxi",
       status: "Angekommen",
       driver: "A. Ritter",
-      vehicle: "Mercedes Vito",
-      plate: "GER TG 784",
+      vehicle: "VW Touran",
+      plate: "GER TX 300",
       price: "49,90 EUR",
       payment: "Bar",
       note: "6 Personen, wenig Gepaeck.",
@@ -90,8 +90,8 @@
       type: "Rollstuhlfahrt",
       status: "Bestaetigt",
       driver: "J. Neumann",
-      vehicle: "Mercedes Sprinter",
-      plate: "GER TG 901",
+      vehicle: "Mercedes-Benz V-Klasse",
+      plate: "GER TX 800",
       price: "96,00 EUR",
       payment: "Krankenkasse",
       demoServiceTag: "Rollstuhlfahrt",
@@ -108,8 +108,8 @@
       type: "Taxi",
       status: "Abgeschlossen",
       driver: "L. Hartmann",
-      vehicle: "Skoda Superb",
-      plate: "GER TG 114",
+      vehicle: "Mercedes-Benz E-Klasse",
+      plate: "GER TX 600",
       price: "86,30 EUR",
       payment: "Karte",
       voucherStatus: "Gutschein verwendet",
@@ -127,8 +127,8 @@
       type: "Grossraumtaxi",
       status: "Abgeschlossen",
       driver: "P. Braun",
-      vehicle: "Ford Tourneo",
-      plate: "GER TG 277",
+      vehicle: "VW Touran",
+      plate: "GER TX 400",
       price: "119,00 EUR",
       payment: "Rechnung",
       demoServiceTag: "Firmenfahrt",
@@ -147,8 +147,8 @@
       type: "Krankenfahrt",
       status: "Abgeschlossen",
       driver: "R. Schuster",
-      vehicle: "VW Caddy",
-      plate: "GER TG 601",
+      vehicle: "Mercedes-Benz B-Klasse",
+      plate: "GER TX 500",
       price: "58,20 EUR",
       payment: "Krankenkasse",
       voucherStatus: "Nicht berechtigt",
@@ -166,8 +166,8 @@
       type: "Flughafenfahrt",
       status: "Abgeschlossen",
       driver: "D. Vogel",
-      vehicle: "Mercedes E-Klasse",
-      plate: "GER TG 419",
+      vehicle: "Tesla Model Y",
+      plate: "GER TX 700",
       price: "98,90 EUR",
       payment: "Karte",
       voucherStatus: "Gutschein verwendet",
@@ -258,8 +258,7 @@
     { id: "veh-500", plate: "GER TX 500", model: "Mercedes-Benz B-Klasse", type: "Kompaktklasse", seats: 4, color: "Graphitgrau", category: "Taxi", icon: "assets/icons/Taxi.svg" },
     { id: "veh-600", plate: "GER TX 600", model: "Mercedes-Benz E-Klasse", type: "Business Limousine", seats: 4, color: "Mitternachtsblau", category: "Taxi", icon: "assets/icons/Taxi.svg" },
     { id: "veh-700", plate: "GER TX 700", model: "Tesla Model Y", type: "Elektro SUV", seats: 5, color: "Pearl White", category: "Elektro", icon: "assets/icons/Taxi.svg" },
-    { id: "veh-800", plate: "GER TX 800", model: "Mercedes-Benz V-Klasse", type: "Premium Van", seats: 7, color: "Selenitgrau", category: "Grossraum", icon: "assets/icons/Van.svg" },
-    { id: "veh-900", plate: "GER TX 900", model: "Mercedes Sprinter", type: "Rollstuhl Fahrzeug", seats: 4, color: "Arktikweiss", category: "Rollstuhl", icon: "assets/icons/Wheelchair%20Vehicle.svg" }
+    { id: "veh-800", plate: "GER TX 800", model: "Mercedes-Benz V-Klasse", type: "Premium Van", seats: 7, color: "Selenitgrau", category: "Grossraum", icon: "assets/icons/Van.svg" }
   ];
 
   const demoDriver = {
@@ -415,7 +414,7 @@
   }
 
   function getLiveRideVehicleForRide(rideId) {
-    if (rideId === "TG-260710-005") return liveRideVehicles[8];
+    if (rideId === "TG-260710-005") return liveRideVehicles[7];
     if (rideId === "TG-260710-002") return liveRideVehicles[7];
     if (rideId === "TG-260710-003") return liveRideVehicles[1];
     return liveRideVehicles[0];

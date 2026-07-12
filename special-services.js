@@ -261,10 +261,17 @@
       input.name = field.id;
       if (field.placeholder) input.placeholder = field.placeholder;
       if (presetValue) input.value = presetValue;
-      if (field.required) input.setAttribute("data-required", "1");
+      if (field.required) {
+        input.setAttribute("data-required", "1");
+        input.setAttribute("required", "required");
+        input.setAttribute("aria-required", "true");
+      }
     } else {
       input.id = "sf-" + field.id;
-      if (field.required) input.setAttribute("data-required", "1");
+      if (field.required) {
+        input.setAttribute("data-required", "1");
+        input.setAttribute("aria-required", "true");
+      }
     }
 
     wrap.appendChild(input);
@@ -272,6 +279,11 @@
     var err = document.createElement("p");
     err.className = "special-field-error";
     err.id = "sf-error-" + field.id;
+    err.setAttribute("role", "status");
+    err.setAttribute("aria-live", "polite");
+    if (field.type !== "multicheck") {
+      input.setAttribute("aria-describedby", err.id);
+    }
     wrap.appendChild(err);
 
     return wrap;
@@ -348,18 +360,29 @@
     return ok;
   }
 
-  function openModal() {
+  var lastModalTrigger = null;
+
+  function openModal(triggerElement) {
     var modal = q("specialSummaryModal");
     if (!modal) return;
+    lastModalTrigger = triggerElement || document.activeElement;
     modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("has-open-special-modal");
+
+    var closeBtn = modal.querySelector("[data-close-special-modal]");
+    if (closeBtn) closeBtn.focus();
   }
 
   function closeModal() {
     var modal = q("specialSummaryModal");
     if (!modal) return;
     modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("has-open-special-modal");
+    if (lastModalTrigger && typeof lastModalTrigger.focus === "function") {
+      lastModalTrigger.focus();
+    }
   }
 
   function updateBookingBridge(serviceKey) {
@@ -538,7 +561,7 @@
         clearErrors(activeFields);
         if (!validate(activeFields)) return;
         buildSummary();
-        openModal();
+        openModal(reviewButton);
       });
     }
 
