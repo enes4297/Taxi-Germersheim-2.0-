@@ -2883,14 +2883,14 @@
       standard:{
         id:'standard',
         segments:[
-          {key:'points-5',icon:'⭐',label:'5 Punkte',desc:'Bonus',message:'Du hast 5 Punkte gewonnen.',win:true,effect:'points'},
-          {key:'points-10',icon:'⭐',label:'10 Punkte',desc:'Bonus',message:'Du hast 10 Punkte gewonnen.',win:true,effect:'points'},
-          {key:'points-25',icon:'⭐',label:'25 Punkte',desc:'Bonus',message:'Du hast 25 Punkte gewonnen.',win:true,effect:'points'},
-          {key:'points-50',icon:'⭐',label:'50 Punkte',desc:'Bonus',message:'Du hast 50 Punkte gewonnen.',win:true,effect:'points'},
-          {key:'voucher',icon:'🎁',label:'5 €',desc:'Gutschein',message:'Du hast einen 5 EUR Gutschein gewonnen.',win:true,effect:'voucher'},
-          {key:'extra-spin',icon:'🔄',label:'Extra Dreh',desc:'Chance',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
-          {key:'mystery',icon:'📦',label:'Mystery Box',desc:'Bonus',message:'Du hast eine Mystery Box gewonnen.',win:true,effect:'mystery'},
-          {key:'no-win',icon:'❌',label:'Niete',desc:'Kein Gewinn',message:'Heute leider kein Gewinn. Morgen wartet die nächste Chance.',win:false,effect:'no-win'}
+          {key:'points-5',icon:'⭐',label:'5 Punkte',desc:'BONUS',resultLabel:'5 Punkte',message:'Du hast 5 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'points-10',icon:'⭐',label:'10 Punkte',desc:'BONUS',resultLabel:'10 Punkte',message:'Du hast 10 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'points-25',icon:'⭐',label:'25 Punkte',desc:'BONUS',resultLabel:'25 Punkte',message:'Du hast 25 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'points-50',icon:'⭐',label:'50 Punkte',desc:'BONUS',resultLabel:'50 Punkte',message:'Du hast 50 Punkte gewonnen.',win:true,effect:'points'},
+          {key:'voucher',icon:'🎁',label:'5-€',desc:'GUTSCHEIN',resultLabel:'5-€-Gutschein',message:'Du hast einen 5-EUR-Gutschein gewonnen.',win:true,effect:'voucher'},
+          {key:'extra-spin',icon:'🔄',label:'Extra',desc:'DREH',resultLabel:'Extra-Dreh',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
+          {key:'mystery',icon:'📦',label:'Mystery',desc:'BOX',resultLabel:'Mystery Box',message:'Du hast eine Mystery Box gewonnen.',win:true,effect:'mystery'},
+          {key:'no-win',icon:'❌',label:'Niete',desc:'HEUTE NICHT',resultLabel:'Niete',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false,effect:'no-win'}
         ]
       }
       // Future-ready slots:
@@ -2903,6 +2903,7 @@
     const pointerAngle=270;
     const segmentStartAngle=-90;
     const spinStorageKey='taxiRewardsLastSpinDate';
+    const demoResetDoneKey='taxiRewardsWheelDemoResetV162Done';
 
     // Keep angle math in one place so future wheel variants can safely reuse it.
     function normalizeDegrees(angle){
@@ -2941,10 +2942,58 @@
 
     function setStoredSpinDate(value){
       try{
-        localStorage.setItem(spinStorageKey,value);
+        if(value) localStorage.setItem(spinStorageKey,value);
+        else localStorage.removeItem(spinStorageKey);
       }catch(_err){
         // Ignore storage errors in demo mode.
       }
+    }
+
+    function isWheelDevMode(){
+      try{
+        if(window.location.protocol==='file:') return true;
+        if(window.location.hostname==='localhost' || window.location.hostname==='127.0.0.1') return true;
+        return /(?:^|[?&])rewardsDev=1(?:&|$)/.test(window.location.search || '');
+      }catch(_err){
+        return false;
+      }
+    }
+
+    function resetWheelCooldownState(){
+      const today=getTodayYmd();
+      let changed=false;
+
+      if(engine){
+        const snapshot=engine.Store.getState();
+        const lastDate=String(snapshot.wheel?.lastSpinDate || '');
+        const freeSpins=Math.max(0,Math.round(Number(snapshot.freeSpins) || 0));
+        if(lastDate===today && freeSpins<=0){
+          engine.Store.addFreeSpin(1);
+          changed=true;
+        }
+      }else if(getStoredSpinDate()===today){
+        setStoredSpinDate('');
+        changed=true;
+      }
+
+      return changed;
+    }
+
+    function runOneTimeDemoReset(){
+      try{
+        if(localStorage.getItem(demoResetDoneKey)==='1') return false;
+      }catch(_err){
+        return false;
+      }
+
+      const changed=resetWheelCooldownState();
+      if(!changed) return false;
+      try{
+        localStorage.setItem(demoResetDoneKey,'1');
+      }catch(_err){
+        // Ignore storage errors in demo mode.
+      }
+      return true;
     }
 
     // Optional audio hook layer (no assets yet).
@@ -3093,8 +3142,8 @@
       const cx=280;
       const cy=280;
       const outerR=214;
-      const innerR=92;
-      const labelR=188;
+      const innerR=74;
+      const labelR=160;
       ledsGroup.innerHTML='';
       for(let i=0;i<80;i++){
         const angle=-90 + i*(360/80);
@@ -3129,19 +3178,19 @@
         const icon=document.createElementNS('http://www.w3.org/2000/svg','text');
         icon.setAttribute('class','rv2-svg-label-icon');
         icon.setAttribute('x','0');
-        icon.setAttribute('y','-16');
+        icon.setAttribute('y','-12');
         icon.textContent=segment.icon || '⭐';
 
         const title=document.createElementNS('http://www.w3.org/2000/svg','text');
         title.setAttribute('class','rv2-svg-label-title');
         title.setAttribute('x','0');
-        title.setAttribute('y','1');
+        title.setAttribute('y','2');
         title.textContent=segment.label || '';
 
         const desc=document.createElementNS('http://www.w3.org/2000/svg','text');
         desc.setAttribute('class','rv2-svg-label-desc');
         desc.setAttribute('x','0');
-        desc.setAttribute('y','17');
+        desc.setAttribute('y','18');
         desc.textContent=segment.desc || '';
 
         labelGroup.append(icon,title,desc);
@@ -3211,6 +3260,7 @@
     widgets.forEach(widget=>{
       const disc=$('.rv2-wheel-rotator',widget) || $('.rewards-wheel-disc',widget);
       const spinBtn=$('.rv2-spin-btn',widget) || $('.rewards-spin-btn',widget);
+      const demoResetBtn=$('[data-wheel-demo-reset]',widget);
       const result=$('.rv2-spin-result',widget) || $('.rewards-spin-result',widget);
       const note=$('.rv2-spin-note',widget) || $('.rewards-spin-note',widget);
       const countdownLabel=$('.rv2-spin-countdown-label',widget);
@@ -3218,7 +3268,9 @@
       const wheelShell=$('.rv2-wheel-shell',widget);
       const pointer=$('.rv2-wheel-pointer',widget);
       const winCard=$('.rv2-win-card',widget);
+      const winTitle=$('[data-rewards-win-title]',widget);
       const winMessage=$('[data-rewards-win-message]',widget);
+      const winDemo=$('[data-rewards-win-demo]',widget);
       const confettiHost=$('.rv2-confetti',widget);
       const svgBuild=buildSvgWheel(widget,segments);
       if(!disc || !spinBtn || !result) return;
@@ -3232,6 +3284,7 @@
       let countdownTimer=0;
       const defaultSpinBtnText='Jetzt drehen';
       const defaultNoteText=(note?.textContent || '').trim();
+      const oneTimeResetApplied=runOneTimeDemoReset();
 
       function hasTodayCooldown(){
         if(engine){
@@ -3356,7 +3409,7 @@
         spinBtn.disabled=true;
         spinBtn.setAttribute('aria-busy','true');
         spinBtn.textContent='Rad dreht ...';
-        result.textContent='Das Rad dreht...';
+        result.textContent='Rad dreht ...';
         result.classList.remove('is-win','is-lose');
         svgBuild?.segmentPaths?.forEach(path=>path.classList.remove('is-hit','is-under-pointer'));
         svgBuild?.labelGroups?.forEach(group=>group.classList.remove('is-hit'));
@@ -3376,10 +3429,9 @@
         const selectedIndex=Math.floor(Math.random()*segments.length);
         const centerAngle=selectedIndex*segmentAngle + segmentAngle/2;
         const extraTurns=5 + Math.floor(Math.random()*3);
-        const jitter=(Math.random()-0.5)*(segmentAngle*0.26);
-        const durationMs=4400 + Math.floor(Math.random()*700);
+        const durationMs=4700 + Math.floor(Math.random()*900);
         const startRotation=rotation;
-        const targetRotation=startRotation + extraTurns*360 + (pointerAngle-centerAngle) + jitter;
+        const targetRotation=startRotation + extraTurns*360 + (pointerAngle-centerAngle);
 
         if(frameId) cancelAnimationFrame(frameId);
         animateSpin(startRotation,targetRotation,durationMs,finalRotation=>{
@@ -3407,18 +3459,20 @@
           handleRewardEvent('wheel:result',{
             win:Boolean(selectedSegment.win),
             effect:selectedSegment.effect || (selectedSegment.win ? 'points' : 'no-win'),
-            label:selectedSegment.label || '',
+            label:selectedSegment.resultLabel || selectedSegment.label || '',
             message:selectedSegment.message || ''
           });
 
           if(selectedSegment.win){
-            result.textContent=`Gewinn: ${selectedSegment.label}`;
+            result.textContent=`Gewinn: ${selectedSegment.resultLabel || selectedSegment.label}`;
             result.classList.add('is-win');
             triggerConfetti(confettiHost);
             audioHooks.play('win');
 
-            if(winCard && winMessage){
+            if(winCard && winMessage && winTitle){
+              winTitle.textContent='Glueckwunsch';
               winMessage.textContent=selectedSegment.message;
+              if(winDemo) winDemo.textContent='Demo-Hinweis: Der Gewinn gilt fuer diese lokale Vorschau.';
               winCard.setAttribute('data-effect',selectedSegment.effect||'points');
               winCard.hidden=false;
               requestAnimationFrame(()=>winCard.classList.add('is-visible'));
@@ -3428,10 +3482,12 @@
 
             if(selectedSegment.effect==='mystery') audioHooks.play('jackpot');
           }else{
-            result.textContent='Dieses Mal leider kein Gewinn.';
+            result.textContent='Heute leider kein Gewinn';
             result.classList.add('is-lose');
-            if(winCard && winMessage){
+            if(winCard && winMessage && winTitle){
+              winTitle.textContent='Heute leider kein Gewinn';
               winMessage.textContent=selectedSegment.message;
+              if(winDemo) winDemo.textContent='Demo-Hinweis: Morgen ist der regulaere Dreh wieder verfuegbar.';
               winCard.setAttribute('data-effect','no-win');
               winCard.hidden=false;
               requestAnimationFrame(()=>winCard.classList.add('is-visible'));
@@ -3445,6 +3501,31 @@
 
       setWheelRotation(rotation);
       applyCooldownUi(hasTodayCooldown());
+
+      if(oneTimeResetApplied){
+        result.textContent='Demo-Dreh wurde einmalig fuer diesen Sprint freigeschaltet.';
+        result.classList.remove('is-win','is-lose');
+      }
+
+      if(demoResetBtn){
+        const visible=isWheelDevMode();
+        demoResetBtn.hidden=!visible;
+        if(visible){
+          demoResetBtn.addEventListener('click',()=>{
+            const changed=resetWheelCooldownState();
+            applyCooldownUi(hasTodayCooldown());
+            result.textContent=changed
+              ? 'Demo-Dreh zurueckgesetzt. Genau ein weiterer Dreh ist frei.'
+              : 'Kein aktiver Tages-Cooldown. Ein Dreh ist bereits verfuegbar.';
+            result.classList.remove('is-win','is-lose');
+            if(winCard){
+              winCard.hidden=true;
+              winCard.classList.remove('is-visible');
+            }
+          });
+        }
+      }
+
       const onResize=()=>{
         setWheelRotation(rotation);
       };

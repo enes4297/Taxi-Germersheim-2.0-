@@ -936,13 +936,14 @@
                     <g class="rv2-svg-leds"></g>
                     <g class="rv2-svg-segments"></g>
                     <g class="rv2-svg-labels"></g>
-                    <circle cx="280" cy="280" r="92" class="rv2-svg-center-shadow"/>
+                    <circle cx="280" cy="280" r="74" class="rv2-svg-center-shadow"/>
                   </svg>
                   <div class="rv2-wheel-logo"><img src="logo.png" alt="Taxi Germersheim Logo"></div>
                 </div>
               </div>
 
               <button class="button rv2-spin-btn" type="button">Jetzt drehen</button>
+              <button class="button rv2-spin-demo-reset" type="button" data-wheel-demo-reset hidden>Demo-Dreh zuruecksetzen</button>
               <small class="rv2-spin-countdown-label" hidden><span aria-hidden="true">📅</span> Nächster Dreh möglich in</small>
               <p class="rv2-spin-countdown" aria-live="polite" hidden>23:59:59</p>
               <p class="rv2-spin-result" aria-live="polite">Noch kein Dreh durchgeführt.</p>
@@ -958,8 +959,9 @@
                 <li>Niete</li>
               </ul>
               <article class="rv2-win-card" hidden>
-                <strong>Glückwunsch!</strong>
+                <strong data-rewards-win-title>Glueckwunsch</strong>
                 <p data-rewards-win-message>Du hast 50 Punkte gewonnen.</p>
+                <small data-rewards-win-demo>Demo-Hinweis: Der Gewinn wird lokal simuliert.</small>
               </article>
               <div class="rv2-confetti" aria-hidden="true"></div>
             </div>
@@ -1095,33 +1097,42 @@
           </section>
 
           <section class="rv2-mystery-box" aria-label="Mystery Box" data-rewards-mystery-box data-mystery-state="available">
-            <header class="rv2-section-head">
+            <header class="rv2-section-head rv2-mystery-head">
               <h3>Mystery Box</h3>
+              <b class="rv2-mystery-status" data-mystery-status>Mystery Box verfuegbar</b>
               <small>Zusätzliche Premium-Belohnung</small>
             </header>
 
             <article class="rv2-mystery-main">
               <div class="rv2-mystery-chest" aria-hidden="true">
                 <div class="rv2-mystery-illustration">
+                  <span class="rv2-mystery-core"></span>
                   <span class="rv2-mystery-lid"></span>
-                  <span class="rv2-mystery-box-art"></span>
-                  <span class="rv2-mystery-shine"></span>
+                  <span class="rv2-mystery-ribbon-v"></span>
+                  <span class="rv2-mystery-ribbon-h"></span>
+                  <span class="rv2-mystery-bow rv2-mystery-bow-left"></span>
+                  <span class="rv2-mystery-bow rv2-mystery-bow-right"></span>
+                  <span class="rv2-mystery-knot"></span>
+                  <span class="rv2-mystery-gleam"></span>
                 </div>
               </div>
 
               <div class="rv2-mystery-copy">
-                <b class="rv2-mystery-status" data-mystery-status>Mystery Box verfügbar</b>
                 <p class="rv2-mystery-note" data-mystery-note>Enthält Punkte, Gutscheine oder seltene Rewards.</p>
-                <button class="button rv2-mystery-open" type="button" data-mystery-open>Jetzt öffnen</button>
-                <small class="rv2-mystery-countdown" data-mystery-countdown hidden>Morgen wieder verfügbar in 23:59:59</small>
               </div>
             </article>
+
+            <div class="rv2-mystery-footer">
+              <button class="button rv2-mystery-open" type="button" data-mystery-open>Jetzt oeffnen</button>
+              <small class="rv2-mystery-countdown" data-mystery-countdown hidden>Morgen wieder verfuegbar in 23:59:59</small>
+            </div>
 
             <article class="rv2-mystery-result" data-mystery-result hidden>
               <i class="rv2-mystery-result-icon" data-mystery-result-icon aria-hidden="true">✨</i>
               <div class="rv2-mystery-result-copy">
                 <h4 data-mystery-result-title>Überraschung freigeschaltet</h4>
                 <p data-mystery-result-text>Demo-Belohnung wird angezeigt, sobald du die Box öffnest.</p>
+                <small>Demo-Hinweis: Die Mystery Box arbeitet nur mit lokalem Zustand.</small>
               </div>
               <div class="rv2-mystery-confetti" data-mystery-confetti aria-hidden="true"></div>
             </article>
