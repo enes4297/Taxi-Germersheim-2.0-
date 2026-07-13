@@ -72,15 +72,13 @@
 
 .special-service-top {
   display: grid;
-  grid-template-columns: 28px 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
   align-items: start;
 }
 
 .special-service-top img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
+  display: none;
 }
 
 .special-service-title {
@@ -99,18 +97,27 @@
 
 .special-benefits li {
   display: grid;
-  grid-template-columns: 14px 1fr;
-  gap: 7px;
+  grid-template-columns: 1fr;
+  gap: 4px;
   align-items: start;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.86);
   line-height: 1.42;
+  position: relative;
+  padding-left: 18px;
 }
 
 .special-benefits li img {
-  width: 12px;
-  height: 12px;
-  margin-top: 2px;
+  display: none;
+}
+
+.special-benefits li::before {
+  content: '\2713';
+  position: absolute;
+  left: 0;
+  top: 1px;
+  color: #ffe8a7;
+  font-weight: 900;
 }
 
 .special-actions {

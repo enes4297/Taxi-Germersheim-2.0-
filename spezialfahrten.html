@@ -14,23 +14,23 @@
   <div class="background" aria-hidden="true"></div>
   <div class="ambient" aria-hidden="true"></div>
 
-  <header>
-    <div class="container nav">
-      <a href="index.html" class="brand" aria-label="Taxi Germersheim Startseite">
-        <span class="brand-logo"><img src="logo.png" alt="Taxi Germersheim Logo" /></span>
-        <span class="brand-text">Taxi Germersheim</span>
-      </a>
-      <nav class="nav-links" aria-label="Hauptnavigation">
-        <a href="index.html">Start</a>
-        <a href="flotte.html">Flotte</a>
-        <a href="spezialfahrten.html" class="active" aria-current="page">Spezialfahrten</a>
-        <a href="meinkonto.html">Mein Konto</a>
-        <a href="hilfe-kontakt.html">Hilfe</a>
-      </nav>
-      <div class="nav-cta">
-        <a class="btn btn-ghost" href="tel:+497272123456">Anrufen</a>
-        <a class="btn btn-primary" href="index.html#booking">Jetzt buchen</a>
-      </div>
+  <header class="topbar">
+    <div class="brand"><a href="index.html"><img src="logo.png" alt="Taxi Germersheim GmbH"></a></div>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen">
+      <span class="menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+    </button>
+    <nav class="site-nav">
+      <a href="index.html">Startseite</a>
+      <a href="index.html?page=services">Leistungen</a>
+      <a href="flotte.html">Fahrzeugflotte</a>
+      <a href="meinkonto.html">Mein Konto</a>
+      <a href="rewards.html">Rewards</a>
+      <a href="spezialfahrten.html" class="active" aria-current="page">Spezialfahrten</a>
+      <a href="hilfe-kontakt.html">Kontakt</a>
+    </nav>
+    <div class="site-nav-backdrop" aria-hidden="true"></div>
+    <div class="top-actions">
+      <a id="headerBookBtn" class="button nav-book-btn" href="index.html?page=booking">Jetzt buchen</a>
     </div>
   </header>
 
@@ -44,8 +44,8 @@
         </nav>
         <span class="special-pill">Special Services & Business</span>
         <h1>Spezialfahrten</h1>
-        <p>Besondere Leistungen von Taxi Germersheim professionell erklärt und als strukturierte Demo-Anfragen vorbereitet. Keine echte Übertragung, keine Backend-Kommunikation.</p>
-        <a class="public-back-home" href="index.html">Zurück zur Startseite</a>
+        <p>Besondere Leistungen von Taxi Germersheim klar erklärt und als strukturierte Anfrage vorbereitet.</p>
+        <a class="public-back-home" data-public-back href="index.html">Zurück</a>
       </section>
 
       <section class="special-card" aria-label="Leistungsübersicht">
@@ -54,55 +54,55 @@
         </div>
         <div class="special-grid">
           <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Krankenfahrten</h3><p class="special-service-description">Arzt, Klinik, ambulante oder stationaere Termine inkl. Demo-Hinweis zu Verordnung/Genehmigung.</p></div></div>
+            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Krankenfahrten</h3><p class="special-service-description">Arzt, Klinik, ambulante oder stationaere Termine mit klaren Hinweisen zu Verordnung und Genehmigung.</p></div></div>
             <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Sitzend oder Rollstuhl moeglich</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Hin- und Rueckfahrt in einer Anfrage</span></li></ul>
             <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=medical">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=medical#specialRequest">Anfrage starten</a></div>
           </article>
 
           <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Calendar.svg" alt="" /><div><h3 class="special-service-title">Dialysefahrten</h3><p class="special-service-description">Regelmaessige Dialysetermine mit planbarer Wochenstruktur als Demo-Anfrage.</p></div></div>
+            <div class="special-service-top"><img src="assets/icons/Calendar.svg" alt="" /><div><h3 class="special-service-title">Dialysefahrten</h3><p class="special-service-description">Regelmaessige Dialysetermine mit planbarer Wochenstruktur und stabiler Organisation.</p></div></div>
             <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Preset fuer Dialyse im Formular</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Wochentage klar erfassbar</span></li></ul>
             <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=dialysis">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=dialysis#specialRequest">Anfrage starten</a></div>
           </article>
 
           <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Chemo- und Strahlentherapie</h3><p class="special-service-description">Fahrtanfragen fuer Chemo- und Strahlentherapietermine als sensible Demo-Struktur.</p></div></div>
+            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Chemo- und Strahlentherapie</h3><p class="special-service-description">Fahrtanfragen fuer Chemo- und Strahlentherapietermine mit besonders sensibler Planung.</p></div></div>
             <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Keine medizinische Beratung</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Klarer Kostenhinweis</span></li></ul>
             <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=chemo">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=chemo#specialRequest">Anfrage starten</a></div>
           </article>
 
           <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Wheelchair%20Vehicle.svg" alt="" /><div><h3 class="special-service-title">Rollstuhlfahrten</h3><p class="special-service-description">Infos zu geeigneter Sicherung, Rampe/Fahrzeugeinstieg und Begleitperson als Demo-Abfrage.</p></div></div>
+            <div class="special-service-top"><img src="assets/icons/Wheelchair%20Vehicle.svg" alt="" /><div><h3 class="special-service-title">Rollstuhlfahrten</h3><p class="special-service-description">Infos zu geeigneter Sicherung, Rampe, Fahrzeugeinstieg und Begleitperson.</p></div></div>
             <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Manuell/elektrisch auswahlen</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Zugangssituation vorab erfassen</span></li></ul>
             <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=wheelchair">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=wheelchair#specialRequest">Anfrage starten</a></div>
           </article>
 
           <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Calendar.svg" alt="" /><div><h3 class="special-service-title">Serienfahrten</h3><p class="special-service-description">Wiederkehrende Fahrten mit Wochenzusammenfassung und Demo-Pruefansicht vor dem Absenden.</p></div></div>
+            <div class="special-service-top"><img src="assets/icons/Calendar.svg" alt="" /><div><h3 class="special-service-title">Serienfahrten</h3><p class="special-service-description">Wiederkehrende Fahrten mit Wochenzusammenfassung und klarer Pruefansicht vor dem Absenden.</p></div></div>
             <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Mo/MI/FR Dialyse als Beispiel</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Persönliche Bestätigung erforderlich</span></li></ul>
             <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=series">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=series#specialRequest">Anfrage starten</a></div>
           </article>
 
           <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Flughafentransfers</h3><p class="special-service-description">FRA, FKB, STR und weitere Flughaefen auf Anfrage, inkl. Festpreisanfrage als Demo.</p></div></div>
+            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Flughafentransfers</h3><p class="special-service-description">FRA, FKB, STR und weitere Flughaefen auf Anfrage, inkl. klarer Festpreisanfrage.</p></div></div>
             <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Terminal/Flugnummer optional</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Keine echte Flugabfrage</span></li></ul>
             <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=airport">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=airport#specialRequest">Anfrage starten</a></div>
           </article>
 
           <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Profile.svg" alt="" /><div><h3 class="special-service-title">Firmen- und Geschaeftskunden</h3><p class="special-service-description">Firmenkonto mit Monatsrechnung, festen Ansprechpartnern und zentraler Buchung als Demo-Anfrage.</p></div></div>
+            <div class="special-service-top"><img src="assets/icons/Profile.svg" alt="" /><div><h3 class="special-service-title">Firmen- und Geschaeftskunden</h3><p class="special-service-description">Firmenkonto mit Monatsrechnung, festen Ansprechpartnern und zentraler Buchung.</p></div></div>
             <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Mitarbeiter-, Flughafen- und Kurierfahrten</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Keine echte Registrierung</span></li></ul>
             <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=business">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=business#specialRequest">Anfrage starten</a></div>
           </article>
 
           <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Schuelerfahrten</h3><p class="special-service-description">Regelmaessige Schuelerbefoerderung mit festen Zeiten und individueller Abstimmung als Demo.</p></div></div>
+            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Schuelerfahrten</h3><p class="special-service-description">Regelmaessige Schuelerbefoerderung mit festen Zeiten und individueller Abstimmung.</p></div></div>
             <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Wochentage und Zeitraum erfassen</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Begleitbedarf abfragen</span></li></ul>
             <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=student">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=student#specialRequest">Anfrage starten</a></div>
           </article>
 
           <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Kurierfahrten</h3><p class="special-service-description">Direktfahrten fuer Dokumente, Ersatzteile und kleine Sendungen als zeitkritische Demo-Anfrage.</p></div></div>
+            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Kurierfahrten</h3><p class="special-service-description">Direktfahrten fuer Dokumente, Ersatzteile und kleine Sendungen als zeitkritische Anfrage.</p></div></div>
             <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Abhol- und Empfangskontakte klar erfassen</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Verbotene Gueter ausgeschlossen</span></li></ul>
             <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=courier">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=courier#specialRequest">Anfrage starten</a></div>
           </article>

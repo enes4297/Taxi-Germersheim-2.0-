@@ -601,16 +601,94 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 0 14px;
+  min-height: 36px;
+  padding: 0 12px;
   border-radius: 999px;
   border: 1px solid rgba(255, 217, 106, 0.34);
   background: rgba(255, 217, 106, 0.08);
   color: #ffe8a7;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.page-head .page-head-link,
+.page-head .page-head-link:visited {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 217, 106, 0.34);
+  background: rgba(255, 217, 106, 0.08);
+  color: #ffe8a7;
+  text-decoration: none;
+}
+
+.page-head .page-head-link:hover,
+.public-back-home:hover {
+  border-color: rgba(255, 217, 106, 0.5);
+  background: rgba(255, 217, 106, 0.16);
+}
+
+#home .feature-grid .feature-card.reward {
+  min-height: 365px !important;
+  height: auto !important;
+  grid-template-rows: 1fr;
+}
+
+#home .feature-grid .feature-card.reward .reward-layout {
+  min-height: 100%;
+  align-content: start;
+}
+
+#medical.medical-page .medical-hero-visual,
+#medical.medical-page .medical-symbol,
+#medical.medical-page .medical-trust-strip i,
+#medical.medical-page .medical-steps i,
+#why.about-page .about-value-card i {
+  display: none !important;
+}
+
+#medical.medical-page .medical-trust-strip {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+#medical.medical-page .medical-trust-strip span {
+  gap: 0;
+}
+
+#medical.medical-page .medical-steps li {
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-areas: 'num title' 'num text';
+  min-height: 0;
+}
+
+#why.about-page .about-value-card {
+  align-content: start;
+  gap: 10px;
+}
+
+#fleet.fleet-page .fleet-v44-hero {
+  max-width: 980px;
+  margin-right: auto;
+  position: relative;
+  overflow: hidden;
+}
+
+#fleet.fleet-page .fleet-v44-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 96% 20%, rgba(255, 217, 106, 0.16), transparent 58%);
+  pointer-events: none;
+}
+
+#fleet.fleet-page .fleet-v44-grid {
+  align-items: stretch;
 }
 
 .public-compact-nav {
@@ -705,6 +783,10 @@ body {
   .public-compact-nav {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  #medical.medical-page .medical-trust-strip {
+    grid-template-columns: 1fr;
   }
 
   .booking-premium .pb-summary li {
@@ -865,6 +947,9 @@ body {
   width: 52px;
   height: 52px;
   border-radius: 12px;
+  object-fit: contain;
+  background: radial-gradient(circle at 50% 36%, rgba(255, 245, 205, 0.22), rgba(255, 245, 205, 0) 68%);
+  padding: 4px;
 }
 
 #rewards.rewards-v2 .rv2-hero-yumak p {
@@ -1023,6 +1108,7 @@ body {
   width: 62px;
   height: 62px;
   border-radius: 12px;
+  background: radial-gradient(circle at 50% 36%, rgba(255, 245, 205, 0.2), rgba(255, 245, 205, 0) 68%);
 }
 
 #rewards.rewards-v2 .rv2-yumak-stage,
@@ -1048,6 +1134,16 @@ body {
 #rewards.rewards-v2 .rv2-yumak-body {
   inset: 0;
   border-radius: 12px;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+}
+
+#rewards.rewards-v2 .rv2-yumak-body img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
 }
 
 #rewards.rewards-v2 .rv2-yumak-bubble {
@@ -1587,6 +1683,78 @@ body {
   line-height: 1.6;
 }
 
+#rewards.rewards-v2 .rv2-mystery-copy > .rv2-mystery-countdown {
+  display: block;
+}
+
+#rewards.rewards-v2 .rv2-mystery-open {
+  min-height: var(--rewards-button-height);
+  width: min(100%, 320px);
+}
+
+#rewards.rewards-v2 .rv2-mystery-demo-reset {
+  min-height: 34px;
+  width: min(100%, 320px);
+  border: 1px dashed rgba(255, 220, 140, 0.42);
+  background: rgba(14, 12, 20, 0.46);
+  color: rgba(255, 234, 196, 0.92);
+  font-size: 12px;
+}
+
+#rewards.rewards-v2 .rv2-mystery-pop {
+  margin-top: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 224, 159, 0.42);
+  background:
+    radial-gradient(140% 130% at 50% -22%, rgba(255, 226, 146, 0.28), rgba(255, 226, 146, 0)),
+    linear-gradient(145deg, rgba(36, 23, 9, 0.84), rgba(20, 14, 7, 0.92));
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  transform: translateY(8px) scale(0.96);
+  opacity: 0;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
+}
+
+#rewards.rewards-v2 .rv2-mystery-pop.is-visible {
+  animation: rv164MysteryPopIn 620ms cubic-bezier(0.22, 0.9, 0.24, 1) forwards;
+}
+
+#rewards.rewards-v2 .rv2-mystery-pop-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 226, 152, 0.18);
+  border: 1px solid rgba(255, 224, 159, 0.48);
+}
+
+#rewards.rewards-v2 .rv2-mystery-pop-copy h4,
+#rewards.rewards-v2 .rv2-mystery-pop-copy p,
+#rewards.rewards-v2 .rv2-mystery-pop-copy small {
+  margin: 0;
+}
+
+#rewards.rewards-v2 .rv2-mystery-pop-copy h4 {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+#rewards.rewards-v2 .rv2-mystery-pop-copy p {
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(255, 246, 226, 0.88);
+}
+
+#rewards.rewards-v2 .rv2-mystery-pop-copy small {
+  font-size: 11px;
+  color: rgba(255, 236, 196, 0.72);
+}
+
 #rewards.rewards-v2 .rv2-mystery-footer {
   display: grid;
   gap: 8px;
@@ -1634,6 +1802,121 @@ body {
 
 #rewards.rewards-v2 .rv2-mystery-box[data-mystery-state='opened'] .rv2-mystery-illustration {
   animation: none;
+}
+
+#rewards.rewards-v2 .rv2-mystery-box.is-opening .rv2-mystery-open,
+#rewards.rewards-v2 .rv2-mystery-box.is-opening .rv2-mystery-demo-reset {
+  pointer-events: none;
+}
+
+#rewards.rewards-v2 .rv2-mystery-box.is-opening-prep .rv2-mystery-illustration {
+  animation:
+    rv164MysteryShake 360ms ease-in-out 2,
+    rv16MysteryFloat 2.8s ease-in-out infinite;
+}
+
+#rewards.rewards-v2 .rv2-mystery-box.is-opening-prep .rv2-mystery-gleam {
+  animation: rv164MysteryGlow 780ms ease forwards;
+}
+
+#rewards.rewards-v2 .rv2-mystery-box.is-opening-reveal .rv2-mystery-lid {
+  animation: rv164MysteryLidOpen 840ms cubic-bezier(0.24, 0.86, 0.22, 1) forwards;
+  transform-origin: 50% 86%;
+}
+
+#rewards.rewards-v2 .rv2-mystery-box.is-opening-reveal .rv2-mystery-gleam {
+  animation: rv164MysteryBeam 920ms ease-out forwards;
+}
+
+#rewards.rewards-v2 .rv2-mystery-box.is-opened .rv2-mystery-lid {
+  transform: translateX(-50%) translateY(-19px) rotateX(16deg);
+}
+
+#rewards.rewards-v2 .rv2-daily-streak {
+  display: grid;
+  gap: 12px;
+}
+
+#rewards.rewards-v2 .rv2-streak-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+#rewards.rewards-v2 .rv2-streak-day {
+  min-height: 124px;
+  display: grid;
+  grid-template-rows: auto minmax(40px, 1fr) auto;
+  align-content: start;
+  gap: 8px;
+}
+
+#rewards.rewards-v2 .rv2-streak-day b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#rewards.rewards-v2 .rv2-streak-day p {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.32;
+}
+
+#rewards.rewards-v2 .rv2-streak-day[data-streak-state='current'] b::after {
+  content: 'Heute';
+  min-height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 225, 143, 0.58);
+  background: rgba(255, 212, 105, 0.2);
+  color: #fff1c4;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#rewards.rewards-v2 .rv2-streak-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 14px;
+  align-items: center;
+}
+
+#rewards.rewards-v2 .rv2-streak-summary {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+#rewards.rewards-v2 .rv2-streak-summary p,
+#rewards.rewards-v2 .rv2-streak-summary small {
+  margin: 0;
+}
+
+#rewards.rewards-v2 .rv2-streak-progress {
+  position: relative;
+  min-height: 11px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 218, 124, 0.32);
+  --streak-progress-pct: 0%;
+  background:
+    linear-gradient(90deg, #f6ca74, #ffd96b 48%, #fff1bb 100%) left top / var(--streak-progress-pct) 100% no-repeat,
+    rgba(12, 11, 18, 0.78);
+  transition: background-size 380ms ease;
+}
+
+#rewards.rewards-v2 .rv2-streak-progress > [data-streak-progress-fill] {
+  display: none;
+}
+
+#rewards.rewards-v2 .rv2-streak-claim {
+  min-height: var(--rewards-button-height);
 }
 
 #rewards.rewards-v2 .rv2-yumak-assistant {
@@ -1871,6 +2154,46 @@ body {
   50% { transform: translateY(-4px); }
 }
 
+@keyframes rv164MysteryPopIn {
+  0% { opacity: 0; transform: translateY(8px) scale(0.96); }
+  70% { opacity: 1; transform: translateY(-2px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes rv164MysteryShake {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-1px) rotate(-1deg); }
+  50% { transform: translateY(0) rotate(1deg); }
+  75% { transform: translateY(-1px) rotate(-0.8deg); }
+}
+
+@keyframes rv164MysteryGlow {
+  0% { opacity: 0.6; filter: blur(2px); }
+  100% { opacity: 1; filter: blur(3px); }
+}
+
+@keyframes rv164MysteryLidOpen {
+  0% { transform: translateX(-50%) translateY(0) rotateX(0deg); }
+  100% { transform: translateX(-50%) translateY(-19px) rotateX(16deg); }
+}
+
+@keyframes rv164MysteryBeam {
+  0% { opacity: 0.5; transform: scale(1); }
+  70% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 0.8; transform: scale(1.03); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #rewards.rewards-v2 .rv2-mystery-illustration,
+  #rewards.rewards-v2 .rv2-mystery-lid,
+  #rewards.rewards-v2 .rv2-mystery-gleam,
+  #rewards.rewards-v2 .rv2-mystery-pop,
+  #rewards.rewards-v2 .rv2-streak-progress {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 @media (min-width: 1500px) {
   #rewards.rewards-v2 .rv2-wheel-card {
     position: relative;
@@ -1960,8 +2283,32 @@ body {
     justify-self: start;
   }
 
-  #rewards.rewards-v2 .rv2-mystery-footer {
-    padding-left: 0;
+  #rewards.rewards-v2 .rv2-streak-meta {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  #rewards.rewards-v2 .rv2-streak-grid {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(112px, 1fr);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 4px;
+  }
+
+  #rewards.rewards-v2 .rv2-streak-day {
+    scroll-snap-align: start;
+    min-height: 118px;
+  }
+
+  #rewards.rewards-v2 .rv2-streak-grid::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  #rewards.rewards-v2 .rv2-streak-grid::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(255, 221, 141, 0.42);
   }
 
   #rewards.rewards-v2 .rv2-quick-actions-row .rv2-quick-action {
