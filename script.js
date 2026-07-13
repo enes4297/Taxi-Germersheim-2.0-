@@ -3093,8 +3093,8 @@
       const cx=280;
       const cy=280;
       const outerR=214;
-      const innerR=116;
-      const labelR=180;
+      const innerR=92;
+      const labelR=188;
       ledsGroup.innerHTML='';
       for(let i=0;i<80;i++){
         const angle=-90 + i*(360/80);
@@ -3129,19 +3129,19 @@
         const icon=document.createElementNS('http://www.w3.org/2000/svg','text');
         icon.setAttribute('class','rv2-svg-label-icon');
         icon.setAttribute('x','0');
-        icon.setAttribute('y','-14');
+        icon.setAttribute('y','-16');
         icon.textContent=segment.icon || '⭐';
 
         const title=document.createElementNS('http://www.w3.org/2000/svg','text');
         title.setAttribute('class','rv2-svg-label-title');
         title.setAttribute('x','0');
-        title.setAttribute('y','3');
+        title.setAttribute('y','1');
         title.textContent=segment.label || '';
 
         const desc=document.createElementNS('http://www.w3.org/2000/svg','text');
         desc.setAttribute('class','rv2-svg-label-desc');
         desc.setAttribute('x','0');
-        desc.setAttribute('y','16');
+        desc.setAttribute('y','17');
         desc.textContent=segment.desc || '';
 
         labelGroup.append(icon,title,desc);
@@ -3230,7 +3230,7 @@
       let lastPointerBucket=-1;
       let hoverBucket=-1;
       let countdownTimer=0;
-      const defaultSpinBtnText='Rad drehen';
+      const defaultSpinBtnText='Jetzt drehen';
       const defaultNoteText=(note?.textContent || '').trim();
 
       function hasTodayCooldown(){
@@ -3355,7 +3355,7 @@
         spun=true;
         spinBtn.disabled=true;
         spinBtn.setAttribute('aria-busy','true');
-        spinBtn.textContent='Dreht...';
+        spinBtn.textContent='Rad dreht ...';
         result.textContent='Das Rad dreht...';
         result.classList.remove('is-win','is-lose');
         svgBuild?.segmentPaths?.forEach(path=>path.classList.remove('is-hit','is-under-pointer'));
@@ -4778,8 +4778,8 @@
 
       stopCountdown();
       root.dataset.mysteryState='available';
-      statusNode.textContent='Verfügbar';
-      noteNode.textContent='Öffne deine Box und entdecke eine Überraschung.';
+        statusNode.textContent='Mystery Box verfügbar';
+        noteNode.textContent='Enthält Punkte, Gutscheine oder seltene Rewards.';
       openButton.disabled=false;
       countdownNode.hidden=true;
     }
@@ -5800,10 +5800,10 @@
 
     const rightSelectors=[
       '.rv2-wheel-card',
-      '.rv2-yumak-assistant',
-      '[data-rewards-daily-streak]',
       '[data-rewards-weekly-goal]',
-      '[data-rewards-mystery-box]'
+      '[data-rewards-mystery-box]',
+      '[data-rewards-daily-streak]',
+      '.rv2-yumak-assistant'
     ];
 
     rightSelectors.forEach(selector=>{

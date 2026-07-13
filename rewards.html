@@ -608,11 +608,11 @@
 
               <article class="rv2-achievement-card" data-achievement-id="vip-secret" data-ach-status="secret" data-ach-current="0" data-ach-target="1" data-ach-rarity="legendary">
                 <i aria-hidden="true">❔</i>
-                <h4>???</h4>
+                <h4>Geheimes Abzeichen</h4>
                 <b class="rv2-achievement-rarity">Legendär</b>
                 <em class="rv2-achievement-status">Geheim</em>
                 <div class="rv2-achievement-progress" role="progressbar" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><u></u></div>
-                <small class="rv2-achievement-progress-text">???</small>
+                <small class="rv2-achievement-progress-text">Bedingung unbekannt</small>
               </article>
 
               <article class="rv2-achievement-card" data-achievement-id="wheel-master" data-ach-status="locked" data-ach-current="8" data-ach-target="20" data-ach-rarity="legendary">
@@ -916,7 +916,8 @@
 
         <aside class="rv2-right" aria-label="Glücksrad Bereich">
           <article class="rv2-wheel-card">
-            <h3>Glücksrad kompakt</h3>
+            <h3>Dein täglicher Dreh</h3>
+            <p class="rv2-wheel-lead">Drehe einmal täglich und sichere dir Punkte, Gutscheine oder seltene Gewinne.</p>
             <div class="rv2-spin-widget" data-rewards-wheel>
               <div class="rv2-wheel-shell" aria-hidden="true">
                 <div class="rv2-wheel-pointer"></div>
@@ -935,25 +936,26 @@
                     <g class="rv2-svg-leds"></g>
                     <g class="rv2-svg-segments"></g>
                     <g class="rv2-svg-labels"></g>
-                    <circle cx="280" cy="280" r="112" class="rv2-svg-center-shadow"/>
+                    <circle cx="280" cy="280" r="92" class="rv2-svg-center-shadow"/>
                   </svg>
                   <div class="rv2-wheel-logo"><img src="logo.png" alt="Taxi Germersheim Logo"></div>
                 </div>
               </div>
 
-              <button class="button rv2-spin-btn" type="button">Rad drehen</button>
+              <button class="button rv2-spin-btn" type="button">Jetzt drehen</button>
               <small class="rv2-spin-countdown-label" hidden><span aria-hidden="true">📅</span> Nächster Dreh möglich in</small>
               <p class="rv2-spin-countdown" aria-live="polite" hidden>23:59:59</p>
               <p class="rv2-spin-result" aria-live="polite">Noch kein Dreh durchgeführt.</p>
-              <small class="rv2-spin-note">Top-Gewinne heute</small>
+              <small class="rv2-spin-note">Mögliche Gewinne</small>
               <ul class="rv2-wheel-top-wins" aria-label="Top Gewinne heute">
                 <li>5 Punkte</li>
                 <li>10 Punkte</li>
                 <li>25 Punkte</li>
                 <li>50 Punkte</li>
-                <li>5 EUR Gutschein</li>
-                <li>Mystery Box</li>
+                <li>5-€-Gutschein</li>
                 <li>Extra Dreh</li>
+                <li>Mystery Box</li>
+                <li>Niete</li>
               </ul>
               <article class="rv2-win-card" hidden>
                 <strong>Glückwunsch!</strong>
@@ -1002,7 +1004,7 @@
               </div>
               <div class="rv2-yumak-copy">
                 <small>Persönlicher Premium-Begleiter</small>
-                <h4>Enes, du bist nah an Platin.</h4>
+                <h4>Enes, dir fehlen noch 120 Punkte bis Platin.</h4>
                 <div class="rv2-yumak-bubble" role="status" aria-live="polite">
                   <p class="rv2-yumak-tip" data-yumak-tip>Enes, heute wartet dein täglicher Dreh auf dich.</p>
                 </div>
@@ -1085,7 +1087,7 @@
               <p><b data-weekly-goal-current>3</b> von <b data-weekly-goal-target>5</b> Missionen</p>
               <div class="rv2-weekly-goal-progress" role="progressbar" aria-label="Wochenziel Fortschritt" aria-valuemin="0" aria-valuemax="5" aria-valuenow="3"><u data-weekly-goal-fill></u></div>
               <ul class="rv2-weekly-goal-rewards">
-                <li>Mystery Box</li>
+                <li class="is-main">Mystery Box</li>
                 <li>Extra Dreh</li>
                 <li>50 Punkte</li>
               </ul>
@@ -1100,13 +1102,17 @@
 
             <article class="rv2-mystery-main">
               <div class="rv2-mystery-chest" aria-hidden="true">
-                <span>🎁</span>
+                <div class="rv2-mystery-illustration">
+                  <span class="rv2-mystery-lid"></span>
+                  <span class="rv2-mystery-box-art"></span>
+                  <span class="rv2-mystery-shine"></span>
+                </div>
               </div>
 
               <div class="rv2-mystery-copy">
-                <b class="rv2-mystery-status" data-mystery-status>Verfügbar</b>
-                <p class="rv2-mystery-note" data-mystery-note>Öffne deine Box und entdecke eine Überraschung.</p>
-                <button class="button rv2-mystery-open" type="button" data-mystery-open>Box öffnen</button>
+                <b class="rv2-mystery-status" data-mystery-status>Mystery Box verfügbar</b>
+                <p class="rv2-mystery-note" data-mystery-note>Enthält Punkte, Gutscheine oder seltene Rewards.</p>
+                <button class="button rv2-mystery-open" type="button" data-mystery-open>Jetzt öffnen</button>
                 <small class="rv2-mystery-countdown" data-mystery-countdown hidden>Morgen wieder verfügbar in 23:59:59</small>
               </div>
             </article>
