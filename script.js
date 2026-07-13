@@ -21,6 +21,7 @@
     location:'<svg viewBox="0 0 48 48"><path d="M24 5v8"/><path d="M24 35v8"/><path d="M5 24h8"/><path d="M35 24h8"/><circle cx="24" cy="24" r="8"/></svg>',
     flag:'<svg viewBox="0 0 48 48"><path d="M12 7v34"/><path d="M12 8h23l-4 9l4 9H12"/></svg>',
     luggage:'<svg viewBox="0 0 48 48"><rect x="12" y="15" width="24" height="26" rx="4"/><path d="M18 15v-4a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v4"/><path d="M18 24h12"/><path d="M18 32h12"/></svg>',
+    courier:'<svg viewBox="0 0 48 48"><rect x="9" y="12" width="30" height="24" rx="3"/><path d="M9 20h30"/><path d="M24 12v24"/><path d="M16 28h5"/><path d="M27 28h5"/></svg>',
     child:'<svg viewBox="0 0 48 48"><circle cx="24" cy="13" r="6"/><path d="M14 42v-7a10 10 0 0 1 20 0v7"/><path d="M18 34h12"/><path d="M17 42h14"/></svg>',
     pet:'<svg viewBox="0 0 48 48"><circle cx="10" cy="21" r="4"/><circle cx="18" cy="12" r="4"/><circle cx="30" cy="12" r="4"/><circle cx="38" cy="21" r="4"/><path d="M16 36c0-7 4-11 8-11s8 4 8 11c0 4-4 6-8 6s-8-2-8-6z"/></svg>',
     passengers:'<svg viewBox="0 0 48 48"><circle cx="17" cy="16" r="6"/><path d="M7 42v-3a10 10 0 0 1 20 0v3"/><circle cx="33" cy="18" r="5"/><path d="M29 42v-2a8 8 0 0 1 13 0v2"/></svg>',
@@ -2702,6 +2703,19 @@
         nav.servicesTrigger?.setAttribute('aria-expanded','false');
       }
       if(nav.siteNav?.classList.contains('open') && !e.target.closest('.site-nav') && !e.target.closest('.menu-toggle')){
+        closeNavigationState(nav);
+      }
+    });
+
+    document.addEventListener('keydown',e=>{
+      if(e.key!=='Escape') return;
+
+      if(nav.servicesItem?.classList.contains('is-open')){
+        nav.servicesItem.classList.remove('is-open');
+        nav.servicesTrigger?.setAttribute('aria-expanded','false');
+      }
+
+      if(nav.siteNav?.classList.contains('open')){
         closeNavigationState(nav);
       }
     });

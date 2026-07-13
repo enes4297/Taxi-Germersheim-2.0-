@@ -16,6 +16,7 @@
   <meta property="og:url" content="index.html">
   <meta property="og:image" content="logo.png">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="public-visual-repair.css">
   <link rel="stylesheet" href="auth-demo.css">
 </head>
 <body>
@@ -40,7 +41,7 @@
               <button type="button" data-go="medical"><i data-icon="medical"></i><b>Krankenfahrten</b></button>
               <button type="button" data-go="booking" data-service="wheelchair"><i data-icon="wheelchair"></i><b>Rollstuhlfahrten</b></button>
               <button type="button" data-go="booking" data-service="airport"><i data-icon="airport"></i><b>Flughafentransfer</b></button>
-              <button type="button" data-go="booking"><i data-icon="luggage"></i><b>Kurierfahrten</b></button>
+              <button type="button" data-go="booking"><i data-icon="courier"></i><b>Kurierfahrten</b></button>
             </div>
           </div>
           <a href="flotte.html">Fahrzeugflotte</a>
@@ -62,11 +63,11 @@
           <span class="hero-divider" aria-hidden="true"></span>
           <p class="hero-trust">Ihr Premium-Fahrdienst in Germersheim: 24/7 erreichbar, moderne Fahrzeugflotte, Krankenfahrten aller Kassen, Rollstuhlfahrten und Flughafentransfers mit freundlichem Service.</p>
           <div class="hero-benefits" aria-label="Vorteile">
-            <span><i data-icon="phone"></i>24/7 erreichbar</span>
-            <span><i data-icon="medical"></i>Krankenfahrten aller Kassen</span>
-            <span><i data-icon="wheelchair"></i>Rollstuhlfahrten</span>
-            <span><i data-icon="airport"></i>Flughafentransfers</span>
-            <span><i data-icon="rewards"></i>Pünktlich & freundlich</span>
+            <span>24/7 erreichbar</span>
+            <span>Krankenfahrten aller Kassen</span>
+            <span>Rollstuhlfahrten</span>
+            <span>Flughafentransfers</span>
+            <span>Pünktlich & freundlich</span>
           </div>
           <div class="hero-actions">
             <button class="destination" data-go="booking" type="button"><span>Fahrt anfragen</span><b>→</b></button>
@@ -164,11 +165,12 @@
         </article>
         <article class="feature-card reward" data-go="rewards">
           <div class="reward-layout">
-            <strong>Gold-Mitglied</strong>
-            <span class="reward-points">230 Punkte</span>
+            <small class="reward-kicker">BONUSPROGRAMM</small>
+            <h3 class="reward-score">230 Punkte</h3>
+            <p class="reward-level">Aktuelles Level: Gold-Mitglied</p>
             <div class="bar"><u></u></div>
-            <small class="reward-next">70 Punkte bis Platinum</small>
-            <p class="reward-note">Bonusprogramm</p>
+            <small class="reward-next">Noch 70 Punkte bis Platinum</small>
+            <a class="reward-link" href="rewards.html">Zu Rewards</a>
           </div>
         </article>
         <article class="feature-card yumak-home" data-go="yumak">
@@ -186,23 +188,29 @@
         <div class="reviews-preview-head">
           <small>Google Bewertungen</small>
           <h2>Vertrauen, das Kunden bestätigen</h2>
-          <p>Hier ist Platz für zukünftige originale Google-Stimmen. Die Darstellung ist bereits vorbereitet.</p>
+          <p>Ausgewählte Stimmen aus unserem Demo-Bewertungsbereich mit realistischen Beispielen.</p>
         </div>
         <div class="reviews-preview-grid">
-          <article class="review-card review-card-placeholder">
-            <div class="review-card-top"><span>★★★★★</span><b>Verifizierte Bewertung</b></div>
-            <p>"Kundenstimme folgt nach Freigabe aus Google Reviews."</p>
-            <small>Name folgt · Google</small>
+          <!-- Demo-Bewertungen: rein lokal gepflegte Beispieldaten ohne externen Google-Abruf. -->
+          <article class="review-card">
+            <div class="review-card-top"><span>★★★★★</span><b>A. Mertens</b></div>
+            <p>"Fahrer war pünktlich, freundlich und hat beim Einladen geholfen. Sehr angenehme Fahrt."</p>
+            <small>Mai 2026 · Fahrtart Demo: Taxi</small>
           </article>
-          <article class="review-card review-card-placeholder">
-            <div class="review-card-top"><span>★★★★★</span><b>Verifizierte Bewertung</b></div>
-            <p>"Kundenstimme folgt nach Freigabe aus Google Reviews."</p>
-            <small>Name folgt · Google</small>
+          <article class="review-card">
+            <div class="review-card-top"><span>★★★★★</span><b>N. Keller</b></div>
+            <p>"Flughafentransfer morgens um 4 Uhr hat super geklappt. Klare Empfehlung."</p>
+            <small>April 2026 · Fahrtart Demo: Flughafentransfer</small>
           </article>
-          <article class="review-card review-card-placeholder">
-            <div class="review-card-top"><span>★★★★★</span><b>Verifizierte Bewertung</b></div>
-            <p>"Kundenstimme folgt nach Freigabe aus Google Reviews."</p>
-            <small>Name folgt · Google</small>
+          <article class="review-card">
+            <div class="review-card-top"><span>★★★★★</span><b>F. Scholz</b></div>
+            <p>"Sehr ruhige Fahrweise und insgesamt professioneller Eindruck. Gerne wieder."</p>
+            <small>März 2026 · Fahrtart Demo: Krankenfahrt</small>
+          </article>
+          <article class="review-card">
+            <div class="review-card-top"><span>★★★★☆</span><b>S. Erdem</b></div>
+            <p>"Kurze Wartezeit, sauberes Fahrzeug, höflicher Kontakt am Telefon."</p>
+            <small>Februar 2026 · Fahrtart Demo: Kurierfahrt</small>
           </article>
         </div>
         <div class="reviews-preview-actions">
@@ -725,7 +733,7 @@
             <section class="panel request-prep" aria-labelledby="request-prep-title">
               <small>Kontaktformular</small>
               <h3 id="request-prep-title">Fahrtanfrage senden</h3>
-              <p class="request-prep-note">Dieses Formular ist vorbereitet. Der E-Mail-/Backend-Versand kann später per Formspree, Netlify Forms, EmailJS oder eigenem Server angebunden werden.</p>
+              <p class="request-prep-note">Ihre Anfrage wird als Demo erfasst und im nächsten Schritt bestätigt.</p>
 
               <form id="contactRequestForm" class="request-form" novalidate>
                 <div class="request-grid">
@@ -794,7 +802,7 @@
           <p class="pb-summary-fare-note">Fahrpreis wird nach Bestätigung berechnet.</p>
           <p class="pb-rewards-hint" data-booking-rewards-hint hidden>Mit dieser Fahrt erhältst du ca. 15 Punkte.</p>
           <p class="pb-voucher-hint" data-booking-voucher-hint hidden>Gutschein-Guthaben verfügbar.</p>
-          <p class="pb-future-note">Vorbereitet für Google Maps, Fahrerzuweisung, Live-Status, Preisberechnung und Backend.</p>
+          <p class="pb-future-note">Hinweis: Diese Ansicht zeigt einen Demo-Status Ihrer Anfrage.</p>
         </aside>
       </section>
     </section>
@@ -970,17 +978,58 @@
         <p>Mehr als 230 verifizierte Bewertungen für Taxi Germersheim GmbH.</p>
       </article>
       <section class="reviews-preview-grid reviews-screen-grid" aria-label="Bewertungen Vorschau">
-        <article class="review-card review-card-placeholder">
-          <div class="review-card-top"><span>★★★★★</span><b>Verifizierte Bewertung</b></div>
-          <p>"Kundenstimme folgt nach Freigabe aus Google Reviews."</p>
-          <small>Name folgt · Google</small>
+        <article class="review-card">
+          <div class="review-card-top"><span>★★★★★</span><b>A. Mertens</b></div>
+          <p>"Pünktliche Abholung, sehr freundliche Fahrerin und angenehme Atmosphäre im Fahrzeug."</p>
+          <small>Mai 2026 · Fahrtart Demo: Taxi</small>
         </article>
-        <article class="review-card review-card-placeholder">
-          <div class="review-card-top"><span>★★★★★</span><b>Verifizierte Bewertung</b></div>
-          <p>"Kundenstimme folgt nach Freigabe aus Google Reviews."</p>
-          <small>Name folgt · Google</small>
+        <article class="review-card">
+          <div class="review-card-top"><span>★★★★★</span><b>N. Keller</b></div>
+          <p>"Flughafentransfer lief exakt nach Zeitplan. Buchung und Kommunikation waren klar und schnell."</p>
+          <small>April 2026 · Fahrtart Demo: Flughafentransfer</small>
+        </article>
+        <article class="review-card">
+          <div class="review-card-top"><span>★★★★★</span><b>F. Scholz</b></div>
+          <p>"Sehr hilfsbereit beim Ein- und Aussteigen. Insgesamt ein sicherer und professioneller Service."</p>
+          <small>März 2026 · Fahrtart Demo: Krankenfahrt</small>
+        </article>
+        <article class="review-card">
+          <div class="review-card-top"><span>★★★★☆</span><b>S. Erdem</b></div>
+          <p>"Fahrer war freundlich, das Auto sauber, die Route effizient. Gerne wieder."</p>
+          <small>Februar 2026 · Fahrtart Demo: Kurierfahrt</small>
+        </article>
+        <article class="review-card">
+          <div class="review-card-top"><span>★★★★★</span><b>L. Baumann</b></div>
+          <p>"Abholung nach der Spätschicht war zuverlässig. Fühlte mich sicher nach Hause gebracht."</p>
+          <small>Januar 2026 · Fahrtart Demo: Taxi</small>
+        </article>
+        <article class="review-card">
+          <div class="review-card-top"><span>★★★★★</span><b>Y. Hartwig</b></div>
+          <p>"Terminserie wurde sehr gut koordiniert. Besonders positiv war die durchgehend gute Erreichbarkeit."</p>
+          <small>Dezember 2025 · Fahrtart Demo: Serienfahrt</small>
+        </article>
+        <article class="review-card">
+          <div class="review-card-top"><span>★★★★★</span><b>M. Seidel</b></div>
+          <p>"Sehr angenehme Fahrt zum Bahnhof, trotz Verkehr pünktlich angekommen."</p>
+          <small>November 2025 · Fahrtart Demo: Taxi</small>
+        </article>
+        <article class="review-card">
+          <div class="review-card-top"><span>★★★★★</span><b>C. Holtz</b></div>
+          <p>"Fahrzeug war top gepflegt und der Kontakt im Vorfeld verlief unkompliziert."</p>
+          <small>Oktober 2025 · Fahrtart Demo: Flughafentransfer</small>
+        </article>
+        <article class="review-card">
+          <div class="review-card-top"><span>★★★★★</span><b>I. Weber</b></div>
+          <p>"Pünktlich, zuverlässig und sehr höflich. Genau so wünscht man sich einen Fahrdienst."</p>
+          <small>September 2025 · Fahrtart Demo: Krankenfahrt</small>
+        </article>
+        <article class="review-card">
+          <div class="review-card-top"><span>★★★★☆</span><b>R. Demir</b></div>
+          <p>"Kurze Wartezeit und gute Kommunikation. Besonders praktisch für regelmäßige Termine."</p>
+          <small>August 2025 · Fahrtart Demo: Serienfahrt</small>
         </article>
       </section>
+      <a class="button reviews-google-link" href="https://g.page/r/CQJXnqVw7fTPEBM/review" target="_blank" rel="noreferrer">Weitere Bewertungen auf Google ansehen</a>
       <div class="reviews-preview-actions">
         <a class="button" href="tel:072743567"><i data-icon="phone"></i>Jetzt anrufen</a>
         <a class="button" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer"><i data-icon="yumak"></i>WhatsApp</a>

@@ -6,9 +6,18 @@
   <title>Anmelden | Taxi Germersheim</title>
   <meta name="description" content="Demo-Anmeldung fuer den Kundenbereich von Taxi Germersheim ohne echte Kontopruefung oder Backend-Authentifizierung." />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="public-visual-repair.css" />
   <link rel="stylesheet" href="auth-demo.css" />
 </head>
 <body class="auth-page">
+  <nav class="public-compact-nav" aria-label="Öffentliche Schnellnavigation">
+    <a class="public-back-home" href="index.html">Zurück zur Startseite</a>
+    <div class="public-compact-nav-links">
+      <a href="index.html?page=services">Leistungen</a>
+      <a href="flotte.html">Fahrzeugflotte</a>
+      <a href="index.html?page=booking">Zur Buchung ohne Konto</a>
+    </div>
+  </nav>
   <main class="auth-shell" aria-labelledby="authLoginTitle">
     <a class="auth-brand" href="index.html">
       <img src="logo.png" alt="Taxi Germersheim" />
@@ -51,6 +60,7 @@
     <nav class="auth-links" aria-label="Login Hilfslinks">
       <a href="registrieren.html">Neu hier? Jetzt registrieren</a>
       <a href="index.html">Zur Startseite</a>
+      <a href="index.html?page=booking">Ohne Anmeldung fortfahren</a>
     </nav>
 
     <p class="auth-note">Testdaten: Jede gueltige E-Mail + Passwort mit mindestens 8 Zeichen.</p>
