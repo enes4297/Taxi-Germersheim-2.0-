@@ -300,48 +300,88 @@ body {
 }
 
 #rewards.rewards-v2 .rv2-main-layout {
-  max-width: 1280px;
+  max-width: 1340px;
   margin-inline: auto;
   width: 100%;
-  gap: 18px;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1.55fr) minmax(340px, 0.95fr);
 }
 
 #rewards.rewards-v2 .rv2-left,
 #rewards.rewards-v2 .rv2-right {
   align-content: start;
-  gap: 16px;
+  gap: 14px;
 }
 
-#rewards.rewards-v2 .rv2-smart-dashboard,
-#rewards.rewards-v2 .rv2-today-overview,
-#rewards.rewards-v2 .rv2-customer-dashboard,
-#rewards.rewards-v2 .rv2-vip-status,
+#rewards.rewards-v2 .rv2-right {
+  position: sticky;
+  top: 84px;
+}
+
+#rewards.rewards-v2 .rv2-account-panel,
+#rewards.rewards-v2 .rv2-stats,
+#rewards.rewards-v2 .rv2-progress,
+#rewards.rewards-v2 .rv2-goal-premium,
+#rewards.rewards-v2 .rv2-badges,
+#rewards.rewards-v2 .rv2-rewards-points,
+#rewards.rewards-v2 .rv2-recent-rewards,
+#rewards.rewards-v2 .rv2-daily-missions,
+#rewards.rewards-v2 .rv2-weekly-missions,
 #rewards.rewards-v2 .rv2-special-missions,
-#rewards.rewards-v2 .rv2-seasonal-events {
-  display: none;
-}
-
-#rewards.rewards-v2 .rv2-smart-dashboard {
-  display: grid;
-}
-
-#rewards.rewards-v2 .rv2-smart-card[data-smart-card='points'],
-#rewards.rewards-v2 .rv2-smart-card[data-smart-card='level'],
-#rewards.rewards-v2 .rv2-smart-card[data-smart-card='mystery'] {
+#rewards.rewards-v2 .rv2-seasonal-events,
+#rewards.rewards-v2 .rv2-info-grid,
+#rewards.rewards-v2 .rv2-voucher-balance,
+#rewards.rewards-v2 .rv2-ride-demo,
+#rewards.rewards-v2 .rv2-admin-settlement {
   display: none !important;
 }
+
+#rewards.rewards-v2 .rv2-hero { order: 1; }
+#rewards.rewards-v2 .rv2-smart-dashboard { order: 2; }
+#rewards.rewards-v2 .rv2-quick-actions { order: 3; }
+#rewards.rewards-v2 .rv2-today-overview { order: 4; }
+#rewards.rewards-v2 .rv2-customer-dashboard { order: 5; }
+#rewards.rewards-v2 .rv2-vip-status { order: 6; }
+#rewards.rewards-v2 .rv2-missions { order: 7; }
+#rewards.rewards-v2 .rv2-daily-streak { order: 8; }
+#rewards.rewards-v2 .rv2-achievements { order: 9; }
+#rewards.rewards-v2 .rv2-collection { order: 10; }
+#rewards.rewards-v2 .rv2-activities { order: 11; }
+#rewards.rewards-v2 .rv2-mystery-box { order: 12; }
+
+#rewards.rewards-v2 .rv2-wheel-card { order: 1; }
+#rewards.rewards-v2 .rv2-yumak-assistant { order: 2; }
 
 #rewards.rewards-v2 .rv2-smart-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+#rewards.rewards-v2 .rv2-smart-card[data-smart-card='points'],
+#rewards.rewards-v2 .rv2-smart-card[data-smart-card='level'],
+#rewards.rewards-v2 .rv2-smart-card[data-smart-card='voucher'],
+#rewards.rewards-v2 .rv2-smart-card[data-smart-card='wheel'],
+#rewards.rewards-v2 .rv2-smart-card[data-smart-card='mystery'],
+#rewards.rewards-v2 .rv2-smart-card[data-smart-card='streak'] {
+  display: grid;
+}
+
 #rewards.rewards-v2 .rv2-wheel-card {
   padding: 16px;
+  gap: 12px;
 }
 
 #rewards.rewards-v2 .rv2-wheel-shell {
-  max-width: 360px;
+  max-width: 320px;
   margin-inline: auto;
+}
+
+#rewards.rewards-v2 .rv2-wheel-card h3 {
+  font-size: 30px;
+}
+
+#rewards.rewards-v2 .rv2-spin-btn {
+  min-height: 46px;
+  min-width: 190px;
 }
 
 #rewards.rewards-v2 .rv2-quick-actions-row .rv2-quick-action {
@@ -352,6 +392,39 @@ body {
 #rewards.rewards-v2 .rv2-achievement-grid,
 #rewards.rewards-v2 .rv2-reward-cards {
   gap: 12px;
+}
+
+@media (max-width: 1240px) {
+  #rewards.rewards-v2 .rv2-main-layout {
+    grid-template-columns: 1fr;
+  }
+
+  #rewards.rewards-v2 .rv2-right {
+    order: 0;
+    position: static;
+    top: auto;
+  }
+
+  #rewards.rewards-v2 .rv2-wheel-card {
+    position: relative;
+    top: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  #rewards.rewards-v2 .rv2-left,
+  #rewards.rewards-v2 .rv2-right {
+    gap: 12px;
+  }
+
+  #rewards.rewards-v2 .rv2-smart-grid,
+  #rewards.rewards-v2 .rv2-quick-actions-row {
+    grid-template-columns: 1fr;
+  }
+
+  #rewards.rewards-v2 .rv2-wheel-shell {
+    max-width: 280px;
+  }
 }
 
 .icon-sm,

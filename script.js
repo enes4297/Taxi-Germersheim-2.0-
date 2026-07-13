@@ -77,10 +77,10 @@
       wheelchair:10,
       referral:50,
       birthday:200,
-      googleReview:15,
+      googleReview:10,
       dailyMission:5,
       profileComplete:20,
-      favoriteAddress:10
+      favoriteAddress:5
     },
     pointsByRide:{
       taxi:10,
@@ -4232,7 +4232,7 @@
     const quickActionTargets={
       wheel:'[data-rewards-wheel]',
       missions:'[data-rewards-missions]',
-      voucher:'[data-voucher-balance]',
+      voucher:'[data-rewards-collection]',
       achievements:'[data-rewards-achievements]',
       mystery:'[data-rewards-mystery-box]'
     };
