@@ -74,6 +74,7 @@
       dialysis:0,
       chemo:0,
       radiation:0,
+      companyRide:0,
       wheelchair:10,
       referral:50,
       birthday:200,
@@ -2882,14 +2883,14 @@
       standard:{
         id:'standard',
         segments:[
+          {key:'points-5',icon:'⭐',label:'5 Punkte',desc:'Bonus',message:'Du hast 5 Punkte gewonnen.',win:true,effect:'points'},
           {key:'points-10',icon:'⭐',label:'10 Punkte',desc:'Bonus',message:'Du hast 10 Punkte gewonnen.',win:true,effect:'points'},
           {key:'points-25',icon:'⭐',label:'25 Punkte',desc:'Bonus',message:'Du hast 25 Punkte gewonnen.',win:true,effect:'points'},
           {key:'points-50',icon:'⭐',label:'50 Punkte',desc:'Bonus',message:'Du hast 50 Punkte gewonnen.',win:true,effect:'points'},
           {key:'voucher',icon:'🎁',label:'5 €',desc:'Gutschein',message:'Du hast einen 5 EUR Gutschein gewonnen.',win:true,effect:'voucher'},
-          {key:'free-ride',icon:'🚕',label:'Freifahrt',desc:'Los',message:'Du hast ein Freifahrt-Los gewonnen.',win:true,effect:'free-ride'},
-          {key:'no-win',icon:'❌',label:'Niete',desc:'Kein Gewinn',message:'Heute leider kein Gewinn. Morgen wartet die nächste Chance.',win:false,effect:'no-win'},
           {key:'extra-spin',icon:'🔄',label:'Extra Dreh',desc:'Chance',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
-          {key:'mystery',icon:'🎁',label:'Geheim',desc:'Preis',message:'Du hast einen Geheimpreis gewonnen.',win:true,effect:'mystery'}
+          {key:'mystery',icon:'📦',label:'Mystery Box',desc:'Bonus',message:'Du hast eine Mystery Box gewonnen.',win:true,effect:'mystery'},
+          {key:'no-win',icon:'❌',label:'Niete',desc:'Kein Gewinn',message:'Heute leider kein Gewinn. Morgen wartet die nächste Chance.',win:false,effect:'no-win'}
         ]
       }
       // Future-ready slots:
@@ -3887,7 +3888,7 @@
     const storageKey='taxiRewardsCustomerDashboardState';
     const defaultData={
       profile:{
-        name:'Max Mustermann',
+        name:'Enes',
         memberSince:'01.01.2026',
         level:'Gold',
         status:'Premium Mitglied',
@@ -3902,7 +3903,7 @@
         rides:184,
         points:230,
         spins:12,
-        vouchers:6,
+        vouchers:2,
         badges:4,
         streak:2
       },
@@ -3915,7 +3916,7 @@
       activities:[
         {day:'Heute',text:'+5 Punkte · Glücksrad'},
         {day:'Gestern',text:'+10 Punkte · Fahrt'},
-        {day:'Vor 3 Tagen',text:'Badge erhalten'}
+        {day:'Diese Woche',text:'Abzeichen Stammkunde erhalten'}
       ]
     };
 
@@ -4232,7 +4233,7 @@
     const quickActionTargets={
       wheel:'[data-rewards-wheel]',
       missions:'[data-rewards-missions]',
-      voucher:'[data-rewards-collection]',
+      voucher:'[data-rewards-benefits]',
       achievements:'[data-rewards-achievements]',
       mystery:'[data-rewards-mystery-box]'
     };
@@ -4464,9 +4465,8 @@
     function renderToday(snapshot){
       const tasks={
         wheel:!snapshot.wheelAvailable,
-        mystery:!snapshot.mysteryAvailable,
-        'first-ride':snapshot.dailyFirstRideDone,
-        'three-missions':snapshot.missionDoneCount>=3
+        missions:snapshot.missionDoneCount>=1,
+        streak:snapshot.streakTodayDone
       };
 
       const items=$$('[data-today-item]',todayRoot);
@@ -4478,19 +4478,20 @@
         item.dataset.todayState=done ? 'done' : 'open';
       });
 
-      const progress=Math.max(0,Math.min(100,(doneCount/4)*100));
+      const totalTasks=Math.max(1,items.length);
+      const progress=Math.max(0,Math.min(100,(doneCount/totalTasks)*100));
       const bar=$('.rv2-today-progress',todayRoot);
       const fill=$('[data-today-progress-fill]',todayRoot);
       const textNode=$('[data-today-progress-text]',todayRoot);
 
       if(bar){
         bar.setAttribute('aria-valuemin','0');
-        bar.setAttribute('aria-valuemax','4');
+        bar.setAttribute('aria-valuemax',String(totalTasks));
         bar.setAttribute('aria-valuenow',String(doneCount));
         bar.style.setProperty('--today-progress',`${progress.toFixed(2)}%`);
       }
       if(fill) fill.style.width=`${progress.toFixed(2)}%`;
-      if(textNode) textNode.textContent=`${doneCount} von 4 Aufgaben erledigt`;
+      if(textNode) textNode.textContent=`${doneCount} von ${totalTasks} Aufgaben erledigt`;
     }
 
     function renderQuickBadges(snapshot,signals){
@@ -5710,7 +5711,8 @@
 
     const filterButtons=$$('[data-activity-filter]',root);
     const timeline=$('.rv2-activity-timeline',root);
-    if(!filterButtons.length || !timeline) return;
+    if(!timeline) return;
+    const compactTimeline=root.dataset.activitiesCompact==='true';
     let currentFilter='all';
 
     function applyFilter(filter){
@@ -5762,14 +5764,14 @@
       if(append) timeline.append(li);
       else timeline.prepend(li);
 
-      while(timeline.children.length>12) timeline.lastElementChild?.remove();
+      while(timeline.children.length>3) timeline.lastElementChild?.remove();
       applyFilter(currentFilter);
     }
 
     function renderStoreActivities(){
       if(!engine) return;
       const snapshot=engine.Store.getState();
-      const entries=Array.isArray(snapshot.activities) ? snapshot.activities.slice(0,12) : [];
+      const entries=Array.isArray(snapshot.activities) ? snapshot.activities.slice(0,3) : [];
       if(!entries.length) return;
       timeline.innerHTML='';
       entries.forEach(entry=>{
@@ -5789,6 +5791,11 @@
         applyFilter(button.dataset.activityFilter || 'all');
       });
     });
+
+    if(compactTimeline){
+      applyFilter('all');
+      return;
+    }
 
     if(engine){
       engine.Events.on('reward.store',renderStoreActivities);
