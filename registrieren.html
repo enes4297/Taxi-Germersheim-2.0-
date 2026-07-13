@@ -67,7 +67,7 @@
       </ul>
 
       <div class="auth-field">
-        <label for="regPasswordConfirm">Passwort bestaetigen</label>
+        <label for="regPasswordConfirm">Passwort bestätigen</label>
         <input id="regPasswordConfirm" name="passwordConfirm" type="password" minlength="8" autocomplete="new-password" required />
       </div>
 
@@ -162,12 +162,12 @@
         }
 
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          error.textContent = "Bitte eine gueltige E-Mail-Adresse eingeben.";
+          error.textContent = "Bitte eine gültige E-Mail-Adresse eingeben.";
           return;
         }
 
         if (phone.length < 6) {
-          error.textContent = "Bitte eine gueltige Telefonnummer eingeben.";
+          error.textContent = "Bitte eine gültige Telefonnummer eingeben.";
           return;
         }
 
@@ -178,7 +178,7 @@
         }
 
         if (password !== passwordConfirm) {
-          error.textContent = "Passwort und Bestaetigung stimmen nicht ueberein.";
+          error.textContent = "Passwort und Bestätigung stimmen nicht überein.";
           return;
         }
 

@@ -16,6 +16,7 @@
   <meta property="og:url" content="rewards.html">
   <meta property="og:image" content="logo.png">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="public-visual-repair.css">
   <link rel="stylesheet" href="auth-demo.css">
 </head>
 <body>
@@ -51,9 +52,9 @@
             <p>Ihr Bonusprogramm bei Taxi Germersheim. Punkte sammeln, Level aufsteigen und exklusive Vorteile freischalten.</p>
           </article>
 
-          <section class="rv2-smart-dashboard" aria-label="Smart Dashboard" data-rewards-smart-dashboard>
+          <section class="rv2-smart-dashboard" aria-label="Rewards-Übersicht" data-rewards-smart-dashboard>
             <header class="rv2-section-head">
-              <h3>Smart Dashboard</h3>
+              <h3>Deine Rewards-Übersicht</h3>
               <small>Deine wichtigsten Rewards-Infos auf einen Blick</small>
             </header>
 
@@ -62,7 +63,7 @@
                 <i aria-hidden="true">⭐</i>
                 <small>Aktuelle Punkte</small>
                 <strong data-smart-points>230</strong>
-                <em>Live-Stand</em>
+                <em>Aktueller Stand</em>
               </article>
 
               <article class="rv2-smart-card" data-smart-card="level">
@@ -74,16 +75,16 @@
 
               <article class="rv2-smart-card" data-smart-card="voucher">
                 <i aria-hidden="true">🎁</i>
-                <small>Gutschein-Guthaben</small>
+                <small>Aktive Gutscheine</small>
                 <strong data-smart-voucher>15 €</strong>
                 <em>Sofort einlösbar</em>
               </article>
 
               <article class="rv2-smart-card" data-smart-card="streak">
                 <i aria-hidden="true">🔥</i>
-                <small>Login-Serie</small>
-                <strong data-smart-streak>2 Tage</strong>
-                <em data-smart-streak-state>Heute offen</em>
+                <small>Heutige Missionen</small>
+                <strong data-smart-streak>3 offen</strong>
+                <em data-smart-streak-state>Jetzt starten</em>
               </article>
 
               <article class="rv2-smart-card" data-smart-card="wheel">
@@ -109,11 +110,11 @@
             </header>
 
             <div class="rv2-quick-actions-row" role="navigation" aria-label="Rewards Navigation">
-              <button class="button rv2-quick-action" type="button" data-dashboard-action="wheel"><span aria-hidden="true">🎡</span>Zum Glücksrad</button>
-              <button class="button rv2-quick-action" type="button" data-dashboard-action="missions"><span aria-hidden="true">✅</span>Zu Missionen <b class="rv2-quick-badge" data-quick-badge="missions" hidden>Neu</b></button>
-              <button class="button rv2-quick-action" type="button" data-dashboard-action="voucher"><span aria-hidden="true">🎟️</span>Zu Gutscheinen</button>
-              <button class="button rv2-quick-action" type="button" data-dashboard-action="achievements"><span aria-hidden="true">🏅</span>Zu Achievements <b class="rv2-quick-badge" data-quick-badge="achievements" hidden>Neu</b></button>
-              <button class="button rv2-quick-action" type="button" data-dashboard-action="mystery"><span aria-hidden="true">📦</span>Zu Mystery Box</button>
+              <button class="button rv2-quick-action" type="button" data-dashboard-action="wheel"><i data-icon="rewards"></i>Zum Glücksrad</button>
+              <button class="button rv2-quick-action" type="button" data-dashboard-action="missions"><i data-icon="check"></i>Zu Missionen <b class="rv2-quick-badge" data-quick-badge="missions" hidden>Neu</b></button>
+              <button class="button rv2-quick-action" type="button" data-dashboard-action="voucher"><i data-icon="voucher"></i>Zu Gutscheinen</button>
+              <button class="button rv2-quick-action" type="button" data-dashboard-action="achievements"><i data-icon="profile"></i>Zu Abzeichen <b class="rv2-quick-badge" data-quick-badge="achievements" hidden>Neu</b></button>
+              <button class="button rv2-quick-action" type="button" data-dashboard-action="mystery"><i data-icon="gift"></i>Zu Mystery Box</button>
             </div>
           </section>
 
@@ -136,18 +137,18 @@
             </ul>
           </section>
 
-          <section class="rv2-customer-dashboard" aria-label="Premium Kunden-Dashboard" data-rewards-customer-dashboard>
+          <section class="rv2-customer-dashboard" aria-label="Kundenbereich" data-rewards-customer-dashboard>
             <header class="rv2-section-head">
-              <h3>Premium Kunden-Dashboard</h3>
+              <h3>Dein Kundenbereich</h3>
               <small>Persönliche Übersicht, Fortschritt und Vorteile</small>
             </header>
 
             <div class="rv2-customer-top">
               <article class="rv2-customer-profile" aria-label="Persönliches Profil">
-                <div class="rv2-customer-avatar" aria-hidden="true">M</div>
+                <div class="rv2-customer-avatar" aria-hidden="true">E</div>
                 <div class="rv2-customer-profile-copy">
                   <small>Persönliches Profil</small>
-                  <h4 data-cd-name>Max Mustermann</h4>
+                  <h4 data-cd-name>Enes</h4>
                   <p>Mitglied seit: <span data-cd-member-since>01.01.2026</span></p>
                   <p>Aktuelles Level: <b data-cd-level>Gold</b></p>
                   <p>Status: <b data-cd-status>Premium Mitglied</b></p>
@@ -205,7 +206,7 @@
               <span data-vip-level="silber">Silber</span>
               <span data-vip-level="gold">Gold</span>
               <span data-vip-level="platin">Platin</span>
-              <span data-vip-level="legend">Legend</span>
+              <span data-vip-level="vip">VIP</span>
             </div>
 
             <article class="rv2-vip-progress-card" aria-label="VIP Fortschritt">
@@ -264,14 +265,14 @@
                 </ul>
               </article>
 
-              <article class="rv2-vip-benefit-card" data-vip-tier="legend">
-                <h4>Legend</h4>
+              <article class="rv2-vip-benefit-card" data-vip-tier="vip">
+                <h4>VIP</h4>
                 <ul>
                   <li>Bonuspunkte: +20%</li>
                   <li>Gutschein-Guthaben: +20 € Bonus</li>
                   <li>Extra-Drehs: 5 / Woche</li>
                   <li>Event-Zugang: Exklusiv</li>
-                  <li>Exklusive Abzeichen: Legendär</li>
+                  <li>Exklusive Abzeichen: VIP-Serie</li>
                 </ul>
               </article>
             </div>
@@ -318,7 +319,7 @@
               <span data-level="silber">Silber</span>
               <span class="is-current" data-level="gold">Gold</span>
               <span data-level="platin">Platin</span>
-              <span data-level="legend">Legend</span>
+              <span data-level="vip">VIP</span>
             </div>
           </section>
 
@@ -348,19 +349,21 @@
             <article class="rv2-rewards-box">
               <h3>Belohnungen</h3>
               <div class="rv2-reward-cards">
-                <article class="rv2-reward-card" data-reward-type="voucher" data-reward-state="upcoming"><b>5 EUR Gutschein</b><small>Ab Gold-Level</small><em class="rv2-reward-status">Bald einloesbar</em><button class="button rv2-reward-btn" type="button">Bald einloesbar</button></article>
-                <article class="rv2-reward-card" data-reward-type="free-ride" data-reward-state="progress"><b>Freifahrt-Los</b><small>Exklusiver Reward</small><em class="rv2-reward-status">In Bearbeitung</em><button class="button rv2-reward-btn" type="button">Bald aktivierbar</button></article>
+                <article class="rv2-reward-card" data-reward-type="voucher" data-reward-state="upcoming"><b>5 EUR Gutschein</b><small>Ab Gold-Level</small><em class="rv2-reward-status">Bald einlösbar</em><button class="button rv2-reward-btn" type="button">Bald einlösbar</button></article>
+                <article class="rv2-reward-card" data-reward-type="extra-spin" data-reward-state="progress"><b>Extra-Dreh</b><small>Exklusiver Reward</small><em class="rv2-reward-status">In Bearbeitung</em><button class="button rv2-reward-btn" type="button">Bald aktivierbar</button></article>
               </div>
             </article>
 
             <article class="rv2-points-box">
               <h3>So sammelst du Punkte</h3>
               <ul>
-                <li class="tone-gold"><i data-icon="taxi"></i><span>Fahrt buchen</span><b>+10 Punkte</b></li>
-                <li class="tone-green"><i data-icon="medical"></i><span>Krankenfahrt</span><b>+20 Punkte</b></li>
+                <li class="tone-gold"><i data-icon="taxi"></i><span>Normale Taxifahrt</span><b>+10 Punkte</b></li>
+                <li class="tone-green"><i data-icon="airport"></i><span>Flughafentransfer</span><b>+15 Punkte</b></li>
+                <li class="tone-gold"><i data-icon="medical"></i><span>Private Krankenfahrt</span><b>+5 Punkte</b></li>
                 <li class="tone-gold"><i data-icon="repeat"></i><span>Weiterempfehlung</span><b>+50 Punkte</b></li>
                 <li class="tone-yellow"><i data-icon="profile"></i><span>Google Bewertung</span><b>+15 Punkte</b></li>
               </ul>
+              <p class="rv2-mission-note">Keine Punkte: Kassen-, Firmen-, Dialyse-, Chemo- und Strahlentherapie-Fahrten.</p>
             </article>
           </section>
 
@@ -540,8 +543,8 @@
               </article>
 
               <article class="rv2-weekly-card" data-weekly-current="0" data-weekly-target="1" data-weekly-status="active">
-                <h4>Krankenfahrt</h4>
-                <p class="rv2-weekly-reward">Belohnung: +40 Punkte</p>
+                <h4>Profil vervollständigen</h4>
+                <p class="rv2-weekly-reward">Belohnung: +20 Punkte</p>
                 <div class="rv2-weekly-progress" role="progressbar" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><u></u></div>
                 <small class="rv2-weekly-progress-text">0 / 1</small>
                 <em class="rv2-weekly-status">Aktiv</em>
@@ -576,13 +579,13 @@
               <article class="rv2-special-card"><i aria-hidden="true">🎃</i><h4>Halloween</h4><b>Bald verfügbar</b></article>
               <article class="rv2-special-card"><i aria-hidden="true">🎂</i><h4>Geburtstag</h4><b>Bald verfügbar</b></article>
               <article class="rv2-special-card"><i aria-hidden="true">🚖</i><h4>Erste Flughafenfahrt</h4><b>Bald verfügbar</b></article>
-              <article class="rv2-special-card"><i aria-hidden="true">🏥</i><h4>Erste Krankenfahrt</h4><b>Bald verfügbar</b></article>
+              <article class="rv2-special-card"><i aria-hidden="true">⭐</i><h4>Lieblingsadresse speichern</h4><b>Bald verfügbar</b></article>
             </div>
           </section>
 
-          <section class="rv2-achievements" aria-label="Achievements" data-rewards-achievements>
+          <section class="rv2-achievements" aria-label="Abzeichen" data-rewards-achievements>
             <header class="rv2-section-head">
-              <h3>Achievements</h3>
+              <h3>Abzeichen</h3>
               <small>Besondere Erfolge und Meilensteine</small>
             </header>
 
@@ -625,7 +628,7 @@
 
               <article class="rv2-achievement-card" data-achievement-id="medical-hero" data-ach-status="locked" data-ach-current="0" data-ach-target="1" data-ach-rarity="selten">
                 <i aria-hidden="true">🏥</i>
-                <h4>Krankenfahrt-Held</h4>
+                <h4>Profil-Profi</h4>
                 <b class="rv2-achievement-rarity">Selten</b>
                 <em class="rv2-achievement-status">Gesperrt</em>
                 <div class="rv2-achievement-progress" role="progressbar" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><u></u></div>
@@ -650,7 +653,7 @@
                 <small class="rv2-achievement-progress-text">1 / 1</small>
               </article>
 
-              <article class="rv2-achievement-card" data-achievement-id="legend" data-ach-status="secret" data-ach-current="0" data-ach-target="1" data-ach-rarity="legendary">
+              <article class="rv2-achievement-card" data-achievement-id="vip-secret" data-ach-status="secret" data-ach-current="0" data-ach-target="1" data-ach-rarity="legendary">
                 <i aria-hidden="true">❔</i>
                 <h4>???</h4>
                 <b class="rv2-achievement-rarity">Legendär</b>
@@ -778,20 +781,20 @@
                 <small class="rv2-mission-progress-text">1 / 1 Transfer</small>
               </article>
 
-              <article class="rv2-mission-card" data-mission-id="medical-booking" data-mission-status="active" data-mission-current="0" data-mission-target="1" data-mission-reward="+30 Punkte">
-                <i class="rv2-mission-icon" aria-hidden="true">🏥</i>
+              <article class="rv2-mission-card" data-mission-id="profile-complete" data-mission-status="active" data-mission-current="0" data-mission-target="1" data-mission-reward="+20 Punkte">
+                <i class="rv2-mission-icon" aria-hidden="true">👤</i>
                 <div class="rv2-mission-copy">
-                  <h4>Krankenfahrt buchen</h4>
-                  <p>Buche deine erste Krankenfahrt über das System.</p>
+                  <h4>Profil vervollständigen</h4>
+                  <p>Ergänze Profilbild, Telefon und Lieblingsadresse.</p>
                 </div>
                 <div class="rv2-mission-meta">
-                  <span class="rv2-mission-reward">+30 Punkte</span>
+                  <span class="rv2-mission-reward">+20 Punkte</span>
                   <b class="rv2-mission-status">Aktiv</b>
                 </div>
-                <div class="rv2-mission-progress" role="progressbar" aria-label="Fortschritt Krankenfahrt" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+                <div class="rv2-mission-progress" role="progressbar" aria-label="Fortschritt Profil" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
                   <u></u>
                 </div>
-                <small class="rv2-mission-progress-text">0 / 1 Buchung</small>
+                <small class="rv2-mission-progress-text">0 / 1 Profil</small>
               </article>
 
               <article class="rv2-mission-card" data-mission-id="refer-friend" data-mission-status="locked" data-mission-current="0" data-mission-target="1" data-mission-reward="10 € Gutschein">

@@ -1,5 +1,10 @@
 /* V14.4 Public Visual Repair */
 
+body {
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+}
+
 .site-nav a,
 .site-nav button {
   background: transparent;
@@ -77,13 +82,44 @@
 }
 
 .feature-card.reward {
-  min-height: 240px;
+  min-height: 280px;
 }
 
 .reward-layout {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   align-content: start;
+  min-height: 100%;
+}
+
+.feature-grid {
+  align-items: stretch;
+}
+
+.feature-grid .feature-card {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: 365px !important;
+  height: 365px !important;
+  margin-top: 0 !important;
+}
+
+.feature-grid .feature-card.rating,
+.feature-grid .feature-card.wide,
+.feature-grid .feature-card.reward,
+.feature-grid .feature-card.yumak-home {
+  align-content: start !important;
+}
+
+.feature-card > em {
+  align-self: end;
+}
+
+.reward-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: end;
 }
 
 .reward-kicker {
@@ -98,8 +134,39 @@
 .reward-score {
   margin: 0;
   font-family: var(--serif);
-  font-size: clamp(30px, 4.2vw, 42px);
+  font-size: clamp(34px, 4.6vw, 46px);
   line-height: 1;
+}
+
+.reward-score span {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.reward-level-box {
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  text-align: right;
+}
+
+.reward-level-box small {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.reward-level-box b {
+  font-size: 24px;
+  line-height: 1;
+  color: #ffe8a7;
 }
 
 .reward-level {
@@ -160,8 +227,131 @@
 }
 
 .reviews-google-link {
-  margin-top: 14px;
+  margin-top: 18px;
+  margin-bottom: 22px;
   display: inline-flex;
+}
+
+.reviews-preview-actions {
+  gap: 12px;
+}
+
+.reviews-preview-actions .button {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.reviews-preview-actions .button i[data-icon],
+.reviews-preview-actions .button .tg-icon-mask {
+  width: 18px;
+  height: 18px;
+}
+
+.booking-premium .pb-favorite-button {
+  min-height: 64px;
+  align-content: start;
+  gap: 6px;
+  padding: 12px;
+}
+
+.booking-premium .pb-favorite-button .pb-favorite-label {
+  line-height: 1.2;
+}
+
+.booking-premium .pb-favorite-button .pb-favorite-value {
+  line-height: 1.35;
+  font-size: 12px;
+}
+
+.booking-premium .pb-summary li {
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.booking-premium .pb-summary li b {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.nav-dropdown button {
+  grid-template-columns: 20px 1fr;
+  gap: 12px;
+  min-height: 40px;
+  padding: 8px 12px;
+}
+
+.nav-dropdown button i[data-icon],
+.nav-dropdown button .tg-icon-mask {
+  width: 18px;
+  height: 18px;
+  color: #ffe8a7;
+}
+
+.nav-dropdown button b {
+  line-height: 1.2;
+}
+
+.nav-dropdown button:hover {
+  background: rgba(255, 217, 106, 0.09);
+}
+
+#rewards.rewards-v2 .rv2-main-layout {
+  max-width: 1280px;
+  margin-inline: auto;
+  width: 100%;
+  gap: 18px;
+}
+
+#rewards.rewards-v2 .rv2-left,
+#rewards.rewards-v2 .rv2-right {
+  align-content: start;
+  gap: 16px;
+}
+
+#rewards.rewards-v2 .rv2-smart-dashboard,
+#rewards.rewards-v2 .rv2-today-overview,
+#rewards.rewards-v2 .rv2-customer-dashboard,
+#rewards.rewards-v2 .rv2-vip-status,
+#rewards.rewards-v2 .rv2-special-missions,
+#rewards.rewards-v2 .rv2-seasonal-events {
+  display: none;
+}
+
+#rewards.rewards-v2 .rv2-smart-dashboard {
+  display: grid;
+}
+
+#rewards.rewards-v2 .rv2-smart-card[data-smart-card='points'],
+#rewards.rewards-v2 .rv2-smart-card[data-smart-card='level'],
+#rewards.rewards-v2 .rv2-smart-card[data-smart-card='mystery'] {
+  display: none !important;
+}
+
+#rewards.rewards-v2 .rv2-smart-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#rewards.rewards-v2 .rv2-wheel-card {
+  padding: 16px;
+}
+
+#rewards.rewards-v2 .rv2-wheel-shell {
+  max-width: 360px;
+  margin-inline: auto;
+}
+
+#rewards.rewards-v2 .rv2-quick-actions-row .rv2-quick-action {
+  min-height: 44px;
+}
+
+#rewards.rewards-v2 .rv2-mission-grid,
+#rewards.rewards-v2 .rv2-achievement-grid,
+#rewards.rewards-v2 .rv2-reward-cards {
+  gap: 12px;
 }
 
 .icon-sm,
@@ -387,6 +577,25 @@
   .fleet-v44-grid {
     grid-template-columns: 1fr;
   }
+
+  .feature-grid .feature-card {
+    min-height: 250px;
+    height: auto !important;
+  }
+
+  .reward-main {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .reward-level-box {
+    justify-items: start;
+    text-align: left;
+  }
+
+  #rewards.rewards-v2 .rv2-smart-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -423,5 +632,14 @@
   .public-compact-nav {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .booking-premium .pb-summary li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .reviews-preview-actions {
+    grid-template-columns: 1fr;
   }
 }
