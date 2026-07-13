@@ -463,7 +463,7 @@
       level:{key:'gold',label:'Gold'},
       voucherBalance:12.5,
       voucherHistory:[
-        {amount:5,title:'5 EUR Gutschein durch Gluecksrad erhalten',source:'wheel',timestamp:Date.now()-86400000},
+        {amount:5,title:'5 EUR Gutschein durch Glücksrad erhalten',source:'wheel',timestamp:Date.now()-86400000},
         {amount:10,title:'10 EUR Gutschein durch Aktion erhalten',source:'campaign',timestamp:Date.now()-172800000}
       ],
       freeSpins:0,
@@ -2890,7 +2890,7 @@
           {key:'voucher',icon:'🎁',label:'5-€',desc:'GUTSCHEIN',resultLabel:'5-€-Gutschein',message:'Du hast einen 5-EUR-Gutschein gewonnen.',win:true,effect:'voucher'},
           {key:'extra-spin',icon:'🔄',label:'Extra',desc:'DREH',resultLabel:'Extra-Dreh',message:'Du hast einen Extra-Dreh gewonnen.',win:true,effect:'extra-spin'},
           {key:'mystery',icon:'📦',label:'Mystery',desc:'BOX',resultLabel:'Mystery Box',message:'Du hast eine Mystery Box gewonnen.',win:true,effect:'mystery'},
-          {key:'no-win',icon:'❌',label:'Niete',desc:'HEUTE NICHT',resultLabel:'Niete',message:'Heute leider kein Gewinn. Morgen wartet die naechste Chance.',win:false,effect:'no-win'}
+          {key:'no-win',icon:'❌',label:'Niete',desc:'HEUTE NICHT',resultLabel:'Niete',message:'Heute leider kein Gewinn. Morgen wartet die nächste Chance.',win:false,effect:'no-win'}
         ]
       }
       // Future-ready slots:
@@ -3470,9 +3470,9 @@
             audioHooks.play('win');
 
             if(winCard && winMessage && winTitle){
-              winTitle.textContent='Glueckwunsch';
+              winTitle.textContent='Glückwunsch';
               winMessage.textContent=selectedSegment.message;
-              if(winDemo) winDemo.textContent='Demo-Hinweis: Der Gewinn gilt fuer diese lokale Vorschau.';
+              if(winDemo) winDemo.textContent='Demo-Hinweis: Der Gewinn gilt für diese lokale Vorschau.';
               winCard.setAttribute('data-effect',selectedSegment.effect||'points');
               winCard.hidden=false;
               requestAnimationFrame(()=>winCard.classList.add('is-visible'));
@@ -3487,7 +3487,7 @@
             if(winCard && winMessage && winTitle){
               winTitle.textContent='Heute leider kein Gewinn';
               winMessage.textContent=selectedSegment.message;
-              if(winDemo) winDemo.textContent='Demo-Hinweis: Morgen ist der regulaere Dreh wieder verfuegbar.';
+              if(winDemo) winDemo.textContent='Demo-Hinweis: Morgen ist der reguläre Dreh wieder verfügbar.';
               winCard.setAttribute('data-effect','no-win');
               winCard.hidden=false;
               requestAnimationFrame(()=>winCard.classList.add('is-visible'));
@@ -3503,7 +3503,7 @@
       applyCooldownUi(hasTodayCooldown());
 
       if(oneTimeResetApplied){
-        result.textContent='Demo-Dreh wurde einmalig fuer diesen Sprint freigeschaltet.';
+        result.textContent='Demo-Dreh wurde einmalig für diesen Sprint freigeschaltet.';
         result.classList.remove('is-win','is-lose');
       }
 
@@ -3515,8 +3515,8 @@
             const changed=resetWheelCooldownState();
             applyCooldownUi(hasTodayCooldown());
             result.textContent=changed
-              ? 'Demo-Dreh zurueckgesetzt. Genau ein weiterer Dreh ist frei.'
-              : 'Kein aktiver Tages-Cooldown. Ein Dreh ist bereits verfuegbar.';
+              ? 'Demo-Dreh zurückgesetzt. Genau ein weiterer Dreh ist frei.'
+              : 'Kein aktiver Tages-Cooldown. Ein Dreh ist bereits verfügbar.';
             result.classList.remove('is-win','is-lose');
             if(winCard){
               winCard.hidden=true;

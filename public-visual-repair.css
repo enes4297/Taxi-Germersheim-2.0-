@@ -1437,12 +1437,12 @@ body {
 #rewards.rewards-v2 .rv2-mystery-main {
   display: grid;
   grid-template-columns: 132px minmax(0, 1fr);
-  gap: 16px;
-  align-items: center;
+  gap: 22px;
+  align-items: start;
 }
 
 #rewards.rewards-v2 .rv2-mystery-chest {
-  min-height: 132px;
+  min-height: 136px;
   display: grid;
   place-items: center;
 }
@@ -1454,6 +1454,7 @@ body {
   display: grid;
   place-items: center;
   animation: rv16MysteryFloat 3.3s ease-in-out infinite;
+  margin-inline: auto;
 }
 
 #rewards.rewards-v2 .rv2-mystery-lid {
@@ -1560,7 +1561,8 @@ body {
 #rewards.rewards-v2 .rv2-mystery-copy {
   display: grid;
   gap: 10px;
-  align-content: center;
+  align-content: start;
+  min-width: 0;
 }
 
 #rewards.rewards-v2 .rv2-mystery-status {
@@ -1581,13 +1583,14 @@ body {
 
 #rewards.rewards-v2 .rv2-mystery-note {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 #rewards.rewards-v2 .rv2-mystery-footer {
   display: grid;
   gap: 8px;
+  padding-left: calc(132px + 22px);
 }
 
 #rewards.rewards-v2 .rv2-mystery-open {
@@ -1595,8 +1598,27 @@ body {
   width: min(100%, 320px);
 }
 
+#rewards.rewards-v2 .rv2-mystery-open[disabled] {
+  opacity: 0.8;
+  color: #2a1e0d;
+}
+
 #rewards.rewards-v2 .rv2-mystery-countdown {
   font-size: 13px;
+  line-height: 1.45;
+}
+
+#rewards.rewards-v2 .rv2-mystery-result {
+  margin-top: 4px;
+}
+
+#rewards.rewards-v2 .rv2-section-head h3 {
+  line-height: 1.12;
+}
+
+#rewards.rewards-v2 .rv2-section-head small {
+  letter-spacing: 0.07em;
+  line-height: 1.4;
 }
 
 #rewards.rewards-v2 .rv2-mystery-result-copy small {
@@ -1659,18 +1681,64 @@ body {
   width: 100%;
 }
 
+#rewards.rewards-v2 .rv2-quick-actions-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+#rewards.rewards-v2 .rv2-quick-actions-row .rv2-quick-action {
+  min-height: 54px;
+  padding: 8px 12px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  line-height: 1.28;
+  letter-spacing: 0.05em;
+  white-space: normal;
+}
+
+#rewards.rewards-v2 .rv2-quick-actions-row .rv2-quick-action i {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#rewards.rewards-v2 .rv2-quick-actions-row .rv2-quick-badge {
+  justify-self: end;
+  align-self: center;
+}
+
 #rewards.rewards-v2 .rv2-today-list {
   align-items: stretch;
 }
 
 #rewards.rewards-v2 .rv2-today-list li {
-  min-height: 146px;
+  min-height: 154px;
   display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
   align-content: start;
-  gap: 8px;
+  gap: 8px 10px;
   padding: 12px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+#rewards.rewards-v2 .rv2-today-list li i {
+  grid-column: 1;
+  grid-row: 1;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
 }
 
 #rewards.rewards-v2 .rv2-today-list li[data-today-state='open'] {
@@ -1684,12 +1752,46 @@ body {
 }
 
 #rewards.rewards-v2 .rv2-today-list li span {
+  grid-column: 2;
+  grid-row: 1;
   font-size: 16px;
   font-weight: 860;
+  line-height: 1.25;
 }
 
 #rewards.rewards-v2 .rv2-today-list li small {
+  grid-column: 1 / -1;
+  grid-row: 2;
   margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#rewards.rewards-v2 .rv2-today-list li::after {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  align-self: end;
+  justify-self: start;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  content: 'Offen';
+  border: 1px solid rgba(255, 217, 106, 0.42);
+  color: #ffe9b5;
+  background: rgba(255, 217, 106, 0.16);
+}
+
+#rewards.rewards-v2 .rv2-today-list li[data-today-state='done']::after {
+  content: 'Erledigt';
+  border-color: rgba(110, 224, 162, 0.44);
+  color: #d6ffea;
+  background: rgba(73, 171, 113, 0.2);
 }
 
 #rewards.rewards-v2 .rv2-rewards-points {
@@ -1855,6 +1957,19 @@ body {
   }
 
   #rewards.rewards-v2 .rv2-mystery-status {
+    justify-self: start;
+  }
+
+  #rewards.rewards-v2 .rv2-mystery-footer {
+    padding-left: 0;
+  }
+
+  #rewards.rewards-v2 .rv2-quick-actions-row .rv2-quick-action {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  #rewards.rewards-v2 .rv2-quick-actions-row .rv2-quick-badge {
+    grid-column: 1 / -1;
     justify-self: start;
   }
 
