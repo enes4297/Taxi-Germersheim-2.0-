@@ -1625,6 +1625,7 @@
   function resolveInitialScreen(){
     const params=new URLSearchParams(window.location.search);
     const page=params.get('page');
+    if(page==='rewards') return null;
     if(page && $('#'+page)) return page;
     return null;
   }
@@ -1635,10 +1636,88 @@
     });
   }
   function show(id){
+    if(id==='rewards'){
+      window.location.href='rewards.html';
+      return;
+    }
     if(!$('#'+id)) id='home';
     $$('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
     $$('.site-nav button').forEach(b=>b.classList.toggle('active',b.dataset.go===id));
     window.scrollTo(0,0);
+  }
+
+  function initPublicBackButtons(){
+    const buttons=$$('[data-public-back], .page-head-link, .public-back-home');
+    if(!buttons.length) return;
+
+    buttons.forEach(button=>{
+      if(button.dataset.backBound==='true') return;
+      button.dataset.backBound='true';
+
+      button.addEventListener('click',event=>{
+        event.preventDefault();
+        const fallback=String(button.getAttribute('href') || 'index.html').trim() || 'index.html';
+        const sameOriginRef=document.referrer && (()=>{
+          try{ return new URL(document.referrer).origin===window.location.origin; }
+          catch(_err){ return false; }
+        })();
+        if(window.history.length>1 && sameOriginRef){
+          window.history.back();
+          return;
+        }
+        window.location.href=fallback;
+      });
+    });
+  }
+
+  function initHomeRewardsCard(){
+    const card=$('#home .feature-card.reward');
+    if(!card) return;
+    if(card.dataset.bound==='true') return;
+    card.dataset.bound='true';
+
+    const scoreNode=$('.reward-score',card);
+    const scoreLabel=$('.reward-score span',card);
+    const levelNode=$('.reward-level-box b',card);
+    const nextNode=$('.reward-next',card);
+    const progressFill=$('.bar u',card);
+
+    if(!scoreNode || !levelNode || !nextNode || !progressFill) return;
+
+    function levelByPoints(points){
+      for(let i=REWARDS_RULES.levels.length-1;i>=0;i--){
+        const level=REWARDS_RULES.levels[i];
+        if(points>=level.minPoints) return level;
+      }
+      return REWARDS_RULES.levels[0];
+    }
+
+    function nextLevel(currentKey){
+      const index=REWARDS_RULES.levels.findIndex(level=>level.key===currentKey);
+      if(index<0 || index===REWARDS_RULES.levels.length-1) return null;
+      return REWARDS_RULES.levels[index+1];
+    }
+
+    let points=230;
+    try{
+      const engineState=JSON.parse(localStorage.getItem('taxiRewardsEngineState') || '');
+      if(engineState && Number.isFinite(Number(engineState.points))) points=Number(engineState.points);
+    }catch(_err){
+      // Keep card resilient when storage data is unavailable.
+    }
+
+    const level=levelByPoints(points);
+    const next=nextLevel(level.key);
+    const currentBase=level.minPoints;
+    const target=next ? next.minPoints : (level.nextTarget || (points+1));
+    const range=Math.max(1,target-currentBase);
+    const progress=Math.max(0,Math.min(100,Math.round(((points-currentBase)/range)*100)));
+
+    scoreNode.childNodes[0].nodeValue=`${points} `;
+    if(scoreLabel) scoreLabel.textContent='Punkte';
+    levelNode.textContent=level.label;
+    nextNode.textContent=next ? `Noch ${Math.max(0,target-points)} Punkte bis ${next.label}` : 'Maximales Level erreicht';
+    progressFill.style.width=`${progress}%`;
   }
   function setService(s){
     const selectedTitle=$('#selectedTitle');
@@ -2052,14 +2131,34 @@
     event.preventDefault();
     if(go.dataset.service) setService(go.dataset.service);
 
-    if(go.dataset.go==='kontakt'){
+    const target=String(go.dataset.go || '').trim();
+
+    if(target==='rewards'){
+      window.location.href='rewards.html';
+      closeNavigationState(nav);
+      return;
+    }
+
+    if(target==='help-public'){
+      window.location.href='hilfe-kontakt.html';
+      closeNavigationState(nav);
+      return;
+    }
+
+    if(target==='kontakt-public'){
+      window.location.href='hilfe-kontakt.html#kontakt';
+      closeNavigationState(nav);
+      return;
+    }
+
+    if(target==='kontakt'){
       show('home');
       setTimeout(()=>{
-        const anchor=document.getElementById(go.dataset.go);
+        const anchor=document.getElementById(target);
         anchor?.scrollIntoView({behavior:'smooth',block:'start'});
       },100);
     }else{
-      show(go.dataset.go);
+      show(target);
     }
 
     closeNavigationState(nav);
@@ -4716,16 +4815,27 @@
     const statusNode=$('[data-mystery-status]',root);
     const noteNode=$('[data-mystery-note]',root);
     const openButton=$('[data-mystery-open]',root);
+    const demoResetButton=$('[data-mystery-demo-reset]',root);
     const countdownNode=$('[data-mystery-countdown]',root);
+    const popCard=$('[data-mystery-pop]',root);
+    const popIcon=$('[data-mystery-pop-icon]',root);
+    const popTitle=$('[data-mystery-pop-title]',root);
+    const popText=$('[data-mystery-pop-text]',root);
     const resultCard=$('[data-mystery-result]',root);
     const resultIcon=$('[data-mystery-result-icon]',root);
     const resultTitle=$('[data-mystery-result-title]',root);
     const resultText=$('[data-mystery-result-text]',root);
     const confettiHost=$('[data-mystery-confetti]',root);
-    if(!openButton || !statusNode || !noteNode || !countdownNode || !resultCard || !resultIcon || !resultTitle || !resultText) return;
+    if(!openButton || !statusNode || !noteNode || !countdownNode || !resultCard || !resultIcon || !resultTitle || !resultText || !popCard || !popIcon || !popTitle || !popText) return;
 
     const storageKey='taxiRewardsMysteryBoxState';
     let countdownTimer=0;
+    let openingTimer=0;
+    let openingStepTimer=0;
+    let isAnimating=false;
+    const reducedMotion=window.matchMedia && typeof window.matchMedia==='function'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false;
 
     const rewards=[
       {id:'points-25',icon:'⭐',title:'+25 Punkte',text:'Du hast 25 Punkte für dein Rewards-Konto erhalten.',win:true},
@@ -4785,6 +4895,17 @@
       countdownTimer=0;
     }
 
+    function stopOpeningTimers(){
+      if(openingTimer){
+        clearTimeout(openingTimer);
+        openingTimer=0;
+      }
+      if(openingStepTimer){
+        clearTimeout(openingStepTimer);
+        openingStepTimer=0;
+      }
+    }
+
     function updateCountdown(){
       countdownNode.textContent=`Morgen wieder verfügbar in ${formatHms(getSecondsUntilTomorrow())}`;
     }
@@ -4799,6 +4920,23 @@
       resultCard.hidden=false;
       resultCard.classList.remove('is-visible');
       requestAnimationFrame(()=>resultCard.classList.add('is-visible'));
+    }
+
+    function resetOpenVisualState(){
+      root.classList.remove('is-opening','is-opening-prep','is-opening-reveal','is-opened');
+      if(popCard){
+        popCard.hidden=true;
+        popCard.classList.remove('is-visible');
+      }
+    }
+
+    function showPopReward(reward){
+      popIcon.textContent=reward.icon;
+      popTitle.textContent=reward.title;
+      popText.textContent=reward.text;
+      popCard.hidden=false;
+      popCard.classList.remove('is-visible');
+      requestAnimationFrame(()=>popCard.classList.add('is-visible'));
     }
 
     function createConfettiBurst(isWin){
@@ -4827,6 +4965,9 @@
       const hardLocked=root.dataset.mysteryState==='locked';
 
       if(hardLocked){
+        stopOpeningTimers();
+        isAnimating=false;
+        resetOpenVisualState();
         root.dataset.mysteryState='locked';
         statusNode.textContent='Gesperrt';
         noteNode.textContent='Diese Mystery Box wird bald freigeschaltet.';
@@ -4837,6 +4978,10 @@
       }
 
       if(openedToday){
+        stopOpeningTimers();
+        isAnimating=false;
+        resetOpenVisualState();
+        root.classList.add('is-opened');
         root.dataset.mysteryState='opened';
         statusNode.textContent='Bereits geöffnet';
         noteNode.textContent='Morgen wieder verfügbar';
@@ -4858,29 +5003,38 @@
       }
 
       stopCountdown();
+      stopOpeningTimers();
+      isAnimating=false;
+      resetOpenVisualState();
       root.dataset.mysteryState='available';
         statusNode.textContent='Mystery Box verfügbar';
-        noteNode.textContent='Enthält Punkte, Gutscheine oder seltene Rewards.';
+        noteNode.textContent='Öffne deine Mystery Box und entdecke eine zufällige Belohnung.';
       openButton.disabled=false;
       countdownNode.hidden=true;
+      resultCard.hidden=true;
+      resultCard.classList.remove('is-visible');
+      if(demoResetButton){
+        demoResetButton.hidden=!(window.__REWARDS_DEV_MODE__ || /localhost|127\.0\.0\.1/.test(location.hostname));
+      }
     }
 
-    openButton.addEventListener('click',()=>{
-      if(openButton.disabled) return;
+    function revealReward(reward){
+      let rewardType='other';
+      if(reward.id.includes('voucher')) rewardType='voucher';
+      else if(reward.id.includes('points')) rewardType='points';
+      else if(reward.id.includes('badge')) rewardType='badge';
+      else if(reward.id==='extra-spin') rewardType='extra-spin';
+      else if(reward.id==='no-win') rewardType='no-win';
 
-      root.classList.add('is-opening');
-      openButton.disabled=true;
-      handleRewardEvent('mystery:opening',{source:'mystery-box'});
+      showPopReward(reward);
+      if(!reducedMotion){
+        root.classList.remove('is-opening-prep');
+        root.classList.add('is-opening-reveal');
+      }
 
-      setTimeout(()=>{
-        root.classList.remove('is-opening');
-        const reward=rewards[Math.floor(Math.random()*rewards.length)];
-        let rewardType='other';
-        if(reward.id.includes('voucher')) rewardType='voucher';
-        else if(reward.id.includes('points')) rewardType='points';
-        else if(reward.id.includes('badge')) rewardType='badge';
-        else if(reward.id==='extra-spin') rewardType='extra-spin';
-        else if(reward.id==='no-win') rewardType='no-win';
+      openingStepTimer=window.setTimeout(()=>{
+        root.classList.remove('is-opening','is-opening-prep','is-opening-reveal');
+        root.classList.add('is-opened');
 
         resultIcon.textContent=reward.icon;
         resultTitle.textContent=reward.title;
@@ -4899,9 +5053,51 @@
           icon:reward.icon,
           win:Boolean(reward.win)
         });
+        isAnimating=false;
         applyAvailability();
-      },520);
+      },reducedMotion ? 120 : 980);
+    }
+
+    openButton.addEventListener('click',()=>{
+      if(openButton.disabled || isAnimating) return;
+
+      isAnimating=true;
+      stopOpeningTimers();
+      root.classList.remove('is-opened');
+      root.classList.add('is-opening');
+      if(!reducedMotion) root.classList.add('is-opening-prep');
+      popCard.hidden=true;
+      popCard.classList.remove('is-visible');
+      openButton.disabled=true;
+      statusNode.textContent='Wird geöffnet ...';
+      noteNode.textContent='Mystery Box wird vorbereitet';
+      handleRewardEvent('mystery:opening',{source:'mystery-box'});
+
+      const reward=rewards[Math.floor(Math.random()*rewards.length)];
+      const prepDuration=reducedMotion ? 40 : 760;
+      const openDuration=reducedMotion ? 40 : 940;
+
+      openingTimer=window.setTimeout(()=>{
+        root.classList.remove('is-opening-prep');
+        if(!reducedMotion) root.classList.add('is-opening-reveal');
+        statusNode.textContent='Belohnung wird freigeschaltet ...';
+        noteNode.textContent='Fast geschafft';
+
+        openingStepTimer=window.setTimeout(()=>{
+          revealReward(reward);
+        },openDuration);
+      },prepDuration);
     });
+
+    if(demoResetButton){
+      demoResetButton.addEventListener('click',()=>{
+        try{ localStorage.removeItem(storageKey); }catch(_err){}
+        stopOpeningTimers();
+        isAnimating=false;
+        handleRewardEvent('mystery:demo-reset',{source:'mystery-box'});
+        applyAvailability();
+      });
+    }
 
     applyAvailability();
   }
@@ -4913,10 +5109,21 @@
 
     const dayCards=$$('[data-streak-day]',root);
     const statusNode=$('[data-streak-status]',root);
+    const progressFill=$('[data-streak-progress-fill]',root);
+    const nextBonusNode=$('[data-streak-next-bonus]',root);
     const claimButton=$('[data-streak-claim]',root);
     if(!dayCards.length) return;
 
     const storageKey='taxiRewardsDailyStreakState';
+    const dayRewards={
+      1:'+5 Punkte',
+      2:'+10 Punkte',
+      3:'+15 Punkte',
+      4:'+20 Punkte',
+      5:'Extra-Dreh',
+      6:'+50 Punkte',
+      7:'Überraschung'
+    };
 
     function getTodayYmd(){
       const now=new Date();
@@ -4989,15 +5196,27 @@
 
       const doneCount=dayCards.filter(card=>card.dataset.streakState==='done').length;
       const todayDone=claimedSet.has(state.currentDay) || state.lastCheckin===today;
+      const progressValue=Math.max(0,Math.min(7,doneCount + (todayDone ? 1 : 0)));
+      const nextDay=(state.currentDay%7)+1;
 
       if(statusNode){
-        if(todayDone) statusNode.textContent=`Tägliche Serie aktiv: ${doneCount}/7 Tage erledigt.`;
-        else statusNode.textContent=`Tag ${state.currentDay} ist heute aktiv. Jetzt Bonus sichern.`;
+        statusNode.textContent=`Serie aktiv: ${progressValue} von 7 Tagen`;
+      }
+
+      if(progressFill && progressFill.parentElement){
+        const percent=Math.round((progressValue/7)*100);
+        progressFill.parentElement.style.backgroundSize=`${percent}% 100%, auto`;
+        progressFill.parentElement.setAttribute('aria-valuenow',String(progressValue));
+      }
+
+      if(nextBonusNode){
+        if(todayDone && progressValue>=7) nextBonusNode.textContent='Morgen: Serie startet neu mit +5 Punkte';
+        else nextBonusNode.textContent=`Morgen: ${dayRewards[nextDay] || '+10 Punkte'}`;
       }
 
       if(claimButton){
         claimButton.disabled=todayDone;
-        claimButton.textContent=todayDone ? 'Heute erledigt' : 'Heute einchecken';
+        claimButton.textContent=todayDone ? 'Heute erledigt' : 'Heute abholen';
       }
     }
 
@@ -5016,7 +5235,7 @@
         render();
 
         const streakLength=state.claimed.length;
-        if(statusNode) statusNode.textContent=`Check-in bestätigt: +10 Punkte. Serie ${streakLength}/7 aktiv.`;
+        if(statusNode) statusNode.textContent=`Serie aktiv: ${Math.max(1,Math.min(7,streakLength))} von 7 Tagen`;
         handleRewardEvent('daily:checkin',{points:10,streak:streakLength});
       });
     }
@@ -6870,6 +7089,12 @@
   function findSplashElement(){
     return document.querySelector('#splash, #splash-screen, .splash-screen, [data-splash], .site-loader, .splash');
   }
+
+  function isHomeLandingPage(){
+    const path=(window.location.pathname || '').replace(/\\/g,'/').toLowerCase();
+    const file=path.split('/').pop() || '';
+    return file==='' || file==='index.html';
+  }
   function cleanupSplashState(previousOverflow=''){
     document.body.classList.remove('splash-active','loading');
     document.body.removeAttribute('aria-busy');
@@ -6884,6 +7109,14 @@
   function initSplashFailSafe(){
     const splash=findSplashElement();
     if(!splash) return;
+
+    if(!isHomeLandingPage()){
+      cleanupSplashState();
+      splash.hidden=true;
+      splash.remove();
+      return;
+    }
+
     if(splash.dataset.hideBound==='true') return;
     splash.dataset.hideBound='true';
 
@@ -6967,6 +7200,8 @@
     initRewardsActivities();
     initRewardsPremiumExperience();
     initRewardsUnifiedDashboard();
+    initPublicBackButtons();
+    initHomeRewardsCard();
 
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);

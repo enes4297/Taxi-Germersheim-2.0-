@@ -20,11 +20,6 @@
   <link rel="stylesheet" href="auth-demo.css">
 </head>
 <body>
-  <div id="splash" class="splash" aria-hidden="true">
-    <div class="splash-glow"></div>
-    <img src="logo.png" alt="Taxi Germersheim GmbH">
-  </div>
-
   <main class="app">
     <header class="topbar">
       <div class="brand"><a href="index.html"><img src="logo.png" alt="Taxi Germersheim GmbH"></a></div>
@@ -47,7 +42,7 @@
     </header>
 
     <section id="rewards" class="screen active simple rewards-page rewards-v2">
-      <header class="page-head"><a href="index.html" class="page-head-link" aria-label="Zur Startseite">‹</a><h2>Rewards</h2><i></i></header>
+      <header class="page-head"><a href="index.html" class="page-head-link" data-public-back aria-label="Zurück">‹</a><h2>Rewards</h2><i></i></header>
 
       <section class="rv2-main-layout" aria-label="Rewards Dashboard">
         <div class="rv2-left">
@@ -74,7 +69,7 @@
               </article>
             </div>
             <article class="rv2-hero-yumak" aria-label="Yumak Hinweis">
-              <img src="yumak.png" alt="Yumak" loading="lazy">
+              <img class="yumak-avatar yumak-avatar-small" src="yumak-avatar.png" alt="Yumak" loading="lazy" decoding="async">
               <p data-hero-yumak-tip>Heute warten Missionen und ein Glücksrad auf dich.</p>
             </article>
           </article>
@@ -991,7 +986,7 @@
                     <span class="rv2-yumak-paw rv2-yumak-paw-left"></span>
                     <span class="rv2-yumak-paw rv2-yumak-paw-right"></span>
                     <div class="rv2-yumak-body">
-                      <img src="yumak.png" alt="Yumak Rewards-Assistent" loading="lazy" draggable="false">
+                      <img class="yumak-avatar yumak-avatar-rewards" src="yumak-avatar.png" alt="Yumak Rewards-Assistent" loading="lazy" decoding="async" draggable="false">
                       <div class="rv2-yumak-face-overlay">
                         <span class="rv2-yumak-eye rv2-yumak-eye-left"><i class="rv2-yumak-eye-pupil"></i></span>
                         <span class="rv2-yumak-eye rv2-yumak-eye-right"><i class="rv2-yumak-eye-pupil"></i></span>
@@ -1059,7 +1054,7 @@
               </article>
               <article class="rv2-streak-day" data-streak-day="5">
                 <b>Tag 5</b>
-                <p>Extra Glücksrad-Dreh</p>
+                <p>Extra-Dreh</p>
                 <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
               </article>
               <article class="rv2-streak-day" data-streak-day="6">
@@ -1069,14 +1064,18 @@
               </article>
               <article class="rv2-streak-day" data-streak-day="7">
                 <b>Tag 7</b>
-                <p>Überraschungsbelohnung</p>
+                <p>Überraschung</p>
                 <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
               </article>
             </div>
 
             <div class="rv2-streak-meta">
-              <p data-streak-status>Heute wartet dein nächster Serienbonus.</p>
-              <button class="button rv2-streak-claim" type="button" data-streak-claim>Heute einchecken</button>
+              <div class="rv2-streak-summary">
+                <p data-streak-status>Serie aktiv: 0 von 7 Tagen</p>
+                <div class="rv2-streak-progress" role="progressbar" aria-label="Fortschritt Tägliche Serie" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0"><span data-streak-progress-fill></span></div>
+                <small data-streak-next-bonus>Morgen: +10 Punkte</small>
+              </div>
+              <button class="button rv2-streak-claim" type="button" data-streak-claim>Heute abholen</button>
             </div>
           </section>
 
@@ -1118,14 +1117,21 @@
               </div>
 
               <div class="rv2-mystery-copy">
-                <p class="rv2-mystery-note" data-mystery-note>Enthält Punkte, Gutscheine oder seltene Rewards.</p>
+                <p class="rv2-mystery-note" data-mystery-note>Öffne deine Mystery Box und entdecke eine zufällige Belohnung.</p>
+                <small class="rv2-mystery-countdown" data-mystery-countdown hidden>Morgen wieder verfügbar in 23:59:59</small>
+                <button class="button rv2-mystery-open" type="button" data-mystery-open>Jetzt öffnen</button>
+                <button class="button rv2-mystery-demo-reset" type="button" data-mystery-demo-reset hidden>Demo-Box zurücksetzen</button>
               </div>
             </article>
 
-            <div class="rv2-mystery-footer">
-              <button class="button rv2-mystery-open" type="button" data-mystery-open>Jetzt öffnen</button>
-              <small class="rv2-mystery-countdown" data-mystery-countdown hidden>Morgen wieder verfügbar in 23:59:59</small>
-            </div>
+            <article class="rv2-mystery-pop" data-mystery-pop hidden>
+              <i class="rv2-mystery-pop-icon" data-mystery-pop-icon aria-hidden="true">✨</i>
+              <div class="rv2-mystery-pop-copy">
+                <h4 data-mystery-pop-title>Belohnung</h4>
+                <p data-mystery-pop-text>Wird vorbereitet ...</p>
+                <small>Direkt aus der Box</small>
+              </div>
+            </article>
 
             <article class="rv2-mystery-result" data-mystery-result hidden>
               <i class="rv2-mystery-result-icon" data-mystery-result-icon aria-hidden="true">✨</i>
