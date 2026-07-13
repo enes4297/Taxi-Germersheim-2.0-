@@ -28,6 +28,11 @@
     user:'<svg viewBox="0 0 48 48"><circle cx="24" cy="16" r="8"/><path d="M9 42a15 15 0 0 1 30 0"/></svg>'
   };
   const officialIcons={
+    medical:'assets/icons/Route.svg',
+    airport:'assets/icons/Destination.svg',
+    courier:'assets/icons/Route.svg',
+    company:'assets/icons/Profile.svg',
+    help:'assets/icons/Phone.svg',
     home:'assets/icons/Home.svg',
     taxi:'assets/icons/Taxi.svg',
     van:'assets/icons/Van.svg',
@@ -46,10 +51,43 @@
     whatsapp:'assets/icons/WhatsApp.svg',
     yumak:'assets/icons/WhatsApp.svg',
     rewards:'assets/icons/Rewards.svg',
+    gift:'assets/icons/Gift Voucher.svg',
     voucher:'assets/icons/Gift Voucher.svg',
     luggage:'assets/icons/Gift Voucher.svg',
     check:'assets/icons/Check Mark.svg',
     confirm:'assets/icons/Check Mark.svg'
+  };
+
+  const REWARDS_RULES={
+    levels:[
+      {key:'bronze',label:'Bronze',minPoints:0,nextTarget:80},
+      {key:'silber',label:'Silber',minPoints:80,nextTarget:180},
+      {key:'gold',label:'Gold',minPoints:180,nextTarget:350},
+      {key:'platin',label:'Platin',minPoints:350,nextTarget:600},
+      {key:'vip',label:'VIP',minPoints:600,nextTarget:900}
+    ],
+    points:{
+      taxi:10,
+      airport:15,
+      medicalPrivate:5,
+      medicalCovered:0,
+      dialysis:0,
+      chemo:0,
+      radiation:0,
+      wheelchair:10,
+      referral:50,
+      birthday:200,
+      googleReview:15,
+      dailyMission:5,
+      profileComplete:20,
+      favoriteAddress:10
+    },
+    pointsByRide:{
+      taxi:10,
+      airport:15,
+      medical:5,
+      wheelchair:10
+    }
   };
 
   function buildOfficialIconMarkup(key){
@@ -357,18 +395,21 @@
       },
       levelByPoints(points){
         const p=Math.max(0,Math.round(Number(points) || 0));
-        if(p>=600) return {key:'legend',label:'Legend',nextTarget:900};
-        if(p>=350) return {key:'platin',label:'Platin',nextTarget:600};
-        if(p>=180) return {key:'gold',label:'Gold',nextTarget:350};
-        if(p>=80) return {key:'silber',label:'Silber',nextTarget:180};
+        for(let i=REWARDS_RULES.levels.length-1;i>=0;i--){
+          const level=REWARDS_RULES.levels[i];
+          if(p>=level.minPoints) return {key:level.key,label:level.label,nextTarget:level.nextTarget};
+        }
         return {key:'bronze',label:'Bronze',nextTarget:80};
       },
       nextLevel(levelKey){
-        const order=['bronze','silber','gold','platin','legend'];
-        const labels={bronze:'Bronze',silber:'Silber',gold:'Gold',platin:'Platin',legend:'Legend'};
+        const order=REWARDS_RULES.levels.map(level=>level.key);
+        const labels=REWARDS_RULES.levels.reduce((acc,level)=>{
+          acc[level.key]=level.label;
+          return acc;
+        },{});
         const index=order.indexOf(levelKey);
-        const next=order[Math.min(order.length-1,Math.max(0,index)+1)] || 'legend';
-        return {key:next,label:labels[next] || 'Legend'};
+        const next=order[Math.min(order.length-1,Math.max(0,index)+1)] || 'vip';
+        return {key:next,label:labels[next] || 'VIP'};
       },
       parsePointsFromText(value){
         const n=this.toNumber(value);
@@ -582,7 +623,7 @@
     }
 
     function completeRide(payload){
-      const customer=String(payload?.customer || 'Kunde').trim() || 'Kunde';
+      const customer=String(payload?.customer || 'Enes').trim() || 'Enes';
       const rideType=String(payload?.rideType || 'taxi').trim().toLowerCase();
       const fare=Math.max(0,Number(payload?.fare) || 0);
       const requestedVoucher=Math.max(0,Number(payload?.voucherApplied) || 0);
@@ -622,8 +663,7 @@
         draft.missions['daily-first-ride']={status:'done',completedAt:Date.now(),title:'Erste Fahrt heute',reward:'+10 Punkte'};
         draft.missions['first-ride']={status:'done',completedAt:Date.now(),title:'Erste Fahrt abschließen',reward:'+50 Punkte'};
         draft.missions['five-rides']={status:rideCount>=5 ? 'done' : 'active',current:Math.min(5,rideCount),target:5,title:'5 Fahrten sammeln',reward:'Abzeichen Stammkunde'};
-        if(rideType==='medical') draft.missions['medical-booking']={status:'done',completedAt:Date.now(),title:'Krankenfahrt buchen',reward:'+30 Punkte'};
-        if(rideType==='airport') draft.missions['airport-first']={status:'done',completedAt:Date.now(),title:'Erster Flughafentransfer',reward:'+100 Punkte'};
+        if(rideType==='airport') draft.missions['airport-first']={status:'done',completedAt:Date.now(),title:'Erster Flughafentransfer',reward:'+15 Punkte'};
 
         const unlocked=Array.isArray(draft.achievements?.unlocked) ? draft.achievements.unlocked : [];
         if(!unlocked.includes('first-ride')) unlocked.push('first-ride');
@@ -1129,7 +1169,7 @@
   }
 
   function getEstimatedRewardPoints(){
-    return bookingStepState.service==='medical' ? 20 : bookingStepState.service==='airport' ? 18 : bookingStepState.service==='wheelchair' ? 17 : 15;
+    return REWARDS_RULES.pointsByRide[bookingStepState.service] || REWARDS_RULES.pointsByRide.taxi;
   }
 
   function formatPriceText(value){
@@ -3507,7 +3547,7 @@
     const statusNode=$('[data-ride-status]',root);
     if(!form || !customerInput || !rideTypeSelect || !fareInput || !voucherInput || !pointsInput || !historyList || !restNode) return;
 
-    const recommendedPoints={taxi:10,medical:20,wheelchair:15,airport:18};
+    const recommendedPoints={...REWARDS_RULES.pointsByRide};
 
     function toEuro(value){
       const n=Number(String(value || '').replace(',','.'));
@@ -3662,7 +3702,7 @@
       balance:$('[data-admin-summary-balance]',root)
     };
 
-    const pointsByRide={taxi:10,medical:20,wheelchair:15,airport:18};
+    const pointsByRide={...REWARDS_RULES.pointsByRide};
     const rideLabelByKey={taxi:'Taxifahrt',medical:'Krankenfahrt',wheelchair:'Rollstuhlfahrt',airport:'Flughafentransfer'};
 
     function toMoney(value){
@@ -3677,8 +3717,8 @@
     function defaultState(){
       return {
         customers:{
-          'cust-max':{name:'Max Mustermann',customerId:'CUST-0001',voucherBalance:25,pointsTotal:0},
-          'cust-enes':{name:'Enes Y.',customerId:'CUST-0002',voucherBalance:18,pointsTotal:0},
+          'cust-max':{name:'Enes',customerId:'CUST-0001',voucherBalance:25,pointsTotal:0},
+          'cust-enes':{name:'Enes',customerId:'CUST-0002',voucherBalance:18,pointsTotal:0},
           'cust-selin':{name:'Selin K.',customerId:'CUST-0003',voucherBalance:12,pointsTotal:0},
           'cust-ali':{name:'Ali B.',customerId:'CUST-0004',voucherBalance:7.5,pointsTotal:0}
         },
@@ -4041,13 +4081,13 @@
     const engine=(window.rewardsEngine && window.rewardsEngine.Store) ? window.rewardsEngine : null;
 
     const storageKey='taxiRewardsVipStatusState';
-    const levelOrder=['bronze','silber','gold','platin','legend'];
+    const levelOrder=['bronze','silber','gold','platin','vip'];
     const levelLabel={
       bronze:'Bronze',
       silber:'Silber',
       gold:'Gold',
       platin:'Platin',
-      legend:'Legend'
+      vip:'VIP'
     };
     const defaultData={
       currentLevel:'gold',
@@ -4188,7 +4228,7 @@
     const storageKey='taxiRewardsDashboardSignalsState';
     const soundStorageKey='taxiRewardsSoundState';
     const engine=(window.rewardsEngine && window.rewardsEngine.Store) ? window.rewardsEngine : null;
-    const vipOrder=['bronze','silber','gold','platin','legend'];
+    const vipOrder=['bronze','silber','gold','platin','vip'];
     const quickActionTargets={
       wheel:'[data-rewards-wheel]',
       missions:'[data-rewards-missions]',
@@ -5797,15 +5837,15 @@
     const STORAGE_KEY='taxiCustomerAccountDemoState';
     const DEFAULT_STATE={
       profile:{
-        name:'Max Mustermann',
+        name:'Enes',
         memberSince:'Januar 2026',
         customerStatus:'Premium Kunde',
         points:230,
         voucherBalance:15
       },
       rideHistory:[
-        {id:'ride-2026-06-18-airport',date:'18.06.2026',rideType:'Flughafentransfer',rideTypeKey:'airport',start:'Germersheim Zentrum',destination:'Frankfurt Flughafen Terminal 1',price:126.5,pointsEarned:18,voucherUsed:true},
-        {id:'ride-2026-06-12-medical',date:'12.06.2026',rideType:'Krankenfahrt',rideTypeKey:'medical',start:'Germersheim Nord',destination:'Dialysezentrum Speyer',price:48,pointsEarned:12,voucherUsed:false},
+        {id:'ride-2026-06-18-airport',date:'18.06.2026',rideType:'Flughafentransfer',rideTypeKey:'airport',start:'Germersheim Zentrum',destination:'Frankfurt Flughafen Terminal 1',price:126.5,pointsEarned:15,voucherUsed:true},
+        {id:'ride-2026-06-12-medical',date:'12.06.2026',rideType:'Krankenfahrt',rideTypeKey:'medical',start:'Germersheim Nord',destination:'Dialysezentrum Speyer',price:48,pointsEarned:5,voucherUsed:false},
         {id:'ride-2026-06-04-taxi',date:'04.06.2026',rideType:'Taxifahrt',rideTypeKey:'taxi',start:'Bahnhof Germersheim',destination:'Innenstadt Germersheim',price:14.8,pointsEarned:10,voucherUsed:false}
       ],
       favoriteAddresses:getDefaultFavoriteAddresses(),
@@ -5821,7 +5861,7 @@
         {title:'Neues Abzeichen',text:'Abzeichen "Flughafen-Profi" wurde freigeschaltet.'}
       ],
       settings:{
-        displayName:'Max Mustermann',
+        displayName:'Enes',
         phone:'07274 3567',
         email:'demo@taxi-germersheim.de',
         language:'de',
