@@ -4964,14 +4964,6 @@
       vip:4
     };
 
-    const tierOrder={
-      fast:0,
-      today:1,
-      easy:2,
-      hard:3,
-      vip:4
-    };
-
     cards.forEach(card=>{
       const current=Math.max(0,Number(card.dataset.dailyCurrent || 0));
       const target=Math.max(1,Number(card.dataset.dailyTarget || 1));
@@ -5212,6 +5204,14 @@
       active:'Aktiv',
       done:'Abgeschlossen',
       locked:'Gesperrt'
+    };
+
+    const tierOrder={
+      fast:0,
+      today:1,
+      easy:2,
+      hard:3,
+      vip:4
     };
 
     function renderCard(card){
@@ -6786,13 +6786,68 @@
       if(timerId) clearInterval(timerId);
     },{once:true});
   }
-  function hideSplash(){
-    const splash=document.getElementById('splash');
+  function findSplashElement(){
+    return document.querySelector('#splash, #splash-screen, .splash-screen, [data-splash], .site-loader, .splash');
+  }
+  function cleanupSplashState(previousOverflow=''){
+    document.body.classList.remove('splash-active','loading');
+    document.body.removeAttribute('aria-busy');
+    if(document.body.style.overflow==='hidden'){
+      if(previousOverflow){
+        document.body.style.overflow=previousOverflow;
+      }else{
+        document.body.style.removeProperty('overflow');
+      }
+    }
+  }
+  function initSplashFailSafe(){
+    const splash=findSplashElement();
     if(!splash) return;
-    splash.classList.add('splash-hide');
-    setTimeout(()=>{
+    if(splash.dataset.hideBound==='true') return;
+    splash.dataset.hideBound='true';
+
+    const previousOverflow=document.body.style.overflow;
+    let isClosed=false;
+    let hideTimer=0;
+    let failSafeTimer=0;
+    let removeTimer=0;
+
+    function forceRemove(){
+      if(!splash.isConnected) return;
+      splash.hidden=true;
       splash.remove();
-    },700);
+    }
+
+    function closeSplash(){
+      if(isClosed) return;
+      isClosed=true;
+      splash.classList.add('splash-hide');
+      splash.style.opacity='0';
+      splash.style.visibility='hidden';
+      splash.style.pointerEvents='none';
+      cleanupSplashState(previousOverflow);
+      removeTimer=window.setTimeout(()=>{
+        forceRemove();
+      },350);
+    }
+
+    hideTimer=window.setTimeout(closeSplash,1200);
+    failSafeTimer=window.setTimeout(()=>{
+      closeSplash();
+      forceRemove();
+    },3000);
+
+    splash.addEventListener('transitionend',event=>{
+      if(event.target!==splash) return;
+      if(!isClosed) return;
+      forceRemove();
+    });
+
+    window.addEventListener('beforeunload',()=>{
+      if(hideTimer) clearTimeout(hideTimer);
+      if(failSafeTimer) clearTimeout(failSafeTimer);
+      if(removeTimer) clearTimeout(removeTimer);
+    },{once:true});
   }
   function boot(){
     inject();
@@ -6801,7 +6856,6 @@
     validate();
     initMapContainer('startMapContainer');
     initMapContainer('bookingRouteMapContainer');
-    setTimeout(hideSplash,1200);
     initMedicalAssistant();
     initMedicalBookingScroll();
     const nav=initPremiumNavigation();
@@ -6841,5 +6895,11 @@
     document.addEventListener('input',handleGlobalInput,true);
     document.addEventListener('keydown',handleGlobalKeydown,true);
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',initSplashFailSafe,{once:true});
+    document.addEventListener('DOMContentLoaded',boot);
+  }else{
+    initSplashFailSafe();
+    boot();
+  }
 })();
