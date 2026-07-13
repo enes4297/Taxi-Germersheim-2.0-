@@ -48,8 +48,18 @@
         <div class="rv2-left">
           <article class="rv2-hero">
             <small>PREMIUM REWARDS</small>
-            <h1>Rewards</h1>
-            <p>Dein Rewards-Bereich bei Taxi Germersheim: heute Punkte sichern, Level ausbauen und Premium-Vorteile freischalten.</p>
+            <h1>Willkommen zurück Enes</h1>
+            <div class="rv2-hero-meta">
+              <span>Gold Mitglied</span>
+              <span>230 Punkte</span>
+              <span>230 / 350</span>
+            </div>
+            <p class="rv2-hero-note">Noch 120 Punkte bis Platin</p>
+            <div class="rv2-hero-progress" role="progressbar" aria-label="Fortschritt bis Platin" aria-valuemin="0" aria-valuemax="350" aria-valuenow="230"><u></u></div>
+            <article class="rv2-hero-yumak" aria-label="Yumak Hinweis">
+              <img src="yumak.png" alt="Yumak" loading="lazy">
+              <p>Heute warten Missionen und ein Glücksrad auf dich.</p>
+            </article>
           </article>
 
           <section class="rv2-smart-dashboard" aria-label="Rewards-Übersicht" data-rewards-smart-dashboard>
@@ -112,7 +122,7 @@
             <div class="rv2-quick-actions-row" role="navigation" aria-label="Rewards Navigation">
               <button class="button rv2-quick-action" type="button" data-dashboard-action="wheel"><i data-icon="rewards"></i>Zum Glücksrad</button>
               <button class="button rv2-quick-action" type="button" data-dashboard-action="missions"><i data-icon="check"></i>Zu Missionen <b class="rv2-quick-badge" data-quick-badge="missions" hidden>Neu</b></button>
-              <button class="button rv2-quick-action" type="button" data-dashboard-action="voucher"><i data-icon="voucher"></i>Zur Sammlung</button>
+              <button class="button rv2-quick-action" type="button" data-dashboard-action="voucher"><i data-icon="voucher"></i>Gutscheine</button>
               <button class="button rv2-quick-action" type="button" data-dashboard-action="achievements"><i data-icon="profile"></i>Zu Abzeichen <b class="rv2-quick-badge" data-quick-badge="achievements" hidden>Neu</b></button>
               <button class="button rv2-quick-action" type="button" data-dashboard-action="mystery"><i data-icon="gift"></i>Zu Mystery Box</button>
             </div>
@@ -124,16 +134,15 @@
               <small>Dein Tagesfokus mit Live-Fortschritt</small>
             </header>
 
-            <div class="rv2-today-progress" role="progressbar" aria-label="Heute erledigen Fortschritt" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0">
+            <div class="rv2-today-progress" role="progressbar" aria-label="Heute erledigen Fortschritt" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">
               <u data-today-progress-fill></u>
             </div>
-            <p data-today-progress-text>0 von 4 Aufgaben erledigt</p>
+            <p data-today-progress-text>0 von 3 Aufgaben erledigt</p>
 
             <ul class="rv2-today-list" data-today-list>
-              <li data-today-item="wheel"><i aria-hidden="true">✓</i><span>Glücksrad drehen</span></li>
-              <li data-today-item="mystery"><i aria-hidden="true">✓</i><span>Mystery Box öffnen</span></li>
-              <li data-today-item="first-ride"><i aria-hidden="true">✓</i><span>Erste Fahrt</span></li>
-              <li data-today-item="three-missions"><i aria-hidden="true">✓</i><span>3 Missionen abschließen</span></li>
+              <li data-today-item="wheel"><i aria-hidden="true">🎡</i><span>Glücksrad</span><small>Ein täglicher Dreh mit Premium-Gewinnen.</small></li>
+              <li data-today-item="missions"><i aria-hidden="true">✅</i><span>Missionen</span><small>Missionen abschließen und Punkte sichern.</small></li>
+              <li data-today-item="streak"><i aria-hidden="true">🔥</i><span>Login-Serie</span><small>Heute einchecken und Serie fortsetzen.</small></li>
             </ul>
           </section>
 
@@ -170,7 +179,7 @@
               <article class="rv2-customer-stat"><i aria-hidden="true">🚖</i><small>Fahrten insgesamt</small><strong data-cd-stat="rides">184</strong></article>
               <article class="rv2-customer-stat"><i aria-hidden="true">⭐</i><small>Punkte gesammelt</small><strong data-cd-stat="points">230</strong></article>
               <article class="rv2-customer-stat"><i aria-hidden="true">🎡</i><small>Glücksrad-Drehungen</small><strong data-cd-stat="spins">12</strong></article>
-              <article class="rv2-customer-stat"><i aria-hidden="true">🎁</i><small>Gutscheine erhalten</small><strong data-cd-stat="vouchers">6</strong></article>
+              <article class="rv2-customer-stat"><i aria-hidden="true">🎁</i><small>Gutscheine erhalten</small><strong data-cd-stat="vouchers">2</strong></article>
               <article class="rv2-customer-stat"><i aria-hidden="true">🏆</i><small>Abzeichen</small><strong data-cd-stat="badges">4</strong></article>
               <article class="rv2-customer-stat"><i aria-hidden="true">📅</i><small>Login-Serie</small><strong data-cd-stat="streak">2</strong></article>
             </section>
@@ -345,7 +354,7 @@
             </div>
           </section>
 
-          <section class="rv2-rewards-points" aria-label="Belohnungen und Punktequellen">
+          <section class="rv2-rewards-points" aria-label="Belohnungen und Punktequellen" data-rewards-benefits>
             <article class="rv2-rewards-box">
               <h3>Belohnungen</h3>
               <div class="rv2-reward-cards">
@@ -360,10 +369,16 @@
                 <li class="tone-gold"><i data-icon="taxi"></i><span>Normale Taxifahrt</span><b>+10 Punkte</b></li>
                 <li class="tone-green"><i data-icon="airport"></i><span>Flughafentransfer</span><b>+15 Punkte</b></li>
                 <li class="tone-gold"><i data-icon="medical"></i><span>Private Krankenfahrt</span><b>+5 Punkte</b></li>
+                <li><i data-icon="medical"></i><span>Krankenkassenfahrt</span><b>0 Punkte</b></li>
+                <li><i data-icon="medical"></i><span>Dialyse</span><b>0 Punkte</b></li>
+                <li><i data-icon="medical"></i><span>Chemo</span><b>0 Punkte</b></li>
+                <li><i data-icon="medical"></i><span>Strahlentherapie</span><b>0 Punkte</b></li>
+                <li><i data-icon="user"></i><span>Firmenfahrt</span><b>0 Punkte</b></li>
                 <li class="tone-gold"><i data-icon="repeat"></i><span>Weiterempfehlung</span><b>+50 Punkte</b></li>
+                <li class="tone-yellow"><i data-icon="gift"></i><span>Geburtstag</span><b>+200 Punkte</b></li>
                 <li class="tone-yellow"><i data-icon="profile"></i><span>Google Bewertung</span><b>+10 Punkte</b></li>
               </ul>
-              <p class="rv2-mission-note">Keine Punkte: Kassen-, Firmen-, Dialyse-, Chemo- und Strahlentherapie-Fahrten.</p>
+              <p class="rv2-mission-note">Nur private Krankenfahrten sind punktefähig. Kassenfahrten und Firmenfahrten bleiben bei 0.</p>
             </article>
           </section>
 
@@ -747,6 +762,7 @@
                   <u></u>
                 </div>
                 <small class="rv2-mission-progress-text">0 / 1 Fahrt</small>
+                <button class="button rv2-mission-action" type="button">Mission öffnen</button>
               </article>
 
               <article class="rv2-mission-card" data-mission-id="five-rides" data-mission-status="active" data-mission-current="3" data-mission-target="5" data-mission-reward="Abzeichen Stammkunde">
@@ -763,6 +779,7 @@
                   <u></u>
                 </div>
                 <small class="rv2-mission-progress-text">3 / 5 Fahrten</small>
+                <button class="button rv2-mission-action" type="button">Mission öffnen</button>
               </article>
 
               <article class="rv2-mission-card" data-mission-id="airport-first" data-mission-status="done" data-mission-current="1" data-mission-target="1" data-mission-reward="+100 Punkte">
@@ -779,6 +796,7 @@
                   <u></u>
                 </div>
                 <small class="rv2-mission-progress-text">1 / 1 Transfer</small>
+                <button class="button rv2-mission-action" type="button">Mission anzeigen</button>
               </article>
 
               <article class="rv2-mission-card" data-mission-id="profile-complete" data-mission-status="active" data-mission-current="0" data-mission-target="1" data-mission-reward="+20 Punkte">
@@ -795,6 +813,7 @@
                   <u></u>
                 </div>
                 <small class="rv2-mission-progress-text">0 / 1 Profil</small>
+                <button class="button rv2-mission-action" type="button">Mission öffnen</button>
               </article>
 
               <article class="rv2-mission-card" data-mission-id="refer-friend" data-mission-status="locked" data-mission-current="0" data-mission-target="1" data-mission-reward="10 € Gutschein">
@@ -811,6 +830,7 @@
                   <u></u>
                 </div>
                 <small class="rv2-mission-progress-text">0 / 1 Empfehlung</small>
+                <button class="button rv2-mission-action" type="button">Mission vormerken</button>
               </article>
 
               <article class="rv2-mission-card" data-mission-id="google-review" data-mission-status="active" data-mission-current="0" data-mission-target="1" data-mission-reward="+25 Punkte">
@@ -827,6 +847,7 @@
                   <u></u>
                 </div>
                 <small class="rv2-mission-progress-text">0 / 1 Bewertung</small>
+                <button class="button rv2-mission-action" type="button">Mission öffnen</button>
               </article>
             </div>
 
@@ -893,69 +914,41 @@
             <p class="rv2-seasonal-note rv2-seasonal-note-subtle">Demo-Stand: Event-Daten sind austauschbar vorbereitet für Sonderräder, Extra-Drehs und exklusive Abzeichen.</p>
           </section>
 
-          <section class="rv2-activities" aria-label="Aktivitäten" data-rewards-activities>
+          <section class="rv2-activities" aria-label="Aktivitäten" data-rewards-activities data-activities-compact="true">
             <header class="rv2-section-head">
               <h3>Aktivitäten</h3>
-              <small>Letzte Ereignisse in deinem Rewards-Konto</small>
+              <small>Kompakte Timeline deiner letzten Rewards-Momente</small>
             </header>
-
-            <div class="rv2-activity-filters" role="tablist" aria-label="Aktivitäten filtern">
-              <button class="rv2-activity-filter is-active" type="button" data-activity-filter="all" role="tab" aria-selected="true">Alle</button>
-              <button class="rv2-activity-filter" type="button" data-activity-filter="points" role="tab" aria-selected="false">Punkte</button>
-              <button class="rv2-activity-filter" type="button" data-activity-filter="voucher" role="tab" aria-selected="false">Gutscheine</button>
-              <button class="rv2-activity-filter" type="button" data-activity-filter="badge" role="tab" aria-selected="false">Abzeichen</button>
-              <button class="rv2-activity-filter" type="button" data-activity-filter="mission" role="tab" aria-selected="false">Missionen</button>
-            </div>
 
             <ol class="rv2-activity-timeline" aria-label="Aktivitätsverlauf">
               <li class="rv2-activity-item" data-activity-type="points">
                 <i class="rv2-activity-icon" aria-hidden="true">🎯</i>
                 <div class="rv2-activity-copy">
-                  <h4>+25 Punkte durch Glücksrad erhalten</h4>
-                  <p>Dein täglicher Dreh war erfolgreich und wurde direkt gutgeschrieben.</p>
-                  <small>Heute, 09:12 Uhr</small>
+                  <h4>Heute</h4>
+                  <p>Glücksrad gedreht und Bonuspunkte erhalten.</p>
+                  <small>+25 Punkte</small>
                 </div>
                 <b class="rv2-activity-status">Punkte</b>
               </li>
 
-              <li class="rv2-activity-item" data-activity-type="voucher">
-                <i class="rv2-activity-icon" aria-hidden="true">🎁</i>
+              <li class="rv2-activity-item" data-activity-type="mission">
+                <i class="rv2-activity-icon" aria-hidden="true">✅</i>
                 <div class="rv2-activity-copy">
-                  <h4>5 € Gutschein-Guthaben freigeschaltet</h4>
-                  <p>Dein Konto wurde mit neuem Gutschein-Guthaben ergänzt.</p>
-                  <small>Heute, 08:40 Uhr</small>
+                  <h4>Gestern</h4>
+                  <p>Mission „5 Fahrten sammeln" deutlich vorangebracht.</p>
+                  <small>3 / 5 erledigt</small>
                 </div>
-                <b class="rv2-activity-status">Gutschein</b>
+                <b class="rv2-activity-status">Mission</b>
               </li>
 
               <li class="rv2-activity-item" data-activity-type="badge">
                 <i class="rv2-activity-icon" aria-hidden="true">🏅</i>
                 <div class="rv2-activity-copy">
-                  <h4>Abzeichen „Erste Fahrt“ erhalten</h4>
-                  <p>Ein neuer Meilenstein wurde in deinem Profil freigeschaltet.</p>
-                  <small>Gestern, 18:26 Uhr</small>
+                  <h4>Diese Woche</h4>
+                  <p>Abzeichen „Stammkunde“ gesichert und Sammlung erweitert.</p>
+                  <small>1 neues Abzeichen</small>
                 </div>
                 <b class="rv2-activity-status">Abzeichen</b>
-              </li>
-
-              <li class="rv2-activity-item" data-activity-type="mission">
-                <i class="rv2-activity-icon" aria-hidden="true">📈</i>
-                <div class="rv2-activity-copy">
-                  <h4>Mission „3 von 5 Fahrten“ aktualisiert</h4>
-                  <p>Du bist auf dem besten Weg zum Stammkunde-Abzeichen.</p>
-                  <small>Gestern, 11:03 Uhr</small>
-                </div>
-                <b class="rv2-activity-status">Mission</b>
-              </li>
-
-              <li class="rv2-activity-item" data-activity-type="points">
-                <i class="rv2-activity-icon" aria-hidden="true">👑</i>
-                <div class="rv2-activity-copy">
-                  <h4>Level Gold erreicht</h4>
-                  <p>Dein Rewards-Level wurde hochgestuft und Vorteile aktiviert.</p>
-                  <small>Vor 2 Tagen, 19:45 Uhr</small>
-                </div>
-                <b class="rv2-activity-status">Level</b>
               </li>
             </ol>
 
@@ -1042,14 +1035,14 @@
               </div>
               <div class="rv2-yumak-copy">
                 <small>Persönlicher Premium-Begleiter</small>
-                <h4>Enes, ich bleibe bei dir, bis dein nächster Rewards-Meilenstein erreicht ist.</h4>
+                <h4>Enes, du bist nah an Platin.</h4>
                 <div class="rv2-yumak-bubble" role="status" aria-live="polite">
                   <p class="rv2-yumak-tip" data-yumak-tip>Enes, heute wartet dein täglicher Dreh auf dich.</p>
                 </div>
                 <div class="rv2-yumak-actions">
-                  <button class="button rv2-yumak-action rv2-yumak-action--primary" type="button" data-yumak-next-tip>Tipp anzeigen</button>
-                  <button class="button rv2-yumak-action" type="button" data-yumak-open-mission>Mission ansehen</button>
-                  <button class="button rv2-yumak-action" type="button" data-yumak-open-wheel>Zum Glücksrad</button>
+                  <button class="button rv2-yumak-action rv2-yumak-action--primary" type="button" data-yumak-open-mission>Mission öffnen</button>
+                  <button class="button rv2-yumak-action" type="button" data-yumak-next-tip hidden>Tipp anzeigen</button>
+                  <button class="button rv2-yumak-action" type="button" data-yumak-open-wheel hidden>Zum Glücksrad</button>
                 </div>
               </div>
             </article>
