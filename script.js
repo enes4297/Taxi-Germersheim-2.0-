@@ -4956,6 +4956,22 @@
       locked:'Gesperrt'
     };
 
+    const tierOrder={
+      fast:0,
+      today:1,
+      easy:2,
+      hard:3,
+      vip:4
+    };
+
+    const tierOrder={
+      fast:0,
+      today:1,
+      easy:2,
+      hard:3,
+      vip:4
+    };
+
     cards.forEach(card=>{
       const current=Math.max(0,Number(card.dataset.dailyCurrent || 0));
       const target=Math.max(1,Number(card.dataset.dailyTarget || 1));
@@ -5250,8 +5266,32 @@
         }
 
         renderCard(card);
+        applyMissionOrdering();
       });
     });
+
+    function applyMissionOrdering(){
+      const missionGrid=$('.rv2-mission-grid',root) || root;
+      const cards=$$('[data-mission-id]',root);
+      cards
+        .slice()
+        .sort((a,b)=>{
+          const ta=String(a.dataset.missionTier || '').toLowerCase();
+          const tb=String(b.dataset.missionTier || '').toLowerCase();
+          const oa=(ta in tierOrder) ? tierOrder[ta] : 99;
+          const ob=(tb in tierOrder) ? tierOrder[tb] : 99;
+          if(oa!==ob) return oa-ob;
+
+          const aCurrent=Math.max(0,Number(a.dataset.missionCurrent || 0));
+          const aTarget=Math.max(1,Number(a.dataset.missionTarget || 1));
+          const bCurrent=Math.max(0,Number(b.dataset.missionCurrent || 0));
+          const bTarget=Math.max(1,Number(b.dataset.missionTarget || 1));
+          const aRatio=aCurrent/aTarget;
+          const bRatio=bCurrent/bTarget;
+          return bRatio-aRatio;
+        })
+        .forEach(card=>missionGrid.append(card));
+    }
 
     function syncFromStore(){
       if(!engine) return;
@@ -5272,12 +5312,15 @@
         }
         renderCard(card);
       });
+      applyMissionOrdering();
     }
 
     if(engine){
       engine.Events.on('reward.store',syncFromStore);
       syncFromStore();
     }
+
+    applyMissionOrdering();
   }
   function initRewardsSeasonalEvents(){
     const root=$('#rewards.rewards-v2 [data-rewards-seasonal-events]');
@@ -5702,6 +5745,130 @@
     updateMode();
     frameId=requestAnimationFrame(animate);
   }
+  function initRewardsWeeklyGoal(){
+    const root=$('#rewards.rewards-v2 [data-rewards-weekly-goal]');
+    if(!root) return;
+    if(root.dataset.bound==='true') return;
+    root.dataset.bound='true';
+
+    const engine=(window.rewardsEngine && window.rewardsEngine.Store) ? window.rewardsEngine : null;
+    const currentNode=$('[data-weekly-goal-current]',root);
+    const targetNode=$('[data-weekly-goal-target]',root);
+    const progressWrap=$('.rv2-weekly-goal-progress',root);
+    const fill=$('[data-weekly-goal-fill]',root);
+    const target=5;
+
+    function readCurrent(){
+      if(engine){
+        const s=engine.Store.getState();
+        const done=Object.values(s.missions || {}).filter(entry=>String(entry?.status || '').toLowerCase()==='done').length;
+        return Math.max(0,Math.min(target,done || 3));
+      }
+      const done=$$('#rewards.rewards-v2 [data-rewards-missions] [data-mission-id][data-mission-status="done"]').length;
+      return Math.max(0,Math.min(target,done || 3));
+    }
+
+    function render(){
+      const current=readCurrent();
+      const percent=Math.max(0,Math.min(100,(current/target)*100));
+      if(currentNode) currentNode.textContent=String(current);
+      if(targetNode) targetNode.textContent=String(target);
+      if(progressWrap){
+        progressWrap.setAttribute('aria-valuemin','0');
+        progressWrap.setAttribute('aria-valuemax',String(target));
+        progressWrap.setAttribute('aria-valuenow',String(current));
+      }
+      if(fill) fill.style.width=`${percent.toFixed(2)}%`;
+    }
+
+    render();
+    if(engine) engine.Events.on('reward.store',render);
+    document.addEventListener('rewards:rewardEvent',event=>{
+      const type=String(event?.detail?.type || '').toLowerCase();
+      if(type==='mission:completed') render();
+    });
+  }
+  function initRewardsV16RailLayout(){
+    const page=$('#rewards.rewards-v2');
+    if(!page) return;
+    if(page.dataset.v16RailBound==='true') return;
+    page.dataset.v16RailBound='true';
+
+    const left=$('.rv2-main-layout .rv2-left',page);
+    const right=$('.rv2-main-layout .rv2-right',page);
+    if(!left || !right) return;
+
+    const rightSelectors=[
+      '.rv2-wheel-card',
+      '.rv2-yumak-assistant',
+      '[data-rewards-daily-streak]',
+      '[data-rewards-weekly-goal]',
+      '[data-rewards-mystery-box]'
+    ];
+
+    rightSelectors.forEach(selector=>{
+      const node=$(selector,page);
+      if(node && node.parentElement!==right) right.append(node);
+    });
+
+    const leftSelectors=[
+      '.rv2-hero',
+      '.rv2-smart-dashboard',
+      '.rv2-quick-actions',
+      '.rv2-today-overview',
+      '.rv2-customer-dashboard',
+      '.rv2-vip-status',
+      '.rv2-missions',
+      '.rv2-rewards-points',
+      '.rv2-achievements',
+      '.rv2-collection',
+      '.rv2-activities'
+    ];
+
+    leftSelectors.forEach(selector=>{
+      const node=$(selector,page);
+      if(node && node.parentElement!==left) left.append(node);
+    });
+  }
+  function initRewardsPremiumExperience(){
+    const root=$('#rewards.rewards-v2');
+    if(!root) return;
+    if(root.dataset.premiumExperienceBound==='true') return;
+    root.dataset.premiumExperienceBound='true';
+
+    const counters=$$('[data-count-up]',root);
+    counters.forEach(node=>{
+      const target=Math.max(0,Math.round(Number(node.dataset.countUp || node.textContent || 0)));
+      const start=performance.now();
+      const duration=760;
+      const from=0;
+      function tick(now){
+        const progress=Math.max(0,Math.min(1,(now-start)/duration));
+        const eased=1-Math.pow(1-progress,3);
+        const value=Math.round(from+(target-from)*eased);
+        node.textContent=String(value);
+        if(progress<1){
+          requestAnimationFrame(tick);
+        }
+      }
+      requestAnimationFrame(tick);
+    });
+
+    const tipNode=$('[data-hero-yumak-tip]',root);
+    if(!tipNode) return;
+    const tips=[
+      'Heute warten Missionen und ein Glücksrad auf dich.',
+      'Dir fehlen nur noch 120 Punkte bis Platin.',
+      'Noch eine Mission bis zur Mystery Box.',
+      'Heute wartet ein Extra-Dreh auf dich.',
+      'Schau dir deine neuen Abzeichen an.'
+    ];
+    let tipIndex=0;
+    window.setInterval(()=>{
+      tipIndex=(tipIndex+1+Math.floor(Math.random()*2))%tips.length;
+      tipNode.textContent=tips[tipIndex];
+    },8800);
+  }
   function initRewardsActivities(){
     const root=$('#rewards.rewards-v2 [data-rewards-activities]');
     if(!root) return;
@@ -5712,7 +5879,6 @@
     const filterButtons=$$('[data-activity-filter]',root);
     const timeline=$('.rv2-activity-timeline',root);
     if(!timeline) return;
-    const compactTimeline=root.dataset.activitiesCompact==='true';
     let currentFilter='all';
 
     function applyFilter(filter){
@@ -5764,14 +5930,14 @@
       if(append) timeline.append(li);
       else timeline.prepend(li);
 
-      while(timeline.children.length>3) timeline.lastElementChild?.remove();
+      while(timeline.children.length>5) timeline.lastElementChild?.remove();
       applyFilter(currentFilter);
     }
 
     function renderStoreActivities(){
       if(!engine) return;
       const snapshot=engine.Store.getState();
-      const entries=Array.isArray(snapshot.activities) ? snapshot.activities.slice(0,3) : [];
+      const entries=Array.isArray(snapshot.activities) ? snapshot.activities.slice(0,5) : [];
       if(!entries.length) return;
       timeline.innerHTML='';
       entries.forEach(entry=>{
@@ -5791,11 +5957,6 @@
         applyFilter(button.dataset.activityFilter || 'all');
       });
     });
-
-    if(compactTimeline){
-      applyFilter('all');
-      return;
-    }
 
     if(engine){
       engine.Events.on('reward.store',renderStoreActivities);
@@ -6663,10 +6824,13 @@
     initRewardsSpecialMissions();
     initRewardsAchievements();
     initRewardsCollection();
+    initRewardsV16RailLayout();
     initRewardsMissions();
     initRewardsSeasonalEvents();
     initRewardsYumakAssistant();
+    initRewardsWeeklyGoal();
     initRewardsActivities();
+    initRewardsPremiumExperience();
     initRewardsUnifiedDashboard();
 
     const initialScreen=resolveInitialScreen();
