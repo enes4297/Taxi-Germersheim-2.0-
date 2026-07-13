@@ -51,14 +51,26 @@
             <h1>Willkommen zurück Enes</h1>
             <div class="rv2-hero-meta">
               <span>Gold Mitglied</span>
-              <span>230 Punkte</span>
-              <span>230 / 350</span>
+              <span><b data-count-up="230">230</b> Punkte</span>
+              <span><b data-count-up="230">230</b> / <b data-count-up="350">350</b></span>
             </div>
             <p class="rv2-hero-note">Noch 120 Punkte bis Platin</p>
             <div class="rv2-hero-progress" role="progressbar" aria-label="Fortschritt bis Platin" aria-valuemin="0" aria-valuemax="350" aria-valuenow="230"><u></u></div>
+            <div class="rv2-hero-overview" aria-label="Hero Übersicht">
+              <article class="rv2-hero-overview-card">
+                <small>Login-Serie</small>
+                <strong data-count-up="3">3</strong>
+                <p>Tage aktiv</p>
+              </article>
+              <article class="rv2-hero-overview-card">
+                <small>Tagesziel</small>
+                <strong>2 / 3</strong>
+                <p>Heute noch eine Mission</p>
+              </article>
+            </div>
             <article class="rv2-hero-yumak" aria-label="Yumak Hinweis">
               <img src="yumak.png" alt="Yumak" loading="lazy">
-              <p>Heute warten Missionen und ein Glücksrad auf dich.</p>
+              <p data-hero-yumak-tip>Heute warten Missionen und ein Glücksrad auf dich.</p>
             </article>
           </article>
 
@@ -394,85 +406,6 @@
             </ol>
           </section>
 
-          <section class="rv2-mystery-box" aria-label="Mystery Box" data-rewards-mystery-box data-mystery-state="available">
-            <header class="rv2-section-head">
-              <h3>Mystery Box</h3>
-              <small>Zusätzliche Premium-Belohnung</small>
-            </header>
-
-            <article class="rv2-mystery-main">
-              <div class="rv2-mystery-chest" aria-hidden="true">
-                <span>🎁</span>
-              </div>
-
-              <div class="rv2-mystery-copy">
-                <b class="rv2-mystery-status" data-mystery-status>Verfügbar</b>
-                <p class="rv2-mystery-note" data-mystery-note>Öffne deine Box und entdecke eine Überraschung.</p>
-                <button class="button rv2-mystery-open" type="button" data-mystery-open>Box öffnen</button>
-                <small class="rv2-mystery-countdown" data-mystery-countdown hidden>Morgen wieder verfügbar in 23:59:59</small>
-              </div>
-            </article>
-
-            <article class="rv2-mystery-result" data-mystery-result hidden>
-              <i class="rv2-mystery-result-icon" data-mystery-result-icon aria-hidden="true">✨</i>
-              <div class="rv2-mystery-result-copy">
-                <h4 data-mystery-result-title>Überraschung freigeschaltet</h4>
-                <p data-mystery-result-text>Demo-Belohnung wird angezeigt, sobald du die Box öffnest.</p>
-              </div>
-              <div class="rv2-mystery-confetti" data-mystery-confetti aria-hidden="true"></div>
-            </article>
-          </section>
-
-          <section class="rv2-daily-streak" aria-label="Tägliche Serie" data-rewards-daily-streak>
-            <header class="rv2-section-head">
-              <h3>Tägliche Serie</h3>
-              <small>7 Tage am Stück für Premium-Belohnungen</small>
-            </header>
-
-            <div class="rv2-streak-grid" data-streak-days>
-              <article class="rv2-streak-day" data-streak-day="1">
-                <b>Tag 1</b>
-                <p>+5 Punkte</p>
-                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
-              </article>
-              <article class="rv2-streak-day" data-streak-day="2">
-                <b>Tag 2</b>
-                <p>+10 Punkte</p>
-                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
-              </article>
-              <article class="rv2-streak-day" data-streak-day="3">
-                <b>Tag 3</b>
-                <p>+15 Punkte</p>
-                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
-              </article>
-              <article class="rv2-streak-day" data-streak-day="4">
-                <b>Tag 4</b>
-                <p>+20 Punkte</p>
-                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
-              </article>
-              <article class="rv2-streak-day" data-streak-day="5">
-                <b>Tag 5</b>
-                <p>Extra Glücksrad-Dreh</p>
-                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
-              </article>
-              <article class="rv2-streak-day" data-streak-day="6">
-                <b>Tag 6</b>
-                <p>+50 Punkte</p>
-                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
-              </article>
-              <article class="rv2-streak-day" data-streak-day="7">
-                <b>Tag 7</b>
-                <p>Überraschungsbelohnung</p>
-                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
-              </article>
-            </div>
-
-            <div class="rv2-streak-meta">
-              <p data-streak-status>Heute wartet dein nächster Serienbonus.</p>
-              <button class="button rv2-streak-claim" type="button" data-streak-claim>Heute einchecken</button>
-            </div>
-          </section>
-
           <section class="rv2-daily-missions" aria-label="Heutige Missionen" data-rewards-daily-missions>
             <header class="rv2-section-head">
               <h3>Heutige Missionen</h3>
@@ -748,24 +681,7 @@
             </header>
 
             <div class="rv2-mission-grid">
-              <article class="rv2-mission-card" data-mission-id="first-ride" data-mission-status="active" data-mission-current="0" data-mission-target="1" data-mission-reward="+50 Punkte">
-                <i class="rv2-mission-icon" aria-hidden="true">🚕</i>
-                <div class="rv2-mission-copy">
-                  <h4>Erste Fahrt abschließen</h4>
-                  <p>Schließe deine erste Fahrt im Rewards-System ab.</p>
-                </div>
-                <div class="rv2-mission-meta">
-                  <span class="rv2-mission-reward">+50 Punkte</span>
-                  <b class="rv2-mission-status">Aktiv</b>
-                </div>
-                <div class="rv2-mission-progress" role="progressbar" aria-label="Fortschritt Erste Fahrt" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
-                  <u></u>
-                </div>
-                <small class="rv2-mission-progress-text">0 / 1 Fahrt</small>
-                <button class="button rv2-mission-action" type="button">Mission öffnen</button>
-              </article>
-
-              <article class="rv2-mission-card" data-mission-id="five-rides" data-mission-status="active" data-mission-current="3" data-mission-target="5" data-mission-reward="Abzeichen Stammkunde">
+              <article class="rv2-mission-card" data-mission-id="five-rides" data-mission-tier="fast" data-mission-status="active" data-mission-current="3" data-mission-target="5" data-mission-reward="Abzeichen Stammkunde">
                 <i class="rv2-mission-icon" aria-hidden="true">🏅</i>
                 <div class="rv2-mission-copy">
                   <h4>5 Fahrten sammeln</h4>
@@ -782,7 +698,24 @@
                 <button class="button rv2-mission-action" type="button">Mission öffnen</button>
               </article>
 
-              <article class="rv2-mission-card" data-mission-id="airport-first" data-mission-status="done" data-mission-current="1" data-mission-target="1" data-mission-reward="+100 Punkte">
+              <article class="rv2-mission-card" data-mission-id="first-ride" data-mission-tier="today" data-mission-status="active" data-mission-current="0" data-mission-target="1" data-mission-reward="+50 Punkte">
+                <i class="rv2-mission-icon" aria-hidden="true">🚕</i>
+                <div class="rv2-mission-copy">
+                  <h4>Erste Fahrt abschließen</h4>
+                  <p>Schließe deine erste Fahrt im Rewards-System ab.</p>
+                </div>
+                <div class="rv2-mission-meta">
+                  <span class="rv2-mission-reward">+50 Punkte</span>
+                  <b class="rv2-mission-status">Aktiv</b>
+                </div>
+                <div class="rv2-mission-progress" role="progressbar" aria-label="Fortschritt Erste Fahrt" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+                  <u></u>
+                </div>
+                <small class="rv2-mission-progress-text">0 / 1 Fahrt</small>
+                <button class="button rv2-mission-action" type="button">Mission öffnen</button>
+              </article>
+
+              <article class="rv2-mission-card" data-mission-id="airport-first" data-mission-tier="easy" data-mission-status="done" data-mission-current="1" data-mission-target="1" data-mission-reward="+100 Punkte">
                 <i class="rv2-mission-icon" aria-hidden="true">✈️</i>
                 <div class="rv2-mission-copy">
                   <h4>Erster Flughafentransfer</h4>
@@ -799,7 +732,7 @@
                 <button class="button rv2-mission-action" type="button">Mission anzeigen</button>
               </article>
 
-              <article class="rv2-mission-card" data-mission-id="profile-complete" data-mission-status="active" data-mission-current="0" data-mission-target="1" data-mission-reward="+20 Punkte">
+              <article class="rv2-mission-card" data-mission-id="profile-complete" data-mission-tier="easy" data-mission-status="active" data-mission-current="0" data-mission-target="1" data-mission-reward="+20 Punkte">
                 <i class="rv2-mission-icon" aria-hidden="true">👤</i>
                 <div class="rv2-mission-copy">
                   <h4>Profil vervollständigen</h4>
@@ -816,24 +749,7 @@
                 <button class="button rv2-mission-action" type="button">Mission öffnen</button>
               </article>
 
-              <article class="rv2-mission-card" data-mission-id="refer-friend" data-mission-status="locked" data-mission-current="0" data-mission-target="1" data-mission-reward="10 € Gutschein">
-                <i class="rv2-mission-icon" aria-hidden="true">🤝</i>
-                <div class="rv2-mission-copy">
-                  <h4>Freund weiterempfehlen</h4>
-                  <p>Empfiehl Taxi Germersheim und sichere dir einen Gutschein.</p>
-                </div>
-                <div class="rv2-mission-meta">
-                  <span class="rv2-mission-reward">10 € Gutschein</span>
-                  <b class="rv2-mission-status">Gesperrt</b>
-                </div>
-                <div class="rv2-mission-progress" role="progressbar" aria-label="Fortschritt Empfehlung" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
-                  <u></u>
-                </div>
-                <small class="rv2-mission-progress-text">0 / 1 Empfehlung</small>
-                <button class="button rv2-mission-action" type="button">Mission vormerken</button>
-              </article>
-
-              <article class="rv2-mission-card" data-mission-id="google-review" data-mission-status="active" data-mission-current="0" data-mission-target="1" data-mission-reward="+25 Punkte">
+              <article class="rv2-mission-card" data-mission-id="google-review" data-mission-tier="hard" data-mission-status="active" data-mission-current="0" data-mission-target="1" data-mission-reward="+25 Punkte">
                 <i class="rv2-mission-icon" aria-hidden="true">⭐</i>
                 <div class="rv2-mission-copy">
                   <h4>Google-Bewertung schreiben</h4>
@@ -848,6 +764,23 @@
                 </div>
                 <small class="rv2-mission-progress-text">0 / 1 Bewertung</small>
                 <button class="button rv2-mission-action" type="button">Mission öffnen</button>
+              </article>
+
+              <article class="rv2-mission-card" data-mission-id="refer-friend" data-mission-tier="vip" data-mission-status="locked" data-mission-current="0" data-mission-target="1" data-mission-reward="10 € Gutschein">
+                <i class="rv2-mission-icon" aria-hidden="true">🤝</i>
+                <div class="rv2-mission-copy">
+                  <h4>Freund weiterempfehlen</h4>
+                  <p>Empfiehl Taxi Germersheim und sichere dir einen Gutschein.</p>
+                </div>
+                <div class="rv2-mission-meta">
+                  <span class="rv2-mission-reward">10 € Gutschein</span>
+                  <b class="rv2-mission-status">Gesperrt</b>
+                </div>
+                <div class="rv2-mission-progress" role="progressbar" aria-label="Fortschritt Empfehlung" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+                  <u></u>
+                </div>
+                <small class="rv2-mission-progress-text">0 / 1 Empfehlung</small>
+                <button class="button rv2-mission-action" type="button">Mission vormerken</button>
               </article>
             </div>
 
@@ -914,7 +847,7 @@
             <p class="rv2-seasonal-note rv2-seasonal-note-subtle">Demo-Stand: Event-Daten sind austauschbar vorbereitet für Sonderräder, Extra-Drehs und exklusive Abzeichen.</p>
           </section>
 
-          <section class="rv2-activities" aria-label="Aktivitäten" data-rewards-activities data-activities-compact="true">
+          <section class="rv2-activities" aria-label="Aktivitäten" data-rewards-activities>
             <header class="rv2-section-head">
               <h3>Aktivitäten</h3>
               <small>Kompakte Timeline deiner letzten Rewards-Momente</small>
@@ -926,7 +859,7 @@
                 <div class="rv2-activity-copy">
                   <h4>Heute</h4>
                   <p>Glücksrad gedreht und Bonuspunkte erhalten.</p>
-                  <small>+25 Punkte</small>
+                  <small>13.07.2026 · 09:12 · +25 Punkte</small>
                 </div>
                 <b class="rv2-activity-status">Punkte</b>
               </li>
@@ -936,7 +869,7 @@
                 <div class="rv2-activity-copy">
                   <h4>Gestern</h4>
                   <p>Mission „5 Fahrten sammeln" deutlich vorangebracht.</p>
-                  <small>3 / 5 erledigt</small>
+                  <small>12.07.2026 · 19:45 · 3 / 5 erledigt</small>
                 </div>
                 <b class="rv2-activity-status">Mission</b>
               </li>
@@ -946,9 +879,29 @@
                 <div class="rv2-activity-copy">
                   <h4>Diese Woche</h4>
                   <p>Abzeichen „Stammkunde“ gesichert und Sammlung erweitert.</p>
-                  <small>1 neues Abzeichen</small>
+                  <small>11.07.2026 · 14:02 · +1 Abzeichen</small>
                 </div>
                 <b class="rv2-activity-status">Abzeichen</b>
+              </li>
+
+              <li class="rv2-activity-item" data-activity-type="voucher">
+                <i class="rv2-activity-icon" aria-hidden="true">🎁</i>
+                <div class="rv2-activity-copy">
+                  <h4>Diese Woche</h4>
+                  <p>5 EUR Gutschein durch Belohnungsstufe freigeschaltet.</p>
+                  <small>10.07.2026 · 17:24 · +5 EUR</small>
+                </div>
+                <b class="rv2-activity-status">Gutschein</b>
+              </li>
+
+              <li class="rv2-activity-item" data-activity-type="points">
+                <i class="rv2-activity-icon" aria-hidden="true">👑</i>
+                <div class="rv2-activity-copy">
+                  <h4>Diese Woche</h4>
+                  <p>Gold-Level bestätigt und neue Vorteile aktiviert.</p>
+                  <small>09.07.2026 · 08:16 · Level Gold</small>
+                </div>
+                <b class="rv2-activity-status">Level</b>
               </li>
             </ol>
 
@@ -987,7 +940,16 @@
               <small class="rv2-spin-countdown-label" hidden><span aria-hidden="true">📅</span> Nächster Dreh möglich in</small>
               <p class="rv2-spin-countdown" aria-live="polite" hidden>23:59:59</p>
               <p class="rv2-spin-result" aria-live="polite">Noch kein Dreh durchgeführt.</p>
-              <small class="rv2-spin-note">Demo-Version - Gewinne werden später mit dem Kundenkonto verbunden.</small>
+              <small class="rv2-spin-note">Top-Gewinne heute</small>
+              <ul class="rv2-wheel-top-wins" aria-label="Top Gewinne heute">
+                <li>5 Punkte</li>
+                <li>10 Punkte</li>
+                <li>25 Punkte</li>
+                <li>50 Punkte</li>
+                <li>5 EUR Gutschein</li>
+                <li>Mystery Box</li>
+                <li>Extra Dreh</li>
+              </ul>
               <article class="rv2-win-card" hidden>
                 <strong>Glückwunsch!</strong>
                 <p data-rewards-win-message>Du hast 50 Punkte gewonnen.</p>
@@ -1048,12 +1010,110 @@
             </article>
 
             <ul class="rv2-yumak-tip-list" hidden>
+              <li>Dir fehlen nur noch 120 Punkte bis Platin.</li>
+              <li>Heute wartet ein Extra-Dreh.</li>
+              <li>Noch eine Mission bis zur Mystery Box.</li>
+              <li>Schau dir deine neuen Abzeichen an.</li>
               <li>Heute wartet dein täglicher Dreh.</li>
               <li>Noch 120 Punkte bis Platin.</li>
-              <li>Viel Glück!</li>
               <li>Starker Gewinn!</li>
               <li>Das schaffen wir!</li>
             </ul>
+          </section>
+
+          <section class="rv2-daily-streak" aria-label="Tägliche Serie" data-rewards-daily-streak>
+            <header class="rv2-section-head">
+              <h3>Tägliche Serie</h3>
+              <small>7 Tage am Stück für Premium-Belohnungen</small>
+            </header>
+
+            <div class="rv2-streak-grid" data-streak-days>
+              <article class="rv2-streak-day" data-streak-day="1">
+                <b>Tag 1</b>
+                <p>+5 Punkte</p>
+                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
+              </article>
+              <article class="rv2-streak-day" data-streak-day="2">
+                <b>Tag 2</b>
+                <p>+10 Punkte</p>
+                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
+              </article>
+              <article class="rv2-streak-day" data-streak-day="3">
+                <b>Tag 3</b>
+                <p>+15 Punkte</p>
+                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
+              </article>
+              <article class="rv2-streak-day" data-streak-day="4">
+                <b>Tag 4</b>
+                <p>+20 Punkte</p>
+                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
+              </article>
+              <article class="rv2-streak-day" data-streak-day="5">
+                <b>Tag 5</b>
+                <p>Extra Glücksrad-Dreh</p>
+                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
+              </article>
+              <article class="rv2-streak-day" data-streak-day="6">
+                <b>Tag 6</b>
+                <p>+50 Punkte</p>
+                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
+              </article>
+              <article class="rv2-streak-day" data-streak-day="7">
+                <b>Tag 7</b>
+                <p>Überraschungsbelohnung</p>
+                <span class="rv2-streak-mark" data-streak-mark aria-hidden="true">🔒</span>
+              </article>
+            </div>
+
+            <div class="rv2-streak-meta">
+              <p data-streak-status>Heute wartet dein nächster Serienbonus.</p>
+              <button class="button rv2-streak-claim" type="button" data-streak-claim>Heute einchecken</button>
+            </div>
+          </section>
+
+          <section class="rv2-weekly-goal" aria-label="Wochenziel" data-rewards-weekly-goal>
+            <header class="rv2-section-head">
+              <h3>Wochenziel</h3>
+              <small>Diese Woche</small>
+            </header>
+            <article class="rv2-weekly-goal-card">
+              <p><b data-weekly-goal-current>3</b> von <b data-weekly-goal-target>5</b> Missionen</p>
+              <div class="rv2-weekly-goal-progress" role="progressbar" aria-label="Wochenziel Fortschritt" aria-valuemin="0" aria-valuemax="5" aria-valuenow="3"><u data-weekly-goal-fill></u></div>
+              <ul class="rv2-weekly-goal-rewards">
+                <li>Mystery Box</li>
+                <li>Extra Dreh</li>
+                <li>50 Punkte</li>
+              </ul>
+            </article>
+          </section>
+
+          <section class="rv2-mystery-box" aria-label="Mystery Box" data-rewards-mystery-box data-mystery-state="available">
+            <header class="rv2-section-head">
+              <h3>Mystery Box</h3>
+              <small>Zusätzliche Premium-Belohnung</small>
+            </header>
+
+            <article class="rv2-mystery-main">
+              <div class="rv2-mystery-chest" aria-hidden="true">
+                <span>🎁</span>
+              </div>
+
+              <div class="rv2-mystery-copy">
+                <b class="rv2-mystery-status" data-mystery-status>Verfügbar</b>
+                <p class="rv2-mystery-note" data-mystery-note>Öffne deine Box und entdecke eine Überraschung.</p>
+                <button class="button rv2-mystery-open" type="button" data-mystery-open>Box öffnen</button>
+                <small class="rv2-mystery-countdown" data-mystery-countdown hidden>Morgen wieder verfügbar in 23:59:59</small>
+              </div>
+            </article>
+
+            <article class="rv2-mystery-result" data-mystery-result hidden>
+              <i class="rv2-mystery-result-icon" data-mystery-result-icon aria-hidden="true">✨</i>
+              <div class="rv2-mystery-result-copy">
+                <h4 data-mystery-result-title>Überraschung freigeschaltet</h4>
+                <p data-mystery-result-text>Demo-Belohnung wird angezeigt, sobald du die Box öffnest.</p>
+              </div>
+              <div class="rv2-mystery-confetti" data-mystery-confetti aria-hidden="true"></div>
+            </article>
           </section>
         </aside>
       </section>
