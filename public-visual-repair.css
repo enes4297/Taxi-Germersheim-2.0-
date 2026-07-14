@@ -2338,3 +2338,302 @@ body {
     height: 50px;
   }
 }
+
+/* Sprint V16.7 - Home card cleanup */
+#home.home-page .feature-card.reward {
+  min-height: 266px;
+}
+
+#home.home-page .feature-card.reward .reward-layout {
+  height: 100%;
+  grid-template-rows: auto auto auto auto auto;
+  align-content: stretch;
+  gap: 14px;
+  padding-right: 0;
+}
+
+#home.home-page .feature-card.reward .reward-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 16px;
+}
+
+#home.home-page .feature-card.reward .reward-points-box {
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+}
+
+#home.home-page .feature-card.reward .reward-points-value {
+  font-size: clamp(42px, 3.2vw, 52px);
+  line-height: 0.95;
+  color: #fff;
+  letter-spacing: -0.03em;
+}
+
+#home.home-page .feature-card.reward .reward-points-label {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+#home.home-page .feature-card.reward .reward-level-box {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  align-self: center;
+}
+
+#home.home-page .feature-card.reward .reward-level-box b {
+  font-size: 28px;
+  line-height: 1;
+}
+
+#home.home-page .feature-card.reward .bar {
+  height: 12px;
+}
+
+#home.home-page .feature-card.reward .bar u {
+  width: 66%;
+}
+
+#home.home-page .feature-card.reward .reward-link {
+  justify-self: start;
+}
+
+#home.home-page .feature-card.yumak-home {
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: center;
+}
+
+#home.home-page .feature-card.yumak-home .yumak-avatar-card {
+  width: 114px;
+  height: 114px;
+  border-radius: 24px;
+  object-fit: contain;
+  border: 1px solid rgba(255, 217, 106, 0.38);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.26), 0 0 26px rgba(255, 217, 106, 0.22);
+}
+
+#home.home-page .feature-card.yumak-home div {
+  gap: 8px;
+}
+
+#home.home-page .feature-card.yumak-home small {
+  display: block;
+  overflow: visible;
+  line-clamp: initial;
+  -webkit-line-clamp: initial;
+}
+
+#home.home-page .yumak-online {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #d9ffe7;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+#home.home-page .yumak-online::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #55e58e;
+  box-shadow: 0 0 0 4px rgba(85, 229, 142, 0.2);
+}
+
+#home.home-page .yumak-more {
+  margin-top: 2px;
+}
+
+#home.home-page .service-points li {
+  padding-left: 0;
+}
+
+#home.home-page .service-points li::before {
+  content: none;
+}
+
+/* Sprint V16.7 - Booking favorite alignment */
+.booking-premium .pb-favorites-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.booking-premium .pb-favorite-button {
+  min-height: 86px;
+  justify-items: center;
+  text-align: center;
+  align-content: center;
+  gap: 6px;
+}
+
+.booking-premium .pb-favorite-button .pb-favorite-label {
+  min-height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  line-height: 1.2;
+}
+
+.booking-premium .pb-favorite-button .pb-favorite-value {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+/* Sprint V16.7 - Mystery box and Daily streak polish */
+#rewards.rewards-v2 .rv2-mystery-main {
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: center;
+}
+
+#rewards.rewards-v2 .rv2-mystery-chest {
+  min-height: 220px;
+}
+
+#rewards.rewards-v2 .rv2-mystery-illustration {
+  width: 208px;
+  height: 196px;
+  perspective: 820px;
+}
+
+#rewards.rewards-v2 .rv2-mystery-core {
+  width: 156px;
+  height: 108px;
+  bottom: 18px;
+  border-radius: 24px;
+  background: linear-gradient(158deg, #8344ca 0%, #5d2f90 54%, #2f1a48 100%);
+  box-shadow: 0 24px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.34), inset 0 -16px 20px rgba(18, 10, 30, 0.4);
+}
+
+#rewards.rewards-v2 .rv2-mystery-lid {
+  top: 24px;
+  width: 172px;
+  height: 54px;
+  border-radius: 22px;
+  background: linear-gradient(145deg, #a35de1, #653798);
+}
+
+#rewards.rewards-v2 .rv2-mystery-ribbon-v {
+  width: 22px;
+  height: 140px;
+  top: 24px;
+}
+
+#rewards.rewards-v2 .rv2-mystery-ribbon-h {
+  width: 156px;
+  height: 18px;
+  top: 62px;
+}
+
+#rewards.rewards-v2 .rv2-mystery-bow {
+  top: 11px;
+  width: 38px;
+  height: 28px;
+}
+
+#rewards.rewards-v2 .rv2-mystery-bow-left {
+  left: calc(50% - 34px);
+}
+
+#rewards.rewards-v2 .rv2-mystery-bow-right {
+  left: calc(50% + 2px);
+}
+
+#rewards.rewards-v2 .rv2-mystery-knot {
+  top: 20px;
+  width: 17px;
+  height: 17px;
+}
+
+#rewards.rewards-v2 .rv2-mystery-footer {
+  padding-left: calc(220px + 22px);
+}
+
+#rewards.rewards-v2 .rv2-streak-grid {
+  gap: 10px;
+}
+
+#rewards.rewards-v2 .rv2-streak-day {
+  min-height: 136px;
+  padding: 12px 10px 10px;
+  grid-template-rows: auto minmax(40px, 1fr) auto;
+  justify-items: center;
+  text-align: center;
+}
+
+#rewards.rewards-v2 .rv2-streak-day b {
+  width: 100%;
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;
+  padding-right: 52px;
+}
+
+#rewards.rewards-v2 .rv2-streak-day p {
+  width: 100%;
+  margin: 0;
+  text-align: center;
+}
+
+#rewards.rewards-v2 .rv2-streak-day[data-streak-state='current'] b::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+#rewards.rewards-v2 .rv2-streak-mark {
+  justify-self: center;
+  align-self: end;
+}
+
+#rewards.rewards-v2 .rv2-streak-meta {
+  align-items: end;
+}
+
+#rewards.rewards-v2 .rv2-streak-summary {
+  gap: 10px;
+}
+
+@media (max-width: 1024px) {
+  #home.home-page .feature-card.reward .reward-main {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  #home.home-page .feature-card.yumak-home {
+    grid-template-columns: 94px minmax(0, 1fr);
+  }
+
+  #home.home-page .feature-card.yumak-home .yumak-avatar-card {
+    width: 92px;
+    height: 92px;
+  }
+
+  #rewards.rewards-v2 .rv2-mystery-main {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  #rewards.rewards-v2 .rv2-mystery-chest {
+    min-height: 184px;
+  }
+
+  #rewards.rewards-v2 .rv2-mystery-illustration {
+    width: 184px;
+    height: 170px;
+  }
+
+  #rewards.rewards-v2 .rv2-mystery-footer {
+    padding-left: 0;
+  }
+}

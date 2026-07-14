@@ -22,6 +22,10 @@ body.has-open-support-modal {
   gap: 10px;
 }
 
+.support-card h2 {
+  font-size: clamp(28px, 2.1vw, 34px);
+}
+
 .support-card h1,
 .support-card h2,
 .support-card h3 {
@@ -66,25 +70,74 @@ body.has-open-support-modal {
 }
 
 .support-faq details {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
+  border: 0;
+  padding: 0;
+}
+
+.support-faq-item {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.03);
-  padding: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
-.support-faq summary {
+.support-faq-item:hover {
+  border-color: rgba(255, 217, 106, 0.34);
+  background: rgba(255, 217, 106, 0.06);
+  transform: translateY(-1px);
+}
+
+.support-faq-question {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  padding: 14px 16px;
   cursor: pointer;
-  list-style: none;
+}
+
+.support-faq-question span {
+  font-size: 15px;
+  line-height: 1.45;
   font-weight: 800;
-  line-height: 1.4;
 }
 
-.support-faq summary::-webkit-details-marker {
-  display: none;
+.support-faq-question b {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.24s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-.support-faq p {
-  margin-top: 8px;
+.support-faq-question[aria-expanded='true'] b {
+  transform: rotate(45deg);
+  border-color: rgba(255, 217, 106, 0.48);
+  color: #ffe8a7;
+}
+
+.support-faq-answer {
+  display: grid;
+  transition: grid-template-rows 0.24s ease;
+  padding: 0 16px 14px;
+}
+
+.support-faq-answer p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .support-contact-grid {
@@ -96,9 +149,11 @@ body.has-open-support-modal {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.03);
-  padding: 10px;
+  min-height: 176px;
+  padding: 14px;
   display: grid;
-  gap: 8px;
+  grid-template-rows: auto minmax(42px, 1fr) auto;
+  gap: 10px;
 }
 
 .support-contact-title {
@@ -107,14 +162,19 @@ body.has-open-support-modal {
   gap: 8px;
 }
 
-.support-contact-title img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
+.support-contact-title i {
+  width: 22px;
+  height: 22px;
+  color: #ffe8a7;
 }
 
 .support-contact-title b {
+  font-size: 15px;
+}
+
+.support-contact-card p {
   font-size: 14px;
+  line-height: 1.55;
 }
 
 .support-contact-actions {
@@ -124,7 +184,7 @@ body.has-open-support-modal {
 }
 
 .support-btn {
-  min-height: 40px;
+  min-height: 44px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.05);
@@ -135,6 +195,9 @@ body.has-open-support-modal {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .support-btn:hover {
@@ -145,7 +208,7 @@ body.has-open-support-modal {
 
 .support-form {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .support-form label {
@@ -184,7 +247,7 @@ body.has-open-support-modal {
 
 .support-legal-links {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .support-legal-links a,
@@ -271,6 +334,10 @@ body.has-open-support-modal {
   .support-grid.cols-2,
   .support-contact-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .support-contact-actions {
+    align-self: end;
   }
 
   .support-modal {
