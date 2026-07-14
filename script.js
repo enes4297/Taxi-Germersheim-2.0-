@@ -111,8 +111,8 @@
     {title:'Städtisches Klinikum Karlsruhe',street:'Moltkestraße 90',postalCode:'76133',city:'Karlsruhe',group:'Krankenhäuser',type:'clinic',scope:'destination'},
     {title:'Nierenzentrum Germersheim',street:'Josef-Probst-Straße 5',postalCode:'76726',city:'Germersheim',group:'Dialysezentren',type:'clinic',scope:'destination'},
     {title:'Dialysezentrum Speyer',street:'Iggelheimer Straße 26',postalCode:'67346',city:'Speyer',group:'Dialysezentren',type:'clinic',scope:'destination'},
-    {title:'Bahnhof Germersheim',street:'Bahnhofstrasse 23',postalCode:'76726',city:'Germersheim',group:'Bahnhöfe',type:'station',scope:'both'},
-    {title:'Hauptbahnhof Speyer',street:'Bahnhofstrasse 1',postalCode:'67346',city:'Speyer',group:'Bahnhöfe',type:'station',scope:'both'},
+    {title:'Bahnhof Germersheim',street:'Bahnhofstraße 23',postalCode:'76726',city:'Germersheim',group:'Bahnhöfe',type:'station',scope:'both'},
+    {title:'Hauptbahnhof Speyer',street:'Bahnhofstraße 1',postalCode:'67346',city:'Speyer',group:'Bahnhöfe',type:'station',scope:'both'},
     {title:'Mannheim Hauptbahnhof',street:'Willy-Brandt-Platz 17',postalCode:'68161',city:'Mannheim',group:'Bahnhöfe',type:'station',scope:'both'},
     {title:'Flughafen Frankfurt Terminal 1',street:'Hugo-Eckener-Ring',postalCode:'60549',city:'Frankfurt am Main',group:'Flughäfen',type:'airport',scope:'destination'},
     {title:'Flughafen Karlsruhe/Baden-Baden',street:'Victoria Boulevard B101',postalCode:'77836',city:'Rheinmünster',group:'Flughäfen',type:'airport',scope:'destination'},
@@ -1985,10 +1985,9 @@
   function getDefaultFavoriteAddresses(){
     return [
       {id:'addr-home',label:'Zuhause',value:'Germersheim Zentrum'},
-      {id:'addr-work',label:'Arbeit',value:'Industriegebiet Sued'},
-      {id:'addr-station',label:'Bahnhof Germersheim',value:'Bahnhofstrasse 23, 76726 Germersheim'},
-      {id:'addr-hospital',label:'Krankenhaus',value:'Asklepios Suedpfalzklinik Germersheim'},
-      {id:'addr-airport',label:'Flughafen Frankfurt',value:'Flughafen Frankfurt Terminal 1'}
+      {id:'addr-work',label:'Arbeit',value:'Industriegebiet Süd'},
+      {id:'addr-station',label:'Bahnhof Germersheim',value:'Bahnhofstraße 23, 76726 Germersheim'},
+      {id:'addr-hospital',label:'Krankenhaus',value:'Asklepios Südpfalzklinik Germersheim'}
     ];
   }
 
@@ -2030,7 +2029,7 @@
   function renderBookingFavoriteAddresses(){
     const lists=$$('[data-booking-favorites-list]');
     if(!lists.length) return;
-    const favorites=readCustomerFavoriteAddresses();
+    const favorites=readCustomerFavoriteAddresses().slice(0,4);
     lists.forEach(list=>{
       const targetRole=String(list.dataset.bookingFavoritesList || '').trim().toLowerCase();
       list.innerHTML='';
@@ -4838,13 +4837,16 @@
       : false;
 
     const rewards=[
-      {id:'points-25',icon:'⭐',title:'+25 Punkte',text:'Du hast 25 Punkte für dein Rewards-Konto erhalten.',win:true},
-      {id:'points-50',icon:'🌟',title:'+50 Punkte',text:'Starker Treffer: 50 Bonuspunkte sind vorgemerkt.',win:true},
-      {id:'voucher-5',icon:'🎟️',title:'5 € Gutschein-Guthaben',text:'5 € Gutschein-Guthaben wurde als Demo-Belohnung freigeschaltet.',win:true},
+      {id:'points-5',icon:'⭐',title:'+5 Punkte',text:'Du hast +5 Punkte aus der Mystery Box erhalten.',win:true},
+      {id:'points-10',icon:'⭐',title:'+10 Punkte',text:'Du hast +10 Punkte aus der Mystery Box erhalten.',win:true},
+      {id:'points-25',icon:'⭐',title:'+25 Punkte',text:'Du hast +25 Punkte aus der Mystery Box erhalten.',win:true},
+      {id:'points-50',icon:'⭐',title:'+50 Punkte',text:'Du hast +50 Punkte aus der Mystery Box erhalten.',win:true},
+      {id:'voucher-5',icon:'🎟️',title:'5-€-Gutschein',text:'5-€-Gutschein als Mystery-Belohnung gesichert.',win:true},
       {id:'extra-spin',icon:'🔄',title:'Extra-Dreh',text:'Du hast einen Extra-Dreh als Mystery-Bonus erhalten.',win:true},
-      {id:'secret-badge',icon:'🏆',title:'Geheimes Abzeichen',text:'Ein geheimes Abzeichen wurde im Demo-System markiert.',win:true},
-      {id:'no-win',icon:'🫶',title:'Trostpreis',text:'Heute kein Hauptgewinn - morgen wartet die nächste Box.',win:false}
+      {id:'mystery-reward',icon:'✨',title:'Mystery Reward',text:'Mystery Reward freigeschaltet.',win:true}
     ];
+
+    const demoResetDoneKey='taxiRewardsMysteryBoxResetV167Done';
 
     function getTodayYmd(){
       const now=new Date();
@@ -4887,6 +4889,21 @@
       }catch(_err){
         // Demo mode: ignore storage errors.
       }
+    }
+
+    function runOneTimeMysteryReset(){
+      try{
+        if(localStorage.getItem(demoResetDoneKey)==='1') return false;
+      }catch(_err){
+        return false;
+      }
+      try{
+        localStorage.removeItem(storageKey);
+        localStorage.setItem(demoResetDoneKey,'1');
+      }catch(_err){
+        return false;
+      }
+      return true;
     }
 
     function stopCountdown(){
@@ -5022,7 +5039,7 @@
       let rewardType='other';
       if(reward.id.includes('voucher')) rewardType='voucher';
       else if(reward.id.includes('points')) rewardType='points';
-      else if(reward.id.includes('badge')) rewardType='badge';
+      else if(reward.id.includes('mystery')) rewardType='badge';
       else if(reward.id==='extra-spin') rewardType='extra-spin';
       else if(reward.id==='no-win') rewardType='no-win';
 
@@ -5070,7 +5087,7 @@
       popCard.classList.remove('is-visible');
       openButton.disabled=true;
       statusNode.textContent='Wird geöffnet ...';
-      noteNode.textContent='Mystery Box wird vorbereitet';
+      noteNode.textContent='Wird geöffnet ...';
       handleRewardEvent('mystery:opening',{source:'mystery-box'});
 
       const reward=rewards[Math.floor(Math.random()*rewards.length)];
@@ -5099,6 +5116,7 @@
       });
     }
 
+    runOneTimeMysteryReset();
     applyAvailability();
   }
   function initRewardsDailyStreak(){
@@ -5139,17 +5157,20 @@
     }
 
     function defaultState(){
-      const currentDay=getCurrentSeriesDay();
-      const claimed=[];
-      for(let day=1;day<currentDay;day++) claimed.push(day);
-      return {claimed,lastCheckin:'',currentDay};
+      return {
+        claimed:[1,2],
+        lastCheckin:getTodayYmd(),
+        currentDay:2
+      };
     }
 
     function readState(){
       try{
         const parsed=JSON.parse(localStorage.getItem(storageKey) || '');
         if(!parsed || typeof parsed!=='object') return defaultState();
-        const currentDay=getCurrentSeriesDay();
+        const currentDay=Number.isInteger(Number(parsed.currentDay))
+          ? Math.max(1,Math.min(7,Number(parsed.currentDay)))
+          : 2;
         const claimed=Array.isArray(parsed.claimed)
           ? parsed.claimed.map(n=>Number(n)).filter(n=>Number.isInteger(n) && n>=1 && n<=7)
           : [];
@@ -5194,10 +5215,9 @@
         }
       });
 
-      const doneCount=dayCards.filter(card=>card.dataset.streakState==='done').length;
       const todayDone=claimedSet.has(state.currentDay) || state.lastCheckin===today;
-      const progressValue=Math.max(0,Math.min(7,doneCount + (todayDone ? 1 : 0)));
-      const nextDay=(state.currentDay%7)+1;
+      const progressValue=Math.max(0,Math.min(7,state.claimed.length));
+      const nextDay=(Math.max(1,Math.min(7,state.currentDay))%7)+1;
 
       if(statusNode){
         statusNode.textContent=`Serie aktiv: ${progressValue} von 7 Tagen`;
