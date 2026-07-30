@@ -2357,6 +2357,21 @@ button {
   font-size: 12px;
 }
 
+.vehicle-card-image-wrap {
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.vehicle-card-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
 .vehicle-meta-list {
   margin: 0;
   display: grid;
@@ -2634,6 +2649,21 @@ button {
   border-top: 1px solid var(--line);
   display: flex;
   justify-content: flex-end;
+}
+
+.vehicle-modal-image-wrap {
+  margin: 0 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.vehicle-modal-image {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
 }
 
 .vehicle-modal-list {
