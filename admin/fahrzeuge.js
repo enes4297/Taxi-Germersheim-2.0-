@@ -1,5 +1,6 @@
 (() => {
   const referenceDate = new Date("2026-07-09T00:00:00");
+  const mercedesVKlasseImagePath = "images/mercedes-v-klasse.jpg";
 
   // Spater kann hier ein API-Array direkt gemappt werden.
   const vehicleSource = [
@@ -168,6 +169,7 @@
     return {
       ...rawVehicle,
       category: resolveVehicleCategory(rawVehicle),
+      imagePath: resolveVehicleImagePath(rawVehicle),
       nextServiceInDays,
       tuvInDays,
       history: {
@@ -187,6 +189,15 @@
     if (typeText.includes("grossraum") || typeText.includes("großraum")) return "Großraum";
     if (typeText.includes("elektro")) return "Elektro";
     return "Taxi";
+  }
+
+  function isMercedesVKlasse(vehicle) {
+    return vehicle.id === "V-800";
+  }
+
+  function resolveVehicleImagePath(vehicle) {
+    if (isMercedesVKlasse(vehicle)) return mercedesVKlasseImagePath;
+    return "";
   }
 
   const vehicles = vehicleSource.map(normalizeVehicle);
@@ -413,6 +424,9 @@
     filtered.forEach((vehicle) => {
       const card = document.createElement("article");
       card.className = "vehicle-card";
+      const vehicleImageHtml = vehicle.imagePath
+        ? `<figure class="vehicle-card-image-wrap"><img class="vehicle-card-image" src="${vehicle.imagePath}" alt="${vehicle.name}"></figure>`
+        : "";
 
       card.innerHTML = `
         <header class="vehicle-card-head">
@@ -425,6 +439,8 @@
           </div>
           <div class="vehicle-head-status-slot"></div>
         </header>
+
+        ${vehicleImageHtml}
 
         <dl class="vehicle-meta-list">
           <div><dt>Kennzeichen</dt><dd>${vehicle.plate}</dd></div>
@@ -522,8 +538,12 @@
   function buildDetailsModal(vehicle) {
     const serviceMeta = getCountdownMeta(vehicle.nextServiceInDays);
     const tuvMeta = getCountdownMeta(vehicle.tuvInDays);
+    const vehicleImageHtml = vehicle.imagePath
+      ? `<figure class="vehicle-modal-image-wrap"><img class="vehicle-modal-image" src="${vehicle.imagePath}" alt="${vehicle.name}"></figure>`
+      : "";
 
     return `
+      ${vehicleImageHtml}
       <dl class="vehicle-modal-list">
         <div><dt>Fahrzeugname</dt><dd>${vehicle.name}</dd></div>
         <div><dt>Kennzeichen</dt><dd>${vehicle.plate}</dd></div>
