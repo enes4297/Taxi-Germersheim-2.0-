@@ -572,6 +572,136 @@ body {
   filter: none;
 }
 
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="e220d"] .fleet-v44-media {
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(180deg, rgba(8, 10, 14, 0.98), rgba(18, 20, 26, 0.98));
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="e220d"] .fleet-v44-media-image {
+  object-fit: contain;
+  object-position: center;
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  transform: none;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="e220d"] .vehicle-image-e-class {
+  object-fit: contain;
+  object-position: center;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="e220d"]:hover .fleet-v44-media-image,
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="e220d"]:hover .vehicle-image-e-class {
+  transform: none;
+  filter: none;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-200"] .fleet-v44-media {
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(180deg, rgba(8, 10, 14, 0.98), rgba(18, 20, 26, 0.98));
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-200"] .fleet-v44-media-image {
+  object-fit: contain;
+  object-position: center;
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  transform: none;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-200"] .vehicle-image-touran {
+  object-fit: contain;
+  object-position: center;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-200"]:hover .fleet-v44-media-image,
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-200"]:hover .vehicle-image-touran {
+  transform: none;
+  filter: none;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="e-klasse-2020"] .fleet-v44-media {
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(180deg, rgba(8, 10, 14, 0.98), rgba(18, 20, 26, 0.98));
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="e-klasse-2020"] .fleet-v44-media-image {
+  object-fit: contain;
+  object-position: center;
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  transform: none;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="e-klasse-2020"] .vehicle-image-e-class-white {
+  object-fit: contain;
+  object-position: center;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="e-klasse-2020"]:hover .fleet-v44-media-image,
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="e-klasse-2020"]:hover .vehicle-image-e-class-white {
+  transform: none;
+  filter: none;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-400"] .fleet-v44-media {
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(180deg, rgba(8, 10, 14, 0.98), rgba(18, 20, 26, 0.98));
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-400"] .fleet-v44-media-image {
+  object-fit: contain;
+  object-position: center;
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  transform: none;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-400"] .vehicle-image-touran-tx400 {
+  object-fit: contain;
+  object-position: center;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-400"]:hover .fleet-v44-media-image,
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-400"]:hover .vehicle-image-touran-tx400 {
+  transform: none;
+  filter: none;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-300"] .fleet-v44-media {
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(180deg, rgba(8, 10, 14, 0.98), rgba(18, 20, 26, 0.98));
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-300"] .fleet-v44-media-image {
+  object-fit: contain;
+  object-position: center;
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  transform: none;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-300"] .vehicle-image-touran-tx300 {
+  object-fit: contain;
+  object-position: center;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-300"]:hover .fleet-v44-media-image,
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="touran-300"]:hover .vehicle-image-touran-tx300 {
+  transform: none;
+  filter: none;
+}
+
 .fleet-v44-card:hover .fleet-v44-media-image {
   transform: scale(1.03);
   filter: contrast(1.03) saturate(1.02);
