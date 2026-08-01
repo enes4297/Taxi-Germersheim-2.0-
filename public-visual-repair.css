@@ -546,6 +546,32 @@ body {
   transition: transform 0.35s ease, filter 0.35s ease;
 }
 
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="v-klasse"] .fleet-v44-media {
+  aspect-ratio: 1398 / 1125;
+  background: linear-gradient(180deg, rgba(8, 10, 14, 0.98), rgba(18, 20, 26, 0.98));
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="v-klasse"] .fleet-v44-media-image {
+  object-fit: contain;
+  object-position: center;
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  transform: none;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="v-klasse"] .vehicle-image-v-class {
+  object-fit: contain;
+  object-position: center;
+}
+
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="v-klasse"]:hover .fleet-v44-media-image,
+#fleet.fleet-page .fleet-v44-card[data-vehicle-key="v-klasse"]:hover .vehicle-image-v-class {
+  transform: none;
+  filter: none;
+}
+
 .fleet-v44-card:hover .fleet-v44-media-image {
   transform: scale(1.03);
   filter: contrast(1.03) saturate(1.02);
