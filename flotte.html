@@ -62,7 +62,7 @@
       <section class="fleet-v44-grid" aria-label="Fahrzeuge von Taxi Germersheim">
         <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="e220d">
           <figure class="fleet-v44-media">
-            <img class="fleet-v44-media-image" data-fleet-image loading="lazy" decoding="async" alt="Mercedes-Benz E 220 d T-Modell in der Fahrzeugflotte">
+            <img class="fleet-v44-media-image vehicle-image-e-class" data-fleet-image loading="lazy" decoding="async" alt="Mercedes-Benz E 220 d T-Modell in der Fahrzeugflotte">
           </figure>
           <div class="fleet-v44-card-head"><h3>Mercedes-Benz E 220 d T-Modell</h3><span class="fleet-v44-plate">GER TX 100</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Taxi</b></li><li><span>Sitzplätze</span><b>4</b></li><li><span>Einsatzbereich</span><b>Alltag, Bahnhof, Klinikfahrten</b></li><li><span>Besonderheit</span><b>Komfortables T-Modell mit großem Kofferraum</b></li></ul>
@@ -71,7 +71,7 @@
 
         <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="touran-200">
           <figure class="fleet-v44-media">
-            <img class="fleet-v44-media-image" data-fleet-image loading="lazy" decoding="async" alt="VW Touran GER TX 200 in der Fahrzeugflotte">
+            <img class="fleet-v44-media-image vehicle-image-touran" data-fleet-image loading="lazy" decoding="async" alt="VW Touran GER TX 200 in der Fahrzeugflotte">
           </figure>
           <div class="fleet-v44-card-head"><h3>VW Touran</h3><span class="fleet-v44-plate">GER TX 200</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Taxi</b></li><li><span>Sitzplätze</span><b>5</b></li><li><span>Einsatzbereich</span><b>Kurzstrecke, Stadtverkehr, Schülerfahrten</b></li><li><span>Besonderheit</span><b>Hohe Alltagstauglichkeit</b></li></ul>
@@ -80,7 +80,7 @@
 
         <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="touran-300">
           <figure class="fleet-v44-media">
-            <img class="fleet-v44-media-image" data-fleet-image loading="lazy" decoding="async" alt="VW Touran GER TX 300 in der Fahrzeugflotte">
+            <img class="fleet-v44-media-image vehicle-image-touran-tx300" data-fleet-image loading="lazy" decoding="async" alt="VW Touran GER TX 300 in der Fahrzeugflotte">
           </figure>
           <div class="fleet-v44-card-head"><h3>VW Touran</h3><span class="fleet-v44-plate">GER TX 300</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Taxi</b></li><li><span>Sitzplätze</span><b>5</b></li><li><span>Einsatzbereich</span><b>Arzttermine, Besorgungsfahrten</b></li><li><span>Besonderheit</span><b>Komfortabler Einstieg</b></li></ul>
@@ -89,7 +89,7 @@
 
         <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="touran-400">
           <figure class="fleet-v44-media">
-            <img class="fleet-v44-media-image" data-fleet-image loading="lazy" decoding="async" alt="VW Touran GER TX 400 in der Fahrzeugflotte">
+            <img class="fleet-v44-media-image vehicle-image-touran-tx400" data-fleet-image loading="lazy" decoding="async" alt="VW Touran GER TX 400 in der Fahrzeugflotte">
           </figure>
           <div class="fleet-v44-card-head"><h3>VW Touran</h3><span class="fleet-v44-plate">GER TX 400</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Taxi</b></li><li><span>Sitzplätze</span><b>5</b></li><li><span>Einsatzbereich</span><b>Regionalfahrten, Pendelverkehr</b></li><li><span>Besonderheit</span><b>Variabler Innenraum</b></li></ul>
@@ -107,7 +107,7 @@
 
         <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="e-klasse-2020">
           <figure class="fleet-v44-media">
-            <img class="fleet-v44-media-image" data-fleet-image loading="lazy" decoding="async" alt="Mercedes-Benz E-Klasse in der Fahrzeugflotte">
+            <img class="fleet-v44-media-image vehicle-image-e-class-white" data-fleet-image loading="lazy" decoding="async" alt="Mercedes-Benz E-Klasse in der Fahrzeugflotte">
           </figure>
           <div class="fleet-v44-card-head"><h3>Mercedes-Benz E-Klasse (gelb, Baujahr 2020)</h3><span class="fleet-v44-plate">GER TX 600</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Taxi</b></li><li><span>Sitzplätze</span><b>4</b></li><li><span>Einsatzbereich</span><b>Business, Fernfahrten</b></li><li><span>Besonderheit</span><b>Premium-Limousine mit hohem Komfort</b></li></ul>
@@ -215,6 +215,11 @@
 
       var fleetImageCatalog = {
         // Struktur für zukünftige Originalbilder pro Fahrzeug:
+        "e220d": "admin/images/mercedes-e-klasse-ger-tx-100-premium.jpg.png",
+        "e-klasse-2020": "admin/images/adminimagesmercedes-e-klasse-weiss-ger-tx-600-premium.jpg.png",
+        "touran-200": "admin/images/vw-touran-ger-tx-200-premium.jpg.png",
+        "touran-300": "admin/images/adminimagesvw-touran-ger-tx-300-premium.jpg.png",
+        "touran-400": "admin/images/adminimagesvw-touran-ger-tx-400-premium.jpg.png",
         // "tesla-y": "assets/fleet/tesla-model-y.jpg",
         // "e-klasse-2020": "assets/fleet/mercedes-e-klasse.jpg",
         // "touran-200": "assets/fleet/vw-touran-200.jpg",
