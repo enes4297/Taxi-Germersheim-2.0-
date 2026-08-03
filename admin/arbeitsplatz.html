@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Mein Arbeitsplatz</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <script src="systemcenter-shared.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="management.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div><strong>Dispatcher</strong><small>Interner Bereich</small></div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item is-active" href="arbeitsplatz.html">Mein Arbeitsplatz</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main m-compact" data-work-main>
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Mein Arbeitsplatz</h1>
+          <p>Persoenliche Startseite, Favoriten, Filter und Verlauf</p>
+        </div>
+        <div class="admin-topbar-actions m-actions">
+          <button class="admin-btn admin-btn-secondary" type="button" data-work-clear-recents>Zuletzt verwendet leeren</button>
+          <button class="admin-btn" type="button" data-work-save-settings>Einstellungen speichern</button>
+        </div>
+      </header>
+
+      <section class="m-split">
+        <section class="admin-panel">
+          <div class="admin-panel-head"><h2>Persoenliche Einstellungen</h2></div>
+          <form class="m-form" data-work-settings-form>
+            <label class="m-field"><span>Startseite</span><input name="preferredStartPage" placeholder="geschaeftsfuehrer-dashboard.html"></label>
+            <label class="m-field"><span>Dichte</span><select name="density"><option value="kompakt">kompakt</option><option value="komfort">komfort</option></select></label>
+            <label class="m-field"><span>Datumsformat</span><input name="dateFormat" placeholder="DD.MM.YYYY"></label>
+            <label class="m-field"><span>Zeitformat</span><select name="timeFormat"><option value="24h">24h</option><option value="12h">12h</option></select></label>
+            <label class="m-field"><span>Standardzeilen in Tabellen</span><input name="tableRows" type="number" min="5" max="200"></label>
+            <label class="m-field"><span>Standardfilter</span><input name="standardFilter" placeholder="status:offen"></label>
+          </form>
+        </section>
+
+        <section class="admin-panel">
+          <div class="admin-panel-head"><h2>Benachrichtigungsprofil</h2></div>
+          <form class="m-form" data-work-notification-form>
+            <label class="m-field"><span>Nur kritische Meldungen</span><select name="criticalOnly"><option value="nein">Nein</option><option value="ja">Ja</option></select></label>
+            <label class="m-field"><span>Meldungen stummschalten</span><select name="muted"><option value="nein">Nein</option><option value="ja">Ja</option></select></label>
+            <label class="m-field"><span>Tageszusammenfassung</span><select name="dailySummaryDemo"><option value="ja">Ja</option><option value="nein">Nein</option></select></label>
+          </form>
+        </section>
+      </section>
+
+      <section class="m-split">
+        <section class="admin-panel">
+          <div class="admin-panel-head"><h2>Favoriten</h2></div>
+          <div class="m-list" data-work-favorites></div>
+        </section>
+
+        <section class="admin-panel">
+          <div class="admin-panel-head"><h2>Zuletzt verwendet</h2></div>
+          <div class="m-list" data-work-recents></div>
+        </section>
+      </section>
+
+      <section class="m-split">
+        <section class="admin-panel">
+          <div class="admin-panel-head"><h2>Gespeicherte Filter</h2></div>
+          <form class="m-form" data-work-filter-form>
+            <label class="m-field"><span>Name</span><input name="name" required></label>
+            <label class="m-field"><span>Bereich</span><input name="area" placeholder="Qualitaet"></label>
+            <label class="m-field"><span>Filterstring</span><input name="filter" placeholder="priority:kritisch status:offen"></label>
+            <label class="m-field"><span>Sichtbarkeit</span><select name="privacy"><option value="privat">privat</option><option value="rolle">rolle</option><option value="team">team</option></select></label>
+            <button class="admin-btn" type="submit">Filter speichern</button>
+          </form>
+          <div class="m-list" data-work-filters></div>
+        </section>
+
+        <section class="admin-panel">
+          <div class="admin-panel-head"><h2>Tabellenansichten</h2></div>
+          <form class="m-form" data-work-view-form>
+            <label class="m-field"><span>Name</span><input name="name" required></label>
+            <label class="m-field"><span>Bereich</span><input name="area" placeholder="Fahrten"></label>
+            <label class="m-field"><span>Spalten (Komma getrennt)</span><input name="columns" placeholder="ID, Status, Fahrer"></label>
+            <label class="m-field"><span>Sortierung</span><input name="sort" placeholder="dueDate asc"></label>
+            <button class="admin-btn" type="submit">Ansicht speichern</button>
+          </form>
+          <div class="m-list" data-work-views></div>
+        </section>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Aktivitaetsprotokoll</h2></div>
+        <div class="m-list" data-work-activity></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="arbeitsplatz.js"></script>
+</body>
+</html>

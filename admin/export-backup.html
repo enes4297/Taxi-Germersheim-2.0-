@@ -6,7 +6,9 @@
   <title>Taxi Germersheim - Export & Backup</title>
   <meta name="robots" content="noindex,nofollow">
   <script src="auth.js"></script>
+  <script src="finanzen-shared.js"></script>
   <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="finanzen.css">
 </head>
 <body>
   <div class="admin-shell">
@@ -101,6 +103,34 @@
           </div>
           <div class="backup-grid" data-backup-grid></div>
         </article>
+      </section>
+
+      <section class="admin-panel" aria-label="V16 Finanzexporte">
+        <div class="admin-panel-head">
+          <h2>V16 Finanzexporte</h2>
+        </div>
+        <div class="export-grid" data-export-v16-grid></div>
+      </section>
+
+      <section class="admin-panel" aria-label="Export und Backup Historie">
+        <div class="admin-panel-head">
+          <h2>Export-/Backup-Laufhistorie</h2>
+        </div>
+        <div class="finance-table-wrap">
+          <table class="admin-table finance-table">
+            <thead>
+              <tr>
+                <th>Lauf-ID</th>
+                <th>Typ</th>
+                <th>Bereich</th>
+                <th>Format</th>
+                <th>Ergebnis</th>
+                <th>Ausgefuehrt am</th>
+              </tr>
+            </thead>
+            <tbody data-export-history-table></tbody>
+          </table>
+        </div>
       </section>
 
       <div class="admin-modal" data-export-modal hidden>

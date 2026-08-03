@@ -1,4 +1,6 @@
 (() => {
+  const F = window.AdminFinanceDemo;
+
   // Demo-Funktionalitat ohne echte Dateierstellung oder Persistenz.
   const exportModules = [
     { id: "EXP-1", area: "Fahrten exportieren", key: "Fahrten", formats: ["CSV", "PDF", "Excel"], scopes: ["Chef", "Disposition"], status: "Bereit", note: "Demo-Export fur Fahrtenjournal." },
@@ -17,8 +19,18 @@
   ];
 
   const state = {
-    selectedFormats: {}
+    selectedFormats: {},
+    financeState: null
   };
+
+  const financeExportModules = [
+    { id: "V16-EXP-1", area: "Abrechnungszentrale Export", key: "Abrechnung", formats: ["CSV", "PDF", "Excel"] },
+    { id: "V16-EXP-2", area: "Krankenkassen-Sammelabrechnung", key: "Krankenkasse", formats: ["CSV", "PDF", "Excel", "DATEV Demo"] },
+    { id: "V16-EXP-3", area: "Firmenkunden-Sammelrechnungen", key: "Firmenkunden", formats: ["CSV", "PDF", "Excel", "DATEV Demo"] },
+    { id: "V16-EXP-4", area: "Mahnlauf Uebersicht", key: "Mahnwesen", formats: ["CSV", "PDF"] },
+    { id: "V16-EXP-5", area: "Controlling Monatsreport", key: "Controlling", formats: ["PDF", "Excel"] },
+    { id: "V16-EXP-6", area: "Monatsabschluss-Pruefprotokoll", key: "Monatsabschluss", formats: ["PDF", "CSV"] }
+  ];
 
   function readSession() {
     if (!window.AdminDemoAuth || typeof window.AdminDemoAuth.readSession !== "function") {
@@ -40,6 +52,36 @@
     return backupItems.filter((item) => item.scopes.includes(role));
   }
 
+  function getFinanceState() {
+    if (!F || typeof F.loadState !== "function") return null;
+    if (!state.financeState) {
+      state.financeState = F.loadState();
+    }
+    return state.financeState;
+  }
+
+  function getHistoryRows() {
+    const data = getFinanceState();
+    if (!data || !Array.isArray(data.exports)) return [];
+    return data.exports;
+  }
+
+  function pushHistoryRow(type, area, format, result) {
+    const data = getFinanceState();
+    if (!data) return;
+    data.exports = Array.isArray(data.exports) ? data.exports : [];
+    data.exports.unshift({
+      id: `EXPLOG-${Date.now()}`,
+      type,
+      area,
+      format,
+      result,
+      at: new Date().toISOString().slice(0, 16).replace("T", " ")
+    });
+    F.saveState(data);
+    renderHistoryTable();
+  }
+
   function renderStats() {
     const modules = getRoleExportModules();
     const backups = getRoleBackupItems();
@@ -57,6 +99,22 @@
       if (!node) return;
       node.textContent = String(value);
     });
+  }
+
+  function renderHistoryTable() {
+    const body = document.querySelector("[data-export-history-table]");
+    if (!body) return;
+    const rows = getHistoryRows();
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="6">Noch keine Export- oder Backup-Laeufe vorhanden.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows
+      .slice(0, 30)
+      .map(
+        (row) => `<tr><td>${row.id}</td><td>${row.type}</td><td>${row.area}</td><td>${row.format}</td><td>${row.result}</td><td>${row.at}</td></tr>`
+      )
+      .join("");
   }
 
   function openModal(payload) {
@@ -166,10 +224,41 @@
       .join("");
   }
 
+  function renderFinanceExportGrid() {
+    const grid = document.querySelector("[data-export-v16-grid]");
+    if (!grid) return;
+    grid.innerHTML = financeExportModules
+      .map((item) => {
+        const selected = state.selectedFormats[item.id] || item.formats[0];
+        const options = item.formats
+          .map((format) => `<option value="${format}"${format === selected ? " selected" : ""}>${format}</option>`)
+          .join("");
+        return `
+          <article class="export-card">
+            <header class="export-card-head">
+              <h3>${item.area}</h3>
+              <span class="status-pill export-status-ready">Bereit</span>
+            </header>
+            <p class="export-card-note">V16-Demo Export mit zentralem Finanzdatenstand.</p>
+            <label class="driver-label" for="format-${item.id}">Export-Format</label>
+            <select id="format-${item.id}" class="driver-search-input export-format-select" data-export-format="${item.id}">
+              ${options}
+            </select>
+            <div class="export-actions">
+              <button class="admin-btn" type="button" data-fin-export-action="start" data-fin-export-id="${item.id}">Export starten Demo</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-fin-export-action="template" data-fin-export-id="${item.id}">Berichtsvorlage Demo</button>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
   function handleExportAction(action, item) {
     const selectedFormat = state.selectedFormats[item.id] || item.formats[0];
 
     if (action === "start") {
+      pushHistoryRow("Export", item.area, selectedFormat, "Ausgefuehrt (Demo)");
       openModal({
         title: "Export starten Demo",
         area: item.area,
@@ -180,6 +269,7 @@
     }
 
     if (action === "download") {
+      pushHistoryRow("Export", item.area, selectedFormat, "Download simuliert");
       openModal({
         title: "Download Demo",
         area: item.area,
@@ -197,8 +287,29 @@
     });
   }
 
+  function handleFinanceExportAction(action, item) {
+    const selectedFormat = state.selectedFormats[item.id] || item.formats[0];
+    if (action === "start") {
+      pushHistoryRow("V16-Export", item.area, selectedFormat, "Ausgefuehrt (Demo)");
+      openModal({
+        title: "V16 Export starten Demo",
+        area: item.area,
+        format: selectedFormat,
+        status: "Ausgefuehrt (Demo)"
+      });
+      return;
+    }
+    openModal({
+      title: "Berichtsvorlage Demo",
+      area: item.area,
+      format: selectedFormat,
+      status: "Vorlage geladen (Demo)"
+    });
+  }
+
   function handleBackupAction(action, item) {
     if (action === "create") {
+      pushHistoryRow("Backup", item.area, item.format, "Backup simuliert");
       openModal({
         title: "Backup erstellen Demo",
         area: item.area,
@@ -247,6 +358,16 @@
         if (!action || !item) return;
         if (item.action === "disabled" && action === "create") return;
         handleBackupAction(action, item);
+        return;
+      }
+
+      const financeBtn = event.target.closest("[data-fin-export-action]");
+      if (financeBtn) {
+        const action = financeBtn.getAttribute("data-fin-export-action");
+        const id = financeBtn.getAttribute("data-fin-export-id");
+        const item = financeExportModules.find((entry) => entry.id === id);
+        if (!action || !item) return;
+        handleFinanceExportAction(action, item);
       }
     });
   }
@@ -271,5 +392,7 @@
     renderStats();
     renderExportGrid();
     renderBackupGrid();
+    renderFinanceExportGrid();
+    renderHistoryTable();
   });
 })();

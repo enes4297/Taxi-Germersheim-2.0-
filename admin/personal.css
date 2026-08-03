@@ -1,0 +1,264 @@
+.person-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.person-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.person-card small {
+  color: rgba(240, 244, 255, 0.72);
+  display: block;
+}
+
+.person-card strong {
+  display: block;
+  font-size: 1.4rem;
+  margin-top: 6px;
+}
+
+.person-tools {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(3, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.person-table-wrap {
+  overflow: auto;
+}
+
+.person-table {
+  min-width: 1140px;
+}
+
+.person-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 0.84rem;
+}
+
+.person-status .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.person-status.ok {
+  color: #8df2b4;
+  background: rgba(18, 130, 84, 0.2);
+}
+
+.person-status.warn {
+  color: #ffd37a;
+  background: rgba(148, 110, 20, 0.2);
+}
+
+.person-status.crit {
+  color: #ff8f8f;
+  background: rgba(153, 44, 44, 0.2);
+}
+
+.person-status.info {
+  color: #8ac8ff;
+  background: rgba(38, 90, 170, 0.2);
+}
+
+.person-pill-row,
+.person-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.person-chip {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 0.8rem;
+}
+
+.person-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 14px;
+}
+
+.person-list {
+  display: grid;
+  gap: 10px;
+}
+
+.person-item {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.person-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.person-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.person-profile-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.person-profile-tabs button {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  border-radius: 10px;
+  padding: 7px 10px;
+}
+
+.person-profile-tabs button.is-active {
+  border-color: rgba(113, 212, 156, 0.8);
+  background: rgba(57, 149, 104, 0.26);
+}
+
+.person-kalender {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.person-month {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.person-day-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.person-day {
+  min-height: 18px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 18px;
+}
+
+.person-day.vac {
+  background: rgba(42, 136, 255, 0.33);
+}
+
+.person-day.sick {
+  background: rgba(229, 93, 93, 0.32);
+}
+
+.person-day.training {
+  background: rgba(113, 212, 156, 0.3);
+}
+
+.person-day.weekend {
+  opacity: 0.55;
+}
+
+.person-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.person-form-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.person-form-grid input,
+.person-form-grid select,
+.person-form-grid textarea {
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  padding: 8px;
+}
+
+.person-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.person-meta {
+  color: rgba(230, 236, 249, 0.8);
+  font-size: 0.84rem;
+}
+
+.person-print {
+  background: #fff;
+  color: #151515;
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.person-print h2,
+.person-print h3 {
+  margin-top: 0;
+}
+
+.person-print p {
+  margin: 7px 0;
+}
+
+@media (max-width: 1200px) {
+  .person-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .person-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .person-kalender {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+
+  .person-form-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .person-kalender {
+    grid-template-columns: 1fr;
+  }
+
+  .person-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .person-table {
+    min-width: 860px;
+  }
+}

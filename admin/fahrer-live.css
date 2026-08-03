@@ -1,0 +1,30 @@
+.driver-live-v15 { gap: 10px; }
+.driver-live-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+.driver-live-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 7px;
+}
+.driver-live-card h3 { margin: 0; font-size: 16px; }
+.driver-live-card p { margin: 0; font-size: 12px; color: rgba(255,255,255,0.86); }
+.driver-live-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.driver-live-tag {
+  min-height: 23px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+}
+.driver-live-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.driver-live-actions .admin-btn { min-height: 32px; font-size: 11px; padding: 0 8px; }
+.driver-live-warning { border: 1px solid rgba(255,145,145,0.48); border-radius: 9px; background: rgba(255,145,145,0.12); color: #ffd6d6; padding: 6px 8px; font-size: 11px; }
+.driver-live-empty { border: 1px dashed rgba(255,255,255,0.22); border-radius: 10px; padding: 10px; color: var(--muted); font-size: 12px; }
+@media (max-width: 1200px) {
+  .driver-live-grid { grid-template-columns: 1fr; }
+}

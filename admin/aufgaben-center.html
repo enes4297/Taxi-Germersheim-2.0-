@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Aufgaben-Center</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <script src="systemcenter-shared.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="management.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item is-active" href="aufgaben-center.html">Aufgaben-Center</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main m-compact" data-task-main>
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Aufgaben-Center</h1>
+          <p>Systemweite Aufgaben, Zuweisung, Priorisierung und Nachverfolgung</p>
+        </div>
+        <div class="admin-topbar-actions m-actions">
+          <button class="admin-btn admin-btn-secondary" type="button" data-task-reset-filter>Filter zuruecksetzen</button>
+          <button class="admin-btn" type="button" data-task-open-create>Neue Aufgabe</button>
+        </div>
+      </header>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head">
+          <h2>Uebersicht</h2>
+          <small>Heute und teamweite Lage</small>
+        </div>
+        <div class="m-grid" data-task-kpis></div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head">
+          <h2>Filter</h2>
+        </div>
+        <form class="m-form m-form-grid" data-task-filter-form>
+          <label class="m-field"><span>Suche</span><input name="q" type="search" placeholder="Titel, Quelle, Kategorie"></label>
+          <label class="m-field"><span>Status</span><select name="status"><option value="alle">Alle</option></select></label>
+          <label class="m-field"><span>Prioritaet</span><select name="priority"><option value="alle">Alle</option></select></label>
+          <label class="m-field"><span>Bereich</span><select name="category"><option value="alle">Alle</option></select></label>
+          <label class="m-field"><span>Nur mir zugewiesen</span><select name="mine"><option value="nein">Nein</option><option value="ja">Ja</option></select></label>
+        </form>
+      </section>
+
+      <section class="m-split">
+        <section class="admin-panel">
+          <div class="admin-panel-head">
+            <h2>Board</h2>
+            <small>Arbeitsstatus je Spalte</small>
+          </div>
+          <div class="m-grid" data-task-board></div>
+        </section>
+
+        <section class="admin-panel">
+          <div class="admin-panel-head">
+            <h2>Faellige Aufgaben</h2>
+            <small>Sortiert nach Frist</small>
+          </div>
+          <div class="m-table-wrap">
+            <table class="admin-table m-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Titel</th>
+                  <th>Status</th>
+                  <th>Prioritaet</th>
+                  <th>Verantwortlich</th>
+                  <th>Faellig</th>
+                  <th>Aktion</th>
+                </tr>
+              </thead>
+              <tbody data-task-table></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head">
+          <h2>Aktivitaetsprotokoll</h2>
+          <small>Letzte Task-Aenderungen</small>
+        </div>
+        <div class="m-list" data-task-activity></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="admin-modal" data-task-modal hidden>
+    <div class="admin-modal-backdrop" data-task-close-modal></div>
+    <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+      <header class="admin-modal-head">
+        <h3 id="task-modal-title">Neue Aufgabe erstellen</h3>
+        <button class="admin-icon-btn" type="button" aria-label="Schliessen" data-task-close-modal>✕</button>
+      </header>
+      <form class="admin-modal-body m-form" data-task-create-form>
+        <label class="m-field"><span>Titel</span><input name="title" required></label>
+        <label class="m-field"><span>Beschreibung</span><textarea name="description" rows="3"></textarea></label>
+        <label class="m-field"><span>Kategorie</span><input name="category" placeholder="Betrieb, Finanzen, Qualitaet..."></label>
+        <label class="m-field"><span>Quelle</span><input name="source" placeholder="Manuell"></label>
+        <label class="m-field"><span>Verantwortlich</span><input name="owner" placeholder="Disposition"></label>
+        <label class="m-field"><span>Prioritaet</span><select name="priority"></select></label>
+        <label class="m-field"><span>Status</span><select name="status"></select></label>
+        <label class="m-field"><span>Faellig am</span><input name="dueDate" type="date"></label>
+        <label class="m-field"><span>Checkliste (eine Zeile pro Punkt)</span><textarea name="checklist" rows="4"></textarea></label>
+      </form>
+      <footer class="admin-modal-foot">
+        <button class="admin-btn admin-btn-secondary" type="button" data-task-close-modal>Abbrechen</button>
+        <button class="admin-btn" type="button" data-task-submit>Aufgabe speichern</button>
+      </footer>
+    </section>
+  </div>
+
+  <script src="aufgaben-center.js"></script>
+</body>
+</html>

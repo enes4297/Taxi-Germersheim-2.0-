@@ -6,7 +6,9 @@
   <title>Taxi Germersheim - Rechnungsmanagement</title>
   <meta name="robots" content="noindex,nofollow">
   <script src="auth.js"></script>
+  <script src="finanzen-shared.js"></script>
   <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="finanzen.css">
 </head>
 <body>
   <div class="admin-shell">
@@ -110,6 +112,27 @@
       </section>
 
       <section class="billing-grid" aria-label="Rechnungsübersicht" data-billing-grid></section>
+
+      <section class="admin-panel" aria-label="Firmenkunden-Sammelrechnungen">
+        <div class="admin-panel-head">
+          <h2>Firmenkunden-Sammelrechnungen</h2>
+        </div>
+        <div class="finance-table-wrap">
+          <table class="admin-table finance-table">
+            <thead>
+              <tr>
+                <th>Firma</th>
+                <th>Rechnungen</th>
+                <th>Gesamtbetrag</th>
+                <th>offen</th>
+                <th>ueberfaellig</th>
+                <th>letzte Rechnung</th>
+              </tr>
+            </thead>
+            <tbody data-billing-company-table></tbody>
+          </table>
+        </div>
+      </section>
 
       <div class="admin-modal" data-billing-modal hidden>
         <div class="admin-modal-backdrop" data-billing-modal-close></div>

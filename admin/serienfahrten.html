@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Serienfahrten</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="serienfahrten.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html">Dashboard</a>
+        <a class="admin-nav-item" href="live-dispo.html">Live-Dispo</a>
+        <a class="admin-nav-item" href="telefonzentrale.html">Telefonzentrale</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item is-active" href="serienfahrten.html" aria-current="page">Serienfahrten</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Serienfahrten</h1>
+          <p>Wiederkehrende Fahrten, Ausnahmen, Pausen und Konfliktkontrolle</p>
+        </div>
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Disposition</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-panel series-overview">
+        <div class="admin-panel-head"><h2>Übersicht</h2></div>
+        <div class="series-overview-grid">
+          <article class="series-overview-card"><small>Aktive Serien</small><strong data-series-stat="active">0</strong></article>
+          <article class="series-overview-card"><small>Pausiert</small><strong data-series-stat="paused">0</strong></article>
+          <article class="series-overview-card"><small>Heute geplant</small><strong data-series-stat="today">0</strong></article>
+          <article class="series-overview-card"><small>Offene Konflikte</small><strong data-series-stat="conflicts">0</strong></article>
+          <article class="series-overview-card"><small>Mit Rückfahrt</small><strong data-series-stat="return">0</strong></article>
+          <article class="series-overview-card"><small>Nächste 7 Tage</small><strong data-series-stat="next7">0</strong></article>
+        </div>
+      </section>
+
+      <section class="series-layout">
+        <article class="admin-panel series-form-panel">
+          <div class="admin-panel-head">
+            <h2>Neue Serienfahrt</h2>
+            <button class="admin-btn admin-btn-secondary" type="button" data-series-action="resetForm">Zurücksetzen</button>
+          </div>
+
+          <form class="series-form" data-series-form>
+            <label><span>Kunde</span><select class="series-select" name="customerId" data-series-customer-select></select></label>
+            <label><span>Fahrtart</span><select class="series-select" name="rideType" data-series-ride-type></select></label>
+            <label><span>Abholadresse</span><input class="driver-search-input" name="pickup" required></label>
+            <label><span>Zieladresse</span><input class="driver-search-input" name="destination" required></label>
+            <label><span>Startdatum</span><input class="driver-search-input" type="date" name="startDate" required></label>
+            <label><span>Enddatum (optional)</span><input class="driver-search-input" type="date" name="endDate"></label>
+            <label><span>Abholzeit</span><input class="driver-search-input" type="time" name="pickupTime" required></label>
+            <label><span>Rückfahrtzeit</span><input class="driver-search-input" type="time" name="returnTime"></label>
+            <label><span>Tage</span>
+              <div class="series-days">
+                <label><input type="checkbox" name="days" value="Mo">Mo</label>
+                <label><input type="checkbox" name="days" value="Di">Di</label>
+                <label><input type="checkbox" name="days" value="Mi">Mi</label>
+                <label><input type="checkbox" name="days" value="Do">Do</label>
+                <label><input type="checkbox" name="days" value="Fr">Fr</label>
+                <label><input type="checkbox" name="days" value="Sa">Sa</label>
+                <label><input type="checkbox" name="days" value="So">So</label>
+              </div>
+            </label>
+            <label><span>Priorität</span><select class="series-select" name="priority"><option>Hoch</option><option selected>Mittel</option><option>Niedrig</option></select></label>
+            <label><span>Rollstuhl</span><select class="series-select" name="wheelchair"><option>Nein</option><option>Ja</option></select></label>
+            <label><span>Begleitperson</span><select class="series-select" name="companion"><option>Nein</option><option>Ja</option></select></label>
+            <label class="full"><span>Ausnahmen / Feiertage</span><textarea class="driver-search-input" name="exceptions" placeholder="z. B. 2026-12-24;2026-12-31"></textarea></label>
+            <label class="full"><span>Pausen</span><textarea class="driver-search-input" name="pauses" placeholder="z. B. 2026-09-10 bis 2026-09-24"></textarea></label>
+            <label class="full"><span>Notizen</span><textarea class="driver-search-input" name="notes"></textarea></label>
+            <div class="series-form-actions full">
+              <button class="admin-btn" type="submit">Serienfahrt speichern</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-series-action="openDispo">In Live-Dispo öffnen</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="admin-panel series-right-panel">
+          <section class="series-block">
+            <div class="admin-panel-head"><h3>Bestehende Serien</h3></div>
+            <div class="series-list" data-series-list></div>
+          </section>
+
+          <section class="series-block">
+            <div class="admin-panel-head"><h3>Nächste Fahrten (14 Tage)</h3></div>
+            <div class="series-calendar" data-series-calendar></div>
+          </section>
+
+          <section class="series-block">
+            <div class="admin-panel-head"><h3>Konflikte</h3></div>
+            <div class="series-conflicts" data-series-conflicts></div>
+          </section>
+        </article>
+      </section>
+
+      <div class="admin-modal" data-series-modal hidden>
+        <div class="admin-modal-backdrop" data-series-modal-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="series-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="series-modal-title" data-series-modal-title>Serienfahrt</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-series-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-series-modal-body></div>
+          <footer class="admin-modal-foot"><button class="admin-btn admin-btn-secondary" type="button" data-series-modal-close>Schließen</button></footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="serienfahrten.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Krankenkassen</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <script src="finanzen-shared.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="finanzen.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation"><div class="admin-sidebar-brand"><img src="../logo.png" alt="Taxi Germersheim Logo"><div><strong>Dispatcher</strong><small>Interner Bereich</small></div></div><nav class="admin-nav"><a class="admin-nav-item is-active" href="krankenkassen.html" aria-current="page">Krankenkassen</a></nav></aside>
+    <main class="admin-main">
+      <header class="admin-topbar"><div class="admin-topbar-title"><h1>Krankenkassenfahrten</h1><p>Pruefung, Sammelabrechnung und Rueckfragen (Demo)</p></div><div class="admin-topbar-actions"><img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo"></div></header>
+
+      <section class="admin-panel"><div class="admin-panel-head"><h2>Krankenkassen-Dashboard</h2></div><div class="finance-kpi-grid" data-kk-stats></div></section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Krankenkassen-Uebersicht</h2></div>
+        <div class="finance-table-wrap"><table class="admin-table finance-table"><thead><tr><th>Name</th><th>IK</th><th>Ansprechpartner</th><th>Telefon</th><th>E-Mail</th><th>Abrechnungsweg</th><th>Zahlungsziel</th><th>Offene Faelle</th><th>Offene Summe</th><th>Letzte Einreichung</th><th>Letzter Zahlungseingang</th><th>Rueckfragen</th></tr></thead><tbody data-kk-insurer-table></tbody></table></div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Patientenabrechnung</h2></div>
+        <div class="finance-table-wrap"><table class="admin-table finance-table"><thead><tr><th>Patient</th><th>Vers.-Nr</th><th>Kasse</th><th>Genehmigung</th><th>Gueltig</th><th>Fahrtart</th><th>Genehmigt</th><th>Verbraucht</th><th>Verbleibend</th><th>Hin/Rueck</th><th>Eigenanteil</th><th>Befreiung</th><th>Transportschein</th><th>Offene Abrechnung</th><th>Pruefung</th><th>Aktion</th></tr></thead><tbody data-kk-patient-table></tbody></table></div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Sammelabrechnung Krankenkasse</h2></div>
+        <div class="finance-table-wrap"><table class="admin-table finance-table"><thead><tr><th>ID</th><th>Krankenkasse</th><th>Status</th><th>Fahrten</th><th>Gesamtbetrag</th><th>Eigenanteil</th><th>Einreichung</th><th>Rueckmeldung</th><th>Aktion</th></tr></thead><tbody data-kk-batch-table></tbody></table></div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Krankenkassen-Rueckfragen</h2></div>
+        <div class="finance-table-wrap"><table class="admin-table finance-table"><thead><tr><th>Kasse</th><th>Patient</th><th>Fahrt</th><th>Betrag</th><th>Eingang</th><th>Frist</th><th>Bearbeiter</th><th>Status</th><th>Notiz</th><th>Aktion</th></tr></thead><tbody data-kk-question-table></tbody></table></div>
+      </section>
+
+      <div class="admin-modal" data-kk-modal hidden>
+        <div class="admin-modal-backdrop" data-kk-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="kk-modal-title">
+          <header class="admin-modal-head"><h3 id="kk-modal-title" data-kk-modal-title>Krankenkassenfall</h3><button class="admin-icon-btn" type="button" data-kk-close aria-label="Schliessen">✕</button></header>
+          <div class="admin-modal-body" data-kk-modal-body></div>
+          <footer class="admin-modal-foot"><button class="admin-btn admin-btn-secondary" type="button" data-kk-close>Schliessen</button></footer>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script src="krankenkassen.js"></script>
+</body>
+</html>

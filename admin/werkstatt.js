@@ -1,5 +1,6 @@
 (() => {
   // Nur Demo-Werkstattdaten ohne FIN/VIN oder sensible Fahrzeugschein-Daten.
+  const QUALITY_STORAGE_KEY = "adminV18QualityState";
   const workshopCases = [
     {
       id: "W-100",
@@ -183,7 +184,9 @@
 
   function getRoleCases() {
     const role = readRole();
-    const base = workshopCases.filter((item) => item.scopes.includes(role));
+    const qualityCases = getQualityWorkshopCases();
+    const all = [...workshopCases, ...qualityCases];
+    const base = all.filter((item) => item.scopes.includes(role));
 
     if (role === "Fahrer") {
       return base.filter((item) => item.ownOnly);
@@ -194,6 +197,60 @@
     }
 
     return base;
+  }
+
+  function loadQualityState() {
+    try {
+      const raw = localStorage.getItem(QUALITY_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function getQualityWorkshopCases() {
+    const quality = loadQualityState();
+    if (!quality) return [];
+
+    const incidentCases = (Array.isArray(quality.incidents) ? quality.incidents : [])
+      .filter((row) => ["Fahrzeugmangel", "Sicherheitsproblem", "technischer Defekt"].some((x) => normalizeText(row.category).includes(normalizeText(x))) || normalizeText(row.description).includes("fahrzeug"))
+      .slice(0, 20)
+      .map((row) => ({
+        id: `QW-I-${row.id}`,
+        vehicle: row.vehicle || "Unbekanntes Fahrzeug",
+        plate: row.vehicle || "-",
+        topic: row.category || "Vorfall",
+        category: "Schaden",
+        priority: row.priority === "kritisch" ? "Kritisch" : row.priority === "wichtig" ? "Hoch" : "Mittel",
+        status: ["abgeschlossen", "archiviert"].includes(normalizeText(row.status)) ? "Erledigt" : "Offen",
+        appointment: `${row.date || "-"} ${row.time || ""}`.trim(),
+        shop: "Qualitaetsmanagement",
+        costDemo: Number(row.estimatedCost || 0),
+        note: `Automatisch aus Vorfall ${row.id}: ${row.description || "ohne Detail"}`,
+        scopes: ["Chef", "Disposition", "Werkstatt"]
+      }));
+
+    const accidentCases = (Array.isArray(quality.accidents) ? quality.accidents : [])
+      .filter((row) => !["abgeschlossen", "archiviert"].includes(normalizeText(row.status)))
+      .slice(0, 20)
+      .map((row) => ({
+        id: `QW-A-${row.id}`,
+        vehicle: row.vehicle || "Unbekanntes Fahrzeug",
+        plate: row.vehicle || "-",
+        topic: row.accidentType || "Unfall",
+        category: "Schaden",
+        priority: "Kritisch",
+        status: "Kritisch",
+        appointment: `${row.date || "-"} ${row.time || ""}`.trim(),
+        shop: "Unfallkoordination",
+        costDemo: Number(row.estimatedCost || 0),
+        note: `Automatisch aus Unfall ${row.id}: ${row.description || "ohne Detail"}`,
+        scopes: ["Chef", "Disposition", "Werkstatt"]
+      }));
+
+    return [...accidentCases, ...incidentCases];
   }
 
   function matchesFilter(item) {

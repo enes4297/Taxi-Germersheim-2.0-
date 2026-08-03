@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Rollen und Rechte</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <script src="systemcenter-shared.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="management.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div><strong>Dispatcher</strong><small>Interner Bereich</small></div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item is-active" href="rollen-rechte.html">Rollen und Rechte</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main m-compact" data-role-main>
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Rollen und Rechte</h1>
+          <p>Rollenmatrix, Vorschau und Berechtigungssimulation (Demo)</p>
+        </div>
+        <div class="admin-topbar-actions m-actions">
+          <button class="admin-btn admin-btn-secondary" type="button" data-role-stop-preview>Vorschau beenden</button>
+          <a class="admin-btn" href="arbeitsplatz.html">Mein Arbeitsplatz</a>
+        </div>
+      </header>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Benutzerprofile</h2><small>Demo-Zugriffe und Startseiten</small></div>
+        <div class="m-table-wrap">
+          <table class="admin-table m-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Rolle</th>
+                <th>Status</th>
+                <th>Letzte Aktivitaet</th>
+                <th>Startseite</th>
+                <th>Bereiche</th>
+              </tr>
+            </thead>
+            <tbody data-role-users></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="m-split">
+        <section class="admin-panel">
+          <div class="admin-panel-head"><h2>Rollenvorschau</h2></div>
+          <form class="m-form" data-role-preview-form>
+            <label class="m-field"><span>Als Rolle anzeigen</span><select name="role"></select></label>
+            <div class="m-actions">
+              <button class="admin-btn" type="submit">Vorschau aktivieren</button>
+            </div>
+            <p class="m-note" data-role-preview-note></p>
+          </form>
+        </section>
+
+        <section class="admin-panel">
+          <div class="admin-panel-head"><h2>Rechtesimulation</h2></div>
+          <form class="m-form" data-role-sim-form>
+            <label class="m-field"><span>Rolle</span><select name="role"></select></label>
+            <label class="m-field"><span>Bereich</span><select name="area"></select></label>
+            <label class="m-field"><span>Aktion</span><select name="right"></select></label>
+            <button class="admin-btn" type="submit">Pruefen</button>
+            <p class="m-note" data-role-sim-result></p>
+          </form>
+        </section>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Rollenmatrix</h2><small>Demo-Matrix pro Bereich und Rolle</small></div>
+        <div class="m-table-wrap">
+          <table class="admin-table m-table" data-role-matrix-table></table>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Audit-Hinweise</h2><small>Aktuelle Rollenereignisse</small></div>
+        <div class="m-list" data-role-activity></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="rollen-rechte.js"></script>
+</body>
+</html>
