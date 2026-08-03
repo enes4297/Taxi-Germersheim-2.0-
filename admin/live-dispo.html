@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Live-Dispo</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="live-dispo.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="admin-nav-item" href="index.html">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item" href="live-karte.html">Live-Karte</a>
+        <a class="admin-nav-item is-active" href="live-dispo.html" aria-current="page">Live-Dispo</a>
+        <a class="admin-nav-item" href="werkstatt.html">Werkstatt</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item" href="schichtplanung.html">Schichtplanung</a>
+        <a class="admin-nav-item" href="dokumente.html">Dokumente</a>
+        <a class="admin-nav-item" href="statistiken.html">Statistiken</a>
+        <a class="admin-nav-item" href="einstellungen.html">Einstellungen</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar dispo-topbar">
+        <div class="admin-topbar-title">
+          <h1>Live-Dispositionszentrale</h1>
+          <p>Gesamter Betrieb auf einem Bildschirm, rein mit Demo-Daten und ohne Backend</p>
+        </div>
+
+        <div class="admin-topbar-actions dispo-topbar-actions">
+          <div class="dispo-quick-actions" aria-label="Schnellaktionen">
+            <button class="admin-btn admin-btn-primary" type="button" title="Neue Demo-Fahrt anlegen" data-dispo-quick-action="newRide">+ Neue Fahrt</button>
+            <button class="admin-btn admin-btn-secondary" type="button" title="Fahrer-Kontaktfenster öffnen" data-dispo-quick-action="contactDriver">+ Fahrer kontaktieren</button>
+            <button class="admin-btn admin-btn-warning" type="button" title="Ausgewähltes Fahrzeug sperren" data-dispo-quick-action="lockVehicle">+ Fahrzeug sperren</button>
+            <button class="admin-btn admin-btn-secondary" type="button" title="Ausgewähltes Fahrzeug freigeben" data-dispo-quick-action="unlockVehicle">+ Fahrzeug freigeben</button>
+            <button class="admin-btn" type="button" title="Einsatzplan als Demo öffnen" data-dispo-quick-action="openPlan">+ Einsatzplan öffnen</button>
+            <button class="admin-btn admin-btn-danger" type="button" title="Alle Demo-Änderungen zurücksetzen" data-dispo-reset-demo>Demo zurücksetzen</button>
+          </div>
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn dispo-notify-btn" type="button" aria-label="Live-Dispo-Benachrichtigungen" aria-haspopup="true" aria-expanded="false" data-dispo-notify-toggle>
+            <span>🔔</span>
+            <b data-dispo-alert-count>0</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Disposition</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+        <section class="dispo-notify-panel" data-dispo-notify-panel hidden>
+          <header class="dispo-notify-head">
+            <strong>Live-Benachrichtigungen</strong>
+            <button class="admin-btn admin-btn-secondary" type="button" data-dispo-notify-read-all>Alle als gelesen</button>
+          </header>
+          <div class="dispo-notify-filters" role="group" aria-label="Priorität filtern">
+            <button class="dispo-filter-chip is-active" type="button" data-dispo-notify-filter="Alle">Alle</button>
+            <button class="dispo-filter-chip" type="button" data-dispo-notify-filter="Hoch">Hoch</button>
+            <button class="dispo-filter-chip" type="button" data-dispo-notify-filter="Mittel">Mittel</button>
+            <button class="dispo-filter-chip" type="button" data-dispo-notify-filter="Niedrig">Niedrig</button>
+          </div>
+          <div class="dispo-notify-list" data-dispo-notify-list></div>
+        </section>
+      </header>
+
+      <section class="admin-panel dispo-kpi" aria-label="Live-Kennzahlen">
+        <div class="admin-panel-head">
+          <h2>Live-Status</h2>
+          <div class="dispo-live-indicator" aria-live="polite">
+            <span class="dispo-live-dot" aria-hidden="true"></span>
+            <strong>Live Demo</strong>
+          </div>
+        </div>
+        <div class="dispo-kpi-grid" data-dispo-kpi-grid></div>
+        <p class="dispo-feedback" data-dispo-feedback>System bereit: Live-Dispositionszentrale aktiv.</p>
+      </section>
+
+      <nav class="dispo-mobile-tabs" aria-label="Live-Dispo Mobile Tabs">
+        <button class="dispo-mobile-tab is-active" type="button" data-dispo-mobile-tab="orders">Aufträge</button>
+        <button class="dispo-mobile-tab" type="button" data-dispo-mobile-tab="map">Karte</button>
+        <button class="dispo-mobile-tab" type="button" data-dispo-mobile-tab="fleet">Flotte</button>
+        <button class="dispo-mobile-tab" type="button" data-dispo-mobile-tab="events">Ereignisse</button>
+      </nav>
+
+      <section class="dispo-layout" aria-label="Live-Dispo Arbeitsbereich">
+        <article class="admin-panel dispo-orders-panel" aria-label="Auftragsliste" data-dispo-pane="orders">
+          <div class="admin-panel-head">
+            <h2>Auftragsliste</h2>
+            <span class="status-pill dispo-status-new" data-dispo-order-count>0 Aufträge</span>
+          </div>
+
+          <div class="dispo-tabs" role="tablist" aria-label="Auftragsstatus Tabs">
+            <button class="dispo-tab is-active" type="button" role="tab" aria-selected="true" data-dispo-tab="Neu">Neu</button>
+            <button class="dispo-tab" type="button" role="tab" aria-selected="false" data-dispo-tab="Bestätigt">Bestätigt</button>
+            <button class="dispo-tab" type="button" role="tab" aria-selected="false" data-dispo-tab="Unterwegs">Unterwegs</button>
+            <button class="dispo-tab" type="button" role="tab" aria-selected="false" data-dispo-tab="Warten">Warten</button>
+            <button class="dispo-tab" type="button" role="tab" aria-selected="false" data-dispo-tab="Problem">Problem</button>
+          </div>
+
+          <div class="dispo-order-tools">
+            <label class="driver-label" for="dispo-search-input">Suche</label>
+            <input
+              id="dispo-search-input"
+              class="driver-search-input"
+              type="search"
+              autocomplete="off"
+              placeholder="Kunde, Fahrer, Fahrzeug, Adresse oder Fahrtart suchen..."
+              data-dispo-search
+            >
+            <div class="dispo-tool-grid">
+              <label>
+                <span>Filter</span>
+                <select class="dispo-select" data-dispo-filter="priority">
+                  <option value="Alle">Priorität: Alle</option>
+                  <option value="Hoch">Priorität: Hoch</option>
+                  <option value="Mittel">Priorität: Mittel</option>
+                  <option value="Niedrig">Priorität: Niedrig</option>
+                </select>
+              </label>
+              <label>
+                <span>Fahrtart</span>
+                <select class="dispo-select" data-dispo-filter="rideType">
+                  <option value="Alle">Fahrtart: Alle</option>
+                  <option value="Taxi">Taxi</option>
+                  <option value="Rollstuhl">Rollstuhl</option>
+                  <option value="Flughafen">Flughafen</option>
+                  <option value="Krankenfahrt">Krankenfahrt</option>
+                </select>
+              </label>
+              <label>
+                <span>Sortierung</span>
+                <select class="dispo-select" data-dispo-sort>
+                  <option value="timeAsc">Uhrzeit aufsteigend</option>
+                  <option value="timeDesc">Uhrzeit absteigend</option>
+                  <option value="priority">Priorität hoch zuerst</option>
+                </select>
+              </label>
+            </div>
+            <small class="dispo-helper">Tipp: Auftrag auf ein Fahrzeug ziehen oder über „Fahrer zuweisen“ öffnen.</small>
+          </div>
+
+          <div class="dispo-orders-list" data-dispo-orders-list></div>
+        </article>
+
+        <article class="admin-panel dispo-map-panel" aria-label="Live-Karte" data-dispo-pane="map">
+          <div class="admin-panel-head">
+            <h2>Live-Karte Demo</h2>
+            <div class="dispo-map-head-actions">
+              <button class="admin-btn admin-btn-secondary" type="button" title="Auftragsliste auf Tablet einblenden" data-dispo-tablet-toggle="orders">Aufträge</button>
+              <button class="admin-btn admin-btn-secondary" type="button" title="Flottenliste auf Tablet einblenden" data-dispo-tablet-toggle="fleet">Flotte</button>
+              <button class="admin-btn admin-btn-secondary" type="button" title="Ausgewähltes Fahrzeug auf der Karte fokussieren" data-dispo-map-focus="vehicle">Fahrzeug fokussieren</button>
+              <button class="admin-btn admin-btn-secondary" type="button" title="Abholort des ausgewählten Auftrags fokussieren" data-dispo-map-focus="pickup">Abholung fokussieren</button>
+              <button class="admin-btn admin-btn-secondary" type="button" title="Zielort des ausgewählten Auftrags fokussieren" data-dispo-map-focus="destination">Ziel fokussieren</button>
+            </div>
+          </div>
+
+          <div class="dispo-map-surface" data-dispo-map-surface>
+            <div class="dispo-map-route" aria-hidden="true"></div>
+          </div>
+
+          <div class="dispo-map-legend" aria-label="Kartenlegende">
+            <span><img class="admin-inline-icon" src="../assets/icons/Taxi.svg" alt="" aria-hidden="true">Taxi</span>
+            <span><img class="admin-inline-icon" src="../assets/icons/Wheelchair%20Vehicle.svg" alt="" aria-hidden="true">Rollstuhl</span>
+            <span><img class="admin-inline-icon" src="../assets/icons/Route.svg" alt="" aria-hidden="true">Flughafen</span>
+            <span><img class="admin-inline-icon" src="../assets/icons/Location.svg" alt="" aria-hidden="true">Krankenfahrt</span>
+            <span>🛣️ Aktive Route</span>
+            <span>📍 Standort Kunde</span>
+            <span>🚖 Standort Fahrer</span>
+            <span>🟢 Frei</span>
+            <span>🔵 Unterwegs</span>
+            <span>🟡 Pause</span>
+            <span>🟠 Problem</span>
+            <span>🔴 Werkstatt/Gesperrt</span>
+          </div>
+        </article>
+
+        <article class="admin-panel dispo-fleet-panel" aria-label="Live-Flotte" data-dispo-pane="fleet">
+          <div class="admin-panel-head">
+            <h2>Live-Flotte</h2>
+            <span class="dispo-map-note">Alle Fahrzeuge Demo</span>
+          </div>
+          <div class="dispo-fleet-list" data-dispo-fleet-list></div>
+        </article>
+      </section>
+
+      <section class="admin-panel dispo-events-panel" aria-label="Live-Ereignisse" data-dispo-pane="events">
+        <div class="admin-panel-head">
+          <h2>Live-Ereignisse</h2>
+          <div class="dispo-events-filters" role="group" aria-label="Ereignisse filtern">
+            <button class="dispo-filter-chip is-active" type="button" data-dispo-event-filter="Alle">Alle</button>
+            <button class="dispo-filter-chip" type="button" data-dispo-event-filter="Aufträge">Aufträge</button>
+            <button class="dispo-filter-chip" type="button" data-dispo-event-filter="Fahrer">Fahrer</button>
+            <button class="dispo-filter-chip" type="button" data-dispo-event-filter="Fahrzeuge">Fahrzeuge</button>
+            <button class="dispo-filter-chip" type="button" data-dispo-event-filter="Probleme">Probleme</button>
+            <button class="dispo-filter-chip" type="button" data-dispo-event-filter="System">System</button>
+          </div>
+        </div>
+        <div class="dispo-events-timeline" data-dispo-events-timeline></div>
+      </section>
+
+      <div class="admin-modal" data-dispo-modal hidden>
+        <div class="admin-modal-backdrop" data-dispo-modal-close></div>
+        <section class="admin-modal-dialog dispo-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="dispo-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="dispo-modal-title" data-dispo-modal-title>Live-Dispo</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-dispo-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-dispo-modal-body></div>
+          <footer class="admin-modal-foot" data-dispo-modal-foot>
+            <button class="admin-btn admin-btn-secondary" type="button" data-dispo-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="live-dispo.js"></script>
+</body>
+</html>

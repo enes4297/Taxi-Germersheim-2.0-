@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Kassenübersicht</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div><strong>Dispatcher</strong><small>Interner Bereich</small></div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html">Dashboard</a>
+        <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
+        <a class="admin-nav-item is-active" href="kassenuebersicht.html" aria-current="page">Kassenübersicht</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Kassenübersicht (Demo)</h1>
+          <p>Fahrer-Schichten, Barbestand und Differenzen</p>
+        </div>
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-user" type="button" aria-label="Benutzer"><span>Buchhaltung</span><strong>Enes</strong></button>
+        </div>
+      </header>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Filter</h2></div>
+        <div class="export-filter-row">
+          <label><span>Zeitraum</span><select class="export-select" data-cash-filter="range"><option>heute</option><option>diese Woche</option><option>alle</option></select></label>
+          <label><span>Fahrer</span><input class="driver-search-input" data-cash-filter="driver" placeholder="Name oder ID"></label>
+          <label><span>Fahrzeug</span><input class="driver-search-input" data-cash-filter="vehicle" placeholder="Fahrzeug"></label>
+          <label><span>Differenz</span><select class="export-select" data-cash-filter="diff"><option>alle</option><option>Differenz vorhanden</option><option>noch nicht abgeschlossen</option></select></label>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Kassen-Tabelle</h2></div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Fahrer</th>
+                <th>Schicht</th>
+                <th>Bar Start</th>
+                <th>Bareinnahmen</th>
+                <th>Ausgaben</th>
+                <th>Erwartet</th>
+                <th>Gezählt</th>
+                <th>Differenz</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody data-cash-table></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="kassenuebersicht.js"></script>
+</body>
+</html>

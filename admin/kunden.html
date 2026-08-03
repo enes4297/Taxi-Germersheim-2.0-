@@ -7,6 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <script src="auth.js"></script>
   <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="kunden-v14.css">
 </head>
 <body>
   <div class="admin-shell">
@@ -97,17 +98,48 @@
           >
         </div>
 
+        <div class="customer-v14-actions" role="group" aria-label="Kundenaktionen">
+          <button class="admin-btn" type="button" data-customer-top-action="new">Neuer Kunde</button>
+          <button class="admin-btn admin-btn-secondary" type="button" data-customer-top-action="duplicate">Dublette prüfen</button>
+          <button class="admin-btn admin-btn-secondary" type="button" data-customer-top-action="reset">Filter zurücksetzen</button>
+          <button class="admin-btn admin-btn-secondary" type="button" data-customer-top-action="phone">Telefonzentrale öffnen</button>
+        </div>
+
         <div class="customer-filter-group" role="group" aria-label="Kundentyp filtern">
           <button class="customer-filter-btn is-active" type="button" data-customer-filter="Alle">Alle</button>
           <button class="customer-filter-btn" type="button" data-customer-filter="Stammkunden">Stammkunden</button>
           <button class="customer-filter-btn" type="button" data-customer-filter="Krankenkasse">Krankenkasse</button>
           <button class="customer-filter-btn" type="button" data-customer-filter="Firmenkunden">Firmenkunden</button>
+          <button class="customer-filter-btn" type="button" data-customer-filter="Patient">Patient</button>
           <button class="customer-filter-btn" type="button" data-customer-filter="VIP">VIP</button>
           <button class="customer-filter-btn" type="button" data-customer-filter="Rückfrage offen">Rückfrage offen</button>
         </div>
       </section>
 
-      <section class="customer-grid" aria-label="Kundenkarten" data-customer-grid></section>
+      <section class="customer-v14-layout" aria-label="Kundenarbeitsbereich">
+        <section class="customer-grid" aria-label="Kundenkarten" data-customer-grid></section>
+
+        <aside class="admin-panel customer-profile-panel" aria-label="Kundenprofil">
+          <div class="admin-panel-head">
+            <h2>Kundenprofil</h2>
+            <span class="customer-profile-id" data-customer-profile-id>-</span>
+          </div>
+
+          <div class="customer-profile-top" data-customer-profile-top></div>
+
+          <div class="customer-profile-tabs" role="tablist" aria-label="Profilbereiche">
+            <button class="customer-profile-tab is-active" type="button" data-customer-profile-tab="basis">Basis</button>
+            <button class="customer-profile-tab" type="button" data-customer-profile-tab="doku">Dokumente</button>
+            <button class="customer-profile-tab" type="button" data-customer-profile-tab="fahrten">Fahrten</button>
+            <button class="customer-profile-tab" type="button" data-customer-profile-tab="aufgaben">Aufgaben</button>
+          </div>
+
+          <div class="customer-profile-pane is-visible" data-customer-profile-pane="basis"></div>
+          <div class="customer-profile-pane" data-customer-profile-pane="doku"></div>
+          <div class="customer-profile-pane" data-customer-profile-pane="fahrten"></div>
+          <div class="customer-profile-pane" data-customer-profile-pane="aufgaben"></div>
+        </aside>
+      </section>
 
       <div class="admin-modal" data-customer-modal hidden>
         <div class="admin-modal-backdrop" data-customer-modal-close></div>
@@ -118,6 +150,7 @@
           </header>
           <div class="admin-modal-body" data-customer-modal-body></div>
           <footer class="admin-modal-foot">
+            <button class="admin-btn admin-btn-secondary" type="button" data-customer-modal-action="save">Speichern</button>
             <button class="admin-btn driver-btn-muted" type="button" data-customer-modal-close>Schließen</button>
           </footer>
         </section>

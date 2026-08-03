@@ -8,40 +8,109 @@
   const KEY_DEMO_NOTIFICATIONS = "adminDemoNotificationsReadState";
   const KEY_DEMO_NOTIFICATIONS_LEGACY = "demoAdminNotificationsState";
   const DEMO_NOTIFICATION_LIMIT = 3;
+  const V20_SHORTCUT = "k";
+  const V20_SEARCH_LIMIT = 8;
+  const NOTIFICATION_OPEN_STATUS = "ungelesen";
+  const NOTIFICATION_AUTO_HIDE_MS = 12000;
 
   const DEMO_USERS = {
     admin: { role: "Chef" },
+    enes: { role: "Chef" },
+    fatih: { role: "Chef" },
+    geschaeft: { role: "Geschaeftsleitung" },
     dispo: { role: "Disposition" },
+    disponent: { role: "Disposition" },
     billing: { role: "Buchhaltung" },
+    abrechnung: { role: "Buchhaltung" },
     fahrer: { role: "Fahrer" },
-    werkstatt: { role: "Werkstatt" }
+    werkstatt: { role: "Werkstatt" },
+    personal: { role: "Personalverwaltung" },
+    qualitaet: { role: "Qualitaetsmanagement" },
+    mitarbeiter: { role: "Mitarbeiter" }
   };
 
   const ROLE_NAV_ACCESS = {
-    Chef: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Live-Karte", "Werkstatt", "Kunden", "Rechnungen", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen", "Benutzer", "Verlauf", "Export & Backup", "Hilfe"],
-    Disposition: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Live-Karte", "Werkstatt", "Kunden", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen", "Verlauf", "Export & Backup", "Hilfe"],
-    Buchhaltung: ["Dashboard", "Fahrten", "Werkstatt", "Kunden", "Rechnungen", "Dokumente", "Statistiken", "Einstellungen", "Verlauf", "Export & Backup", "Hilfe"],
+    Chef: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Live-Karte", "Live-Dispo", "Telefonzentrale", "Werkstatt", "Kunden", "Serienfahrten", "Fahrzeugübergaben", "Abrechnungszentrale", "Krankenkassen", "Rechnungen", "Zahlungen", "Mahnwesen", "Pruefen und Klaeren", "Monatsabschluss", "Controlling", "Personaluebersicht", "Mitarbeiter", "Urlaubsplanung", "Abwesenheiten", "Dokumentfristen", "Schulungen", "Mitteilungen", "Mitarbeiterportal", "Personalaufgaben", "Qualitaet & Sicherheit", "Qualitaetsuebersicht", "Beschwerden", "Vorfaelle", "Unfaelle", "Fundbuero", "Pruefungen", "Massnahmen", "Qualitaetsberichte", "Unternehmenssteuerung", "Geschaeftsfuehrer-Dashboard", "Betriebssteuerung", "Kapazitaetsplanung", "Nachfrageprognose", "Szenarien", "Ziele", "Entscheidungscenter", "Geschaeftsberichte", "Kassenübersicht", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen", "Benutzer", "Verlauf", "Export & Backup", "Hilfe"],
+    Geschaeftsleitung: ["Dashboard", "Live-Dispo", "Telefonzentrale", "Werkstatt", "Kunden", "Serienfahrten", "Abrechnungszentrale", "Rechnungen", "Controlling", "Monatsabschluss", "Personaluebersicht", "Mitarbeiter", "Urlaubsplanung", "Abwesenheiten", "Dokumentfristen", "Qualitaet & Sicherheit", "Qualitaetsuebersicht", "Beschwerden", "Vorfaelle", "Unfaelle", "Pruefungen", "Massnahmen", "Qualitaetsberichte", "Unternehmenssteuerung", "Geschaeftsfuehrer-Dashboard", "Betriebssteuerung", "Kapazitaetsplanung", "Nachfrageprognose", "Szenarien", "Ziele", "Entscheidungscenter", "Geschaeftsberichte", "Schichtplanung", "Statistiken", "Hilfe"],
+    Disposition: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Live-Karte", "Live-Dispo", "Telefonzentrale", "Werkstatt", "Kunden", "Serienfahrten", "Fahrzeugübergaben", "Abrechnungszentrale", "Pruefen und Klaeren", "Personaluebersicht", "Mitarbeiter", "Urlaubsplanung", "Abwesenheiten", "Mitteilungen", "Mitarbeiterportal", "Personalaufgaben", "Qualitaet & Sicherheit", "Qualitaetsuebersicht", "Beschwerden", "Vorfaelle", "Unfaelle", "Fundbuero", "Pruefungen", "Massnahmen", "Qualitaetsberichte", "Unternehmenssteuerung", "Geschaeftsfuehrer-Dashboard", "Betriebssteuerung", "Kapazitaetsplanung", "Nachfrageprognose", "Szenarien", "Geschaeftsberichte", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen", "Verlauf", "Export & Backup", "Hilfe"],
+    Buchhaltung: ["Dashboard", "Fahrten", "Werkstatt", "Kunden", "Abrechnungszentrale", "Krankenkassen", "Rechnungen", "Zahlungen", "Mahnwesen", "Pruefen und Klaeren", "Monatsabschluss", "Controlling", "Personaluebersicht", "Dokumentfristen", "Mitteilungen", "Personalaufgaben", "Qualitaet & Sicherheit", "Qualitaetsuebersicht", "Beschwerden", "Pruefungen", "Massnahmen", "Qualitaetsberichte", "Unternehmenssteuerung", "Geschaeftsfuehrer-Dashboard", "Geschaeftsberichte", "Ziele", "Entscheidungscenter", "Kassenübersicht", "Dokumente", "Statistiken", "Einstellungen", "Verlauf", "Export & Backup", "Hilfe"],
     Fahrer: ["Dashboard", "Fahrten", "Fahrzeuge", "Live-Karte", "Werkstatt", "Dokumente", "Statistiken", "Einstellungen", "Verlauf", "Hilfe"],
-    Werkstatt: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Live-Karte", "Werkstatt", "Kunden", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen"]
+    Werkstatt: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Live-Karte", "Werkstatt", "Kunden", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen"],
+    Personalverwaltung: ["Dashboard", "Fahrten", "Fahrer", "Kunden", "Personaluebersicht", "Mitarbeiter", "Urlaubsplanung", "Abwesenheiten", "Dokumentfristen", "Schulungen", "Mitteilungen", "Mitarbeiterportal", "Personalaufgaben", "Qualitaet & Sicherheit", "Qualitaetsuebersicht", "Beschwerden", "Vorfaelle", "Fundbuero", "Massnahmen", "Qualitaetsberichte", "Unternehmenssteuerung", "Betriebssteuerung", "Kapazitaetsplanung", "Ziele", "Geschaeftsberichte", "Schichtplanung", "Dokumente", "Statistiken", "Einstellungen", "Verlauf", "Hilfe"],
+    Qualitaetsmanagement: ["Dashboard", "Fahrten", "Fahrer", "Fahrzeuge", "Live-Dispo", "Werkstatt", "Kunden", "Dokumente", "Schichtplanung", "Mitarbeiter", "Mitteilungen", "Mitarbeiterportal", "Personalaufgaben", "Qualitaet & Sicherheit", "Qualitaetsuebersicht", "Beschwerden", "Vorfaelle", "Unfaelle", "Fundbuero", "Pruefungen", "Massnahmen", "Qualitaetsberichte", "Verlauf", "Hilfe"],
+    Mitarbeiter: ["Mitteilungen", "Mitarbeiterportal", "Personalaufgaben", "Hilfe"]
+  };
+
+  const V20_NAV_BY_ROLE = {
+    Chef: ["Aufgaben-Center", "Benachrichtigungs-Center", "Rollen und Rechte", "Mein Arbeitsplatz"],
+    Geschaeftsleitung: ["Aufgaben-Center", "Benachrichtigungs-Center", "Mein Arbeitsplatz"],
+    Disposition: ["Aufgaben-Center", "Benachrichtigungs-Center", "Mein Arbeitsplatz"],
+    Buchhaltung: ["Aufgaben-Center", "Benachrichtigungs-Center", "Mein Arbeitsplatz"],
+    Fahrer: ["Aufgaben-Center", "Benachrichtigungs-Center", "Mein Arbeitsplatz"],
+    Werkstatt: ["Aufgaben-Center", "Benachrichtigungs-Center", "Mein Arbeitsplatz"],
+    Personalverwaltung: ["Aufgaben-Center", "Benachrichtigungs-Center", "Mein Arbeitsplatz"],
+    Qualitaetsmanagement: ["Aufgaben-Center", "Benachrichtigungs-Center", "Mein Arbeitsplatz"],
+    Mitarbeiter: ["Aufgaben-Center", "Benachrichtigungs-Center", "Mein Arbeitsplatz"]
   };
 
   const ROLE_PAGE_ACCESS = {
-    "index.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"],
+    "index.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer"],
     "fahrer.html": ["Chef", "Disposition"],
     "fahrzeuge.html": ["Chef", "Disposition", "Fahrer"],
     "live-karte.html": ["Chef", "Disposition", "Fahrer", "Werkstatt"],
-    "werkstatt.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt"],
-    "kunden.html": ["Chef", "Disposition", "Buchhaltung"],
-    "rechnungen.html": ["Chef", "Buchhaltung"],
-    "schichtplanung.html": ["Chef", "Disposition"],
+    "live-dispo.html": ["Chef", "Geschaeftsleitung", "Disposition"],
+    "telefonzentrale.html": ["Chef", "Geschaeftsleitung", "Disposition"],
+    "werkstatt.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt"],
+    "kunden.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung"],
+    "serienfahrten.html": ["Chef", "Geschaeftsleitung", "Disposition"],
+    "fahrzeuguebergaben.html": ["Chef", "Disposition"],
+    "abrechnungszentrale.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung"],
+    "krankenkassen.html": ["Chef", "Buchhaltung"],
+    "rechnungen.html": ["Chef", "Geschaeftsleitung", "Buchhaltung"],
+    "zahlungen.html": ["Chef", "Buchhaltung"],
+    "mahnwesen.html": ["Chef", "Buchhaltung"],
+    "pruefcenter.html": ["Chef", "Disposition", "Buchhaltung"],
+    "monatsabschluss.html": ["Chef", "Geschaeftsleitung", "Buchhaltung"],
+    "controlling.html": ["Chef", "Geschaeftsleitung", "Buchhaltung"],
+    "personaluebersicht.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Personalverwaltung"],
+    "mitarbeiter.html": ["Chef", "Geschaeftsleitung", "Disposition", "Personalverwaltung"],
+    "urlaubsplanung.html": ["Chef", "Geschaeftsleitung", "Disposition", "Personalverwaltung"],
+    "abwesenheiten.html": ["Chef", "Geschaeftsleitung", "Disposition", "Personalverwaltung"],
+    "dokumentfristen.html": ["Chef", "Geschaeftsleitung", "Buchhaltung", "Personalverwaltung"],
+    "schulungen.html": ["Chef", "Personalverwaltung"],
+    "mitteilungen.html": ["Chef", "Disposition", "Buchhaltung", "Personalverwaltung", "Mitarbeiter"],
+    "personalaufgaben.html": ["Chef", "Disposition", "Buchhaltung", "Personalverwaltung", "Mitarbeiter"],
+    "qualitaetsuebersicht.html": ["Chef", "Disposition", "Buchhaltung", "Personalverwaltung", "Qualitaetsmanagement"],
+    "beschwerden.html": ["Chef", "Disposition", "Buchhaltung", "Personalverwaltung", "Qualitaetsmanagement"],
+    "vorfaelle.html": ["Chef", "Disposition", "Personalverwaltung", "Qualitaetsmanagement"],
+    "unfaelle.html": ["Chef", "Disposition", "Qualitaetsmanagement"],
+    "fundbuero.html": ["Chef", "Disposition", "Personalverwaltung", "Qualitaetsmanagement"],
+    "pruefungen.html": ["Chef", "Disposition", "Buchhaltung", "Qualitaetsmanagement"],
+    "massnahmen.html": ["Chef", "Disposition", "Buchhaltung", "Personalverwaltung", "Qualitaetsmanagement"],
+    "qualitaetsberichte.html": ["Chef", "Disposition", "Buchhaltung", "Personalverwaltung", "Qualitaetsmanagement"],
+    "geschaeftsfuehrer-dashboard.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Personalverwaltung", "Qualitaetsmanagement"],
+    "betriebssteuerung.html": ["Chef", "Geschaeftsleitung", "Disposition", "Personalverwaltung", "Qualitaetsmanagement"],
+    "kapazitaetsplanung.html": ["Chef", "Geschaeftsleitung", "Disposition", "Personalverwaltung"],
+    "nachfrageprognose.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung"],
+    "szenarien.html": ["Chef", "Geschaeftsleitung", "Disposition"],
+    "ziele.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Personalverwaltung", "Qualitaetsmanagement"],
+    "entscheidungscenter.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung"],
+    "geschaeftsberichte.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Personalverwaltung", "Qualitaetsmanagement"],
+    "kassenuebersicht.html": ["Chef", "Buchhaltung"],
+    "schichtplanung.html": ["Chef", "Geschaeftsleitung", "Disposition"],
     "dokumente.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"],
-    "statistiken.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"],
+    "statistiken.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer"],
     "einstellungen.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"],
     "benutzer.html": ["Chef"],
     "verlauf.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"],
     "export-backup.html": ["Chef", "Disposition", "Buchhaltung"],
-    "hilfe.html": ["Chef", "Disposition", "Buchhaltung", "Fahrer"]
+    "hilfe.html": ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer"]
   };
+
+  ROLE_PAGE_ACCESS["aufgaben-center.html"] = ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt", "Personalverwaltung", "Qualitaetsmanagement", "Mitarbeiter"];
+  ROLE_PAGE_ACCESS["benachrichtigungen-center.html"] = ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt", "Personalverwaltung", "Qualitaetsmanagement", "Mitarbeiter"];
+  ROLE_PAGE_ACCESS["rollen-rechte.html"] = ["Chef"];
+  ROLE_PAGE_ACCESS["arbeitsplatz.html"] = ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt", "Personalverwaltung", "Qualitaetsmanagement", "Mitarbeiter"];
 
   // Nur Demo-Benachrichtigungen ohne Backend.
   const DEMO_NOTIFICATIONS = [
@@ -91,6 +160,69 @@
       scope: "Rechnungen"
     },
     {
+      id: "demo-insurer-return",
+      title: "Krankenkassen-Rueckfrage offen",
+      text: "KK-CASE-103 wartet auf fehlenden Transportschein.",
+      time: "vor 21 Min",
+      type: "Warnung",
+      category: "Krankenkasse",
+      scopes: ["Rechnungen", "Kunden"]
+    },
+    {
+      id: "demo-payment-gap",
+      title: "Differenz im Zahlungsabgleich",
+      text: "Fahrt V16-R-204: Karteneingang liegt 8,50 EUR unter Soll.",
+      time: "vor 6 Min",
+      type: "Kritisch",
+      category: "Controlling",
+      scopes: ["Rechnungen", "Fahrten"]
+    },
+    {
+      id: "demo-vac-request",
+      title: "Neuer Urlaubsantrag",
+      text: "MA-104 hat einen neuen Urlaubsantrag eingereicht.",
+      time: "vor 4 Min",
+      type: "Info",
+      category: "Personal",
+      scope: "Personal"
+    },
+    {
+      id: "demo-license-expire",
+      title: "Fuehrerschein laeuft ab",
+      text: "MA-102: Fuehrerschein ist abgelaufen.",
+      time: "vor 13 Min",
+      type: "Kritisch",
+      category: "Personal",
+      scope: "Personal"
+    },
+    {
+      id: "demo-quality-complaint",
+      title: "Neue kritische Beschwerde",
+      text: "QB-1002 wartet auf Eskalationsentscheidung.",
+      time: "vor 3 Min",
+      type: "Kritisch",
+      category: "Qualitaet",
+      scope: "Qualitaet"
+    },
+    {
+      id: "demo-quality-inspection",
+      title: "Pruefung heute faellig",
+      text: "Fahrzeugkontrolle GER TX200 heute durchfuehren.",
+      time: "vor 9 Min",
+      type: "Warnung",
+      category: "Qualitaet",
+      scope: "Qualitaet"
+    },
+    {
+      id: "demo-management-bottleneck",
+      title: "Managementwarnung Engpass 06:00-09:00",
+      text: "Fahrer- und Fahrzeugreserve fuer Peak pruefen.",
+      time: "vor 5 Min",
+      type: "Warnung",
+      category: "Unternehmenssteuerung",
+      scope: "Management"
+    },
+    {
       id: "demo-shift-open",
       title: "Schicht unbesetzt",
       text: "Spätschicht 18:00-22:00 hat aktuell keine Zuordnung.",
@@ -111,10 +243,13 @@
   ];
 
   const ROLE_NOTIFICATION_SCOPES = {
-    Chef: ["Fahrten", "Fahrzeuge", "Schichten", "Fahrer", "Rechnungen", "Kunden"],
-    Disposition: ["Fahrten", "Fahrzeuge", "Schichten", "Fahrer"],
-    Buchhaltung: ["Rechnungen", "Kunden"],
-    Fahrer: ["Fahrten", "Fahrzeuge"]
+    Chef: ["Fahrten", "Fahrzeuge", "Schichten", "Fahrer", "Rechnungen", "Kunden", "Personal", "Qualitaet", "Management"],
+    Geschaeftsleitung: ["Management", "Fahrten", "Fahrzeuge", "Schichten", "Fahrer", "Rechnungen", "Kunden", "Personal", "Qualitaet"],
+    Disposition: ["Fahrten", "Fahrzeuge", "Schichten", "Fahrer", "Personal", "Qualitaet", "Management"],
+    Buchhaltung: ["Rechnungen", "Kunden", "Personal", "Qualitaet", "Management"],
+    Fahrer: ["Fahrten", "Fahrzeuge", "Personal"],
+    Personalverwaltung: ["Personal", "Schichten", "Fahrer", "Kunden", "Qualitaet", "Management"],
+    Qualitaetsmanagement: ["Qualitaet", "Fahrzeuge", "Fahrten", "Fahrer", "Schichten", "Kunden"]
   };
 
   const SIDEBAR_ITEMS = [
@@ -123,18 +258,69 @@
     { key: "Fahrer", href: "fahrer.html", label: "Fahrer" },
     { key: "Fahrzeuge", href: "fahrzeuge.html", label: "Fahrzeuge" },
     { key: "Live-Karte", href: "live-karte.html", label: "Live-Karte" },
+    { key: "Live-Dispo", href: "live-dispo.html", label: "Live-Dispo" },
+    { key: "Telefonzentrale", href: "telefonzentrale.html", label: "Telefonzentrale" },
     { key: "Werkstatt", href: "werkstatt.html", label: "Werkstatt" },
     { key: "Kunden", href: "kunden.html", label: "Kunden" },
+    { key: "Serienfahrten", href: "serienfahrten.html", label: "Serienfahrten" },
+    { key: "Fahrzeugübergaben", href: "fahrzeuguebergaben.html", label: "Fahrzeugübergaben" },
+    { key: "Abrechnungszentrale", href: "abrechnungszentrale.html", label: "Abrechnungszentrale" },
+    { key: "Krankenkassen", href: "krankenkassen.html", label: "Krankenkassen" },
     { key: "Rechnungen", href: "rechnungen.html", label: "Rechnungen" },
+    { key: "Zahlungen", href: "zahlungen.html", label: "Zahlungen" },
+    { key: "Mahnwesen", href: "mahnwesen.html", label: "Mahnwesen" },
+    { key: "Pruefen und Klaeren", href: "pruefcenter.html", label: "Pruefen und Klaeren" },
+    { key: "Monatsabschluss", href: "monatsabschluss.html", label: "Monatsabschluss" },
+    { key: "Controlling", href: "controlling.html", label: "Controlling" },
+    { key: "Personaluebersicht", href: "personaluebersicht.html", label: "Personaluebersicht" },
+    { key: "Mitarbeiter", href: "mitarbeiter.html", label: "Mitarbeiter" },
+    { key: "Urlaubsplanung", href: "urlaubsplanung.html", label: "Urlaubsplanung" },
+    { key: "Abwesenheiten", href: "abwesenheiten.html", label: "Abwesenheiten" },
+    { key: "Dokumentfristen", href: "dokumentfristen.html", label: "Dokumentfristen" },
+    { key: "Schulungen", href: "schulungen.html", label: "Schulungen" },
+    { key: "Mitteilungen", href: "mitteilungen.html", label: "Mitteilungen" },
+    { key: "Mitarbeiterportal", href: "../fahrer/mitarbeiter.html", label: "Mitarbeiterportal" },
+    { key: "Personalaufgaben", href: "personalaufgaben.html", label: "Personalaufgaben" },
+    { key: "Qualitaet & Sicherheit", href: "qualitaetsuebersicht.html", label: "Qualitaet & Sicherheit" },
+    { key: "Qualitaetsuebersicht", href: "qualitaetsuebersicht.html", label: "Qualitaetsuebersicht" },
+    { key: "Beschwerden", href: "beschwerden.html", label: "Beschwerden" },
+    { key: "Vorfaelle", href: "vorfaelle.html", label: "Vorfaelle" },
+    { key: "Unfaelle", href: "unfaelle.html", label: "Unfaelle" },
+    { key: "Fundbuero", href: "fundbuero.html", label: "Fundbuero" },
+    { key: "Pruefungen", href: "pruefungen.html", label: "Pruefungen" },
+    { key: "Massnahmen", href: "massnahmen.html", label: "Massnahmen" },
+    { key: "Qualitaetsberichte", href: "qualitaetsberichte.html", label: "Qualitaetsberichte" },
+    { key: "Unternehmenssteuerung", href: "geschaeftsfuehrer-dashboard.html", label: "Unternehmenssteuerung" },
+    { key: "Geschaeftsfuehrer-Dashboard", href: "geschaeftsfuehrer-dashboard.html", label: "Geschaeftsfuehrer-Dashboard" },
+    { key: "Betriebssteuerung", href: "betriebssteuerung.html", label: "Betriebssteuerung" },
+    { key: "Kapazitaetsplanung", href: "kapazitaetsplanung.html", label: "Kapazitaetsplanung" },
+    { key: "Nachfrageprognose", href: "nachfrageprognose.html", label: "Nachfrageprognose" },
+    { key: "Szenarien", href: "szenarien.html", label: "Szenarien" },
+    { key: "Ziele", href: "ziele.html", label: "Ziele" },
+    { key: "Entscheidungscenter", href: "entscheidungscenter.html", label: "Entscheidungscenter" },
+    { key: "Geschaeftsberichte", href: "geschaeftsberichte.html", label: "Geschaeftsberichte" },
+    { key: "Kassenübersicht", href: "kassenuebersicht.html", label: "Kassenübersicht" },
     { key: "Schichtplanung", href: "schichtplanung.html", label: "Schichtplanung" },
     { key: "Dokumente", href: "dokumente.html", label: "Dokumente" },
     { key: "Statistiken", href: "statistiken.html", label: "Statistiken" },
     { key: "Einstellungen", href: "einstellungen.html", label: "Einstellungen" },
+    { key: "Aufgaben-Center", href: "aufgaben-center.html", label: "Aufgaben-Center" },
+    { key: "Benachrichtigungs-Center", href: "benachrichtigungen-center.html", label: "Benachrichtigungs-Center" },
+    { key: "Rollen und Rechte", href: "rollen-rechte.html", label: "Rollen und Rechte" },
+    { key: "Mein Arbeitsplatz", href: "arbeitsplatz.html", label: "Mein Arbeitsplatz" },
     { key: "Benutzer", href: "benutzer.html", label: "Benutzer" },
     { key: "Verlauf", href: "verlauf.html", label: "Verlauf" },
     { key: "Export & Backup", href: "export-backup.html", label: "Export & Backup" },
     { key: "Hilfe", href: "hilfe.html", label: "Hilfe" }
   ];
+
+  Object.entries(V20_NAV_BY_ROLE).forEach(([role, labels]) => {
+    const base = ROLE_NAV_ACCESS[role];
+    if (!Array.isArray(base)) return;
+    labels.forEach((label) => {
+      if (!base.includes(label)) base.push(label);
+    });
+  });
 
   function normalizePath(pathname) {
     const lower = String(pathname || "").toLowerCase();
@@ -230,13 +416,53 @@
     if (fileName === "fahrer.html") return "Fahrer";
     if (fileName === "fahrzeuge.html") return "Fahrzeuge";
     if (fileName === "live-karte.html") return "Live-Karte";
+    if (fileName === "live-dispo.html") return "Live-Dispo";
+    if (fileName === "telefonzentrale.html") return "Telefonzentrale";
     if (fileName === "werkstatt.html") return "Werkstatt";
     if (fileName === "kunden.html") return "Kunden";
+    if (fileName === "serienfahrten.html") return "Serienfahrten";
+    if (fileName === "fahrzeuguebergaben.html") return "Fahrzeugübergaben";
+    if (fileName === "abrechnungszentrale.html") return "Abrechnungszentrale";
+    if (fileName === "krankenkassen.html") return "Krankenkassen";
     if (fileName === "rechnungen.html") return "Rechnungen";
+    if (fileName === "zahlungen.html") return "Zahlungen";
+    if (fileName === "mahnwesen.html") return "Mahnwesen";
+    if (fileName === "pruefcenter.html") return "Pruefen und Klaeren";
+    if (fileName === "monatsabschluss.html") return "Monatsabschluss";
+    if (fileName === "controlling.html") return "Controlling";
+    if (fileName === "personaluebersicht.html") return "Personaluebersicht";
+    if (fileName === "mitarbeiter.html") return "Mitarbeiter";
+    if (fileName === "urlaubsplanung.html") return "Urlaubsplanung";
+    if (fileName === "abwesenheiten.html") return "Abwesenheiten";
+    if (fileName === "dokumentfristen.html") return "Dokumentfristen";
+    if (fileName === "schulungen.html") return "Schulungen";
+    if (fileName === "mitteilungen.html") return "Mitteilungen";
+    if (fileName === "personalaufgaben.html") return "Personalaufgaben";
+    if (fileName === "qualitaetsuebersicht.html") return "Qualitaetsuebersicht";
+    if (fileName === "beschwerden.html") return "Beschwerden";
+    if (fileName === "vorfaelle.html") return "Vorfaelle";
+    if (fileName === "unfaelle.html") return "Unfaelle";
+    if (fileName === "fundbuero.html") return "Fundbuero";
+    if (fileName === "pruefungen.html") return "Pruefungen";
+    if (fileName === "massnahmen.html") return "Massnahmen";
+    if (fileName === "qualitaetsberichte.html") return "Qualitaetsberichte";
+    if (fileName === "geschaeftsfuehrer-dashboard.html") return "Geschaeftsfuehrer-Dashboard";
+    if (fileName === "betriebssteuerung.html") return "Betriebssteuerung";
+    if (fileName === "kapazitaetsplanung.html") return "Kapazitaetsplanung";
+    if (fileName === "nachfrageprognose.html") return "Nachfrageprognose";
+    if (fileName === "szenarien.html") return "Szenarien";
+    if (fileName === "ziele.html") return "Ziele";
+    if (fileName === "entscheidungscenter.html") return "Entscheidungscenter";
+    if (fileName === "geschaeftsberichte.html") return "Geschaeftsberichte";
+    if (fileName === "kassenuebersicht.html") return "Kassenübersicht";
     if (fileName === "schichtplanung.html") return "Schichtplanung";
     if (fileName === "dokumente.html") return "Dokumente";
     if (fileName === "statistiken.html") return "Statistiken";
     if (fileName === "einstellungen.html") return "Einstellungen";
+    if (fileName === "aufgaben-center.html") return "Aufgaben-Center";
+    if (fileName === "benachrichtigungen-center.html") return "Benachrichtigungs-Center";
+    if (fileName === "rollen-rechte.html") return "Rollen und Rechte";
+    if (fileName === "arbeitsplatz.html") return "Mein Arbeitsplatz";
     if (fileName === "benutzer.html") return "Benutzer";
     if (fileName === "verlauf.html") return "Verlauf";
     if (fileName === "export-backup.html") return "Export & Backup";
@@ -355,13 +581,430 @@
 
   function getNotificationsForRole(role) {
     const allowedScopes = new Set(ROLE_NOTIFICATION_SCOPES[role] || []);
-    return DEMO_NOTIFICATIONS.filter((item) => {
+    const demoRows = DEMO_NOTIFICATIONS.filter((item) => {
       const scopes = Array.isArray(item.scopes) ? item.scopes : [item.scope];
       return scopes.some((scope) => allowedScopes.has(scope));
     }).map((item) => ({
       ...item,
+      sourceType: "demo",
+      status: NOTIFICATION_OPEN_STATUS,
       read: false
     }));
+
+    if (!window.AdminSystemCenter) return demoRows;
+    try {
+      const state = window.AdminSystemCenter.loadState();
+      const sources = window.AdminSystemCenter.loadSources();
+      const rows = window.AdminSystemCenter.allNotifications(state, sources)
+        .filter((item) => {
+          const assignee = String(item.assignedTo || "").toLowerCase();
+          if (!assignee) return true;
+          if (role === "Chef" || role === "Geschaeftsleitung") return true;
+          if (role === "Disposition") return assignee.includes("dispo") || assignee.includes("telefon");
+          if (role === "Buchhaltung") return assignee.includes("buch");
+          if (role === "Personalverwaltung") return assignee.includes("personal");
+          if (role === "Qualitaetsmanagement") return assignee.includes("qualitaet");
+          if (role === "Werkstatt") return assignee.includes("werkstatt") || assignee.includes("flotte");
+          if (role === "Fahrer") return assignee.includes("fahrer");
+          if (role === "Mitarbeiter") return assignee.includes("mitarbeiter");
+          return true;
+        })
+        .slice(0, 5)
+        .map((item) => ({
+          id: item.id,
+          title: item.title,
+          text: item.message,
+          time: window.AdminSystemCenter.formatDateTime(item.timestamp),
+          type: item.priority === "kritisch" ? "Kritisch" : item.priority === "dringend" || item.priority === "wichtig" ? "Warnung" : "Info",
+          category: item.category || "System",
+          scope: "Management",
+          sourceType: "system",
+          status: String(item.status || NOTIFICATION_OPEN_STATUS).toLowerCase(),
+          read: ["gelesen", "bestaetigt", "erledigt", "archiviert"].includes(String(item.status || "").toLowerCase())
+        }));
+      return [...rows, ...demoRows];
+    } catch {
+      return demoRows;
+    }
+  }
+
+  let systemCenterLoadPromise = null;
+
+  function ensureSystemCenterReady() {
+    if (window.AdminSystemCenter) return Promise.resolve(window.AdminSystemCenter);
+    if (systemCenterLoadPromise) return systemCenterLoadPromise;
+
+    systemCenterLoadPromise = new Promise((resolve) => {
+      const existing = document.querySelector('script[src$="systemcenter-shared.js"]');
+      if (existing) {
+        existing.addEventListener("load", () => resolve(window.AdminSystemCenter || null), { once: true });
+        existing.addEventListener("error", () => resolve(null), { once: true });
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "systemcenter-shared.js";
+      script.defer = true;
+      script.addEventListener("load", () => resolve(window.AdminSystemCenter || null), { once: true });
+      script.addEventListener("error", () => resolve(null), { once: true });
+      document.head.append(script);
+    });
+
+    return systemCenterLoadPromise;
+  }
+
+  function isTypingField(target) {
+    if (!(target instanceof Element)) return false;
+    if (target.isContentEditable) return true;
+    const tag = target.tagName;
+    if (tag === "TEXTAREA" || tag === "SELECT") return true;
+    if (tag === "INPUT") {
+      const type = String(target.getAttribute("type") || "text").toLowerCase();
+      return ["text", "search", "email", "number", "password", "tel", "url", "date", "datetime-local", "month", "time", "week"].includes(type);
+    }
+    return false;
+  }
+
+  function injectSystemEntryButtons(role, user) {
+    const actions = document.querySelector(".admin-topbar-actions");
+    if (!actions || actions.querySelector("[data-v20-open-tasks]")) return;
+
+    const taskLink = document.createElement("a");
+    taskLink.className = "admin-btn admin-btn-secondary admin-v20-quick-link";
+    taskLink.href = "aufgaben-center.html";
+    taskLink.setAttribute("data-v20-open-tasks", "");
+    taskLink.innerHTML = '<span>Aufgaben</span><b data-v20-open-tasks-count hidden></b>';
+
+    const noticeLink = document.createElement("a");
+    noticeLink.className = "admin-btn admin-btn-secondary admin-v20-quick-link";
+    noticeLink.href = "benachrichtigungen-center.html";
+    noticeLink.setAttribute("data-v20-open-notices", "");
+    noticeLink.innerHTML = '<span>Meldungen</span><b data-v20-open-notices-count hidden></b>';
+
+    const workspaceLink = document.createElement("a");
+    workspaceLink.className = "admin-btn admin-btn-secondary admin-v20-quick-link is-subtle";
+    workspaceLink.href = "arbeitsplatz.html";
+    workspaceLink.textContent = `Arbeitsplatz ${user ? `(${user})` : ""}`.trim();
+
+    actions.prepend(workspaceLink);
+    actions.prepend(noticeLink);
+    actions.prepend(taskLink);
+
+    if (role !== "Chef" && role !== "Geschaeftsleitung") {
+      const roleLink = document.querySelector('a[href="rollen-rechte.html"]');
+      if (roleLink) roleLink.remove();
+    }
+  }
+
+  function updateSystemEntryBadges(role, user) {
+    if (!window.AdminSystemCenter) return;
+    const taskCount = document.querySelector("[data-v20-open-tasks-count]");
+    const noticeCount = document.querySelector("[data-v20-open-notices-count]");
+    if (!taskCount && !noticeCount) return;
+
+    const fallbackRole = localStorage.getItem(KEY_ROLE) || "Chef";
+    const fallbackUser = localStorage.getItem(KEY_USER) || "admin";
+
+    const state = window.AdminSystemCenter.loadState();
+    const sources = window.AdminSystemCenter.loadSources();
+    const tasks = window.AdminSystemCenter.allTasks(state, sources);
+    const notices = window.AdminSystemCenter.allNotifications(state, sources);
+
+    const roleNeedle = String(role || fallbackRole).toLowerCase();
+    const userNeedle = String(user || fallbackUser).toLowerCase();
+
+    const openTaskCount = tasks.filter((task) => {
+      const status = String(task.status || "").toLowerCase();
+      if (["erledigt", "storniert"].includes(status)) return false;
+      const owner = String(task.owner || "").toLowerCase();
+      if (!owner) return true;
+      if (roleNeedle === "chef" || roleNeedle === "geschaeftsleitung") return true;
+      return owner.includes(roleNeedle) || (userNeedle && owner.includes(userNeedle));
+    }).length;
+
+    const unreadNoticeCount = notices.filter((item) => {
+      const status = String(item.status || "").toLowerCase();
+      if (["gelesen", "bestaetigt", "erledigt", "archiviert"].includes(status)) return false;
+      const assignee = String(item.assignedTo || "").toLowerCase();
+      if (!assignee) return true;
+      if (roleNeedle === "chef" || roleNeedle === "geschaeftsleitung") return true;
+      return assignee.includes(roleNeedle) || (userNeedle && assignee.includes(userNeedle));
+    }).length;
+
+    const roleNotifications = getNotificationsForRole(role || fallbackRole)
+      .map((item) => {
+        const statusMap = getNotificationStatusMapForRole(role || fallbackRole);
+        const status = String(statusMap[item.id] || item.status || NOTIFICATION_OPEN_STATUS).toLowerCase();
+        return { ...item, status };
+      })
+      .filter((item) => !isClosedNotificationStatus(item.status));
+
+    const unifiedOpenNoticeCount = Math.max(unreadNoticeCount, roleNotifications.length);
+
+    if (taskCount) {
+      taskCount.textContent = String(openTaskCount);
+      taskCount.hidden = openTaskCount === 0;
+    }
+
+    if (noticeCount) {
+      noticeCount.textContent = String(unifiedOpenNoticeCount);
+      noticeCount.hidden = unifiedOpenNoticeCount === 0;
+    }
+  }
+
+  function refreshV20Badges(roleArg, userArg) {
+    const fallbackRole = localStorage.getItem(KEY_ROLE) || "Chef";
+    const fallbackUser = localStorage.getItem(KEY_USER) || "admin";
+    updateSystemEntryBadges(roleArg || fallbackRole, userArg || fallbackUser);
+  }
+
+  window.__adminV20RefreshBadges = refreshV20Badges;
+
+  function renderGlobalSearchResults(state, sources, query, filter) {
+    const container = document.querySelector("[data-v20-global-search-results]");
+    if (!container || !window.AdminSystemCenter) return;
+
+    const rows = window.AdminSystemCenter.search(state, sources, query, { filter }).slice(0, V20_SEARCH_LIMIT);
+    if (!rows.length) {
+      container.innerHTML = '<p class="admin-v20-search-empty">Keine Treffer</p>';
+      return;
+    }
+
+    container.innerHTML = rows
+      .map((item) => {
+        return [
+          `<a class="admin-v20-search-item" href="${item.link || '#'}" data-v20-search-link data-v20-title="${item.title}" data-v20-category="${item.category}">`,
+          '<span class="admin-v20-search-icon" aria-hidden="true">',
+          item.icon || "#",
+          "</span>",
+          '<span class="admin-v20-search-copy">',
+          `<strong>${item.title}</strong>`,
+          `<small>${item.category}${item.status ? ` · ${item.status}` : ""}</small>`,
+          "</span>",
+          "</a>"
+        ].join("");
+      })
+      .join("");
+  }
+
+  function setupGlobalSystemSearch(role, user) {
+    if (!window.AdminSystemCenter) return;
+
+    const topbar = document.querySelector(".admin-topbar");
+    const actions = document.querySelector(".admin-topbar-actions");
+    if (!topbar || !actions || document.querySelector("[data-v20-global-search-wrap]")) return;
+
+    const searchWrap = document.createElement("div");
+    searchWrap.className = "admin-v20-search-wrap";
+    searchWrap.setAttribute("data-v20-global-search-wrap", "");
+    searchWrap.innerHTML = [
+      '<input class="admin-v20-search-input" type="search" data-v20-global-search-input placeholder="Systemweit suchen (Ctrl/Cmd+K)" aria-label="Systemweite Suche">',
+      '<select class="admin-v20-search-filter" data-v20-global-search-filter aria-label="Suchbereich">',
+      '<option value="alle">Alle</option>',
+      '<option value="seiten">Seiten</option>',
+      '<option value="aufgaben">Aufgaben</option>',
+      '<option value="kunden">Kunden</option>',
+      '<option value="fahrten">Fahrten</option>',
+      '<option value="fahrzeuge">Fahrzeuge</option>',
+      '<option value="personal">Personal</option>',
+      '<option value="finanzen">Finanzen</option>',
+      '<option value="qualitaet">Qualitaet</option>',
+      '</select>',
+      '<section class="admin-v20-search-results" data-v20-global-search-results hidden></section>'
+    ].join("");
+
+    topbar.insertBefore(searchWrap, actions);
+
+    const input = searchWrap.querySelector("[data-v20-global-search-input]");
+    const filter = searchWrap.querySelector("[data-v20-global-search-filter]");
+    const panel = searchWrap.querySelector("[data-v20-global-search-results]");
+    const state = window.AdminSystemCenter.loadState();
+    const sources = window.AdminSystemCenter.loadSources();
+
+    const refresh = () => {
+      const query = String(input.value || "").trim();
+      if (!query) {
+        panel.hidden = true;
+        panel.innerHTML = "";
+        return;
+      }
+      renderGlobalSearchResults(state, sources, query, filter.value);
+      panel.hidden = false;
+    };
+
+    input.addEventListener("input", refresh);
+    filter.addEventListener("change", refresh);
+
+    searchWrap.addEventListener("click", (event) => {
+      const link = event.target.closest("[data-v20-search-link]");
+      if (!link) return;
+      const title = link.getAttribute("data-v20-title") || "";
+      const category = link.getAttribute("data-v20-category") || "Allgemein";
+      window.AdminSystemCenter.addRecent(state, { title, category, link: link.getAttribute("href") || "" });
+      window.AdminSystemCenter.addSearchHistory(state, input.value || "");
+    });
+
+    const previousSearchClick = window.__adminV20SearchOutsideHandler;
+    if (previousSearchClick) {
+      document.removeEventListener("pointerdown", previousSearchClick, true);
+    }
+
+    const clickOutside = (event) => {
+      if (!(event.target instanceof Node)) return;
+      if (searchWrap.contains(event.target)) return;
+      panel.hidden = true;
+    };
+    document.addEventListener("pointerdown", clickOutside, true);
+    window.__adminV20SearchOutsideHandler = clickOutside;
+
+    window.__adminV20FocusSearch = () => {
+      input.focus();
+      input.select();
+      refresh();
+    };
+
+    injectSystemEntryButtons(role, user);
+    updateSystemEntryBadges(role, user);
+  }
+
+  function setupCommandPalette(role, user) {
+    if (!window.AdminSystemCenter || document.querySelector("[data-v20-command-palette]")) return;
+
+    const palette = document.createElement("section");
+    palette.className = "admin-v20-palette";
+    palette.setAttribute("data-v20-command-palette", "");
+    palette.hidden = true;
+    palette.innerHTML = [
+      '<div class="admin-v20-palette-backdrop" data-v20-palette-close></div>',
+      '<div class="admin-v20-palette-dialog" role="dialog" aria-modal="true" aria-label="Command Palette">',
+      '<header class="admin-v20-palette-head">',
+      '<input type="search" class="admin-v20-palette-input" data-v20-palette-input placeholder="Befehl oder Datensatz suchen...">',
+      '<div class="admin-v20-palette-hint">Esc schliesst · Enter oeffnet</div>',
+      '</header>',
+      '<div class="admin-v20-palette-list" data-v20-palette-list></div>',
+      '</div>'
+    ].join("");
+    document.body.append(palette);
+
+    const input = palette.querySelector("[data-v20-palette-input]");
+    const list = palette.querySelector("[data-v20-palette-list]");
+
+    function close() {
+      palette.hidden = true;
+      document.body.classList.remove("admin-v20-palette-open");
+    }
+
+    function open(prefill) {
+      palette.hidden = false;
+      document.body.classList.add("admin-v20-palette-open");
+      input.value = prefill || "";
+      input.focus();
+      input.select();
+      render(prefill || "");
+    }
+
+    function buildCommandRows(term) {
+      const state = window.AdminSystemCenter.loadState();
+      const sources = window.AdminSystemCenter.loadSources();
+      const searchRows = window.AdminSystemCenter.search(state, sources, term, { filter: "alle" }).slice(0, 7);
+      const commands = [
+        { title: "Aufgaben-Center oeffnen", category: "Befehl", info: "Neue oder offene Aufgaben steuern", link: "aufgaben-center.html" },
+        { title: "Benachrichtigungs-Center oeffnen", category: "Befehl", info: "Ungelesene Meldungen bearbeiten", link: "benachrichtigungen-center.html" },
+        { title: "Arbeitsplatz oeffnen", category: "Befehl", info: "Persoenliche Ansicht und Favoriten", link: "arbeitsplatz.html" },
+        { title: "Rollen und Rechte oeffnen", category: "Befehl", info: "Rollenmatrix und Rollenvorschau", link: "rollen-rechte.html" },
+        { title: "Globales Suchfeld fokussieren", category: "Befehl", info: "Schnellsuche im Header", action: "focus-search" }
+      ];
+      const commandRows = commands.filter((row) => !term || `${row.title} ${row.info}`.toLowerCase().includes(term.toLowerCase()));
+      return [...commandRows, ...searchRows];
+    }
+
+    function render(term) {
+      const rows = buildCommandRows(term);
+      if (!rows.length) {
+        list.innerHTML = '<p class="admin-v20-search-empty">Keine Ergebnisse</p>';
+        return;
+      }
+      list.innerHTML = rows
+        .map((row, index) => {
+          const href = row.link || "#";
+          const action = row.action ? ` data-v20-palette-action="${row.action}"` : "";
+          const activeClass = index === 0 ? " is-active" : "";
+          return `<a class="admin-v20-palette-item${activeClass}" href="${href}"${action}><strong>${row.title}</strong><small>${row.category}${row.info ? ` · ${row.info}` : ""}</small></a>`;
+        })
+        .join("");
+    }
+
+    palette.addEventListener("click", (event) => {
+      if (event.target.closest("[data-v20-palette-close]")) {
+        close();
+        return;
+      }
+
+      const item = event.target.closest(".admin-v20-palette-item");
+      if (!item) return;
+
+      const action = item.getAttribute("data-v20-palette-action");
+      if (action === "focus-search") {
+        event.preventDefault();
+        close();
+        if (typeof window.__adminV20FocusSearch === "function") {
+          window.__adminV20FocusSearch();
+        }
+      }
+    });
+
+    input.addEventListener("input", () => render(String(input.value || "").trim()));
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        close();
+      }
+    });
+
+    const previousHotkeys = window.__adminV20HotkeysHandler;
+    if (previousHotkeys) {
+      document.removeEventListener("keydown", previousHotkeys, true);
+    }
+
+    const hotkeys = (event) => {
+      const target = event.target;
+      const typing = isTypingField(target instanceof Element ? target : null);
+      const key = String(event.key || "").toLowerCase();
+
+      if ((event.ctrlKey || event.metaKey) && key === V20_SHORTCUT) {
+        event.preventDefault();
+        open(typing ? "" : "");
+        return;
+      }
+
+      if (key === "escape" && !palette.hidden) {
+        event.preventDefault();
+        close();
+        return;
+      }
+
+      if (!typing && key === "/") {
+        event.preventDefault();
+        if (typeof window.__adminV20FocusSearch === "function") {
+          window.__adminV20FocusSearch();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", hotkeys, true);
+    window.__adminV20HotkeysHandler = hotkeys;
+
+    window.__adminV20OpenPalette = open;
+
+    injectSystemEntryButtons(role, user);
+  }
+
+  function initV20Productivity(role, user) {
+    ensureSystemCenterReady().then((system) => {
+      if (!system) return;
+      setupGlobalSystemSearch(role, user);
+      setupCommandPalette(role, user);
+      updateSystemEntryBadges(role, user);
+    });
   }
 
   function readNotificationStateStore() {
@@ -370,6 +1013,26 @@
       if (!raw) return { byRole: {} };
       const parsed = JSON.parse(raw);
       if (!parsed || typeof parsed !== "object") return { byRole: {} };
+
+      if (!parsed.byRoleStatus || typeof parsed.byRoleStatus !== "object") {
+        parsed.byRoleStatus = {};
+      }
+
+      if (parsed.byRole && typeof parsed.byRole === "object") {
+        Object.entries(parsed.byRole).forEach(([role, ids]) => {
+          if (!Array.isArray(ids)) return;
+          if (!parsed.byRoleStatus[role] || typeof parsed.byRoleStatus[role] !== "object") {
+            parsed.byRoleStatus[role] = {};
+          }
+          ids.forEach((id) => {
+            const key = String(id || "").trim();
+            if (!key) return;
+            if (!parsed.byRoleStatus[role][key]) {
+              parsed.byRoleStatus[role][key] = "gelesen";
+            }
+          });
+        });
+      }
 
       if (localStorage.getItem(KEY_DEMO_NOTIFICATIONS_LEGACY) && !localStorage.getItem(KEY_DEMO_NOTIFICATIONS)) {
         writeNotificationStateStore(parsed);
@@ -390,24 +1053,45 @@
     }
   }
 
-  function getReadNotificationIdsForRole(role) {
-    const store = readNotificationStateStore();
-    const byRole = store && typeof store.byRole === "object" ? store.byRole : {};
-    const roleIds = byRole[role];
-    if (!Array.isArray(roleIds)) return new Set();
-    return new Set(roleIds.map((value) => String(value || "").trim()).filter(Boolean));
+  function isClosedNotificationStatus(status) {
+    const normalized = String(status || "").toLowerCase();
+    return ["gelesen", "bestaetigt", "erledigt", "archiviert", "dismissed", "closed", "read", "confirmed", "done", "archived"].includes(normalized);
   }
 
-  function persistReadNotificationIdsForRole(role, notifications) {
+  function mapActionToNotificationStatus(action) {
+    if (action === "archive") return "archiviert";
+    if (action === "confirm") return "bestaetigt";
+    return "gelesen";
+  }
+
+  function getNotificationStatusMapForRole(role) {
     const store = readNotificationStateStore();
+    const byRoleStatus = store && typeof store.byRoleStatus === "object" ? store.byRoleStatus : {};
+    const roleMap = byRoleStatus[role];
+    if (!roleMap || typeof roleMap !== "object") return {};
+    return { ...roleMap };
+  }
+
+  function persistNotificationStatusMapForRole(role, notifications) {
+    const store = readNotificationStateStore();
+    if (!store.byRoleStatus || typeof store.byRoleStatus !== "object") {
+      store.byRoleStatus = {};
+    }
+
+    const statusMap = {};
+    notifications.forEach((item) => {
+      if (!item || !item.id) return;
+      const status = String(item.status || NOTIFICATION_OPEN_STATUS).toLowerCase();
+      if (status === NOTIFICATION_OPEN_STATUS) return;
+      statusMap[String(item.id)] = status;
+    });
+
+    store.byRoleStatus[role] = statusMap;
     if (!store.byRole || typeof store.byRole !== "object") {
       store.byRole = {};
     }
 
-    store.byRole[role] = notifications
-      .filter((item) => item.read)
-      .map((item) => String(item.id || "").trim())
-      .filter(Boolean);
+    store.byRole[role] = Object.keys(statusMap).filter((id) => statusMap[id] === "gelesen");
 
     store.updatedAt = new Date().toISOString();
     writeNotificationStateStore(store);
@@ -458,9 +1142,11 @@
     if (!list) return;
 
     const topOpen = notifications
-      .filter((item) => !item.read)
+      .filter((item) => !isClosedNotificationStatus(item.status))
       .sort((a, b) => scoreType(b.type) - scoreType(a.type))
       .slice(0, DEMO_NOTIFICATION_LIMIT);
+
+    panel.hidden = topOpen.length === 0;
 
     if (!topOpen.length) {
       list.innerHTML = '<p class="admin-hints-empty">Keine offenen Hinweise.</p>';
@@ -477,6 +1163,11 @@
           `<span>${item.time}</span>`,
           `<span class="admin-hint-category">${item.category}</span>`,
           "</div>",
+          '<div class="admin-notification-actions">',
+          `<button class="admin-btn admin-btn-secondary admin-notification-read-btn" type="button" data-admin-hint-action="close" data-admin-hint-id="${item.id}">Schliessen</button>`,
+          `<button class="admin-btn admin-btn-secondary" type="button" data-admin-hint-action="confirm" data-admin-hint-id="${item.id}">Bestaetigen</button>`,
+          `<button class="admin-btn admin-btn-secondary" type="button" data-admin-hint-action="archive" data-admin-hint-id="${item.id}">Archivieren</button>`,
+          "</div>",
           "</article>"
         ].join("");
       })
@@ -485,8 +1176,23 @@
 
   function setupNotificationCenter(role) {
     const topbar = document.querySelector(".admin-topbar");
-    const actions = document.querySelector(".admin-topbar-actions");
-    if (!topbar || !actions) return;
+    if (!topbar) return;
+
+    let actions = document.querySelector(".admin-topbar-actions");
+    if (!actions) {
+      actions = document.createElement("div");
+      actions.className = "admin-topbar-actions";
+      topbar.append(actions);
+    }
+
+    if (!actions.querySelector("button[aria-label='Benachrichtigungen']")) {
+      const bell = document.createElement("button");
+      bell.className = "admin-icon-btn";
+      bell.type = "button";
+      bell.setAttribute("aria-label", "Benachrichtigungen");
+      bell.innerHTML = '<span>🔔</span><b></b>';
+      actions.append(bell);
+    }
 
     const bellButton = actions.querySelector('button[aria-label="Benachrichtigungen"]');
     if (!bellButton) return;
@@ -505,15 +1211,17 @@
     })();
 
     const notifications = getNotificationsForRole(role);
-    const readIds = getReadNotificationIdsForRole(role);
+    const statusMap = getNotificationStatusMapForRole(role);
     notifications.forEach((item) => {
-      item.read = readIds.has(item.id);
+      item.status = String(statusMap[item.id] || item.status || NOTIFICATION_OPEN_STATUS).toLowerCase();
+      item.read = isClosedNotificationStatus(item.status);
     });
 
     const state = {
       role,
       notifications,
-      openCount: 0
+      openCount: 0,
+      autoHideTimers: {}
     };
 
     let panel = topbar.querySelector("[data-admin-notification-panel]");
@@ -547,12 +1255,12 @@
     const main = document.querySelector(".admin-main");
 
     function renderNotificationCenter() {
-      state.openCount = state.notifications.filter((item) => !item.read).length;
+      const openNotifications = state.notifications.filter((item) => !isClosedNotificationStatus(item.status));
+      state.openCount = openNotifications.length;
       const hasNotifications = state.notifications.length > 0;
 
       badge.textContent = state.openCount > 0 ? String(state.openCount) : "";
       badge.hidden = state.openCount === 0;
-      badge.style.display = state.openCount === 0 ? "none" : "grid";
       badge.setAttribute("aria-hidden", state.openCount === 0 ? "true" : "false");
 
       if (countNode) {
@@ -577,7 +1285,7 @@
         if (!hasNotifications) {
           listNode.innerHTML = "";
         } else {
-          listNode.innerHTML = state.notifications
+          listNode.innerHTML = openNotifications
             .map((item) => {
               const readClass = item.read ? "is-read" : "";
               return [
@@ -596,9 +1304,9 @@
                 `<span class="admin-notification-read-state">${item.read ? "✓ Gelesen" : "Ungelesen"}</span>`,
                 "</div>",
                 '<div class="admin-notification-actions">',
-                item.read
-                  ? '<span class="admin-notification-read-chip">✓ Gelesen</span>'
-                  : `<button class="admin-btn admin-btn-secondary admin-notification-read-btn" type="button" data-admin-notification-action="read" data-admin-notification-id="${item.id}">Als gelesen markieren</button>`,
+                `<button class="admin-btn admin-btn-secondary admin-notification-read-btn" type="button" data-admin-notification-action="close" data-admin-notification-id="${item.id}">Schliessen</button>`,
+                `<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-action="confirm" data-admin-notification-id="${item.id}">Bestaetigen</button>`,
+                `<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-action="archive" data-admin-notification-id="${item.id}">Archivieren</button>`,
                 `<button class="admin-btn admin-btn-secondary admin-notification-detail-btn" type="button" data-admin-notification-action="details" data-admin-notification-id="${item.id}">Details Demo</button>`,
                 "</div>",
                 "</article>"
@@ -608,9 +1316,46 @@
         }
       }
 
-      persistReadNotificationIdsForRole(state.role, state.notifications);
+      persistNotificationStatusMapForRole(state.role, state.notifications);
+
+      if (typeof window.__adminV20RefreshBadges === "function") {
+        window.__adminV20RefreshBadges(role, localStorage.getItem(KEY_USER) || "admin");
+      }
 
       renderDashboardHints(main, state.notifications);
+
+      Object.keys(state.autoHideTimers).forEach((id) => {
+        const isStillOpen = openNotifications.some((entry) => entry.id === id);
+        if (isStillOpen) return;
+        clearTimeout(state.autoHideTimers[id]);
+        delete state.autoHideTimers[id];
+      });
+
+      openNotifications.forEach((item) => {
+        if (typeClassName(item.type) === "is-critical") return;
+        if (state.autoHideTimers[item.id]) return;
+        state.autoHideTimers[item.id] = window.setTimeout(() => {
+          const target = state.notifications.find((entry) => entry.id === item.id);
+          if (!target || isClosedNotificationStatus(target.status)) return;
+          target.status = "gelesen";
+          target.read = true;
+          if (target.sourceType === "system" && window.AdminSystemCenter) {
+            const systemState = window.AdminSystemCenter.loadState();
+            window.AdminSystemCenter.updateNotification(systemState, target.id, { status: "gelesen" }, "System");
+          }
+          renderNotificationCenter();
+        }, NOTIFICATION_AUTO_HIDE_MS);
+      });
+    }
+
+    function updateNotificationLifecycle(item, action) {
+      const nextStatus = mapActionToNotificationStatus(action);
+      item.status = nextStatus;
+      item.read = isClosedNotificationStatus(nextStatus);
+      if (item.sourceType === "system" && window.AdminSystemCenter) {
+        const systemState = window.AdminSystemCenter.loadState();
+        window.AdminSystemCenter.updateNotification(systemState, item.id, { status: nextStatus }, localStorage.getItem(KEY_USER) || "System");
+      }
     }
 
     function isNotificationPanelOpen() {
@@ -650,8 +1395,19 @@
       const readAll = event.target.closest("[data-admin-notification-read-all]");
       if (readAll) {
         state.notifications.forEach((item) => {
-          item.read = true;
+          updateNotificationLifecycle(item, "close");
         });
+        renderNotificationCenter();
+        return;
+      }
+
+      const hintAction = event.target.closest("[data-admin-hint-action]");
+      if (hintAction) {
+        const id = hintAction.getAttribute("data-admin-hint-id");
+        const action = hintAction.getAttribute("data-admin-hint-action") || "close";
+        const item = state.notifications.find((entry) => entry.id === id);
+        if (!item) return;
+        updateNotificationLifecycle(item, action);
         renderNotificationCenter();
         return;
       }
@@ -664,21 +1420,41 @@
       const item = state.notifications.find((entry) => entry.id === id);
       if (!item) return;
 
-      if (action === "read") {
-        if (item.read) return;
-        item.read = true;
+      if (action === "read" || action === "close" || action === "confirm" || action === "archive") {
+        if (isClosedNotificationStatus(item.status)) return;
+        updateNotificationLifecycle(item, action);
         renderNotificationCenter();
         return;
       }
 
       if (action === "details") {
-        item.read = true;
+        updateNotificationLifecycle(item, "close");
         window.alert(`Demo-Details: ${item.title}\n${item.text}`);
         renderNotificationCenter();
       }
     };
 
     panel.addEventListener("click", panelClickHandler);
+
+    const previousHintHandler = window.__adminHintActionHandler;
+    if (previousHintHandler) {
+      document.removeEventListener("click", previousHintHandler, true);
+    }
+
+    const hintHandler = (event) => {
+      const actionBtn = event.target.closest("[data-admin-hint-action]");
+      if (!actionBtn) return;
+      event.preventDefault();
+      const id = actionBtn.getAttribute("data-admin-hint-id");
+      const action = actionBtn.getAttribute("data-admin-hint-action") || "close";
+      const item = state.notifications.find((entry) => entry.id === id);
+      if (!item) return;
+      updateNotificationLifecycle(item, action);
+      renderNotificationCenter();
+    };
+
+    document.addEventListener("click", hintHandler, true);
+    window.__adminHintActionHandler = hintHandler;
 
     const previousGlobalHandlers = window.__adminNotificationGlobalHandlers;
     if (previousGlobalHandlers) {
@@ -788,8 +1564,11 @@
     if (protectionState.role) {
       renderUnifiedSidebar(protectionState.role);
       renderRoleIndicator(protectionState.role);
-      setupNotificationCenter(protectionState.role);
       setupMobileNavigation();
+      ensureSystemCenterReady().finally(() => {
+        setupNotificationCenter(protectionState.role);
+        initV20Productivity(protectionState.role, protectionState.user);
+      });
     }
     renderPermissionNotice();
   });

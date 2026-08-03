@@ -1,6 +1,7 @@
 (() => {
   const referenceDate = new Date("2026-07-09T00:00:00");
   const mercedesVKlasseImagePath = "images/mercedes-v-klasse.jpg";
+  const QUALITY_STORAGE_KEY = "adminV18QualityState";
 
   // Spater kann hier ein API-Array direkt gemappt werden.
   const vehicleSource = [
@@ -201,6 +202,55 @@
   }
 
   const vehicles = vehicleSource.map(normalizeVehicle);
+
+  function normalizePlate(value) {
+    return normalizeText(String(value || "").replace(/\s+/g, ""));
+  }
+
+  function loadQualityState() {
+    try {
+      const raw = localStorage.getItem(QUALITY_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function applyQualityOverlays() {
+    const quality = loadQualityState();
+    if (!quality) return;
+
+    const blockedPlates = new Set();
+    const criticalIssuePlates = new Set();
+
+    (Array.isArray(quality.accidents) ? quality.accidents : []).forEach((row) => {
+      const p = normalizePlate(row.vehicle || row.plate || "");
+      if (!p) return;
+      if (!["abgeschlossen", "archiviert"].includes(normalizeText(row.status))) blockedPlates.add(p);
+    });
+
+    (Array.isArray(quality.incidents) ? quality.incidents : []).forEach((row) => {
+      const p = normalizePlate(row.vehicle || row.plate || "");
+      if (!p) return;
+      const cat = normalizeText(row.category || "");
+      const isVehicleIssue = cat.includes("fahrzeug") || cat.includes("technik") || cat.includes("defekt") || normalizeText(row.description || "").includes("fahrzeug");
+      if (isVehicleIssue && !["abgeschlossen", "archiviert"].includes(normalizeText(row.status))) criticalIssuePlates.add(p);
+    });
+
+    vehicles.forEach((vehicle) => {
+      const plate = normalizePlate(vehicle.plate);
+      if (blockedPlates.has(plate)) {
+        vehicle.status = "Gesperrt";
+        vehicle.hint = vehicle.hint ? `${vehicle.hint} · V18 Unfallpruefung offen` : "V18 Unfallpruefung offen";
+      }
+      if (criticalIssuePlates.has(plate)) {
+        vehicle.tireStatus = "Pruefung offen";
+        vehicle.hint = vehicle.hint ? `${vehicle.hint} · V18 Sicherheitsmangel` : "V18 Sicherheitsmangel";
+      }
+    });
+  }
 
   function normalizeText(value) {
     return String(value || "")
@@ -705,6 +755,7 @@
     });
   }
 
+  applyQualityOverlays();
   renderStats();
   syncFilterUi();
   bindFilters();

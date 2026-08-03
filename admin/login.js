@@ -7,9 +7,17 @@
 
   const DEMO_USERS = {
     admin: { password: "Taxi2026!", role: "Chef" },
+    enes: { password: "Enes2026!", role: "Chef" },
+    fatih: { password: "Fatih2026!", role: "Chef" },
+    geschaeft: { password: "Leitung2026!", role: "Geschaeftsleitung" },
     dispo: { password: "Dispo2026!", role: "Disposition" },
+    disponent: { password: "Dispo2026!", role: "Disposition" },
     billing: { password: "Rechnung2026!", role: "Buchhaltung" },
-    fahrer: { password: "Fahrer2026!", role: "Fahrer" }
+    abrechnung: { password: "Rechnung2026!", role: "Buchhaltung" },
+    fahrer: { password: "Fahrer2026!", role: "Fahrer" },
+    personal: { password: "Personal2026!", role: "Personalverwaltung" },
+    qualitaet: { password: "Quali2026!", role: "Qualitaetsmanagement" },
+    mitarbeiter: { password: "Mitarbeiter2026!", role: "Mitarbeiter" }
   };
 
   function readSession() {
@@ -51,7 +59,11 @@
     );
   }
 
-  function redirectToAdmin() {
+  function redirectToAdmin(role) {
+    if (role === "Geschaeftsleitung") {
+      window.location.replace("geschaeftsfuehrer-dashboard.html");
+      return;
+    }
     window.location.replace("index.html");
   }
 
@@ -74,12 +86,12 @@
 
       setError("");
       createDemoSession(username, user.role);
-      redirectToAdmin();
+      redirectToAdmin(user.role);
     });
   }
 
   if (isValidSession(readSession())) {
-    redirectToAdmin();
+    redirectToAdmin((readSession() || {}).role || "");
   } else {
     bindLogin();
   }

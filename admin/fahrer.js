@@ -501,11 +501,178 @@
     });
   }
 
+  function readV15State() {
+    try {
+      const raw = localStorage.getItem("adminV15DriverOps");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.drivers)) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+
+  function mapV15StatusText(statusKey) {
+    const map = {
+      off: "nicht im Dienst",
+      ready: "einsatzbereit",
+      offer: "Auftrag erhalten",
+      toCustomer: "auf dem Weg zum Kunden",
+      atCustomer: "beim Kunden",
+      boarded: "Fahrgast eingestiegen",
+      running: "Fahrt läuft",
+      pause: "Pause",
+      unavailable: "nicht verfügbar",
+      finished: "Schicht beendet"
+    };
+    return map[statusKey] || "unbekannt";
+  }
+
+  function calcV15ShiftDuration(driver) {
+    if (!driver.shiftStart) return "00:00";
+    const start = new Date(driver.shiftStart).getTime();
+    const end = driver.shiftEnd ? new Date(driver.shiftEnd).getTime() : Date.now();
+    const min = Math.max(0, Math.floor((end - start) / 60000));
+    const hh = String(Math.floor(min / 60)).padStart(2, "0");
+    const mm = String(min % 60).padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+
+  function renderV15DriverLive() {
+    const wrap = document.querySelector("[data-driver-live-grid]");
+    if (!wrap) return;
+
+    const v15 = readV15State();
+    if (!v15 || !Array.isArray(v15.drivers) || !v15.drivers.length) {
+      wrap.innerHTML = '<article class="driver-live-empty">Noch keine Live-Daten aus dem Fahrer-Portal vorhanden.</article>';
+      return;
+    }
+
+    const orders = Array.isArray(v15.orders) ? v15.orders : [];
+    const checks = Array.isArray(v15.vehicleChecks) ? v15.vehicleChecks : [];
+
+    wrap.innerHTML = v15.drivers.map((driver) => {
+      const currentOrder = orders.find((item) => item.driverId === driver.id && item.accepted && !item.declined && item.statusText !== "Auftrag abschließen" && item.statusText !== "Fehlfahrt");
+      const nextOrder = orders.find((item) => item.driverId === driver.id && !item.accepted && !item.declined);
+      const warnings = Array.isArray(driver.warnings) ? driver.warnings : [];
+      const lastCheck = checks.find((item) => item.driverId === driver.id);
+
+      return `
+        <article class="driver-live-card">
+          <h3>${driver.name}</h3>
+          <p>Status: ${mapV15StatusText(driver.statusKey)}</p>
+          <p>Aktuelles Fahrzeug: ${driver.currentVehicleId || "-"}</p>
+          <p>Aktuelle Fahrt: ${currentOrder ? currentOrder.id : "-"}</p>
+          <p>Nächster Auftrag: ${nextOrder ? nextOrder.id : "-"}</p>
+          <p>Schichtdauer: ${calcV15ShiftDuration(driver)} h · Pause: ${driver.breakTotalMin || 0} Min</p>
+          <p>Letzte Statusmeldung: ${driver.lastStatusAt ? new Date(driver.lastStatusAt).toLocaleString("de-DE") : "-"}</p>
+          <p>Demo-Standort: ${currentOrder ? currentOrder.customer.pickup : "Germersheim Zentrum"}</p>
+          <p>Letzter Fahrzeugcheck: ${lastCheck ? `${new Date(lastCheck.at).toLocaleString("de-DE")} · ${lastCheck.overall}` : "-"}</p>
+          <div class="driver-live-tags">
+            ${(warnings.length ? warnings : ["keine offene Warnung"]).map((entry) => `<span class="driver-live-tag">${entry}</span>`).join("")}
+          </div>
+          ${warnings.length ? `<p class="driver-live-warning">Warnungen offen: ${warnings.join(", ")}</p>` : ""}
+          <div class="driver-live-actions">
+            <button class="admin-btn admin-btn-secondary" type="button" data-driver-v15-action="contact" data-driver-v15-id="${driver.id}">Fahrer kontaktieren</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-driver-v15-action="assign" data-driver-v15-id="${driver.id}">Auftrag zuweisen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-driver-v15-action="pauseRequest" data-driver-v15-id="${driver.id}">Pause beenden anfragen</button>
+            <button class="admin-btn admin-btn-warning" type="button" data-driver-v15-action="lock" data-driver-v15-id="${driver.id}">Fahrer sperren</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-driver-v15-action="unlock" data-driver-v15-id="${driver.id}">Fahrer freigeben</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-driver-v15-action="shift" data-driver-v15-id="${driver.id}">Schichtdetails öffnen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-driver-v15-action="check" data-driver-v15-id="${driver.id}">Fahrzeugcheck öffnen</button>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function bindV15DriverActions() {
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-driver-v15-action]");
+      if (!button) return;
+
+      const action = button.getAttribute("data-driver-v15-action") || "";
+      const id = button.getAttribute("data-driver-v15-id") || "";
+      const v15 = readV15State();
+      if (!v15 || !Array.isArray(v15.drivers)) return;
+      const driver = v15.drivers.find((item) => item.id === id);
+      if (!driver) return;
+
+      if (action === "contact") {
+        openModal(`Kontakt: ${driver.name}`, `<p class="driver-modal-note">Demo: Kontaktaufnahme an ${driver.name} wurde ausgelöst.</p>`);
+        return;
+      }
+
+      if (action === "assign") {
+        openModal(`Auftrag zuweisen: ${driver.name}`, `<p class="driver-modal-note">Demo: Auftrag wird in der Live-Dispo zugewiesen. Diese Aktion erzeugt keinen direkten Backend-Call.</p>`);
+        return;
+      }
+
+      if (action === "pauseRequest") {
+        openModal(`Pause anfragen: ${driver.name}`, `<p class="driver-modal-note">Demo: Anfrage an Fahrer gesendet, Pause zu beenden.</p>`);
+        return;
+      }
+
+      if (action === "lock") {
+        driver.statusKey = "unavailable";
+        driver.lastStatusAt = new Date().toISOString();
+        localStorage.setItem("adminV15DriverOps", JSON.stringify(v15));
+        renderV15DriverLive();
+        return;
+      }
+
+      if (action === "unlock") {
+        if (driver.statusKey === "unavailable") {
+          driver.statusKey = "ready";
+          driver.lastStatusAt = new Date().toISOString();
+          localStorage.setItem("adminV15DriverOps", JSON.stringify(v15));
+          renderV15DriverLive();
+        }
+        return;
+      }
+
+      if (action === "shift") {
+        openModal(
+          `Schichtdetails: ${driver.name}`,
+          `
+            <dl class="driver-modal-list">
+              <div><dt>Fahrer</dt><dd>${driver.name}</dd></div>
+              <div><dt>Fahrzeug</dt><dd>${driver.currentVehicleId || "-"}</dd></div>
+              <div><dt>Schichtbeginn</dt><dd>${driver.shiftStart ? new Date(driver.shiftStart).toLocaleString("de-DE") : "-"}</dd></div>
+              <div><dt>Schichtende</dt><dd>${driver.shiftEnd ? new Date(driver.shiftEnd).toLocaleString("de-DE") : "-"}</dd></div>
+              <div><dt>Arbeitszeit</dt><dd>${calcV15ShiftDuration(driver)} h</dd></div>
+              <div><dt>Pausen</dt><dd>${driver.breakTotalMin || 0} Min</dd></div>
+              <div><dt>Aufträge</dt><dd>${driver.ridesDone || 0}</dd></div>
+              <div><dt>Kilometer</dt><dd>${driver.kmToday || 0} km</dd></div>
+              <div><dt>Status</dt><dd>${mapV15StatusText(driver.statusKey)}</dd></div>
+            </dl>
+            <p class="driver-modal-note">Weitere V15-Details (Zahlungen, Tankungen, Schäden, Übergabe) sind in den V15-Adminseiten verfügbar.</p>
+          `
+        );
+        return;
+      }
+
+      if (action === "check") {
+        const checks = Array.isArray(v15.vehicleChecks) ? v15.vehicleChecks.filter((entry) => entry.driverId === driver.id) : [];
+        const latest = checks[0];
+        openModal(
+          `Fahrzeugcheck: ${driver.name}`,
+          latest
+            ? `<p class="driver-modal-note">Letzter Check: ${new Date(latest.at).toLocaleString("de-DE")} · Ergebnis: ${latest.overall}</p>`
+            : "<p class=\"driver-modal-note\">Noch kein Fahrzeugcheck vorhanden.</p>"
+        );
+      }
+    });
+  }
+
   bindSearch();
   bindFilters();
   bindCardActions();
+  bindV15DriverActions();
   bindModalClose();
   bindDisabledNavItems();
   renderDriverStats();
   renderDrivers();
+  renderV15DriverLive();
 })();

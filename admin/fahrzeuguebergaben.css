@@ -1,0 +1,15 @@
+.handover-overview-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 8px; }
+.handover-overview-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: rgba(255,255,255,0.03); display: grid; gap: 4px; }
+.handover-overview-card small { color: var(--muted); font-size: 11px; }
+.handover-overview-card strong { color: var(--gold); font-size: 19px; }
+.handover-table td { vertical-align: top; }
+.handover-state { min-height: 24px; border-radius: 999px; border: 1px solid var(--line); padding: 0 8px; display: inline-flex; align-items: center; font-size: 11px; }
+.handover-state.ok { border-color: rgba(139,226,173,0.45); color: var(--status-green); background: rgba(139,226,173,0.12); }
+.handover-state.warn { border-color: rgba(255,179,124,0.45); color: var(--status-orange); background: rgba(255,179,124,0.12); }
+.handover-state.crit { border-color: rgba(255,145,145,0.5); color: #ffd0d0; background: rgba(255,145,145,0.14); }
+@media (max-width: 1200px) {
+  .handover-overview-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+}
+@media (max-width: 820px) {
+  .handover-overview-grid { grid-template-columns: 1fr; }
+}

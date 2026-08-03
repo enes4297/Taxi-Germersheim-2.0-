@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Abrechnungszentrale</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <script src="finanzen-shared.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="finanzen.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div><strong>Dispatcher</strong><small>Interner Bereich</small></div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item is-active" href="abrechnungszentrale.html" aria-current="page">Abrechnungszentrale</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Abrechnungszentrale</h1>
+          <p>Zentraler Arbeitsplatz fuer offene und zu pruefende Fahrtabrechnungen (Demo)</p>
+        </div>
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-user" type="button" aria-label="Benutzer"><span>Abrechnung</span><strong>Enes</strong></button>
+        </div>
+      </header>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Kennzahlen</h2></div>
+        <div class="finance-stats" data-billing-stats></div>
+      </section>
+
+      <section class="admin-panel finance-toolbar">
+        <div class="admin-panel-head">
+          <h2>Filter und Sortierung</h2>
+          <div class="finance-compact-actions">
+            <button class="admin-btn admin-btn-secondary" type="button" data-fin-reset-filter>Filter zuruecksetzen</button>
+            <button class="admin-btn admin-btn-danger" type="button" data-fin-reset-demo>Finanz-Demo zuruecksetzen</button>
+          </div>
+        </div>
+        <div class="finance-filter-grid">
+          <label><span>Zeitraum</span><select class="export-select" data-fin-filter="range"><option>alle</option><option>heute</option><option>diese Woche</option><option>dieser Monat</option></select></label>
+          <label><span>Fahrtart</span><input class="driver-search-input" data-fin-filter="rideType" placeholder="z. B. Krankenfahrt"></label>
+          <label><span>Kunde</span><input class="driver-search-input" data-fin-filter="customer" placeholder="Name"></label>
+          <label><span>Fahrer</span><input class="driver-search-input" data-fin-filter="driver" placeholder="ID oder Name"></label>
+          <label><span>Fahrzeug</span><input class="driver-search-input" data-fin-filter="vehicle" placeholder="Kennung"></label>
+          <label><span>Zahlungsart</span><select class="export-select" data-fin-filter="paymentType"><option>alle</option><option>Bar</option><option>Karte</option><option>Rechnung</option><option>Krankenkasse</option><option>Firmenkonto</option></select></label>
+          <label><span>Abrechnungsart</span><select class="export-select" data-fin-filter="billingType"><option>alle</option><option>Direktzahlung</option><option>Sammelrechnung</option><option>Krankenkasse</option></select></label>
+          <label><span>Krankenkasse</span><input class="driver-search-input" data-fin-filter="insurer" placeholder="AOK, TK ..."></label>
+          <label><span>Firmenkunde</span><input class="driver-search-input" data-fin-filter="company" placeholder="Firma"></label>
+          <label><span>Pruefstatus</span><select class="export-select" data-fin-filter="checkStatus"><option>alle</option><option>noch nicht geprueft</option><option>vollstaendig</option><option>Korrektur erforderlich</option></select></label>
+          <label><span>Dokument fehlt</span><select class="export-select" data-fin-filter="docMissing"><option>alle</option><option>ja</option></select></label>
+          <label><span>Rechnung offen</span><select class="export-select" data-fin-filter="invoiceOpen"><option>alle</option><option>ja</option></select></label>
+          <label><span>Differenz vorhanden</span><select class="export-select" data-fin-filter="hasDiff"><option>alle</option><option>ja</option></select></label>
+          <label><span>Sortierung</span><select class="export-select" data-fin-filter="sort"><option>neueste zuerst</option><option>aelteste zuerst</option><option>hoechster Betrag</option><option>niedrigster Betrag</option><option>kritischste Faelle</option><option>fehlende Unterlagen</option></select></label>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Abrechnungsliste</h2></div>
+        <div class="finance-table-wrap">
+          <table class="admin-table finance-table">
+            <thead>
+              <tr>
+                <th>Auftrag</th><th>Fahrt-ID</th><th>Datum</th><th>Uhrzeit</th><th>Kunde</th><th>Kundentyp</th><th>Abholort</th><th>Ziel</th><th>Fahrtart</th><th>Fahrer</th><th>Fahrzeug</th><th>Taxameter</th><th>Festpreis</th><th>Zahlungsart</th><th>Abrechnung</th><th>Beleg</th><th>Genehmigung</th><th>Transportschein</th><th>Rechnung</th><th>Pruefstatus</th><th>Differenz</th><th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody data-billing-table></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="admin-modal" data-billing-center-modal hidden>
+        <div class="admin-modal-backdrop" data-billing-center-close></div>
+        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="billing-center-title">
+          <header class="admin-modal-head">
+            <h3 id="billing-center-title" data-billing-center-title>Fahrtabrechnung</h3>
+            <button class="admin-icon-btn" type="button" data-billing-center-close aria-label="Schliessen">✕</button>
+          </header>
+          <div class="admin-modal-body" data-billing-center-body></div>
+          <footer class="admin-modal-foot" data-billing-center-foot>
+            <button class="admin-btn admin-btn-secondary" type="button" data-billing-center-close>Schliessen</button>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="abrechnungszentrale.js"></script>
+</body>
+</html>

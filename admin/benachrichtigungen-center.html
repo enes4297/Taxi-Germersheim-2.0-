@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Benachrichtigungs-Center</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <script src="systemcenter-shared.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="management.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div><strong>Dispatcher</strong><small>Interner Bereich</small></div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item is-active" href="benachrichtigungen-center.html">Benachrichtigungs-Center</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main m-compact" data-notice-main>
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Benachrichtigungs-Center</h1>
+          <p>Systemweit gruppiert, priorisiert und bearbeitbar</p>
+        </div>
+        <div class="admin-topbar-actions m-actions">
+          <button class="admin-btn admin-btn-secondary" type="button" data-notice-read-all>Alle als gelesen</button>
+          <button class="admin-btn" type="button" data-notice-open-create>Neue Meldung</button>
+        </div>
+      </header>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Status</h2></div>
+        <div class="m-grid" data-notice-kpis></div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Filter</h2></div>
+        <form class="m-form m-form-grid" data-notice-filter-form>
+          <label class="m-field"><span>Suche</span><input name="q" type="search" placeholder="Titel, Nachricht, Quelle"></label>
+          <label class="m-field"><span>Status</span><select name="status"><option value="alle">Alle</option></select></label>
+          <label class="m-field"><span>Prioritaet</span><select name="priority"><option value="alle">Alle</option></select></label>
+          <label class="m-field"><span>Kategorie</span><select name="category"><option value="alle">Alle</option></select></label>
+          <label class="m-field"><span>Nur offene</span><select name="openOnly"><option value="ja">Ja</option><option value="nein">Nein</option></select></label>
+        </form>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Meldungen</h2><small>Gruppiert nach Anlass</small></div>
+        <div class="m-list" data-notice-list></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="admin-modal" data-notice-modal hidden>
+    <div class="admin-modal-backdrop" data-notice-close-modal></div>
+    <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="notice-modal-title">
+      <header class="admin-modal-head">
+        <h3 id="notice-modal-title">Neue Meldung erstellen</h3>
+        <button class="admin-icon-btn" type="button" aria-label="Schliessen" data-notice-close-modal>✕</button>
+      </header>
+      <form class="admin-modal-body m-form" data-notice-create-form>
+        <label class="m-field"><span>Titel</span><input name="title" required></label>
+        <label class="m-field"><span>Text</span><textarea name="message" rows="3" required></textarea></label>
+        <label class="m-field"><span>Kategorie</span><input name="category" placeholder="Betrieb, Finanzen..."></label>
+        <label class="m-field"><span>Prioritaet</span><select name="priority"></select></label>
+        <label class="m-field"><span>Status</span><select name="status"></select></label>
+        <label class="m-field"><span>Zugewiesen an</span><input name="assignedTo" placeholder="Disposition"></label>
+        <label class="m-field"><span>Link</span><input name="link" placeholder="aufgaben-center.html"></label>
+      </form>
+      <footer class="admin-modal-foot">
+        <button class="admin-btn admin-btn-secondary" type="button" data-notice-close-modal>Abbrechen</button>
+        <button class="admin-btn" type="button" data-notice-submit>Meldung speichern</button>
+      </footer>
+    </section>
+  </div>
+
+  <script src="benachrichtigungen-center.js"></script>
+</body>
+</html>

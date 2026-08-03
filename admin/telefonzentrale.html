@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Telefonzentrale</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="telefonzentrale.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item" href="index.html#dashboard">Dashboard</a>
+        <a class="admin-nav-item" href="index.html">Fahrten</a>
+        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
+        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
+        <a class="admin-nav-item" href="live-karte.html">Live-Karte</a>
+        <a class="admin-nav-item" href="live-dispo.html">Live-Dispo</a>
+        <a class="admin-nav-item is-active" href="telefonzentrale.html" aria-current="page">Telefonzentrale</a>
+        <a class="admin-nav-item" href="kunden.html">Kunden</a>
+        <a class="admin-nav-item" href="serienfahrten.html">Serienfahrten</a>
+        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main call-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Telefonzentrale</h1>
+          <p>Schnelle Fahrtannahme, Kundeninfos, Rückrufe und Aufgaben - nur Demo ohne Telefonanlage</p>
+        </div>
+        <div class="admin-topbar-actions">
+          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+          <button class="admin-icon-btn" type="button" aria-label="Hinweise">
+            <span>📞</span>
+            <b data-call-open-count>0</b>
+          </button>
+          <button class="admin-user" type="button" aria-label="Benutzer">
+            <span>Disposition</span>
+            <strong>Enes</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="admin-panel call-now-panel" aria-label="Aktueller Anruf">
+        <div class="admin-panel-head">
+          <h2>Aktueller Anruf</h2>
+          <span class="status-pill call-status-pill" data-call-status-pill>Klingelt</span>
+        </div>
+        <div class="call-now-grid">
+          <article class="call-now-card">
+            <small>Eingehender Anruf</small>
+            <strong data-call-number>+49 172 901 2288</strong>
+            <p data-call-detected-customer>Unbekannter Anrufer</p>
+            <p data-call-customer-type>Kundentyp: -</p>
+            <p>Anrufdauer: <b data-call-duration>00:00</b></p>
+          </article>
+          <article class="call-now-card call-actions-card">
+            <small>Statussteuerung</small>
+            <div class="call-action-grid">
+              <button class="admin-btn" type="button" title="Anruf annehmen" data-call-action="accept">Annehmen</button>
+              <button class="admin-btn admin-btn-secondary" type="button" title="Anruf halten" data-call-action="hold">Halten</button>
+              <button class="admin-btn admin-btn-secondary" type="button" title="Gespräch fortsetzen" data-call-action="resume">Fortsetzen</button>
+              <button class="admin-btn admin-btn-danger" type="button" title="Anruf beenden" data-call-action="end">Beenden</button>
+              <button class="admin-btn admin-btn-warning" type="button" title="Rückruf eintragen" data-call-action="callback">Rückruf eintragen</button>
+              <button class="admin-btn admin-btn-secondary" type="button" title="Neuen Kunden aus Anruf anlegen" data-call-action="newCustomer">Neuen Kunden anlegen</button>
+            </div>
+          </article>
+          <article class="call-now-card">
+            <small>Letzte Anrufer</small>
+            <div class="call-last-list" data-call-last-list></div>
+          </article>
+        </div>
+        <p class="call-feedback" data-call-feedback>Bereit für eingehende Demo-Anrufe.</p>
+      </section>
+
+      <nav class="call-mobile-tabs" aria-label="Telefonzentrale Mobilnavigation">
+        <button class="call-mobile-tab is-active" type="button" data-call-mobile-tab="anruf">Anruf</button>
+        <button class="call-mobile-tab" type="button" data-call-mobile-tab="kunde">Kunde</button>
+        <button class="call-mobile-tab" type="button" data-call-mobile-tab="fahrt">Fahrt</button>
+        <button class="call-mobile-tab" type="button" data-call-mobile-tab="verlauf">Verlauf</button>
+        <button class="call-mobile-tab" type="button" data-call-mobile-tab="aufgaben">Aufgaben</button>
+      </nav>
+
+      <section class="call-layout" aria-label="Telefonarbeitsplatz">
+        <article class="admin-panel call-col-left" data-call-pane="anruf">
+          <div class="admin-panel-head">
+            <h2>Kundensuche</h2>
+            <span class="call-mini">Live-Suche während Eingabe</span>
+          </div>
+          <label class="driver-label" for="call-search-input">Suche nach Name, Telefon, Nummer, Adresse, Geburtstag, Versicherung, Firma</label>
+          <input id="call-search-input" class="driver-search-input" type="search" autocomplete="off" placeholder="Kunde suchen..." data-call-search>
+          <div class="call-search-results" data-call-search-results></div>
+
+          <section class="call-card-sub">
+            <h3>Schnellzugriff Kunde</h3>
+            <div data-call-selected-customer></div>
+          </section>
+
+          <section class="call-card-sub">
+            <h3>Stammadressen</h3>
+            <div class="call-address-actions">
+              <button class="admin-btn admin-btn-secondary" type="button" data-call-address-action="add">Adresse hinzufügen</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-call-address-action="edit">Adresse bearbeiten</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-call-address-action="default">Standard setzen</button>
+            </div>
+            <div class="call-address-list" data-call-address-list></div>
+          </section>
+        </article>
+
+        <article class="admin-panel call-col-center" data-call-pane="fahrt">
+          <div class="admin-panel-head">
+            <h2>Schnelle Fahrtannahme</h2>
+            <button class="admin-btn admin-btn-secondary" type="button" title="Formular auf Anfang setzen" data-call-reset-form>Formular zurücksetzen</button>
+          </div>
+
+          <div class="call-fast-buttons">
+            <button class="call-chip" type="button" data-call-fast="now">Jetzt</button>
+            <button class="call-chip" type="button" data-call-fast="15">In 15 Minuten</button>
+            <button class="call-chip" type="button" data-call-fast="30">In 30 Minuten</button>
+            <button class="call-chip" type="button" data-call-fast="60">In 60 Minuten</button>
+            <button class="call-chip" type="button" data-call-fast="today">Heute</button>
+            <button class="call-chip" type="button" data-call-fast="tomorrow">Morgen</button>
+            <button class="call-chip" type="button" data-call-fast="returnOpen">Rückfahrt offen</button>
+            <button class="call-chip" type="button" data-call-fast="sameBack">Gleiche Strecke zurück</button>
+          </div>
+
+          <form class="call-ride-form" data-call-ride-form>
+            <label><span>Kunde</span><input class="driver-search-input" name="customer" required></label>
+            <label><span>Telefonnummer</span><input class="driver-search-input" name="phone" required></label>
+            <label><span>Abholadresse</span><input class="driver-search-input" name="pickup" required></label>
+            <label><span>Zieladresse</span><input class="driver-search-input" name="destination" required></label>
+            <label><span>Datum</span><input class="driver-search-input" type="date" name="date" required></label>
+            <label><span>Uhrzeit</span><input class="driver-search-input" type="time" name="time" required></label>
+            <label><span>Fahrtart</span><select class="call-select" name="rideType" data-call-ride-type></select></label>
+            <label><span>Personenanzahl</span><input class="driver-search-input" type="number" min="1" max="8" name="persons" value="1"></label>
+            <label><span>Fahrzeugtyp</span><input class="driver-search-input" name="vehicleType" placeholder="z. B. Limousine, Rollstuhl"></label>
+            <label><span>Rollstuhl</span><select class="call-select" name="wheelchair"><option>Nein</option><option>Ja</option></select></label>
+            <label><span>Rollator</span><select class="call-select" name="rollator"><option>Nein</option><option>Ja</option></select></label>
+            <label><span>Begleitperson</span><select class="call-select" name="companion"><option>Nein</option><option>Ja</option></select></label>
+            <label><span>Gepäck</span><input class="driver-search-input" name="luggage"></label>
+            <label><span>Hin- und Rückfahrt</span><select class="call-select" name="returnTrip"><option>Nein</option><option>Ja</option></select></label>
+            <label><span>Rückfahrtzeit</span><input class="driver-search-input" type="time" name="returnTime"></label>
+            <label class="full"><span>Notizen</span><textarea class="driver-search-input" name="notes"></textarea></label>
+            <label><span>Priorität</span><select class="call-select" name="priority"><option>Hoch</option><option selected>Mittel</option><option>Niedrig</option></select></label>
+            <label><span>Zahlungsart</span><select class="call-select" name="payment"><option>Bar</option><option>Karte</option><option>Rechnung</option><option>Krankenkasse</option></select></label>
+            <label><span>Abrechnungsart</span><select class="call-select" name="billing"><option>Privat</option><option>Firmenkonto</option><option>Krankenkasse</option><option>Monatsrechnung</option></select></label>
+            <div class="call-form-actions full">
+              <button class="admin-btn" type="submit">Fahrt speichern</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-call-action="openDispo">In Live-Dispo öffnen</button>
+            </div>
+          </form>
+
+          <section class="call-recommendation" data-call-recommendation>
+            <h3>Dispositions-Empfehlung</h3>
+            <p>Noch keine Empfehlung - zuerst Fahrt speichern.</p>
+          </section>
+        </article>
+
+        <article class="admin-panel call-col-right" data-call-pane="verlauf">
+          <section class="call-card-sub">
+            <h3>Letzte Fahrten</h3>
+            <div class="call-history-list" data-call-last-rides></div>
+          </section>
+
+          <section class="call-card-sub">
+            <h3>Offene Fahrten</h3>
+            <div class="call-open-rides" data-call-open-rides></div>
+          </section>
+
+          <section class="call-card-sub">
+            <h3>Serienfahrten</h3>
+            <div class="call-series-list" data-call-series-list></div>
+          </section>
+
+          <section class="call-card-sub" data-call-pane="aufgaben">
+            <h3>Offene Aufgaben</h3>
+            <div class="call-task-list" data-call-task-list></div>
+          </section>
+
+          <section class="call-card-sub">
+            <h3>Rückruf-Liste</h3>
+            <div class="call-callback-list" data-call-callback-list></div>
+          </section>
+        </article>
+      </section>
+
+      <div class="admin-modal" data-call-modal hidden>
+        <div class="admin-modal-backdrop" data-call-modal-close></div>
+        <section class="admin-modal-dialog call-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="call-modal-title">
+          <header class="admin-modal-head">
+            <h3 id="call-modal-title" data-call-modal-title>Telefonzentrale</h3>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-call-modal-close>✕</button>
+          </header>
+          <div class="admin-modal-body" data-call-modal-body></div>
+          <footer class="admin-modal-foot" data-call-modal-foot>
+            <button class="admin-btn admin-btn-secondary" type="button" data-call-modal-close>Schließen</button>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="telefonzentrale.js"></script>
+</body>
+</html>

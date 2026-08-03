@@ -1,5 +1,7 @@
 (() => {
-  const invoices = [
+  const F = window.AdminFinanceDemo;
+
+  const fallbackInvoices = [
     {
       id: "RG-2026-1001",
       customer: "Mara Hoffmann (Demo)",
@@ -134,9 +136,49 @@
   };
 
   const state = {
+    financeData: null,
     activeFilter: "Alle",
     searchTerm: ""
   };
+
+  function mapFinanceStatus(status) {
+    if (status === "bezahlt") return "Bezahlt";
+    if (status === "teilbezahlt") return "Offen";
+    if (status === "ueberfaellig") return "Überfällig";
+    if (status === "storniert") return "Storniert";
+    if (status === "in_pruefung") return "In Prüfung";
+    return "Offen";
+  }
+
+  function mapFinanceType(kind) {
+    if (kind === "Krankenkasse") return "Krankenkasse";
+    if (kind === "Firmenkunde") return "Firmenkunde";
+    return "Privatkunde";
+  }
+
+  function getInvoices() {
+    if (!F || typeof F.loadState !== "function") return fallbackInvoices;
+    if (!state.financeData) {
+      state.financeData = F.loadState();
+    }
+
+    const mapped = (state.financeData.invoices || []).map((inv) => ({
+      id: inv.id,
+      customer: inv.customer,
+      accountType: mapFinanceType(inv.kind),
+      date: inv.date,
+      dueDate: inv.dueDate,
+      amount: Number(inv.gross || 0),
+      status: mapFinanceStatus(inv.status),
+      paymentMethod: inv.paymentMethod || "Rechnung",
+      rideType: inv.rideType || "Taxi",
+      rideRef: inv.orderNo || "-",
+      note: inv.note || "-",
+      openAmount: Number(inv.open || 0)
+    }));
+
+    return mapped.length ? mapped : fallbackInvoices;
+  }
 
   function normalizeText(value) {
     return String(value || "")
@@ -183,10 +225,12 @@
   }
 
   function getVisibleInvoices() {
+    const invoices = getInvoices();
     return invoices.filter((invoice) => matchesFilter(invoice) && matchesSearch(invoice));
   }
 
   function renderStats() {
+    const invoices = getInvoices();
     const stats = {
       total: invoices.length,
       open: invoices.filter((item) => item.status === "Offen").length,
@@ -241,11 +285,40 @@
   }
 
   function buildActionModal(invoice, action) {
+    if (F && state.financeData) {
+      const financeInvoice = (state.financeData.invoices || []).find((x) => x.id === invoice.id);
+      if (financeInvoice) {
+        if (action === "paid") {
+          financeInvoice.status = "bezahlt";
+          financeInvoice.open = 0;
+          F.saveState(state.financeData);
+        }
+        if (action === "remind" && Number(financeInvoice.open || 0) > 0) {
+          state.financeData.reminders = state.financeData.reminders || [];
+          state.financeData.reminders.unshift({
+            id: `REM-AUTO-${Date.now()}`,
+            invoiceId: financeInvoice.id,
+            customer: financeInvoice.customer,
+            invoiceDate: financeInvoice.date,
+            dueDate: financeInvoice.dueDate,
+            amount: Number(financeInvoice.gross || 0),
+            paid: Number(financeInvoice.gross || 0) - Number(financeInvoice.open || 0),
+            open: Number(financeInvoice.open || 0),
+            overdueDays: 0,
+            stage: "Erinnerung",
+            lastContact: F.todayIso(),
+            owner: "Buchhaltung"
+          });
+          F.saveState(state.financeData);
+        }
+      }
+    }
+
     const templates = {
-      paid: `Demo: ${invoice.id} als bezahlt markieren ist vorbereitet. Keine Speicherung ohne Backend.`,
-      remind: `Demo: Zahlungserinnerung an ${invoice.customer} wird vorbereitet. Keine echte Nachricht.`,
+      paid: `Demo: ${invoice.id} wurde im lokalen Finanzstatus als bezahlt markiert.`,
+      remind: `Demo: Zahlungserinnerung an ${invoice.customer} wurde als Mahnfall im lokalen Demo-Store vorgemerkt.`,
       pdf: `Demo: PDF-Ansicht für ${invoice.id} wird simuliert. Kein echter Export.`,
-      cancel: `Demo: Storno für ${invoice.id} ist vorbereitet. Keine Speicherung ohne Backend.`
+      cancel: `Demo: Storno für ${invoice.id} ist vorbereitet. Keine automatische Umbuchung in andere Bereiche.`
     };
 
     return `<p class="billing-modal-note">${templates[action] || "Demo-Aktion ohne Speicherung."}</p>`;
@@ -326,6 +399,43 @@
     grid.innerHTML = visibleInvoices.map((invoice) => buildInvoiceCard(invoice)).join("");
   }
 
+  function renderCompanyInvoices() {
+    const body = document.querySelector("[data-billing-company-table]");
+    if (!body) return;
+
+    const invoices = getInvoices().filter((item) => item.accountType === "Firmenkunde");
+    if (!invoices.length) {
+      body.innerHTML = '<tr><td colspan="6">Keine Firmenrechnungen vorhanden.</td></tr>';
+      return;
+    }
+
+    const grouped = {};
+    invoices.forEach((inv) => {
+      if (!grouped[inv.customer]) {
+        grouped[inv.customer] = {
+          company: inv.customer,
+          count: 0,
+          total: 0,
+          open: 0,
+          overdue: 0,
+          lastDate: ""
+        };
+      }
+      const g = grouped[inv.customer];
+      g.count += 1;
+      g.total += Number(inv.amount || 0);
+      g.open += Number(inv.openAmount != null ? inv.openAmount : inv.status === "Bezahlt" ? 0 : inv.amount || 0);
+      g.overdue += inv.status === "Überfällig" ? 1 : 0;
+      if (!g.lastDate || String(inv.date) > g.lastDate) g.lastDate = inv.date;
+    });
+
+    body.innerHTML = Object.values(grouped)
+      .map(
+        (g) => `<tr><td>${g.company}</td><td>${g.count}</td><td>${formatEuro(g.total)}</td><td>${formatEuro(g.open)}</td><td>${g.overdue}</td><td>${g.lastDate}</td></tr>`
+      )
+      .join("");
+  }
+
   function bindSearch() {
     const input = document.querySelector("[data-billing-search]");
     if (!input) return;
@@ -380,6 +490,9 @@
       }
 
       openModal(`Aktion: ${invoice.id}`, buildActionModal(invoice, action));
+      renderStats();
+      renderInvoices();
+      renderCompanyInvoices();
     });
   }
 
@@ -413,4 +526,5 @@
   bindModalClose();
   bindDisabledNavItems();
   renderInvoices();
+  renderCompanyInvoices();
 })();
