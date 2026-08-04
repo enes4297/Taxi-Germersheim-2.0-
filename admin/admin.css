@@ -129,7 +129,7 @@ button {
 
 .admin-nav-group {
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 
 .admin-nav-group-toggle {
@@ -138,12 +138,13 @@ button {
   background: rgba(255, 255, 255, 0.03);
   color: var(--text);
   border-radius: 10px;
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 30px;
+  padding: 0 9px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-weight: 700;
+  font-size: 12px;
   letter-spacing: 0.01em;
   cursor: pointer;
 }
@@ -166,7 +167,13 @@ button {
 
 .admin-nav-group-items {
   display: grid;
-  gap: 5px;
+  gap: 4px;
+  padding-left: 7px;
+}
+
+.admin-nav-group.is-collapsed .admin-nav-group-items,
+.admin-nav-group-items[hidden] {
+  display: none;
 }
 
 .admin-nav-item {
@@ -175,13 +182,13 @@ button {
   border: 1px solid transparent;
   background: transparent;
   color: rgba(255, 255, 255, 0.82);
-  min-height: 36px;
+  min-height: 32px;
   border-radius: 10px;
   text-align: left;
   padding: 0 10px;
   cursor: pointer;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 12px;
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
@@ -256,15 +263,66 @@ button {
 }
 
 .admin-quick-create-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  position: relative;
+  display: inline-grid;
 }
 
-.admin-quick-create {
-  min-height: 32px;
-  padding: 0 10px;
+.admin-quick-create-main {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.admin-quick-create-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 260px;
+  border: 1px solid rgba(255, 217, 106, 0.38);
+  border-radius: 12px;
+  background: linear-gradient(160deg, rgba(18, 19, 25, 0.98), rgba(9, 10, 14, 0.99));
+  box-shadow: 0 20px 34px rgba(0, 0, 0, 0.35);
+  padding: 7px;
+  display: grid;
+  gap: 4px;
+  z-index: 75;
+}
+
+.admin-quick-create-menu[hidden] {
+  display: none;
+}
+
+.admin-quick-create-item {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid transparent;
+  border-radius: 9px;
+  min-height: 34px;
+  padding: 0 9px;
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.admin-quick-create-item b {
+  font-size: 12px;
+}
+
+.admin-quick-create-item small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.admin-quick-create-item:hover {
+  border-color: rgba(255, 217, 106, 0.3);
+  background: rgba(255, 217, 106, 0.08);
+}
+
+.admin-topbar-quick-link {
+  min-height: 34px;
+  padding: 0 11px;
   font-size: 12px;
 }
 
@@ -2445,7 +2503,14 @@ body.admin-v20-palette-open {
 }
 
 .vehicle-tools {
-  gap: 9px;
+  gap: 8px;
+}
+
+.vehicle-toolbar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
 }
 
 .fleet-overview {
@@ -2495,7 +2560,31 @@ body.admin-v20-palette-open {
 
 .vehicle-search-wrap {
   display: grid;
-  gap: 7px;
+  gap: 5px;
+}
+
+.vehicle-view-switch {
+  display: inline-grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.vehicle-view-btn {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.84);
+  padding: 0 11px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.vehicle-view-btn.is-active {
+  border-color: rgba(255, 217, 106, 0.5);
+  background: rgba(255, 217, 106, 0.16);
+  color: var(--gold);
+  font-weight: 700;
 }
 
 .vehicle-stat-card {
@@ -2515,13 +2604,14 @@ body.admin-v20-palette-open {
 }
 
 .vehicle-filter-btn {
-  min-height: 34px;
+  min-height: 32px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.03);
   color: rgba(255, 255, 255, 0.84);
-  padding: 0 12px;
+  padding: 0 10px;
   cursor: pointer;
+  font-size: 12px;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -2541,15 +2631,15 @@ body.admin-v20-palette-open {
 .vehicle-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .vehicle-card {
   border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 11px;
+  border-radius: 14px;
+  padding: 9px;
   display: grid;
-  gap: 9px;
+  gap: 7px;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
   box-shadow: 0 12px 22px rgba(0, 0, 0, 0.22);
   transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
@@ -2563,7 +2653,7 @@ body.admin-v20-palette-open {
 
 .vehicle-card-head h2 {
   margin: 0;
-  font-size: 19px;
+  font-size: 16px;
 }
 
 .vehicle-card-head {
@@ -2589,23 +2679,23 @@ body.admin-v20-palette-open {
 
 .vehicle-card-plate {
   display: inline-flex;
-  margin-top: 6px;
-  min-height: 26px;
+  margin-top: 4px;
+  min-height: 24px;
   border-radius: 999px;
   border: 1px solid rgba(255, 217, 106, 0.38);
   background: rgba(255, 217, 106, 0.1);
   color: var(--gold);
   padding: 0 10px;
   align-items: center;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.03em;
 }
 
 .vehicle-card-head small {
   display: block;
-  margin-top: 6px;
+  margin-top: 4px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .vehicle-type-slot {
@@ -2651,7 +2741,7 @@ body.admin-v20-palette-open {
   margin: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px 8px;
+  gap: 5px 7px;
 }
 
 .vehicle-meta-list div {
@@ -2668,7 +2758,7 @@ body.admin-v20-palette-open {
 
 .vehicle-meta-list dd {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   overflow-wrap: anywhere;
 }
 
@@ -2793,12 +2883,56 @@ body.admin-v20-palette-open {
 
 .vehicle-card-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .vehicle-card-actions .admin-btn {
+  min-height: 34px;
+  font-size: 11px;
+  padding: 0 8px;
+}
+
+.vehicle-compact-list {
+  display: grid;
+  gap: 6px;
+}
+
+.vehicle-compact-row {
+  border: 1px solid var(--line);
+  border-radius: 11px;
   min-height: 44px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  grid-template-columns: 1.1fr 1.8fr 1fr 1.2fr 1fr 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.vehicle-compact-row > span,
+.vehicle-compact-row > b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vehicle-compact-head {
+  background: rgba(255, 255, 255, 0.07);
+  border-style: dashed;
+  color: var(--muted);
+  min-height: 36px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.vehicle-row-action {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 11px;
 }
 
 .vehicle-btn-muted {
@@ -5537,10 +5671,16 @@ body.admin-v20-palette-open {
     width: 100%;
   }
 
+  .admin-quick-create-menu {
+    right: auto;
+    left: 0;
+    min-width: min(360px, calc(100vw - 36px));
+  }
+
   .admin-nav-item {
     text-align: left;
     padding: 0 12px;
-    min-height: 48px;
+    min-height: 40px;
   }
 
   .admin-stats {
@@ -5581,6 +5721,27 @@ body.admin-v20-palette-open {
 
   .vehicle-grid {
     grid-template-columns: 1fr;
+  }
+
+  .vehicle-toolbar-row {
+    grid-template-columns: 1fr;
+  }
+
+  .vehicle-view-switch {
+    width: 100%;
+  }
+
+  .vehicle-compact-row {
+    grid-template-columns: 1fr 1.6fr 1fr 1.2fr;
+  }
+
+  .vehicle-compact-row > span:nth-child(5),
+  .vehicle-compact-row > span:nth-child(6),
+  .vehicle-compact-row > span:nth-child(7),
+  .vehicle-compact-head > b:nth-child(5),
+  .vehicle-compact-head > b:nth-child(6),
+  .vehicle-compact-head > b:nth-child(7) {
+    display: none;
   }
 
   .fleet-overview-grid {
@@ -5702,9 +5863,23 @@ body.admin-v20-palette-open {
     flex-wrap: wrap;
   }
 
-  .admin-quick-create {
+  .admin-quick-create-main {
     min-height: 34px;
     font-size: 11px;
+  }
+
+  .admin-quick-create-menu {
+    min-width: calc(100vw - 32px);
+  }
+
+  .vehicle-compact-row {
+    grid-template-columns: 1fr 1.2fr 1fr auto;
+    font-size: 11px;
+  }
+
+  .vehicle-compact-row > span:nth-child(4),
+  .vehicle-compact-head > b:nth-child(4) {
+    display: none;
   }
 
   .admin-notification-panel {

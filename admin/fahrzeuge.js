@@ -2,6 +2,7 @@
   const referenceDate = new Date("2026-07-09T00:00:00");
   const mercedesVKlasseImagePath = "images/mercedes-v-klasse.jpg";
   const QUALITY_STORAGE_KEY = "adminV18QualityState";
+  const VIEW_STORAGE_KEY = "adminVehicleViewV211";
 
   // Spater kann hier ein API-Array direkt gemappt werden.
   const vehicleSource = [
@@ -147,7 +148,8 @@
 
   const state = {
     filter: "Alle",
-    searchTerm: ""
+    searchTerm: "",
+    view: "compact"
   };
 
   function daysUntil(dateValue) {
@@ -274,7 +276,9 @@
     switch (state.filter) {
       case "Verfügbar":
       case "Unterwegs":
+      case "Pause":
       case "Werkstatt":
+      case "Gesperrt":
         return vehicle.status === state.filter;
       case "Service fällig":
         return vehicle.isServiceDueSoon;
@@ -326,6 +330,52 @@
     updateVehicleViews();
   }
 
+  function loadSavedView() {
+    try {
+      const raw = localStorage.getItem(VIEW_STORAGE_KEY);
+      if (raw === "compact" || raw === "cards" || raw === "table") {
+        state.view = raw;
+      }
+    } catch {
+      state.view = "compact";
+    }
+  }
+
+  function saveView() {
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, state.view);
+    } catch {
+      // Demo-only: local persistence fallback.
+    }
+  }
+
+  function syncViewUi() {
+    document.querySelectorAll("[data-vehicle-view]").forEach((button) => {
+      const view = button.getAttribute("data-vehicle-view") || "compact";
+      const isActive = view === state.view;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+  }
+
+  function applyViewVisibility() {
+    const compactList = document.querySelector("[data-vehicle-compact-list]");
+    const grid = document.querySelector("[data-vehicle-grid]");
+    const tablePanel = document.querySelector("[data-vehicle-table-panel]");
+
+    if (compactList) compactList.hidden = state.view !== "compact";
+    if (grid) grid.hidden = state.view !== "cards";
+    if (tablePanel) tablePanel.hidden = state.view !== "table";
+  }
+
+  function setView(nextView) {
+    if (!["compact", "cards", "table"].includes(nextView)) return;
+    state.view = nextView;
+    saveView();
+    syncViewUi();
+    applyViewVisibility();
+  }
+
   function getCountdownMeta(days) {
     if (days < 0) {
       return {
@@ -375,11 +425,6 @@
 
     Object.entries(stats).forEach(([key, value]) => {
       const node = document.querySelector(`[data-vehicle-stat="${key}"]`);
-      if (node) node.textContent = String(value);
-    });
-
-    Object.entries(stats).forEach(([key, value]) => {
-      const node = document.querySelector(`[data-fleet-today="${key}"]`);
       if (node) node.textContent = String(value);
     });
   }
@@ -474,40 +519,31 @@
     filtered.forEach((vehicle) => {
       const card = document.createElement("article");
       card.className = "vehicle-card";
-      const vehicleImageHtml = vehicle.imagePath
-        ? `<figure class="vehicle-card-image-wrap"><img class="vehicle-card-image" src="${vehicle.imagePath}" alt="${vehicle.name}"></figure>`
-        : "";
 
       card.innerHTML = `
         <header class="vehicle-card-head">
           <div class="vehicle-card-head-main">
             <h2>${vehicle.name}</h2>
             <strong class="vehicle-card-plate">${vehicle.plate}</strong>
-            <small>${vehicle.type}</small>
+            <small>${vehicle.type} · ${vehicle.seats} Sitzplätze</small>
             <div class="vehicle-type-slot"></div>
-            ${vehicle.hint ? `<p class="vehicle-note">${vehicle.hint}</p>` : ""}
           </div>
           <div class="vehicle-head-status-slot"></div>
         </header>
 
-        ${vehicleImageHtml}
-
         <dl class="vehicle-meta-list">
-          <div><dt>Kennzeichen</dt><dd>${vehicle.plate}</dd></div>
-          <div><dt>Kategorie</dt><dd>${vehicle.category}</dd></div>
-          <div><dt>Sitzplätze</dt><dd>${vehicle.seats}</dd></div>
           <div><dt>Aktueller Fahrer</dt><dd class="vehicle-driver-slot"></dd></div>
           <div><dt>Kilometerstand</dt><dd>${formatKm(vehicle.odometerKm)}</dd></div>
-          <div class="vehicle-maintenance-row"><dt>Wartung</dt><dd class="vehicle-maintenance-slot"></dd></div>
-          <div><dt>Versicherung</dt><dd>${formatDate(vehicle.insuranceUntil)}</dd></div>
-          <div><dt>Reifenstatus</dt><dd class="vehicle-tire-slot"></dd></div>
+          <div><dt>Nächster Service</dt><dd>${formatDate(vehicle.nextService)}</dd></div>
+          <div><dt>TÜV</dt><dd>${formatDate(vehicle.tuvDate)}</dd></div>
         </dl>
 
         <div class="vehicle-card-actions">
           <button class="admin-btn vehicle-btn-muted" type="button" data-vehicle-action="details" data-vehicle-id="${vehicle.id}">Details</button>
           <button class="admin-btn vehicle-btn-muted" type="button" data-vehicle-action="assign" data-vehicle-id="${vehicle.id}">Fahrer zuweisen</button>
-          <button class="admin-btn vehicle-btn-muted" type="button" data-vehicle-action="service" data-vehicle-id="${vehicle.id}">Service eintragen</button>
-          <button class="admin-btn" type="button" data-vehicle-action="status" data-vehicle-id="${vehicle.id}">Status ändern</button>
+          <button class="admin-btn vehicle-btn-muted" type="button" data-vehicle-action="status" data-vehicle-id="${vehicle.id}">Status ändern</button>
+          <button class="admin-btn vehicle-btn-muted" type="button" data-vehicle-action="workshop" data-vehicle-id="${vehicle.id}">Werkstatt</button>
+          <button class="admin-btn" type="button" data-vehicle-action="lock" data-vehicle-id="${vehicle.id}">Sperren</button>
         </div>
       `;
 
@@ -520,13 +556,44 @@
       const driverSlot = card.querySelector(".vehicle-driver-slot");
       if (driverSlot) driverSlot.append(createDriverNode(vehicle));
 
-      const tireSlot = card.querySelector(".vehicle-tire-slot");
-      if (tireSlot) tireSlot.append(createTireNode(vehicle.tireStatus));
-
-      const maintenanceSlot = card.querySelector(".vehicle-maintenance-slot");
-      if (maintenanceSlot) maintenanceSlot.append(createMaintenanceNode(vehicle));
-
       grid.append(card);
+    });
+  }
+
+  function renderCompact() {
+    const list = document.querySelector("[data-vehicle-compact-list]");
+    if (!list) return;
+
+    const filtered = getVisibleVehicles();
+    list.innerHTML = "";
+
+    if (!filtered.length) {
+      list.innerHTML = "<article class='vehicle-empty admin-empty-state'><strong>🚗 Keine Einträge gefunden</strong><p>Bitte Filter oder Suche anpassen.</p><button class='admin-btn admin-btn-secondary admin-empty-reset' type='button' data-vehicle-reset>Filter zurücksetzen</button></article>";
+      return;
+    }
+
+    const header = document.createElement("article");
+    header.className = "vehicle-compact-row vehicle-compact-head";
+    header.innerHTML = "<b>Kennzeichen</b><b>Fahrzeug</b><b>Status</b><b>Fahrer</b><b>KM</b><b>Service</b><b>TÜV</b><b>Aktion</b>";
+    list.append(header);
+
+    filtered.forEach((vehicle) => {
+      const row = document.createElement("article");
+      row.className = "vehicle-compact-row";
+      row.innerHTML = `
+        <span>${vehicle.plate}</span>
+        <span>${vehicle.name}</span>
+        <span class="vehicle-compact-status"></span>
+        <span>${vehicle.currentDriver}</span>
+        <span>${formatKm(vehicle.odometerKm)}</span>
+        <span>${formatDate(vehicle.nextService)}</span>
+        <span>${formatDate(vehicle.tuvDate)}</span>
+        <span><button class="admin-btn vehicle-btn-muted vehicle-row-action" type="button" data-vehicle-action="details" data-vehicle-id="${vehicle.id}">Details</button></span>
+      `;
+
+      const statusSlot = row.querySelector(".vehicle-compact-status");
+      if (statusSlot) statusSlot.append(createStatusPill(vehicle.status));
+      list.append(row);
     });
   }
 
@@ -548,6 +615,7 @@
         <td>${formatDate(vehicle.nextService)}</td>
         <td>${formatDate(vehicle.tuvDate)}</td>
         <td>${formatKm(vehicle.odometerKm)}</td>
+        <td><button class="admin-btn vehicle-btn-muted vehicle-row-action" type="button" data-vehicle-action="details" data-vehicle-id="${vehicle.id}">Details</button></td>
       `;
 
       const statusCell = row.querySelector(".vehicle-table-status");
@@ -557,8 +625,11 @@
   }
 
   function updateVehicleViews() {
+    renderStats();
+    renderCompact();
     renderCards();
     renderTable();
+    applyViewVisibility();
   }
 
   function getVehicleById(vehicleId) {
@@ -639,15 +710,16 @@
     return `
       <div class="vehicle-modal-status-box">
         <label for="vehicle-status-select">Neuen Status wählen (Demo)</label>
-        <select id="vehicle-status-select">
-          <option>Verfügbar</option>
-          <option>Unterwegs</option>
-          <option>Pause</option>
-          <option>Werkstatt</option>
-          <option>Gesperrt</option>
+        <select id="vehicle-status-select" data-vehicle-status-select>
+          <option ${vehicle.status === "Verfügbar" ? "selected" : ""}>Verfügbar</option>
+          <option ${vehicle.status === "Unterwegs" ? "selected" : ""}>Unterwegs</option>
+          <option ${vehicle.status === "Pause" ? "selected" : ""}>Pause</option>
+          <option ${vehicle.status === "Werkstatt" ? "selected" : ""}>Werkstatt</option>
+          <option ${vehicle.status === "Gesperrt" ? "selected" : ""}>Gesperrt</option>
         </select>
+        <button class="admin-btn" type="button" data-vehicle-status-save="${vehicle.id}">Status übernehmen</button>
       </div>
-      <p class="vehicle-modal-note">Demo-Modus: Auswahl wird nicht gespeichert.</p>
+      <p class="vehicle-modal-note">Demo-Modus: Auswahl wird lokal gesetzt.</p>
       <p class="vehicle-modal-note">Demo-Modul ohne Backend.</p>
     `;
   }
@@ -689,11 +761,53 @@
     });
   }
 
-  function bindCardActions() {
-    const grid = document.querySelector("[data-vehicle-grid]");
-    if (!grid) return;
+  function applyVehicleAction(action, vehicle) {
+    if (action === "details") {
+      openModal(`Details: ${vehicle.name}`, buildDetailsModal(vehicle));
+      return;
+    }
 
-    grid.addEventListener("click", (event) => {
+    if (action === "assign") {
+      openModal(`Fahrer zuweisen: ${vehicle.name}`, buildActionModal(vehicle, "assign"));
+      return;
+    }
+
+    if (action === "service") {
+      openModal(`Service eintragen: ${vehicle.name}`, buildActionModal(vehicle, "service"));
+      return;
+    }
+
+    if (action === "workshop") {
+      vehicle.status = "Werkstatt";
+      vehicle.hint = vehicle.hint || "Manuell zur Werkstatt gesetzt.";
+      updateVehicleViews();
+      return;
+    }
+
+    if (action === "lock") {
+      vehicle.status = "Gesperrt";
+      vehicle.hint = vehicle.hint || "Manuell gesperrt.";
+      updateVehicleViews();
+      return;
+    }
+
+    openModal(`Status ändern: ${vehicle.name}`, buildActionModal(vehicle, "status"));
+  }
+
+  function bindVehicleActions() {
+    document.addEventListener("click", (event) => {
+      const statusSave = event.target.closest("[data-vehicle-status-save]");
+      if (statusSave) {
+        const vehicleId = statusSave.getAttribute("data-vehicle-status-save") || "";
+        const vehicle = getVehicleById(vehicleId);
+        const select = document.querySelector("[data-vehicle-status-select]");
+        if (!vehicle || !select) return;
+        vehicle.status = String(select.value || "Verfügbar");
+        updateVehicleViews();
+        closeModal();
+        return;
+      }
+
       const resetButton = event.target.closest("[data-vehicle-reset]");
       if (resetButton) {
         state.filter = "Alle";
@@ -707,28 +821,20 @@
 
       const button = event.target.closest("[data-vehicle-action]");
       if (!button) return;
-
-      const action = button.getAttribute("data-vehicle-action");
-      const vehicleId = button.getAttribute("data-vehicle-id");
+      const action = button.getAttribute("data-vehicle-action") || "";
+      const vehicleId = button.getAttribute("data-vehicle-id") || "";
       const vehicle = getVehicleById(vehicleId);
       if (!vehicle || !action) return;
+      applyVehicleAction(action, vehicle);
+    });
+  }
 
-      if (action === "details") {
-        openModal(`Details: ${vehicle.name}`, buildDetailsModal(vehicle));
-        return;
-      }
-
-      if (action === "assign") {
-        openModal(`Fahrer zuweisen: ${vehicle.name}`, buildActionModal(vehicle, "assign"));
-        return;
-      }
-
-      if (action === "service") {
-        openModal(`Service eintragen: ${vehicle.name}`, buildActionModal(vehicle, "service"));
-        return;
-      }
-
-      openModal(`Status ändern: ${vehicle.name}`, buildActionModal(vehicle, "status"));
+  function bindViewSwitch() {
+    document.querySelectorAll("[data-vehicle-view]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const view = button.getAttribute("data-vehicle-view") || "compact";
+        setView(view);
+      });
     });
   }
 
@@ -756,12 +862,14 @@
   }
 
   applyQualityOverlays();
-  renderStats();
+  loadSavedView();
+  syncViewUi();
   syncFilterUi();
   bindFilters();
   bindStatCards();
   bindSearch();
-  bindCardActions();
+  bindViewSwitch();
+  bindVehicleActions();
   bindModalClose();
   bindDisabledNavItems();
   updateVehicleViews();

@@ -13,6 +13,7 @@
   const NOTIFICATION_OPEN_STATUS = "ungelesen";
   const NOTIFICATION_AUTO_HIDE_MS = 12000;
   const KEY_SIDEBAR_GROUP_STATE = "adminSidebarGroupStateV21";
+  const SIDEBAR_SINGLE_OPEN = true;
 
   const DEMO_USERS = {
     admin: { role: "Chef" },
@@ -162,7 +163,7 @@
     },
     {
       id: "demo-insurer-return",
-      title: "Krankenkassen-Rueckfrage offen",
+      title: "Krankenkassen-Rückfrage offen",
       text: "KK-CASE-103 wartet auf fehlenden Transportschein.",
       time: "vor 21 Min",
       type: "Warnung",
@@ -189,8 +190,8 @@
     },
     {
       id: "demo-license-expire",
-      title: "Fuehrerschein laeuft ab",
-      text: "MA-102: Fuehrerschein ist abgelaufen.",
+      title: "Führerschein läuft ab",
+      text: "MA-102: Führerschein ist abgelaufen.",
       time: "vor 13 Min",
       type: "Kritisch",
       category: "Personal",
@@ -270,10 +271,10 @@
     { key: "Rechnungen", href: "rechnungen.html", label: "Rechnungen" },
     { key: "Zahlungen", href: "zahlungen.html", label: "Zahlungen" },
     { key: "Mahnwesen", href: "mahnwesen.html", label: "Mahnwesen" },
-    { key: "Pruefen und Klaeren", href: "pruefcenter.html", label: "Pruefen und Klaeren" },
+    { key: "Pruefen und Klaeren", href: "pruefcenter.html", label: "Pruefen und Klaeren", displayLabel: "Prüfen und Klären" },
     { key: "Monatsabschluss", href: "monatsabschluss.html", label: "Monatsabschluss" },
     { key: "Controlling", href: "controlling.html", label: "Controlling" },
-    { key: "Personaluebersicht", href: "personaluebersicht.html", label: "Personaluebersicht" },
+    { key: "Personaluebersicht", href: "personaluebersicht.html", label: "Personaluebersicht", displayLabel: "Personalübersicht" },
     { key: "Mitarbeiter", href: "mitarbeiter.html", label: "Mitarbeiter" },
     { key: "Urlaubsplanung", href: "urlaubsplanung.html", label: "Urlaubsplanung" },
     { key: "Abwesenheiten", href: "abwesenheiten.html", label: "Abwesenheiten" },
@@ -509,21 +510,22 @@
         if (!items.length) return "";
 
         const hasActive = items.some((item) => item.key === activeNavKey);
-        const fallbackOpen = group.key === "betrieb";
-        const isOpen = hasActive ? true : storedGroupState[group.key] === undefined ? fallbackOpen : Boolean(storedGroupState[group.key]);
+        const isOpen = storedGroupState[group.key] === undefined ? hasActive : Boolean(storedGroupState[group.key]);
         const groupClass = hasActive ? " is-active-group" : "";
+        const collapsedClass = isOpen ? "" : " is-collapsed";
 
         const linksHtml = items
           .map((item) => {
             const isActive = item.key === activeNavKey;
             const activeClass = isActive ? " is-active" : "";
             const ariaCurrent = isActive ? ' aria-current="page"' : "";
-            return `<a class="admin-nav-item${activeClass}" href="${item.href}"${ariaCurrent} title="${item.label}">${item.label}</a>`;
+            const text = item.displayLabel || item.label;
+            return `<a class="admin-nav-item${activeClass}" href="${item.href}"${ariaCurrent} title="${text}">${text}</a>`;
           })
           .join("");
 
         return [
-          `<section class="admin-nav-group${groupClass}" data-admin-nav-group="${group.key}">`,
+          `<section class="admin-nav-group${groupClass}${collapsedClass}" data-admin-nav-group="${group.key}">`,
           `<button class="admin-nav-group-toggle" type="button" data-admin-nav-group-toggle="${group.key}" aria-expanded="${isOpen ? "true" : "false"}">`,
           `<span>${group.label}</span>`,
           '<i aria-hidden="true">▾</i>',
@@ -535,6 +537,16 @@
       .join("");
 
     nav.innerHTML = `${groupsHtml}<button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>`;
+  }
+
+  function persistSidebarGroupState() {
+    const map = {};
+    document.querySelectorAll("[data-admin-nav-group]").forEach((groupNode) => {
+      const key = groupNode.getAttribute("data-admin-nav-group") || "";
+      if (!key) return;
+      map[key] = !groupNode.classList.contains("is-collapsed");
+    });
+    localStorage.setItem(KEY_SIDEBAR_GROUP_STATE, JSON.stringify(map));
   }
 
   function bindSidebarGroups() {
@@ -549,20 +561,29 @@
       event.preventDefault();
       const key = toggle.getAttribute("data-admin-nav-group-toggle") || "";
       const itemsNode = document.querySelector(`[data-admin-nav-group-items="${key}"]`);
+      const groupNode = document.querySelector(`[data-admin-nav-group="${key}"]`);
       if (!itemsNode) return;
 
       const open = itemsNode.hidden;
       itemsNode.hidden = !open;
       toggle.setAttribute("aria-expanded", open ? "true" : "false");
-
-      let stored = {};
-      try {
-        stored = JSON.parse(localStorage.getItem(KEY_SIDEBAR_GROUP_STATE) || "{}") || {};
-      } catch {
-        stored = {};
+      if (groupNode) {
+        groupNode.classList.toggle("is-collapsed", !open);
       }
-      stored[key] = open;
-      localStorage.setItem(KEY_SIDEBAR_GROUP_STATE, JSON.stringify(stored));
+
+      if (open && SIDEBAR_SINGLE_OPEN) {
+        document.querySelectorAll("[data-admin-nav-group]").forEach((node) => {
+          const otherKey = node.getAttribute("data-admin-nav-group") || "";
+          if (!otherKey || otherKey === key) return;
+          const otherItems = node.querySelector("[data-admin-nav-group-items]");
+          const otherToggle = node.querySelector("[data-admin-nav-group-toggle]");
+          if (otherItems) otherItems.hidden = true;
+          if (otherToggle) otherToggle.setAttribute("aria-expanded", "false");
+          node.classList.add("is-collapsed");
+        });
+      }
+
+      persistSidebarGroupState();
     };
 
     document.addEventListener("click", clickHandler);
@@ -577,17 +598,87 @@
     wrap.className = "admin-quick-create-wrap";
     wrap.setAttribute("data-admin-quick-create-wrap", "");
     wrap.innerHTML = [
-      '<a class="admin-btn admin-btn-secondary admin-quick-create" href="live-dispo.html" title="Neue Fahrt">+ Neue Fahrt</a>',
-      '<a class="admin-btn admin-btn-secondary admin-quick-create" href="kunden.html" title="Neuer Kunde">+ Neuer Kunde</a>',
-      '<a class="admin-btn admin-btn-secondary admin-quick-create" href="fahrer.html" title="Neuer Fahrer">+ Neuer Fahrer</a>',
-      '<a class="admin-btn admin-btn-secondary admin-quick-create" href="fahrzeuge.html" title="Neues Fahrzeug">+ Neues Fahrzeug</a>',
-      '<a class="admin-btn admin-btn-secondary admin-quick-create" href="rechnungen.html" title="Neue Rechnung">+ Neue Rechnung</a>'
+      '<button class="admin-btn admin-btn-primary admin-quick-create-main" type="button" aria-haspopup="true" aria-expanded="false" data-admin-quick-create-toggle>+ Neu</button>',
+      '<div class="admin-quick-create-menu" data-admin-quick-create-menu hidden>',
+      '<a class="admin-quick-create-item" href="live-dispo.html" title="Neue Demo-Fahrt anlegen"><span aria-hidden="true">🚕</span><b>Neue Fahrt</b><small>Strg+Alt+F</small></a>',
+      '<a class="admin-quick-create-item" href="kunden.html" title="Neuen Kunden erfassen"><span aria-hidden="true">👤</span><b>Neuer Kunde</b><small>Strg+Alt+K</small></a>',
+      '<a class="admin-quick-create-item" href="fahrer.html" title="Neuen Fahrer anlegen"><span aria-hidden="true">🧑‍✈️</span><b>Neuer Fahrer</b><small>Strg+Alt+R</small></a>',
+      '<a class="admin-quick-create-item" href="fahrzeuge.html" title="Neues Fahrzeug anlegen"><span aria-hidden="true">🚗</span><b>Neues Fahrzeug</b><small>Strg+Alt+V</small></a>',
+      '<a class="admin-quick-create-item" href="rechnungen.html" title="Neue Rechnung erstellen"><span aria-hidden="true">🧾</span><b>Neue Rechnung</b><small>Strg+Alt+B</small></a>',
+      '<a class="admin-quick-create-item" href="aufgaben-center.html" title="Neue Aufgabe im Aufgaben-Center"><span aria-hidden="true">✅</span><b>Neue Aufgabe</b><small>Strg+Alt+A</small></a>',
+      '<a class="admin-quick-create-item" href="serienfahrten.html" title="Neue Serienfahrt erstellen"><span aria-hidden="true">🔁</span><b>Neue Serienfahrt</b><small>Strg+Alt+S</small></a>',
+      "</div>"
     ].join("");
 
     topbarActions.prepend(wrap);
+
+    const existingHandler = window.__adminQuickCreateHandler;
+    if (existingHandler) {
+      document.removeEventListener("click", existingHandler.click, true);
+      document.removeEventListener("keydown", existingHandler.keydown, true);
+    }
+
+    const toggle = wrap.querySelector("[data-admin-quick-create-toggle]");
+    const menu = wrap.querySelector("[data-admin-quick-create-menu]");
+    if (!toggle || !menu) return;
+
+    const setOpen = (open) => {
+      menu.hidden = !open;
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      wrap.classList.toggle("is-open", open);
+    };
+
+    const onClick = (event) => {
+      const clickedToggle = event.target.closest("[data-admin-quick-create-toggle]");
+      if (clickedToggle) {
+        event.preventDefault();
+        event.stopPropagation();
+        setOpen(menu.hidden);
+        return;
+      }
+
+      if (event.target.closest(".admin-quick-create-item")) {
+        setOpen(false);
+        return;
+      }
+
+      if (!wrap.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+
+    const onKeydown = (event) => {
+      if (event.key !== "Escape" && event.key !== "Esc") return;
+      if (menu.hidden) return;
+      setOpen(false);
+    };
+
+    document.addEventListener("click", onClick, true);
+    document.addEventListener("keydown", onKeydown, true);
+    window.__adminQuickCreateHandler = { click: onClick, keydown: onKeydown };
+  }
+
+  function normalizeTopbarActions() {
+    const topbarActions = document.querySelector(".admin-topbar-actions");
+    if (!topbarActions) return;
+
+    topbarActions.querySelectorAll(".admin-topbar-logo").forEach((logo) => logo.remove());
+
+    const bellButtons = Array.from(topbarActions.querySelectorAll("button[aria-label='Benachrichtigungen']"));
+    bellButtons.slice(1).forEach((button) => button.remove());
+
+    const userButtons = Array.from(topbarActions.querySelectorAll(".admin-user"));
+    userButtons.slice(1).forEach((button) => button.remove());
+
+    const taskLinks = Array.from(topbarActions.querySelectorAll('a[href*="aufgaben-center.html"]'));
+    taskLinks.slice(1).forEach((node) => node.remove());
+
+    const workspaceLinks = Array.from(topbarActions.querySelectorAll('a[href*="arbeitsplatz.html"]'));
+    workspaceLinks.slice(1).forEach((node) => node.remove());
   }
 
   function setupMobileNavigation() {
+    if (window.__adminMobileNavigationBound) return;
     const shell = document.querySelector(".admin-shell");
     const sidebar = document.querySelector(".admin-sidebar");
     const topbarActions = document.querySelector(".admin-topbar-actions");
@@ -654,6 +745,8 @@
         closeSidebar();
       }
     });
+
+    window.__adminMobileNavigationBound = true;
   }
 
   function applyDemoLoadingState() {
@@ -1260,8 +1353,8 @@
           `<span class="admin-hint-category">${item.category}</span>`,
           "</div>",
           '<div class="admin-notification-actions">',
-          `<button class="admin-btn admin-btn-secondary admin-notification-read-btn" type="button" data-admin-hint-action="close" data-admin-hint-id="${item.id}">Schliessen</button>`,
-          `<button class="admin-btn admin-btn-secondary" type="button" data-admin-hint-action="confirm" data-admin-hint-id="${item.id}">Bestaetigen</button>`,
+          `<button class="admin-btn admin-btn-secondary admin-notification-read-btn" type="button" data-admin-hint-action="close" data-admin-hint-id="${item.id}">Schließen</button>`,
+          `<button class="admin-btn admin-btn-secondary" type="button" data-admin-hint-action="confirm" data-admin-hint-id="${item.id}">Bestätigen</button>`,
           `<button class="admin-btn admin-btn-secondary" type="button" data-admin-hint-action="archive" data-admin-hint-id="${item.id}">Archivieren</button>`,
           "</div>",
           "</article>"
@@ -1279,6 +1372,10 @@
       actions = document.createElement("div");
       actions.className = "admin-topbar-actions";
       topbar.append(actions);
+    }
+
+    if (actions.querySelector("[data-dispo-notify-toggle]")) {
+      return;
     }
 
     if (!actions.querySelector("button[aria-label='Benachrichtigungen']")) {
@@ -1400,8 +1497,8 @@
                 `<span class="admin-notification-read-state">${item.read ? "✓ Gelesen" : "Ungelesen"}</span>`,
                 "</div>",
                 '<div class="admin-notification-actions">',
-                `<button class="admin-btn admin-btn-secondary admin-notification-read-btn" type="button" data-admin-notification-action="close" data-admin-notification-id="${item.id}">Schliessen</button>`,
-                `<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-action="confirm" data-admin-notification-id="${item.id}">Bestaetigen</button>`,
+                `<button class="admin-btn admin-btn-secondary admin-notification-read-btn" type="button" data-admin-notification-action="close" data-admin-notification-id="${item.id}">Schließen</button>`,
+                `<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-action="confirm" data-admin-notification-id="${item.id}">Bestätigen</button>`,
                 `<button class="admin-btn admin-btn-secondary" type="button" data-admin-notification-action="archive" data-admin-notification-id="${item.id}">Archivieren</button>`,
                 `<button class="admin-btn admin-btn-secondary admin-notification-detail-btn" type="button" data-admin-notification-action="details" data-admin-notification-id="${item.id}">Details Demo</button>`,
                 "</div>",
@@ -1594,7 +1691,7 @@
 
   function renderRoleIndicator(role) {
     const topbarActions = document.querySelector(".admin-topbar-actions");
-    if (!topbarActions || topbarActions.querySelector("[data-admin-role-indicator]")) return;
+    if (!topbarActions || topbarActions.querySelector("[data-admin-role-indicator]") || topbarActions.querySelector(".admin-user")) return;
 
     const badge = document.createElement("div");
     badge.className = "admin-role-indicator";
@@ -1662,10 +1759,12 @@
       bindSidebarGroups();
       renderRoleIndicator(protectionState.role);
       injectTopbarQuickCreateActions();
+      normalizeTopbarActions();
       setupMobileNavigation();
       ensureSystemCenterReady().finally(() => {
         setupNotificationCenter(protectionState.role);
         initV20Productivity(protectionState.role, protectionState.user);
+        normalizeTopbarActions();
       });
     }
     renderPermissionNotice();
