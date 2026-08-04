@@ -54,7 +54,7 @@
 
       <section class="admin-stats" aria-label="Fahrzeugstatistik">
         <article class="stat-card vehicle-stat-card is-active" data-vehicle-stat-filter="Alle" role="button" tabindex="0" aria-pressed="true">
-          <small>🚘 Fahrzeuge gesamt</small>
+          <small>🚘 Gesamt</small>
           <strong data-vehicle-stat="total">0</strong>
         </article>
         <article class="stat-card vehicle-stat-card" data-vehicle-stat-filter="Verfügbar" role="button" tabindex="0" aria-pressed="false">
@@ -65,22 +65,27 @@
           <small>🔵 Unterwegs</small>
           <strong data-vehicle-stat="onRoute">0</strong>
         </article>
+        <article class="stat-card vehicle-stat-card" data-vehicle-stat-filter="Pause" role="button" tabindex="0" aria-pressed="false">
+          <small>🟡 Pause</small>
+          <strong data-vehicle-stat="pause">0</strong>
+        </article>
         <article class="stat-card vehicle-stat-card" data-vehicle-stat-filter="Werkstatt" role="button" tabindex="0" aria-pressed="false">
           <small>🔧 Werkstatt</small>
           <strong data-vehicle-stat="workshop">0</strong>
         </article>
         <article class="stat-card vehicle-stat-card" data-vehicle-stat-filter="TÜV fällig" role="button" tabindex="0" aria-pressed="false">
-          <small>⚠️ TÜV bald fällig</small>
+          <small>⚠️ TÜV fällig</small>
           <strong data-vehicle-stat="tuvDue">0</strong>
         </article>
         <article class="stat-card vehicle-stat-card" data-vehicle-stat-filter="Service fällig" role="button" tabindex="0" aria-pressed="false">
-          <small>🛠️ Service bald fällig</small>
+          <small>🛠️ Service fällig</small>
           <strong data-vehicle-stat="serviceDue">0</strong>
         </article>
       </section>
 
       <section class="admin-panel vehicle-tools" aria-label="Fahrzeugfilter">
-        <div class="vehicle-search-wrap">
+        <div class="vehicle-toolbar-row">
+          <div class="vehicle-search-wrap">
           <label class="driver-label" for="vehicle-search-input">Fahrzeug suchen</label>
           <input
             id="vehicle-search-input"
@@ -90,49 +95,32 @@
             autocomplete="off"
             data-vehicle-search
           >
+          </div>
+
+          <div class="vehicle-view-switch" role="tablist" aria-label="Darstellung wählen">
+            <button class="vehicle-view-btn is-active" type="button" role="tab" aria-selected="true" data-vehicle-view="compact">Kompakt</button>
+            <button class="vehicle-view-btn" type="button" role="tab" aria-selected="false" data-vehicle-view="cards">Karten</button>
+            <button class="vehicle-view-btn" type="button" role="tab" aria-selected="false" data-vehicle-view="table">Tabelle</button>
+          </div>
         </div>
 
         <div class="vehicle-filter-group" role="group" aria-label="Fahrzeugstatus filtern">
           <button class="vehicle-filter-btn is-active" type="button" data-vehicle-filter="Alle">Alle</button>
           <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Verfügbar">Verfügbar</button>
           <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Unterwegs">Unterwegs</button>
+          <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Pause">Pause</button>
           <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Werkstatt">Werkstatt</button>
           <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Service fällig">Service fällig</button>
           <button class="vehicle-filter-btn" type="button" data-vehicle-filter="TÜV fällig">TÜV fällig</button>
+          <button class="vehicle-filter-btn" type="button" data-vehicle-filter="Gesperrt">Gesperrt</button>
         </div>
       </section>
 
-      <section class="admin-panel fleet-overview" aria-label="Flotte heute">
-        <div class="admin-panel-head">
-          <h2>Flotte heute</h2>
-        </div>
-        <div class="fleet-overview-grid">
-          <article class="fleet-overview-card">
-            <small>🚘 Fahrzeuge gesamt</small>
-            <strong data-fleet-today="total">0</strong>
-          </article>
-          <article class="fleet-overview-card is-available">
-            <small>🟢 Verfügbar</small>
-            <strong data-fleet-today="available">0</strong>
-          </article>
-          <article class="fleet-overview-card is-onroute">
-            <small>🔵 Unterwegs</small>
-            <strong data-fleet-today="onRoute">0</strong>
-          </article>
-          <article class="fleet-overview-card is-pause">
-            <small>🟡 Pause</small>
-            <strong data-fleet-today="pause">0</strong>
-          </article>
-          <article class="fleet-overview-card is-workshop">
-            <small>🟠 Werkstatt</small>
-            <strong data-fleet-today="workshop">0</strong>
-          </article>
-        </div>
-      </section>
+      <section class="vehicle-compact-list" aria-label="Fahrzeuge kompakt" data-vehicle-compact-list></section>
 
-      <section class="vehicle-grid" aria-label="Fahrzeugkarten" data-vehicle-grid></section>
+      <section class="vehicle-grid" aria-label="Fahrzeugkarten" data-vehicle-grid hidden></section>
 
-      <section class="admin-panel" aria-label="Fahrzeugtabelle">
+      <section class="admin-panel" aria-label="Fahrzeugtabelle" data-vehicle-table-panel hidden>
         <div class="admin-panel-head">
           <h2>Fahrzeuge im Überblick</h2>
         </div>
@@ -148,6 +136,7 @@
                 <th>Service</th>
                 <th>TÜV</th>
                 <th>KM</th>
+                <th>Aktion</th>
               </tr>
             </thead>
             <tbody data-vehicle-table></tbody>
