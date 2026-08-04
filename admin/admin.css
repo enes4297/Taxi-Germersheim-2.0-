@@ -83,10 +83,14 @@ button {
 .admin-sidebar {
   border-right: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(16, 17, 22, 0.98), rgba(8, 9, 12, 0.98));
-  padding: 28px 18px;
+  padding: 18px 12px;
   display: grid;
   align-content: start;
-  gap: 24px;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow: auto;
 }
 
 .admin-sidebar-brand {
@@ -120,7 +124,49 @@ button {
 
 .admin-nav {
   display: grid;
-  gap: 8px;
+  gap: 7px;
+}
+
+.admin-nav-group {
+  display: grid;
+  gap: 5px;
+}
+
+.admin-nav-group-toggle {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  border-radius: 10px;
+  min-height: 34px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+.admin-nav-group-toggle i {
+  font-style: normal;
+  color: var(--muted);
+  transition: transform 0.18s ease;
+}
+
+.admin-nav-group-toggle[aria-expanded="false"] i {
+  transform: rotate(-90deg);
+}
+
+.admin-nav-group.is-active-group .admin-nav-group-toggle {
+  border-color: rgba(255, 217, 106, 0.35);
+  background: rgba(255, 217, 106, 0.11);
+  color: var(--gold);
+}
+
+.admin-nav-group-items {
+  display: grid;
+  gap: 5px;
 }
 
 .admin-nav-item {
@@ -129,12 +175,13 @@ button {
   border: 1px solid transparent;
   background: transparent;
   color: rgba(255, 255, 255, 0.82);
-  min-height: 44px;
-  border-radius: 12px;
+  min-height: 36px;
+  border-radius: 10px;
   text-align: left;
-  padding: 0 14px;
+  padding: 0 10px;
   cursor: pointer;
   text-decoration: none;
+  font-size: 13px;
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
@@ -206,6 +253,19 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.admin-quick-create-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-quick-create {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
 }
 
 .admin-v20-search-wrap {
@@ -4397,6 +4457,12 @@ body.admin-v20-palette-open {
   color: var(--text);
   padding: 0 10px;
   outline: none;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) calc(50% - 3px), calc(100% - 11px) calc(50% - 3px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 30px;
 }
 
 .dispo-select:focus {
@@ -5443,6 +5509,7 @@ body.admin-v20-palette-open {
     transition: transform 0.24s ease;
     z-index: 90;
     overflow: auto;
+    max-height: none;
   }
 
   body.admin-sidebar-open .admin-sidebar {
@@ -5464,6 +5531,10 @@ body.admin-v20-palette-open {
 
   .admin-nav {
     grid-template-columns: 1fr;
+  }
+
+  .admin-quick-create-wrap {
+    width: 100%;
   }
 
   .admin-nav-item {
@@ -5629,6 +5700,11 @@ body.admin-v20-palette-open {
     width: 100%;
     justify-content: flex-start;
     flex-wrap: wrap;
+  }
+
+  .admin-quick-create {
+    min-height: 34px;
+    font-size: 11px;
   }
 
   .admin-notification-panel {

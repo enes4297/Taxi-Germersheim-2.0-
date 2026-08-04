@@ -12,6 +12,7 @@
   const V20_SEARCH_LIMIT = 8;
   const NOTIFICATION_OPEN_STATUS = "ungelesen";
   const NOTIFICATION_AUTO_HIDE_MS = 12000;
+  const KEY_SIDEBAR_GROUP_STATE = "adminSidebarGroupStateV21";
 
   const DEMO_USERS = {
     admin: { role: "Chef" },
@@ -314,6 +315,17 @@
     { key: "Hilfe", href: "hilfe.html", label: "Hilfe" }
   ];
 
+  const SIDEBAR_GROUPS = [
+    { key: "betrieb", label: "Betrieb", items: ["Dashboard", "Live-Dispo", "Live-Karte", "Telefonzentrale", "Fahrten"] },
+    { key: "kunden", label: "Kunden", items: ["Kunden", "Serienfahrten", "Pruefen und Klaeren"] },
+    { key: "flotte", label: "Flotte", items: ["Fahrzeuge", "Fahrzeugübergaben", "Werkstatt"] },
+    { key: "personal", label: "Personal", items: ["Fahrer", "Mitarbeiter", "Personaluebersicht", "Schichtplanung", "Urlaubsplanung", "Abwesenheiten", "Dokumentfristen", "Schulungen", "Mitteilungen", "Mitarbeiterportal", "Personalaufgaben"] },
+    { key: "finanzen", label: "Finanzen", items: ["Abrechnungszentrale", "Krankenkassen", "Rechnungen", "Zahlungen", "Mahnwesen", "Monatsabschluss", "Controlling", "Kassenübersicht"] },
+    { key: "qualitaet", label: "Qualität", items: ["Qualitaet & Sicherheit", "Qualitaetsuebersicht", "Beschwerden", "Vorfaelle", "Unfaelle", "Fundbuero", "Pruefungen", "Massnahmen", "Qualitaetsberichte"] },
+    { key: "management", label: "Management", items: ["Unternehmenssteuerung", "Geschaeftsfuehrer-Dashboard", "Betriebssteuerung", "Kapazitaetsplanung", "Nachfrageprognose", "Szenarien", "Ziele", "Entscheidungscenter", "Geschaeftsberichte", "Statistiken"] },
+    { key: "system", label: "System", items: ["Aufgaben-Center", "Benachrichtigungs-Center", "Mein Arbeitsplatz", "Einstellungen", "Benutzer", "Verlauf", "Export & Backup", "Dokumente", "Hilfe"] }
+  ];
+
   Object.entries(V20_NAV_BY_ROLE).forEach(([role, labels]) => {
     const base = ROLE_NAV_ACCESS[role];
     if (!Array.isArray(base)) return;
@@ -478,17 +490,101 @@
     const fileName = normalizePath(window.location.pathname);
     const activeNavKey = getActiveNavKey(fileName);
 
-    const linksHtml = SIDEBAR_ITEMS
-      .filter((item) => allowedLabels.has(item.label))
-      .map((item) => {
-        const isActive = item.key === activeNavKey;
-        const activeClass = isActive ? " is-active" : "";
-        const ariaCurrent = isActive ? ' aria-current="page"' : "";
-        return `<a class="admin-nav-item${activeClass}" href="${item.href}"${ariaCurrent}>${item.label}</a>`;
+    const byLabel = new Map(
+      SIDEBAR_ITEMS
+        .filter((item) => allowedLabels.has(item.label))
+        .map((item) => [item.label, item])
+    );
+
+    let storedGroupState = {};
+    try {
+      storedGroupState = JSON.parse(localStorage.getItem(KEY_SIDEBAR_GROUP_STATE) || "{}") || {};
+    } catch {
+      storedGroupState = {};
+    }
+
+    const groupsHtml = SIDEBAR_GROUPS
+      .map((group) => {
+        const items = group.items.map((label) => byLabel.get(label)).filter(Boolean);
+        if (!items.length) return "";
+
+        const hasActive = items.some((item) => item.key === activeNavKey);
+        const fallbackOpen = group.key === "betrieb";
+        const isOpen = hasActive ? true : storedGroupState[group.key] === undefined ? fallbackOpen : Boolean(storedGroupState[group.key]);
+        const groupClass = hasActive ? " is-active-group" : "";
+
+        const linksHtml = items
+          .map((item) => {
+            const isActive = item.key === activeNavKey;
+            const activeClass = isActive ? " is-active" : "";
+            const ariaCurrent = isActive ? ' aria-current="page"' : "";
+            return `<a class="admin-nav-item${activeClass}" href="${item.href}"${ariaCurrent} title="${item.label}">${item.label}</a>`;
+          })
+          .join("");
+
+        return [
+          `<section class="admin-nav-group${groupClass}" data-admin-nav-group="${group.key}">`,
+          `<button class="admin-nav-group-toggle" type="button" data-admin-nav-group-toggle="${group.key}" aria-expanded="${isOpen ? "true" : "false"}">`,
+          `<span>${group.label}</span>`,
+          '<i aria-hidden="true">▾</i>',
+          "</button>",
+          `<div class="admin-nav-group-items" data-admin-nav-group-items="${group.key}" ${isOpen ? "" : "hidden"}>${linksHtml}</div>`,
+          "</section>"
+        ].join("");
       })
       .join("");
 
-    nav.innerHTML = `${linksHtml}<button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>`;
+    nav.innerHTML = `${groupsHtml}<button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>`;
+  }
+
+  function bindSidebarGroups() {
+    if (window.__adminSidebarGroupClickHandler) {
+      document.removeEventListener("click", window.__adminSidebarGroupClickHandler);
+    }
+
+    const clickHandler = (event) => {
+      const toggle = event.target.closest("[data-admin-nav-group-toggle]");
+      if (!toggle) return;
+
+      event.preventDefault();
+      const key = toggle.getAttribute("data-admin-nav-group-toggle") || "";
+      const itemsNode = document.querySelector(`[data-admin-nav-group-items="${key}"]`);
+      if (!itemsNode) return;
+
+      const open = itemsNode.hidden;
+      itemsNode.hidden = !open;
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+
+      let stored = {};
+      try {
+        stored = JSON.parse(localStorage.getItem(KEY_SIDEBAR_GROUP_STATE) || "{}") || {};
+      } catch {
+        stored = {};
+      }
+      stored[key] = open;
+      localStorage.setItem(KEY_SIDEBAR_GROUP_STATE, JSON.stringify(stored));
+    };
+
+    document.addEventListener("click", clickHandler);
+    window.__adminSidebarGroupClickHandler = clickHandler;
+  }
+
+  function injectTopbarQuickCreateActions() {
+    const topbarActions = document.querySelector(".admin-topbar-actions");
+    if (!topbarActions || topbarActions.querySelector("[data-admin-quick-create-wrap]")) return;
+
+    const wrap = document.createElement("div");
+    wrap.className = "admin-quick-create-wrap";
+    wrap.setAttribute("data-admin-quick-create-wrap", "");
+    wrap.innerHTML = [
+      '<a class="admin-btn admin-btn-secondary admin-quick-create" href="live-dispo.html" title="Neue Fahrt">+ Neue Fahrt</a>',
+      '<a class="admin-btn admin-btn-secondary admin-quick-create" href="kunden.html" title="Neuer Kunde">+ Neuer Kunde</a>',
+      '<a class="admin-btn admin-btn-secondary admin-quick-create" href="fahrer.html" title="Neuer Fahrer">+ Neuer Fahrer</a>',
+      '<a class="admin-btn admin-btn-secondary admin-quick-create" href="fahrzeuge.html" title="Neues Fahrzeug">+ Neues Fahrzeug</a>',
+      '<a class="admin-btn admin-btn-secondary admin-quick-create" href="rechnungen.html" title="Neue Rechnung">+ Neue Rechnung</a>'
+    ].join("");
+
+    topbarActions.prepend(wrap);
   }
 
   function setupMobileNavigation() {
@@ -1563,7 +1659,9 @@
     bindLogout();
     if (protectionState.role) {
       renderUnifiedSidebar(protectionState.role);
+      bindSidebarGroups();
       renderRoleIndicator(protectionState.role);
+      injectTopbarQuickCreateActions();
       setupMobileNavigation();
       ensureSystemCenterReady().finally(() => {
         setupNotificationCenter(protectionState.role);
