@@ -4,6 +4,8 @@
   const MAX_EVENTS = 80;
   const MAX_NOTIFICATIONS = 48;
   const DEMO_DAY = "2026-08-03";
+  const NOTIFICATION_OPEN_STATUS = "offen";
+  const NOTIFICATION_CLOSED_STATUSES = ["gelesen", "bestaetigt", "archiviert", "geschlossen"];
 
   const STATUS_LIST = [
     "Neu",
@@ -426,10 +428,10 @@
       { id: "EV-5", time: "08:20", category: "System", tone: "tone-system", message: "Live-Dispo Demo-Zustand synchronisiert.", refType: "system", refId: "" }
     ],
     notifications: [
-      { id: "NT-1", priority: "Hoch", title: "Neuer Auftrag", text: "TG-1053 wartet auf Zuweisung.", refType: "order", refId: "TG-1053", read: false, time: "08:19" },
-      { id: "NT-2", priority: "Hoch", title: "Rollstuhlfahrzeug benötigt", text: "TG-1052 benötigt geeignetes Fahrzeug.", refType: "order", refId: "TG-1052", read: false, time: "08:18" },
-      { id: "NT-3", priority: "Mittel", title: "Kunde wartet", text: "TG-1051 meldet Wartezeit am Abholort.", refType: "order", refId: "TG-1051", read: false, time: "08:14" },
-      { id: "NT-4", priority: "Niedrig", title: "Fahrt abgeschlossen", text: "TG-1039 wurde erfolgreich beendet.", refType: "system", refId: "", read: true, time: "08:08" }
+      { id: "NT-1", priority: "Hoch", title: "Neuer Auftrag", text: "TG-1053 wartet auf Zuweisung.", refType: "order", refId: "TG-1053", read: false, status: "offen", time: "08:19" },
+      { id: "NT-2", priority: "Hoch", title: "Rollstuhlfahrzeug benötigt", text: "TG-1052 benötigt geeignetes Fahrzeug.", refType: "order", refId: "TG-1052", read: false, status: "offen", time: "08:18" },
+      { id: "NT-3", priority: "Mittel", title: "Kunde wartet", text: "TG-1051 meldet Wartezeit am Abholort.", refType: "order", refId: "TG-1051", read: false, status: "offen", time: "08:14" },
+      { id: "NT-4", priority: "Niedrig", title: "Fahrt abgeschlossen", text: "TG-1039 wurde erfolgreich beendet.", refType: "system", refId: "", read: true, status: "gelesen", time: "08:08" }
     ],
     sequence: {
       order: 1053,
@@ -471,6 +473,22 @@
       if (!parsed || !Array.isArray(parsed.orders) || !Array.isArray(parsed.vehicles)) {
         return deepClone(defaultData);
       }
+
+      if (!Array.isArray(parsed.notifications)) {
+        parsed.notifications = [];
+      }
+
+      parsed.notifications = parsed.notifications.map((item) => {
+        const mappedStatus = String(item?.status || "").toLowerCase();
+        const fallbackStatus = item?.read ? "gelesen" : NOTIFICATION_OPEN_STATUS;
+        const status = mappedStatus || fallbackStatus;
+        return {
+          ...item,
+          status,
+          read: NOTIFICATION_CLOSED_STATUSES.includes(status)
+        };
+      });
+
       return parsed;
     } catch {
       return deepClone(defaultData);
@@ -1062,11 +1080,16 @@
     const list = document.querySelector("[data-dispo-notify-list]");
     if (!badge || !list) return;
 
-    const unread = state.data.notifications.filter((item) => !item.read).length;
+    const openNotifications = state.data.notifications.filter((item) => !NOTIFICATION_CLOSED_STATUSES.includes(String(item.status || "").toLowerCase()));
+    const unread = openNotifications.length;
     badge.textContent = String(unread);
     badge.hidden = unread <= 0;
 
-    const visible = state.data.notifications.filter((item) => {
+    if (unread <= 0) {
+      toggleNotificationPanel(false);
+    }
+
+    const visible = openNotifications.filter((item) => {
       if (state.ui.notifyFilter === "Alle") return true;
       return item.priority === state.ui.notifyFilter;
     });
@@ -1080,9 +1103,8 @@
 
     list.innerHTML = visible
       .map((item) => {
-        const readClass = item.read ? "is-read" : "";
         return `
-          <article class="dispo-notify-item ${readClass}">
+          <article class="dispo-notify-item">
             <header>
               <strong>${item.title}</strong>
               <span class="dispo-prio-badge prio-${normalize(item.priority)}">${item.priority}</span>
@@ -1091,7 +1113,9 @@
             <small>${item.time}</small>
             <div class="dispo-notify-actions">
               <button class="admin-btn admin-btn-secondary" type="button" data-dispo-notify-action="open" data-dispo-notify-id="${item.id}">Öffnen</button>
-              ${item.read ? "<span class=\"dispo-read-chip\">Gelesen</span>" : `<button class="admin-btn admin-btn-secondary" type="button" data-dispo-notify-action="read" data-dispo-notify-id="${item.id}">Als gelesen</button>`}
+              <button class="admin-btn admin-btn-secondary" type="button" data-dispo-notify-action="confirm" data-dispo-notify-id="${item.id}">Bestätigen</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-dispo-notify-action="archive" data-dispo-notify-id="${item.id}">Archivieren</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-dispo-notify-action="close" data-dispo-notify-id="${item.id}">Schließen</button>
             </div>
           </article>
         `;
@@ -1141,6 +1165,7 @@
       refType,
       refId,
       read: false,
+      status: NOTIFICATION_OPEN_STATUS,
       time: nowTime()
     };
 
@@ -1833,10 +1858,12 @@
     closeModal();
   }
 
-  function markNotificationRead(id) {
+  function updateNotificationStatus(id, status) {
     const item = state.data.notifications.find((entry) => entry.id === id);
     if (!item) return;
-    item.read = true;
+    const nextStatus = String(status || NOTIFICATION_OPEN_STATUS).toLowerCase();
+    item.status = nextStatus;
+    item.read = NOTIFICATION_CLOSED_STATUSES.includes(nextStatus);
     saveData();
     renderNotifications();
   }
@@ -1845,6 +1872,7 @@
     const item = state.data.notifications.find((entry) => entry.id === id);
     if (!item) return;
 
+    item.status = "gelesen";
     item.read = true;
 
     if (item.refType === "order" && item.refId) {
@@ -2329,11 +2357,14 @@
       const readAll = event.target.closest("[data-dispo-notify-read-all]");
       if (readAll) {
         state.data.notifications.forEach((item) => {
-          item.read = true;
+          if (!NOTIFICATION_CLOSED_STATUSES.includes(String(item.status || "").toLowerCase())) {
+            item.status = "gelesen";
+            item.read = true;
+          }
         });
         saveData();
         renderNotifications();
-        setFeedback("Alle Benachrichtigungen als gelesen markiert.", "success");
+        setFeedback("Alle offenen Benachrichtigungen wurden erledigt.", "success");
         return;
       }
 
@@ -2343,7 +2374,22 @@
         const id = action.getAttribute("data-dispo-notify-id") || "";
 
         if (name === "read") {
-          markNotificationRead(id);
+          updateNotificationStatus(id, "gelesen");
+          return;
+        }
+
+        if (name === "confirm") {
+          updateNotificationStatus(id, "bestaetigt");
+          return;
+        }
+
+        if (name === "archive") {
+          updateNotificationStatus(id, "archiviert");
+          return;
+        }
+
+        if (name === "close") {
+          updateNotificationStatus(id, "geschlossen");
           return;
         }
 
