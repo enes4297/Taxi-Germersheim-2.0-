@@ -2,7 +2,7 @@
   const S = window.AdminSystemCenter;
   if (!S) return;
 
-  const state = { data: S.loadState(), query: "", status: "alle", priority: "alle", category: "alle", openOnly: "ja" };
+  const state = { data: S.loadState(), query: "", status: "alle", priority: "alle", category: "alle", openOnly: "ja", showAll: false };
   const session = {
     user: localStorage.getItem("demoAdminUser") || "System",
     role: localStorage.getItem("demoAdminRole") || "Chef"
@@ -60,17 +60,21 @@
     if (!node) return;
     const unread = items.filter((x) => isOpen(x.status)).length;
     const critical = items.filter((x) => S.normalize(x.priority).includes("krit")).length;
-    const grouped = S.groupedNotifications(items);
     const assigned = items.filter((x) => S.normalize(x.assignedTo).includes(S.normalize(session.role)) || S.normalize(x.assignedTo).includes(S.normalize(session.user))).length;
 
     node.innerHTML = [
-      `<article class="m-kpi"><small>Gesamt</small><strong>${items.length}</strong><p>Systemweite Meldungen</p></article>`,
       `<article class="m-kpi"><small>Offen</small><strong>${unread}</strong><p>Noch nicht abgeschlossen</p></article>`,
       `<article class="m-kpi"><small>Kritisch</small><strong>${critical}</strong><p>Sofortige Priorität</p></article>`,
-      `<article class="m-kpi"><small>Gruppiert</small><strong>${grouped.length}</strong><p>Zusammengefasste Ereignisse</p></article>`,
-      `<article class="m-kpi"><small>Meine Rolle</small><strong>${assigned}</strong><p>Direkt zugewiesen</p></article>`,
-      `<article class="m-kpi"><small>Letzte Aktualisierung</small><strong>${formatDateTimeLabel(S.nowIso())}</strong><p>Live aus lokalen Daten</p></article>`
+      `<article class="m-kpi"><small>Direkt bei mir</small><strong>${assigned}</strong><p>für ${session.role}</p></article>`
     ].join("");
+  }
+
+  function priorityScore(priority) {
+    const p = S.normalize(priority);
+    if (p.includes("krit")) return 4;
+    if (p.includes("dring") || p.includes("wichtig")) return 3;
+    if (p.includes("normal")) return 2;
+    return 1;
   }
 
   function renderFilters(items) {
@@ -99,20 +103,26 @@
     const node = document.querySelector("[data-notice-list]");
     if (!node) return;
 
-    const grouped = S.groupedNotifications(items);
-    if (!grouped.length) {
+    const ordered = [...items].sort((a, b) => {
+      const diffPriority = priorityScore(b.priority) - priorityScore(a.priority);
+      if (diffPriority !== 0) return diffPriority;
+      return String(b.timestamp || "").localeCompare(String(a.timestamp || ""));
+    });
+
+    const visible = state.showAll ? ordered : ordered.slice(0, 8);
+    if (!visible.length) {
       node.innerHTML = '<p class="m-note">Keine Meldungen im aktuellen Filter.</p>';
       return;
     }
 
-    node.innerHTML = grouped.map((group) => {
-      const first = group.items[0];
-      const detailRows = group.items.map((item) => {
-        return `<article class="m-item"><strong>${item.title}</strong><p>${item.message}</p><p class="m-meta-line">${badge(item.priority)}${badge(item.status, isOpen(item.status) ? "wichtig" : "success")}</p><p>${item.category || "-"} · ${item.source || "-"} · ${formatDateTimeLabel(item.timestamp)}</p><div class="m-actions"><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="gelesen" data-notice-id="${item.id}">Schließen</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="bestaetigt" data-notice-id="${item.id}">Bestätigen</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="archiviert" data-notice-id="${item.id}">Archivieren</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="erledigt" data-notice-id="${item.id}">Erledigt</button><button class="admin-btn" type="button" data-notice-task="${item.id}">Als Aufgabe</button></div></article>`;
-      }).join("");
+    const remaining = Math.max(0, ordered.length - visible.length);
+    const info = remaining > 0 ? `<p class="m-note">${remaining} weitere Meldungen ausgeblendet.</p>` : "";
 
-      return `<section class="admin-panel"><div class="admin-panel-head"><h3>${group.title}</h3><small>${group.count} Eintrag(e) · ${badge(first.priority)}</small></div>${detailRows}</section>`;
+    const rows = visible.map((item) => {
+      return `<article class="m-item"><strong>${item.title}</strong><p>${item.message}</p><p class="m-meta-line">${badge(item.priority)}${badge(item.status, isOpen(item.status) ? "wichtig" : "success")}</p><p>${item.category || "-"} · ${item.source || "-"} · ${formatDateTimeLabel(item.timestamp)}</p><div class="m-actions"><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="gelesen" data-notice-id="${item.id}">Schließen</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="bestaetigt" data-notice-id="${item.id}">Bestätigen</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="archiviert" data-notice-id="${item.id}">Archivieren</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="erledigt" data-notice-id="${item.id}">Erledigt</button><button class="admin-btn" type="button" data-notice-task="${item.id}">Als Aufgabe</button></div></article>`;
     }).join("");
+
+    node.innerHTML = `${info}${rows}`;
   }
 
   function render() {
@@ -277,6 +287,15 @@
           S.updateNotification(state.data, row.id, { status: "gelesen" }, session.user);
         });
         refreshBadges();
+        render();
+      });
+    }
+
+    const toggleAll = document.querySelector("[data-notice-toggle-all]");
+    if (toggleAll) {
+      toggleAll.addEventListener("click", () => {
+        state.showAll = !state.showAll;
+        toggleAll.textContent = state.showAll ? "Kompaktansicht" : "Alle Meldungen anzeigen";
         render();
       });
     }

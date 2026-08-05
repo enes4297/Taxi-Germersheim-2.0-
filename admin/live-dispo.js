@@ -1906,6 +1906,11 @@
   }
 
   function setMobileTab(tabName) {
+    if (state.ui.tabletPanel) {
+      state.ui.tabletPanel = "";
+      document.body.classList.remove("dispo-tablet-orders-open", "dispo-tablet-fleet-open");
+    }
+
     state.ui.mobileTab = tabName;
 
     document.querySelectorAll("[data-dispo-mobile-tab]").forEach((button) => {
@@ -2433,12 +2438,22 @@
     document.querySelectorAll("[data-dispo-tablet-toggle]").forEach((button) => {
       button.addEventListener("click", () => {
         const panel = button.getAttribute("data-dispo-tablet-toggle") || "";
-        if (panel) setTabletPanel(panel);
+        if (!panel) return;
+        if (window.innerWidth <= 820) {
+          setMobileTab(panel);
+          return;
+        }
+        setTabletPanel(panel);
       });
     });
 
     window.addEventListener("resize", () => {
       if (window.innerWidth > 1200) {
+        state.ui.tabletPanel = "";
+        document.body.classList.remove("dispo-tablet-orders-open", "dispo-tablet-fleet-open");
+      }
+
+      if (window.innerWidth <= 820 && state.ui.tabletPanel) {
         state.ui.tabletPanel = "";
         document.body.classList.remove("dispo-tablet-orders-open", "dispo-tablet-fleet-open");
       }

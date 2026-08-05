@@ -1,6 +1,7 @@
 (() => {
   const STORAGE_KEY = "adminTerminCockpitV22Phase1";
   const LIVE_DISPO_KEY = "adminLiveDispoV131";
+  const DISPATCH_BRIDGE_KEY = "adminV22DispatchBridge";
   const STATUS_FLOW = ["Noch ungeplant", "Neu", "Geplant", "Bestaetigt", "Unterwegs", "Erledigt", "Abgerechnet"];
   const AI_STEPS = [
     "Fahrer analysieren",
@@ -74,6 +75,13 @@
     }
   }
 
+  function normalize(value) {
+    return String(value || "")
+      .toLocaleLowerCase("de-DE")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
   function loadLiveResources() {
     const parsed = safeParse(localStorage.getItem(LIVE_DISPO_KEY)) || {};
     const drivers = Array.isArray(parsed.drivers) ? parsed.drivers : [];
@@ -103,6 +111,48 @@
           }))
         : fallbackVehicles
     };
+  }
+
+  function loadDispatchBridge() {
+    const parsed = safeParse(localStorage.getItem(DISPATCH_BRIDGE_KEY)) || {};
+    return {
+      plannedDrivers: Array.isArray(parsed.plannedDrivers) ? parsed.plannedDrivers : [],
+      confirmedPlan: Array.isArray(parsed.confirmedPlan) ? parsed.confirmedPlan : []
+    };
+  }
+
+  function toMinutes(text) {
+    const [h, m] = String(text || "00:00").split(":").map((v) => Number(v));
+    return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+  }
+
+  function isInsideShift(timeText, startText, endText) {
+    const t = toMinutes(timeText);
+    const s = toMinutes(startText);
+    const eRaw = toMinutes(endText);
+    const e = eRaw <= s ? eRaw + 1440 : eRaw;
+    const tNorm = t < s ? t + 1440 : t;
+    return tNorm >= s && tNorm <= e;
+  }
+
+  function isDriverRegularlyPlanable(driver, appointment) {
+    const status = normalize(driver.status);
+    if (!(status.includes("aktiv") || status.includes("dienst") || status.includes("frei") || status.includes("probe"))) return { ok: false, reason: "Mitarbeiter nicht aktiv" };
+    if (normalize(driver.dayAvailability).includes("nicht")) return { ok: false, reason: "nicht verfügbar" };
+    if (["abgelaufen", "fehlt", "gesperrt"].includes(normalize(driver.licenseStatus))) return { ok: false, reason: "Führerschein nicht gültig" };
+    if (["abgelaufen", "fehlt", "gesperrt"].includes(normalize(driver.permitStatus))) return { ok: false, reason: "Taxischein nicht gültig" };
+    if (!isInsideShift(appointment.time, driver.shiftStart, driver.shiftEnd)) return { ok: false, reason: "außerhalb Schicht" };
+
+    const quals = Array.isArray(driver.qualifications) ? driver.qualifications.map((q) => normalize(q)) : [];
+    const dest = normalize(appointment.destination || "");
+    if (appointment.wheelchair && !(normalize(driver.vehicle).includes("200") || quals.some((q) => q.includes("rollstuhl")))) {
+      return { ok: false, reason: "Rollstuhlqualifikation fehlt" };
+    }
+    if (dest.includes("dialyse") && !quals.some((q) => q.includes("dialyse") || q.includes("kranken"))) {
+      return { ok: false, reason: "Dialysequalifikation fehlt" };
+    }
+
+    return { ok: true, reason: "einplanbar" };
   }
 
   function defaultAppointments() {
@@ -381,6 +431,7 @@
         '<article class="tc-suggestion-card">',
         `<h3>${suggestion.vehicleLabel}</h3>`,
         `<p>${suggestion.driverName}</p>`,
+        `<p class="m-meta">${suggestion.explain || "Demo-Vorschlag"}</p>`,
         `<div class="tc-route">${route}</div>`,
         '<div class="tc-metrics">',
         `<span>Geschaetzte Auslastung: ${suggestion.utilization}%</span>`,
@@ -457,14 +508,38 @@
 
   function generateSuggestions() {
     const resources = loadLiveResources();
+    const bridge = loadDispatchBridge();
     const candidates = state.data.appointments
       .filter((a) => ["Noch ungeplant", "Neu"].includes(a.status))
       .sort(compareAppointments)
       .slice(0, 8);
 
     const fresh = candidates.map((appointment, index) => {
-      const baseVehicle = resources.vehicles[index % Math.max(resources.vehicles.length, 1)] || { id: `VEH-${index}`, plate: `GER TX${100 + index}`, name: `GER TX${100 + index}`, driverId: "" };
-      const driver = resources.drivers.find((d) => d.id === baseVehicle.driverId) || resources.drivers[index % Math.max(resources.drivers.length, 1)] || { name: `Fahrer ${index + 1}` };
+      const plannedForDate = bridge.plannedDrivers.filter((d) => d && d.shiftStart && d.shiftEnd);
+      const regular = plannedForDate
+        .filter((d) => !d.reserve)
+        .map((d) => ({ data: d, check: isDriverRegularlyPlanable(d, appointment) }))
+        .filter((d) => d.check.ok);
+      const reserve = plannedForDate
+        .filter((d) => d.reserve)
+        .map((d) => ({ data: d, check: isDriverRegularlyPlanable(d, appointment) }))
+        .filter((d) => d.check.ok);
+
+      const picked = regular[0] || reserve[0] || null;
+      const baseVehicle = picked
+        ? { id: picked.data.employeeId, plate: picked.data.vehicle || `GER TX${100 + index}`, name: picked.data.vehicle || `GER TX${100 + index}`, driverId: picked.data.employeeId }
+        : (resources.vehicles[index % Math.max(resources.vehicles.length, 1)] || { id: `VEH-${index}`, plate: `GER TX${100 + index}`, name: `GER TX${100 + index}`, driverId: "" });
+
+      const driver = picked
+        ? { name: picked.data.name || `Fahrer ${index + 1}` }
+        : (resources.drivers.find((d) => d.id === baseVehicle.driverId) || resources.drivers[index % Math.max(resources.drivers.length, 1)] || { name: `Fahrer ${index + 1}` });
+
+      const reasonText = picked
+        ? (picked.data.reserve
+          ? "Reservefahrer aus Plan für morgen"
+          : "Eingeplanter Fahrer aus Plan für morgen")
+        : "Kein eingeplanter Fahrer gefunden, Fallback aus Live-Demo";
+
       return {
         id: uid("SUG"),
         appointmentId: appointment.id,
@@ -475,6 +550,7 @@
         utilization: Math.min(98, 82 + (index % 5) * 3),
         emptyKm: 2 + (index % 4),
         driveMin: 35 + (index % 4) * 12,
+        explain: reasonText,
         status: "offen",
         createdAt: nowIso()
       };

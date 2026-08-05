@@ -1117,17 +1117,7 @@
     searchWrap.setAttribute("data-v20-global-search-wrap", "");
     searchWrap.innerHTML = [
       '<input class="admin-v20-search-input" type="search" data-v20-global-search-input placeholder="Systemweit suchen (Ctrl/Cmd+K)" aria-label="Systemweite Suche">',
-      '<select class="admin-v20-search-filter" data-v20-global-search-filter aria-label="Suchbereich">',
-      '<option value="alle">Alle</option>',
-      '<option value="seiten">Seiten</option>',
-      '<option value="aufgaben">Aufgaben</option>',
-      '<option value="kunden">Kunden</option>',
-      '<option value="fahrten">Fahrten</option>',
-      '<option value="fahrzeuge">Fahrzeuge</option>',
-      '<option value="personal">Personal</option>',
-      '<option value="finanzen">Finanzen</option>',
-      '<option value="qualitaet">Qualitaet</option>',
-      '</select>',
+      '<button class="admin-v20-search-filter" type="button" data-v20-global-search-filter aria-label="Suchoptionen" title="Suchoptionen">Filter</button>',
       '<section class="admin-v20-search-results" data-v20-global-search-results hidden></section>'
     ].join("");
 
@@ -1146,12 +1136,18 @@
         panel.innerHTML = "";
         return;
       }
-      renderGlobalSearchResults(state, sources, query, filter.value);
+      renderGlobalSearchResults(state, sources, query, "alle");
       panel.hidden = false;
     };
 
     input.addEventListener("input", refresh);
-    filter.addEventListener("change", refresh);
+    if (filter) {
+      filter.addEventListener("click", () => {
+        if (typeof window.__adminV20OpenPalette === "function") {
+          window.__adminV20OpenPalette(input.value || "");
+        }
+      });
+    }
 
     searchWrap.addEventListener("click", (event) => {
       const link = event.target.closest("[data-v20-search-link]");
@@ -1503,7 +1499,7 @@
       topbar.append(actions);
     }
 
-    if (actions.querySelector("[data-dispo-notify-toggle]")) {
+    if (document.querySelector("[data-dispo-notify-toggle]")) {
       return;
     }
 
@@ -1648,7 +1644,7 @@
         window.__adminV20RefreshBadges(role, localStorage.getItem(KEY_USER) || "admin");
       }
 
-      renderDashboardHints(main, state.notifications);
+      // Leitstellenmodus: kein separates Hinweisbanner in der Standardansicht.
 
       Object.keys(state.autoHideTimers).forEach((id) => {
         const isStillOpen = openNotifications.some((entry) => entry.id === id);
@@ -1894,6 +1890,7 @@
     });
 
     applyDemoLoadingState();
+    document.body.classList.add("admin-leitstelle-mode");
     ensureHeaderConsistency();
     bindLogout();
     if (protectionState.role) {

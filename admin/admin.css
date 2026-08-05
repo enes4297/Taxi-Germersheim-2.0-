@@ -93,7 +93,7 @@ button {
 .admin-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 280px minmax(0, 1fr);
 }
 
 .admin-sidebar {
@@ -223,10 +223,12 @@ button {
 }
 
 .admin-main {
-  padding: 26px 28px 36px;
+  padding: 20px 22px 28px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
-  gap: 18px;
+  gap: 14px;
+  min-width: 0;
 }
 
 .admin-main-loading {
@@ -253,29 +255,31 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   border: 1px solid var(--line);
   border-radius: 18px;
-  padding: 16px 18px;
+  padding: 12px 14px;
   background: linear-gradient(140deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  min-width: 0;
 }
 
 .admin-topbar-title h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1.1;
 }
 
 .admin-topbar-title p {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .admin-topbar-actions {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .admin-quick-create-wrap {
@@ -348,13 +352,13 @@ button {
   max-width: 520px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: 6px;
 }
 
 .admin-v20-search-input,
 .admin-v20-search-filter,
 .admin-v20-palette-input {
-  min-height: 44px;
+  min-height: 40px;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.05);
@@ -364,7 +368,10 @@ button {
 }
 
 .admin-v20-search-filter {
-  min-width: 130px;
+  min-width: 74px;
+  font-size: 12px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .admin-v20-search-input::placeholder,
@@ -376,7 +383,7 @@ button {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  width: 100%;
+  width: min(560px, 100%);
   display: grid;
   gap: 6px;
   border-radius: 12px;
@@ -1012,10 +1019,10 @@ body.admin-v20-palette-open {
 .admin-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-l);
-  padding: var(--space-16);
+  padding: 13px;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .admin-panel-head {
@@ -1027,7 +1034,25 @@ body.admin-v20-palette-open {
 
 .admin-panel-head h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 18px;
+}
+
+body.admin-leitstelle-mode .admin-main {
+  gap: 12px;
+}
+
+body.admin-leitstelle-mode .admin-panel {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+body.admin-leitstelle-mode .admin-panel-head small {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+}
+
+body.admin-leitstelle-mode .admin-btn {
+  min-height: 36px;
 }
 
 .admin-panel-actions {

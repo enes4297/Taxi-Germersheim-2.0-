@@ -34,13 +34,11 @@
     const planned = data.dayPlan.length;
     const open = data.appointments.filter((a) => ["Noch ungeplant", "Neu"].includes(a.status)).length;
     const confirmed = data.appointments.filter((a) => a.status === "Bestaetigt").length;
-    const completed = data.appointments.filter((a) => ["Erledigt", "Abgerechnet"].includes(a.status)).length;
 
     node.innerHTML = [
       `<article class="m-kpi"><small>Geplante Termine</small><strong>${planned}</strong><p>aus KI-Demo oder manuell uebernommen</p></article>`,
       `<article class="m-kpi"><small>Noch ungeplant</small><strong>${open}</strong><p>fuer naechste KI-Planung</p></article>`,
-      `<article class="m-kpi"><small>Bestaetigt</small><strong>${confirmed}</strong><p>telefonisch informiert</p></article>`,
-      `<article class="m-kpi"><small>Abgeschlossen</small><strong>${completed}</strong><p>erledigt oder abgerechnet</p></article>`
+      `<article class="m-kpi"><small>Bestaetigt</small><strong>${confirmed}</strong><p>telefonisch informiert</p></article>`
     ].join("");
   }
 
