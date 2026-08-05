@@ -113,6 +113,8 @@
   ROLE_PAGE_ACCESS["benachrichtigungen-center.html"] = ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt", "Personalverwaltung", "Qualitaetsmanagement", "Mitarbeiter"];
   ROLE_PAGE_ACCESS["rollen-rechte.html"] = ["Chef"];
   ROLE_PAGE_ACCESS["arbeitsplatz.html"] = ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt", "Personalverwaltung", "Qualitaetsmanagement", "Mitarbeiter"];
+  ROLE_PAGE_ACCESS["termin-cockpit.html"] = ["Chef", "Geschaeftsleitung", "Disposition"];
+  ROLE_PAGE_ACCESS["tagesplanung.html"] = ["Chef", "Geschaeftsleitung", "Disposition"];
 
   // Nur Demo-Benachrichtigungen ohne Backend.
   const DEMO_NOTIFICATIONS = [
@@ -335,6 +337,38 @@
     });
   });
 
+  const V22_NAV_BY_ROLE = {
+    Chef: ["Termin-Cockpit", "Tagesplanung"],
+    Geschaeftsleitung: ["Termin-Cockpit", "Tagesplanung"],
+    Disposition: ["Termin-Cockpit", "Tagesplanung"]
+  };
+
+  Object.entries(V22_NAV_BY_ROLE).forEach(([role, labels]) => {
+    const base = ROLE_NAV_ACCESS[role];
+    if (!Array.isArray(base)) return;
+    labels.forEach((label) => {
+      if (!base.includes(label)) base.push(label);
+    });
+  });
+
+  if (!SIDEBAR_ITEMS.some((item) => item.key === "Termin-Cockpit")) {
+    SIDEBAR_ITEMS.splice(6, 0, { key: "Termin-Cockpit", href: "termin-cockpit.html", label: "Termin-Cockpit" });
+  }
+
+  if (!SIDEBAR_ITEMS.some((item) => item.key === "Tagesplanung")) {
+    SIDEBAR_ITEMS.splice(7, 0, { key: "Tagesplanung", href: "tagesplanung.html", label: "Tagesplanung" });
+  }
+
+  const betriebGroup = SIDEBAR_GROUPS.find((group) => group.key === "betrieb");
+  if (betriebGroup) {
+    if (!betriebGroup.items.includes("Termin-Cockpit")) {
+      betriebGroup.items.splice(1, 0, "Termin-Cockpit");
+    }
+    if (!betriebGroup.items.includes("Tagesplanung")) {
+      betriebGroup.items.splice(2, 0, "Tagesplanung");
+    }
+  }
+
   function normalizePath(pathname) {
     const lower = String(pathname || "").toLowerCase();
     if (lower.endsWith("/")) return "index.html";
@@ -426,6 +460,8 @@
     const hash = String(window.location.hash || "").toLowerCase();
     if (fileName === "index.html" && hash === "#dashboard") return "Dashboard";
     if (fileName === "index.html") return "Fahrten";
+    if (fileName === "termin-cockpit.html") return "Termin-Cockpit";
+    if (fileName === "tagesplanung.html") return "Tagesplanung";
     if (fileName === "fahrer.html") return "Fahrer";
     if (fileName === "fahrzeuge.html") return "Fahrzeuge";
     if (fileName === "live-karte.html") return "Live-Karte";
@@ -600,7 +636,7 @@
     wrap.innerHTML = [
       '<button class="admin-btn admin-btn-primary admin-quick-create-main" type="button" aria-haspopup="true" aria-expanded="false" data-admin-quick-create-toggle>+ Neu</button>',
       '<div class="admin-quick-create-menu" data-admin-quick-create-menu hidden>',
-      '<a class="admin-quick-create-item" href="live-dispo.html" title="Neue Demo-Fahrt anlegen"><span aria-hidden="true">🚕</span><b>Neue Fahrt</b><small>Strg+Alt+F</small></a>',
+      '<a class="admin-quick-create-item" href="termin-cockpit.html" title="Neuen Termin schnell erfassen"><span aria-hidden="true">🚕</span><b>Neuer Termin</b><small>Strg+Alt+F</small></a>',
       '<a class="admin-quick-create-item" href="kunden.html" title="Neuen Kunden erfassen"><span aria-hidden="true">👤</span><b>Neuer Kunde</b><small>Strg+Alt+K</small></a>',
       '<a class="admin-quick-create-item" href="fahrer.html" title="Neuen Fahrer anlegen"><span aria-hidden="true">🧑‍✈️</span><b>Neuer Fahrer</b><small>Strg+Alt+R</small></a>',
       '<a class="admin-quick-create-item" href="fahrzeuge.html" title="Neues Fahrzeug anlegen"><span aria-hidden="true">🚗</span><b>Neues Fahrzeug</b><small>Strg+Alt+V</small></a>',
@@ -662,19 +698,49 @@
     const topbarActions = document.querySelector(".admin-topbar-actions");
     if (!topbarActions) return;
 
+    const normalizeHref = (value) => {
+      const text = String(value || "");
+      const split = text.split(/[?#]/)[0] || "";
+      return split.split("/").pop() || split;
+    };
+
     topbarActions.querySelectorAll(".admin-topbar-logo").forEach((logo) => logo.remove());
 
     const bellButtons = Array.from(topbarActions.querySelectorAll("button[aria-label='Benachrichtigungen']"));
     bellButtons.slice(1).forEach((button) => button.remove());
 
+    const roleIndicators = Array.from(topbarActions.querySelectorAll("[data-admin-role-indicator]"));
+    roleIndicators.forEach((node) => node.remove());
+
     const userButtons = Array.from(topbarActions.querySelectorAll(".admin-user"));
     userButtons.slice(1).forEach((button) => button.remove());
 
-    const taskLinks = Array.from(topbarActions.querySelectorAll('a[href*="aufgaben-center.html"]'));
+    const taskLinks = Array.from(topbarActions.querySelectorAll("a")).filter((link) => normalizeHref(link.getAttribute("href")) === "aufgaben-center.html");
     taskLinks.slice(1).forEach((node) => node.remove());
 
-    const workspaceLinks = Array.from(topbarActions.querySelectorAll('a[href*="arbeitsplatz.html"]'));
+    const workspaceLinks = Array.from(topbarActions.querySelectorAll("a")).filter((link) => normalizeHref(link.getAttribute("href")) === "arbeitsplatz.html");
     workspaceLinks.slice(1).forEach((node) => node.remove());
+
+    const noticeLinks = Array.from(topbarActions.querySelectorAll("a")).filter((link) => normalizeHref(link.getAttribute("href")) === "benachrichtigungen-center.html");
+    noticeLinks.slice(1).forEach((node) => node.remove());
+
+    const quickCreateWrap = topbarActions.querySelector("[data-admin-quick-create-wrap]");
+    const links = Array.from(topbarActions.querySelectorAll("a"));
+    const taskLink = links.find((link) => normalizeHref(link.getAttribute("href")) === "aufgaben-center.html") || null;
+    const noticeLink = links.find((link) => normalizeHref(link.getAttribute("href")) === "benachrichtigungen-center.html") || null;
+    const workspaceLink = links.find((link) => normalizeHref(link.getAttribute("href")) === "arbeitsplatz.html") || null;
+    const profile = topbarActions.querySelector(".admin-user");
+
+    [quickCreateWrap, taskLink, noticeLink, workspaceLink, profile].forEach((node) => {
+      if (node && node.parentElement === topbarActions) {
+        topbarActions.append(node);
+      }
+    });
+
+    const hasNoticeLink = Boolean(noticeLink);
+    if (hasNoticeLink) {
+      topbarActions.querySelectorAll("button[aria-label='Benachrichtigungen']").forEach((button) => button.remove());
+    }
   }
 
   function setupMobileNavigation() {
@@ -818,6 +884,46 @@
   }
 
   let systemCenterLoadPromise = null;
+  let uiTextLoadPromise = null;
+
+  function ensureUiTextReady() {
+    if (window.AdminUiText) return Promise.resolve(window.AdminUiText);
+    if (uiTextLoadPromise) return uiTextLoadPromise;
+
+    uiTextLoadPromise = new Promise((resolve) => {
+      const loadScript = (selector, src) => {
+        return new Promise((done) => {
+          const existing = document.querySelector(selector);
+          if (existing) {
+            if (src.endsWith("ui-visible-terms.js") && window.AdminUiVisibleTerms) {
+              done();
+              return;
+            }
+            if (src.endsWith("ui-text.js") && window.AdminUiText) {
+              done();
+              return;
+            }
+            existing.addEventListener("load", () => done(), { once: true });
+            existing.addEventListener("error", () => done(), { once: true });
+            return;
+          }
+
+          const script = document.createElement("script");
+          script.src = src;
+          script.defer = true;
+          script.addEventListener("load", () => done(), { once: true });
+          script.addEventListener("error", () => done(), { once: true });
+          document.head.append(script);
+        });
+      };
+
+      loadScript('script[src$="ui-visible-terms.js"]', "ui-visible-terms.js")
+        .then(() => loadScript('script[src$="ui-text.js"]', "ui-text.js"))
+        .then(() => resolve(window.AdminUiText || null));
+    });
+
+    return uiTextLoadPromise;
+  }
 
   function ensureSystemCenterReady() {
     if (window.AdminSystemCenter) return Promise.resolve(window.AdminSystemCenter);
@@ -855,8 +961,19 @@
   }
 
   function injectSystemEntryButtons(role, user) {
-    const actions = document.querySelector(".admin-topbar-actions");
+    const topbar = document.querySelector(".admin-topbar");
+    if (!topbar) return;
+
+    let actions = document.querySelector(".admin-topbar-actions");
+    if (!actions) {
+      actions = document.createElement("div");
+      actions.className = "admin-topbar-actions";
+      topbar.append(actions);
+    }
+
     if (!actions || actions.querySelector("[data-v20-open-tasks]")) return;
+
+    actions.querySelectorAll("button[aria-label='Benachrichtigungen']").forEach((node) => node.remove());
 
     const taskLink = document.createElement("a");
     taskLink.className = "admin-btn admin-btn-secondary admin-v20-quick-link";
@@ -878,6 +995,18 @@
     actions.prepend(workspaceLink);
     actions.prepend(noticeLink);
     actions.prepend(taskLink);
+
+    if (!actions.querySelector(".admin-user")) {
+      const profile = document.createElement("button");
+      profile.className = "admin-user";
+      profile.type = "button";
+      profile.setAttribute("aria-label", "Benutzer");
+      profile.innerHTML = `<span>${role || "Chef"}</span><strong>${user || localStorage.getItem(KEY_USER) || "admin"}</strong>`;
+      actions.append(profile);
+    }
+
+    injectTopbarQuickCreateActions();
+    normalizeTopbarActions();
 
     if (role !== "Chef" && role !== "Geschaeftsleitung") {
       const roleLink = document.querySelector('a[href="rollen-rechte.html"]');
@@ -1378,6 +1507,10 @@
       return;
     }
 
+    if (actions.querySelector('[data-v20-open-notices]')) {
+      return;
+    }
+
     if (!actions.querySelector("button[aria-label='Benachrichtigungen']")) {
       const bell = document.createElement("button");
       bell.className = "admin-icon-btn";
@@ -1691,13 +1824,16 @@
 
   function renderRoleIndicator(role) {
     const topbarActions = document.querySelector(".admin-topbar-actions");
-    if (!topbarActions || topbarActions.querySelector("[data-admin-role-indicator]") || topbarActions.querySelector(".admin-user")) return;
+    if (!topbarActions) return;
+    if (topbarActions.querySelector(".admin-user")) return;
 
-    const badge = document.createElement("div");
-    badge.className = "admin-role-indicator";
-    badge.setAttribute("data-admin-role-indicator", "");
-    badge.textContent = `Angemeldet als: ${role}`;
-    topbarActions.prepend(badge);
+    const userName = localStorage.getItem(KEY_USER) || "admin";
+    const profile = document.createElement("button");
+    profile.className = "admin-user";
+    profile.type = "button";
+    profile.setAttribute("aria-label", "Benutzer");
+    profile.innerHTML = `<span>${role}</span><strong>${userName}</strong>`;
+    topbarActions.append(profile);
   }
 
   function renderPermissionNotice() {
@@ -1751,6 +1887,12 @@
   document.addEventListener("DOMContentLoaded", () => {
     if (!protectionState.protected) return;
 
+    ensureUiTextReady().then((uiText) => {
+      if (!uiText) return;
+      uiText.normalizeDocument(document);
+      uiText.observeDocument(document);
+    });
+
     applyDemoLoadingState();
     ensureHeaderConsistency();
     bindLogout();
@@ -1764,6 +1906,7 @@
       ensureSystemCenterReady().finally(() => {
         setupNotificationCenter(protectionState.role);
         initV20Productivity(protectionState.role, protectionState.user);
+        injectTopbarQuickCreateActions();
         normalizeTopbarActions();
       });
     }

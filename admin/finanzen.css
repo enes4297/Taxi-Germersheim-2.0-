@@ -21,8 +21,32 @@
 }
 .finance-filter-grid label { display: grid; gap: 5px; }
 .finance-filter-grid span { color: var(--muted); font-size: 11px; }
-.finance-table-wrap { overflow: auto; }
-.finance-table th, .finance-table td { white-space: nowrap; }
+.finance-table-wrap {
+  overflow: auto;
+  max-height: 62vh;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.finance-table {
+  min-width: 820px;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.finance-table th,
+.finance-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.finance-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(12, 13, 18, 0.98);
+}
 .finance-status {
   min-height: 23px;
   border-radius: 999px;
@@ -75,6 +99,29 @@
 }
 .finance-kpi small { color: var(--muted); font-size: 11px; display: block; }
 .finance-kpi strong { font-size: 16px; color: var(--gold); }
+
+.kk-more-kpi {
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.kk-more-kpi > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+  list-style: none;
+}
+
+.kk-more-kpi > summary::-webkit-details-marker {
+  display: none;
+}
+
+.kk-more-kpi[open] > summary {
+  color: var(--gold);
+  margin-bottom: 8px;
+}
 .finance-progress {
   height: 8px;
   border-radius: 999px;
@@ -91,11 +138,13 @@
   .finance-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .finance-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .finance-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .finance-table { min-width: 700px; }
 }
 @media (max-width: 820px) {
   .finance-filter-grid { grid-template-columns: 1fr; }
   .finance-actions { grid-template-columns: 1fr; }
   .finance-kpi-grid { grid-template-columns: 1fr; }
+  .finance-table { min-width: 620px; }
   .finance-mobile-tabs {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));

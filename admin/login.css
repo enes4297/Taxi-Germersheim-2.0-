@@ -62,6 +62,12 @@
   gap: 8px;
 }
 
+.admin-login-password-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
 .admin-login-form label {
   color: var(--muted);
   font-size: 12px;
@@ -82,6 +88,43 @@
 .admin-login-form input:focus {
   border-color: rgba(255, 217, 106, 0.44);
   box-shadow: 0 0 0 3px rgba(255, 217, 106, 0.14);
+}
+
+.admin-login-toggle {
+  min-height: 46px;
+}
+
+.admin-login-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.admin-login-remember input {
+  inline-size: 15px;
+  block-size: 15px;
+}
+
+.admin-login-recovery-links {
+  display: grid;
+  gap: 2px;
+}
+
+.admin-link-btn {
+  border: 0;
+  background: transparent;
+  color: var(--gold);
+  text-align: left;
+  min-height: 30px;
+  padding: 0;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.admin-link-btn:hover {
+  text-decoration: underline;
 }
 
 .admin-login-error {
@@ -120,6 +163,33 @@
   margin: 0;
   color: var(--muted);
   font-size: 12px;
+}
+
+.admin-recovery-dialog {
+  width: min(620px, 100%);
+}
+
+.admin-recovery-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-recovery-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-recovery-grid label > input[type="radio"] {
+  margin-right: 8px;
+}
+
+.admin-recovery-grid .driver-search-input {
+  min-height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0 12px;
 }
 
 @media (max-width: 640px) {

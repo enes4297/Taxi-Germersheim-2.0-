@@ -2,7 +2,7 @@
   const S = window.AdminSystemCenter;
   if (!S) return;
 
-  const state = { data: S.loadState(), query: "", status: "alle", priority: "alle", category: "alle", mine: "nein" };
+  const state = { data: S.loadState(), query: "", status: "alle", priority: "alle", category: "alle", mine: "nein", showEmptyColumns: false };
   const session = {
     user: localStorage.getItem("demoAdminUser") || "System",
     role: localStorage.getItem("demoAdminRole") || "Chef"
@@ -59,30 +59,85 @@
     const stats = S.taskStats(tasks, session.user);
     node.innerHTML = [
       `<article class="m-kpi"><small>Gesamt</small><strong>${stats.total}</strong><p>alle sichtbaren Aufgaben</p></article>`,
-      `<article class="m-kpi"><small>Heute faellig</small><strong>${stats.dueToday}</strong><p>inklusive rueckfuehrender Tasks</p></article>`,
-      `<article class="m-kpi"><small>Ueberfaellig</small><strong>${stats.overdue}</strong><p>mit Eskalationsbedarf</p></article>`,
-      `<article class="m-kpi"><small>Kritisch</small><strong>${stats.critical}</strong><p>Prioritaet kritisch</p></article>`,
-      `<article class="m-kpi"><small>Wartet</small><strong>${stats.waiting}</strong><p>wartet auf Rueckmeldung</p></article>`,
+      `<article class="m-kpi"><small>Heute fällig</small><strong>${stats.dueToday}</strong><p>inklusive rückführender Tasks</p></article>`,
+      `<article class="m-kpi"><small>Überfällig</small><strong>${stats.overdue}</strong><p>mit Eskalationsbedarf</p></article>`,
+      `<article class="m-kpi"><small>Kritisch</small><strong>${stats.critical}</strong><p>Priorität kritisch</p></article>`,
+      `<article class="m-kpi"><small>Wartet</small><strong>${stats.waiting}</strong><p>wartet auf Rückmeldung</p></article>`,
       `<article class="m-kpi"><small>Heute erledigt</small><strong>${stats.doneToday}</strong><p>seit Tagesbeginn</p></article>`
     ].join("");
   }
 
   function renderBoard(tasks) {
     const node = document.querySelector("[data-task-board]");
+    const emptyNode = document.querySelector("[data-task-empty-columns]");
+    const toggleBtn = document.querySelector("[data-task-toggle-empty]");
     if (!node) return;
 
-    node.innerHTML = boardColumns.map((status) => {
-      const rows = tasks.filter((t) => S.normalize(t.status) === S.normalize(status)).slice(0, 5);
+    const today = S.todayIso();
+    const myNeedle = `${session.user} ${session.role}`.toLowerCase();
+    const grouped = [
+      {
+        key: "today",
+        title: "Heute",
+        rows: tasks.filter((row) => String(row.dueDate || "") === today)
+      },
+      {
+        key: "open",
+        title: "Offen",
+        rows: tasks.filter((row) => ["neu", "offen", "zugewiesen", "in bearbeitung"].includes(S.normalize(row.status)))
+      },
+      {
+        key: "overdue",
+        title: "Überfällig",
+        rows: tasks.filter((row) => String(row.dueDate || "") < today && S.normalize(row.status) !== "erledigt")
+      },
+      {
+        key: "mine",
+        title: "Meine Aufgaben",
+        rows: tasks.filter((row) => S.normalize(row.owner || "").includes(myNeedle) || myNeedle.includes(S.normalize(row.owner || "")))
+      }
+    ];
+
+    const emptyStatuses = boardColumns
+      .map((status) => ({ status, count: tasks.filter((row) => S.normalize(row.status) === S.normalize(status)).length }))
+      .filter((entry) => entry.count === 0)
+      .map((entry) => `<span class="m-board-empty-chip">${entry.status}</span>`)
+      .join("");
+
+    if (emptyNode) {
+      emptyNode.innerHTML = emptyStatuses ? `<p class="m-note">Leere Spalten: ${emptyStatuses}</p>` : "";
+      emptyNode.hidden = !state.showEmptyColumns;
+    }
+
+    if (toggleBtn) {
+      toggleBtn.textContent = state.showEmptyColumns ? "Leere Spalten ausblenden" : "Leere Spalten anzeigen";
+    }
+
+    const compactRows = grouped.map((group) => {
+      const rows = group.rows.slice(0, 4);
       const cards = rows.length
-        ? rows
-            .map((row) => {
-              const progress = S.checklistProgress(row);
-              return `<article class="m-item"><strong>${row.title}</strong><p>${badge(row.priority)} · ${badge(row.status)}</p><p>${row.owner || "ohne Zuweisung"} · faellig ${row.dueDate || "-"}</p><p>Checkliste: ${progress.done}/${progress.done + progress.open}</p></article>`;
-            })
-            .join("")
-        : '<p class="m-note">Keine Eintraege</p>';
-      return `<section class="admin-panel"><div class="admin-panel-head"><h3>${status}</h3><small>${rows.length}</small></div>${cards}</section>`;
+        ? rows.map((row) => {
+          const progress = S.checklistProgress(row);
+          return `<article class="m-item"><strong>${row.title}</strong><p class="m-meta-line">${badge(row.priority)}${badge(row.status)}</p><p>${row.owner || "ohne Zuweisung"} · fällig ${row.dueDate || "-"}</p><p>Checkliste: ${progress.done}/${progress.done + progress.open}</p></article>`;
+        }).join("")
+        : '<p class="m-note">Keine Einträge.</p>';
+      return `<section class="admin-panel"><div class="admin-panel-head"><h3>${group.title}</h3><small>${group.rows.length}</small></div>${cards}</section>`;
     }).join("");
+
+    let emptyColumnsBlock = "";
+    if (state.showEmptyColumns) {
+      const blocks = boardColumns.map((status) => {
+        const rows = tasks.filter((t) => S.normalize(t.status) === S.normalize(status)).slice(0, 3);
+        if (!rows.length) {
+          return `<section class="admin-panel"><div class="admin-panel-head"><h3>${status}</h3><small>0</small></div><p class="m-note">Keine Einträge.</p></section>`;
+        }
+        const cards = rows.map((row) => `<article class="m-item"><strong>${row.title}</strong><p class="m-meta-line">${badge(row.priority)}${badge(row.status)}</p><p>${row.owner || "ohne Zuweisung"}</p></article>`).join("");
+        return `<section class="admin-panel"><div class="admin-panel-head"><h3>${status}</h3><small>${rows.length}</small></div>${cards}</section>`;
+      }).join("");
+      emptyColumnsBlock = `<div class="m-board-row">${blocks}</div>`;
+    }
+
+    node.innerHTML = `<div class="m-board-row">${compactRows}</div>${emptyColumnsBlock}`;
   }
 
   function renderTable(tasks) {
@@ -119,7 +174,7 @@
     if (!node) return;
     const rows = S.getActivityLog().filter((x) => x.area === "Aufgaben").slice(0, 10);
     if (!rows.length) {
-      node.innerHTML = '<p class="m-note">Noch keine Task-Aktivitaeten vorhanden.</p>';
+      node.innerHTML = '<p class="m-note">Noch keine Task-Aktivitäten vorhanden.</p>';
       return;
     }
     node.innerHTML = rows.map((row) => `<article class="m-item"><strong>${row.action}</strong><p>${row.record || "-"} · ${row.note || ""}</p><p>${S.formatDateTime(row.at)} · ${row.user}</p></article>`).join("");
@@ -272,11 +327,21 @@
     });
   }
 
+  function bindBoardOptions() {
+    const toggle = document.querySelector("[data-task-toggle-empty]");
+    if (!toggle) return;
+    toggle.addEventListener("click", () => {
+      state.showEmptyColumns = !state.showEmptyColumns;
+      render();
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     bindFilters();
     bindCreateForm();
     bindTableActions();
     bindReset();
+    bindBoardOptions();
     render();
   });
 })();

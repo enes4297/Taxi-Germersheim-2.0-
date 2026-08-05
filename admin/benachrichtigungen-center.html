@@ -28,14 +28,11 @@
           <h1>Benachrichtigungs-Center</h1>
           <p>Systemweit gruppiert, priorisiert und bearbeitbar</p>
         </div>
-        <div class="admin-topbar-actions m-actions">
-          <button class="admin-btn admin-btn-secondary" type="button" data-notice-read-all>Alle als gelesen</button>
-          <button class="admin-btn" type="button" data-notice-open-create>Neue Meldung</button>
-        </div>
       </header>
 
       <section class="admin-panel">
-        <div class="admin-panel-head"><h2>Status</h2></div>
+        <div class="admin-panel-head"><h2>Status</h2><span class="m-live-badge">Live aus lokalen Daten</span></div>
+        <div class="m-actions"><button class="admin-btn" type="button" data-notice-open-create>Neue Meldung</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-read-all>Alle als gelesen</button></div>
         <div class="m-grid" data-notice-kpis></div>
       </section>
 
@@ -62,16 +59,28 @@
     <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="notice-modal-title">
       <header class="admin-modal-head">
         <h3 id="notice-modal-title">Neue Meldung erstellen</h3>
-        <button class="admin-icon-btn" type="button" aria-label="Schliessen" data-notice-close-modal>✕</button>
+        <button class="admin-icon-btn" type="button" aria-label="Schließen" data-notice-close-modal>✕</button>
       </header>
-      <form class="admin-modal-body m-form" data-notice-create-form>
-        <label class="m-field"><span>Titel</span><input name="title" required></label>
-        <label class="m-field"><span>Text</span><textarea name="message" rows="3" required></textarea></label>
-        <label class="m-field"><span>Kategorie</span><input name="category" placeholder="Betrieb, Finanzen..."></label>
-        <label class="m-field"><span>Prioritaet</span><select name="priority"></select></label>
-        <label class="m-field"><span>Status</span><select name="status"></select></label>
-        <label class="m-field"><span>Zugewiesen an</span><input name="assignedTo" placeholder="Disposition"></label>
-        <label class="m-field"><span>Link</span><input name="link" placeholder="aufgaben-center.html"></label>
+      <form class="admin-modal-body m-modal-form" data-notice-create-form>
+        <div class="m-modal-form-grid">
+          <label class="m-field is-full"><span>Titel</span><input name="title" required minlength="3" maxlength="120"></label>
+        </div>
+        <div class="m-modal-form-grid">
+          <label class="m-field is-full"><span>Text / Nachricht</span><textarea name="message" rows="6" required minlength="6" maxlength="1200"></textarea></label>
+        </div>
+        <div class="m-modal-form-grid">
+          <label class="m-field"><span>Kategorie</span><input name="category" placeholder="Betrieb, Finanzen, Personal"></label>
+          <label class="m-field"><span>Priorität</span><select name="priority"></select></label>
+        </div>
+        <div class="m-modal-form-grid">
+          <label class="m-field"><span>Status</span><select name="status"></select></label>
+          <label class="m-field"><span>Zugewiesen an</span><input name="assignedTo" placeholder="Disposition"></label>
+        </div>
+        <div class="m-modal-form-grid">
+          <label class="m-field"><span>Verknüpfung / Link</span><input name="link" placeholder="aufgaben-center.html"></label>
+          <label class="m-field"><span>Optionaler Bezug</span><input name="relation" placeholder="z. B. TG-1049"></label>
+        </div>
+        <p class="m-modal-error" data-notice-form-error hidden></p>
       </form>
       <footer class="admin-modal-foot">
         <button class="admin-btn admin-btn-secondary" type="button" data-notice-close-modal>Abbrechen</button>

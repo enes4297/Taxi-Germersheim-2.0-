@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Tagesplanung</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="management.css">
+  <link rel="stylesheet" href="termin-cockpit.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item is-active" href="tagesplanung.html">Tagesplanung</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main tc-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Tagesplanung</h1>
+          <p>Alle geplanten Termine pro Fahrzeug und Fahrer in einer ruhigen Tagesliste.</p>
+        </div>
+        <div class="tc-topbar-actions">
+          <a class="admin-btn admin-btn-secondary" href="termin-cockpit.html">Zum Termin-Cockpit</a>
+        </div>
+      </header>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head">
+          <h2>Uebersicht</h2>
+          <small>Planungsstand fuer den Dispositions-Tag</small>
+        </div>
+        <div class="m-grid" data-plan-kpis></div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head">
+          <h2>Fahrerplanung</h2>
+          <small>Nach Fahrzeugen gruppiert</small>
+        </div>
+        <div class="tc-plan-list" data-plan-list></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="tagesplanung.js"></script>
+</body>
+</html>
