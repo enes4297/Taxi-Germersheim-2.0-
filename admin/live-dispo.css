@@ -1,17 +1,54 @@
 .dispo-topbar {
   align-items: flex-start;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
 }
 
 .dispo-topbar-actions {
   flex-wrap: wrap;
   justify-content: flex-end;
+  margin-left: auto;
+}
+
+.dispo-topbar .admin-topbar-title {
+  flex: 1 1 320px;
+  min-width: 220px;
+}
+
+.dispo-topbar .admin-v20-search-wrap {
+  flex: 1 1 300px;
+  min-width: 220px;
+  max-width: 460px;
+}
+
+.admin-main > .dispo-topbar,
+.admin-main > .dispo-ops-panel,
+.admin-main > .dispo-kpi,
+.admin-main > .dispo-layout,
+.admin-main > .dispo-events-panel {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.dispo-layout {
+  grid-template-columns: minmax(260px, 1fr) minmax(320px, 1.25fr) minmax(260px, 1fr);
+}
+
+.dispo-ops-panel {
+  gap: 10px;
+}
+
+.dispo-ops-panel > summary {
+  width: fit-content;
 }
 
 .dispo-quick-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .dispo-quick-actions .admin-btn {
@@ -25,9 +62,9 @@
 }
 
 .dispo-notify-panel {
-  position: absolute;
-  right: 120px;
-  top: calc(100% + 10px);
+  position: relative;
+  right: auto;
+  top: auto;
   width: min(460px, calc(100vw - 36px));
   max-height: 62vh;
   border: 1px solid rgba(255, 217, 106, 0.32);
@@ -594,6 +631,7 @@
 @media (max-width: 1200px) {
   .dispo-layout {
     grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .dispo-map-panel {
@@ -608,18 +646,19 @@
   body.dispo-tablet-orders-open .dispo-orders-panel,
   body.dispo-tablet-fleet-open .dispo-fleet-panel {
     display: grid;
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    z-index: auto;
+    max-height: min(56vh, 520px);
+    overflow: auto;
+    box-shadow: inset 0 0 0 1px rgba(255, 217, 106, 0.2);
   }
 
   body.dispo-tablet-orders-open .dispo-orders-panel,
   body.dispo-tablet-fleet-open .dispo-fleet-panel {
-    position: fixed;
-    left: 16px;
-    right: 16px;
-    bottom: 18px;
-    z-index: 70;
-    max-height: 56vh;
-    overflow: auto;
-    box-shadow: 0 24px 36px rgba(0, 0, 0, 0.42);
+    margin-top: 10px;
   }
 
   .dispo-map-head-actions .admin-btn[data-dispo-tablet-toggle] {
@@ -715,6 +754,10 @@
   .dispo-map-head-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .dispo-map-head-actions .admin-btn[data-dispo-tablet-toggle] {
+    display: none;
   }
 
   .dispo-quick-actions .admin-btn,

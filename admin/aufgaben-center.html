@@ -35,17 +35,15 @@
 
       <section class="admin-panel">
         <div class="admin-panel-head">
-          <h2>Übersicht</h2>
-          <small>Heute und teamweite Lage</small>
+          <h2>Leitstellenfokus</h2>
+          <small>Heute, Überfällig, Meine Aufgaben, Offen</small>
         </div>
         <div class="m-actions"><button class="admin-btn" type="button" data-task-open-create>Neue Aufgabe</button><button class="admin-btn admin-btn-secondary" type="button" data-task-reset-filter>Filter zurücksetzen</button></div>
         <div class="m-grid" data-task-kpis></div>
       </section>
 
-      <section class="admin-panel">
-        <div class="admin-panel-head">
-          <h2>Filter</h2>
-        </div>
+      <details class="admin-panel" open>
+        <summary>Arbeitsfilter</summary>
         <form class="m-form m-form-grid" data-task-filter-form>
           <label class="m-field"><span>Suche</span><input name="q" type="search" placeholder="Titel, Quelle, Kategorie"></label>
           <label class="m-field"><span>Status</span><select name="status"><option value="alle">Alle</option></select></label>
@@ -53,50 +51,42 @@
           <label class="m-field"><span>Bereich</span><select name="category"><option value="alle">Alle</option></select></label>
           <label class="m-field"><span>Nur mir zugewiesen</span><select name="mine"><option value="nein">Nein</option><option value="ja">Ja</option></select></label>
         </form>
-      </section>
-
-      <section class="m-split">
-        <section class="admin-panel">
-          <div class="admin-panel-head">
-            <h2>Fällige Aufgaben</h2>
-            <small>Sortiert nach Frist</small>
-          </div>
-          <div class="m-table-wrap">
-            <table class="admin-table m-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Titel</th>
-                  <th>Status</th>
-                  <th>Priorität</th>
-                  <th>Verantwortlich</th>
-                  <th>Fällig</th>
-                  <th>Aktion</th>
-                </tr>
-              </thead>
-              <tbody data-task-table></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="admin-panel">
-          <div class="admin-panel-head">
-            <h2>Board</h2>
-            <small>Standard: Heute, Offen, Überfällig, Meine Aufgaben</small>
-          </div>
-          <div class="m-actions"><button class="admin-btn admin-btn-secondary" type="button" data-task-toggle-empty>Leere Spalten anzeigen</button></div>
-          <div data-task-empty-columns></div>
-          <div class="m-board" data-task-board></div>
-        </section>
-      </section>
+      </details>
 
       <section class="admin-panel">
         <div class="admin-panel-head">
-          <h2>Aktivitätsprotokoll</h2>
-          <small>Letzte Task-Änderungen</small>
+          <h2>Aufgaben jetzt</h2>
+          <small>Priorisierte Kompaktansicht</small>
         </div>
-        <div class="m-list" data-task-activity></div>
+        <div class="m-actions"><button class="admin-btn admin-btn-secondary" type="button" data-task-toggle-empty>Leere Spalten anzeigen</button></div>
+        <div data-task-empty-columns></div>
+        <div class="m-board" data-task-board></div>
       </section>
+
+      <details class="admin-panel">
+        <summary>Alle offenen Aufgaben (Tabelle)</summary>
+        <div class="m-table-wrap">
+          <table class="admin-table m-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Titel</th>
+                <th>Status</th>
+                <th>Priorität</th>
+                <th>Verantwortlich</th>
+                <th>Fällig</th>
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody data-task-table></tbody>
+          </table>
+        </div>
+      </details>
+
+      <details class="admin-panel">
+        <summary>Aktivitätsprotokoll</summary>
+        <div class="m-list" data-task-activity></div>
+      </details>
     </main>
   </div>
 

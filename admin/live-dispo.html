@@ -43,24 +43,21 @@
           <h1>Live-Dispositionszentrale</h1>
           <p>Gesamter Betrieb auf einem Bildschirm, rein mit Demo-Daten und ohne Backend</p>
         </div>
+        <div class="admin-topbar-actions dispo-topbar-actions"></div>
+      </header>
 
-        <div class="admin-topbar-actions dispo-topbar-actions">
-          <div class="dispo-quick-actions" aria-label="Schnellaktionen">
-            <button class="admin-btn admin-btn-primary" type="button" title="Neue Demo-Fahrt anlegen" data-dispo-quick-action="newRide">+ Neue Fahrt</button>
-            <button class="admin-btn admin-btn-secondary" type="button" title="Fahrer-Kontaktfenster öffnen" data-dispo-quick-action="contactDriver">+ Fahrer kontaktieren</button>
-            <button class="admin-btn admin-btn-warning" type="button" title="Ausgewähltes Fahrzeug sperren" data-dispo-quick-action="lockVehicle">+ Fahrzeug sperren</button>
-            <button class="admin-btn admin-btn-secondary" type="button" title="Ausgewähltes Fahrzeug freigeben" data-dispo-quick-action="unlockVehicle">+ Fahrzeug freigeben</button>
-            <button class="admin-btn" type="button" title="Einsatzplan als Demo öffnen" data-dispo-quick-action="openPlan">+ Einsatzplan öffnen</button>
-            <button class="admin-btn admin-btn-danger" type="button" title="Alle Demo-Änderungen zurücksetzen" data-dispo-reset-demo>Demo zurücksetzen</button>
-          </div>
-          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
+      <details class="admin-panel dispo-ops-panel">
+        <summary>Leitstellen-Details und Schnellaktionen</summary>
+        <div class="dispo-quick-actions" aria-label="Schnellaktionen">
+          <button class="admin-btn admin-btn-primary" type="button" title="Neue Demo-Fahrt anlegen" data-dispo-quick-action="newRide">+ Neue Fahrt</button>
+          <button class="admin-btn admin-btn-secondary" type="button" title="Fahrer-Kontaktfenster öffnen" data-dispo-quick-action="contactDriver">+ Fahrer kontaktieren</button>
+          <button class="admin-btn admin-btn-warning" type="button" title="Ausgewähltes Fahrzeug sperren" data-dispo-quick-action="lockVehicle">+ Fahrzeug sperren</button>
+          <button class="admin-btn admin-btn-secondary" type="button" title="Ausgewähltes Fahrzeug freigeben" data-dispo-quick-action="unlockVehicle">+ Fahrzeug freigeben</button>
+          <button class="admin-btn" type="button" title="Einsatzplan als Demo öffnen" data-dispo-quick-action="openPlan">+ Einsatzplan öffnen</button>
+          <button class="admin-btn admin-btn-danger" type="button" title="Alle Demo-Änderungen zurücksetzen" data-dispo-reset-demo>Demo zurücksetzen</button>
           <button class="admin-icon-btn dispo-notify-btn" type="button" aria-label="Live-Dispo-Benachrichtigungen" aria-haspopup="true" aria-expanded="false" data-dispo-notify-toggle>
             <span>🔔</span>
             <b data-dispo-alert-count>0</b>
-          </button>
-          <button class="admin-user" type="button" aria-label="Benutzer">
-            <span>Disposition</span>
-            <strong>Enes</strong>
           </button>
         </div>
         <section class="dispo-notify-panel" data-dispo-notify-panel hidden>
@@ -76,7 +73,7 @@
           </div>
           <div class="dispo-notify-list" data-dispo-notify-list></div>
         </section>
-      </header>
+      </details>
 
       <section class="admin-panel dispo-kpi" aria-label="Live-Kennzahlen">
         <div class="admin-panel-head">

@@ -58,12 +58,10 @@
     if (!node) return;
     const stats = S.taskStats(tasks, session.user);
     node.innerHTML = [
-      `<article class="m-kpi"><small>Gesamt</small><strong>${stats.total}</strong><p>alle sichtbaren Aufgaben</p></article>`,
       `<article class="m-kpi"><small>Heute fällig</small><strong>${stats.dueToday}</strong><p>inklusive rückführender Tasks</p></article>`,
       `<article class="m-kpi"><small>Überfällig</small><strong>${stats.overdue}</strong><p>mit Eskalationsbedarf</p></article>`,
-      `<article class="m-kpi"><small>Kritisch</small><strong>${stats.critical}</strong><p>Priorität kritisch</p></article>`,
-      `<article class="m-kpi"><small>Wartet</small><strong>${stats.waiting}</strong><p>wartet auf Rückmeldung</p></article>`,
-      `<article class="m-kpi"><small>Heute erledigt</small><strong>${stats.doneToday}</strong><p>seit Tagesbeginn</p></article>`
+      `<article class="m-kpi"><small>Meine Aufgaben</small><strong>${stats.mine}</strong><p>direkter Fokus für diese Schicht</p></article>`,
+      `<article class="m-kpi"><small>Offen gesamt</small><strong>${Math.max(0, stats.total - stats.doneToday)}</strong><p>inklusive blockierter Einträge</p></article>`
     ].join("");
   }
 

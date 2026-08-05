@@ -31,13 +31,13 @@
       </header>
 
       <section class="admin-panel">
-        <div class="admin-panel-head"><h2>Status</h2><span class="m-live-badge">Live aus lokalen Daten</span></div>
+        <div class="admin-panel-head"><h2>Leitstellenstatus</h2><span class="m-live-badge">Live aus lokalen Daten</span></div>
         <div class="m-actions"><button class="admin-btn" type="button" data-notice-open-create>Neue Meldung</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-read-all>Alle als gelesen</button></div>
         <div class="m-grid" data-notice-kpis></div>
       </section>
 
-      <section class="admin-panel">
-        <div class="admin-panel-head"><h2>Filter</h2></div>
+      <details class="admin-panel">
+        <summary>Filter und Suche</summary>
         <form class="m-form m-form-grid" data-notice-filter-form>
           <label class="m-field"><span>Suche</span><input name="q" type="search" placeholder="Titel, Nachricht, Quelle"></label>
           <label class="m-field"><span>Status</span><select name="status"><option value="alle">Alle</option></select></label>
@@ -45,10 +45,10 @@
           <label class="m-field"><span>Kategorie</span><select name="category"><option value="alle">Alle</option></select></label>
           <label class="m-field"><span>Nur offene</span><select name="openOnly"><option value="ja">Ja</option><option value="nein">Nein</option></select></label>
         </form>
-      </section>
+      </details>
 
       <section class="admin-panel">
-        <div class="admin-panel-head"><h2>Meldungen</h2><small>Gruppiert nach Anlass</small></div>
+        <div class="admin-panel-head"><h2>Letzte Meldungen</h2><button class="admin-btn admin-btn-secondary" type="button" data-notice-toggle-all>Alle Meldungen anzeigen</button></div>
         <div class="m-list" data-notice-list></div>
       </section>
     </main>

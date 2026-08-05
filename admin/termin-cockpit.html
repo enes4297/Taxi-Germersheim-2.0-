@@ -31,10 +31,6 @@
           <h1>Termin-Cockpit</h1>
           <p>Termine organisieren statt lange Fahrtdaten erfassen. Ziel: neue Terminaufnahme in maximal 20 Sekunden.</p>
         </div>
-        <div class="tc-topbar-actions">
-          <button class="admin-btn" type="button" data-start-ai>KI-Planung starten</button>
-          <a class="admin-btn admin-btn-secondary" href="tagesplanung.html">Tagesplanung</a>
-        </div>
       </header>
 
       <section class="admin-panel">
@@ -42,6 +38,7 @@
           <h2>Schnelle Terminaufnahme</h2>
           <small>Nur Pflichtfelder. Alles Weitere ist optional.</small>
         </div>
+        <div class="m-actions"><button class="admin-btn" type="button" data-start-ai>KI-Planung starten</button><a class="admin-btn admin-btn-secondary" href="tagesplanung.html">Tagesplanung</a></div>
         <form class="m-form tc-fast-form" data-appointment-form>
           <label class="m-field">
             <span>Name *</span>
@@ -95,7 +92,9 @@
         </div>
       </section>
 
-      <section class="tc-grid-2">
+      <details class="admin-panel">
+        <summary>Intelligente Details (Stammkunden und KI-Schritte)</summary>
+        <section class="tc-grid-2">
         <section class="admin-panel">
           <div class="admin-panel-head">
             <h2>Stammkunden-Hinweise</h2>
@@ -114,7 +113,8 @@
           </div>
           <ol class="tc-analysis-list" data-ai-steps></ol>
         </section>
-      </section>
+        </section>
+      </details>
 
       <section class="admin-panel">
         <div class="admin-panel-head">

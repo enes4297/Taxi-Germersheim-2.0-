@@ -69,6 +69,26 @@
     return Array.isArray(value) ? value : fallback;
   }
 
+  function ensureEmployeeShape(emp) {
+    const next = { ...emp };
+    next.employmentType = next.employmentType || "Vollzeit";
+    if (!["Vollzeit", "Teilzeit", "Minijob", "Aushilfe", "Springer"].includes(next.employmentType)) {
+      next.employmentType = "Springer";
+    }
+    next.licenseCheckedAt = next.licenseCheckedAt || "";
+    next.licenseCheckedBy = next.licenseCheckedBy || "";
+    next.pPermitCheckedAt = next.pPermitCheckedAt || "";
+    next.pPermitCheckedBy = next.pPermitCheckedBy || "";
+    next.documentStatus = next.documentStatus || "ungeprueft";
+    next.preferredVehicle = next.preferredVehicle || "";
+    next.allowedVehicles = ensureArray(next.allowedVehicles, []);
+    next.blockedVehicles = ensureArray(next.blockedVehicles, []);
+    next.fixedVehicle = next.fixedVehicle || "";
+    next.replacementVehicles = ensureArray(next.replacementVehicles, []);
+    next.preferredServiceType = next.preferredServiceType || "";
+    return next;
+  }
+
   function buildEmployees() {
     return [
       {
@@ -562,7 +582,7 @@
 
   function ensureShape(data) {
     const d = data && typeof data === "object" ? data : createDefaultState();
-    d.employees = ensureArray(d.employees, buildEmployees());
+    d.employees = ensureArray(d.employees, buildEmployees()).map(ensureEmployeeShape);
     d.vacations = ensureArray(d.vacations, buildVacations());
     d.absences = ensureArray(d.absences, buildAbsences());
     d.availabilities = ensureArray(d.availabilities, buildAvailabilities());

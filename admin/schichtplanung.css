@@ -313,6 +313,110 @@
   color: var(--muted);
 }
 
+.shift-planner-panel,
+.shift-template-panel,
+.shift-suggestion-panel {
+  gap: 12px;
+}
+
+.shift-plan-list,
+.shift-template-list,
+.shift-suggestion-list {
+  display: grid;
+  gap: 10px;
+}
+
+.shift-plan-row,
+.shift-template-row,
+.shift-suggestion-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 8px;
+}
+
+.shift-plan-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+}
+
+.shift-plan-row strong {
+  font-size: 15px;
+}
+
+.shift-plan-row input,
+.shift-plan-row select,
+.shift-template-row input {
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.shift-plan-row small {
+  color: var(--muted);
+  grid-column: 1 / -1;
+}
+
+.shift-plan-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.shift-template-row {
+  grid-template-columns: 1.3fr 1fr 1fr;
+  align-items: center;
+}
+
+.shift-suggestion-card.is-selected {
+  border-color: rgba(255, 217, 106, 0.45);
+  box-shadow: 0 0 0 1px rgba(255, 217, 106, 0.25);
+}
+
+.shift-suggestion-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.shift-suggestion-card p,
+.shift-suggestion-card ul {
+  margin: 0;
+}
+
+.shift-suggestion-card ul {
+  padding-left: 18px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+}
+
+.shift-avisierung {
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  align-items: center;
+}
+
+.shift-avisierung select {
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0 10px;
+}
+
 @media (max-width: 1200px) {
   .shift-layout {
     grid-template-columns: 1fr;
@@ -324,6 +428,18 @@
 
   .shift-overview-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .shift-plan-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shift-template-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .shift-avisierung {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -350,6 +466,12 @@
   }
 
   .shift-modal-list {
+    grid-template-columns: 1fr;
+  }
+
+  .shift-plan-row,
+  .shift-template-row,
+  .shift-avisierung {
     grid-template-columns: 1fr;
   }
 }

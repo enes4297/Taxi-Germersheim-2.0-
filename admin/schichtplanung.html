@@ -6,6 +6,7 @@
   <title>Taxi Germersheim - Schichtplanung</title>
   <meta name="robots" content="noindex,nofollow">
   <script src="auth.js"></script>
+  <script src="personal-shared.js"></script>
   <link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="schichtplanung.css">
 </head>
@@ -27,10 +28,8 @@
         <a class="admin-nav-item" href="kunden.html">Kunden</a>
         <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
         <a class="admin-nav-item is-active" href="schichtplanung.html" aria-current="page">Schichtplanung</a>
-        <a class="admin-nav-item" href="#" aria-disabled="true">Rewards</a>
         <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
-        <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
-        <a class="admin-nav-item" href="einstellungen.html">Einstellungen</a>
+        <a class="admin-nav-item" href="termin-cockpit.html">Termin-Cockpit</a>
         <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
       </nav>
     </aside>
@@ -38,26 +37,21 @@
     <main class="admin-main">
       <header class="admin-topbar">
         <div class="admin-topbar-title">
-          <h1>Shift & Dispatch Planning</h1>
-          <p>Schichten und Fahrzeugzuordnung im Tagesbetrieb, nur Demo-Daten</p>
+          <h1>Mitarbeiter-Einsatzplanung</h1>
+          <p>Heute im Dienst, Plan für morgen und regelbasierte Planungsvorschläge (Demo)</p>
         </div>
 
         <div class="admin-topbar-actions">
-          <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
-          <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
-            <span>🔔</span>
-            <b data-shift-alert-count>4</b>
-          </button>
-          <button class="admin-user" type="button" aria-label="Benutzer">
-            <span>Disposition</span>
-            <strong>Enes</strong>
-          </button>
+          <button class="admin-btn" type="button" data-plan-generate>Planung für morgen erstellen</button>
+          <button class="admin-btn admin-btn-secondary" type="button" data-plan-accept-all>Kompletten Plan übernehmen</button>
+          <button class="admin-btn admin-btn-secondary" type="button" data-plan-save>Planung speichern</button>
         </div>
       </header>
 
       <section class="admin-panel shift-overview" aria-label="Schicht Dashboard">
         <div class="admin-panel-head">
           <h2>Schicht-Dashboard</h2>
+          <small data-shift-feedback>Planung wird geladen</small>
         </div>
         <div class="shift-overview-grid">
           <article class="shift-overview-card">
@@ -65,7 +59,7 @@
             <strong data-shift-stat="driversToday">0</strong>
           </article>
           <article class="shift-overview-card is-available">
-            <small><img class="admin-inline-icon" src="../assets/icons/Taxi.svg" alt="" aria-hidden="true">Fahrzeuge verfügbar</small>
+            <small>🚖 Fahrzeuge verfügbar</small>
             <strong data-shift-stat="vehiclesAvailable">0</strong>
           </article>
           <article class="shift-overview-card is-early">
@@ -81,7 +75,7 @@
             <strong data-shift-stat="night">0</strong>
           </article>
           <article class="shift-overview-card is-warning">
-            <small>⚠️ Fehlende Besetzungen</small>
+            <small>⚠️ Warnungen</small>
             <strong data-shift-stat="missingAssignments">0</strong>
           </article>
         </div>
@@ -89,64 +83,86 @@
 
       <section class="admin-panel shift-timeline-panel" aria-label="Tagesübersicht Zeitachse">
         <div class="admin-panel-head">
-          <h2>Tagesübersicht</h2>
+          <h2>Übersicht Schichten heute</h2>
         </div>
         <div class="shift-timeline" data-shift-timeline></div>
       </section>
 
-      <section class="admin-panel shift-tools" aria-label="Schicht Filter und Suche">
+      <section class="admin-panel shift-tools" aria-label="Heute im Dienst Filter und Suche">
+        <div class="admin-panel-head">
+          <h2>Heute im Dienst</h2>
+        </div>
+        <p class="person-meta">Dokumentenprüfung: Führerschein und Taxischein/Personenbeförderungsschein müssen gültig und geprüft sein.</p>
         <div class="shift-search-wrap">
           <label class="driver-label" for="shift-search-input">Suche</label>
           <input
             id="shift-search-input"
             class="driver-search-input"
             type="search"
-            placeholder="Fahrer, Fahrzeug oder Kennzeichen suchen..."
+            placeholder="Mitarbeiter, Fahrzeug, Status oder Qualifikation suchen"
             autocomplete="off"
             data-shift-search
           >
         </div>
 
-        <div class="shift-filter-group" role="group" aria-label="Schichtstatus filtern">
+        <div class="shift-filter-group" role="group" aria-label="Status filtern">
           <button class="shift-filter-btn is-active" type="button" data-shift-filter="Alle">Alle</button>
-          <button class="shift-filter-btn" type="button" data-shift-filter="Früh">Früh</button>
-          <button class="shift-filter-btn" type="button" data-shift-filter="Spät">Spät</button>
-          <button class="shift-filter-btn" type="button" data-shift-filter="Nacht">Nacht</button>
-          <button class="shift-filter-btn" type="button" data-shift-filter="Frei">Frei</button>
-          <button class="shift-filter-btn" type="button" data-shift-filter="Urlaub">Urlaub</button>
-          <button class="shift-filter-btn" type="button" data-shift-filter="Krank">Krank</button>
+          <button class="shift-filter-btn" type="button" data-shift-filter="im Dienst">im Dienst</button>
+          <button class="shift-filter-btn" type="button" data-shift-filter="verfügbar">verfügbar</button>
+          <button class="shift-filter-btn" type="button" data-shift-filter="Pause">Pause</button>
+          <button class="shift-filter-btn" type="button" data-shift-filter="abgemeldet">abgemeldet</button>
         </div>
       </section>
 
       <section class="shift-layout">
-        <section class="shift-driver-grid" aria-label="Fahrerkarten" data-shift-driver-grid></section>
+        <section class="shift-driver-grid" aria-label="Heute im Dienst Liste" data-shift-driver-grid></section>
 
-        <section class="admin-panel shift-side-panel" aria-label="Dispatch Hinweise und Fahrzeugzuordnung">
+        <section class="admin-panel shift-side-panel" aria-label="Warnungen und Fahrzeugzuordnung">
           <div class="shift-side-block">
             <h3>Warnungen</h3>
             <div class="shift-warning-list" data-shift-warning-list></div>
           </div>
 
           <div class="shift-side-block">
-            <h3>Fahrzeugzuordnung</h3>
+            <h3>Fahrzeugzuordnung heute</h3>
             <div class="shift-mapping-list" data-shift-mapping-list></div>
           </div>
         </section>
       </section>
 
-      <div class="admin-modal" data-shift-modal hidden>
-        <div class="admin-modal-backdrop" data-shift-modal-close></div>
-        <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="shift-modal-title">
-          <header class="admin-modal-head">
-            <h3 id="shift-modal-title" data-shift-modal-title>Schichtdetails</h3>
-            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-shift-modal-close>✕</button>
-          </header>
-          <div class="admin-modal-body" data-shift-modal-body></div>
-          <footer class="admin-modal-foot">
-            <button class="admin-btn" type="button" data-shift-modal-close>Schließen</button>
-          </footer>
-        </section>
-      </div>
+      <section class="admin-panel shift-planner-panel" aria-label="Plan für morgen">
+        <div class="admin-panel-head">
+          <h2>Plan für morgen</h2>
+          <div class="person-actions">
+            <select data-template-bulk></select>
+            <button class="admin-btn admin-btn-secondary" type="button" data-apply-template-selected>Schichtvorlage auf Auswahl anwenden</button>
+          </div>
+        </div>
+        <p class="person-meta">Schnellplanung: Fahrer aktivieren, Schicht wählen, optional Fahrzeug zuweisen, speichern.</p>
+        <div class="shift-plan-list" data-tomorrow-list></div>
+      </section>
+
+      <section class="admin-panel shift-template-panel" aria-label="Schichtvorlagen">
+        <div class="admin-panel-head">
+          <h2>Schichtvorlagen</h2>
+        </div>
+        <div class="shift-template-list" data-template-list></div>
+      </section>
+
+      <section class="admin-panel shift-suggestion-panel" aria-label="Planungsvorschläge">
+        <div class="admin-panel-head">
+          <h2>Planungsvorschläge für morgen</h2>
+          <small>Regelbasierte Demo-Logik, keine echte KI</small>
+        </div>
+        <div class="shift-suggestion-list" data-suggestion-list></div>
+      </section>
+
+      <section class="admin-panel" aria-label="Fahrer Tagespläne">
+        <div class="admin-panel-head">
+          <h2>Fahrer-Tagespläne</h2>
+        </div>
+        <div data-driver-dayplans></div>
+      </section>
     </main>
   </div>
 
