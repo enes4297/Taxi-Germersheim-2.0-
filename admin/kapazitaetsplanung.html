@@ -1,8 +1,91 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Taxi Germersheim - Kapazitaetsplanung</title><meta name="robots" content="noindex,nofollow"><script src="auth.js"></script><script src="management-shared.js"></script><link rel="stylesheet" href="admin.css"><link rel="stylesheet" href="management.css"></head>
-<body><div class="admin-shell"><aside class="admin-sidebar" aria-label="Interne Navigation"><div class="admin-sidebar-brand"><img src="../logo.png" alt="Taxi Germersheim Logo"><div><strong>Dispatcher</strong><small>Interner Bereich</small></div></div><nav class="admin-nav"><a class="admin-nav-item is-active" href="kapazitaetsplanung.html">Kapazitaetsplanung</a></nav></aside><main class="admin-main">
-<header class="admin-topbar"><div class="admin-topbar-title"><h1>Kapazitaetsplanung</h1><p>Kapazitaetsmatrix, Luecken, Spezialkapazitaeten und Demo-Drag-Drop</p></div></header>
-<section class="admin-panel"><div class="admin-panel-head"><h2>Kapazitaetsmatrix</h2></div><div class="m-table-wrap"><table class="admin-table m-table"><thead><tr><th>Zeitraum</th><th>b. Fahrer</th><th>v. Fahrer</th><th>b. Fahrzeuge</th><th>v. Fahrzeuge</th><th>Rollstuhl</th><th>Grossraum</th><th>Elektro</th><th>Reserve</th><th>Engpass</th></tr></thead><tbody data-kp-matrix></tbody></table></div></section>
-<section class="m-split"><section class="admin-panel"><div class="admin-panel-head"><h2>Spezialkapazitaeten und Warnungen</h2></div><div class="m-list" data-kp-special></div></section><aside class="admin-panel"><div class="admin-panel-head"><h2>Kapazitaetsluecken</h2></div><div class="m-list" data-kp-gaps></div></aside></section>
-<section class="admin-panel"><div class="admin-panel-head"><h2>Drag & Drop Planung (Demo)</h2><small>plus barrierefreie Button-Alternative</small></div><div class="m-triple"><article class="m-item"><strong>Reserve-Pool</strong><div class="m-dropzone" data-kp-pool></div></article><article class="m-item"><strong>Zeitfenster 06:00-09:00</strong><div class="m-dropzone" data-kp-zone="06:00-09:00"></div><div class="m-actions"><button class="admin-btn" type="button" data-kp-assign="06:00-09:00">Reserve zuweisen</button></div></article><article class="m-item"><strong>Zeitfenster 15:00-18:00</strong><div class="m-dropzone" data-kp-zone="15:00-18:00"></div><div class="m-actions"><button class="admin-btn" type="button" data-kp-assign="15:00-18:00">Reserve zuweisen</button></div></article></div></section>
-</main></div><script src="kapazitaetsplanung.js"></script></body></html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Kapazitätsplanung</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <script src="management-shared.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="management.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div><strong>Dispatcher</strong><small>Interner Bereich</small></div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item is-active" href="kapazitaetsplanung.html">Kapazitätsplanung</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Kapazitätsplanung</h1>
+          <p>Kapazitätsmatrix, Kapazitätslücken, Spezialkapazitäten und Demo-Planung</p>
+        </div>
+      </header>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Kapazitätsmatrix</h2></div>
+        <div class="m-table-wrap">
+          <table class="admin-table m-table m-table-capacity">
+            <thead>
+              <tr>
+                <th>Zeitraum</th>
+                <th>Benötigte Fahrer</th>
+                <th>Verfügbare Fahrer</th>
+                <th>Benötigte Fahrzeuge</th>
+                <th>Verfügbare Fahrzeuge</th>
+                <th>Rollstuhl</th>
+                <th>Großraum</th>
+                <th>Elektro</th>
+                <th>Reserve</th>
+                <th>Engpass</th>
+              </tr>
+            </thead>
+            <tbody data-kp-matrix></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="m-split">
+        <section class="admin-panel">
+          <div class="admin-panel-head"><h2>Spezialkapazitäten und Warnungen</h2></div>
+          <div class="m-list" data-kp-special></div>
+        </section>
+        <aside class="admin-panel">
+          <div class="admin-panel-head"><h2>Kapazitätslücken</h2></div>
+          <div class="m-list" data-kp-gaps></div>
+        </aside>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Planung (Demo)</h2><small>Drag & Drop plus barrierefreie Button-Alternative</small></div>
+        <div class="m-triple">
+          <article class="m-item">
+            <strong>Reserve-Pool</strong>
+            <div class="m-dropzone" data-kp-pool></div>
+          </article>
+          <article class="m-item">
+            <strong>Zeitfenster 06:00-09:00</strong>
+            <div class="m-dropzone" data-kp-zone="06:00-09:00"></div>
+            <div class="m-actions"><button class="admin-btn" type="button" data-kp-assign="06:00-09:00">Reserve zuweisen</button></div>
+          </article>
+          <article class="m-item">
+            <strong>Zeitfenster 15:00-18:00</strong>
+            <div class="m-dropzone" data-kp-zone="15:00-18:00"></div>
+            <div class="m-actions"><button class="admin-btn" type="button" data-kp-assign="15:00-18:00">Reserve zuweisen</button></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="kapazitaetsplanung.js"></script>
+</body>
+</html>

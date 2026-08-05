@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Termin-Cockpit</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="management.css">
+  <link rel="stylesheet" href="termin-cockpit.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item is-active" href="termin-cockpit.html">Termin-Cockpit</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main tc-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Termin-Cockpit</h1>
+          <p>Termine organisieren statt lange Fahrtdaten erfassen. Ziel: neue Terminaufnahme in maximal 20 Sekunden.</p>
+        </div>
+        <div class="tc-topbar-actions">
+          <button class="admin-btn" type="button" data-start-ai>KI-Planung starten</button>
+          <a class="admin-btn admin-btn-secondary" href="tagesplanung.html">Tagesplanung</a>
+        </div>
+      </header>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head">
+          <h2>Schnelle Terminaufnahme</h2>
+          <small>Nur Pflichtfelder. Alles Weitere ist optional.</small>
+        </div>
+        <form class="m-form tc-fast-form" data-appointment-form>
+          <label class="m-field">
+            <span>Name *</span>
+            <input name="name" required autocomplete="off" placeholder="Herr Mueller">
+          </label>
+          <label class="m-field">
+            <span>Abholadresse *</span>
+            <input name="pickup" required autocomplete="off" placeholder="Germersheim Zentrum 4">
+          </label>
+          <label class="m-field">
+            <span>Ziel *</span>
+            <input name="destination" required autocomplete="off" placeholder="Dialyse Speyer">
+          </label>
+          <label class="m-field">
+            <span>Datum *</span>
+            <input name="date" type="date" required>
+          </label>
+          <label class="m-field">
+            <span>Uhrzeit *</span>
+            <input name="time" type="time" required>
+          </label>
+
+          <div class="m-field is-full tc-favorites">
+            <span>Favoritenziele</span>
+            <div class="tc-chip-row" data-favorite-targets></div>
+          </div>
+
+          <details class="tc-optional">
+            <summary>Weitere Angaben (optional)</summary>
+            <div class="tc-optional-grid">
+              <label class="m-field">
+                <span>Telefonnummer</span>
+                <input name="phone" placeholder="0171 1234567">
+              </label>
+              <label class="m-field">
+                <span>Notiz</span>
+                <textarea name="note" rows="3" placeholder="Optionaler Hinweis fuer Fahrer"></textarea>
+              </label>
+              <label class="tc-check"><input name="medical" type="checkbox"> Krankenfahrt</label>
+              <label class="tc-check"><input name="wheelchair" type="checkbox"> Rollstuhl</label>
+            </div>
+          </details>
+
+          <div class="m-form-actions">
+            <button class="admin-btn admin-btn-secondary" type="reset">Zuruecksetzen</button>
+            <button class="admin-btn" type="submit">Termin speichern</button>
+          </div>
+        </form>
+        <div class="tc-capture-info">
+          <p class="m-note" data-capture-info>Bereit fuer schnelle Aufnahme.</p>
+        </div>
+      </section>
+
+      <section class="tc-grid-2">
+        <section class="admin-panel">
+          <div class="admin-panel-head">
+            <h2>Stammkunden-Hinweise</h2>
+            <small>Nur Demo-Daten</small>
+          </div>
+          <div class="tc-customer-suggest" data-customer-suggest></div>
+          <article class="m-card" data-customer-insight>
+            <small>Tippe einen Namen, um letzte Fahrten zu sehen.</small>
+          </article>
+        </section>
+
+        <section class="admin-panel">
+          <div class="admin-panel-head">
+            <h2>KI-Vorbereitung</h2>
+            <small>Kein echtes Modell. Nur strukturierte Demo-Schritte.</small>
+          </div>
+          <ol class="tc-analysis-list" data-ai-steps></ol>
+        </section>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head">
+          <h2>Morgen-Ansicht</h2>
+          <small>Heute, Morgen, Uebermorgen, diese Woche, naechste Woche</small>
+        </div>
+        <div class="tc-timeline-groups" data-timeline></div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head">
+          <h2>Vorschlagskarten</h2>
+          <small>Demo fuer KI-Planung und Dispo-Entscheidung</small>
+        </div>
+        <div class="tc-suggestion-grid" data-suggestions></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="termin-cockpit.js"></script>
+</body>
+</html>

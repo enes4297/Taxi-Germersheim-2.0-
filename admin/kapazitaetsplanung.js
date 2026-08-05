@@ -21,19 +21,19 @@
     const wheel = Math.min(...matrix.map((m) => m.wheelVehicles));
     const van = Math.min(...matrix.map((m) => m.vanVehicles));
     const warnings = [];
-    if (wheel <= 0) warnings.push("keine passende Kombination aus Fahrer und Fahrzeug fuer Rollstuhl");
-    if (van <= 0) warnings.push("Fahrzeug verfuegbar, aber kein qualifizierter Fahrer fuer Grossraum");
-    if (matrix.some((m) => m.gap > 0)) warnings.push("Folgeauftrag gefaehrdet");
+    if (wheel <= 0) warnings.push("Keine passende Kombination aus Fahrer und Fahrzeug für Rollstuhl.");
+    if (van <= 0) warnings.push("Fahrzeug verfügbar, aber kein qualifizierter Fahrer für Großraum.");
+    if (matrix.some((m) => m.gap > 0)) warnings.push("Folgeauftrag gefährdet.");
     if (matrix.every((m) => m.reserve <= 0)) warnings.push("Reserve fehlt");
 
-    node.innerHTML = `<article class="m-item"><strong>Rollstuhlfahrzeuge</strong><p>minimum verfuegbar: ${wheel}</p></article><article class="m-item"><strong>Grossraumfahrzeuge</strong><p>minimum verfuegbar: ${van}</p></article><article class="m-item"><strong>Warnungen</strong><p>${warnings.length ? warnings.join("<br>") : "keine"}</p></article>`;
+    node.innerHTML = `<article class="m-item"><strong>Rollstuhlfahrzeuge</strong><p>Minimum verfügbar: ${wheel}</p></article><article class="m-item"><strong>Großraumfahrzeuge</strong><p>Minimum verfügbar: ${van}</p></article><article class="m-item"><strong>Warnungen</strong><p>${warnings.length ? warnings.join("<br>") : "Keine"}</p></article>`;
   }
 
   function renderGaps(source) {
     const node = document.querySelector("[data-kp-gaps]");
     if (!node) return;
     const gaps = M.capacityGaps(state.data, source);
-    node.innerHTML = gaps.length ? gaps.map((g) => `<article class="m-item"><strong>${g.period}</strong><p>fehlende Fahrer: ${g.missingDrivers}</p><p>fehlende Fahrzeuge: ${g.missingVehicles}</p><p>Fahrzeugart: ${g.neededType}</p><p>betroffene Fahrten: ${g.affectedRides}</p><p>${pill(g.priority)}</p><p>${g.proposals.join(" | ")}</p></article>`).join("") : '<article class="m-item"><p>Keine Kapazitaetsluecken.</p></article>';
+    node.innerHTML = gaps.length ? gaps.map((g) => `<article class="m-item"><strong>${g.period}</strong><p>Fehlende Fahrer: ${g.missingDrivers}</p><p>Fehlende Fahrzeuge: ${g.missingVehicles}</p><p>Fahrzeugart: ${g.neededType}</p><p>Betroffene Fahrten: ${g.affectedRides}</p><p>${pill(g.priority)}</p><p>${g.proposals.join(" | ")}</p></article>`).join("") : '<article class="m-item"><p>Keine Kapazitätslücken.</p></article>';
   }
 
   function renderPool(source) {
@@ -69,13 +69,13 @@
       zone.append(div);
       M.addManagementTask(state.data, {
         title: `Reserve zugewiesen: ${row.name}`,
-        area: "Kapazitaetsplanung",
+        area: "Kapazitätsplanung",
         priority: "normal",
         owner: "Disposition",
         dueDate: M.todayIso(),
         status: "in Bearbeitung",
         relation: zone.getAttribute("data-kp-zone") || "",
-        impact: "Kapazitaet kurzfristig erhoeht"
+        impact: "Kapazität kurzfristig erhöht"
       });
       state.data = M.loadState();
       state.drag = null;
@@ -97,13 +97,13 @@
       target.append(div);
       M.addManagementTask(state.data, {
         title: `Button-Zuweisung: ${first.name}`,
-        area: "Kapazitaetsplanung",
+        area: "Kapazitätsplanung",
         priority: "normal",
         owner: "Disposition",
         dueDate: M.todayIso(),
         status: "offen",
         relation: zone,
-        impact: "Zuweisung ueber barrierefreie Alternative"
+        impact: "Zuweisung über barrierefreie Alternative"
       });
       state.data = M.loadState();
     });

@@ -1804,6 +1804,11 @@
   }
 
   function init() {
+    if (window.AdminUiText) {
+      window.AdminUiText.normalizeDocument(document);
+      window.AdminUiText.observeDocument(document);
+    }
+
     bindUI();
     renderDriverSelector();
 

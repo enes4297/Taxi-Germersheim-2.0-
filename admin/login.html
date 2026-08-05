@@ -21,19 +21,30 @@
 
       <header class="admin-login-head">
         <h1>Admin Login</h1>
-        <p>Interner Bereich</p>
+        <p>Interner Bereich für Disposition, Verwaltung und Geschäftsleitung</p>
       </header>
 
       <form class="admin-login-form" data-login-form novalidate>
-        <label for="admin-username">Benutzername</label>
+        <label for="admin-username">Benutzername oder E-Mail</label>
         <input id="admin-username" name="username" type="text" autocomplete="username" required>
 
-        <label for="admin-password">Passwort</label>
-        <input id="admin-password" name="password" type="password" autocomplete="current-password" required>
+        <label for="admin-password">Passwort oder PIN</label>
+        <div class="admin-login-password-wrap">
+          <input id="admin-password" name="password" type="password" autocomplete="current-password" required>
+          <button class="admin-btn admin-btn-secondary admin-login-toggle" type="button" data-login-toggle-password aria-label="Passwort anzeigen oder verbergen">Anzeigen</button>
+        </div>
+
+        <label class="admin-login-remember"><input type="checkbox" name="remember" data-login-remember> Anmeldung merken (Demo)</label>
 
         <p class="admin-login-error" data-login-error hidden></p>
 
-        <button class="admin-btn" type="submit">Login</button>
+        <button class="admin-btn" type="submit">Anmelden</button>
+
+        <div class="admin-login-recovery-links">
+          <button class="admin-link-btn" type="button" data-recovery-open="password">Passwort oder PIN vergessen?</button>
+          <button class="admin-link-btn" type="button" data-recovery-open="username">Benutzername vergessen?</button>
+          <button class="admin-link-btn" type="button" data-recovery-open="access">Probleme bei der Anmeldung? Zugang wiederherstellen</button>
+        </div>
       </form>
 
       <section class="admin-login-demo-users" aria-label="Demo-Benutzer">
@@ -42,22 +53,36 @@
           <li><strong>Chef:</strong> admin / Taxi2026!</li>
           <li><strong>Admin Enes:</strong> enes / Enes2026!</li>
           <li><strong>Admin Fatih:</strong> fatih / Fatih2026!</li>
-          <li><strong>Geschaeftsleitung:</strong> geschaeft / Leitung2026!</li>
+          <li><strong>Geschäftsleitung:</strong> geschaeft / Leitung2026!</li>
           <li><strong>Disposition:</strong> dispo / Dispo2026!</li>
           <li><strong>Disponent:</strong> disponent / Dispo2026!</li>
           <li><strong>Buchhaltung:</strong> billing / Rechnung2026!</li>
           <li><strong>Abrechnung:</strong> abrechnung / Rechnung2026!</li>
           <li><strong>Fahrer:</strong> fahrer / Fahrer2026!</li>
           <li><strong>Personalverwaltung:</strong> personal / Personal2026!</li>
-          <li><strong>Qualitaetsmanagement:</strong> qualitaet / Quali2026!</li>
+          <li><strong>Qualitätsmanagement:</strong> qualitaet / Quali2026!</li>
           <li><strong>Mitarbeiter:</strong> mitarbeiter / Mitarbeiter2026!</li>
         </ul>
       </section>
 
-      <p class="admin-login-hint">Demo-Login ohne Backend</p>
+      <p class="admin-login-hint">Demo-Login ohne Backend. Keine echte E-Mail oder echte Passwort-/PIN-Rücksetzung.</p>
+
+      <div class="admin-modal" data-recovery-modal hidden>
+        <div class="admin-modal-backdrop" data-recovery-close></div>
+        <section class="admin-modal-dialog admin-recovery-dialog" role="dialog" aria-modal="true" aria-labelledby="recovery-title">
+          <header class="admin-modal-head">
+            <h3 id="recovery-title" data-recovery-title>Zugang wiederherstellen</h3>
+            <button class="admin-icon-btn" type="button" data-recovery-close aria-label="Dialog schließen">✕</button>
+          </header>
+          <div class="admin-modal-body admin-recovery-body" data-recovery-body></div>
+          <footer class="admin-modal-foot admin-recovery-foot" data-recovery-foot></footer>
+        </section>
+      </div>
     </section>
   </main>
 
+  <script src="ui-visible-terms.js"></script>
+  <script src="ui-text.js"></script>
   <script src="login.js"></script>
 </body>
 </html>

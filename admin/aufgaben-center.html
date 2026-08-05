@@ -31,17 +31,14 @@
           <h1>Aufgaben-Center</h1>
           <p>Systemweite Aufgaben, Zuweisung, Priorisierung und Nachverfolgung</p>
         </div>
-        <div class="admin-topbar-actions m-actions">
-          <button class="admin-btn admin-btn-secondary" type="button" data-task-reset-filter>Filter zuruecksetzen</button>
-          <button class="admin-btn" type="button" data-task-open-create>Neue Aufgabe</button>
-        </div>
       </header>
 
       <section class="admin-panel">
         <div class="admin-panel-head">
-          <h2>Uebersicht</h2>
+          <h2>Übersicht</h2>
           <small>Heute und teamweite Lage</small>
         </div>
+        <div class="m-actions"><button class="admin-btn" type="button" data-task-open-create>Neue Aufgabe</button><button class="admin-btn admin-btn-secondary" type="button" data-task-reset-filter>Filter zurücksetzen</button></div>
         <div class="m-grid" data-task-kpis></div>
       </section>
 
@@ -61,15 +58,7 @@
       <section class="m-split">
         <section class="admin-panel">
           <div class="admin-panel-head">
-            <h2>Board</h2>
-            <small>Arbeitsstatus je Spalte</small>
-          </div>
-          <div class="m-grid" data-task-board></div>
-        </section>
-
-        <section class="admin-panel">
-          <div class="admin-panel-head">
-            <h2>Faellige Aufgaben</h2>
+            <h2>Fällige Aufgaben</h2>
             <small>Sortiert nach Frist</small>
           </div>
           <div class="m-table-wrap">
@@ -79,9 +68,9 @@
                   <th>ID</th>
                   <th>Titel</th>
                   <th>Status</th>
-                  <th>Prioritaet</th>
+                  <th>Priorität</th>
                   <th>Verantwortlich</th>
-                  <th>Faellig</th>
+                  <th>Fällig</th>
                   <th>Aktion</th>
                 </tr>
               </thead>
@@ -89,12 +78,22 @@
             </table>
           </div>
         </section>
+
+        <section class="admin-panel">
+          <div class="admin-panel-head">
+            <h2>Board</h2>
+            <small>Standard: Heute, Offen, Überfällig, Meine Aufgaben</small>
+          </div>
+          <div class="m-actions"><button class="admin-btn admin-btn-secondary" type="button" data-task-toggle-empty>Leere Spalten anzeigen</button></div>
+          <div data-task-empty-columns></div>
+          <div class="m-board" data-task-board></div>
+        </section>
       </section>
 
       <section class="admin-panel">
         <div class="admin-panel-head">
-          <h2>Aktivitaetsprotokoll</h2>
-          <small>Letzte Task-Aenderungen</small>
+          <h2>Aktivitätsprotokoll</h2>
+          <small>Letzte Task-Änderungen</small>
         </div>
         <div class="m-list" data-task-activity></div>
       </section>
@@ -106,7 +105,7 @@
     <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
       <header class="admin-modal-head">
         <h3 id="task-modal-title">Neue Aufgabe erstellen</h3>
-        <button class="admin-icon-btn" type="button" aria-label="Schliessen" data-task-close-modal>✕</button>
+        <button class="admin-icon-btn" type="button" aria-label="Schließen" data-task-close-modal>✕</button>
       </header>
       <form class="admin-modal-body m-form" data-task-create-form>
         <label class="m-field"><span>Titel</span><input name="title" required></label>

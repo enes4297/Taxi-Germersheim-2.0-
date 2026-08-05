@@ -502,6 +502,11 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    if (window.AdminUiText) {
+      window.AdminUiText.normalizeDocument(document);
+      window.AdminUiText.observeDocument(document);
+    }
+
     render();
     bind();
     setTab("start");

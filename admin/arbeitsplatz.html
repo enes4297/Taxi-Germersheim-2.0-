@@ -26,35 +26,22 @@
       <header class="admin-topbar">
         <div class="admin-topbar-title">
           <h1>Mein Arbeitsplatz</h1>
-          <p>Persoenliche Startseite, Favoriten, Filter und Verlauf</p>
-        </div>
-        <div class="admin-topbar-actions m-actions">
-          <button class="admin-btn admin-btn-secondary" type="button" data-work-clear-recents>Zuletzt verwendet leeren</button>
-          <button class="admin-btn" type="button" data-work-save-settings>Einstellungen speichern</button>
+          <p>Persönliche Startseite, Favoriten, Filter und Verlauf</p>
         </div>
       </header>
 
-      <section class="m-split">
-        <section class="admin-panel">
-          <div class="admin-panel-head"><h2>Persoenliche Einstellungen</h2></div>
-          <form class="m-form" data-work-settings-form>
-            <label class="m-field"><span>Startseite</span><input name="preferredStartPage" placeholder="geschaeftsfuehrer-dashboard.html"></label>
-            <label class="m-field"><span>Dichte</span><select name="density"><option value="kompakt">kompakt</option><option value="komfort">komfort</option></select></label>
-            <label class="m-field"><span>Datumsformat</span><input name="dateFormat" placeholder="DD.MM.YYYY"></label>
-            <label class="m-field"><span>Zeitformat</span><select name="timeFormat"><option value="24h">24h</option><option value="12h">12h</option></select></label>
-            <label class="m-field"><span>Standardzeilen in Tabellen</span><input name="tableRows" type="number" min="5" max="200"></label>
-            <label class="m-field"><span>Standardfilter</span><input name="standardFilter" placeholder="status:offen"></label>
-          </form>
-        </section>
-
-        <section class="admin-panel">
-          <div class="admin-panel-head"><h2>Benachrichtigungsprofil</h2></div>
-          <form class="m-form" data-work-notification-form>
-            <label class="m-field"><span>Nur kritische Meldungen</span><select name="criticalOnly"><option value="nein">Nein</option><option value="ja">Ja</option></select></label>
-            <label class="m-field"><span>Meldungen stummschalten</span><select name="muted"><option value="nein">Nein</option><option value="ja">Ja</option></select></label>
-            <label class="m-field"><span>Tageszusammenfassung</span><select name="dailySummaryDemo"><option value="ja">Ja</option><option value="nein">Nein</option></select></label>
-          </form>
-        </section>
+      <section class="admin-panel">
+        <div class="admin-panel-head"><h2>Persönliche Einstellungen</h2></div>
+        <form class="m-form" data-work-settings-form>
+          <label class="m-field"><span>Startseite</span><select name="preferredStartPage"><option value="index.html">Dashboard</option><option value="live-dispo.html">Live-Dispo</option><option value="geschaeftsfuehrer-dashboard.html">Geschäftsführer-Dashboard</option><option value="aufgaben-center.html">Aufgaben-Center</option><option value="benachrichtigungen-center.html">Benachrichtigungs-Center</option><option value="arbeitsplatz.html">Mein Arbeitsplatz</option></select></label>
+          <label class="m-field"><span>Informationsdichte</span><select name="density"><option value="kompakt">Kompakt</option><option value="komfort">Komfortabel</option></select></label>
+          <label class="m-field"><span>Datumsformat</span><select name="dateFormat"><option value="DD.MM.YYYY">TT.MM.JJJJ</option><option value="DD.MM.YY">TT.MM.JJ</option><option value="YYYY-MM-DD">JJJJ-MM-TT</option></select></label>
+          <label class="m-field"><span>Zeitformat</span><select name="timeFormat"><option value="24h">24 Stunden</option><option value="12h">12 Stunden</option></select></label>
+          <label class="m-field"><span>Tabellenzeilen</span><input name="tableRows" type="number" min="5" max="200"></label>
+          <label class="m-field"><span>Standardfilter</span><select name="standardFilter"><option value="">Kein Standardfilter</option><option value="status:offen">Status: Offen</option><option value="priority:kritisch">Priorität: Kritisch</option><option value="status:in Bearbeitung">Status: In Bearbeitung</option></select></label>
+          <label class="m-field"><span>Benachrichtigungsprofil</span><select name="notificationProfile"><option value="alle">Alle Meldungen</option><option value="kritisch">Nur kritische Meldungen</option><option value="stumm">Stummgeschaltet (Demo)</option></select></label>
+          <div class="m-form-actions"><button class="admin-btn admin-btn-secondary" type="button" data-work-clear-recents>Zuletzt verwendet leeren</button><button class="admin-btn" type="button" data-work-save-settings>Einstellungen speichern</button></div>
+        </form>
       </section>
 
       <section class="m-split">
@@ -96,7 +83,7 @@
       </section>
 
       <section class="admin-panel">
-        <div class="admin-panel-head"><h2>Aktivitaetsprotokoll</h2></div>
+        <div class="admin-panel-head"><h2>Aktivitätsprotokoll</h2></div>
         <div class="m-list" data-work-activity></div>
       </section>
     </main>

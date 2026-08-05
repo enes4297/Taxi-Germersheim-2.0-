@@ -30,6 +30,14 @@
     return `<span class="m-pill ${custom || tone(text)}">${text}</span>`;
   }
 
+  function formatDateTimeLabel(iso) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "-";
+    const date = d.toLocaleDateString("de-DE");
+    const time = d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    return `${date} · ${time} Uhr`;
+  }
+
   function getRows() {
     state.data = S.loadState();
     const items = S.allNotifications(state.data, S.loadSources());
@@ -56,12 +64,12 @@
     const assigned = items.filter((x) => S.normalize(x.assignedTo).includes(S.normalize(session.role)) || S.normalize(x.assignedTo).includes(S.normalize(session.user))).length;
 
     node.innerHTML = [
-      `<article class="m-kpi"><small>Gesamt</small><strong>${items.length}</strong><p>systemweite Meldungen</p></article>`,
-      `<article class="m-kpi"><small>Offen</small><strong>${unread}</strong><p>noch nicht abgeschlossen</p></article>`,
-      `<article class="m-kpi"><small>Kritisch</small><strong>${critical}</strong><p>sofortige Prioritaet</p></article>`,
-      `<article class="m-kpi"><small>Gruppen</small><strong>${grouped.length}</strong><p>zusammengefasste Events</p></article>`,
-      `<article class="m-kpi"><small>Meine Rolle</small><strong>${assigned}</strong><p>direkt zugewiesen</p></article>
-      <article class="m-kpi"><small>Letzte Aktualisierung</small><strong>${S.formatDateTime(S.nowIso())}</strong><p>live aus lokalen Daten</p></article>`
+      `<article class="m-kpi"><small>Gesamt</small><strong>${items.length}</strong><p>Systemweite Meldungen</p></article>`,
+      `<article class="m-kpi"><small>Offen</small><strong>${unread}</strong><p>Noch nicht abgeschlossen</p></article>`,
+      `<article class="m-kpi"><small>Kritisch</small><strong>${critical}</strong><p>Sofortige Priorität</p></article>`,
+      `<article class="m-kpi"><small>Gruppiert</small><strong>${grouped.length}</strong><p>Zusammengefasste Ereignisse</p></article>`,
+      `<article class="m-kpi"><small>Meine Rolle</small><strong>${assigned}</strong><p>Direkt zugewiesen</p></article>`,
+      `<article class="m-kpi"><small>Letzte Aktualisierung</small><strong>${formatDateTimeLabel(S.nowIso())}</strong><p>Live aus lokalen Daten</p></article>`
     ].join("");
   }
 
@@ -100,7 +108,7 @@
     node.innerHTML = grouped.map((group) => {
       const first = group.items[0];
       const detailRows = group.items.map((item) => {
-        return `<article class="m-item"><strong>${item.title}</strong><p>${item.message}</p><p>${badge(item.priority)} · ${badge(item.status, isOpen(item.status) ? "wichtig" : "success")}</p><p>${item.category || "-"} · ${item.source || "-"} · ${S.formatDateTime(item.timestamp)}</p><div class="m-actions"><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="gelesen" data-notice-id="${item.id}">Schliessen</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="bestaetigt" data-notice-id="${item.id}">Bestaetigen</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="archiviert" data-notice-id="${item.id}">Archivieren</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="erledigt" data-notice-id="${item.id}">Erledigt</button><button class="admin-btn" type="button" data-notice-task="${item.id}">Als Aufgabe</button></div></article>`;
+        return `<article class="m-item"><strong>${item.title}</strong><p>${item.message}</p><p class="m-meta-line">${badge(item.priority)}${badge(item.status, isOpen(item.status) ? "wichtig" : "success")}</p><p>${item.category || "-"} · ${item.source || "-"} · ${formatDateTimeLabel(item.timestamp)}</p><div class="m-actions"><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="gelesen" data-notice-id="${item.id}">Schließen</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="bestaetigt" data-notice-id="${item.id}">Bestätigen</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="archiviert" data-notice-id="${item.id}">Archivieren</button><button class="admin-btn admin-btn-secondary" type="button" data-notice-status="erledigt" data-notice-id="${item.id}">Erledigt</button><button class="admin-btn" type="button" data-notice-task="${item.id}">Als Aufgabe</button></div></article>`;
       }).join("");
 
       return `<section class="admin-panel"><div class="admin-panel-head"><h3>${group.title}</h3><small>${group.count} Eintrag(e) · ${badge(first.priority)}</small></div>${detailRows}</section>`;
@@ -118,25 +126,77 @@
     const modal = document.querySelector("[data-notice-modal]");
     if (!modal) return;
     modal.hidden = !open;
+    document.body.classList.toggle("admin-modal-open", open);
   }
 
   function bindForm() {
     const form = document.querySelector("[data-notice-create-form]");
     const submit = document.querySelector("[data-notice-submit]");
     const openBtn = document.querySelector("[data-notice-open-create]");
+    const errorNode = document.querySelector("[data-notice-form-error]");
+    let initialSnapshot = "";
+    let modalDirty = false;
 
     if (!form || !submit || !openBtn) return;
 
     form.elements.priority.innerHTML = S.NOTICE_PRIORITIES.map((x) => `<option value="${x}">${x}</option>`).join("");
     form.elements.status.innerHTML = S.NOTICE_STATUSES.map((x) => `<option value="${x}">${x}</option>`).join("");
 
-    openBtn.addEventListener("click", () => openModal(true));
+    const snapshot = () => JSON.stringify(Object.fromEntries(new FormData(form).entries()));
+
+    const resetDirty = () => {
+      initialSnapshot = snapshot();
+      modalDirty = false;
+    };
+
+    const closeModalSafely = (force) => {
+      if (!force && modalDirty) return;
+      openModal(false);
+      if (errorNode) {
+        errorNode.hidden = true;
+        errorNode.textContent = "";
+      }
+      form.reset();
+      resetDirty();
+    };
+
+    form.addEventListener("input", () => {
+      modalDirty = snapshot() !== initialSnapshot;
+    });
+
+    openBtn.addEventListener("click", () => {
+      openModal(true);
+      resetDirty();
+    });
+
     submit.addEventListener("click", () => {
-      if (!form.reportValidity()) return;
+      if (errorNode) {
+        errorNode.hidden = true;
+        errorNode.textContent = "";
+      }
+
+      const title = String(form.elements.title.value || "").trim();
+      const message = String(form.elements.message.value || "").trim();
+      if (title.length < 3) {
+        if (errorNode) {
+          errorNode.hidden = false;
+          errorNode.textContent = "Bitte einen Titel mit mindestens 3 Zeichen eingeben.";
+        }
+        form.elements.title.focus();
+        return;
+      }
+      if (message.length < 6) {
+        if (errorNode) {
+          errorNode.hidden = false;
+          errorNode.textContent = "Bitte eine Nachricht mit mindestens 6 Zeichen eingeben.";
+        }
+        form.elements.message.focus();
+        return;
+      }
+
       const payload = Object.fromEntries(new FormData(form).entries());
       S.addNotification(state.data, payload, session.user);
-      form.reset();
-      openModal(false);
+      closeModalSafely(true);
       refreshBadges();
       render();
     });
@@ -144,7 +204,8 @@
     if (!window.__adminNoticeModalCloseHandler) {
       window.__adminNoticeModalCloseHandler = (event) => {
         if (!event.target.closest("[data-notice-close-modal]")) return;
-        openModal(false);
+        const isBackdrop = Boolean(event.target.closest(".admin-modal-backdrop"));
+        closeModalSafely(!isBackdrop);
       };
       document.addEventListener("click", window.__adminNoticeModalCloseHandler);
     }
@@ -154,7 +215,7 @@
         if (event.key !== "Escape" && event.key !== "Esc") return;
         const modal = document.querySelector("[data-notice-modal]");
         if (!modal || modal.hidden) return;
-        openModal(false);
+        closeModalSafely(true);
       };
       document.addEventListener("keydown", window.__adminNoticeModalEscapeHandler);
     }
