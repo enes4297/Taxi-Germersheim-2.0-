@@ -4,6 +4,11 @@
   gap: 14px;
 }
 
+.person-grid-compact {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
 .person-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -34,6 +39,10 @@
 
 .person-table {
   min-width: 1140px;
+}
+
+.person-table-compact {
+  min-width: 900px;
 }
 
 .person-status {
@@ -78,6 +87,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.person-chip-row-tight {
+  gap: 6px;
+}
+
+.person-filter-row .person-chip {
+  cursor: pointer;
 }
 
 .person-chip {
@@ -188,6 +205,10 @@
   gap: 10px;
 }
 
+.person-form-grid-compact {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
 .person-form-grid label {
   display: grid;
   gap: 6px;
@@ -202,6 +223,90 @@
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 9px;
   padding: 8px;
+}
+
+.person-form-wide {
+  grid-column: 1 / -1;
+}
+
+.person-dialog {
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  width: min(920px, calc(100vw - 24px));
+}
+
+.person-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(2px);
+}
+
+.person-dialog-card {
+  background: linear-gradient(180deg, rgba(18, 19, 24, 0.98), rgba(10, 11, 14, 0.99));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 28px 42px rgba(0, 0, 0, 0.42);
+}
+
+.person-dialog-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.person-dialog-head h3,
+.person-dialog-head p {
+  margin: 0;
+}
+
+.person-dialog-head p {
+  color: rgba(230, 236, 249, 0.8);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.person-dialog-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+}
+
+.person-dialog-actions {
+  margin-top: 14px;
+}
+
+.person-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.person-detail-card {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.person-detail-card small {
+  display: block;
+  color: rgba(230, 236, 249, 0.72);
+}
+
+.person-detail-card strong {
+  display: block;
+  margin-top: 5px;
+}
+
+.person-detail-card.full {
+  grid-column: 1 / -1;
 }
 
 .person-actions {
@@ -247,6 +352,11 @@
   .person-form-grid {
     grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
+
+  .person-form-grid-compact,
+  .person-detail-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
@@ -260,5 +370,9 @@
 
   .person-table {
     min-width: 860px;
+  }
+
+  .person-dialog {
+    width: calc(100vw - 16px);
   }
 }

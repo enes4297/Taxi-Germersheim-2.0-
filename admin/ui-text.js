@@ -33,14 +33,73 @@
     [/\bVerfuegbar\b/g, "Verfügbar"],
     [/\bverfuegbar\b/g, "verfügbar"],
     [/\bPruefung\b/g, "Prüfung"],
-    [/\bpruefung\b/g, "prüfung"]
+    [/\bpruefung\b/g, "prüfung"],
+    [/\bRueckkehr\b/g, "Rückkehr"],
+    [/\brueckkehr\b/g, "rückkehr"],
+    [/\bRueckmeldung\b/g, "Rückmeldung"],
+    [/\brueckmeldung\b/g, "rückmeldung"],
+    [/\bUebersicht\b/g, "Übersicht"],
+    [/\buebersicht\b/g, "übersicht"],
+    [/\bUeberfaellig\b/g, "Überfällig"],
+    [/\bueberfaellig\b/g, "überfällig"],
+    [/\bFaellig\b/g, "Fällig"],
+    [/\bfaellig\b/g, "fällig"],
+    [/\bEintraege\b/g, "Einträge"],
+    [/\beintraege\b/g, "einträge"],
+    [/\bKlaeren\b/g, "Klären"],
+    [/\bklaeren\b/g, "klären"],
+    [/\bFuehrerschein\b/g, "Führerschein"],
+    [/\bfuehrerschein\b/g, "führerschein"],
+    [/\bgueltig\b/g, "gültig"],
+    [/\bGueltig\b/g, "Gültig"],
+    [/\bgeprueft\b/g, "geprüft"],
+    [/\bGeprueft\b/g, "Geprüft"],
+    [/\bSpaetschicht\b/g, "Spätschicht"],
+    [/\bSpaet\b/g, "Spät"],
+    [/\bFruehschicht\b/g, "Frühschicht"],
+    [/\bfruehschicht\b/g, "frühschicht"],
+    [/\bverfuegbar\b/g, "verfügbar"],
+    [/\bVerfuegbar\b/g, "Verfügbar"],
+    [/\bbenoetigt\b/g, "benötigt"],
+    [/\bBenoetigt\b/g, "Benötigt"],
+    [/\bKapazitaet\b/g, "Kapazität"],
+    [/\bKapazitaeten\b/g, "Kapazitäten"],
+    [/\bGeschaeftsfuehrer\b/g, "Geschäftsführer"],
+    [/\bGeschaeftsfuehrer-Dashboard\b/g, "Geschäftsführer-Dashboard"],
+    [/\bPersonaluebersicht\b/g, "Personalübersicht"],
+    [/\bPersoenliche Einstellungen\b/g, "Persönliche Einstellungen"],
+    [/\bMeldung ueber\b/g, "Meldung über"]
   ];
+
+  const ISO_DATE_RE = /\b(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::\d{2})?)?\b/g;
+
+  function formatIsoDate(year, month, day) {
+    const date = new Date(`${year}-${month}-${day}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return `${year}-${month}-${day}`;
+    return date.toLocaleDateString("de-DE");
+  }
+
+  function formatIsoDateTime(year, month, day, hour, minute) {
+    const date = new Date(`${year}-${month}-${day}T${hour}:${minute}:00`);
+    if (Number.isNaN(date.getTime())) return `${year}-${month}-${day} ${hour}:${minute}`;
+    return `${date.toLocaleDateString("de-DE")} · ${date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr`;
+  }
+
+  function replaceIsoDates(text) {
+    if (!text || typeof text !== "string") return text;
+    return text.replace(ISO_DATE_RE, (_, year, month, day, hour, minute) => {
+      if (hour && minute) {
+        return formatIsoDateTime(year, month, day, hour, minute);
+      }
+      return formatIsoDate(year, month, day);
+    });
+  }
 
   const ATTRIBUTE_NAMES = ["title", "aria-label", "placeholder", "alt"];
 
   function replaceText(text) {
     if (!text || typeof text !== "string") return text;
-    let output = text;
+    let output = replaceIsoDates(text);
     REPLACEMENTS.forEach(([pattern, next]) => {
       output = output.replace(pattern, next);
     });

@@ -870,10 +870,64 @@
     return users;
   }
 
-  function formatDateTime(iso) {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return String(iso || "");
-    return `${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`;
+  function parseDateValue(value) {
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+    const raw = String(value || "").trim();
+    if (!raw) return null;
+
+    const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::\d{2})?)?$/);
+    if (isoMatch) {
+      const date = new Date(`${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}T${isoMatch[4] || "00"}:${isoMatch[5] || "00"}:00`);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    const compactMatch = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})(?:\s*[·-]\s*(\d{2}):(\d{2})\s*Uhr?)?$/);
+    if (compactMatch) {
+      const date = new Date(`${compactMatch[3]}-${compactMatch[2]}-${compactMatch[1]}T${compactMatch[4] || "00"}:${compactMatch[5] || "00"}:00`);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function formatDate(value) {
+    const date = parseDateValue(value);
+    if (!date) return String(value || "");
+    return date.toLocaleDateString("de-DE");
+  }
+
+  function formatTime(value) {
+    const date = parseDateValue(value);
+    if (date) {
+      return `${date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr`;
+    }
+
+    const text = String(value || "").trim();
+    const timeMatch = text.match(/^(\d{2}):(\d{2})$/);
+    if (!timeMatch) return text;
+    return `${timeMatch[1]}:${timeMatch[2]} Uhr`;
+  }
+
+  function formatDateRange(start, end) {
+    const startDate = parseDateValue(start);
+    const endDate = parseDateValue(end);
+    if (!startDate && !endDate) return [start, end].filter(Boolean).join(" bis ");
+    if (!startDate) return formatDate(endDate || end);
+    if (!endDate) return formatDate(startDate);
+
+    const sameYear = startDate.getFullYear() === endDate.getFullYear();
+    const sameMonth = sameYear && startDate.getMonth() === endDate.getMonth();
+    if (sameMonth) {
+      return `${String(startDate.getDate()).padStart(2, "0")}.${String(startDate.getMonth() + 1).padStart(2, "0")}.–${formatDate(endDate)}`;
+    }
+    return `${formatDate(startDate)} bis ${formatDate(endDate)}`;
+  }
+
+  function formatDateTime(value) {
+    const date = parseDateValue(value);
+    if (!date) return String(value || "");
+    return `${formatDate(date)} · ${formatTime(date)}`;
   }
 
   function addActivity(entry) {
@@ -1181,7 +1235,10 @@
     normalize,
     todayIso,
     nowIso,
+    formatDate,
+    formatDateRange,
     formatDateTime,
+    formatTime,
     loadState,
     saveState,
     resetState,
