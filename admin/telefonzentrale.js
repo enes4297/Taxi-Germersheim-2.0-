@@ -1,4 +1,5 @@
 (() => {
+  const S = window.AdminSystemCenter || {};
   const STORAGE_KEYS = {
     customers: "adminSharedCustomersV14",
     tasks: "adminSharedTasksV14",
@@ -309,7 +310,8 @@
     searchTerm: "",
     recentCallers: ["+49 172 901 2288", "+49 172 901 2244", "+49 7274 901700", "+49 172 901 9988"],
     durationTimer: null,
-    mobileTab: "anruf"
+    mobileTab: "anruf",
+    rightTab: "last"
   };
 
   function loadWithFallback(key, fallback) {
@@ -332,6 +334,11 @@
 
   function normalize(v) {
     return String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function formatDate(value) {
+    if (S.formatDate) return S.formatDate(value);
+    return String(value || "-");
   }
 
   function getCustomerLabel(customer) {
@@ -442,19 +449,18 @@
         customer.addresses.map((addr) => addr.fullAddress).join(" ")
       ].join(" "));
       return haystack.includes(term);
-    }).slice(0, 12);
+    }).slice(0, 5);
 
     wrap.innerHTML = matches.length
       ? matches.map((customer) => {
-        const lastRide = customer.rides[0] ? `${customer.rides[0].date} ${customer.rides[0].time}` : "-";
+        const lastRide = customer.rides[0] ? `${formatDate(customer.rides[0].date)} ${customer.rides[0].time}` : "-";
         return `
           <article class="call-search-item" data-call-customer-select="${customer.id}">
             <strong>${getCustomerLabel(customer)}</strong>
-            <p>${customer.phone} · ${customer.type} · Hauptadresse: ${customer.addresses[0] ? customer.addresses[0].fullAddress : "-"}</p>
+            <p>${customer.phone} · ${customer.type}</p>
             <div class="call-search-tags">
               <span class="call-tag">Letzte Fahrt: ${lastRide}</span>
               <span class="call-tag">Offene Fahrt: ${customer.openRide || "-"}</span>
-              <span class="call-tag">Hinweis: ${customer.importantHint || "-"}</span>
             </div>
           </article>
         `;
@@ -698,68 +704,96 @@
 
   function renderRightColumn() {
     const customer = getSelectedCustomer();
+    const wrap = document.querySelector("[data-call-right-content]");
+    if (!wrap) return;
 
-    const ridesWrap = document.querySelector("[data-call-last-rides]");
-    if (ridesWrap) {
+    const activeTabs = document.querySelectorAll("[data-call-right-tab]");
+    activeTabs.forEach((button) => {
+      const key = button.getAttribute("data-call-right-tab");
+      button.classList.toggle("is-active", key === state.rightTab);
+    });
+
+    if (state.rightTab === "last") {
       const rides = customer ? customer.rides.slice(0, 8) : [];
-      ridesWrap.innerHTML = rides.length ? rides.map((ride) => `
+      wrap.innerHTML = `
+        <h3>Letzte Fahrten</h3>
+        <div class="call-history-list" data-call-last-rides>
+          ${rides.length ? rides.map((ride) => `
         <article class="call-history-item">
-          <strong>${ride.id} · ${ride.date} ${ride.time}</strong>
+          <strong>${ride.id} · ${formatDate(ride.date)} ${ride.time}</strong>
           <p>${ride.pickup} → ${ride.destination}</p>
           <p>${ride.rideType} · ${ride.driver} · ${ride.vehicle} · ${ride.status}</p>
           <div class="call-item-actions">
             <button type="button" data-call-history-action="repeat" data-call-ride-id="${ride.id}">Erneut buchen</button>
             <button type="button" data-call-history-action="return" data-call-ride-id="${ride.id}">Rückfahrt erstellen</button>
-            <button type="button" data-call-history-action="duplicate" data-call-ride-id="${ride.id}">Fahrt duplizieren</button>
             <button type="button" data-call-history-action="series" data-call-ride-id="${ride.id}">Als Serienfahrt</button>
           </div>
         </article>
-      `).join("") : '<article class="admin-empty-state"><strong>Keine Fahrten</strong><p>Für diesen Kunden gibt es noch keine Fahrten.</p></article>';
+      `).join("") : '<article class="admin-empty-state"><strong>Keine Fahrten</strong><p>Für diesen Kunden gibt es noch keine Fahrten.</p></article>'}
+        </div>
+      `;
+      return;
     }
 
-    const openWrap = document.querySelector("[data-call-open-rides]");
-    if (openWrap) {
+    if (state.rightTab === "open") {
       const openRides = customer ? customer.rides.filter((ride) => ["Neu", "Wartet", "Bestätigt", "Zugewiesen"].includes(ride.status)).slice(0, 6) : [];
-      openWrap.innerHTML = openRides.length ? openRides.map((ride) => `
+      wrap.innerHTML = `
+        <h3>Offene Fahrten</h3>
+        <div class="call-open-rides" data-call-open-rides>
+          ${openRides.length ? openRides.map((ride) => `
         <article class="call-open-item">
           <strong>${ride.id}</strong>
-          <p>${ride.date} ${ride.time} · ${ride.pickup} → ${ride.destination}</p>
+          <p>${formatDate(ride.date)} ${ride.time} · ${ride.pickup} → ${ride.destination}</p>
           <p>Status: ${ride.status}</p>
         </article>
-      `).join("") : '<article class="admin-empty-state"><strong>Keine offenen Fahrten</strong><p>Aktuell kein offener Auftrag.</p></article>';
+      `).join("") : '<article class="admin-empty-state"><strong>Keine offenen Fahrten</strong><p>Aktuell kein offener Auftrag.</p></article>'}
+        </div>
+      `;
+      return;
     }
 
-    const seriesWrap = document.querySelector("[data-call-series-list]");
-    if (seriesWrap) {
+    if (state.rightTab === "series") {
       const seriesItems = customer ? state.series.filter((item) => item.customerId === customer.id) : [];
-      seriesWrap.innerHTML = seriesItems.length ? seriesItems.map((item) => `
+      wrap.innerHTML = `
+        <h3>Serienfahrten</h3>
+        <div class="call-series-list">
+          ${seriesItems.length ? seriesItems.map((item) => `
         <article class="call-series-item">
           <strong>${item.id} · ${item.type}</strong>
-          <p>Nächster Termin: ${item.nextDate} · Tage: ${item.days}</p>
+          <p>Nächster Termin: ${formatDate(item.nextDate)} · Tage: ${item.days}</p>
         </article>
-      `).join("") : '<article class="admin-empty-state"><strong>Keine Serienfahrt</strong><p>Noch keine Serienfahrt vorhanden.</p></article>';
+      `).join("") : '<article class="admin-empty-state"><strong>Keine Serienfahrt</strong><p>Noch keine Serienfahrt vorhanden.</p></article>'}
+        </div>
+      `;
+      return;
     }
 
-    const taskWrap = document.querySelector("[data-call-task-list]");
-    if (taskWrap) {
+    if (state.rightTab === "tasks") {
       const tasks = state.tasks.filter((task) => !customer || task.customerId === customer.id).slice(0, 10);
-      taskWrap.innerHTML = tasks.length ? tasks.map((task) => `
+      wrap.innerHTML = `
+        <h3>Offene Aufgaben</h3>
+        <div class="call-task-list">
+          ${tasks.length ? tasks.map((task) => `
         <article class="call-task-item">
           <strong>${task.title}</strong>
-          <p>Fällig: ${task.due} · Priorität: ${task.priority} · Status: ${task.status}</p>
+          <p>Fällig: ${formatDate(task.due)} · Priorität: ${task.priority} · Status: ${task.status}</p>
           <p>${task.note}</p>
           <div class="call-item-actions">
             <button type="button" data-call-task-action="done" data-call-task-id="${task.id}">Erledigt</button>
             <button type="button" data-call-task-action="progress" data-call-task-id="${task.id}">In Bearbeitung</button>
           </div>
         </article>
-      `).join("") : '<article class="admin-empty-state"><strong>Keine Aufgaben</strong><p>Aktuell keine offenen Aufgaben.</p></article>';
+      `).join("") : '<article class="admin-empty-state"><strong>Keine Aufgaben</strong><p>Aktuell keine offenen Aufgaben.</p></article>'}
+        </div>
+      `;
+      return;
     }
 
-    const callbackWrap = document.querySelector("[data-call-callback-list]");
-    if (callbackWrap) {
-      const callbacks = state.callbacks.slice(0, 10);
-      callbackWrap.innerHTML = callbacks.length ? callbacks.map((cb) => {
+    const callbacks = state.callbacks.slice(0, 10);
+    wrap.innerHTML = `
+      <h3>Rückruf-Liste</h3>
+      <div class="call-callback-list">
+        ${callbacks.length ? callbacks.map((cb) => {
         const linkedCustomer = state.customers.find((c) => c.id === cb.customerId);
         return `
           <article class="call-callback-item">
@@ -773,8 +807,9 @@
             </div>
           </article>
         `;
-      }).join("") : '<article class="admin-empty-state"><strong>Keine Rückrufe</strong><p>Rückrufliste ist leer.</p></article>';
-    }
+      }).join("") : '<article class="admin-empty-state"><strong>Keine Rückrufe</strong><p>Rückrufliste ist leer.</p></article>'}
+      </div>
+    `;
   }
 
   function openModal(title, body, foot) {
@@ -1051,6 +1086,13 @@
         fillFormFromCustomer(selected);
         renderSelectedCustomer();
         renderAddresses();
+        renderRightColumn();
+        return;
+      }
+
+      const rightTab = event.target.closest("[data-call-right-tab]");
+      if (rightTab) {
+        state.rightTab = rightTab.getAttribute("data-call-right-tab") || "last";
         renderRightColumn();
         return;
       }

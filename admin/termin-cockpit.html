@@ -30,7 +30,18 @@
       <header class="admin-topbar">
         <div class="admin-topbar-title">
           <h1>Termin-Cockpit</h1>
-          <p>Termine organisieren statt lange Fahrtdaten erfassen. Ziel: neue Terminaufnahme in maximal 20 Sekunden.</p>
+          <p>Termine in wenigen Sekunden aufnehmen und für die Planung vorbereiten.</p>
+        </div>
+        <div class="admin-topbar-actions tc-topbar-actions">
+          <button class="admin-btn" type="button" data-cockpit-new>+ Neuer Termin</button>
+          <a class="admin-btn admin-btn-secondary" href="tagesplanung.html" aria-label="Tagesplanung öffnen"><span aria-hidden="true">🗓</span><span>Tagesplanung öffnen</span></a>
+          <details class="tc-more-actions">
+            <summary class="admin-btn admin-btn-secondary" aria-label="Weitere Aktionen">⋯</summary>
+            <div class="tc-more-menu">
+              <a class="admin-btn admin-btn-secondary" href="termin-schnellerfassung.html">Mobile Schnellaufnahme</a>
+              <button class="admin-btn admin-btn-secondary" type="button" data-start-ai>KI-Planung starten</button>
+            </div>
+          </details>
         </div>
       </header>
 
@@ -39,27 +50,37 @@
           <h2>Schnelle Terminaufnahme</h2>
           <small>Nur Pflichtfelder. Alles Weitere ist optional.</small>
         </div>
-        <div class="m-actions"><button class="admin-btn" type="button" data-start-ai>KI-Planung starten</button><a class="admin-btn admin-btn-secondary" href="tagesplanung.html">Tagesplanung</a><a class="admin-btn admin-btn-secondary" href="termin-schnellerfassung.html">+ Termin mobil</a></div>
         <form class="m-form tc-fast-form" data-appointment-form>
-          <label class="m-field">
+          <label class="m-field tc-col-name">
             <span>Name *</span>
             <input name="name" required autocomplete="off" placeholder="Herr Müller">
           </label>
-          <label class="m-field">
+          <label class="m-field tc-col-phone">
+            <span>Telefonnummer</span>
+            <input name="phone" autocomplete="off" placeholder="0171 1234567">
+          </label>
+          <label class="m-field tc-col-pickup">
             <span>Abholadresse *</span>
             <input name="pickup" required autocomplete="off" placeholder="Germersheim Zentrum 4">
           </label>
-          <label class="m-field">
+          <label class="m-field tc-col-destination">
             <span>Ziel *</span>
             <input name="destination" required autocomplete="off" placeholder="Dialyse Speyer">
           </label>
-          <label class="m-field">
+          <label class="m-field tc-col-date">
             <span>Datum *</span>
             <input name="date" type="date" required>
           </label>
-          <label class="m-field">
+          <label class="m-field tc-col-time">
             <span>Uhrzeit *</span>
             <input name="time" type="time" required>
+          </label>
+          <label class="m-field tc-col-return">
+            <span>Rückfahrt</span>
+            <select name="returnTrip">
+              <option value="Nein" selected>Nein</option>
+              <option value="Ja">Ja</option>
+            </select>
           </label>
 
           <div class="m-field is-full tc-favorites">
@@ -70,10 +91,6 @@
           <details class="tc-optional">
             <summary>Weitere Angaben (optional)</summary>
             <div class="tc-optional-grid">
-              <label class="m-field">
-                <span>Telefonnummer</span>
-                <input name="phone" placeholder="0171 1234567">
-              </label>
               <label class="m-field">
                 <span>Notiz</span>
                 <textarea name="note" rows="3" placeholder="Optionaler Hinweis für Fahrer"></textarea>
@@ -99,7 +116,6 @@
             <h2>Noch zu prüfen</h2>
             <small>Sprachnotizen, unvollständige Termine, Textnotizen und offene Rückfahrten</small>
           </div>
-          <a class="admin-btn admin-btn-secondary" href="termin-schnellerfassung.html">Termin schnell aufnehmen</a>
         </div>
         <div class="tc-inbox-stats" data-quick-inbox-stats></div>
         <section class="tc-inbox-layout">
@@ -109,8 +125,11 @@
         </section>
       </section>
 
-      <details class="admin-panel">
-        <summary>Intelligente Details (Stammkunden und KI-Schritte)</summary>
+      <section class="admin-panel" data-intelligent-panel hidden>
+        <div class="admin-panel-head">
+          <h2>Intelligente Details</h2>
+          <small>Stammkunden-Hinweise und KI-Schritte nur bei aktiver Terminbearbeitung</small>
+        </div>
         <section class="tc-grid-2">
         <section class="admin-panel">
           <div class="admin-panel-head">
@@ -131,7 +150,7 @@
           <ol class="tc-analysis-list" data-ai-steps></ol>
         </section>
         </section>
-      </details>
+      </section>
 
       <section class="admin-panel">
         <div class="admin-panel-head">

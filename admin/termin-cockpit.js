@@ -1,4 +1,5 @@
 (() => {
+  const S = window.AdminSystemCenter || {};
   const STORAGE_KEY = "adminTerminCockpitV22Phase1";
   const LIVE_DISPO_KEY = "adminLiveDispoV131";
   const DISPATCH_BRIDGE_KEY = "adminV22DispatchBridge";
@@ -160,44 +161,49 @@
     return [
       {
         id: uid("AP"),
-        name: "Herr Müller",
+        name: "Frau Müller",
         pickup: "Germersheim Süd 12",
         destination: "Dialyse Speyer",
         date: base,
-        time: "08:00",
+        time: "06:30",
         phone: "0171 221100",
         medical: true,
         wheelchair: false,
         note: "Stammkunde",
-        status: "Noch ungeplant",
+        status: "Bestätigt",
+        driverName: "Sabine Hoffmann",
+        vehicleLabel: "GER TK 230",
         createdAt: nowIso()
       },
       {
         id: uid("AP"),
-        name: "Frau Schmidt",
-        pickup: "Lingenfeld Hauptstrasse 4",
-        destination: "Karlsruhe Klinikum",
+        name: "Herr Demir",
+        pickup: "Germersheim Innenstadt",
+        destination: "Dialyse Speyer",
         date: base,
-        time: "08:30",
-        phone: "0171 441200",
+        time: "07:10",
+        phone: "0171 441210",
         medical: true,
         wheelchair: false,
-        note: "Anmeldung 10 Minuten vorher",
+        note: "Fahrerzuweisung offen",
         status: "Noch ungeplant",
         createdAt: nowIso()
       },
       {
         id: uid("AP"),
-        name: "Herr Cakir",
+        name: "Flughafen Frankfurt",
         pickup: "Bellheim Mitte 1",
         destination: "Flughafen Frankfurt",
-        date: addDaysIso(base, 1),
-        time: "09:10",
+        date: base,
+        time: "08:15",
         phone: "0171 775510",
         medical: false,
         wheelchair: false,
-        note: "1 Koffer",
-        status: "Noch ungeplant",
+        note: "Anschlussfahrt beachten",
+        status: "Geplant",
+        driverName: "Daniel Kaya",
+        connectionTime: "09:45",
+        connectionDestination: "Mannheim",
         createdAt: nowIso()
       }
     ];
@@ -230,10 +236,28 @@
     return next;
   }
 
+  function migrateLegacyDemoScenario(data) {
+    if (!data || !Array.isArray(data.appointments)) return false;
+    if (data.appointments.length !== 3) return false;
+
+    const key = data.appointments
+      .map((item) => `${item.name || ""}|${item.time || ""}`)
+      .sort()
+      .join(";");
+
+    const legacyKey = ["Frau Schmidt|08:30", "Herr Cakir|09:10", "Herr Müller|08:00"].sort().join(";");
+    if (key !== legacyKey) return false;
+
+    data.appointments = defaultAppointments();
+    return true;
+  }
+
   function loadData() {
     const parsed = safeParse(localStorage.getItem(STORAGE_KEY));
     state.data = ensureShape(parsed);
+    const migrated = migrateLegacyDemoScenario(state.data);
     if (!parsed) saveData();
+    if (migrated) saveData();
   }
 
   function saveData() {
@@ -255,9 +279,15 @@
   }
 
   function formatDate(iso) {
+    if (S.formatDate) return S.formatDate(iso);
     const d = new Date(`${iso}T00:00:00`);
     if (Number.isNaN(d.getTime())) return iso;
     return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+  }
+
+  function formatDateTime(value) {
+    if (S.formatDateTime) return S.formatDateTime(value);
+    return String(value || "");
   }
 
   function compareAppointments(a, b) {
@@ -318,7 +348,7 @@
   function renderFavorites() {
     const node = document.querySelector("[data-favorite-targets]");
     if (!node) return;
-    node.innerHTML = FAVORITE_DESTINATIONS.map((target) => `<button type="button" data-fav-target="${target}">${target}</button>`).join("");
+    node.innerHTML = FAVORITE_DESTINATIONS.map((target) => `<button type="button" data-fav-target="${target}"><span aria-hidden="true">◦</span>${target}</button>`).join("");
   }
 
   function renderCaptureInfo() {
@@ -344,13 +374,17 @@
 
   function renderCustomerInsightByName(name) {
     const insightNode = document.querySelector("[data-customer-insight]");
+    const panel = document.querySelector("[data-intelligent-panel]");
     if (!insightNode) return;
 
     const needle = String(name || "").trim().toLowerCase();
     if (!needle) {
+      if (panel) panel.hidden = true;
       insightNode.innerHTML = "<small>Tippe einen Namen, um letzte Fahrten zu sehen.</small>";
       return;
     }
+
+    if (panel) panel.hidden = false;
 
     const matches = CUSTOMER_PROFILES.filter((item) => item.name.toLowerCase().includes(needle));
     if (!matches.length) {
@@ -389,10 +423,19 @@
               '<article class="tc-time-item">',
               '<div class="tc-time-main">',
               `<div class="tc-time">${item.time || "--:--"}</div>`,
-              `<div><strong>${item.name}</strong><p>${item.destination}</p><p>${item.pickup}</p></div>`,
+              '<div>',
+              `<strong class="tc-time-title">${item.name || "Termin"}</strong>`,
+              `<p class="tc-time-destination">${item.destination || "Ziel offen"}</p>`,
+              `<p class="tc-time-meta">&rarr; Fahrer: ${item.driverName || "fehlt"}</p>`,
+              item.vehicleLabel ? `<p class="tc-time-meta">&rarr; Fahrzeug: ${item.vehicleLabel}</p>` : "",
+              item.connectionTime && item.connectionDestination
+                ? `<p class="tc-time-connection">&rarr; Anschlussfahrt: ${item.connectionTime} ${item.connectionDestination}</p>`
+                : "",
+              '</div>',
               `<span class="m-pill ${statusTone(item.status)}">${item.status}</span>`,
               "</div>",
               '<div class="tc-actions">',
+              !item.driverName ? `<button type="button" class="tc-assign-btn" data-assign-driver="${item.id}">Fahrer zuweisen</button>` : "",
               `<button type="button" data-call-driver="${item.id}">Fahrer telefonisch informiert</button>`,
               `<button type="button" data-create-return="${item.id}">Rückfahrt erzeugen</button>`,
               `<select data-status-select="${item.id}">${STATUS_FLOW.map((status) => `<option value="${status}"${status === item.status ? " selected" : ""}>${status}</option>`).join("")}</select>`,
@@ -624,6 +667,16 @@
     render();
   }
 
+  function assignMissingDriver(appointmentId) {
+    const appointment = state.data.appointments.find((item) => item.id === appointmentId);
+    if (!appointment) return;
+    if (!appointment.driverName) appointment.driverName = "Sabine Hoffmann";
+    if (!appointment.vehicleLabel) appointment.vehicleLabel = "GER TK 230";
+    if (appointment.status === "Noch ungeplant") appointment.status = "Geplant";
+    saveData();
+    render();
+  }
+
   function updateAppointmentStatus(appointmentId, status) {
     const appointment = state.data.appointments.find((item) => item.id === appointmentId);
     if (!appointment) return;
@@ -647,6 +700,7 @@
       phone: String(payload.phone || "").trim(),
       medical: form.elements.medical.checked,
       wheelchair: form.elements.wheelchair.checked,
+      returnTrip: String(payload.returnTrip || "Nein") === "Ja",
       note: String(payload.note || "").trim(),
       status: "Noch ungeplant",
       createdAt: nowIso()
@@ -683,6 +737,14 @@
     form.elements.name.addEventListener("input", () => {
       renderCustomerInsightByName(form.elements.name.value);
     });
+
+    const focusNewButton = document.querySelector("[data-cockpit-new]");
+    if (focusNewButton) {
+      focusNewButton.addEventListener("click", () => {
+        form.scrollIntoView({ behavior: "smooth", block: "start" });
+        form.elements.name.focus();
+      });
+    }
   }
 
   function bindClickActions() {
@@ -712,6 +774,7 @@
         form.elements.pickup.value = profile.lastPickup;
         form.elements.destination.value = profile.lastDestination;
         form.elements.time.value = profile.lastTime;
+        form.elements.returnTrip.value = "Nein";
         renderCustomerInsightByName(profile.name);
         return;
       }
@@ -719,6 +782,12 @@
       const callBtn = event.target.closest("[data-call-driver]");
       if (callBtn) {
         markPhoneConfirmed(callBtn.getAttribute("data-call-driver") || "");
+        return;
+      }
+
+      const assignBtn = event.target.closest("[data-assign-driver]");
+      if (assignBtn) {
+        assignMissingDriver(assignBtn.getAttribute("data-assign-driver") || "");
         return;
       }
 

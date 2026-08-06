@@ -1,5 +1,6 @@
 (() => {
   const P = window.AdminPersonnelDemo;
+  const S = window.AdminSystemCenter || {};
   const COCKPIT_KEY = "adminTerminCockpitV22Phase1";
   const LIVE_DISPO_KEY = "adminLiveDispoV131";
   const STORE_KEY = "adminV22DispatchPlanner";
@@ -59,6 +60,25 @@
       .toLocaleLowerCase("de-DE")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function formatDate(value) {
+    const text = String(value || "").trim();
+    if (!text) return "-";
+    if (/^\d{2}\.\d{2}\.\d{4}$/.test(text)) return text;
+    if (S.formatDate) return S.formatDate(text);
+    const date = new Date(`${text}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return text;
+    return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
+  }
+
+  function formatDateTime(value) {
+    const text = String(value || "").trim();
+    if (!text) return "-";
+    if (S.formatDateTime) return S.formatDateTime(text);
+    const match = text.match(/^(\d{4}-\d{2}-\d{2})[\sT](\d{2}:\d{2})/);
+    if (!match) return formatDate(text);
+    return `${formatDate(match[1])} · ${match[2]} Uhr`;
   }
 
   function todayIso() {
@@ -811,7 +831,7 @@
       return `
         <article class="tc-vehicle-plan">
           <h3>${emp ? employeeName(emp) : driverId} · ${vehicle}</h3>
-          <p>Schicht: ${shift ? `${shift.start}–${shift.end}` : "offen"}</p>
+          <p>Schicht: ${shift ? `${formatDate(state.dateTomorrow)} · ${shift.start}–${shift.end}` : "offen"}</p>
           <ul>${body}</ul>
           <div class="shift-avisierung">
             <span>Telefonische Avisierung:</span>
@@ -833,7 +853,7 @@
     if (!node) return;
     const activeTomorrow = state.planner.tomorrowPlan.filter((x) => x.active).length;
     const reserveTomorrow = state.planner.tomorrowPlan.filter((x) => x.active && x.reserve).length;
-    node.textContent = `Plan für morgen: ${activeTomorrow} aktiv, davon ${reserveTomorrow} Reserve. Letzte Aktualisierung ${state.planner.updatedAt}.`;
+    node.textContent = `Plan für morgen: ${activeTomorrow} aktiv, davon ${reserveTomorrow} Reserve. Letzte Aktualisierung ${formatDateTime(state.planner.updatedAt)}.`;
   }
 
   function persistToCockpitBridge() {

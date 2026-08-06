@@ -181,6 +181,13 @@
     return `${Number(value || 0).toFixed(2).replace('.', ',')} EUR`;
   }
 
+  function getPrimaryAction(ride) {
+    if (ride.status === "Offen") return { key: "assign", label: "Fahrer zuweisen" };
+    if (ride.status === "Bestätigt" || ride.status === "Fahrer zugewiesen") return { key: "status", label: "Als unterwegs markieren" };
+    if (ride.status === "Unterwegs") return { key: "status", label: "Status aktualisieren" };
+    return { key: "details", label: "Details" };
+  }
+
   function normalize(value) {
     return String(value || "")
       .toLowerCase()
@@ -240,6 +247,7 @@
   }
 
   function buildRideCard(ride) {
+    const primary = getPrimaryAction(ride);
     return `
       <article class="ride-card">
         <header class="ride-card-head">
@@ -272,23 +280,29 @@
             <dd>${ride.vehicle}</dd>
           </div>
           <div>
-            <dt>Preis Demo</dt>
+            <dt>Preis</dt>
             <dd>${formatEuro(ride.priceDemo)}</dd>
           </div>
           <div>
-            <dt>Zahlungsart Demo</dt>
+            <dt>Zahlung</dt>
             <dd>${ride.paymentDemo}</dd>
           </div>
         </dl>
 
-        <p class="ride-note">Hinweis Demo: ${ride.noteDemo}</p>
+        <p class="ride-note">${ride.noteDemo}</p>
 
         <div class="ride-card-actions">
+          <button class="admin-btn" type="button" data-ride-action="${primary.key}" data-ride-id="${ride.id}">${primary.label}</button>
           <button class="admin-btn ride-btn-muted" type="button" data-ride-action="details" data-ride-id="${ride.id}">Details</button>
-          <button class="admin-btn" type="button" data-ride-action="assign" data-ride-id="${ride.id}">Fahrer zuweisen</button>
-          <button class="admin-btn" type="button" data-ride-action="status" data-ride-id="${ride.id}">Status ändern</button>
-          <button class="admin-btn ride-btn-muted" type="button" data-ride-action="call" data-ride-id="${ride.id}">Kunde anrufen</button>
-          <button class="admin-btn ride-btn-muted" type="button" data-ride-action="whatsapp" data-ride-id="${ride.id}">WhatsApp</button>
+          <details class="ride-more-actions">
+            <summary class="admin-btn ride-btn-muted" aria-label="Weitere Aktionen">Mehr</summary>
+            <div class="ride-more-menu">
+              <button class="admin-btn ride-btn-muted" type="button" data-ride-action="assign" data-ride-id="${ride.id}">Fahrer zuweisen</button>
+              <button class="admin-btn ride-btn-muted" type="button" data-ride-action="status" data-ride-id="${ride.id}">Status ändern</button>
+              <button class="admin-btn ride-btn-muted" type="button" data-ride-action="call" data-ride-id="${ride.id}">Kunde anrufen</button>
+              <button class="admin-btn ride-btn-muted" type="button" data-ride-action="whatsapp" data-ride-id="${ride.id}">WhatsApp</button>
+            </div>
+          </details>
         </div>
       </article>
     `;

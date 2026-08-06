@@ -628,6 +628,9 @@
   }
 
   function injectTopbarQuickCreateActions() {
+    const pageName = normalizePath(window.location.pathname);
+    if (pageName === "termin-cockpit.html") return;
+
     const topbarActions = document.querySelector(".admin-topbar-actions");
     if (!topbarActions || topbarActions.querySelector("[data-admin-quick-create-wrap]")) return;
 
@@ -1001,7 +1004,7 @@
     const workspaceLink = document.createElement("a");
     workspaceLink.className = "admin-btn admin-btn-secondary admin-v20-quick-link is-subtle";
     workspaceLink.href = "arbeitsplatz.html";
-    workspaceLink.textContent = `Arbeitsplatz ${user ? `(${user})` : ""}`.trim();
+    workspaceLink.textContent = "Arbeitsplatz";
 
     actions.prepend(workspaceLink);
     actions.prepend(noticeLink);
@@ -1009,10 +1012,14 @@
 
     if (!actions.querySelector(".admin-user")) {
       const profile = document.createElement("button");
-      profile.className = "admin-user";
+      profile.className = "admin-user admin-user-compact";
       profile.type = "button";
       profile.setAttribute("aria-label", "Benutzer");
-      profile.innerHTML = `<span>${role || "Chef"}</span><strong>${user || localStorage.getItem(KEY_USER) || "admin"}</strong>`;
+      const displayRole = role === "Chef" ? "Geschaeftsleitung" : role || "Leitung";
+      const rawUser = String(user || localStorage.getItem(KEY_USER) || "Enes");
+      const normalizedUser = rawUser.toLowerCase() === "admin" ? "Enes" : rawUser;
+      const displayUser = normalizedUser ? `${normalizedUser.charAt(0).toUpperCase()}${normalizedUser.slice(1)}` : "Enes";
+      profile.innerHTML = `<strong>${displayUser}</strong><span>${displayRole}</span>`;
       actions.append(profile);
     }
 
@@ -1128,27 +1135,44 @@
     searchWrap.setAttribute("data-v20-global-search-wrap", "");
     searchWrap.innerHTML = [
       '<input class="admin-v20-search-input" type="search" data-v20-global-search-input placeholder="Systemweit suchen (Ctrl/Cmd+K)" aria-label="Systemweite Suche">',
-      '<button class="admin-v20-search-filter" type="button" data-v20-global-search-filter aria-label="Suchoptionen" title="Suchoptionen">Filter</button>',
-      '<section class="admin-v20-search-results" data-v20-global-search-results hidden></section>'
+      '<button class="admin-v20-search-filter" type="button" data-v20-global-search-filter aria-label="Suchoptionen" title="Suchoptionen">Filter</button>'
     ].join("");
 
     topbar.insertBefore(searchWrap, actions);
 
     const input = searchWrap.querySelector("[data-v20-global-search-input]");
     const filter = searchWrap.querySelector("[data-v20-global-search-filter]");
-    const panel = searchWrap.querySelector("[data-v20-global-search-results]");
+    let panel = null;
     const state = window.AdminSystemCenter.loadState();
     const sources = window.AdminSystemCenter.loadSources();
+
+    const ensurePanel = () => {
+      if (panel && panel.isConnected) return panel;
+      panel = document.createElement("section");
+      panel.className = "admin-v20-search-results";
+      panel.setAttribute("data-v20-global-search-results", "");
+      panel.hidden = true;
+      searchWrap.append(panel);
+      return panel;
+    };
+
+    const hidePanel = () => {
+      if (!panel) return;
+      panel.hidden = true;
+      panel.innerHTML = "";
+      panel.remove();
+      panel = null;
+    };
 
     const refresh = () => {
       const query = String(input.value || "").trim();
       if (!query) {
-        panel.hidden = true;
-        panel.innerHTML = "";
+        hidePanel();
         return;
       }
+      const activePanel = ensurePanel();
       renderGlobalSearchResults(state, sources, query, "alle");
-      panel.hidden = false;
+      activePanel.hidden = false;
     };
 
     input.addEventListener("input", refresh);
@@ -1177,7 +1201,7 @@
     const clickOutside = (event) => {
       if (!(event.target instanceof Node)) return;
       if (searchWrap.contains(event.target)) return;
-      panel.hidden = true;
+      if (panel) panel.hidden = true;
     };
     document.addEventListener("pointerdown", clickOutside, true);
     window.__adminV20SearchOutsideHandler = clickOutside;
@@ -1834,12 +1858,15 @@
     if (!topbarActions) return;
     if (topbarActions.querySelector(".admin-user")) return;
 
-    const userName = localStorage.getItem(KEY_USER) || "admin";
+    const rawUser = localStorage.getItem(KEY_USER) || "Enes";
+    const normalizedUser = String(rawUser).toLowerCase() === "admin" ? "Enes" : String(rawUser);
+    const userName = normalizedUser ? `${normalizedUser.charAt(0).toUpperCase()}${normalizedUser.slice(1)}` : "Enes";
+    const displayRole = role === "Chef" ? "Geschaeftsleitung" : role || "Leitung";
     const profile = document.createElement("button");
-    profile.className = "admin-user";
+    profile.className = "admin-user admin-user-compact";
     profile.type = "button";
     profile.setAttribute("aria-label", "Benutzer");
-    profile.innerHTML = `<span>${role}</span><strong>${userName}</strong>`;
+    profile.innerHTML = `<strong>${userName}</strong><span>${displayRole}</span>`;
     topbarActions.append(profile);
   }
 

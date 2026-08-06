@@ -89,7 +89,6 @@
         <button class="call-mobile-tab" type="button" data-call-mobile-tab="kunde">Kunde</button>
         <button class="call-mobile-tab" type="button" data-call-mobile-tab="fahrt">Fahrt</button>
         <button class="call-mobile-tab" type="button" data-call-mobile-tab="verlauf">Verlauf</button>
-        <button class="call-mobile-tab" type="button" data-call-mobile-tab="aufgaben">Aufgaben</button>
       </nav>
 
       <section class="call-layout" aria-label="Telefonarbeitsplatz">
@@ -98,7 +97,7 @@
             <h2>Kundensuche</h2>
             <span class="call-mini">Live-Suche während Eingabe</span>
           </div>
-          <label class="driver-label" for="call-search-input">Suche nach Name, Telefon, Nummer, Adresse, Geburtstag, Versicherung, Firma</label>
+          <label class="driver-label" for="call-search-input">Suche nach Name, Telefonnummer oder Adresse</label>
           <input id="call-search-input" class="driver-search-input" type="search" autocomplete="off" placeholder="Kunde suchen..." data-call-search>
           <div class="call-search-results" data-call-search-results></div>
 
@@ -144,17 +143,22 @@
             <label><span>Uhrzeit</span><input class="driver-search-input" type="time" name="time" required></label>
             <label><span>Fahrtart</span><select class="call-select" name="rideType" data-call-ride-type></select></label>
             <label><span>Personenanzahl</span><input class="driver-search-input" type="number" min="1" max="8" name="persons" value="1"></label>
-            <label><span>Fahrzeugtyp</span><input class="driver-search-input" name="vehicleType" placeholder="z. B. Limousine, Rollstuhl"></label>
-            <label><span>Rollstuhl</span><select class="call-select" name="wheelchair"><option>Nein</option><option>Ja</option></select></label>
-            <label><span>Rollator</span><select class="call-select" name="rollator"><option>Nein</option><option>Ja</option></select></label>
-            <label><span>Begleitperson</span><select class="call-select" name="companion"><option>Nein</option><option>Ja</option></select></label>
-            <label><span>Gepäck</span><input class="driver-search-input" name="luggage"></label>
             <label><span>Hin- und Rückfahrt</span><select class="call-select" name="returnTrip"><option>Nein</option><option>Ja</option></select></label>
             <label><span>Rückfahrtzeit</span><input class="driver-search-input" type="time" name="returnTime"></label>
-            <label class="full"><span>Notizen</span><textarea class="driver-search-input" name="notes"></textarea></label>
-            <label><span>Priorität</span><select class="call-select" name="priority"><option>Hoch</option><option selected>Mittel</option><option>Niedrig</option></select></label>
-            <label><span>Zahlungsart</span><select class="call-select" name="payment"><option>Bar</option><option>Karte</option><option>Rechnung</option><option>Krankenkasse</option></select></label>
-            <label><span>Abrechnungsart</span><select class="call-select" name="billing"><option>Privat</option><option>Firmenkonto</option><option>Krankenkasse</option><option>Monatsrechnung</option></select></label>
+            <details class="call-more-fields full">
+              <summary>Weitere Angaben</summary>
+              <div class="call-more-grid">
+                <label><span>Fahrzeugtyp</span><input class="driver-search-input" name="vehicleType" placeholder="z. B. Limousine, Rollstuhl"></label>
+                <label><span>Rollstuhl</span><select class="call-select" name="wheelchair"><option>Nein</option><option>Ja</option></select></label>
+                <label><span>Rollator</span><select class="call-select" name="rollator"><option>Nein</option><option>Ja</option></select></label>
+                <label><span>Begleitperson</span><select class="call-select" name="companion"><option>Nein</option><option>Ja</option></select></label>
+                <label><span>Gepäck</span><input class="driver-search-input" name="luggage"></label>
+                <label><span>Priorität</span><select class="call-select" name="priority"><option>Hoch</option><option selected>Mittel</option><option>Niedrig</option></select></label>
+                <label><span>Zahlungsart</span><select class="call-select" name="payment"><option>Bar</option><option>Karte</option><option>Rechnung</option><option>Krankenkasse</option></select></label>
+                <label><span>Abrechnungsart</span><select class="call-select" name="billing"><option>Privat</option><option>Firmenkonto</option><option>Krankenkasse</option><option>Monatsrechnung</option></select></label>
+                <label class="full"><span>Notizen</span><textarea class="driver-search-input" name="notes"></textarea></label>
+              </div>
+            </details>
             <div class="call-form-actions full">
               <button class="admin-btn" type="submit">Fahrt speichern</button>
               <button class="admin-btn admin-btn-secondary" type="button" data-call-action="openDispo">In Live-Dispo öffnen</button>
@@ -168,30 +172,14 @@
         </article>
 
         <article class="admin-panel call-col-right" data-call-pane="verlauf">
-          <section class="call-card-sub">
-            <h3>Letzte Fahrten</h3>
-            <div class="call-history-list" data-call-last-rides></div>
-          </section>
-
-          <section class="call-card-sub">
-            <h3>Offene Fahrten</h3>
-            <div class="call-open-rides" data-call-open-rides></div>
-          </section>
-
-          <section class="call-card-sub">
-            <h3>Serienfahrten</h3>
-            <div class="call-series-list" data-call-series-list></div>
-          </section>
-
-          <section class="call-card-sub" data-call-pane="aufgaben">
-            <h3>Offene Aufgaben</h3>
-            <div class="call-task-list" data-call-task-list></div>
-          </section>
-
-          <section class="call-card-sub">
-            <h3>Rückruf-Liste</h3>
-            <div class="call-callback-list" data-call-callback-list></div>
-          </section>
+          <div class="call-right-tabs" role="tablist" aria-label="Rechte Arbeitsbereiche">
+            <button class="call-right-tab is-active" type="button" data-call-right-tab="last">Letzte Fahrten</button>
+            <button class="call-right-tab" type="button" data-call-right-tab="open">Offene Fahrten</button>
+            <button class="call-right-tab" type="button" data-call-right-tab="series">Serienfahrten</button>
+            <button class="call-right-tab" type="button" data-call-right-tab="tasks">Aufgaben</button>
+            <button class="call-right-tab" type="button" data-call-right-tab="callbacks">Rückrufe</button>
+          </div>
+          <section class="call-card-sub" data-call-right-content></section>
         </article>
       </section>
 
