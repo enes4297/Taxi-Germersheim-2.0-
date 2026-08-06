@@ -962,6 +962,10 @@ body.admin-v20-palette-open {
   font-size: 14px;
 }
 
+.admin-mobile-quick-capture {
+  display: none;
+}
+
 @media (max-width: 1200px) {
   .admin-v20-search-wrap {
     order: 3;
@@ -978,6 +982,15 @@ body.admin-v20-palette-open {
     margin-left: auto;
     flex-wrap: wrap;
     justify-content: flex-end;
+  }
+}
+
+@media (max-width: 820px) {
+  .admin-mobile-quick-capture {
+    display: inline-flex;
+    min-height: 44px;
+    width: 100%;
+    justify-content: center;
   }
 }
 

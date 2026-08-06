@@ -1,0 +1,210 @@
+.ts-shell {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ts-shell .admin-sidebar {
+  display: none;
+}
+
+.ts-main {
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+  gap: 12px;
+  padding-bottom: 108px;
+}
+
+.ts-topbar {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.ts-topbar-actions {
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.ts-mode-panel,
+.ts-last-panel,
+.ts-pane {
+  gap: 12px;
+}
+
+.ts-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ts-mode-btn,
+.ts-chip {
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0 14px;
+}
+
+.ts-mode-btn.is-active,
+.ts-chip {
+  cursor: pointer;
+}
+
+.ts-mode-btn.is-active {
+  border-color: rgba(255, 217, 106, 0.5);
+  background: rgba(255, 217, 106, 0.14);
+  color: var(--gold);
+}
+
+.ts-content {
+  display: grid;
+  gap: 12px;
+}
+
+.ts-pane {
+  display: none;
+}
+
+.ts-pane.is-visible {
+  display: grid;
+}
+
+.ts-recorder-state {
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 217, 106, 0.35);
+  background: rgba(255, 217, 106, 0.08);
+  color: var(--gold);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.ts-recorder-timer {
+  font-size: 34px;
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
+}
+
+.ts-transcript,
+.ts-form input,
+.ts-form select,
+.ts-form textarea {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  padding: 0 14px;
+}
+
+.ts-transcript,
+.ts-form textarea {
+  min-height: 140px;
+  padding-top: 14px;
+}
+
+.ts-big-actions,
+.ts-shortcuts,
+.ts-customer-suggestions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ts-form,
+.ts-more-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.ts-form label,
+.ts-more-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.ts-more {
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.ts-more > summary {
+  cursor: pointer;
+}
+
+.ts-more-grid .full {
+  grid-column: 1 / -1;
+}
+
+.ts-speech-preview,
+.ts-last-list {
+  display: grid;
+  gap: 10px;
+}
+
+.ts-preview-card,
+.ts-last-card,
+.ts-customer-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 6px;
+}
+
+.ts-bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, rgba(5, 5, 5, 0.1), rgba(5, 5, 5, 0.96));
+  backdrop-filter: blur(8px);
+}
+
+.ts-bottom-bar .admin-btn {
+  min-height: 52px;
+}
+
+@media (min-width: 821px) {
+  .ts-shell .admin-sidebar {
+    display: grid;
+  }
+
+  .ts-shell {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .ts-main {
+    max-width: none;
+    margin: 0;
+  }
+
+  .ts-content {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .ts-pane[data-intake-pane="note"] {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .ts-mode-switch,
+  .ts-big-actions,
+  .ts-shortcuts,
+  .ts-customer-suggestions,
+  .ts-bottom-bar {
+    grid-template-columns: 1fr;
+  }
+}

@@ -285,11 +285,111 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
+
+.tc-inbox-head {
+  align-items: center;
+}
+
+.tc-inbox-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.tc-inbox-stats span {
+  min-height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tc-inbox-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.95fr) minmax(320px, 1.1fr) minmax(240px, 0.95fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.tc-inbox-list,
+.tc-inbox-detail,
+.tc-inbox-side {
+  display: grid;
+  gap: 10px;
+}
+
+.tc-inbox-item,
+.tc-inbox-panel,
+.tc-inbox-customer,
+.tc-inbox-side-box {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 8px;
+}
+
+.tc-inbox-item.is-active {
+  border-color: rgba(255, 217, 106, 0.45);
+  box-shadow: 0 0 0 1px rgba(255, 217, 106, 0.2);
+}
+
+.tc-inbox-open {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.tc-inbox-open p,
+.tc-inbox-panel p,
+.tc-inbox-customer p,
+.tc-inbox-side-box p {
+  margin: 0;
+  color: rgba(220, 228, 240, 0.85);
+}
+
+.tc-inbox-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tc-inbox-edit-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.tc-inbox-edit-grid input {
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  padding: 0 10px;
+}
   padding: 10px;
 }
 
 .tc-vehicle-plan h3,
 .tc-vehicle-plan p {
+
+  .tc-inbox-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .tc-inbox-edit-grid {
+    grid-template-columns: 1fr;
+  }
   margin: 0;
 }
 

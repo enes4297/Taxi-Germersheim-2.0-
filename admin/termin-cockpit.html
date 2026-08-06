@@ -6,6 +6,7 @@
   <title>Taxi Germersheim - Termin-Cockpit</title>
   <meta name="robots" content="noindex,nofollow">
   <script src="auth.js"></script>
+  <script src="termin-intake-shared.js"></script>
   <link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="management.css">
   <link rel="stylesheet" href="termin-cockpit.css">
@@ -38,11 +39,11 @@
           <h2>Schnelle Terminaufnahme</h2>
           <small>Nur Pflichtfelder. Alles Weitere ist optional.</small>
         </div>
-        <div class="m-actions"><button class="admin-btn" type="button" data-start-ai>KI-Planung starten</button><a class="admin-btn admin-btn-secondary" href="tagesplanung.html">Tagesplanung</a></div>
+        <div class="m-actions"><button class="admin-btn" type="button" data-start-ai>KI-Planung starten</button><a class="admin-btn admin-btn-secondary" href="tagesplanung.html">Tagesplanung</a><a class="admin-btn admin-btn-secondary" href="termin-schnellerfassung.html">+ Termin mobil</a></div>
         <form class="m-form tc-fast-form" data-appointment-form>
           <label class="m-field">
             <span>Name *</span>
-            <input name="name" required autocomplete="off" placeholder="Herr Mueller">
+            <input name="name" required autocomplete="off" placeholder="Herr Müller">
           </label>
           <label class="m-field">
             <span>Abholadresse *</span>
@@ -75,7 +76,7 @@
               </label>
               <label class="m-field">
                 <span>Notiz</span>
-                <textarea name="note" rows="3" placeholder="Optionaler Hinweis fuer Fahrer"></textarea>
+                <textarea name="note" rows="3" placeholder="Optionaler Hinweis für Fahrer"></textarea>
               </label>
               <label class="tc-check"><input name="medical" type="checkbox"> Krankenfahrt</label>
               <label class="tc-check"><input name="wheelchair" type="checkbox"> Rollstuhl</label>
@@ -83,13 +84,29 @@
           </details>
 
           <div class="m-form-actions">
-            <button class="admin-btn admin-btn-secondary" type="reset">Zuruecksetzen</button>
+            <button class="admin-btn admin-btn-secondary" type="reset">Zurücksetzen</button>
             <button class="admin-btn" type="submit">Termin speichern</button>
           </div>
         </form>
         <div class="tc-capture-info">
-          <p class="m-note" data-capture-info>Bereit fuer schnelle Aufnahme.</p>
+          <p class="m-note" data-capture-info>Bereit für schnelle Aufnahme.</p>
         </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head tc-inbox-head">
+          <div>
+            <h2>Noch zu prüfen</h2>
+            <small>Sprachnotizen, unvollständige Termine, Textnotizen und offene Rückfahrten</small>
+          </div>
+          <a class="admin-btn admin-btn-secondary" href="termin-schnellerfassung.html">Termin schnell aufnehmen</a>
+        </div>
+        <div class="tc-inbox-stats" data-quick-inbox-stats></div>
+        <section class="tc-inbox-layout">
+          <div class="tc-inbox-list" data-quick-inbox-list></div>
+          <div class="tc-inbox-detail" data-quick-inbox-detail></div>
+          <div class="tc-inbox-side" data-quick-inbox-side></div>
+        </section>
       </section>
 
       <details class="admin-panel">
@@ -119,7 +136,7 @@
       <section class="admin-panel">
         <div class="admin-panel-head">
           <h2>Morgen-Ansicht</h2>
-          <small>Heute, Morgen, Uebermorgen, diese Woche, naechste Woche</small>
+          <small>Heute, Morgen, Übermorgen, diese Woche, nächste Woche</small>
         </div>
         <div class="tc-timeline-groups" data-timeline></div>
       </section>
@@ -127,7 +144,7 @@
       <section class="admin-panel">
         <div class="admin-panel-head">
           <h2>Vorschlagskarten</h2>
-          <small>Demo fuer KI-Planung und Dispo-Entscheidung</small>
+          <small>Demo für KI-Planung und Dispo-Entscheidung</small>
         </div>
         <div class="tc-suggestion-grid" data-suggestions></div>
       </section>
@@ -135,5 +152,6 @@
   </div>
 
   <script src="termin-cockpit.js"></script>
+  <script src="termin-cockpit-inbox.js"></script>
 </body>
 </html>

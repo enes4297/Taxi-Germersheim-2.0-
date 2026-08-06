@@ -115,6 +115,7 @@
   ROLE_PAGE_ACCESS["arbeitsplatz.html"] = ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt", "Personalverwaltung", "Qualitaetsmanagement", "Mitarbeiter"];
   ROLE_PAGE_ACCESS["termin-cockpit.html"] = ["Chef", "Geschaeftsleitung", "Disposition"];
   ROLE_PAGE_ACCESS["tagesplanung.html"] = ["Chef", "Geschaeftsleitung", "Disposition"];
+  ROLE_PAGE_ACCESS["termin-schnellerfassung.html"] = ["Chef", "Geschaeftsleitung", "Disposition"];
 
   // Nur Demo-Benachrichtigungen ohne Backend.
   const DEMO_NOTIFICATIONS = [
@@ -636,6 +637,7 @@
     wrap.innerHTML = [
       '<button class="admin-btn admin-btn-primary admin-quick-create-main" type="button" aria-haspopup="true" aria-expanded="false" data-admin-quick-create-toggle>+ Neu</button>',
       '<div class="admin-quick-create-menu" data-admin-quick-create-menu hidden>',
+      '<a class="admin-quick-create-item" href="termin-schnellerfassung.html" title="Termin mobil und mit einer Hand vormerken"><span aria-hidden="true">📱</span><b>+ Termin</b><small>mobil</small></a>',
       '<a class="admin-quick-create-item" href="termin-cockpit.html" title="Neuen Termin schnell erfassen"><span aria-hidden="true">🚕</span><b>Neuer Termin</b><small>Strg+Alt+F</small></a>',
       '<a class="admin-quick-create-item" href="kunden.html" title="Neuen Kunden erfassen"><span aria-hidden="true">👤</span><b>Neuer Kunde</b><small>Strg+Alt+K</small></a>',
       '<a class="admin-quick-create-item" href="fahrer.html" title="Neuen Fahrer anlegen"><span aria-hidden="true">🧑‍✈️</span><b>Neuer Fahrer</b><small>Strg+Alt+R</small></a>',
@@ -647,6 +649,15 @@
     ].join("");
 
     topbarActions.prepend(wrap);
+
+    if (!topbarActions.querySelector("[data-admin-mobile-quick-capture]")) {
+      const mobileLink = document.createElement("a");
+      mobileLink.className = "admin-btn admin-btn-primary admin-mobile-quick-capture";
+      mobileLink.href = "termin-schnellerfassung.html";
+      mobileLink.setAttribute("data-admin-mobile-quick-capture", "");
+      mobileLink.textContent = "+ Termin";
+      topbarActions.prepend(mobileLink);
+    }
 
     const existingHandler = window.__adminQuickCreateHandler;
     if (existingHandler) {

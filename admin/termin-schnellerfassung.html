@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Termin schnell aufnehmen</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="auth.js"></script>
+  <script src="termin-intake-shared.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="termin-schnellerfassung.css">
+</head>
+<body>
+  <div class="admin-shell ts-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div>
+          <strong>Dispatcher</strong>
+          <small>Interner Bereich</small>
+        </div>
+      </div>
+      <nav class="admin-nav">
+        <a class="admin-nav-item is-active" href="termin-schnellerfassung.html" aria-current="page">Termin schnell aufnehmen</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main ts-main">
+      <header class="admin-topbar ts-topbar">
+        <div class="admin-topbar-title">
+          <h1>Termin schnell aufnehmen</h1>
+          <p>Sprach- und Terminverarbeitung erfolgt derzeit nur als lokale Demo.</p>
+        </div>
+        <div class="admin-topbar-actions ts-topbar-actions">
+          <a class="admin-btn admin-btn-secondary" href="termin-cockpit.html">Noch zu prüfen</a>
+          <a class="admin-btn admin-btn-secondary" href="tagesplanung.html">Tagesplanung</a>
+        </div>
+      </header>
+
+      <section class="admin-panel ts-mode-panel">
+        <div class="ts-mode-switch" role="tablist" aria-label="Erfassungsmodi">
+          <button class="ts-mode-btn is-active" type="button" data-intake-mode="speech">1. Sprache</button>
+          <button class="ts-mode-btn" type="button" data-intake-mode="form">2. Schnellformular</button>
+          <button class="ts-mode-btn" type="button" data-intake-mode="note">3. Nur Notiz</button>
+        </div>
+      </section>
+
+      <section class="ts-content">
+        <section class="admin-panel ts-pane is-visible" data-intake-pane="speech">
+          <div class="admin-panel-head">
+            <h2>Sprachnotiz als Demo</h2>
+            <small>Keine echte Spracherkennung. Demo-Text oder manuelle Eingabe.</small>
+          </div>
+          <div class="ts-recorder-state" data-recorder-state>bereit</div>
+          <div class="ts-recorder-timer" data-recorder-timer>00:00</div>
+          <textarea class="ts-transcript" data-speech-text placeholder="Beispieltext wird hier angezeigt oder kann direkt eingegeben werden."></textarea>
+          <div class="ts-big-actions">
+            <button class="admin-btn" type="button" data-recorder-action="start">Aufnahme starten</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-recorder-action="pause">Pause</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-recorder-action="resume">Fortsetzen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-recorder-action="stop">Aufnahme beenden</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-recorder-action="cancel">Abbrechen</button>
+          </div>
+          <div class="ts-speech-preview" data-speech-preview></div>
+        </section>
+
+        <section class="admin-panel ts-pane" data-intake-pane="form">
+          <div class="admin-panel-head">
+            <h2>Schnellformular</h2>
+            <small>Nur die nötigsten Felder sofort sichtbar.</small>
+          </div>
+          <form class="ts-form" data-quick-form>
+            <label>Kunde oder Name<input name="customer" required></label>
+            <label>Datum<input type="date" name="date" required></label>
+            <label>Uhrzeit<input type="time" name="time" required></label>
+            <label>Abholort<input name="pickup" required></label>
+            <label>Ziel<input name="destination" required></label>
+            <div class="ts-shortcuts">
+              <button type="button" class="ts-chip" data-shortcut-date="today">Heute</button>
+              <button type="button" class="ts-chip" data-shortcut-date="tomorrow">Morgen</button>
+              <button type="button" class="ts-chip" data-shortcut-date="dayAfter">Übermorgen</button>
+              <button type="button" class="ts-chip" data-shortcut-time="now">Jetzt</button>
+              <button type="button" class="ts-chip" data-shortcut-time="plus30">In 30 Minuten</button>
+              <button type="button" class="ts-chip" data-shortcut-return="open">Rückfahrt offen</button>
+              <button type="button" class="ts-chip" data-shortcut-return="sameRoute">Gleiche Strecke zurück</button>
+            </div>
+            <details class="ts-more">
+              <summary>Weitere Angaben</summary>
+              <div class="ts-more-grid">
+                <label>Telefonnummer<input name="phone"></label>
+                <label>Fahrtart<select name="rideType"><option>Taxi</option><option>Krankenfahrt</option><option>Serienfahrt</option><option>Flughafenfahrt</option><option>Firmenfahrt</option></select></label>
+                <label>Rollstuhl<select name="wheelchair"><option value="Nein">Nein</option><option value="Ja">Ja</option></select></label>
+                <label>Personenanzahl<input type="number" min="1" max="8" name="persons" value="1"></label>
+                <label>Rückfahrtzeit<input type="time" name="returnTime"></label>
+                <label>Krankenkasse<input name="insurance"></label>
+                <label>Priorität<select name="priority"><option>niedrig</option><option selected>mittel</option><option>hoch</option><option>dringend</option></select></label>
+                <label class="full">Notiz<textarea name="note"></textarea></label>
+              </div>
+            </details>
+          </form>
+          <div class="ts-customer-suggestions" data-form-customer-suggestions></div>
+        </section>
+
+        <section class="admin-panel ts-pane" data-intake-pane="note">
+          <div class="admin-panel-head">
+            <h2>Nur Notiz</h2>
+            <small>Für Situationen ohne Zeit für eine vollständige Erfassung.</small>
+          </div>
+          <form class="ts-form" data-note-form>
+            <label>Was muss später eingetragen werden?
+              <textarea name="note" required placeholder="Müller morgen 8 Uhr Dialyse Speyer, Rückfahrt offen."></textarea>
+            </label>
+            <label>Erinnerung<select name="reminder"><option value="">keine</option><option>heute</option><option>später</option><option>morgen früh</option></select></label>
+            <label>Datum<input type="date" name="date"></label>
+            <label>Priorität<select name="priority"><option>niedrig</option><option selected>mittel</option><option>hoch</option><option>dringend</option></select></label>
+          </form>
+        </section>
+      </section>
+
+      <section class="admin-panel ts-last-panel">
+        <div class="admin-panel-head">
+          <h2>Zuletzt vorgemerkt</h2>
+          <small>Lokal gespeichert</small>
+        </div>
+        <p class="m-note" data-mobile-save-feedback>Bereit für schnelle Erfassung.</p>
+        <div class="ts-last-list" data-last-entries></div>
+      </section>
+
+      <div class="ts-bottom-bar">
+        <button class="admin-btn" type="button" data-primary-save>Termin vormerken</button>
+        <button class="admin-btn admin-btn-secondary" type="button" data-secondary-save>Speichern und prüfen</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="termin-schnellerfassung.js"></script>
+</body>
+</html>
