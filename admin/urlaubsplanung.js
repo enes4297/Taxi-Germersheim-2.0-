@@ -1,6 +1,27 @@
 (() => {
   const P = window.AdminPersonnelDemo;
+  const S = window.AdminSystemCenter || {};
   const state = { data: P.loadState(), year: new Date().getFullYear(), role: "alle", status: "alle", view: "Jahr" };
+
+  function formatDate(value) {
+    const text = String(value || "").trim();
+    if (!text) return "-";
+    if (/^\d{2}\.\d{2}\.\d{4}$/.test(text)) return text;
+    if (S.formatDate) return S.formatDate(text);
+    const date = new Date(`${text}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return text;
+    return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
+  }
+
+  function formatDateRange(start, end) {
+    if (S.formatDateRange) return S.formatDateRange(start, end);
+    if (start && end) return `${formatDate(start)} bis ${formatDate(end)}`;
+    return formatDate(start || end);
+  }
+
+  function formatLooseDateText(value) {
+    return String(value || "").replace(/\b(\d{4}-\d{2}-\d{2})\b/g, (match) => formatDate(match));
+  }
 
   function name(id) {
     const e = P.getEmployee(state.data, id);
@@ -74,12 +95,12 @@
     }
     body.innerHTML = rows.map((r) => {
       const conf = P.evaluateVacationConflicts(state.data, r);
-      return `<tr><td>${name(r.employeeId)}</td><td>${r.start} bis ${r.end}</td><td>${r.type}</td><td>${statusBadge(r.status)}</td><td>${r.replacementId ? name(r.replacementId) : "-"}</td><td>${conf.length ? `${conf.length} Konflikt(e)` : "keine"}</td><td><button class="admin-btn admin-btn-secondary" type="button" data-vac-open="${r.id}">Pruefen</button></td></tr>`;
+      return `<tr><td>${name(r.employeeId)}</td><td>${formatDateRange(r.start, r.end)}</td><td>${r.type}</td><td>${statusBadge(r.status)}</td><td>${r.replacementId ? name(r.replacementId) : "-"}</td><td>${conf.length ? `${conf.length} Konflikt(e)` : "keine"}</td><td><button class="admin-btn admin-btn-secondary" type="button" data-vac-open="${r.id}">Prüfen</button></td></tr>`;
     }).join("");
   }
 
   function printFormHtml(req) {
-    return `<div class="person-print"><h2>Taxi Germersheim GmbH</h2><h3>Urlaubsantrag</h3><p>Mitarbeitername: ${name(req.employeeId)}</p><p>Zeitraum: ${req.start} bis ${req.end}</p><p>Anzahl Tage (Demo): ${req.workDaysDemo}</p><p>Urlaubsart: ${req.type}</p><p>Antrag gestellt am: ${req.createdAt}</p><p>Vertretung: ${req.replacementId ? name(req.replacementId) : "-"}</p><p>Mitarbeiterunterschrift: ____________________</p><p>Genehmigt durch: ${req.decisionBy || "-"}</p><p>Unterschrift Geschaeftsleitung: ____________________</p><p>Genehmigungsdatum: ${req.decisionAt || "-"}</p><p>Bemerkungen: ${req.decisionNote || req.comment || ""}</p></div>`;
+    return `<div class="person-print"><h2>Taxi Germersheim GmbH</h2><h3>Urlaubsantrag</h3><p>Mitarbeitername: ${name(req.employeeId)}</p><p>Zeitraum: ${formatDateRange(req.start, req.end)}</p><p>Anzahl Tage (Demo): ${req.workDaysDemo}</p><p>Urlaubsart: ${req.type}</p><p>Antrag gestellt am: ${formatDate(req.createdAt)}</p><p>Vertretung: ${req.replacementId ? name(req.replacementId) : "-"}</p><p>Mitarbeiterunterschrift: ____________________</p><p>Genehmigt durch: ${req.decisionBy || "-"}</p><p>Unterschrift Geschäftsleitung: ____________________</p><p>Genehmigungsdatum: ${formatDate(req.decisionAt)}</p><p>Bemerkungen: ${req.decisionNote || req.comment || ""}</p></div>`;
   }
 
   function openModal(title, body, foot) {
@@ -90,7 +111,7 @@
     if (!modal || !t || !b || !f) return;
     t.textContent = title;
     b.innerHTML = body;
-    f.innerHTML = foot || '<button class="admin-btn admin-btn-secondary" type="button" data-vac-close>Schliessen</button>';
+    f.innerHTML = foot || '<button class="admin-btn admin-btn-secondary" type="button" data-vac-close>Schließen</button>';
     modal.hidden = false;
   }
 
@@ -136,13 +157,13 @@
       if (!req) return;
       const conflicts = P.evaluateVacationConflicts(state.data, req);
       const conflictHtml = conflicts.length
-        ? `<div class="person-list">${conflicts.map((c) => `<article class="person-item"><strong>${c.cause}</strong><p>betroffene Tage: ${c.days}</p><p>betroffene Mitarbeiter: ${c.employees.join(", ")}</p><p>betroffene Schichten: ${c.shifts.join(", ")}</p><p>Loesungsvorschlag: ${c.suggestion}</p></article>`).join("")}</div>`
+        ? `<div class="person-list">${conflicts.map((c) => `<article class="person-item"><strong>${c.cause}</strong><p>betroffene Tage: ${formatLooseDateText(c.days)}</p><p>betroffene Mitarbeiter: ${c.employees.join(", ")}</p><p>betroffene Schichten: ${c.shifts.join(", ")}</p><p>Lösungsvorschlag: ${c.suggestion}</p></article>`).join("")}</div>`
         : "<p>Keine Konflikte erkannt.</p>";
 
       openModal(
         `Antrag ${id}`,
-        `<p>${name(req.employeeId)} · ${req.start} bis ${req.end} · ${req.type}</p>${conflictHtml}`,
-        `<div class="person-actions"><button class="admin-btn" type="button" data-vac-action="genehmigt" data-vac-id="${id}">genehmigen</button><button class="admin-btn admin-btn-secondary" type="button" data-vac-action="teilweise genehmigt" data-vac-id="${id}">teilweise genehmigen</button><button class="admin-btn admin-btn-warning" type="button" data-vac-action="abgelehnt" data-vac-id="${id}">ablehnen</button><button class="admin-btn admin-btn-secondary" type="button" data-vac-action="in Pruefung" data-vac-id="${id}">Rueckfrage stellen</button><button class="admin-btn admin-btn-secondary" type="button" data-vac-action="print" data-vac-id="${id}">Druckansicht</button></div>`
+        `<p>${name(req.employeeId)} · ${formatDateRange(req.start, req.end)} · ${req.type}</p>${conflictHtml}`,
+        `<div class="person-actions"><button class="admin-btn" type="button" data-vac-action="genehmigt" data-vac-id="${id}">genehmigen</button><button class="admin-btn admin-btn-secondary" type="button" data-vac-action="teilweise genehmigt" data-vac-id="${id}">teilweise genehmigen</button><button class="admin-btn admin-btn-warning" type="button" data-vac-action="abgelehnt" data-vac-id="${id}">ablehnen</button><button class="admin-btn admin-btn-secondary" type="button" data-vac-action="in Pruefung" data-vac-id="${id}">Rückfrage stellen</button><button class="admin-btn admin-btn-secondary" type="button" data-vac-action="print" data-vac-id="${id}">Druckansicht</button></div>`
       );
     });
 

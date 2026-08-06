@@ -1,5 +1,6 @@
 (() => {
   const P = window.AdminPersonnelDemo;
+  const S = window.AdminSystemCenter || {};
   const state = {
     data: P.loadState(),
     filter: "alle",
@@ -33,6 +34,31 @@
 
   function normalize(value) {
     return P.normalize(value);
+  }
+
+  function formatDate(value) {
+    const text = String(value || "").trim();
+    if (!text) return "-";
+    if (/^\d{2}\.\d{2}\.\d{4}$/.test(text)) return text;
+    if (S.formatDate) return S.formatDate(text);
+    const date = new Date(`${text}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return text;
+    return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
+  }
+
+  function formatDateTime(value) {
+    const text = String(value || "").trim();
+    if (!text) return "-";
+    if (S.formatDateTime) return S.formatDateTime(text);
+    const match = text.match(/^(\d{4}-\d{2}-\d{2})[\sT](\d{2}:\d{2})/);
+    if (!match) return formatDate(text);
+    return `${formatDate(match[1])} · ${match[2]} Uhr`;
+  }
+
+  function formatDateRange(start, end) {
+    if (S.formatDateRange) return S.formatDateRange(start, end);
+    if (start && end) return `${formatDate(start)} bis ${formatDate(end)}`;
+    return formatDate(start || end);
   }
 
   function displayDocType(type) {
@@ -99,7 +125,7 @@
   function vacationSummary(emp) {
     const t = P.todayIso();
     const active = state.data.vacations.find((v) => v.employeeId === emp.id && ["genehmigt", "teilweise genehmigt"].includes(v.status) && t >= v.start && t <= v.end);
-    if (active) return `Urlaub ${active.start} bis ${active.end}`;
+    if (active) return `Urlaub ${formatDateRange(active.start, active.end)}`;
     const open = state.data.vacations.find((v) => v.employeeId === emp.id && ["beantragt", "in Pruefung"].includes(v.status));
     return open ? `Antrag ${open.status}` : "kein Urlaub";
   }
@@ -254,8 +280,8 @@
             <strong>${fullName(emp)}</strong>
             <p>${emp.employeeId} · ${emp.role}</p>
             <p>${statusBadge(emp.status)}</p>
-            <p>Eintritt: ${emp.entryDate || "-"} · ${emp.employmentType}</p>
-            <p>heutige Schicht: ${emp.todayShift || "-"} · nächster Dienst: ${emp.nextShift || "-"}</p>
+            <p>Eintritt: ${formatDate(emp.entryDate)} · ${emp.employmentType}</p>
+            <p>heutige Schicht: ${emp.todayShift || "-"} · nächster Dienst: ${formatDateTime(emp.nextShift)}</p>
             <p>Führerscheinstatus: ${employeeLicenseStatus(emp)} · Taxischeinstatus: ${employeePermitStatus(emp)}</p>
             <p>bevorzugtes Fahrzeug: ${emp.preferredVehicle || "-"} · feste Zuordnung: ${emp.fixedVehicle || "-"}</p>
             <p>Ersatzfahrzeuge: ${listText(emp.replacementVehicles)}</p>
@@ -269,25 +295,25 @@
     } else if (state.profileTab === "Kontaktdaten") {
       content = `<div class="person-list"><article class="person-item"><p>Telefon: ${emp.phone || "-"}</p><p>Alternative Telefonnummer: ${emp.altPhone || "-"}</p><p>E-Mail: ${emp.email || "-"}</p><p>Adresse: ${emp.address || "-"}</p><p>Sprache: ${emp.language || "-"}</p></article></div>`;
     } else if (state.profileTab === "Beschäftigung") {
-      content = `<div class="person-list"><article class="person-item"><p>Status: ${emp.status}</p><p>Rolle: ${emp.role}</p><p>Beschäftigungsart: ${emp.employmentType}</p><p>Eintrittsdatum: ${emp.entryDate || "-"}</p><p>Vertragsbeginn: ${emp.contractStart || "-"}</p><p>Vertragsende: ${emp.contractEnd || "-"}</p><p>Probezeit bis: ${emp.probationUntil || "-"}</p><p>Standort: ${emp.location || "-"}</p><p>Schichtmodell: ${emp.shiftModel || "-"}</p><p>bevorzugte Arbeitszeiten: ${emp.preferredHours || "-"}</p><p>bevorzugte Einsatzart: ${emp.preferredServiceType || "-"}</p></article></div>`;
+      content = `<div class="person-list"><article class="person-item"><p>Status: ${emp.status}</p><p>Rolle: ${emp.role}</p><p>Beschäftigungsart: ${emp.employmentType}</p><p>Eintrittsdatum: ${formatDate(emp.entryDate)}</p><p>Vertragsbeginn: ${formatDate(emp.contractStart)}</p><p>Vertragsende: ${formatDate(emp.contractEnd)}</p><p>Probezeit bis: ${formatDate(emp.probationUntil)}</p><p>Standort: ${emp.location || "-"}</p><p>Schichtmodell: ${emp.shiftModel || "-"}</p><p>bevorzugte Arbeitszeiten: ${emp.preferredHours || "-"}</p><p>bevorzugte Einsatzart: ${emp.preferredServiceType || "-"}</p></article></div>`;
     } else if (state.profileTab === "Schichten") {
-      content = `<div class="person-list"><article class="person-item"><p>Heute: ${emp.todayShift || "-"}</p><p>Nächster Dienst: ${emp.nextShift || "-"}</p><p>Status: ${emp.status}</p></article></div>`;
+      content = `<div class="person-list"><article class="person-item"><p>Heute: ${emp.todayShift || "-"}</p><p>Nächster Dienst: ${formatDateTime(emp.nextShift)}</p><p>Status: ${emp.status}</p></article></div>`;
     } else if (state.profileTab === "Abwesenheiten") {
-      content = `<div class="person-list">${abs.map((a) => `<article class="person-item"><strong>${a.kind}</strong><p>${a.start} bis ${a.expectedEnd}</p><p>Status: ${a.status} · Nachweis: ${a.proofStatus}</p><p>${a.note || ""}</p></article>`).join("") || '<article class="person-item">Keine Einträge.</article>'}</div>`;
+      content = `<div class="person-list">${abs.map((a) => `<article class="person-item"><strong>${a.kind}</strong><p>${formatDateRange(a.start, a.expectedEnd)}</p><p>Status: ${a.status} · Nachweis: ${a.proofStatus}</p><p>${a.note || ""}</p></article>`).join("") || '<article class="person-item">Keine Einträge.</article>'}</div>`;
     } else if (state.profileTab === "Urlaub") {
-      content = `<div class="person-list"><article class="person-item"><strong>Urlaubskonto (organisatorisch, Demo)</strong><p>Jahresanspruch: ${quota.yearly}</p><p>bereits genommen: ${quota.taken}</p><p>genehmigt: ${quota.approved}</p><p>beantragt: ${quota.requested}</p><p>verbleibend: ${quota.remaining}</p><p>Resturlaub Vorjahr: ${quota.carry}</p></article>${vacs.map((v) => `<article class="person-item"><strong>${v.type}</strong><p>${v.start} bis ${v.end}</p><p>Status: ${v.status}</p></article>`).join("")}</div>`;
+      content = `<div class="person-list"><article class="person-item"><strong>Urlaubskonto (organisatorisch, Demo)</strong><p>Jahresanspruch: ${quota.yearly}</p><p>bereits genommen: ${quota.taken}</p><p>genehmigt: ${quota.approved}</p><p>beantragt: ${quota.requested}</p><p>verbleibend: ${quota.remaining}</p><p>Resturlaub Vorjahr: ${quota.carry}</p></article>${vacs.map((v) => `<article class="person-item"><strong>${v.type}</strong><p>${formatDateRange(v.start, v.end)}</p><p>Status: ${v.status}</p></article>`).join("")}</div>`;
     } else if (state.profileTab === "Dokumente") {
-      content = `<div class="person-list">${docs.map((d) => `<article class="person-item"><strong>${displayDocType(d.type)}</strong><p>Nr: ${d.no || "-"}</p><p>gültig bis: ${d.validUntil || "-"}</p><p>Status: ${displayStatusText(d.status)}</p><p>geprüft am: ${d.checkedAt || "-"}</p><p>geprüft durch: ${d.checkedBy || "-"}</p><p>Notiz: ${d.note || "-"}</p></article>`).join("") || '<article class="person-item">Keine Dokumente.</article>'}</div>`;
+      content = `<div class="person-list">${docs.map((d) => `<article class="person-item"><strong>${displayDocType(d.type)}</strong><p>Nr: ${d.no || "-"}</p><p>gültig bis: ${formatDate(d.validUntil)}</p><p>Status: ${displayStatusText(d.status)}</p><p>geprüft am: ${formatDate(d.checkedAt)}</p><p>geprüft durch: ${d.checkedBy || "-"}</p><p>Notiz: ${d.note || "-"}</p></article>`).join("") || '<article class="person-item">Keine Dokumente.</article>'}</div>`;
     } else if (state.profileTab === "Schulungen") {
-      content = `<div class="person-list">${trainings.map((t) => `<article class="person-item"><strong>${t.title}</strong><p>${t.date} ${t.time} · ${t.place}</p><p>Status: ${t.status} · Pflicht: ${t.mandatory ? "Ja" : "Nein"}</p></article>`).join("") || '<article class="person-item">Keine Schulungen.</article>'}</div>`;
+      content = `<div class="person-list">${trainings.map((t) => `<article class="person-item"><strong>${t.title}</strong><p>${formatDate(t.date)} ${t.time} · ${t.place}</p><p>Status: ${t.status} · Pflicht: ${t.mandatory ? "Ja" : "Nein"}</p></article>`).join("") || '<article class="person-item">Keine Schulungen.</article>'}</div>`;
     } else if (state.profileTab === "Fahrzeuge") {
       content = `<div class="person-list"><article class="person-item"><p>Aktuelles Fahrzeug: ${emp.activeVehicle || "-"}</p><p>bevorzugtes Fahrzeug: ${emp.preferredVehicle || "-"}</p><p>bevorzugter Fahrzeugtyp: ${emp.preferredVehicleType || "-"}</p><p>feste Fahrzeugzuordnung: ${emp.fixedVehicle || "-"}</p><p>erlaubte Fahrzeuge: ${listText(emp.allowedVehicles)}</p><p>nicht erlaubte Fahrzeuge: ${listText(emp.blockedVehicles)}</p><p>Ersatzfahrzeuge: ${listText(emp.replacementVehicles)}</p><p>Rollstuhlfahrten: ${emp.wheelchairSkill ? "Ja" : "Nein"}</p><p>Großraumfahrzeug: ${emp.largeVehicleSkill ? "Ja" : "Nein"}</p><p>Elektrofahrzeug-Einweisung: ${emp.evTraining ? "Ja" : "Nein"}</p><p>Qualifikationen: ${listText(emp.qualifications)}</p></article></div>`;
     } else if (state.profileTab === "Aufgaben") {
-      content = `<div class="person-list">${tasks.map((t) => `<article class="person-item"><strong>${t.title}</strong><p>${t.category} · ${t.status}</p><p>Fällig: ${t.dueDate} · Verantwortlich: ${t.owner}</p><p>${t.note || ""}</p></article>`).join("") || '<article class="person-item">Keine Aufgaben.</article>'}</div>`;
+      content = `<div class="person-list">${tasks.map((t) => `<article class="person-item"><strong>${t.title}</strong><p>${t.category} · ${t.status}</p><p>Fällig: ${formatDate(t.dueDate)} · Verantwortlich: ${t.owner}</p><p>${t.note || ""}</p></article>`).join("") || '<article class="person-item">Keine Aufgaben.</article>'}</div>`;
     } else if (state.profileTab === "Mitteilungen") {
       content = `<div class="person-list">${msgs.map((m) => `<article class="person-item"><strong>${m.title}</strong><p>${m.category} · Priorität: ${m.priority}</p><p>Status Lesen: ${m.reads && m.reads[emp.id] ? "gelesen" : "ungelesen"}</p></article>`).join("") || '<article class="person-item">Keine Mitteilungen.</article>'}</div>`;
     } else if (state.profileTab === "Verlauf") {
-      content = `<div class="person-list">${history.map((h) => `<article class="person-item"><strong>${h.event}</strong><p>${h.at} · ${h.by}</p><p>${h.note || ""}</p></article>`).join("") || '<article class="person-item">Kein Verlauf.</article>'}</div>`;
+      content = `<div class="person-list">${history.map((h) => `<article class="person-item"><strong>${h.event}</strong><p>${formatDateTime(h.at)} · ${h.by}</p><p>${h.note || ""}</p></article>`).join("") || '<article class="person-item">Kein Verlauf.</article>'}</div>`;
     } else {
       content = `<div class="person-list"><article class="person-item"><strong>Interne Notizen</strong><p>${emp.internalNotes || "Keine Notiz"}</p><p>${emp.profileNote || ""}</p></article></div>`;
     }

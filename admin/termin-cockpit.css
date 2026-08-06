@@ -2,28 +2,89 @@
   gap: 14px;
 }
 
+.tc-main .admin-topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title actions"
+    "search actions";
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 12px;
+}
+
+.tc-main .admin-topbar-title {
+  grid-area: title;
+}
+
+.tc-main .admin-v20-search-wrap {
+  grid-area: search;
+  max-width: 460px;
+  margin-top: 2px;
+}
+
+.tc-main .admin-v20-search-input,
+.tc-main .admin-v20-search-filter {
+  min-height: 34px;
+}
+
 .tc-topbar-actions {
+  grid-area: actions;
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.tc-topbar-actions .admin-btn,
+.tc-topbar-actions .admin-user,
+.tc-topbar-actions .admin-v20-quick-link,
+.tc-topbar-actions .admin-quick-create-wrap {
+  min-height: 34px;
+}
+
+.tc-more-actions {
+  position: relative;
+}
+
+.tc-more-actions summary {
+  list-style: none;
+  min-width: 42px;
+}
+
+.tc-more-actions summary::-webkit-details-marker {
+  display: none;
+}
+
+.tc-more-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 15;
+  min-width: 230px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #111820;
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.35);
+  display: grid;
+  gap: 7px;
 }
 
 .tc-fast-form {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
-.tc-fast-form .m-field:nth-child(1) {
-  grid-column: span 1;
-}
-
-.tc-fast-form .m-field:nth-child(2),
-.tc-fast-form .m-field:nth-child(3) {
+.tc-col-name,
+.tc-col-pickup,
+.tc-col-destination {
   grid-column: span 2;
 }
 
-.tc-fast-form .m-field:nth-child(4),
-.tc-fast-form .m-field:nth-child(5) {
+.tc-col-phone,
+.tc-col-date,
+.tc-col-time,
+.tc-col-return {
   grid-column: span 1;
 }
 
@@ -45,6 +106,9 @@
   color: #f6f7fb;
   padding: 0 12px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .tc-chip-row button:hover {
@@ -110,30 +174,6 @@
   cursor: pointer;
 }
 
-.tc-customer-list,
-.tc-customer-list li {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.tc-customer-list {
-  display: grid;
-  gap: 7px;
-}
-
-.tc-customer-list button {
-  width: 100%;
-  min-height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.04);
-  color: inherit;
-  text-align: left;
-  padding: 0 10px;
-  cursor: pointer;
-}
-
 .tc-analysis-list {
   margin: 0;
   padding-left: 18px;
@@ -154,7 +194,7 @@
 
 .tc-timeline-groups {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .tc-time-group {
@@ -173,7 +213,7 @@
 
 .tc-time-group-head h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .tc-time-list {
@@ -184,7 +224,7 @@
 .tc-time-item {
   border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: 10px;
-  padding: 9px;
+  padding: 8px;
   display: grid;
   gap: 8px;
   background: rgba(5, 8, 13, 0.6);
@@ -192,13 +232,13 @@
 
 .tc-time-main {
   display: grid;
-  grid-template-columns: 72px 1fr auto;
-  gap: 10px;
+  grid-template-columns: 68px 1fr auto;
+  gap: 8px;
   align-items: start;
 }
 
 .tc-time {
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 700;
   color: #ffd56e;
 }
@@ -206,6 +246,27 @@
 .tc-time-item p {
   margin: 2px 0;
   color: rgba(220, 228, 240, 0.85);
+}
+
+.tc-time-title {
+  display: block;
+  font-size: 15px;
+}
+
+.tc-time-destination {
+  color: #f2f6ff;
+}
+
+.tc-time-meta,
+.tc-time-connection {
+  font-size: 12px;
+  color: rgba(220, 228, 240, 0.88);
+}
+
+.tc-assign-btn {
+  border-color: rgba(255, 217, 106, 0.46) !important;
+  background: rgba(255, 217, 106, 0.14) !important;
+  color: var(--gold);
 }
 
 .tc-actions {
@@ -285,6 +346,34 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
+  padding: 10px;
+}
+
+.tc-vehicle-plan h3,
+.tc-vehicle-plan p {
+  margin: 0;
+}
+
+.tc-vehicle-plan h3 {
+  font-size: 16px;
+}
+
+.tc-vehicle-plan p {
+  color: rgba(220, 228, 240, 0.83);
+}
+
+.tc-vehicle-plan ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.tc-vehicle-plan li {
+  border-top: 1px dashed rgba(255, 255, 255, 0.14);
+  padding-top: 7px;
+}
 
 .tc-inbox-head {
   align-items: center;
@@ -310,7 +399,7 @@
 
 .tc-inbox-layout {
   display: grid;
-  grid-template-columns: minmax(260px, 0.95fr) minmax(320px, 1.1fr) minmax(240px, 0.95fr);
+  grid-template-columns: minmax(250px, 0.9fr) minmax(320px, 1.15fr) minmax(220px, 0.85fr);
   gap: 12px;
   align-items: start;
 }
@@ -377,57 +466,37 @@
   color: inherit;
   padding: 0 10px;
 }
-  padding: 10px;
-}
-
-.tc-vehicle-plan h3,
-.tc-vehicle-plan p {
-
-  .tc-inbox-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .tc-inbox-edit-grid {
-    grid-template-columns: 1fr;
-  }
-  margin: 0;
-}
-
-.tc-vehicle-plan h3 {
-  font-size: 16px;
-}
-
-.tc-vehicle-plan p {
-  color: rgba(220, 228, 240, 0.83);
-}
-
-.tc-vehicle-plan ul {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 7px;
-}
-
-.tc-vehicle-plan li {
-  border-top: 1px dashed rgba(255, 255, 255, 0.14);
-  padding-top: 7px;
-}
 
 @media (max-width: 1240px) {
-  .tc-fast-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .tc-main .admin-topbar {
+    grid-template-areas:
+      "title"
+      "actions"
+      "search";
+    grid-template-columns: 1fr;
   }
 
-  .tc-fast-form .m-field:nth-child(1),
-  .tc-fast-form .m-field:nth-child(2),
-  .tc-fast-form .m-field:nth-child(3),
-  .tc-fast-form .m-field:nth-child(4),
-  .tc-fast-form .m-field:nth-child(5) {
+  .tc-topbar-actions {
+    flex-wrap: wrap;
+  }
+
+  .tc-main .admin-v20-search-wrap {
+    max-width: none;
+    width: 100%;
+  }
+
+  .tc-fast-form {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tc-col-name,
+  .tc-col-pickup,
+  .tc-col-destination {
     grid-column: span 1;
   }
 
-  .tc-grid-2 {
+  .tc-grid-2,
+  .tc-inbox-layout {
     grid-template-columns: 1fr;
   }
 }
@@ -442,7 +511,14 @@
     justify-content: flex-start;
   }
 
-  .tc-optional-grid {
+  .tc-fast-form,
+  .tc-optional-grid,
+  .tc-inbox-edit-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tc-more-menu {
+    right: auto;
+    left: 0;
   }
 }

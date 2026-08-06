@@ -1,4 +1,5 @@
 (() => {
+  const S = window.AdminSystemCenter || {};
   const STORAGE_KEYS = {
     customers: "adminSharedCustomersV14",
     tasks: "adminSharedTasksV14",
@@ -274,6 +275,19 @@
     return `${Number(value || 0).toFixed(2).replace(".", ",")} EUR`;
   }
 
+  function formatDateDisplay(value) {
+    if (S.formatDate) return S.formatDate(value);
+    if (!value) return "-";
+    const d = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return value;
+    return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+  }
+
+  function formatDateTimeDisplay(value) {
+    if (S.formatDateTime) return S.formatDateTime(value);
+    return String(value || "-");
+  }
+
   function getCustomerLabel(customer) {
     return customer.displayName || `${customer.firstName || ""} ${customer.lastName || ""}`.trim() || "Unbekannt";
   }
@@ -363,7 +377,7 @@
         card.style.borderColor = "rgba(255,217,106,0.5)";
       }
 
-      const lastRide = customer.rides && customer.rides.length ? `${customer.rides[0].date} ${customer.rides[0].time}` : "-";
+      const lastRide = customer.rides && customer.rides.length ? `${formatDateDisplay(customer.rides[0].date)} ${customer.rides[0].time || ""}` : "-";
       const nextRide = customer.openRide || "-";
 
       card.innerHTML = `
@@ -376,25 +390,17 @@
         </header>
 
         <dl class="customer-meta-list">
-          <div><dt>Kundennummer</dt><dd>${customer.customerNumber || "-"}</dd></div>
           <div><dt>Telefon</dt><dd>${customer.phone || "-"}</dd></div>
-          <div><dt>Geburtsdatum</dt><dd>${customer.birthDate || "-"}</dd></div>
-          <div><dt>Versicherung</dt><dd>${customer.insurance || "-"}</dd></div>
           <div><dt>Letzte Fahrt</dt><dd>${lastRide}</dd></div>
-          <div><dt>Offene Fahrt</dt><dd class="customer-next-ride">${nextRide}</dd></div>
           <div><dt>Lieblingsziel</dt><dd>${customer.favoriteDestination || "-"}</dd></div>
-          <div><dt>Abrechnung</dt><dd>${customer.billingType || "-"}</dd></div>
+          <div><dt>Offene Fahrt</dt><dd class="customer-next-ride">${nextRide}</dd></div>
         </dl>
 
         ${customer.openQuestion ? "<p class='customer-question'>Rückfrage offen</p>" : ""}
 
         <div class="customer-card-actions">
-          <button class="admin-btn customer-btn-muted" type="button" data-customer-action="select" data-customer-id="${customer.id}">Profil öffnen</button>
+          <button class="admin-btn" type="button" data-customer-action="select" data-customer-id="${customer.id}">Öffnen</button>
           <button class="admin-btn customer-btn-muted" type="button" data-customer-action="ride" data-customer-id="${customer.id}">Neue Fahrt</button>
-          <button class="admin-btn customer-btn-muted" type="button" data-customer-action="call" data-customer-id="${customer.id}">Anrufen</button>
-          <button class="admin-btn customer-btn-muted" type="button" data-customer-action="note" data-customer-id="${customer.id}">Notiz</button>
-          <button class="admin-btn customer-btn-muted" type="button" data-customer-action="task" data-customer-id="${customer.id}">Aufgabe</button>
-          <button class="admin-btn" type="button" data-customer-action="lock" data-customer-id="${customer.id}">${customer.locked ? "Freigeben" : "Sperren"}</button>
         </div>
       `;
 
@@ -454,15 +460,15 @@
         <div><dt>Geburtsdatum</dt><dd>${customer.birthDate || "-"}</dd></div>
         <div><dt>Versicherungsnummer</dt><dd>${customer.insuranceNumber || "-"}</dd></div>
         <div><dt>Lieblingsziel</dt><dd>${customer.favoriteDestination || "-"}</dd></div>
-        <div><dt>Erstellt</dt><dd>${customer.createdAt || "-"}</dd></div>
-        <div><dt>Aktualisiert</dt><dd>${customer.updatedAt || "-"}</dd></div>
+        <div><dt>Erstellt</dt><dd>${formatDateDisplay(customer.createdAt)}</dd></div>
+        <div><dt>Aktualisiert</dt><dd>${formatDateDisplay(customer.updatedAt)}</dd></div>
       </dl>
       <div class="customer-profile-note-list">
         ${(customer.notes || []).slice(0, 6).map((note) => `
           <article class="customer-mini-item">
             <strong>${note.type || "Notiz"}${note.pinned ? " · Angeheftet" : ""}</strong>
             <p>${note.text || "-"}</p>
-            <small>${note.at || "-"}</small>
+            <small>${formatDateTimeDisplay(note.at)}</small>
           </article>
         `).join("") || '<div class="customer-profile-empty">Keine Notizen vorhanden.</div>'}
       </div>
@@ -480,7 +486,7 @@
           <article class="customer-mini-item">
             <strong>${entry.type || "Eintrag"}</strong>
             <p>${entry.text || "-"}</p>
-            <small>${entry.at || "-"}</small>
+            <small>${formatDateTimeDisplay(entry.at)}</small>
           </article>
         `).join("") || '<div class="customer-profile-empty">Kein Kommunikationsverlauf vorhanden.</div>'}
       </div>
@@ -490,7 +496,7 @@
       <div class="customer-profile-history">
         ${(customer.rides || []).slice(0, 10).map((ride) => `
           <article class="customer-mini-item">
-            <strong>${ride.id || "-"} · ${ride.date || "-"} ${ride.time || "-"}</strong>
+            <strong>${ride.id || "-"} · ${formatDateDisplay(ride.date)} ${ride.time || "-"}</strong>
             <p>${ride.pickup || "-"} → ${ride.destination || "-"}</p>
             <p>${ride.rideType || "Taxi"} · Status: ${ride.status || "Neu"}</p>
             <div class="customer-mini-actions">
@@ -510,7 +516,7 @@
         ${customerTasks.map((task) => `
           <article class="customer-mini-item">
             <strong>${task.title}</strong>
-            <p>Fällig: ${task.due} · Priorität: ${task.priority} · Status: ${task.status}</p>
+            <p>Fällig: ${formatDateDisplay(task.due)} · Priorität: ${task.priority} · Status: ${task.status}</p>
             <p>${task.note || ""}</p>
             <div class="customer-mini-actions">
               <button type="button" data-customer-task-action="done" data-customer-task-id="${task.id}">Erledigt</button>

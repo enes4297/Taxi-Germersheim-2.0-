@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Taxi Germersheim - Personaluebersicht</title>
+  <title>Taxi Germersheim - Personalübersicht</title>
   <meta name="robots" content="noindex,nofollow">
   <script src="auth.js"></script>
   <script src="personal-shared.js"></script>
@@ -12,21 +12,22 @@
 </head>
 <body>
   <div class="admin-shell">
-    <aside class="admin-sidebar" aria-label="Interne Navigation"><div class="admin-sidebar-brand"><img src="../logo.png" alt="Taxi Germersheim Logo"><div><strong>Dispatcher</strong><small>Interner Bereich</small></div></div><nav class="admin-nav"><a class="admin-nav-item is-active" href="personaluebersicht.html">Personaluebersicht</a></nav></aside>
+    <aside class="admin-sidebar" aria-label="Interne Navigation"><div class="admin-sidebar-brand"><img src="../logo.png" alt="Taxi Germersheim Logo"><div><strong>Dispatcher</strong><small>Interner Bereich</small></div></div><nav class="admin-nav"><a class="admin-nav-item is-active" href="personaluebersicht.html">Personalübersicht</a></nav></aside>
     <main class="admin-main">
       <header class="admin-topbar">
-        <div class="admin-topbar-title"><h1>Personaluebersicht</h1><p>Organisatorische Personalsteuerung ohne Lohnbezug</p></div>
-        <div class="admin-topbar-actions"><button class="admin-btn admin-btn-warning" type="button" data-person-reset-year>Urlaubsjahr zuruecksetzen</button><button class="admin-btn admin-btn-danger" type="button" data-person-reset-all>Personal-Demo zuruecksetzen</button></div>
+        <div class="admin-topbar-title"><h1>Personalübersicht</h1><p>Organisatorische Personalsteuerung ohne Lohnbezug</p></div>
+        <div class="admin-topbar-actions"><button class="admin-btn admin-btn-warning" type="button" data-person-reset-year>Urlaubsjahr zurücksetzen</button><button class="admin-btn admin-btn-danger" type="button" data-person-reset-all>Personal-Demo zurücksetzen</button></div>
       </header>
 
       <section class="admin-panel"><div class="admin-panel-head"><h2>Statistik-Karten</h2></div><div class="person-grid" data-person-kpis></div></section>
 
       <section class="person-layout">
         <section class="admin-panel"><div class="admin-panel-head"><h2>Heutige Personalsituation</h2></div><div class="person-table-wrap"><table class="admin-table person-table"><thead><tr><th>Name</th><th>Rolle</th><th>geplanter Dienst</th><th>Status</th><th>Fahrzeug</th><th>Schichtbeginn</th><th>Kontakt</th><th>Hinweise</th></tr></thead><tbody data-person-today-table></tbody></table></div></section>
-        <aside class="admin-panel"><div class="admin-panel-head"><h2>Warnungen</h2></div><div class="person-list" data-person-warning-list></div></aside>
+        <aside class="admin-panel"><div class="admin-panel-head"><h2>Warnungen</h2></div><div class="person-chip-row person-filter-row" data-person-warning-filters></div><label class="person-meta">Warnungen suchen<input type="search" class="driver-search-input" data-person-warning-search placeholder="Name, Grund oder Detail"></label><div class="person-list" data-person-warning-list></div></aside>
       </section>
 
       <section class="admin-panel"><div class="admin-panel-head"><h2>Tagesstatus kompakt</h2></div><div class="person-pill-row" data-person-status-chips></div></section>
+      <section class="admin-panel"><div class="admin-panel-head"><h2>Dokumentenstatus-Ampel</h2></div><div class="person-grid person-grid-compact" data-person-doc-ampel></div></section>
     </main>
   </div>
   <script src="personaluebersicht.js"></script>

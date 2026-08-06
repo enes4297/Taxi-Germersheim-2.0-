@@ -1,5 +1,6 @@
 (() => {
   const Q = window.AdminQuickIntakeDemo;
+  const S = window.AdminSystemCenter || {};
   if (!Q) return;
 
   const state = {
@@ -20,16 +21,19 @@
     return visibleEntries().find((entry) => entry.id === state.selectedEntryId) || visibleEntries()[0] || null;
   }
 
+  function formatDateTime(value) {
+    if (S.formatDateTime) return S.formatDateTime(value);
+    return String(value || "");
+  }
+
   function renderStats() {
     const node = document.querySelector("[data-quick-inbox-stats]");
     if (!node) return;
     const stats = Q.getStats(visibleEntries());
     node.innerHTML = `
-      <span>insgesamt ${stats.total}</span>
-      <span>heute ${stats.today}</span>
-      <span>dringend ${stats.urgent}</span>
-      <span>vollständig genug ${stats.completeEnough}</span>
-      <span>Angaben fehlen ${stats.missing}</span>
+      <span>Offen ${stats.total}</span>
+      <span>Dringend ${stats.urgent}</span>
+      <span>Unvollständig ${stats.missing}</span>
     `;
   }
 
@@ -38,24 +42,20 @@
     if (!node) return;
     const rows = visibleEntries();
     if (!rows.length) {
-      node.innerHTML = '<p class="m-note">Keine offenen Einträge.</p>';
+      node.innerHTML = '<article class="tc-inbox-panel"><strong>Inbox leer</strong><p>Keine offenen Prüffälle vorhanden.</p></article>';
       return;
     }
     node.innerHTML = rows.map((entry) => `
       <article class="tc-inbox-item${entry.id === state.selectedEntryId ? " is-active" : ""}">
         <button type="button" class="tc-inbox-open" data-inbox-open="${entry.id}">
-          <strong>${entry.createdAt}</strong>
+          <strong>${formatDateTime(entry.createdAt)}</strong>
           <p>${entry.rawNote || entry.recognized.customer || "Notiz"}</p>
           <p>${entry.recognized.customer || "Kunde offen"} · ${entry.recognized.dateLabel || entry.recognized.date || "Datum offen"} · ${entry.recognized.timeLabel || entry.recognized.time || (entry.recognized.timeOpen ? "offen" : "Uhrzeit offen")}</p>
           <p>${entry.recognized.pickup || "Abholung offen"} → ${entry.recognized.destination || "Ziel offen"}</p>
-          <p>${entry.completeness} · Priorität ${entry.recognized.priority || "mittel"}${entry.urgent ? " · dringend" : ""}</p>
         </button>
         <div class="tc-actions">
-          <button type="button" data-inbox-open="${entry.id}">prüfen</button>
-          <button type="button" data-inbox-edit="${entry.id}">bearbeiten</button>
-          <button type="button" data-inbox-release="${entry.id}">direkt freigeben</button>
-          <button type="button" data-inbox-task="${entry.id}">als Aufgabe speichern</button>
-          <button type="button" data-inbox-remind="${entry.id}">später erinnern</button>
+          <button type="button" data-inbox-open="${entry.id}">Öffnen</button>
+          <button type="button" data-inbox-release="${entry.id}">Freigeben</button>
         </div>
       </article>
     `).join("");
@@ -90,8 +90,8 @@
         </div>
         <div class="tc-actions">
           <button type="button" data-inbox-release="${entry.id}">Für Planung freigeben</button>
-          <button type="button" data-inbox-save-draft="${entry.id}">Als Entwurf speichern</button>
           <button type="button" data-inbox-save-entry="${entry.id}">Angaben ergänzen</button>
+          <button type="button" data-inbox-save-draft="${entry.id}">Als Entwurf speichern</button>
           <button type="button" data-inbox-delete="${entry.id}">Verwerfen</button>
           ${entry.urgent ? `<button type="button" data-inbox-live="${entry.id}">Direkt in Live-Dispo</button>` : ""}
         </div>
