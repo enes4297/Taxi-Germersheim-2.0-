@@ -6,6 +6,7 @@
   <title>Taxi Germersheim - Einstellungen</title>
   <meta name="robots" content="noindex,nofollow">
   <script src="auth.js"></script>
+  <script src="planung-v25-shared.js"></script>
   <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -199,6 +200,49 @@
             <li><span>Demo-Daten</span><strong class="settings-status-pill is-warning">aktiv</strong></li>
             <li><span>Backend</span><strong class="settings-status-pill is-offline">nicht verbunden</strong></li>
           </ul>
+        </article>
+
+        <article class="admin-panel settings-card" data-settings-roles="Chef,Geschaeftsleitung,Disposition" data-settings-section="paj-demo">
+          <div class="admin-panel-head">
+            <h2>PAJ GPS</h2>
+          </div>
+          <p class="settings-demo-note">Echte PAJ-Verbindung benötigt eine sichere serverseitige Schnittstelle.</p>
+          <ul class="settings-status-list" data-paj-summary>
+            <li><span>Verbindung</span><strong class="settings-status-pill is-warning">Demo</strong></li>
+            <li><span>Verbundene Fahrzeuge</span><strong data-paj-connected-count>0</strong></li>
+            <li><span>Nicht zugeordnete Tracker</span><strong data-paj-unassigned-count>0</strong></li>
+            <li><span>Letzte Demo-Aktualisierung</span><strong data-paj-last-update>-</strong></li>
+          </ul>
+          <form class="settings-form" data-paj-form>
+            <label class="settings-field">
+              <span>Fahrzeug</span>
+              <select name="vehicleId" data-paj-vehicle-select></select>
+            </label>
+            <label class="settings-field">
+              <span>Tracker</span>
+              <select name="trackerId">
+                <option value="PAJ-101">PAJ-101</option>
+                <option value="PAJ-102">PAJ-102</option>
+                <option value="PAJ-103">PAJ-103</option>
+                <option value="PAJ-104">PAJ-104</option>
+              </select>
+            </label>
+            <label class="settings-field">
+              <span>PAJ-Fahrzeugname</span>
+              <input type="text" name="vehicleName" value="Demo-Fahrzeug">
+            </label>
+            <label class="settings-field">
+              <span>Aktualisierungsintervall später</span>
+              <select name="interval"><option>30 Sekunden</option><option>60 Sekunden</option><option>120 Sekunden</option></select>
+            </label>
+            <div class="settings-form-actions">
+              <button class="admin-btn" type="submit">Tracker zuordnen</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-paj-test>Verbindung testen</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-paj-refresh>Demo-Daten aktualisieren</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-paj-remove>Zuordnung entfernen</button>
+            </div>
+          </form>
+          <div class="settings-users-list" data-paj-list></div>
         </article>
       </section>
     </main>

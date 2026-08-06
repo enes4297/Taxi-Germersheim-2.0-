@@ -2,14 +2,14 @@
   const STORAGE_KEY = "adminTerminCockpitV22Phase1";
   const LIVE_DISPO_KEY = "adminLiveDispoV131";
   const DISPATCH_BRIDGE_KEY = "adminV22DispatchBridge";
-  const STATUS_FLOW = ["Noch ungeplant", "Neu", "Geplant", "Bestaetigt", "Unterwegs", "Erledigt", "Abgerechnet"];
+  const STATUS_FLOW = ["Noch ungeplant", "Neu", "Geplant", "Bestätigt", "Unterwegs", "Erledigt", "Abgerechnet"];
   const AI_STEPS = [
     "Fahrer analysieren",
     "Fahrzeuge analysieren",
-    "Schichten pruefen",
-    "Zeitabstaende pruefen",
-    "Fahrzeugtypen pruefen",
-    "Rollstuhl pruefen",
+    "Schichten prüfen",
+    "Zeitabstände prüfen",
+    "Fahrzeugtypen prüfen",
+    "Rollstuhl prüfen",
     "Auslastung berechnen"
   ];
 
@@ -17,9 +17,9 @@
 
   const CUSTOMER_PROFILES = [
     {
-      name: "Herr Mueller",
+      name: "Herr Müller",
       phone: "0171 221100",
-      lastPickup: "Germersheim Sued 12",
+      lastPickup: "Germersheim Süd 12",
       lastDestination: "Dialyse Speyer",
       lastTime: "08:00",
       frequentRides: ["Dialyse", "Krankenhaus", "Zuhause"]
@@ -160,8 +160,8 @@
     return [
       {
         id: uid("AP"),
-        name: "Herr Mueller",
-        pickup: "Germersheim Sued 12",
+        name: "Herr Müller",
+        pickup: "Germersheim Süd 12",
         destination: "Dialyse Speyer",
         date: base,
         time: "08:00",
@@ -274,7 +274,7 @@
     const diffDays = Math.round((date.getTime() - today.getTime()) / 86400000);
     if (diffDays <= 0) return "Heute";
     if (diffDays === 1) return "Morgen";
-    if (diffDays === 2) return "Uebermorgen";
+    if (diffDays === 2) return "Übermorgen";
 
     const currentWeekStart = new Date(today);
     currentWeekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7));
@@ -283,7 +283,7 @@
     const followingWeekStart = new Date(currentWeekStart);
     followingWeekStart.setDate(currentWeekStart.getDate() + 14);
 
-    if (date >= nextWeekStart && date < followingWeekStart) return "Naechste Woche";
+    if (date >= nextWeekStart && date < followingWeekStart) return "Nächste Woche";
     return "Diese Woche";
   }
 
@@ -291,9 +291,9 @@
     const groups = {
       Heute: [],
       Morgen: [],
-      Uebermorgen: [],
+      Übermorgen: [],
       "Diese Woche": [],
-      "Naechste Woche": []
+      "Nächste Woche": []
     };
 
     state.data.appointments.forEach((item) => {
@@ -326,11 +326,11 @@
     if (!node) return;
     const sec = Number(state.data.lastCaptureSeconds || 0);
     if (!sec) {
-      node.textContent = "Bereit fuer schnelle Aufnahme.";
+      node.textContent = "Bereit für schnelle Aufnahme.";
       return;
     }
     const goalOk = sec <= 20;
-    node.textContent = `Letzte Aufnahme: ${sec.toFixed(1)} Sekunden (${goalOk ? "unter 20 Sekunden" : "ueber 20 Sekunden"}).`;
+    node.textContent = `Letzte Aufnahme: ${sec.toFixed(1)} Sekunden (${goalOk ? "unter 20 Sekunden" : "über 20 Sekunden"}).`;
   }
 
   function renderCustomerSuggestions() {
@@ -363,7 +363,7 @@
       `<small>${selected.name}</small>`,
       `<strong>Letzte Adresse: ${selected.lastPickup}</strong>`,
       `<p class="m-meta">Letztes Ziel: ${selected.lastDestination} · Letzte Uhrzeit: ${selected.lastTime}</p>`,
-      `<p class="m-meta">Haeufige Fahrten: ${selected.frequentRides.join(", ")}</p>`
+      `<p class="m-meta">Häufige Fahrten: ${selected.frequentRides.join(", ")}</p>`
     ].join("");
   }
 
@@ -394,7 +394,7 @@
               "</div>",
               '<div class="tc-actions">',
               `<button type="button" data-call-driver="${item.id}">Fahrer telefonisch informiert</button>`,
-              `<button type="button" data-create-return="${item.id}">Rueckfahrt erzeugen</button>`,
+              `<button type="button" data-create-return="${item.id}">Rückfahrt erzeugen</button>`,
               `<select data-status-select="${item.id}">${STATUS_FLOW.map((status) => `<option value="${status}"${status === item.status ? " selected" : ""}>${status}</option>`).join("")}</select>`,
               "</div>",
               "</article>"
@@ -417,7 +417,7 @@
 
     const active = state.data.suggestions.filter((s) => s.status !== "abgelehnt");
     if (!active.length) {
-      node.innerHTML = '<p class="m-note">Noch keine Vorschlaege vorhanden. Starte die KI-Planung fuer Demo-Vorschlaege.</p>';
+      node.innerHTML = '<p class="m-note">Noch keine Vorschläge vorhanden. Starte die KI-Planung für Demo-Vorschläge.</p>';
       return;
     }
 
@@ -434,13 +434,13 @@
         `<p class="m-meta">${suggestion.explain || "Demo-Vorschlag"}</p>`,
         `<div class="tc-route">${route}</div>`,
         '<div class="tc-metrics">',
-        `<span>Geschaetzte Auslastung: ${suggestion.utilization}%</span>`,
-        `<span>Geschaetzte Leerfahrt: ${suggestion.emptyKm} km</span>`,
-        `<span>Geschaetzte Fahrzeit: ${suggestion.driveMin} min</span>`,
+        `<span>Geschätzte Auslastung: ${suggestion.utilization}%</span>`,
+        `<span>Geschätzte Leerfahrt: ${suggestion.emptyKm} km</span>`,
+        `<span>Geschätzte Fahrzeit: ${suggestion.driveMin} min</span>`,
         "</div>",
         '<div class="tc-actions">',
-        `<button type="button" data-suggest-accept="${suggestion.id}">Uebernehmen</button>`,
-        `<button type="button" data-suggest-change-driver="${suggestion.id}">Anderen Fahrer waehlen</button>`,
+        `<button type="button" data-suggest-accept="${suggestion.id}">Übernehmen</button>`,
+        `<button type="button" data-suggest-change-driver="${suggestion.id}">Anderen Fahrer wählen</button>`,
         `<button type="button" data-suggest-manual="${suggestion.id}">Manuell planen</button>`,
         `<button type="button" data-suggest-reject="${suggestion.id}">Ablehnen</button>`,
         "</div>",
@@ -474,13 +474,18 @@
       destination: appointment.destination,
       pickup: appointment.pickup,
       vehicleLabel: manual ? "Manuelle Planung" : suggestion.vehicleLabel,
-      driverName: manual ? "Disponent waehlt manuell" : suggestion.driverName,
+      driverName: manual ? "Disponent wählt manuell" : suggestion.driverName,
       route: suggestion.route,
       utilization: suggestion.utilization,
       emptyKm: suggestion.emptyKm,
       driveMin: suggestion.driveMin,
       createdAt: nowIso()
     });
+
+    if (appointment.sourceDraftId && window.AdminQuickIntakeDemo) {
+      const quickState = window.AdminQuickIntakeDemo.loadState();
+      window.AdminQuickIntakeDemo.markPlanned(quickState, appointment.sourceDraftId);
+    }
   }
 
   function buildDemoRoute(appointment) {
@@ -489,7 +494,7 @@
     return [
       { time: appointment.time, label: category },
       { time: addMinutesToTime(appointment.time, 70), label: first },
-      { time: addMinutesToTime(appointment.time, 140), label: "Rueckfahrt" }
+      { time: addMinutesToTime(appointment.time, 140), label: "Rückfahrt" }
     ];
   }
 
@@ -602,7 +607,7 @@
       destination: source.pickup,
       time: addMinutesToTime(source.time, 120),
       status: "Noch ungeplant",
-      note: source.note ? `${source.note} | Rueckfahrt` : "Rueckfahrt",
+      note: source.note ? `${source.note} | Rückfahrt` : "Rückfahrt",
       createdAt: nowIso()
     };
 
@@ -614,7 +619,7 @@
   function markPhoneConfirmed(appointmentId) {
     const appointment = state.data.appointments.find((item) => item.id === appointmentId);
     if (!appointment) return;
-    appointment.status = "Bestaetigt";
+    appointment.status = "Bestätigt";
     saveData();
     render();
   }
@@ -789,6 +794,15 @@
     loadData();
     bindForm();
     bindClickActions();
+    window.addEventListener("v24-intake-approved", () => {
+      loadData();
+      render();
+    });
+    window.addEventListener("storage", (event) => {
+      if (!event.key || event.key !== STORAGE_KEY) return;
+      loadData();
+      render();
+    });
     renderCustomerInsightByName("");
     render();
   });

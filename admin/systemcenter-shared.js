@@ -29,6 +29,7 @@
     { title: "Dashboard", category: "Seiten", link: "index.html" },
     { title: "Geschaeftsfuehrer-Dashboard", category: "Seiten", link: "geschaeftsfuehrer-dashboard.html" },
     { title: "Termin-Cockpit", category: "Seiten", link: "termin-cockpit.html" },
+    { title: "Termin schnell aufnehmen", category: "Seiten", link: "termin-schnellerfassung.html" },
     { title: "Tagesplanung", category: "Seiten", link: "tagesplanung.html" },
     { title: "Live-Dispo", category: "Seiten", link: "live-dispo.html" },
     { title: "Telefonzentrale", category: "Seiten", link: "telefonzentrale.html" },
