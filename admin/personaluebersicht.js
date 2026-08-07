@@ -45,11 +45,11 @@
       ["krank heute", s.sickToday],
       ["offene Urlaubsantraege", s.openVacationRequests],
       ["bald ablaufende Dokumente", s.expiringDocs],
-      ["ungueltige Dokumente", s.invalidDocs],
+      ["ungültige Dokumente", s.invalidDocs],
       ["offene Schulungen", s.openTrainings],
       ["neue Mitarbeiter", s.newEmployees],
       ["Mitarbeiter in Probezeit", s.onProbation],
-      ["heute verfuegbare Fahrer", s.availableDriversToday]
+      ["heute verfügbare Fahrer", s.availableDriversToday]
     ];
     const node = document.querySelector("[data-person-kpis]");
     if (!node) return;

@@ -1,5 +1,8 @@
 (() => {
   const S = window.AdminSystemCenter || {};
+  const P = window.AdminPersonnelDemo || null;
+  const DISPO_KEY = "adminLiveDispoV131";
+  const DISPATCH_BRIDGE_KEY = "adminV22DispatchBridge";
   const STORAGE_KEYS = {
     customers: "adminSharedCustomersV14",
     tasks: "adminSharedTasksV14",
@@ -287,14 +290,6 @@
     { id: "SR-940", customerId: "K-2001", type: "Bahntransfer", nextDate: "2026-08-04", days: "Mo-Fr", status: "aktiv" }
   ];
 
-  const DEMO_DRIVERS = ["Michael Becker", "Sabine Hoffmann", "Julia Schneider", "Mehmet Yildiz", "Fatma Aydin"];
-  const DEMO_VEHICLES = [
-    { plate: "GER-TK 203", type: "Limousine", wheelchair: false },
-    { plate: "GER-TK 230", type: "Rollstuhl", wheelchair: true },
-    { plate: "GER-TK 214", type: "Van", wheelchair: false },
-    { plate: "GER-TK 340", type: "Großraum", wheelchair: true }
-  ];
-
   const state = {
     customers: loadWithFallback(STORAGE_KEYS.customers, KNOWN_CUSTOMERS),
     tasks: loadWithFallback(STORAGE_KEYS.tasks, DEFAULT_TASKS),
@@ -558,6 +553,130 @@
     return `${year}-${month}-${day}`;
   }
 
+  function safeParse(raw) {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function minutes(text) {
+    const [h, m] = String(text || "00:00").split(":").map((value) => Number(value));
+    return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+  }
+
+  function inTimeWindow(time, start, end) {
+    const t = minutes(time);
+    const s = minutes(start);
+    const eRaw = minutes(end);
+    const e = eRaw <= s ? eRaw + 1440 : eRaw;
+    const tNorm = t < s ? t + 1440 : t;
+    return tNorm >= s && tNorm <= e;
+  }
+
+  function addMinutes(time, plus) {
+    const total = minutes(time) + plus;
+    const normalized = ((total % 1440) + 1440) % 1440;
+    const hh = String(Math.floor(normalized / 60)).padStart(2, "0");
+    const mm = String(normalized % 60).padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+
+  function nowTime() {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  }
+
+  function todayIso() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  }
+
+  function shiftFromEmployee(emp) {
+    const match = String(emp.todayShift || "").match(/^(\d{2}:\d{2})-(\d{2}:\d{2})$/);
+    if (!match) return { start: "", end: "" };
+    return { start: match[1], end: match[2] };
+  }
+
+  function isTimeConflict(rideDate, rideTime, emp, bridge, dispo) {
+    const employeeId = String(emp.id || "");
+    const employeeName = normalize(`${emp.firstName || ""} ${emp.lastName || ""}`.trim());
+    const targetStart = minutes(rideTime);
+    const targetEnd = minutes(addMinutes(rideTime, 45));
+    const candidateRows = [];
+    const bridgeRows = Array.isArray(bridge.confirmedPlan) ? bridge.confirmedPlan : [];
+    bridgeRows.forEach((row) => {
+      if (row.driverId !== employeeId || row.date !== rideDate || !row.time) return;
+      candidateRows.push({ start: row.time, end: addMinutes(row.time, 45) });
+    });
+
+    const dispoRows = Array.isArray(dispo.orders) ? dispo.orders : [];
+    dispoRows.forEach((row) => {
+      if (row.date !== rideDate || !row.time) return;
+      const byId = row.driverId && normalize(row.driverId) === normalize(employeeId);
+      const byName = row.driver && normalize(row.driver) === employeeName;
+      if (!byId && !byName) return;
+      candidateRows.push({ start: row.time, end: addMinutes(row.time, 45) });
+    });
+
+    return candidateRows.some((row) => {
+      const start = minutes(row.start);
+      const end = minutes(row.end);
+      return start < targetEnd && targetStart < end;
+    });
+  }
+
+  function requiredQualifications(ride) {
+    const required = [];
+    const type = normalize(ride.rideType);
+    const destination = normalize(ride.destination);
+    if (String(ride.wheelchair || "Nein") === "Ja") required.push("Rollstuhl");
+    if (type.includes("kranken") || type.includes("dialyse") || type.includes("chemo") || destination.includes("klinik") || destination.includes("onkologie")) required.push("Krankenfahrt");
+    if (type.includes("schuler") || type.includes("schüler")) required.push("Schülerbeförderung");
+    if (Number(ride.persons || 1) >= 5) required.push("Großraum");
+    required.push("Personenbeförderungsschein");
+    return [...new Set(required)];
+  }
+
+  function hasQualification(emp, qualification) {
+    const quals = Array.isArray(emp.qualifications) ? emp.qualifications.map((q) => normalize(q)) : [];
+    const q = normalize(qualification);
+    if (q.includes("personenbeforderung")) return String(emp.pPermit || "Nein") === "Ja";
+    if (q.includes("rollstuhl")) return Boolean(emp.wheelchairSkill) || quals.some((entry) => entry.includes("rollstuhl"));
+    if (q.includes("kranken")) return quals.some((entry) => entry.includes("kranken") || entry.includes("dialyse") || entry.includes("chemo"));
+    if (q.includes("grossraum") || q.includes("großraum")) return Boolean(emp.largeVehicleSkill) || quals.some((entry) => entry.includes("grossraum") || entry.includes("großraum"));
+    if (q.includes("schuler") || q.includes("schüler")) return quals.some((entry) => entry.includes("schuler") || entry.includes("schüler"));
+    return true;
+  }
+
+  function loadDispatchContext() {
+    const personnel = P && typeof P.loadState === "function" ? P.loadState() : { employees: [], vacations: [], absences: [] };
+    const bridge = safeParse(localStorage.getItem(DISPATCH_BRIDGE_KEY)) || { plannedDrivers: [], confirmedPlan: [] };
+    const dispo = safeParse(localStorage.getItem(DISPO_KEY)) || { drivers: [], vehicles: [], orders: [] };
+    return { personnel, bridge, dispo };
+  }
+
+  function mapVehicleByEmployee(emp, bridge, dispo) {
+    const planned = (Array.isArray(bridge.plannedDrivers) ? bridge.plannedDrivers : []).find((row) => row.employeeId === emp.id);
+    if (planned && planned.vehicle) return planned.vehicle;
+    if (emp.activeVehicle && emp.activeVehicle !== "-") return emp.activeVehicle;
+    const liveByName = (Array.isArray(dispo.vehicles) ? dispo.vehicles : []).find((row) => normalize(row.driverName || row.driverId || "") === normalize(`${emp.firstName} ${emp.lastName}`));
+    return liveByName ? (liveByName.plate || liveByName.name || "-") : "-";
+  }
+
+  function getLastRideInfo(employeeId, bridge) {
+    const rides = (Array.isArray(bridge.confirmedPlan) ? bridge.confirmedPlan : [])
+      .filter((row) => row.driverId === employeeId && row.time)
+      .sort((a, b) => String(a.time).localeCompare(String(b.time), "de"));
+    if (!rides.length) return { endedAt: "-", nextDistance: "Demo 5 km" };
+    const last = rides[rides.length - 1];
+    return {
+      endedAt: addMinutes(last.time, 45),
+      nextDistance: `Demo ${4 + (employeeId.length % 7)} km`
+    };
+  }
+
   function defaultTime(offset = 0) {
     const now = new Date(Date.now() + offset * 60000);
     const hh = String(now.getHours()).padStart(2, "0");
@@ -573,48 +692,127 @@
   }
 
   function buildRecommendation(ride) {
-    const alternatives = DEMO_VEHICLES.map((vehicle, idx) => {
-      const distance = 4 + idx * 3;
-      const driver = DEMO_DRIVERS[idx % DEMO_DRIVERS.length];
-      const conflicts = [];
-      if (ride.wheelchair === "Ja" && !vehicle.wheelchair) {
-        conflicts.push("Rollstuhlanforderung passt nicht");
-      }
-      if (ride.persons > (vehicle.type === "Großraum" ? 8 : vehicle.type === "Van" ? 7 : 4)) {
-        conflicts.push("Sitzplätze knapp");
-      }
-      return {
-        plate: vehicle.plate,
-        type: vehicle.type,
-        driver,
-        distance,
-        eta: `${distance + 4} Min`,
-        conflicts
-      };
-    }).sort((a, b) => a.distance - b.distance);
+    const context = loadDispatchContext();
+    const { personnel, bridge, dispo } = context;
+    const required = requiredQualifications(ride);
+    const rideDate = String(ride.date || defaultDate());
+    const now = nowTime();
+    const today = todayIso();
 
-    const recommended = alternatives.find((alt) => alt.conflicts.length === 0) || alternatives[0];
-    return { recommended, alternatives };
+    const candidates = (personnel.employees || [])
+      .filter((emp) => emp.role === "Fahrer")
+      .map((emp) => {
+        const shift = (() => {
+          const planned = (Array.isArray(bridge.plannedDrivers) ? bridge.plannedDrivers : []).find((row) => row.employeeId === emp.id);
+          if (planned && planned.shiftStart && planned.shiftEnd) return { start: planned.shiftStart, end: planned.shiftEnd };
+          return shiftFromEmployee(emp);
+        })();
+        const hasShift = Boolean(shift.start && shift.end);
+        const rideInShift = hasShift && inTimeWindow(ride.time, shift.start, shift.end);
+        const shiftStartedNow = hasShift && inTimeWindow(now, shift.start, shift.end);
+        const beforeShiftNow = hasShift && minutes(now) < minutes(shift.start);
+        const isSick = normalize(emp.status).includes("krank");
+        const isVacation = normalize(emp.status).includes("urlaub") || (personnel.vacations || []).some((v) => v.employeeId === emp.id && ["genehmigt", "teilweise genehmigt"].includes(v.status) && rideDate >= v.start && rideDate <= v.end);
+        const hasAbsence = (personnel.absences || []).some((a) => a.employeeId === emp.id && a.status !== "abgeschlossen" && rideDate >= a.start && rideDate <= a.expectedEnd);
+        const isBlocked = normalize(emp.status).includes("gesperrt") || normalize(emp.status).includes("dokument ungueltig") || normalize(emp.status).includes("dokument ungultig") || normalize(emp.status).includes("nicht verfuegbar") || normalize(emp.status).includes("nicht verfugbar");
+
+        const qualificationMissing = required.filter((q) => !hasQualification(emp, q));
+        const vehicle = mapVehicleByEmployee(emp, bridge, dispo);
+        const vehicleType = normalize(vehicle);
+        const vehicleConflict = [];
+        if (String(ride.wheelchair || "Nein") === "Ja" && !(vehicleType.includes("200") || vehicleType.includes("230") || vehicleType.includes("rollstuhl"))) {
+          vehicleConflict.push("Fahrzeug ungeeignet");
+        }
+        if (Number(ride.persons || 1) >= 5 && !(vehicleType.includes("340") || vehicleType.includes("214") || vehicleType.includes("gross") || vehicleType.includes("großraum"))) {
+          vehicleConflict.push("Fahrzeug ungeeignet");
+        }
+
+        const timeConflict = isTimeConflict(rideDate, ride.time, emp, bridge, dispo);
+        const baseAvailable = hasShift && rideInShift && !isSick && !isVacation && !hasAbsence && !isBlocked;
+        const availableNow = rideDate === today ? (baseAvailable && shiftStartedNow) : baseAvailable;
+        const onDuty = hasShift && !isSick && !isVacation && !hasAbsence && !isBlocked;
+
+        const reasons = [];
+        if (!onDuty) reasons.push("Nicht im Dienst");
+        if (!rideInShift) reasons.push("Außerhalb der Schicht");
+        if (!availableNow) reasons.push(beforeShiftNow ? "Beginnt später" : "Nicht verfügbar");
+        if (qualificationMissing.length) reasons.push("Qualifikation fehlt");
+        if (vehicleConflict.length) reasons.push("Fahrzeug ungeeignet");
+        if (timeConflict) reasons.push("Zeitkonflikt");
+
+        let score = 0;
+        if (onDuty) score += 30;
+        if (availableNow) score += 34;
+        if (rideInShift) score += 8;
+        if (!qualificationMissing.length) score += 20;
+        if (!vehicleConflict.length) score += 12;
+        if (!timeConflict) score += 10;
+        if (normalize(emp.status).includes("im dienst")) score += 6;
+
+        const lastRide = getLastRideInfo(emp.id, bridge);
+        return {
+          employeeId: emp.id,
+          name: `${emp.firstName} ${emp.lastName}`,
+          status: availableNow ? "Verfügbar" : onDuty ? (beforeShiftNow ? "Beginnt später" : "Auf Fahrt") : (isSick ? "Krank" : isVacation ? "Urlaub" : "Abwesend"),
+          shift,
+          vehicle,
+          lastRideEndedAt: lastRide.endedAt,
+          distance: lastRide.nextDistance,
+          reasons,
+          score,
+          canAssign: onDuty && rideInShift && !qualificationMissing.length && !vehicleConflict.length && !timeConflict
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    const recommended = candidates.find((row) => row.canAssign) || candidates[0] || null;
+    return { recommended, alternatives: candidates.slice(1, 3), all: candidates, required };
   }
 
-  function renderRecommendationBlock(payload, ride, recommendation) {
+  function renderRecommendationBlock(payload, recommendation) {
     const node = document.querySelector("[data-call-recommendation]");
     if (!node) return;
+
+    if (!recommendation.recommended) {
+      node.innerHTML = "<h3>Dispositions-Empfehlung</h3><p>Keine Fahrerempfehlung verfügbar.</p>";
+      return;
+    }
+
+    const lead = recommendation.recommended;
+    const leadBadge = lead.canAssign ? '<span class="call-reco-badge ok">Einplanbar</span>' : '<span class="call-reco-badge crit">Konflikt</span>';
+    const altRows = recommendation.alternatives.length
+      ? recommendation.alternatives.map((alt, index) => {
+        const tone = alt.canAssign ? "ok" : (alt.reasons.length ? "warn" : "crit");
+        return `
+          <article class="call-reco-alt-item">
+            <strong>${index + 2}. ${alt.name}</strong>
+            <p>Status: ${alt.status} · Schicht: ${alt.shift.start || "-"}–${alt.shift.end || "-"} Uhr · Fahrzeug: ${alt.vehicle || "-"}</p>
+            <p>${alt.reasons.length ? alt.reasons.join(" · ") : "Passend als Alternative"}</p>
+            <span class="call-reco-badge ${tone}">${alt.canAssign ? "Einplanbar" : "Mit Einschränkung"}</span>
+          </article>
+        `;
+      }).join("")
+      : "<p>Keine Alternative verfügbar.</p>";
 
     node.innerHTML = `
       <h3>Dispositions-Empfehlung</h3>
       <article class="call-reco-card">
-        <p><b>Empfohlenes Fahrzeug:</b> ${recommendation.recommended.plate} (${recommendation.recommended.type})</p>
-        <p><b>Empfohlener Fahrer:</b> ${recommendation.recommended.driver}</p>
-        <p><b>Entfernung Demo:</b> ${recommendation.recommended.distance} Minuten · <b>Voraussichtliche Ankunft:</b> ${recommendation.recommended.eta}</p>
-        <p><b>Konflikte:</b> ${recommendation.recommended.conflicts.length ? recommendation.recommended.conflicts.join(", ") : "Keine"}</p>
+        <p><b>EMPFOHLENER FAHRER</b></p>
+        <p><b>${lead.name}</b></p>
+        <p>Status: ${lead.status}</p>
+        <p>Schicht: ${lead.shift.start || "-"}–${lead.shift.end || "-"} Uhr</p>
+        <p>Fahrzeug: ${lead.vehicle || "-"}</p>
+        <p>Letzte Fahrt beendet: ${lead.lastRideEndedAt}</p>
+        <p>Entfernung zur nächsten Fahrt: ${lead.distance}</p>
+        <p>${lead.reasons.length ? lead.reasons.join(" · ") : "Alle Prüfungen erfüllt"}</p>
+        ${leadBadge}
       </article>
       <div class="call-reco-actions">
-        <button class="admin-btn" type="button" data-call-reco-action="assignNow" data-call-ride-id="${payload.id}" data-call-plate="${recommendation.recommended.plate}" data-call-driver="${recommendation.recommended.driver}">Direkt zuweisen</button>
+        <button class="admin-btn" type="button" data-call-reco-action="assignNow" data-call-ride-id="${payload.id}" data-call-driver-id="${lead.employeeId}" data-call-plate="${lead.vehicle}" data-call-driver="${lead.name}">Fahrer zuweisen</button>
         <button class="admin-btn admin-btn-secondary" type="button" data-call-reco-action="later" data-call-ride-id="${payload.id}">Später zuweisen</button>
         <button class="admin-btn admin-btn-secondary" type="button" data-call-reco-action="openDispo" data-call-ride-id="${payload.id}">In Live-Dispo öffnen</button>
       </div>
-      <p><b>Alternative Fahrzeuge:</b> ${recommendation.alternatives.slice(1, 4).map((alt) => `${alt.plate} (${alt.distance} Min)`).join(" · ")}</p>
+      <div class="call-reco-alt-list">${altRows}</div>
     `;
   }
 
@@ -1406,7 +1604,7 @@
         appendOpenRide(payload);
 
         const recommendation = buildRecommendation({ ...payload, persons: Number(payload.persons || 1) });
-        renderRecommendationBlock(payload, payload, recommendation);
+        renderRecommendationBlock(payload, recommendation);
 
         state.tasks.unshift({
           id: `T-${Date.now()}`,

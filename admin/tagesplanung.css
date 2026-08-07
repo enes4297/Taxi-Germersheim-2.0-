@@ -18,6 +18,141 @@
   gap: 12px;
 }
 
+.tp-service-panel {
+  gap: 10px;
+}
+
+.tp-service-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tp-service-kpi {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 10px;
+  display: grid;
+  gap: 2px;
+}
+
+.tp-service-kpi small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.tp-service-kpi strong {
+  color: var(--gold);
+  font-size: 18px;
+}
+
+.tp-service-list {
+  display: grid;
+  gap: 8px;
+}
+
+.tp-service-row {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 8px 10px;
+  display: grid;
+  gap: 7px;
+}
+
+.tp-service-head,
+.tp-service-meta,
+.tp-service-actions,
+.tp-service-warnings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tp-service-head strong {
+  font-size: 14px;
+}
+
+.tp-service-chip {
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 0 9px;
+  font-size: 11px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+}
+
+.tp-service-status {
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tp-service-status.is-green {
+  border-color: rgba(139, 226, 173, 0.5);
+  background: rgba(139, 226, 173, 0.14);
+  color: var(--status-green);
+}
+
+.tp-service-status.is-yellow {
+  border-color: rgba(255, 217, 106, 0.5);
+  background: rgba(255, 217, 106, 0.16);
+  color: var(--gold);
+}
+
+.tp-service-status.is-blue {
+  border-color: rgba(123, 190, 255, 0.52);
+  background: rgba(123, 190, 255, 0.14);
+  color: #9fd3ff;
+}
+
+.tp-service-status.is-red {
+  border-color: rgba(255, 145, 145, 0.5);
+  background: rgba(255, 145, 145, 0.14);
+  color: #ffb5b5;
+}
+
+.tp-service-status.is-gray {
+  border-color: rgba(184, 191, 203, 0.45);
+  background: rgba(184, 191, 203, 0.14);
+  color: var(--status-gray);
+}
+
+.tp-service-meta {
+  color: rgba(236, 241, 249, 0.9);
+  font-size: 12px;
+}
+
+.tp-service-warnings .tp-service-chip {
+  border-color: rgba(255, 163, 122, 0.45);
+  color: #ffd8c0;
+  background: rgba(255, 163, 122, 0.08);
+}
+
+.tp-service-actions button {
+  min-height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(245, 249, 255, 0.88);
+  padding: 0 9px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.tp-service-actions button:hover {
+  border-color: rgba(255, 217, 106, 0.42);
+  color: var(--gold);
+}
+
 .tp-toolbar-grid {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr) auto;
@@ -355,6 +490,7 @@
   .tp-layout,
   .tp-driver-controls,
   .tp-plan-summary,
+  .tp-service-kpis,
   .tp-map-grid {
     grid-template-columns: 1fr;
   }
