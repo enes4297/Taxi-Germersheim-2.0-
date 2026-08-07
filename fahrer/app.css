@@ -93,6 +93,11 @@ body {
   grid-template-columns: repeat(4, minmax(0,1fr));
   gap: 8px;
 }
+.driver-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 8px;
+}
 .driver-status-card {
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -135,6 +140,7 @@ body {
   gap: 8px;
 }
 .driver-card h2 { margin: 0; font-size: 17px; }
+.driver-hero-card { background: linear-gradient(160deg, rgba(255,217,106,0.08), rgba(255,255,255,0.02)); }
 .driver-card-actions-inline { display: flex; flex-wrap: wrap; gap: 6px; }
 .driver-card-actions-inline .driver-btn { min-height: 36px; font-size: 12px; }
 .driver-status-pill {
@@ -244,6 +250,7 @@ body {
 
 @media (max-width: 980px) {
   .driver-status-cards { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .driver-summary-grid { grid-template-columns: 1fr; }
   .driver-form-grid { grid-template-columns: 1fr; }
   .driver-check-grid { grid-template-columns: 1fr; }
   .driver-zone-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
@@ -255,7 +262,7 @@ body {
   .driver-quick-actions { grid-template-columns: 1fr; }
   .driver-mobile-nav {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0,1fr));
+    grid-template-columns: repeat(3, minmax(0,1fr));
     gap: 6px;
   }
   .driver-mobile-tab {

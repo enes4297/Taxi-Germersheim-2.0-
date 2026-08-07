@@ -896,6 +896,34 @@
     return row;
   }
 
+  function submitEmployeeDocument(state, payload) {
+    const row = {
+      id: `PDOC-${Date.now()}`,
+      employeeId: payload.employeeId,
+      type: payload.type || "Sonstiges Dokument",
+      no: payload.no || "",
+      issuedAt: payload.issuedAt || "",
+      validUntil: payload.validUntil || "",
+      issuer: payload.issuer || "",
+      status: "eingereicht",
+      note: payload.note || "",
+      demoFile: payload.demoFile || "",
+      demoFileName: payload.demoFileName || "",
+      demoFileType: payload.demoFileType || "",
+      submittedAt: todayIso(),
+      source: "Mitarbeiterportal",
+      reminderActive: false,
+      reminder: "",
+      checkedAt: "",
+      checkedBy: ""
+    };
+    state.documents.unshift(row);
+    state.notifications.unshift({ id: `PN-${Date.now()}`, at: nowStamp(), title: "Neues Dokument eingereicht", priority: "wichtig", ref: row.id });
+    applyDocumentLockSync(state);
+    saveState(state);
+    return row;
+  }
+
   function markReturn(state, absenceId, returnedAt, ready) {
     const row = state.absences.find((a) => a.id === absenceId);
     if (!row) return null;
@@ -931,6 +959,7 @@
       vacationToday: onVacation,
       sickToday: sick,
       openVacationRequests: state.vacations.filter((v) => ["beantragt", "in Pruefung"].includes(v.status)).length,
+      openDocumentEntries: state.documents.filter((d) => d.status === "eingereicht").length,
       expiringDocs: docsExp30,
       invalidDocs: docsInvalid,
       openTrainings: state.trainings.filter((t) => ["eingeladen", "bestaetigt", "Nachweis fehlt", "nicht teilgenommen"].includes(t.status)).length,
@@ -1042,6 +1071,7 @@
     addVacationRequest,
     decideVacationRequest,
     addAbsence,
+    submitEmployeeDocument,
     markReturn,
     getDashboardStats,
     buildPersonalWarnings,
