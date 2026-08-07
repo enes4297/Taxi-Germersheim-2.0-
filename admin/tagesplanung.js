@@ -1,5 +1,6 @@
 (() => {
   const P = window.AdminPersonnelDemo;
+  const S = window.AdminSystemCenter || {};
   const V25 = window.AdminPlanningDemoV25;
   const STORAGE_KEY = "adminV23DayPlanning";
   const COCKPIT_KEY = "adminTerminCockpitV22Phase1";
@@ -88,9 +89,230 @@
   }
 
   function formatDate(iso) {
+    if (S.formatDate) return S.formatDate(iso);
     const d = new Date(`${iso}T00:00:00`);
     if (Number.isNaN(d.getTime())) return iso;
     return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+  }
+
+  function nowTime() {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  }
+
+  function minutes(text) {
+    return V25.toMinutes(String(text || "00:00"));
+  }
+
+  function employmentLabel(type) {
+    if (["Minijob", "Aushilfe", "Springer"].includes(type)) return "Minijob";
+    return "Festangestellt";
+  }
+
+  function shiftRange(row, emp) {
+    const fromEmployee = String(emp.todayShift || "").match(/^(\d{2}:\d{2})-(\d{2}:\d{2})$/);
+    if (fromEmployee) return { start: fromEmployee[1], end: fromEmployee[2] };
+    const byDriver = row && row.shiftStart && row.shiftEnd ? { start: row.shiftStart, end: row.shiftEnd } : null;
+    if (byDriver) return byDriver;
+    return { start: "", end: "" };
+  }
+
+  function isWithinShift(time, start, end) {
+    if (!time || !start || !end) return false;
+    const t = minutes(time);
+    const s = minutes(start);
+    const eRaw = minutes(end);
+    const e = eRaw <= s ? eRaw + 1440 : eRaw;
+    const tNorm = t < s ? t + 1440 : t;
+    return tNorm >= s && tNorm <= e;
+  }
+
+  function shiftHasEnded(current, start, end) {
+    if (!start || !end) return true;
+    const c = minutes(current);
+    const s = minutes(start);
+    const eRaw = minutes(end);
+    if (eRaw <= s) {
+      return c > eRaw && c < s;
+    }
+    return c > eRaw;
+  }
+
+  function shiftHasStarted(current, start) {
+    if (!start) return false;
+    return minutes(current) >= minutes(start);
+  }
+
+  function getTodayRidesByEmployee() {
+    const map = {};
+    const today = todayIso();
+    const payload = safeParse(localStorage.getItem(COCKPIT_KEY)) || {};
+    const appointments = Array.isArray(payload.appointments) ? payload.appointments : [];
+    const byName = {};
+    (state.personnel.employees || []).forEach((emp) => {
+      byName[V25.normalize(`${emp.firstName || ""} ${emp.lastName || ""}`.trim())] = emp.id;
+    });
+    appointments
+      .filter((row) => row.date === today && row.driverName)
+      .forEach((row) => {
+        const employeeId = row.driverId || byName[V25.normalize(row.driverName)] || "";
+        if (!employeeId) return;
+        map[employeeId] = map[employeeId] || [];
+        const end = row.endTime || V25.addMinutes(row.time || "00:00", 45);
+        map[employeeId].push({
+          id: row.id,
+          time: row.time || "",
+          end,
+          label: `${row.time || "--:--"} ${row.name || row.customer || "Fahrt"}`
+        });
+      });
+
+    Object.values(map).forEach((rides) => rides.sort((a, b) => String(a.time || "").localeCompare(String(b.time || ""), "de")));
+    return map;
+  }
+
+  function serviceStatusClass(label) {
+    if (label === "Verfügbar") return "is-green";
+    if (label === "Pause" || label === "Beginnt später") return "is-yellow";
+    if (label === "Auf Fahrt") return "is-blue";
+    if (["Krank", "Abwesend"].includes(label)) return "is-red";
+    return "is-gray";
+  }
+
+  function buildServiceRows() {
+    const current = nowTime();
+    const today = todayIso();
+    const ridesByEmployee = getTodayRidesByEmployee();
+
+    return (state.personnel.employees || [])
+      .filter((emp) => emp.role === "Fahrer")
+      .map((emp) => {
+        const driver = state.planning.drivers.find((row) => row.employeeId === emp.id) || null;
+        const shift = shiftRange(driver, emp);
+        const hasShift = Boolean(shift.start && shift.end);
+        const started = hasShift && shiftHasStarted(current, shift.start);
+        const ended = hasShift && shiftHasEnded(current, shift.start, shift.end);
+
+        const normalizedStatus = V25.normalize(emp.status);
+        const isSick = normalizedStatus.includes("krank");
+        const isVacation = normalizedStatus.includes("urlaub")
+          || state.personnel.vacations.some((v) => v.employeeId === emp.id && ["genehmigt", "teilweise genehmigt"].includes(v.status) && today >= v.start && today <= v.end);
+        const hasAbsence = state.personnel.absences.some((a) => a.employeeId === emp.id && a.status !== "abgeschlossen" && today >= a.start && today <= a.expectedEnd);
+        const isBlocked = normalizedStatus.includes("gesperrt") || normalizedStatus.includes("dokument ungueltig") || normalizedStatus.includes("dokument ungultig") || normalizedStatus.includes("nicht verfuegbar") || normalizedStatus.includes("nicht verfugbar");
+        const isManualOffDuty = normalizedStatus === "frei";
+        const onPause = V25.normalize(emp.status).includes("pause") || V25.normalize(driver && driver.status).includes("pause");
+
+        const rides = ridesByEmployee[emp.id] || [];
+        const currentRide = rides.find((ride) => isWithinShift(current, ride.time, ride.end)) || null;
+        const nextRide = rides.find((ride) => minutes(ride.time) > minutes(current)) || null;
+        const lastRide = rides.filter((ride) => minutes(ride.end) <= minutes(current)).slice(-1)[0] || null;
+
+        const availableForDispatch = hasShift && started && !ended && !isSick && !isVacation && !hasAbsence && !isBlocked && !currentRide && !isManualOffDuty;
+
+        let status = "Feierabend";
+        if (isSick) status = "Krank";
+        else if (isVacation) status = "Urlaub";
+        else if (isManualOffDuty) status = "Feierabend";
+        else if (hasAbsence || isBlocked) status = "Abwesend";
+        else if (!hasShift || ended) status = "Feierabend";
+        else if (!started) status = "Beginnt später";
+        else if (currentRide) status = "Auf Fahrt";
+        else if (onPause) status = "Pause";
+        else status = "Verfügbar";
+
+        let availabilityHint = "";
+        if (status === "Verfügbar") {
+          availabilityHint = `Verfügbar seit ${lastRide ? lastRide.end : shift.start} Uhr`;
+        } else if (status === "Auf Fahrt") {
+          availabilityHint = `Voraussichtlich frei ab ${currentRide ? currentRide.end : "offen"} Uhr`;
+        } else if (status === "Beginnt später") {
+          availabilityHint = `Dienstbeginn ${shift.start} Uhr`;
+        }
+
+        const warnings = [];
+        const permitDays = emp.pPermitValidUntil ? P.daysUntil(emp.pPermitValidUntil) : 9999;
+        if (permitDays >= 0 && permitDays <= 30) warnings.push("Personenbeförderungsschein läuft bald ab");
+        if (permitDays < 0) warnings.push("Personenbeförderungsschein abgelaufen");
+        if (!emp.activeVehicle || emp.activeVehicle === "-") warnings.push("Kein Fahrzeug zugewiesen");
+        if (status === "Beginnt später" || status === "Feierabend") warnings.push("Fahrer außerhalb seiner Schicht");
+        if (hasAbsence && hasShift) warnings.push("Abwesenheitskonflikt");
+        const sortedRides = [...rides].sort((a, b) => minutes(a.time) - minutes(b.time));
+        const hasRideOverlap = sortedRides.some((ride, index) => {
+          if (index === 0) return false;
+          const prev = sortedRides[index - 1];
+          return minutes(ride.time) < minutes(prev.end);
+        });
+        if (hasRideOverlap) warnings.push("Schichtüberschneidung");
+
+        return {
+          employeeId: emp.id,
+          name: `${emp.firstName} ${emp.lastName}`,
+          employment: employmentLabel(emp.employmentType),
+          shift,
+          status,
+          statusClass: serviceStatusClass(status),
+          vehicle: emp.activeVehicle || "-",
+          currentRide: currentRide ? currentRide.label : "-",
+          nextRide: nextRide ? nextRide.label : "-",
+          qualifications: Array.isArray(emp.qualifications) && emp.qualifications.length ? emp.qualifications : ["-"] ,
+          availabilityHint,
+          availableForDispatch,
+          warnings
+        };
+      });
+  }
+
+  function renderServiceArea() {
+    const kpiNode = document.querySelector("[data-tp-service-kpis]");
+    const listNode = document.querySelector("[data-tp-service-list]");
+    if (!kpiNode || !listNode) return;
+
+    const rows = buildServiceRows();
+    const kpis = {
+      "Im Dienst": rows.filter((row) => ["Verfügbar", "Auf Fahrt", "Pause"].includes(row.status)).length,
+      "Verfügbar": rows.filter((row) => row.status === "Verfügbar").length,
+      "Auf Fahrt": rows.filter((row) => row.status === "Auf Fahrt").length,
+      "Pause": rows.filter((row) => row.status === "Pause").length,
+      "Abwesend": rows.filter((row) => ["Abwesend", "Krank", "Urlaub"].includes(row.status)).length
+    };
+
+    kpiNode.innerHTML = Object.entries(kpis).map(([label, value]) => `<article class="tp-service-kpi"><small>${label}</small><strong>${value}</strong></article>`).join("");
+
+    if (!rows.length) {
+      listNode.innerHTML = '<p class="m-note">Keine Fahrer im Personalbestand vorhanden.</p>';
+      return;
+    }
+
+    listNode.innerHTML = rows.map((row) => {
+      const warningText = row.warnings.slice(0, 3).map((warning) => `<span class="tp-service-chip">${warning}</span>`).join("");
+      const qualificationText = row.qualifications.join(", ");
+      return `
+        <article class="tp-service-row">
+          <div class="tp-service-head">
+            <strong>${row.name}</strong>
+            <span class="tp-service-chip">${row.employment}</span>
+            <span class="tp-service-chip">${row.shift.start && row.shift.end ? `${row.shift.start}–${row.shift.end} Uhr` : "Keine Schicht"}</span>
+            <span class="tp-service-status ${row.statusClass}">${row.status}</span>
+          </div>
+          <div class="tp-service-meta">
+            <span>Fahrzeug: ${row.vehicle}</span>
+            <span>Aktuelle Fahrt: ${row.currentRide}</span>
+            <span>Nächste Fahrt: ${row.nextRide}</span>
+            <span>Qualifikationen: ${qualificationText}</span>
+            <span>${row.availabilityHint || ""}</span>
+          </div>
+          <div class="tp-service-actions">
+            <button type="button" data-tp-service-action="vehicle" data-employee-id="${row.employeeId}">🚕 Fahrzeug</button>
+            <button type="button" data-tp-service-action="shift" data-employee-id="${row.employeeId}">🕒 Schicht</button>
+            <button type="button" data-tp-service-action="pause" data-employee-id="${row.employeeId}">☕ Pause</button>
+            <button type="button" data-tp-service-action="available" data-employee-id="${row.employeeId}">✅ Verfügbar</button>
+            <button type="button" data-tp-service-action="finish" data-employee-id="${row.employeeId}">🌙 Feierabend</button>
+            <button type="button" data-tp-service-action="details" data-employee-id="${row.employeeId}">ℹ Details</button>
+          </div>
+          ${warningText ? `<div class="tp-service-warnings">${warningText}</div>` : ""}
+        </article>
+      `;
+    }).join("");
   }
 
   function loadPersonnel() {
@@ -722,6 +944,7 @@
 
   function renderAll() {
     renderToolbar();
+    renderServiceArea();
     renderAppointments();
     renderDrivers();
     renderPlanSummary();
@@ -734,6 +957,84 @@
     renderPrint();
     renderMap();
     renderMobileTabs();
+  }
+
+  function persistPersonnelChanges() {
+    if (!P || typeof P.saveState !== "function") return;
+    P.saveState(state.personnel);
+    state.personnel = P.loadState();
+  }
+
+  function rotateShiftForEmployee(employeeId) {
+    const emp = state.personnel.employees.find((row) => row.id === employeeId);
+    const driver = state.planning.drivers.find((row) => row.employeeId === employeeId);
+    if (!emp) return;
+    const current = String(emp.todayShift || "").match(/^(\d{2}:\d{2})-(\d{2}:\d{2})$/);
+    const currentStart = current ? current[1] : (driver ? driver.shiftStart : "08:00");
+    const currentEnd = current ? current[2] : (driver ? driver.shiftEnd : "16:00");
+    const currentIndex = SHIFT_TEMPLATES.findIndex((tpl) => tpl.start === currentStart && tpl.end === currentEnd);
+    const next = SHIFT_TEMPLATES[(currentIndex + 1 + SHIFT_TEMPLATES.length) % SHIFT_TEMPLATES.length] || SHIFT_TEMPLATES[1];
+    if (driver) {
+      driver.shiftTemplateId = next.id;
+      driver.shiftStart = next.start;
+      driver.shiftEnd = next.end;
+      driver.dayActive = true;
+    }
+    emp.todayShift = `${next.start}-${next.end}`;
+  }
+
+  function assignNextVehicle(employeeId) {
+    const emp = state.personnel.employees.find((row) => row.id === employeeId);
+    const driver = state.planning.drivers.find((row) => row.employeeId === employeeId);
+    if (!emp || !driver) return;
+    const available = state.planning.vehicles
+      .filter((vehicle) => !["Werkstatt", "Gesperrt"].includes(vehicle.workshopStatus))
+      .map((vehicle) => vehicle.plate);
+    if (!available.length) return;
+    const current = emp.activeVehicle || driver.vehicle || "";
+    const currentIndex = available.findIndex((plate) => plate === current);
+    const next = available[(currentIndex + 1 + available.length) % available.length];
+    emp.activeVehicle = next;
+    driver.vehicle = next;
+  }
+
+  function bindServiceActions() {
+    document.addEventListener("click", (event) => {
+      const actionButton = event.target.closest("[data-tp-service-action]");
+      if (!actionButton) return;
+      const action = actionButton.getAttribute("data-tp-service-action") || "";
+      const employeeId = actionButton.getAttribute("data-employee-id") || "";
+      const emp = state.personnel.employees.find((row) => row.id === employeeId);
+      const driver = state.planning.drivers.find((row) => row.employeeId === employeeId);
+      if (!emp || !driver) return;
+
+      if (action === "vehicle") assignNextVehicle(employeeId);
+      if (action === "shift") rotateShiftForEmployee(employeeId);
+      if (action === "pause") {
+        emp.status = "Pause";
+        driver.status = "Pause";
+      }
+      if (action === "available") {
+        emp.status = "im Dienst";
+        driver.status = "Aktiv";
+        driver.dayActive = true;
+      }
+      if (action === "finish") {
+        emp.status = "frei";
+        driver.dayActive = false;
+      }
+      if (action === "details") {
+        const shift = shiftRange(driver, emp);
+        const msg = `${emp.firstName} ${emp.lastName} · ${employmentLabel(emp.employmentType)} · Schicht ${shift.start || "-"}–${shift.end || "-"} Uhr · Status ${emp.status}`;
+        const info = document.querySelector("[data-plan-state]");
+        if (info) info.textContent = msg;
+        return;
+      }
+
+      persistPersonnelChanges();
+      state.planning = buildPlanning();
+      rebuild("Heute-im-Dienst geändert", true);
+    });
   }
 
   function pickNextDriver(appointmentId) {
@@ -1176,6 +1477,7 @@
 
     bindToolbar();
     bindFilters();
+    bindServiceActions();
     bindDriverActions();
     bindAppointmentActions();
     bindVehicleActions();
