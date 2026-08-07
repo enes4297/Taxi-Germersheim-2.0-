@@ -85,7 +85,7 @@
     }
     body.innerHTML = state.data.documents.map((d) => {
       const datedStatus = statusByDate(d.validUntil, d.status);
-      return `<tr><td>${empName(d.employeeId)}</td><td>${d.type}</td><td>${d.no || "-"}</td><td>${formatDate(d.issuedAt)}</td><td>${formatDate(d.validUntil)}</td><td>${badge(datedStatus)}</td><td>${formatDate(d.checkedAt)}</td><td>${d.checkedBy || "-"}</td><td>${d.reminderActive ? d.reminder : "aus"}</td><td>${expiryInfo(d.validUntil)}</td><td><button class="admin-btn admin-btn-secondary" type="button" data-docfr-act="${d.id}">Prüfen</button></td></tr>`;
+      return `<tr><td>${empName(d.employeeId)}</td><td>${d.type}</td><td>${d.no || "-"}</td><td>${formatDate(d.issuedAt)}</td><td>${formatDate(d.validUntil)}</td><td>${badge(datedStatus)}</td><td>${formatDate(d.checkedAt)}</td><td>${d.checkedBy || "-"}</td><td>${d.reminderActive ? d.reminder : "aus"}</td><td>${expiryInfo(d.validUntil)}</td><td><button class="admin-btn admin-btn-secondary" type="button" data-docfr-act="${d.id}">Prüfen</button><button class="admin-btn admin-btn-warning" type="button" data-docfr-request="${d.id}">Anfordern</button></td></tr>`;
     }).join("");
   }
 
@@ -144,6 +144,35 @@
       doc.checkedBy = "Admin Enes";
       if (doc.status === "ungeprueft" || doc.status === "eingereicht") doc.status = "gueltig";
       P.applyDocumentLockSync(state.data);
+      P.saveState(state.data);
+      state.data = P.loadState();
+      renderKpis();
+      renderTable();
+    });
+
+    document.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-docfr-request]");
+      if (!btn) return;
+      const id = btn.getAttribute("data-docfr-request") || "";
+      const doc = state.data.documents.find((d) => d.id === id);
+      if (!doc) return;
+      const note = window.prompt("Notiz zur Dokumentanforderung", "Bitte Vorder- und Rückseite fotografieren.") || "";
+      doc.status = "angefordert";
+      doc.checkedAt = "";
+      doc.checkedBy = "";
+      if (note) doc.note = note;
+      if (P.addEmployeeMessage) {
+        P.addEmployeeMessage(state.data, {
+          employeeId: doc.employeeId,
+          title: "Dokument benötigt",
+          text: `${doc.type}\n${note || "Taxi Germersheim benötigt eine aktuelle Version."}`,
+          category: "Dokumentenfrist",
+          priority: "wichtig",
+          recipients: "einzelne Mitarbeiter",
+          createdBy: "Admin Enes",
+          eventType: "DOCUMENT_REUPLOAD_REQUIRED"
+        });
+      }
       P.saveState(state.data);
       state.data = P.loadState();
       renderKpis();

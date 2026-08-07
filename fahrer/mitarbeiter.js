@@ -27,6 +27,25 @@
     return `${formatDate(start)} bis ${formatDate(end)}`;
   }
 
+  function weekdayDateLabel(value) {
+    const text = String(value || "").trim();
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return formatDate(text);
+    const date = new Date(`${text}T00:00:00`);
+    const weekday = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(date);
+    return `${weekday}, ${formatDate(text)}`;
+  }
+
+  function tomorrowIso() {
+    const now = new Date();
+    now.setDate(now.getDate() + 1);
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  }
+
+  function portalSnapshot(employeeId) {
+    return P.getEmployeePortalSnapshot ? P.getEmployeePortalSnapshot(state.data, employeeId) : P.getPortalSnapshot(state.data, employeeId);
+  }
+
   function vacationQuota(employeeId) {
     return P.getVacationQuota(state.data, employeeId);
   }
@@ -56,31 +75,48 @@
     const nameNode = document.querySelector("[data-portal-name]");
     const roleNode = document.querySelector("[data-portal-role]");
     const statusNode = document.querySelector("[data-portal-status]");
+    const snap = portalSnapshot(e.id);
     if (nameNode) nameNode.textContent = `${e.firstName} ${e.lastName}`;
     if (roleNode) roleNode.textContent = `${e.role} · ${e.employeeId}`;
-    if (statusNode) statusNode.textContent = `Status: ${e.status}`;
+    if (statusNode) statusNode.textContent = `Status: ${e.status}${snap && snap.unreadMessages ? ` · ${snap.unreadMessages} neue Mitteilungen` : ""}`;
   }
 
   function renderKpis() {
     const e = emp();
     if (!e) return;
-    const snap = P.getPortalSnapshot(state.data, e.id);
+    const snap = portalSnapshot(e.id);
     const node = document.querySelector("[data-portal-kpis]");
     if (!node || !snap) return;
+    const todayPlan = snap.todayPlan || {};
+    const tomorrowPlan = snap.tomorrowPlan || {};
+    const todayBlocks = [
+      `<strong>HEUTE</strong>`,
+      `<p>${weekdayDateLabel(P.todayIso())}</p>`,
+      `<p>${todayPlan.shiftText || e.todayShift || "kein Dienst hinterlegt"}</p>`,
+      todayPlan.published && todayPlan.vehicleText ? `<p>Mein Fahrzeug</p><p>${todayPlan.vehicleText}</p>` : "",
+      `<p>Status: ${todayPlan.status || e.status}</p>`
+    ].join("");
+    const tomorrowBlocks = [
+      `<strong>MORGEN</strong>`,
+      `<p>${weekdayDateLabel(tomorrowIso())}</p>`,
+      `<p>${tomorrowPlan.published ? (tomorrowPlan.shiftText || "-") : "Plan noch nicht veröffentlicht"}</p>`,
+      tomorrowPlan.published && tomorrowPlan.vehicleText && !["Frei", "Urlaub", "Krank"].includes(tomorrowPlan.status) ? `<p>Mein Fahrzeug</p><p>${tomorrowPlan.vehicleText}</p>` : "",
+      `<p>${tomorrowPlan.published ? (tomorrowPlan.changed ? "Veröffentlicht · geändert" : "Veröffentlicht") : "Entwurf"}</p>`
+    ].join("");
+    const alertCard = snap.alerts.length
+      ? `<article class="driver-item"><strong>WICHTIG</strong><p>${snap.alerts[0].title}</p><p>${snap.alerts[0].text}</p><p>${snap.alerts[0].action}</p></article>`
+      : `<article class="driver-item"><strong>WICHTIG</strong><p>Keine neuen Warnungen.</p></article>`;
     const rows = [
-      ["Heute", e.todayShift || "kein Dienst hinterlegt"],
-      ["Morgen", e.nextShift || "offen"],
-      ["Status", e.status],
-      ["Urlaubsanträge", snap.vacations.filter((v) => ["beantragt", "in Pruefung"].includes(v.status)).length],
-      ["Krankmeldungen", snap.absences.filter((a) => a.kind === "Krank" && a.status !== "abgeschlossen").length],
-      ["Mitteilungen", snap.messages.filter((m) => !m.reads[e.id]).length],
-      ["Dokumente offen", snap.docs.filter((d) => ["eingereicht", "angefordert", "ungeprueft", "fehlt", "abgelaufen", "laeuft bald ab"].includes(d.status)).length]
+      [todayBlocks, ""],
+      [tomorrowBlocks, ""],
+      [`<strong>Mitteilungen</strong><p>${snap.unreadMessages} ungelesen</p>`, ""],
+      [`<strong>Dokumente offen</strong><p>${snap.alerts.length}</p>`, ""]
     ];
-    node.innerHTML = `<div class="driver-summary-grid">${rows.map((r) => `<article class="driver-item"><strong>${r[0]}</strong><p>${r[1]}</p></article>`).join("")}</div>`;
+    node.innerHTML = `<div class="driver-list"><article class="driver-item">${todayBlocks}</article><article class="driver-item">${tomorrowBlocks}</article><article class="driver-item"><strong>MITTEILUNGEN</strong><p>${snap.unreadMessages} neue Mitteilung${snap.unreadMessages === 1 ? "" : "en"}</p><p>${snap.messages[0] ? snap.messages[0].text : "Keine aktuellen Mitteilungen."}</p></article><article class="driver-item"><strong>DOKUMENTE</strong><p>${snap.alerts.length ? snap.alerts[0].title : "Keine offenen Dokumentwarnungen."}</p><p>${snap.alerts.length ? snap.alerts[0].text : ""}</p></article>${alertCard}</div>`;
 
     const summary = document.querySelector("[data-portal-summary]");
     if (summary) {
-      summary.innerHTML = `<div class="driver-list"><article class="driver-item"><strong>Hallo ${e.firstName}</strong><p>Heute: ${e.todayShift || "kein Dienst"}</p><p>Morgen: ${e.nextShift || "offen"}</p></article><article class="driver-item"><strong>Wichtige Hinweise</strong><p>Urlaub, Krankmeldung, Dokumente und Mitteilungen laufen in einem vereinfachten Mitarbeiterportal.</p></article></div>`;
+      summary.innerHTML = `<div class="driver-list"><article class="driver-item"><strong>Hallo ${e.firstName}</strong><p>Heute: ${todayPlan.shiftText || e.todayShift || "kein Dienst"}</p><p>Morgen: ${tomorrowPlan.published ? (tomorrowPlan.shiftText || "-") : "Plan noch nicht veröffentlicht"}</p><p>Fahrzeug heute: ${todayPlan.vehicleText || e.activeVehicle || "-"}</p></article><article class="driver-item"><strong>Wichtige Hinweise</strong><p>${snap.alerts[0] ? snap.alerts[0].title : "Keine neuen Hinweise."}</p><p>${snap.alerts[0] ? snap.alerts[0].text : ""}</p></article></div>`;
     }
   }
 
@@ -103,10 +139,26 @@
     if (!e) return;
     const node = document.querySelector("[data-portal-shift-list]");
     if (!node) return;
-    const today = e.todayShift || "kein Dienst hinterlegt";
-    const next = e.nextShift || "offen";
-    const absentToday = P.isEmployeeAbsentToday(state.data, e.id);
-    node.innerHTML = `<div class="driver-list"><article class="driver-item"><strong>Heutiger Dienst</strong><p>${today}</p><p>Status: ${absentToday ? "nicht im Einsatz" : e.status}</p></article><article class="driver-item"><strong>Nächster Dienst</strong><p>${formatDateTime(next)}</p><p>Letzte Aktivität: ${e.lastActivity || "-"}</p></article></div>`;
+    const snap = portalSnapshot(e.id);
+    const todayPlan = snap.todayPlan || {};
+    const tomorrowPlan = snap.tomorrowPlan || {};
+    node.innerHTML = `
+      <div class="driver-list">
+        <article class="driver-item">
+          <strong>HEUTE</strong>
+          <p>${weekdayDateLabel(P.todayIso())}</p>
+          <p>${todayPlan.shiftText || e.todayShift || "kein Dienst hinterlegt"}</p>
+          ${todayPlan.vehicleText ? `<p>Mein Fahrzeug</p><p>${todayPlan.vehicleText}</p>` : ""}
+          <p>Status: ${todayPlan.status || e.status}</p>
+        </article>
+        <article class="driver-item">
+          <strong>MORGEN</strong>
+          <p>${weekdayDateLabel(tomorrowIso())}</p>
+          <p>${tomorrowPlan.published ? (tomorrowPlan.shiftText || "-") : "Plan noch nicht veröffentlicht"}</p>
+          ${tomorrowPlan.published && !["Frei", "Urlaub", "Krank"].includes(tomorrowPlan.status) && tomorrowPlan.vehicleText ? `<p>Mein Fahrzeug</p><p>${tomorrowPlan.vehicleText}</p>` : ""}
+          <p>${tomorrowPlan.published ? (tomorrowPlan.changed ? "Veröffentlicht · geändert" : "Veröffentlicht") : "Entwurf"}</p>
+        </article>
+      </div>`;
   }
 
   function renderDocs() {

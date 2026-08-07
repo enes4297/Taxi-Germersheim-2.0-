@@ -2,6 +2,7 @@
   const KEY = "adminV17PersonnelState";
   const V15_KEY = "adminV15DriverOps";
   const DISPO_KEY = "adminLiveDispoV131";
+  const PLAN_KEY = "adminV23DayPlanning";
 
   const STATUS = {
     employee: ["aktiv", "im Dienst", "frei", "Urlaub", "krank", "Pause", "Schulung", "gesperrt", "ausgeschieden", "nicht verfuegbar", "in Probezeit", "Dokument ungueltig"],
@@ -67,6 +68,231 @@
 
   function ensureArray(value, fallback = []) {
     return Array.isArray(value) ? value : fallback;
+  }
+
+  function getPlanningStore() {
+    const parsed = safeParse(localStorage.getItem(PLAN_KEY)) || {};
+    parsed.days = parsed.days && typeof parsed.days === "object" ? parsed.days : {};
+    return parsed;
+  }
+
+  function getPlanningDayState(dateIso) {
+    const store = getPlanningStore();
+    const day = store.days[dateIso] || {};
+    return {
+      variant: day.variant || "balanced",
+      appointmentFilter: day.appointmentFilter || "alle",
+      locks: day.locks || {},
+      selectedDriverIds: Array.isArray(day.selectedDriverIds) ? day.selectedDriverIds : [],
+      manualBlocks: Array.isArray(day.manualBlocks) ? day.manualBlocks : [],
+      avisierung: day.avisierung || {},
+      routeMapOpen: Boolean(day.routeMapOpen),
+      confirmed: Boolean(day.confirmed),
+      needsReview: Boolean(day.needsReview),
+      history: Array.isArray(day.history) ? day.history : [],
+      publishedPlan: day.publishedPlan || null,
+      draftPlan: day.draftPlan || null
+    };
+  }
+
+  function buildPlanEmployeeLookup(publishedPlan) {
+    const map = {};
+    if (!publishedPlan || !Array.isArray(publishedPlan.driverRows)) return map;
+    publishedPlan.driverRows.forEach((row) => {
+      map[row.employeeId] = row;
+    });
+    return map;
+  }
+
+  function planDisplayStatus(row, employee) {
+    const status = normalize((row && row.status) || (employee && employee.status) || "");
+    if (status.includes("urlaub")) return "Urlaub";
+    if (status.includes("krank")) return "Krank";
+    if (status.includes("frei") || status.includes("feierabend")) return "Frei";
+    if (status.includes("schulung")) return "Schulung";
+    if (row && row.published && row.shiftStart && row.shiftEnd) return "Im Dienst";
+    return row && row.published ? "Im Dienst" : "Plan noch nicht veröffentlicht";
+  }
+
+  function formatPlanTimeRange(row) {
+    if (!row || (!row.shiftStart && !row.shiftEnd)) return "-";
+    if (row.shiftStart && row.shiftEnd) return `${row.shiftStart} – ${row.shiftEnd} Uhr`;
+    return row.shiftStart || row.shiftEnd || "-";
+  }
+
+  function displayDocType(type) {
+    if (normalize(type) === normalize("Fuehrerschein")) return "Führerschein";
+    if (normalize(type) === normalize("Personenbefoerderungsschein")) return "Personenbeförderungsschein";
+    return String(type || "Dokument");
+  }
+
+  function getEmployeeDayPlan(state, employeeId, dateIso) {
+    const employee = getEmployee(state, employeeId);
+    const dayState = getPlanningDayState(dateIso);
+    const published = dayState.publishedPlan;
+    const lookup = buildPlanEmployeeLookup(published);
+    const row = lookup[employeeId] || null;
+
+    const fallbackShift = dateIso === todayIso() ? (employee ? employee.todayShift || "" : "") : (employee ? employee.nextShift || "" : "");
+    const fallbackVehicle = employee ? employee.activeVehicle || "" : "";
+    const fallbackStatus = employee ? employee.status || "" : "";
+
+    if (!published) {
+      return {
+        employeeId,
+        date: dateIso,
+        published: false,
+        publishedAt: "",
+        publishedBy: "",
+        changed: false,
+        status: dateIso === todayIso() ? fallbackStatus : "Plan noch nicht veröffentlicht",
+        shiftText: dateIso === todayIso() ? fallbackShift || "-" : "Plan noch nicht veröffentlicht",
+        vehicleText: dateIso === todayIso() ? fallbackVehicle || "" : "",
+        vehicleLabel: dateIso === todayIso() ? fallbackVehicle || "" : "",
+        planMessage: dateIso === todayIso() ? fallbackStatus : "Plan noch nicht veröffentlicht"
+      };
+    }
+
+    if (!row) {
+      return {
+        employeeId,
+        date: dateIso,
+        published: true,
+        publishedAt: published.publishedAt || "",
+        publishedBy: published.publishedBy || "",
+        changed: Boolean(published.changed),
+        status: employee ? employee.status || "Plan veröffentlicht" : "Plan veröffentlicht",
+        shiftText: dateIso === todayIso() ? fallbackShift || "-" : fallbackShift || "-",
+        vehicleText: dateIso === todayIso() ? fallbackVehicle || "" : fallbackVehicle || "",
+        vehicleLabel: dateIso === todayIso() ? fallbackVehicle || "" : fallbackVehicle || "",
+        planMessage: published.changed ? "Plan wurde nach Veröffentlichung geändert" : "Plan veröffentlicht",
+        note: ""
+      };
+    }
+
+    const vehicleText = String(row.vehicleLabel || row.vehicle || row.vehicleId || "").trim();
+    const statusText = planDisplayStatus(row, employee);
+    return {
+      employeeId,
+      date: dateIso,
+      published: true,
+      publishedAt: published.publishedAt || "",
+      publishedBy: published.publishedBy || "",
+      changed: Boolean(published.changed),
+      status: statusText,
+      shiftText: formatPlanTimeRange(row),
+      vehicleText,
+      vehicleLabel: vehicleText,
+      planMessage: published.changed ? "Plan wurde nach Veröffentlichung geändert" : "Plan veröffentlicht",
+      note: row.note || ""
+    };
+  }
+
+  function getEmployeeDocumentAlerts(state, employeeId) {
+    const docs = listEmployeeDocs(state, employeeId);
+    const alerts = [];
+    const criticalTypes = ["Fuehrerschein", "Personenbefoerderungsschein"];
+    criticalTypes.forEach((type) => {
+      const docsOfType = docs.filter((doc) => normalize(doc.type) === normalize(type));
+      if (!docsOfType.length) {
+        const label = displayDocType(type);
+        alerts.push({ level: "kritisch", type, title: `${label} fehlt`, text: `Bitte reiche deinen ${label} ein.`, action: "Dokument senden" });
+        return;
+      }
+      const doc = docsOfType[0];
+      const days = daysUntil(doc.validUntil);
+      if (doc.status === "abgelaufen") {
+        const label = displayDocType(type);
+        alerts.push({ level: "kritisch", type, title: `${label} abgelaufen`, text: `Dein ${label} ist abgelaufen.`, action: "Neues Dokument senden" });
+      } else if (doc.status === "fehlt" || doc.status === "angefordert") {
+        alerts.push({ level: "wichtig", type, title: `${displayDocType(type)} benötigt`, text: `Taxi Germersheim benötigt eine aktuelle Version.`, action: "Jetzt einreichen" });
+      } else if (days >= 0 && days <= 30) {
+        const label = displayDocType(type);
+        alerts.push({ level: "wichtig", type, title: `${label} läuft bald ab`, text: `Dein ${label} läuft am ${doc.validUntil ? `${doc.validUntil.split("-").reverse().join(".")}` : "bald"} ab.`, action: "Neues Dokument senden" });
+      }
+    });
+
+    docs.forEach((doc) => {
+      const days = daysUntil(doc.validUntil);
+      if (doc.status === "eingereicht") {
+        alerts.push({ level: "normal", type: doc.type, title: `${displayDocType(doc.type)} eingereicht`, text: `Dein Dokument wurde an die Verwaltung übergeben.`, action: "Verstanden" });
+      } else if (doc.status === "geprueft") {
+        alerts.push({ level: "normal", type: doc.type, title: `${displayDocType(doc.type)} geprüft`, text: `Dein Dokument wurde geprüft.`, action: "Verstanden" });
+      } else if (days >= 0 && days <= 7 && !criticalTypes.some((type) => normalize(type) === normalize(doc.type))) {
+        alerts.push({ level: "wichtig", type: doc.type, title: `${displayDocType(doc.type)} läuft bald ab`, text: `Dein ${displayDocType(doc.type)} läuft am ${doc.validUntil ? `${doc.validUntil.split("-").reverse().join(".")}` : "bald"} ab.`, action: "Neues Dokument senden" });
+      }
+    });
+
+    return alerts.sort((a, b) => {
+      const rank = { kritisch: 0, wichtig: 1, normal: 2 };
+      return (rank[a.level] || 9) - (rank[b.level] || 9);
+    }).slice(0, 4);
+  }
+
+  function getEmployeePortalSnapshot(state, employeeId) {
+    const employee = getEmployee(state, employeeId);
+    if (!employee) return null;
+    const todayPlan = getEmployeeDayPlan(state, employeeId, todayIso());
+    const tomorrow = new Date(`${todayIso()}T00:00:00`);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowIsoValue = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+    const tomorrowPlan = getEmployeeDayPlan(state, employeeId, tomorrowIsoValue);
+    const docs = listEmployeeDocs(state, employeeId);
+    const messages = listEmployeeMessages(state, employeeId).sort((a, b) => {
+      const pa = a.priority === "wichtig" ? 2 : 1;
+      const pb = b.priority === "wichtig" ? 2 : 1;
+      return pb - pa;
+    });
+
+    return {
+      employee,
+      todayPlan,
+      tomorrowPlan,
+      docs,
+      messages,
+      alerts: getEmployeeDocumentAlerts(state, employeeId),
+      unreadMessages: messages.filter((msg) => !(msg.reads || {})[employeeId]).length,
+      vacationQuota: getVacationQuota(state, employeeId),
+      tomorrowPublished: tomorrowPlan.published,
+      tomorrowChanged: tomorrowPlan.changed,
+      tomorrowPublishedAt: tomorrowPlan.publishedAt,
+      tomorrowPublishedBy: tomorrowPlan.publishedBy
+    };
+  }
+
+  function addEmployeeMessage(state, payload) {
+    const employeeIds = ensureArray(payload.employeeIds, payload.employeeId ? [payload.employeeId] : []);
+    const reads = {};
+    const confirmations = {};
+    employeeIds.forEach((employeeId) => {
+      reads[employeeId] = false;
+      confirmations[employeeId] = false;
+    });
+    const row = {
+      id: `MSG-${Date.now()}-${Math.floor(Math.random() * 9)}`,
+      title: payload.title || "Mitteilung",
+      text: payload.text || "",
+      category: payload.category || "allgemeine Information",
+      priority: payload.priority || "normal",
+      recipients: payload.recipients || (employeeIds.length === 1 ? "einzelne Mitarbeiter" : "mehrere Mitarbeiter"),
+      roles: ensureArray(payload.roles, []),
+      employeeIds,
+      from: payload.from || todayIso(),
+      to: payload.to || "",
+      confirmRequired: Boolean(payload.confirmRequired),
+      attachment: payload.attachment || "",
+      createdBy: payload.createdBy || "System",
+      status: "aktiv",
+      reads,
+      confirmations,
+      lastReminder: "",
+      eventType: payload.eventType || "system",
+      source: payload.source || "in-app"
+    };
+    state.messages.unshift(row);
+    state.notifications.unshift({ id: `PN-${Date.now()}`, at: nowStamp(), title: row.title, priority: row.priority, ref: row.id, eventType: row.eventType });
+    saveState(state);
+    return row;
   }
 
   function ensureEmployeeShape(emp) {
@@ -1063,10 +1289,13 @@
     listEmployeeTrainings,
     listEmployeeTasks,
     listEmployeeMessages,
+    getPlanningStore,
+    getPlanningDayState,
     isEmployeeAbsentToday,
     getVacationQuota,
     evaluateVacationConflicts,
     addEmployee,
+    addEmployeeMessage,
     checkDuplicate,
     addVacationRequest,
     decideVacationRequest,
@@ -1077,6 +1306,9 @@
     buildPersonalWarnings,
     applyDocumentLockSync,
     pushMessageRead,
-    getPortalSnapshot
+    getPortalSnapshot,
+    getEmployeeDayPlan,
+    getEmployeeDocumentAlerts,
+    getEmployeePortalSnapshot
   };
 })();
