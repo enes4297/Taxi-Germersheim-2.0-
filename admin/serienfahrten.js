@@ -60,6 +60,22 @@
     modalOpen: false
   };
 
+  function formatDate(value) {
+    const text = String(value || "").trim();
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return text || "-";
+    return `${match[3]}.${match[2]}.${match[1]}`;
+  }
+
+  function toIsoDate(value) {
+    const text = String(value || "").trim();
+    const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (iso) return text;
+    const de = text.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+    if (de) return `${de[3]}-${de[2]}-${de[1]}`;
+    return text;
+  }
+
   function deepClone(value) {
     return JSON.parse(JSON.stringify(value));
   }
@@ -160,11 +176,22 @@
         rideType: series.rideType,
         priority: series.priority,
         wheelchair: series.wheelchair,
-        companion: series.companion
+        companion: series.companion,
+        override: (series.dateOverrides && series.dateOverrides[dateIso]) || null
       });
     }
 
-    return entries;
+    return entries.map((entry) => {
+      if (!entry.override) return entry;
+      return {
+        ...entry,
+        pickupTime: entry.override.pickupTime || entry.pickupTime,
+        returnTime: entry.override.returnTime || entry.returnTime,
+        pickup: entry.override.pickup || entry.pickup,
+        destination: entry.override.destination || entry.destination,
+        note: entry.override.note || ""
+      };
+    });
   }
 
   function detectConflicts(occurrences) {
@@ -237,9 +264,10 @@
           <span class="series-chip">Status: ${item.status}</span>
         </div>
         <div class="series-actions">
-          <button type="button" data-series-item-action="pause" data-series-id="${item.id}">${item.status === "aktiv" ? "Pausieren" : "Aktivieren"}</button>
-          <button type="button" data-series-item-action="generate" data-series-id="${item.id}">Fahrt erzeugen</button>
           <button type="button" data-series-item-action="details" data-series-id="${item.id}">Details</button>
+          <button type="button" data-series-item-action="pause" data-series-id="${item.id}">${item.status === "aktiv" ? "Pausieren" : "Aktivieren"}</button>
+          <button type="button" data-series-item-action="edit" data-series-id="${item.id}">Bearbeiten</button>
+          <button type="button" data-series-item-action="single" data-series-id="${item.id}">Einzelne Fahrt ändern</button>
           <button type="button" data-series-item-action="delete" data-series-id="${item.id}">Löschen</button>
         </div>
       </article>
@@ -263,9 +291,12 @@
 
     wrap.innerHTML = occurrences.map((entry) => `
       <article class="series-calendar-item">
-        <strong>${entry.date} · ${entry.dayKey} · ${entry.pickupTime}</strong>
+        <strong>${formatDate(entry.date)} · ${entry.dayKey} · ${entry.pickupTime}</strong>
         <p>${entry.customerLabel} · ${entry.rideType}</p>
         <p>${entry.pickup} → ${entry.destination}</p>
+        <div class="series-actions">
+          <button type="button" data-series-occ-action="edit" data-series-id="${entry.seriesId}" data-series-date="${entry.date}">Einzeländerung</button>
+        </div>
       </article>
     `).join("");
   }
@@ -287,7 +318,7 @@
       return `
         <article class="series-conflict-item">
           <strong>${entry.type}</strong>
-          <p>${sample.date || "-"} · ${sample.customerLabel || "-"}</p>
+          <p>${formatDate(sample.date || "-")} · ${sample.customerLabel || "-"}</p>
           <p>${sample.pickupTime || "-"} · ${sample.rideType || "-"}</p>
         </article>
       `;
@@ -383,9 +414,10 @@
       priority: values.priority,
       wheelchair: values.wheelchair === "Ja",
       companion: values.companion === "Ja",
-      exceptions: String(values.exceptions || "").split(";").map((entry) => entry.trim()).filter(Boolean),
+      exceptions: String(values.exceptions || "").split(";").map((entry) => toIsoDate(entry.trim())).filter(Boolean),
       pauses: String(values.pauses || "").split(";").map((entry) => entry.trim()).filter(Boolean),
       notes: values.notes || "",
+      dateOverrides: {},
       status: "aktiv"
     };
 
@@ -406,6 +438,27 @@
     renderSeriesList();
     renderCalendar();
     renderConflicts();
+  }
+
+  function openSingleRideEditor(series, dateIso) {
+    const override = (series.dateOverrides && series.dateOverrides[dateIso]) || {};
+    openModal(
+      `Einzelfahrt ändern · ${series.id} · ${formatDate(dateIso)}`,
+      `
+        <form class="series-form" data-series-single-form>
+          <input type="hidden" name="seriesId" value="${series.id}">
+          <input type="hidden" name="date" value="${dateIso}">
+          <label><span>Abholzeit</span><input class="driver-search-input" type="time" name="pickupTime" value="${override.pickupTime || series.pickupTime || ""}"></label>
+          <label><span>Rückfahrtzeit</span><input class="driver-search-input" type="time" name="returnTime" value="${override.returnTime || series.returnTime || ""}"></label>
+          <label class="full"><span>Abholung</span><input class="driver-search-input" name="pickup" value="${override.pickup || series.pickup || ""}"></label>
+          <label class="full"><span>Ziel</span><input class="driver-search-input" name="destination" value="${override.destination || series.destination || ""}"></label>
+          <label class="full"><span>Notiz</span><textarea class="driver-search-input" name="note">${override.note || ""}</textarea></label>
+          <div class="series-form-actions full">
+            <button class="admin-btn" type="submit">Einzelfahrt speichern</button>
+          </div>
+        </form>
+      `
+    );
   }
 
   function bindEvents() {
@@ -458,30 +511,94 @@
         return;
       }
 
-      if (name === "generate") {
-        const next = collectOccurrences(series, 20)[0];
-        if (!next) {
-          openModal("Keine Termine", "<p>Für diese Serie wurden im Zeitraum keine gültigen Termine gefunden.</p>");
-          return;
-        }
-        pushRideToInbox(series, next.date);
-        openModal("Fahrt erzeugt", `<p>Neue Fahrt aus ${series.id} für ${next.date} wurde in die Live-Dispo Inbox übergeben.</p>`);
-        return;
-      }
-
       if (name === "details") {
         openModal(
           `Details ${series.id}`,
-          `<p><strong>Kunde:</strong> ${series.customerLabel}</p><p><strong>Strecke:</strong> ${series.pickup} → ${series.destination}</p><p><strong>Tage:</strong> ${series.days.join("/")}</p><p><strong>Start/Ende:</strong> ${series.startDate} ${series.endDate ? `bis ${series.endDate}` : "ohne Enddatum"}</p><p><strong>Ausnahmen:</strong> ${(series.exceptions || []).join(", ") || "-"}</p><p><strong>Pausen:</strong> ${(series.pauses || []).join(", ") || "-"}</p><p><strong>Notizen:</strong> ${series.notes || "-"}</p>`
+          `<p><strong>Kunde:</strong> ${series.customerLabel}</p><p><strong>Strecke:</strong> ${series.pickup} → ${series.destination}</p><p><strong>Wochentage:</strong> ${series.days.join("/")}</p><p><strong>Uhrzeit:</strong> ${series.pickupTime}${series.returnTime ? ` / Rück ${series.returnTime}` : ""}</p><p><strong>Beginn/Ende:</strong> ${formatDate(series.startDate)} ${series.endDate ? `bis ${formatDate(series.endDate)}` : "ohne Enddatum"}</p><p><strong>Fahrerwunsch:</strong> ${series.driverWish || "-"}</p><p><strong>Status:</strong> ${series.status}</p><p><strong>Ausnahmen:</strong> ${(series.exceptions || []).join(", ") || "-"}</p><p><strong>Pausen:</strong> ${(series.pauses || []).join(", ") || "-"}</p><p><strong>Notizen:</strong> ${series.notes || "-"}</p>`
         );
         return;
       }
 
+      if (name === "edit") {
+        openModal(
+          `Serie bearbeiten · ${series.id}`,
+          `
+            <form class="series-form" data-series-edit-form>
+              <input type="hidden" name="seriesId" value="${series.id}">
+              <label><span>Status</span><select class="series-select" name="status"><option${series.status === "aktiv" ? " selected" : ""}>aktiv</option><option${series.status === "pausiert" ? " selected" : ""}>pausiert</option></select></label>
+              <label><span>Fahrerwunsch</span><input class="driver-search-input" name="driverWish" value="${series.driverWish || ""}"></label>
+              <label class="full"><span>Notizen</span><textarea class="driver-search-input" name="notes">${series.notes || ""}</textarea></label>
+              <div class="series-form-actions full"><button class="admin-btn" type="submit">Serie speichern</button></div>
+            </form>
+          `
+        );
+        return;
+      }
+
+      if (name === "single") {
+        const first = collectOccurrences(series, 20)[0];
+        if (!first) {
+          openModal("Keine Einzeltermine", "<p>Für diese Serie wurden derzeit keine konkreten Termine gefunden.</p>");
+          return;
+        }
+        openSingleRideEditor(series, first.date);
+        return;
+      }
+
       if (name === "delete") {
+        if (!window.confirm(`Serienfahrt ${series.id} wirklich löschen?`)) return;
         state.series = state.series.filter((entry) => entry.id !== seriesId);
         saveSeries();
         renderAll();
       }
+
+      const occurrenceAction = event.target.closest("[data-series-occ-action]");
+      if (occurrenceAction) {
+        const seriesId = occurrenceAction.getAttribute("data-series-id") || "";
+        const dateIso = occurrenceAction.getAttribute("data-series-date") || "";
+        const series = state.series.find((entry) => entry.id === seriesId);
+        if (!series || !dateIso) return;
+        openSingleRideEditor(series, dateIso);
+        return;
+      }
+
+      const singleForm = event.target.closest("[data-series-single-form]");
+      if (singleForm) return;
+    });
+
+    document.addEventListener("submit", (event) => {
+      const singleForm = event.target.closest("[data-series-single-form]");
+      if (singleForm) {
+        event.preventDefault();
+        const payload = Object.fromEntries(new FormData(singleForm).entries());
+        const series = state.series.find((entry) => entry.id === payload.seriesId);
+        if (!series || !payload.date) return;
+        series.dateOverrides = series.dateOverrides && typeof series.dateOverrides === "object" ? series.dateOverrides : {};
+        series.dateOverrides[payload.date] = {
+          pickupTime: payload.pickupTime || series.pickupTime,
+          returnTime: payload.returnTime || series.returnTime,
+          pickup: payload.pickup || series.pickup,
+          destination: payload.destination || series.destination,
+          note: payload.note || ""
+        };
+        saveSeries();
+        renderAll();
+        closeModal();
+        return;
+      }
+
+      const editForm = event.target.closest("[data-series-edit-form]");
+      if (!editForm) return;
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(editForm).entries());
+      const series = state.series.find((entry) => entry.id === payload.seriesId);
+      if (!series) return;
+      series.status = payload.status || series.status;
+      series.driverWish = payload.driverWish || "";
+      series.notes = payload.notes || "";
+      saveSeries();
+      renderAll();
+      closeModal();
     });
 
     document.addEventListener("keydown", (event) => {

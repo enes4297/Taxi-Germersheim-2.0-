@@ -99,19 +99,21 @@
         </div>
 
         <div class="customer-v14-actions" role="group" aria-label="Kundenaktionen">
-          <button class="admin-btn" type="button" data-customer-top-action="new">Neuer Kunde</button>
-          <button class="admin-btn admin-btn-secondary" type="button" data-customer-top-action="duplicate">Dublette prüfen</button>
+          <button class="admin-btn" type="button" data-customer-top-action="new">+ Neu</button>
+          <button class="admin-btn admin-btn-secondary" type="button" data-customer-top-action="newBusiness">Geschäftskunde</button>
+          <button class="admin-btn admin-btn-secondary" type="button" data-customer-top-action="duplicate">Dublette</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-customer-top-action="reset">Filter zurücksetzen</button>
-          <button class="admin-btn admin-btn-secondary" type="button" data-customer-top-action="phone">Telefonzentrale öffnen</button>
+          <button class="admin-btn admin-btn-secondary" type="button" data-customer-top-action="phone">Telefonzentrale</button>
         </div>
 
         <div class="customer-filter-group" role="group" aria-label="Kundentyp filtern">
           <button class="customer-filter-btn is-active" type="button" data-customer-filter="Alle">Alle</button>
-          <button class="customer-filter-btn" type="button" data-customer-filter="Stammkunden">Stammkunden</button>
-          <button class="customer-filter-btn" type="button" data-customer-filter="Krankenkasse">Krankenkasse</button>
-          <button class="customer-filter-btn" type="button" data-customer-filter="Firmenkunden">Firmenkunden</button>
-          <button class="customer-filter-btn" type="button" data-customer-filter="Patient">Patient</button>
-          <button class="customer-filter-btn" type="button" data-customer-filter="VIP">VIP</button>
+          <button class="customer-filter-btn" type="button" data-customer-filter="Privatkunde">Privatkunde</button>
+          <button class="customer-filter-btn" type="button" data-customer-filter="Krankenfahrt">Krankenfahrt</button>
+          <button class="customer-filter-btn" type="button" data-customer-filter="Geschäftskunde">Geschäftskunde</button>
+          <button class="customer-filter-btn" type="button" data-customer-filter="Einrichtung">Einrichtung</button>
+          <button class="customer-filter-btn" type="button" data-customer-filter="Bahnunternehmen">Bahnunternehmen</button>
+          <button class="customer-filter-btn" type="button" data-customer-filter="Pflegeeinrichtung">Pflegeeinrichtung</button>
           <button class="customer-filter-btn" type="button" data-customer-filter="Rückfrage offen">Rückfrage offen</button>
         </div>
       </section>
@@ -128,16 +130,18 @@
           <div class="customer-profile-top" data-customer-profile-top></div>
 
           <div class="customer-profile-tabs" role="tablist" aria-label="Profilbereiche">
-            <button class="customer-profile-tab is-active" type="button" data-customer-profile-tab="basis">Basis</button>
-            <button class="customer-profile-tab" type="button" data-customer-profile-tab="doku">Dokumente</button>
+            <button class="customer-profile-tab is-active" type="button" data-customer-profile-tab="uebersicht">Übersicht</button>
             <button class="customer-profile-tab" type="button" data-customer-profile-tab="fahrten">Fahrten</button>
-            <button class="customer-profile-tab" type="button" data-customer-profile-tab="aufgaben">Aufgaben</button>
+            <button class="customer-profile-tab" type="button" data-customer-profile-tab="serienfahrten">Serienfahrten</button>
+            <button class="customer-profile-tab" type="button" data-customer-profile-tab="abrechnung">Abrechnung</button>
+            <button class="customer-profile-tab" type="button" data-customer-profile-tab="notizen">Notizen</button>
           </div>
 
-          <div class="customer-profile-pane is-visible" data-customer-profile-pane="basis"></div>
-          <div class="customer-profile-pane" data-customer-profile-pane="doku"></div>
+          <div class="customer-profile-pane is-visible" data-customer-profile-pane="uebersicht"></div>
           <div class="customer-profile-pane" data-customer-profile-pane="fahrten"></div>
-          <div class="customer-profile-pane" data-customer-profile-pane="aufgaben"></div>
+          <div class="customer-profile-pane" data-customer-profile-pane="serienfahrten"></div>
+          <div class="customer-profile-pane" data-customer-profile-pane="abrechnung"></div>
+          <div class="customer-profile-pane" data-customer-profile-pane="notizen"></div>
         </aside>
       </section>
 

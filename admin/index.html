@@ -6,6 +6,7 @@
   <title>Taxi Germersheim - Fahrtenmanagement</title>
   <meta name="robots" content="noindex,nofollow">
   <script src="auth.js"></script>
+  <script src="personal-shared.js"></script>
   <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -66,11 +67,11 @@
             <strong data-ride-stat="open">0</strong>
           </article>
           <article class="ride-overview-card is-confirmed">
-            <small><img class="admin-inline-icon" src="../assets/icons/Check%20Mark.svg" alt="" aria-hidden="true">Bestätigt</small>
+            <small><img class="admin-inline-icon" src="../assets/icons/Check%20Mark.svg" alt="" aria-hidden="true">Zugewiesen</small>
             <strong data-ride-stat="confirmed">0</strong>
           </article>
           <article class="ride-overview-card is-onroute">
-            <small><img class="admin-inline-icon" src="../assets/icons/Taxi.svg" alt="" aria-hidden="true">Unterwegs</small>
+            <small><img class="admin-inline-icon" src="../assets/icons/Taxi.svg" alt="" aria-hidden="true">Morgen</small>
             <strong data-ride-stat="onRoute">0</strong>
           </article>
           <article class="ride-overview-card is-completed">
@@ -82,6 +83,21 @@
             <strong data-ride-stat="cancelled">0</strong>
           </article>
         </div>
+      </section>
+
+      <section class="admin-panel ride-operational" aria-label="Betriebslage heute">
+        <div class="admin-panel-head">
+          <h2>Betriebslage heute</h2>
+        </div>
+        <div class="ride-overview-grid ride-overview-grid-operational">
+          <article class="ride-overview-card"><small>Fahrten heute</small><strong data-ride-operational="today">0</strong></article>
+          <article class="ride-overview-card is-open"><small>Noch offen</small><strong data-ride-operational="open">0</strong></article>
+          <article class="ride-overview-card is-confirmed"><small>Fahrer im Dienst</small><strong data-ride-operational="onDuty">0</strong></article>
+          <article class="ride-overview-card is-onroute"><small>Verfügbare Fahrer</small><strong data-ride-operational="availableDrivers">0</strong></article>
+          <article class="ride-overview-card is-completed"><small>Fahrzeuge verfügbar</small><strong data-ride-operational="availableVehicles">0</strong></article>
+          <article class="ride-overview-card is-cancelled"><small>Aktuelle Konflikte</small><strong data-ride-operational="conflicts">0</strong></article>
+        </div>
+        <div class="ride-next-list" data-ride-next-list></div>
       </section>
 
       <section class="admin-panel ride-tools" aria-label="Fahrten Suche und Filter">
@@ -98,14 +114,27 @@
         </div>
 
         <div class="ride-filter-group" role="group" aria-label="Fahrten filtern">
-          <button class="ride-filter-btn is-active" type="button" data-ride-filter="Alle">Alle</button>
+          <button class="ride-filter-btn is-active" type="button" data-ride-filter="Heute">Heute</button>
+          <button class="ride-filter-btn" type="button" data-ride-filter="Morgen">Morgen</button>
+          <button class="ride-filter-btn" type="button" data-ride-filter="Diese Woche">Diese Woche</button>
           <button class="ride-filter-btn" type="button" data-ride-filter="Offen">Offen</button>
-          <button class="ride-filter-btn" type="button" data-ride-filter="Bestätigt">Bestätigt</button>
-          <button class="ride-filter-btn" type="button" data-ride-filter="Unterwegs">Unterwegs</button>
-          <button class="ride-filter-btn" type="button" data-ride-filter="Abgeschlossen">Abgeschlossen</button>
-          <button class="ride-filter-btn" type="button" data-ride-filter="Storniert">Storniert</button>
           <button class="ride-filter-btn" type="button" data-ride-filter="Krankenfahrt">Krankenfahrt</button>
-          <button class="ride-filter-btn" type="button" data-ride-filter="Flughafen">Flughafen</button>
+          <button class="ride-filter-btn" type="button" data-ride-filter="Serienfahrt">Serienfahrt</button>
+          <button class="ride-filter-btn" type="button" data-ride-filter="Geschäftskunde">Geschäftskunde</button>
+        </div>
+      </section>
+
+      <section class="admin-panel ride-operational" aria-label="Management-Zusammenfassung">
+        <div class="admin-panel-head"><h2>Management</h2></div>
+        <div class="ride-overview-grid ride-overview-grid-operational">
+          <article class="ride-overview-card is-open"><small>Fristen Personal</small><strong data-ride-mgmt="staffDeadlines">0</strong></article>
+          <article class="ride-overview-card is-cancelled"><small>Fristen Fahrzeuge</small><strong data-ride-mgmt="vehicleDeadlines">0</strong></article>
+          <article class="ride-overview-card"><small>Urlaubsanträge offen</small><strong data-ride-mgmt="vacOpen">0</strong></article>
+          <article class="ride-overview-card"><small>Aufgaben offen</small><strong data-ride-mgmt="tasksOpen">0</strong></article>
+          <article class="ride-overview-card"><small>Genehmigungen/Hinweise</small><strong data-ride-mgmt="approvalsOpen">0</strong></article>
+          <article class="ride-overview-card is-onroute"><small>Morgen: Fahrten</small><strong data-ride-mgmt="tomorrowRides">0</strong></article>
+          <article class="ride-overview-card is-onroute"><small>Morgen: Fahrer offen</small><strong data-ride-mgmt="tomorrowDriversOpen">0</strong></article>
+          <article class="ride-overview-card is-cancelled"><small>Morgen: Konflikte</small><strong data-ride-mgmt="tomorrowConflicts">0</strong></article>
         </div>
       </section>
 

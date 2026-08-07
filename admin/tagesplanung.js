@@ -26,7 +26,13 @@
     mobileTab: "appointments",
     planning: null,
     mapOpen: false,
-    coreState: null
+    coreState: null,
+    uiMode: "day",
+    previousDate: "",
+    tomorrowFilter: "alle",
+    tomorrowAssignOpenId: "",
+    tomorrowPrepared: [],
+    tomorrowMessages: {}
   };
 
   function safeParse(raw) {
@@ -86,6 +92,10 @@
     const d = new Date(`${baseIso}T00:00:00`);
     d.setDate(d.getDate() + plus);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  function tomorrowIso() {
+    return addDaysIso(todayIso(), 1);
   }
 
   function formatDate(iso) {
@@ -175,7 +185,7 @@
     if (label === "Verfügbar") return "is-green";
     if (label === "Pause" || label === "Beginnt später") return "is-yellow";
     if (label === "Auf Fahrt") return "is-blue";
-    if (["Krank", "Abwesend"].includes(label)) return "is-red";
+    if (["Krank", "Abwesend", "Gesperrt"].includes(label)) return "is-red";
     return "is-gray";
   }
 
@@ -197,7 +207,7 @@
         const isSick = normalizedStatus.includes("krank");
         const isVacation = normalizedStatus.includes("urlaub")
           || state.personnel.vacations.some((v) => v.employeeId === emp.id && ["genehmigt", "teilweise genehmigt"].includes(v.status) && today >= v.start && today <= v.end);
-        const hasAbsence = state.personnel.absences.some((a) => a.employeeId === emp.id && a.status !== "abgeschlossen" && today >= a.start && today <= a.expectedEnd);
+        const hasAbsence = state.personnel.absences.some((a) => a.employeeId === emp.id && !["abgeschlossen", "Abgelehnt"].includes(a.status) && today >= a.start && today <= a.expectedEnd);
         const isBlocked = normalizedStatus.includes("gesperrt") || normalizedStatus.includes("dokument ungueltig") || normalizedStatus.includes("dokument ungultig") || normalizedStatus.includes("nicht verfuegbar") || normalizedStatus.includes("nicht verfugbar");
         const isManualOffDuty = normalizedStatus === "frei";
         const onPause = V25.normalize(emp.status).includes("pause") || V25.normalize(driver && driver.status).includes("pause");
@@ -213,7 +223,8 @@
         if (isSick) status = "Krank";
         else if (isVacation) status = "Urlaub";
         else if (isManualOffDuty) status = "Feierabend";
-        else if (hasAbsence || isBlocked) status = "Abwesend";
+        else if (isBlocked) status = "Gesperrt";
+        else if (hasAbsence) status = "Abwesend";
         else if (!hasShift || ended) status = "Feierabend";
         else if (!started) status = "Beginnt später";
         else if (currentRide) status = "Auf Fahrt";
@@ -242,7 +253,7 @@
           const prev = sortedRides[index - 1];
           return minutes(ride.time) < minutes(prev.end);
         });
-        if (hasRideOverlap) warnings.push("Schichtüberschneidung");
+        if (hasRideOverlap) warnings.push("Schichtkonflikt");
 
         return {
           employeeId: emp.id,
@@ -273,7 +284,8 @@
       "Verfügbar": rows.filter((row) => row.status === "Verfügbar").length,
       "Auf Fahrt": rows.filter((row) => row.status === "Auf Fahrt").length,
       "Pause": rows.filter((row) => row.status === "Pause").length,
-      "Abwesend": rows.filter((row) => ["Abwesend", "Krank", "Urlaub"].includes(row.status)).length
+      "Beginnt später": rows.filter((row) => row.status === "Beginnt später").length,
+      "Abwesend": rows.filter((row) => ["Abwesend", "Krank", "Urlaub", "Gesperrt"].includes(row.status)).length
     };
 
     kpiNode.innerHTML = Object.entries(kpis).map(([label, value]) => `<article class="tp-service-kpi"><small>${label}</small><strong>${value}</strong></article>`).join("");
@@ -315,6 +327,345 @@
     }).join("");
   }
 
+  function requiredQualificationsForAppointment(appointment) {
+    const required = [];
+    const type = V25.normalize(appointment.rideType || "");
+    if (appointment.wheelchair) required.push("Rollstuhl");
+    if (type.includes("kranken") || type.includes("dialyse") || type.includes("chemo")) required.push("Krankenfahrt");
+    if (type.includes("schuler") || type.includes("schüler")) required.push("Schülerbeförderung");
+    if (Number(appointment.persons || 1) >= 5) required.push("Großraum");
+    required.push("Personenbeförderungsschein");
+    return [...new Set(required)];
+  }
+
+  function employeeHasQualification(emp, qualification) {
+    const target = V25.normalize(qualification || "");
+    const list = Array.isArray(emp.qualifications) ? emp.qualifications.map((entry) => V25.normalize(entry)) : [];
+    if (target.includes("personenbeforderung")) return String(emp.pPermit || "Nein") === "Ja";
+    if (target.includes("rollstuhl")) return Boolean(emp.wheelchairSkill) || list.some((entry) => entry.includes("rollstuhl"));
+    if (target.includes("kranken")) return list.some((entry) => entry.includes("kranken") || entry.includes("dialyse") || entry.includes("chemo"));
+    if (target.includes("grossraum") || target.includes("großraum")) return Boolean(emp.largeVehicleSkill) || list.some((entry) => entry.includes("grossraum") || entry.includes("großraum"));
+    if (target.includes("schuler") || target.includes("schüler")) return list.some((entry) => entry.includes("schuler") || entry.includes("schüler"));
+    return true;
+  }
+
+  function appointmentDurationMinutes(appointment) {
+    const quality = appointment && appointment.quality;
+    const byQuality = quality && quality.estimatedDurationMin ? Number(quality.estimatedDurationMin) : 0;
+    if (Number.isFinite(byQuality) && byQuality > 0) return byQuality;
+    return 45;
+  }
+
+  function appointmentEndTime(appointment) {
+    if (!appointment || !appointment.time || !V25.hasClockTime(appointment.time)) return "";
+    return V25.addMinutes(appointment.time, appointmentDurationMinutes(appointment));
+  }
+
+  function overlaps(startA, endA, startB, endB) {
+    const aStart = minutes(startA);
+    const aEnd = minutes(endA);
+    const bStart = minutes(startB);
+    const bEnd = minutes(endB);
+    return aStart < bEnd && bStart < aEnd;
+  }
+
+  function appointmentNeedsLargeVehicle(appointment) {
+    const type = V25.normalize(appointment.rideType || "");
+    return Number(appointment.persons || 1) >= 5 || type.includes("grossraum") || type.includes("großraum");
+  }
+
+  function appointmentNeedsMedicalSkill(appointment) {
+    const type = V25.normalize(appointment.rideType || "");
+    return type.includes("kranken") || type.includes("dialyse") || type.includes("chemo");
+  }
+
+  function findVehicleByCandidate(candidate) {
+    if (!candidate) return null;
+    const pool = getTomorrowVehiclePool();
+    return pool.find((vehicle) => vehicle.id === candidate.vehicleId)
+      || pool.find((vehicle) => vehicle.plate === candidate.vehicleLabel)
+      || null;
+  }
+
+  function getTomorrowDriverPool() {
+    const byPlanning = Array.isArray(state.planning.drivers) ? state.planning.drivers : [];
+    if (byPlanning.length) return byPlanning;
+    return (state.personnel.employees || [])
+      .filter((emp) => emp.role === "Fahrer")
+      .map((emp) => {
+        const shift = shiftRange(null, emp);
+        return {
+          employeeId: emp.id,
+          name: `${emp.firstName || ""} ${emp.lastName || ""}`.trim(),
+          shiftStart: shift.start,
+          shiftEnd: shift.end,
+          dayActive: true,
+          status: emp.status || "im Dienst",
+          vehicle: emp.activeVehicle || "",
+          pauseStart: "",
+          pauseEnd: ""
+        };
+      });
+  }
+
+  function getTomorrowVehiclePool() {
+    const byPlanning = Array.isArray(state.planning.vehicles) ? state.planning.vehicles : [];
+    if (byPlanning.length) return byPlanning;
+    const coreVehicles = state.coreState && Array.isArray(state.coreState.vehicles) ? state.coreState.vehicles : [];
+    return coreVehicles.map((vehicle) => ({
+      id: vehicle.id || vehicle.plate,
+      name: vehicle.name || vehicle.plate || "Fahrzeug",
+      plate: vehicle.plate || vehicle.name || "-",
+      seats: Number(vehicle.seats || 4),
+      wheelchair: Boolean(vehicle.wheelchair),
+      workshopStatus: vehicle.workshopStatus || "Verfügbar",
+      status: vehicle.status || "verfügbar"
+    }));
+  }
+
+  function findDriverContext(driverId) {
+    const driver = getTomorrowDriverPool().find((row) => row.employeeId === driverId) || null;
+    const emp = state.personnel.employees.find((row) => row.id === driverId) || null;
+    return { driver, emp };
+  }
+
+  function vehicleCompatibilityWarnings(vehicle, appointment, vehicleLabel) {
+    const warnings = [];
+    if (!vehicle) {
+      if (!vehicleLabel || vehicleLabel === "noch offen" || vehicleLabel === "-") warnings.push("Kein Fahrzeug zugeordnet");
+      return warnings;
+    }
+    if (["Werkstatt", "Gesperrt"].includes(vehicle.workshopStatus)) warnings.push("Fahrzeug nicht verfügbar");
+    if (vehicle.status && V25.normalize(vehicle.status).includes("gesperrt")) warnings.push("Fahrzeug gesperrt");
+    if (Number(vehicle.seats || 0) < Number(appointment.persons || 1)) warnings.push(`Zu wenig Sitzplätze (${vehicle.seats || 0})`);
+    if (appointment.wheelchair && !vehicle.wheelchair) warnings.push("Fahrzeug nicht rollstuhltauglich");
+    if (appointmentNeedsLargeVehicle(appointment) && Number(vehicle.seats || 0) < 5) warnings.push("Kein Großraumfahrzeug");
+    return warnings;
+  }
+
+  function findAdjacentDriverRides(appointmentId, driverId) {
+    const rows = state.planning.appointments
+      .filter((entry) => entry.id !== appointmentId && entry.assignment && entry.assignment.driverId === driverId && V25.hasClockTime(entry.time) && entry.planStatus !== "Konflikt")
+      .map((entry) => ({ ...entry, endTime: appointmentEndTime(entry) }))
+      .sort((a, b) => String(a.time).localeCompare(String(b.time), "de"));
+    return rows;
+  }
+
+  function findAdjacentVehicleRides(appointmentId, vehicleId) {
+    return state.planning.appointments
+      .filter((entry) => entry.id !== appointmentId && entry.assignment && entry.assignment.vehicleId === vehicleId && V25.hasClockTime(entry.time) && entry.planStatus !== "Konflikt")
+      .map((entry) => ({ ...entry, endTime: appointmentEndTime(entry) }))
+      .sort((a, b) => String(a.time).localeCompare(String(b.time), "de"));
+  }
+
+  function evaluateTomorrowCandidate(appointment, candidate) {
+    const conflicts = [];
+    const notes = [];
+    const context = findDriverContext(candidate.driverId);
+    const driver = context.driver;
+    const emp = context.emp;
+    const vehicle = findVehicleByCandidate(candidate);
+    const start = appointment.time;
+    const end = appointmentEndTime(appointment);
+
+    if (!driver || !emp) {
+      conflicts.push("Fahrerprofil fehlt in der Tagesplanung");
+      return { conflicts, notes, status: "Konflikt", goodConnection: false };
+    }
+    if (!V25.hasClockTime(start)) {
+      conflicts.push("Uhrzeit fehlt, keine sichere Zuweisung möglich");
+      return { conflicts, notes, status: "Konflikt", goodConnection: false };
+    }
+
+    const shift = shiftRange(driver, emp);
+    if (!isWithinShift(start, shift.start, shift.end)) {
+      conflicts.push(`Fahrt liegt außerhalb der Schicht ${shift.start || "-"}–${shift.end || "-"} Uhr`);
+    }
+
+    const normalizedStatus = V25.normalize(emp.status || "");
+    const isVacation = normalizedStatus.includes("urlaub") || state.personnel.vacations.some((v) => v.employeeId === emp.id && ["genehmigt", "teilweise genehmigt"].includes(v.status) && state.selectedDate >= v.start && state.selectedDate <= v.end);
+    const hasAbsence = state.personnel.absences.some((a) => a.employeeId === emp.id && !["abgeschlossen", "Abgelehnt"].includes(a.status) && state.selectedDate >= a.start && state.selectedDate <= a.expectedEnd);
+    if (normalizedStatus.includes("krank")) conflicts.push("Fahrer ist krank gemeldet");
+    if (isVacation) conflicts.push("Fahrer ist im Urlaub");
+    if (hasAbsence) conflicts.push("Fahrer ist abwesend");
+    if (normalizedStatus.includes("pause") || (driver.pauseStart && driver.pauseEnd && isWithinShift(start, driver.pauseStart, driver.pauseEnd))) {
+      conflicts.push(`Fahrer befindet sich in Pause${driver.pauseStart && driver.pauseEnd ? ` (${driver.pauseStart}–${driver.pauseEnd} Uhr)` : ""}`);
+    }
+
+    const required = requiredQualificationsForAppointment(appointment);
+    required.forEach((qualification) => {
+      if (!employeeHasQualification(emp, qualification)) {
+        conflicts.push(`Fahrer besitzt keine ${qualification}-Qualifikation`);
+      }
+    });
+
+    const vehicleWarnings = vehicleCompatibilityWarnings(vehicle, appointment, candidate.vehicleLabel);
+    conflicts.push(...vehicleWarnings);
+
+    const driverRides = findAdjacentDriverRides(appointment.id, candidate.driverId);
+    const overlappingDriverRide = driverRides.find((ride) => overlaps(start, end, ride.time, ride.endTime));
+    if (overlappingDriverRide) {
+      conflicts.push(`Zeitkonflikt - vorherige Fahrt endet voraussichtlich um ${overlappingDriverRide.endTime} Uhr.`);
+    }
+
+    const vehicleId = candidate.vehicleId || (vehicle ? vehicle.id : "");
+    if (vehicleId) {
+      const vehicleRides = findAdjacentVehicleRides(appointment.id, vehicleId);
+      const overlappingVehicleRide = vehicleRides.find((ride) => overlaps(start, end, ride.time, ride.endTime));
+      if (overlappingVehicleRide) {
+        conflicts.push(`Fahrzeug ist zeitgleich belegt bis ${overlappingVehicleRide.endTime} Uhr.`);
+      }
+    }
+
+    const previousRide = driverRides.filter((ride) => minutes(ride.endTime) <= minutes(start)).slice(-1)[0] || null;
+    const nextRide = driverRides.find((ride) => minutes(ride.time) >= minutes(end)) || null;
+    if (previousRide) {
+      const previousGap = minutes(start) - minutes(previousRide.endTime);
+      if (previousGap < 10) conflicts.push(`Zu wenig Zeit zwischen Fahrten - es fehlen ${10 - previousGap} Minuten Puffer.`);
+      const sameLocation = V25.normalize(previousRide.destination || "") === V25.normalize(appointment.pickup || "");
+      if (sameLocation && previousGap >= 10 && previousGap <= 90) notes.push("Gute Anschlussfahrt");
+    }
+    if (nextRide) {
+      const nextGap = minutes(nextRide.time) - minutes(end);
+      if (nextGap < 10) conflicts.push(`Nächste Fahrt startet zu früh um ${nextRide.time} Uhr.`);
+      const sameLocation = V25.normalize(appointment.destination || "") === V25.normalize(nextRide.pickup || "");
+      if (sameLocation && nextGap >= 10 && nextGap <= 90) notes.push("Sinnvolle Kombination");
+    }
+
+    const status = conflicts.length ? "Konflikt" : notes.length ? "Hinweis" : "Geplant";
+    return { conflicts, notes, status, goodConnection: notes.length > 0 };
+  }
+
+  function buildTomorrowCandidateOptions(appointment) {
+    const suggestionGroup = state.planning.suggestions.find((entry) => entry.appointmentId === appointment.id);
+    const fromSuggestions = suggestionGroup && suggestionGroup.items.length
+      ? suggestionGroup.items.slice(0, 3).map((item) => {
+        const evaluation = evaluateTomorrowCandidate(appointment, item);
+        const context = findDriverContext(item.driverId);
+        const driver = context.driver;
+        const emp = context.emp;
+        const shift = shiftRange(driver, emp || {});
+        const vehicle = findVehicleByCandidate(item);
+        return {
+          rank: 0,
+          driverId: item.driverId,
+          driverName: item.driverName,
+          shift,
+          vehicleId: item.vehicleId,
+          vehicleLabel: item.vehicleLabel || (driver && driver.vehicle) || (emp && emp.activeVehicle) || "noch offen",
+          hasOwnVehicle: Boolean(emp && emp.activeVehicle && emp.activeVehicle !== "-"),
+          availability: evaluation.conflicts.length ? (evaluation.conflicts.find((entry) => entry.includes("Pause")) ? "In Pause" : "Mit Konflikt") : "Verfügbar",
+          evaluation,
+          reasons: summarizeSuitability(item).slice(0, 2)
+        };
+      })
+      : [];
+
+    if (fromSuggestions.length) {
+      return fromSuggestions.map((entry, index) => ({ ...entry, rank: index + 1 }));
+    }
+
+    const fallback = getTomorrowDriverPool()
+      .filter((driver) => driver.dayActive !== false)
+      .slice(0, 3)
+      .map((driver, index) => {
+        const emp = state.personnel.employees.find((row) => row.id === driver.employeeId) || {};
+        const shift = shiftRange(driver, emp);
+        const vehiclePool = getTomorrowVehiclePool();
+        const preferred = vehiclePool.find((vehicle) => vehicle.plate === driver.vehicle)
+          || vehiclePool.find((vehicle) => !["Werkstatt", "Gesperrt"].includes(vehicle.workshopStatus));
+        const candidate = {
+          driverId: driver.employeeId,
+          driverName: driver.name,
+          vehicleId: preferred ? preferred.id : "",
+          vehicleLabel: preferred ? preferred.plate : (driver.vehicle || emp.activeVehicle || "noch offen")
+        };
+        const evaluation = evaluateTomorrowCandidate(appointment, candidate);
+        return {
+          rank: index + 1,
+          driverId: candidate.driverId,
+          driverName: candidate.driverName,
+          shift,
+          vehicleId: candidate.vehicleId,
+          vehicleLabel: candidate.vehicleLabel,
+          hasOwnVehicle: Boolean(emp.activeVehicle && emp.activeVehicle !== "-"),
+          availability: evaluation.conflicts.length ? "Mit Konflikt" : "Verfügbar",
+          evaluation,
+          reasons: ["Aus aktiver Tagesplanung übernommen"]
+        };
+      });
+    return fallback;
+  }
+
+  function seriesNextDates(appointment) {
+    const type = V25.normalize(appointment.rideType || "");
+    if (!type.includes("serien")) return [];
+    const base = appointment.date || state.selectedDate;
+    return [1, 2, 3].map((week) => formatDate(addDaysIso(base, week * 7)));
+  }
+
+  function tomorrowStatusTone(kind) {
+    if (kind === "Konflikt") return "is-red";
+    if (kind === "Fahrer offen") return "is-gold";
+    if (kind === "Geplant") return "is-green";
+    return "is-blue";
+  }
+
+  function passesTomorrowFilter(row) {
+    const f = state.tomorrowFilter;
+    if (f === "alle") return true;
+    if (f === "offen") return row.kind === "Fahrer offen";
+    if (f === "zugewiesen") return row.kind === "Geplant" || row.kind === "Hinweis";
+    if (f === "konflikte") return row.kind === "Konflikt";
+    if (f === "kranken") return appointmentNeedsMedicalSkill(row.appointment);
+    if (f === "serien") return V25.normalize(row.appointment.rideType || "").includes("serien");
+    return true;
+  }
+
+  function buildTomorrowRows() {
+    const appointments = [...state.planning.appointments].sort((a, b) => String(a.time || "99:99").localeCompare(String(b.time || "99:99"), "de"));
+    return appointments.map((appointment) => {
+      const required = requiredQualificationsForAppointment(appointment);
+      const assigned = appointment.assignment || null;
+      const candidate = assigned ? {
+        driverId: assigned.driverId,
+        driverName: assigned.driverName,
+        vehicleId: assigned.vehicleId,
+        vehicleLabel: assigned.vehicleLabel
+      } : null;
+      const evaluation = candidate ? evaluateTomorrowCandidate(appointment, candidate) : { conflicts: [], notes: [], status: "Fahrer offen", goodConnection: false };
+      const hasConflicts = evaluation.conflicts.length > 0;
+      const kind = hasConflicts ? "Konflikt" : !assigned ? "Fahrer offen" : evaluation.notes.length ? "Hinweis" : "Geplant";
+      return {
+        appointment,
+        required,
+        assigned,
+        evaluation,
+        kind,
+        tone: tomorrowStatusTone(kind),
+        seriesDates: seriesNextDates(appointment)
+      };
+    });
+  }
+
+  function buildTomorrowTimeline(rows) {
+    const byDriver = {};
+    rows.filter((row) => row.assigned && V25.hasClockTime(row.appointment.time)).forEach((row) => {
+      const key = row.assigned.driverId || row.assigned.driverName;
+      byDriver[key] = byDriver[key] || { name: row.assigned.driverName || "Unbekannt", items: [] };
+      byDriver[key].items.push({
+        start: row.appointment.time,
+        end: appointmentEndTime(row.appointment),
+        customer: row.appointment.customer || "Fahrt",
+        conflict: row.kind === "Konflikt"
+      });
+    });
+    return Object.values(byDriver).map((driver) => ({
+      ...driver,
+      items: driver.items.sort((a, b) => String(a.start).localeCompare(String(b.start), "de"))
+    })).sort((a, b) => a.name.localeCompare(b.name, "de"));
+  }
+
   function loadPersonnel() {
     return P && typeof P.loadState === "function" ? P.loadState() : { employees: [], documents: [], vacations: [], absences: [] };
   }
@@ -329,6 +680,111 @@
       { id: "night", label: "Nacht", from: 22 * 60, to: 23 * 60 + 59 },
       { id: "open", label: "Offen", from: -1, to: -1 }
     ];
+  }
+
+  function buildAppointmentFromCockpitRow(row, dateIso) {
+    const returnTrip = row.returnTrip === true || String(row.returnTrip || "").toLowerCase() === "ja";
+    const wheelchair = row.wheelchair === true || String(row.wheelchair || "").toLowerCase() === "ja";
+    const persons = Number(row.persons || row.passengers || 1);
+    const assignment = row.driverId || row.vehicleId || row.driver || row.vehicle
+      ? {
+        driverId: row.driverId || "",
+        driverName: row.driverName || row.driver || "",
+        vehicleId: row.vehicleId || "",
+        vehicleLabel: row.vehicleLabel || row.vehicle || ""
+      }
+      : null;
+    const appointment = {
+      id: row.id || `CK-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      customer: row.customer || row.name || "Unbekannt",
+      date: row.date || dateIso,
+      time: row.time || "",
+      pickup: row.pickup || "",
+      destination: row.destination || "",
+      rideType: row.rideType || row.type || "Taxi",
+      returnTrip,
+      returnStatus: returnTrip ? "offene Rückfahrt" : "keine Rückfahrt",
+      wheelchair,
+      persons: Number.isFinite(persons) && persons > 0 ? persons : 1,
+      note: row.note || row.special || "",
+      status: row.status || "Noch ungeplant",
+      sourceDraftId: row.sourceDraftId || "",
+      vehicleRequirement: wheelchair ? "Rollstuhlfahrzeug" : (Number.isFinite(persons) && persons >= 5) ? "Großraum" : "Standard",
+      openTime: !V25.hasClockTime(row.time || ""),
+      assignment,
+      locked: false
+    };
+    appointment.quality = V25.buildAppointmentQuality(appointment);
+    return appointment;
+  }
+
+  function cockpitAppointmentsForDate(dateIso) {
+    const payload = safeParse(localStorage.getItem(COCKPIT_KEY)) || {};
+    const rows = Array.isArray(payload.appointments) ? payload.appointments : [];
+    return rows
+      .filter((row) => String(row.date || "") === dateIso)
+      .map((row) => buildAppointmentFromCockpitRow(row, dateIso));
+  }
+
+  function syncOperationalState() {
+    const bridge = safeParse(localStorage.getItem("adminV22DispatchBridge")) || { plannedDrivers: [], confirmedPlan: [] };
+    const dispo = safeParse(localStorage.getItem(LIVE_DISPO_KEY)) || { drivers: [], vehicles: [], orders: [] };
+    bridge.plannedDrivers = Array.isArray(bridge.plannedDrivers) ? bridge.plannedDrivers : [];
+    dispo.drivers = Array.isArray(dispo.drivers) ? dispo.drivers : [];
+    dispo.vehicles = Array.isArray(dispo.vehicles) ? dispo.vehicles : [];
+
+    const ensureBridge = (emp, driver) => {
+      const existing = bridge.plannedDrivers.find((row) => row.employeeId === emp.id);
+      const shift = shiftRange(driver || null, emp);
+      const payload = {
+        employeeId: emp.id,
+        name: `${emp.firstName || ""} ${emp.lastName || ""}`.trim(),
+        shiftStart: shift.start,
+        shiftEnd: shift.end,
+        vehicle: emp.activeVehicle || (driver && driver.vehicle) || "",
+        status: emp.status || ""
+      };
+      if (existing) Object.assign(existing, payload);
+      else bridge.plannedDrivers.push(payload);
+    };
+
+    (state.personnel.employees || []).filter((emp) => emp.role === "Fahrer").forEach((emp) => {
+      const driver = state.planning.drivers.find((row) => row.employeeId === emp.id) || null;
+      ensureBridge(emp, driver);
+
+      const liveDriver = dispo.drivers.find((row) => row.id === emp.id)
+        || dispo.drivers.find((row) => V25.normalize(row.name || "") === V25.normalize(`${emp.firstName || ""} ${emp.lastName || ""}`));
+      const normalized = V25.normalize(emp.status || "");
+      const liveStatus = normalized.includes("krank") ? "Krank"
+        : normalized.includes("urlaub") ? "Urlaub"
+          : normalized.includes("pause") ? "Pause"
+            : normalized.includes("gesperrt") ? "Gesperrt"
+              : "Verfügbar";
+      if (liveDriver) {
+        liveDriver.id = emp.id;
+        liveDriver.name = liveDriver.name || `${emp.firstName || ""} ${emp.lastName || ""}`.trim();
+        liveDriver.status = liveStatus;
+        liveDriver.vehicle = emp.activeVehicle || liveDriver.vehicle || "";
+      } else {
+        dispo.drivers.push({
+          id: emp.id,
+          name: `${emp.firstName || ""} ${emp.lastName || ""}`.trim(),
+          status: liveStatus,
+          vehicle: emp.activeVehicle || ""
+        });
+      }
+
+      if (emp.activeVehicle && emp.activeVehicle !== "-") {
+        const liveVehicle = dispo.vehicles.find((row) => row.plate === emp.activeVehicle || row.name === emp.activeVehicle);
+        if (liveVehicle) {
+          liveVehicle.driverId = emp.id;
+          liveVehicle.driverName = `${emp.firstName || ""} ${emp.lastName || ""}`.trim();
+        }
+      }
+    });
+
+    localStorage.setItem("adminV22DispatchBridge", JSON.stringify(bridge));
+    localStorage.setItem(LIVE_DISPO_KEY, JSON.stringify(dispo));
   }
 
   function buildPlanning() {
@@ -363,6 +819,14 @@
       openTime: !V25.hasClockTime(appointment.time),
       vehicleRequirement: appointment.wheelchair ? "Rollstuhlfahrzeug" : appointment.persons > 4 ? "Großraum" : "Standard"
     }));
+
+    const cockpitRows = cockpitAppointmentsForDate(state.selectedDate);
+    const appointmentMap = new Map();
+    architecture.appointments.forEach((entry) => appointmentMap.set(entry.id, entry));
+    cockpitRows.forEach((entry) => {
+      if (!appointmentMap.has(entry.id)) appointmentMap.set(entry.id, entry);
+    });
+    architecture.appointments = [...appointmentMap.values()];
 
     return {
       selectedDate: state.selectedDate,
@@ -862,6 +1326,177 @@
     `;
   }
 
+  function renderTomorrowPreparation() {
+    const panel = document.querySelector("[data-tp-tomorrow-panel]");
+    if (!panel) return;
+
+    const visible = state.uiMode === "tomorrowPrep";
+    panel.hidden = !visible;
+    document.querySelectorAll("[data-tp-day-workspace]").forEach((node) => {
+      node.hidden = visible;
+    });
+    const mobileTabs = document.querySelector(".tp-mobile-tabs");
+    if (mobileTabs) mobileTabs.hidden = visible;
+
+    const toggleButton = document.querySelector("[data-tp-mode-toggle]");
+    if (toggleButton) {
+      toggleButton.textContent = visible ? "Tagesmodus" : "Morgen vorbereiten";
+      toggleButton.classList.toggle("admin-btn-secondary", !visible);
+    }
+    if (!visible) return;
+
+    const tomorrowDateNode = document.querySelector("[data-tp-tomorrow-date]");
+    if (tomorrowDateNode) tomorrowDateNode.textContent = `Datum: ${formatDate(state.selectedDate)}`;
+
+    const rows = buildTomorrowRows();
+    const filtered = rows.filter(passesTomorrowFilter);
+    const openCount = rows.filter((row) => row.kind === "Fahrer offen").length;
+    const conflictCount = rows.filter((row) => row.kind === "Konflikt").length;
+    const fullPlanned = rows.filter((row) => row.kind === "Geplant" || row.kind === "Hinweis").length;
+    const driversOnDuty = getTomorrowDriverPool().filter((driver) => {
+      const emp = state.personnel.employees.find((row) => row.id === driver.employeeId);
+      const normalizedStatus = V25.normalize((emp && emp.status) || "");
+      const hasShift = Boolean(driver.shiftStart && driver.shiftEnd) || Boolean(String((emp && emp.todayShift) || "").match(/^(\d{2}:\d{2})-(\d{2}:\d{2})$/));
+      return hasShift && !normalizedStatus.includes("krank") && !normalizedStatus.includes("urlaub") && !normalizedStatus.includes("gesperrt");
+    }).length;
+    const vehiclesAvailable = getTomorrowVehiclePool().filter((vehicle) => !["Werkstatt", "Gesperrt"].includes(vehicle.workshopStatus)).length;
+
+    const statusNode = document.querySelector("[data-tp-tomorrow-status]");
+    if (statusNode) {
+      const summaryTone = openCount === 0 && conflictCount === 0 ? "is-green" : "is-blue";
+      const summaryText = openCount === 0 && conflictCount === 0
+        ? "Morgen vollständig geplant"
+        : `Morgen: ${rows.length} Fahrten · ${fullPlanned} vollständig geplant · ${openCount} Fahrer offen`;
+      const bulkText = state.tomorrowMessages.bulk ? `<span class="tp-tomorrow-summary is-blue">${state.tomorrowMessages.bulk}</span>` : "";
+      statusNode.innerHTML = `<span class="tp-tomorrow-summary ${summaryTone}">${summaryText}</span>${bulkText}`;
+    }
+
+    const kpiNode = document.querySelector("[data-tp-tomorrow-kpis]");
+    if (kpiNode) {
+      const cards = {
+        "Fahrten morgen": rows.length,
+        "Noch ohne Fahrer": openCount,
+        "Bereits zugewiesen": fullPlanned,
+        "Konflikte": conflictCount,
+        "Fahrer im Dienst": driversOnDuty,
+        "Fahrzeuge verfügbar": vehiclesAvailable
+      };
+      kpiNode.innerHTML = Object.entries(cards).map(([label, value]) => `<article class="tp-service-kpi"><small>${label}</small><strong>${value}</strong></article>`).join("");
+    }
+
+    const preparedNode = document.querySelector("[data-tp-tomorrow-prepared]");
+    if (preparedNode) {
+      if (!state.tomorrowPrepared.length) {
+        preparedNode.innerHTML = '<p class="m-note">Noch keine vorbereiteten Vorschläge. Mit „Vorschläge erstellen“ werden nur Empfehlungen erzeugt, nichts wird automatisch zugewiesen.</p>';
+      } else {
+        preparedNode.innerHTML = state.tomorrowPrepared.map((entry) => `
+          <article class="tp-tomorrow-item">
+            <div class="tp-tomorrow-item-head">
+              <strong>${entry.time} Uhr · ${entry.customer}</strong>
+              <span class="tp-tomorrow-status-pill is-blue">Vorschlag</span>
+            </div>
+            <p class="tp-tomorrow-note">Empfehlung: ${entry.driver} · ${entry.vehicle}</p>
+            <div class="tp-tomorrow-item-actions">
+              <button class="admin-btn admin-btn-secondary" type="button" data-tp-open-assign="${entry.appointmentId}">Einzeln bestätigen</button>
+            </div>
+          </article>
+        `).join("");
+      }
+    }
+
+    const listNode = document.querySelector("[data-tp-tomorrow-list]");
+    if (listNode) {
+      if (!filtered.length) {
+        listNode.innerHTML = '<p class="m-note">Keine Fahrten für den gewählten Filter.</p>';
+      } else {
+        listNode.innerHTML = filtered.map((row) => {
+          const appointment = row.appointment;
+          const assignedDriver = row.assigned ? row.assigned.driverName : "noch offen";
+          const assignedVehicle = row.assigned ? row.assigned.vehicleLabel : "noch offen";
+          const openAssign = state.tomorrowAssignOpenId === appointment.id;
+          const options = openAssign ? buildTomorrowCandidateOptions(appointment) : [];
+          const message = state.tomorrowMessages[appointment.id] || "";
+          const seriesLabel = row.seriesDates.length ? `<span class="tp-service-chip">Serienfahrt</span>` : "";
+
+          const assignPanel = openAssign ? `
+            <div class="tp-tomorrow-assign">
+              <strong>EMPFOHLEN</strong>
+              ${options.length ? options.map((option, index) => {
+                const conflicts = option.evaluation.conflicts;
+                const notes = option.evaluation.notes;
+                const availability = conflicts.length ? (conflicts[0] || "Mit Konflikt") : (notes[0] || option.availability);
+                return `
+                  <article class="tp-tomorrow-option">
+                    <strong>${index + 1}. ${option.driverName}</strong>
+                    <p>${availability}</p>
+                    <p>Schicht ${option.shift.start || "-"}–${option.shift.end || "-"} Uhr · Fahrzeug ${option.vehicleLabel || "noch offen"}</p>
+                    <p>${option.reasons.length ? option.reasons.join(" · ") : "Passende Qualifikation"}</p>
+                    ${!option.hasOwnVehicle ? "<p class=\"tp-tomorrow-note\">Fahrzeug wird direkt mit zugewiesen.</p>" : ""}
+                    <div class="tp-tomorrow-inline">
+                      <button class="admin-btn" type="button" data-tp-assign-choice="${appointment.id}" data-driver-id="${option.driverId}" data-vehicle-id="${option.vehicleId || ""}" data-vehicle-label="${option.vehicleLabel || ""}">Zuweisen</button>
+                    </div>
+                  </article>
+                `;
+              }).join("") : '<p class="m-note">Keine kompakten Vorschläge verfügbar.</p>'}
+            </div>
+          ` : "";
+
+          const conflictText = row.evaluation.conflicts.slice(0, 2).join(" · ");
+          const noteText = row.evaluation.notes.slice(0, 2).join(" · ");
+          const seriesDates = row.seriesDates.length ? `<p class="tp-tomorrow-note">Nächste Termine: ${row.seriesDates.join(" · ")}</p>` : "";
+
+          return `
+            <article class="tp-tomorrow-item">
+              <div class="tp-tomorrow-item-head">
+                <strong>${appointment.time || "offen"} Uhr · ${appointment.customer || "Unbekannt"}</strong>
+                <span class="tp-tomorrow-status-pill ${row.tone}">${row.kind}</span>
+              </div>
+              <div class="tp-tomorrow-item-meta">
+                <span>${appointment.pickup || "Abholung offen"} → ${appointment.destination || "Ziel offen"}</span>
+                <span>Fahrtart: ${appointment.rideType || "Taxi"}</span>
+                <span>Personen: ${appointment.persons || 1}</span>
+                <span>Besonderheiten: ${appointment.note || "-"}</span>
+                <span>Benötigte Qualifikation: ${row.required.join(", ")}</span>
+                <span>Fahrer: ${assignedDriver}</span>
+                <span>Fahrzeug: ${assignedVehicle}</span>
+                ${seriesLabel}
+              </div>
+              ${seriesDates}
+              ${conflictText ? `<p class="tp-tomorrow-warning">${conflictText}</p>` : ""}
+              ${noteText ? `<p class="tp-tomorrow-note">${noteText}</p>` : ""}
+              ${message ? `<p class="tp-tomorrow-note">${message}</p>` : ""}
+              <div class="tp-tomorrow-item-actions">
+                <button class="admin-btn admin-btn-secondary" type="button" data-tp-open-assign="${appointment.id}">Fahrer zuweisen</button>
+              </div>
+              ${assignPanel}
+            </article>
+          `;
+        }).join("");
+      }
+    }
+
+    const timelineNode = document.querySelector("[data-tp-timeline]");
+    if (timelineNode) {
+      const timelineRows = buildTomorrowTimeline(rows);
+      const scale = "06:00 · 06:30 · 07:00 · 07:30 · 08:00 · 08:30 · 09:00 · 09:30 · 10:00";
+      if (!timelineRows.length) {
+        timelineNode.innerHTML = `<p class="m-note">Zeitleiste: ${scale}</p><p class="m-note">Noch keine zugewiesenen Fahrten.</p>`;
+      } else {
+        timelineNode.innerHTML = `
+          <p class="m-note">Zeitleiste: ${scale}</p>
+          ${timelineRows.map((driver) => `
+            <article class="tp-timeline-row">
+              <strong>${driver.name}</strong>
+              <div class="tp-timeline-track">
+                ${driver.items.map((item) => `<span class="tp-timeline-segment">${item.start} <b>━━━━━</b> ${item.end} · ${item.customer}${item.conflict ? " · Konflikt" : ""}</span>`).join("")}
+              </div>
+            </article>
+          `).join("")}
+        `;
+      }
+    }
+  }
+
   function renderBlocks() {
     const node = document.querySelector("[data-block-list]");
     if (!node) return;
@@ -915,7 +1550,9 @@
       row.status = state.planning.confirmed ? "Bestätigt" : appointment.planStatus || "Noch ungeplant";
       if (appointment.assignment) {
         row.driverId = appointment.assignment.driverId;
+        row.driverName = appointment.assignment.driverName;
         row.vehicleId = appointment.assignment.vehicleId;
+        row.vehicleLabel = appointment.assignment.vehicleLabel;
       }
     });
     localStorage.setItem(COCKPIT_KEY, JSON.stringify(cockpit));
@@ -926,10 +1563,13 @@
       const row = live.orders.find((entry) => entry.id === appointment.id);
       if (!row || !appointment.assignment) return;
       row.driverId = appointment.assignment.driverId;
+      row.driver = appointment.assignment.driverName;
       row.vehicleId = appointment.assignment.vehicleId;
+      row.vehicle = appointment.assignment.vehicleLabel;
       row.status = state.planning.confirmed ? "Bestätigt" : "Neu";
     });
     localStorage.setItem(LIVE_DISPO_KEY, JSON.stringify(live));
+    syncOperationalState();
   }
 
   function rebuild(reason, markDirty) {
@@ -945,6 +1585,7 @@
   function renderAll() {
     renderToolbar();
     renderServiceArea();
+    renderTomorrowPreparation();
     renderAppointments();
     renderDrivers();
     renderPlanSummary();
@@ -957,6 +1598,174 @@
     renderPrint();
     renderMap();
     renderMobileTabs();
+  }
+
+  function switchToTomorrowMode(enabled) {
+    if (enabled) {
+      if (state.selectedDate !== tomorrowIso()) {
+        state.previousDate = state.selectedDate;
+        state.selectedDate = tomorrowIso();
+        state.selectedShortcut = "tomorrow";
+        const dayState = getDayState(state.selectedDate);
+        state.selectedVariant = dayState.variant;
+        state.appointmentFilter = dayState.appointmentFilter;
+        state.selectedDrivers = new Set(dayState.selectedDriverIds);
+        state.mapOpen = dayState.routeMapOpen;
+        state.planning = buildPlanning();
+        rebuild("Morgen-Ansicht geladen", false);
+      }
+      state.uiMode = "tomorrowPrep";
+      renderAll();
+      return;
+    }
+
+    state.uiMode = "day";
+    if (state.previousDate) {
+      state.selectedDate = state.previousDate;
+      state.previousDate = "";
+      state.selectedShortcut = "custom";
+      const dayState = getDayState(state.selectedDate);
+      state.selectedVariant = dayState.variant;
+      state.appointmentFilter = dayState.appointmentFilter;
+      state.selectedDrivers = new Set(dayState.selectedDriverIds);
+      state.mapOpen = dayState.routeMapOpen;
+      state.planning = buildPlanning();
+      rebuild("Zur Tagesplanung zurück", false);
+      return;
+    }
+    renderAll();
+  }
+
+  function bindTomorrowMode() {
+    document.addEventListener("click", (event) => {
+      const toggle = event.target.closest("[data-tp-mode-toggle]");
+      if (toggle) {
+        switchToTomorrowMode(state.uiMode !== "tomorrowPrep");
+        return;
+      }
+
+      const close = event.target.closest("[data-tp-mode-close]");
+      if (close) {
+        switchToTomorrowMode(false);
+        return;
+      }
+
+      const createSuggestions = event.target.closest("[data-tp-suggest-open]");
+      if (createSuggestions) {
+        const rows = buildTomorrowRows().filter((row) => !row.assigned);
+        state.tomorrowPrepared = rows.map((row) => {
+          const options = buildTomorrowCandidateOptions(row.appointment);
+          const lead = options[0];
+          return {
+            appointmentId: row.appointment.id,
+            customer: row.appointment.customer || "Unbekannt",
+            time: row.appointment.time || "offen",
+            driver: lead ? lead.driverName : "kein Vorschlag",
+            vehicle: lead ? (lead.vehicleLabel || "noch offen") : "noch offen"
+          };
+        });
+        renderTomorrowPreparation();
+        return;
+      }
+
+      const applyConflictFree = event.target.closest("[data-tp-apply-conflictfree]");
+      if (applyConflictFree) {
+        const candidates = buildTomorrowRows().filter((row) => !row.assigned).map((row) => {
+          const option = buildTomorrowCandidateOptions(row.appointment)[0] || null;
+          if (!option || option.evaluation.conflicts.length) return null;
+          return { row, option };
+        }).filter(Boolean);
+        if (!candidates.length) {
+          state.tomorrowMessages.bulk = "Keine konfliktfreien Vorschläge verfügbar.";
+          renderTomorrowPreparation();
+          return;
+        }
+        if (!window.confirm(`${candidates.length} konfliktfreie Vorschläge übernehmen?`)) return;
+        candidates.forEach(({ row, option }) => {
+          row.appointment.assignment = {
+            driverId: option.driverId,
+            driverName: option.driverName,
+            vehicleId: option.vehicleId || "",
+            vehicleLabel: option.vehicleLabel || "noch offen"
+          };
+          row.appointment.locked = true;
+          row.appointment.planStatus = "zugewiesen";
+          state.planning.locks[row.appointment.id] = {
+            driverId: option.driverId,
+            driverName: option.driverName,
+            vehicleId: option.vehicleId || "",
+            vehicleLabel: option.vehicleLabel || "noch offen",
+            time: row.appointment.time
+          };
+        });
+        state.tomorrowMessages.bulk = `${candidates.length} konfliktfreie Vorschläge übernommen.`;
+        rebuild("Konfliktfreie Vorschläge übernommen", true);
+        syncOperationalState();
+        return;
+      }
+
+      const openAssign = event.target.closest("[data-tp-open-assign]");
+      if (openAssign) {
+        const appointmentId = openAssign.getAttribute("data-tp-open-assign") || "";
+        state.tomorrowAssignOpenId = state.tomorrowAssignOpenId === appointmentId ? "" : appointmentId;
+        renderTomorrowPreparation();
+        return;
+      }
+
+      const assign = event.target.closest("[data-tp-assign-choice]");
+      if (assign) {
+        const appointmentId = assign.getAttribute("data-tp-assign-choice") || "";
+        const driverId = assign.getAttribute("data-driver-id") || "";
+        const vehicleId = assign.getAttribute("data-vehicle-id") || "";
+        const vehicleLabel = assign.getAttribute("data-vehicle-label") || "";
+        const appointment = state.planning.appointments.find((entry) => entry.id === appointmentId);
+        const driver = getTomorrowDriverPool().find((entry) => entry.employeeId === driverId);
+        const employee = state.personnel.employees.find((entry) => entry.id === driverId);
+        const vehicle = getTomorrowVehiclePool().find((entry) => entry.id === vehicleId) || getTomorrowVehiclePool().find((entry) => entry.plate === vehicleId);
+        if (!appointment || !driver) return;
+
+        const candidate = {
+          driverId,
+          driverName: driver.name,
+          vehicleId: vehicle ? vehicle.id : vehicleId,
+          vehicleLabel: vehicle ? vehicle.plate : (vehicleLabel || (driver.vehicle || (employee && employee.activeVehicle) || (appointment.assignment ? appointment.assignment.vehicleLabel : "noch offen")))
+        };
+        const evaluation = evaluateTomorrowCandidate(appointment, candidate);
+        state.tomorrowMessages[appointmentId] = evaluation.conflicts.length
+          ? `Zuweisung mit Hinweis: ${evaluation.conflicts.slice(0, 2).join(" · ")}`
+          : "Zuweisung bestätigt.";
+
+        appointment.assignment = {
+          driverId: candidate.driverId,
+          driverName: candidate.driverName,
+          vehicleId: candidate.vehicleId,
+          vehicleLabel: candidate.vehicleLabel
+        };
+        appointment.locked = true;
+        appointment.planStatus = evaluation.conflicts.length ? "Konflikt" : "zugewiesen";
+
+        state.planning.locks[appointmentId] = {
+          driverId: candidate.driverId,
+          driverName: candidate.driverName,
+          vehicleId: candidate.vehicleId,
+          vehicleLabel: candidate.vehicleLabel,
+          time: appointment.time
+        };
+
+        state.tomorrowAssignOpenId = "";
+        rebuild("Morgen-Zuweisung bestätigt", true);
+        syncOperationalState();
+        return;
+      }
+
+      const filter = event.target.closest("[data-tp-tomorrow-filter]");
+      if (!filter) return;
+      state.tomorrowFilter = filter.getAttribute("data-tp-tomorrow-filter") || "alle";
+      document.querySelectorAll("[data-tp-tomorrow-filter]").forEach((button) => {
+        button.classList.toggle("is-active", button === filter);
+      });
+      renderTomorrowPreparation();
+    });
   }
 
   function persistPersonnelChanges() {
@@ -1034,6 +1843,7 @@
       persistPersonnelChanges();
       state.planning = buildPlanning();
       rebuild("Heute-im-Dienst geändert", true);
+      syncOperationalState();
     });
   }
 
@@ -1067,6 +1877,7 @@
     document.querySelectorAll("[data-day-shortcut]").forEach((button) => {
       button.addEventListener("click", () => {
         const key = button.getAttribute("data-day-shortcut") || "tomorrow";
+        if (state.uiMode === "tomorrowPrep" && key !== "tomorrow") state.uiMode = "day";
         state.selectedShortcut = key;
         if (key === "today") state.selectedDate = todayIso();
         if (key === "tomorrow") state.selectedDate = addDaysIso(todayIso(), 1);
@@ -1085,6 +1896,7 @@
     if (dateInput) {
       dateInput.addEventListener("change", () => {
         state.selectedDate = String(dateInput.value || addDaysIso(todayIso(), 1));
+        if (state.uiMode === "tomorrowPrep" && state.selectedDate !== tomorrowIso()) state.uiMode = "day";
         state.selectedShortcut = "custom";
         const dayState = getDayState(state.selectedDate);
         state.selectedVariant = dayState.variant;
@@ -1474,8 +2286,10 @@
     state.selectedDrivers = new Set(dayState.selectedDriverIds);
     state.mapOpen = dayState.routeMapOpen;
     state.planning = buildPlanning();
+    syncOperationalState();
 
     bindToolbar();
+    bindTomorrowMode();
     bindFilters();
     bindServiceActions();
     bindDriverActions();

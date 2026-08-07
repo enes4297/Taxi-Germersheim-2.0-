@@ -665,6 +665,37 @@
     return liveByName ? (liveByName.plate || liveByName.name || "-") : "-";
   }
 
+  function resolveVehicleState(vehicleLabel, dispo) {
+    const vehicles = Array.isArray(dispo.vehicles) ? dispo.vehicles : [];
+    const row = vehicles.find((vehicle) => normalize(vehicle.plate || vehicle.name || "") === normalize(vehicleLabel || "")) || null;
+    if (!row) {
+      return {
+        available: vehicleLabel && vehicleLabel !== "-",
+        reasons: vehicleLabel && vehicleLabel !== "-" ? [] : ["Kein Fahrzeug zugeordnet"],
+        seats: 0,
+        wheelchair: false,
+        large: false,
+        statusLabel: "unbekannt"
+      };
+    }
+    const statusText = normalize(row.status || row.workshopStatus || "");
+    const blocked = statusText.includes("werkstatt") || statusText.includes("gesperrt");
+    const paused = statusText.includes("pause");
+    const onRoute = statusText.includes("unterwegs") || statusText.includes("fahrt");
+    const reasons = [];
+    if (blocked) reasons.push("Fahrzeug nicht verfügbar");
+    if (paused) reasons.push("Fahrzeug in Pause");
+    if (onRoute) reasons.push("Fahrzeug aktuell unterwegs");
+    return {
+      available: !blocked,
+      reasons,
+      seats: Number(row.seats || row.capacity || 4),
+      wheelchair: Boolean(row.wheelchair) || normalize(row.type || "").includes("rollstuhl"),
+      large: Number(row.seats || row.capacity || 0) >= 5 || normalize(row.type || "").includes("grossraum") || normalize(row.type || "").includes("großraum"),
+      statusLabel: row.status || row.workshopStatus || "Verfügbar"
+    };
+  }
+
   function getLastRideInfo(employeeId, bridge) {
     const rides = (Array.isArray(bridge.confirmedPlan) ? bridge.confirmedPlan : [])
       .filter((row) => row.driverId === employeeId && row.time)
@@ -718,14 +749,17 @@
 
         const qualificationMissing = required.filter((q) => !hasQualification(emp, q));
         const vehicle = mapVehicleByEmployee(emp, bridge, dispo);
+        const vehicleState = resolveVehicleState(vehicle, dispo);
         const vehicleType = normalize(vehicle);
         const vehicleConflict = [];
-        if (String(ride.wheelchair || "Nein") === "Ja" && !(vehicleType.includes("200") || vehicleType.includes("230") || vehicleType.includes("rollstuhl"))) {
+        if (String(ride.wheelchair || "Nein") === "Ja" && !vehicleState.wheelchair && !(vehicleType.includes("200") || vehicleType.includes("230") || vehicleType.includes("rollstuhl"))) {
           vehicleConflict.push("Fahrzeug ungeeignet");
         }
-        if (Number(ride.persons || 1) >= 5 && !(vehicleType.includes("340") || vehicleType.includes("214") || vehicleType.includes("gross") || vehicleType.includes("großraum"))) {
+        if (Number(ride.persons || 1) >= 5 && !vehicleState.large && !(vehicleType.includes("340") || vehicleType.includes("214") || vehicleType.includes("gross") || vehicleType.includes("großraum"))) {
           vehicleConflict.push("Fahrzeug ungeeignet");
         }
+        if (vehicleState.seats > 0 && Number(ride.persons || 1) > vehicleState.seats) vehicleConflict.push("Zu wenig Sitzplätze");
+        vehicleConflict.push(...vehicleState.reasons);
 
         const timeConflict = isTimeConflict(rideDate, ride.time, emp, bridge, dispo);
         const baseAvailable = hasShift && rideInShift && !isSick && !isVacation && !hasAbsence && !isBlocked;
@@ -750,14 +784,21 @@
         if (normalize(emp.status).includes("im dienst")) score += 6;
 
         const lastRide = getLastRideInfo(emp.id, bridge);
+        const availableSince = availableNow ? (lastRide.endedAt === "-" ? (shift.start || "-") : lastRide.endedAt) : "";
+        const connectionHint = timeConflict ? "Anschlussfahrt derzeit nicht sinnvoll" : "Sinnvolle Kombination möglich";
         return {
           employeeId: emp.id,
           name: `${emp.firstName} ${emp.lastName}`,
           status: availableNow ? "Verfügbar" : onDuty ? (beforeShiftNow ? "Beginnt später" : "Auf Fahrt") : (isSick ? "Krank" : isVacation ? "Urlaub" : "Abwesend"),
           shift,
           vehicle,
+          vehicleStatus: vehicleState.statusLabel,
           lastRideEndedAt: lastRide.endedAt,
           distance: lastRide.nextDistance,
+          availableSince,
+          nextFreeAt: lastRide.endedAt === "-" ? (shift.start || "-") : lastRide.endedAt,
+          connectionHint,
+          qualificationText: qualificationMissing.length ? "Qualifikation fehlt" : required.join(", "),
           reasons,
           score,
           canAssign: onDuty && rideInShift && !qualificationMissing.length && !vehicleConflict.length && !timeConflict
@@ -802,7 +843,11 @@
         <p>Status: ${lead.status}</p>
         <p>Schicht: ${lead.shift.start || "-"}–${lead.shift.end || "-"} Uhr</p>
         <p>Fahrzeug: ${lead.vehicle || "-"}</p>
-        <p>Letzte Fahrt beendet: ${lead.lastRideEndedAt}</p>
+        <p>Fahrzeugstatus: ${lead.vehicleStatus || "-"}</p>
+        <p>Qualifikation: ${lead.qualificationText || "-"}</p>
+        <p>Vorherige Fahrt endet: ${lead.lastRideEndedAt}</p>
+        <p>Voraussichtlich verfügbar: ${lead.nextFreeAt || "-"} Uhr</p>
+        <p>Anschlussfahrt: ${lead.connectionHint || "-"}</p>
         <p>Entfernung zur nächsten Fahrt: ${lead.distance}</p>
         <p>${lead.reasons.length ? lead.reasons.join(" · ") : "Alle Prüfungen erfüllt"}</p>
         ${leadBadge}
