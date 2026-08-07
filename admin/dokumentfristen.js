@@ -9,7 +9,7 @@
 
   function badge(text) {
     const t = P.normalize(text);
-    const cls = t.includes("abgelaufen") || t.includes("fehlt") || t.includes("ungueltig") || t.includes("abgelehnt") ? "crit" : t.includes("bald") || t.includes("ungeprueft") || t.includes("angefordert") || t.includes("unvollstaendig") ? "warn" : t.includes("gueltig") || t.includes("ersetzt") || t.includes("eingereicht") ? "ok" : "info";
+    const cls = t.includes("abgelaufen") || t.includes("fehlt") || t.includes("ungueltig") || t.includes("abgelehnt") ? "crit" : t.includes("bald") || t.includes("ungeprueft") || t.includes("angefordert") || t.includes("unvollstaendig") || t.includes("eingereicht") ? "warn" : t.includes("gueltig") || t.includes("ersetzt") ? "ok" : "info";
     return `<span class="person-status ${cls}"><span class="dot"></span>${text}</span>`;
   }
 
@@ -55,17 +55,25 @@
     }).length;
     const kpis = [
       ["Dokumente gesamt", docs.length],
-      ["vollstaendig", docs.filter((d) => d.status === "gueltig").length],
+      ["vollständig", docs.filter((d) => d.status === "gueltig").length],
       ["laufen in 30 Tagen ab", exp30],
       ["laufen in 60 Tagen ab", exp60],
       ["abgelaufen", docs.filter((d) => d.status === "abgelaufen").length],
+      ["eingereicht", docs.filter((d) => d.status === "eingereicht").length],
       ["fehlen", docs.filter((d) => d.status === "fehlt").length],
-      ["ungeprueft", docs.filter((d) => d.status === "ungeprueft").length],
+      ["ungeprüft", docs.filter((d) => d.status === "ungeprueft").length],
       ["kritisch", docs.filter((d) => ["abgelaufen", "fehlt", "abgelehnt"].includes(d.status)).length]
     ];
     const node = document.querySelector("[data-doc-kpis]");
     if (!node) return;
     node.innerHTML = kpis.map((k) => `<article class="person-card"><small>${k[0]}</small><strong>${k[1]}</strong></article>`).join("");
+
+    const submittedNode = document.querySelector("[data-docfr-submitted]");
+    const reviewedNode = document.querySelector("[data-docfr-reviewed]");
+    const submitted = docs.filter((d) => d.status === "eingereicht").length;
+    const reviewed = docs.filter((d) => d.status === "eingereicht" && d.checkedAt).length;
+    if (submittedNode) submittedNode.textContent = String(submitted);
+    if (reviewedNode) reviewedNode.textContent = String(reviewed);
   }
 
   function renderTable() {
