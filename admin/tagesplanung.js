@@ -66,7 +66,8 @@
       routeMapOpen: Boolean(existing.routeMapOpen),
       confirmed: Boolean(existing.confirmed),
       needsReview: Boolean(existing.needsReview),
-      history: Array.isArray(existing.history) ? existing.history : []
+      history: Array.isArray(existing.history) ? existing.history : [],
+      publishedPlan: existing.publishedPlan || null
     };
   }
 
@@ -108,6 +109,10 @@
   function nowTime() {
     const now = new Date();
     return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  }
+
+  function currentStamp() {
+    return P.nowStamp ? P.nowStamp() : `${todayIso()} ${nowTime()}`;
   }
 
   function minutes(text) {
@@ -1348,6 +1353,28 @@
     const tomorrowDateNode = document.querySelector("[data-tp-tomorrow-date]");
     if (tomorrowDateNode) tomorrowDateNode.textContent = `Datum: ${formatDate(state.selectedDate)}`;
 
+    const publicationNode = document.querySelector("[data-tp-tomorrow-publication]");
+    const dayState = getDayState(state.selectedDate);
+    const publication = dayState.publishedPlan;
+    if (publicationNode) {
+      if (publication) {
+        const openVehicleLabel = publication.openVehicles === 1 ? "1 Fahrzeug noch offen" : `${publication.openVehicles} Fahrzeuge noch offen`;
+        const assignedLabel = publication.assignedVehicles === 1 ? "1 Fahrzeug zugewiesen" : `${publication.assignedVehicles} Fahrzeuge zugewiesen`;
+        const employeeLabel = publication.plannedEmployees === 1 ? "1 Mitarbeiter eingeplant" : `${publication.plannedEmployees} Mitarbeiter eingeplant`;
+        publicationNode.innerHTML = `
+          <span class="tp-tomorrow-summary is-green">${publication.status || "Veröffentlicht"}</span>
+          <p class="m-note">Veröffentlicht: ${formatDate(publication.publishedDate || state.selectedDate)} · ${publication.publishedAt ? publication.publishedAt.split(" ")[1] + " Uhr" : "-"} · ${publication.publishedBy || "-"}</p>
+          <p class="m-note">${employeeLabel} · ${assignedLabel} · ${openVehicleLabel}</p>
+          ${publication.changed ? '<p class="tp-tomorrow-warning">Veröffentlichter Plan wurde nachträglich geändert.</p>' : ''}
+        `;
+      } else {
+        publicationNode.innerHTML = `
+          <span class="tp-tomorrow-summary is-blue">Entwurf</span>
+          <p class="m-note">Plan noch nicht veröffentlicht.</p>
+        `;
+      }
+    }
+
     const rows = buildTomorrowRows();
     const filtered = rows.filter(passesTomorrowFilter);
     const openCount = rows.filter((row) => row.kind === "Fahrer offen").length;
@@ -1368,7 +1395,8 @@
         ? "Morgen vollständig geplant"
         : `Morgen: ${rows.length} Fahrten · ${fullPlanned} vollständig geplant · ${openCount} Fahrer offen`;
       const bulkText = state.tomorrowMessages.bulk ? `<span class="tp-tomorrow-summary is-blue">${state.tomorrowMessages.bulk}</span>` : "";
-      statusNode.innerHTML = `<span class="tp-tomorrow-summary ${summaryTone}">${summaryText}</span>${bulkText}`;
+      const publicationText = publication ? `<span class="tp-tomorrow-summary is-green">${publication.changed ? "Veröffentlicht · geändert" : "Veröffentlicht"}</span>` : '<span class="tp-tomorrow-summary is-blue">Entwurf</span>';
+      statusNode.innerHTML = `<span class="tp-tomorrow-summary ${summaryTone}">${summaryText}</span>${publicationText}${bulkText}`;
     }
 
     const kpiNode = document.querySelector("[data-tp-tomorrow-kpis]");
@@ -1539,6 +1567,160 @@
       needsReview: state.planning.needsReview,
       history: state.planning.history
     });
+    syncPublishedTomorrowPlan();
+  }
+
+  function buildTomorrowPublicationRows() {
+    return state.planning.drivers.map((driver) => ({
+      employeeId: driver.employeeId,
+      name: driver.name,
+      shiftStart: driver.shiftStart || "",
+      shiftEnd: driver.shiftEnd || "",
+      vehicleId: driver.vehicle || "",
+      vehicleLabel: driver.vehicle || "",
+      status: driver.status || (driver.dayActive === false ? "Frei" : "Im Dienst"),
+      dayActive: driver.dayActive !== false,
+      reserve: Boolean(driver.reserve),
+      availableTime: driver.availableTime || "",
+      preferredVehicle: driver.preferredVehicle || ""
+    })).sort((a, b) => a.employeeId.localeCompare(b.employeeId, "de"));
+  }
+
+  function buildTomorrowPublicationSignature(rows) {
+    return rows.map((row) => [row.employeeId, row.shiftStart, row.shiftEnd, row.vehicleLabel, row.status, row.dayActive ? "1" : "0"].join("|")).join("~");
+  }
+
+  function saveTomorrowPublication(record) {
+    persistDayState(state.selectedDate, {
+      publishedPlan: record,
+      confirmed: true,
+      needsReview: false,
+      history: [V25.createHistoryEntry("Freigabe", record.changed ? "Morgenplan erneut veröffentlicht" : "Morgenplan veröffentlicht"), ...state.planning.history]
+    });
+  }
+
+  function syncPublishedTomorrowPlan() {
+    const dayState = getDayState(state.selectedDate);
+    if (!dayState.publishedPlan) return;
+
+    const rows = buildTomorrowPublicationRows();
+    const signature = buildTomorrowPublicationSignature(rows);
+    const previous = dayState.publishedPlan;
+    const previousSignature = String(previous.lastNotifiedSignature || previous.signature || "");
+    if (signature === previousSignature) return;
+
+    const previousRows = Array.isArray(previous.driverRows) ? previous.driverRows : [];
+    const previousMap = new Map(previousRows.map((row) => [row.employeeId, row]));
+    const changedRows = rows.filter((row) => {
+      const before = previousMap.get(row.employeeId);
+      if (!before) return true;
+      return before.shiftStart !== row.shiftStart || before.shiftEnd !== row.shiftEnd || before.vehicleLabel !== row.vehicleLabel || before.status !== row.status || before.dayActive !== row.dayActive;
+    });
+    if (!changedRows.length) return;
+
+    changedRows.forEach((row) => {
+      const before = previousMap.get(row.employeeId) || {};
+      const statusText = row.status === "Urlaub" || row.status === "Krank" || row.status === "Frei"
+        ? row.status
+        : `${row.shiftStart || "-"} – ${row.shiftEnd || "-"} Uhr`;
+      const vehicleText = row.status === "Urlaub" || row.status === "Krank" || row.status === "Frei"
+        ? ""
+        : `\nNeues Fahrzeug: ${row.vehicleLabel || "Fahrzeug wird noch zugeteilt"}`;
+      const beforeShift = before.shiftStart && before.shiftEnd ? `${before.shiftStart} – ${before.shiftEnd} Uhr` : "";
+      const beforeVehicle = before.vehicleLabel || "";
+      const title = before.shiftStart || before.vehicleLabel || before.status ? "Dein Plan für morgen wurde geändert." : "Dein Plan für morgen ist da.";
+      const text = before.shiftStart || before.vehicleLabel || before.status
+        ? `${formatDate(state.selectedDate)}\nNeue Arbeitszeit: ${statusText}${vehicleText}`
+        : `${formatDate(state.selectedDate)}\nArbeitszeit: ${statusText}${vehicleText}`;
+      if (P.addEmployeeMessage) {
+        P.addEmployeeMessage(state.personnel, {
+          employeeId: row.employeeId,
+          title,
+          text,
+          category: before.shiftStart || before.vehicleLabel || before.status ? "Dienstplanaenderung" : "Planveroeffentlichung",
+          priority: before.shiftStart || before.vehicleLabel || before.status ? "wichtig" : "normal",
+          recipients: "einzelne Mitarbeiter",
+          createdBy: "Admin Enes",
+          eventType: before.shiftStart || before.vehicleLabel || before.status ? "SHIFT_CHANGED" : "PLAN_PUBLISHED"
+        });
+      }
+      if (!before.shiftStart && !before.vehicleLabel && !before.status && P.addEmployeeMessage) {
+        // no-op, message already sent above
+      }
+    });
+
+    saveTomorrowPublication({
+      ...previous,
+      changed: true,
+      updatedAt: currentStamp(),
+      lastNotifiedSignature: signature,
+      driverRows: rows
+    });
+  }
+
+  function publishTomorrowPlan() {
+    const rows = buildTomorrowPublicationRows();
+    const signature = buildTomorrowPublicationSignature(rows);
+    const dayState = getDayState(state.selectedDate);
+    const previous = dayState.publishedPlan || null;
+    const publishedAt = currentStamp();
+    const plannedEmployees = rows.filter((row) => row.dayActive && row.status !== "Urlaub" && row.status !== "Krank").length;
+    const assignedVehicles = rows.filter((row) => row.dayActive && row.vehicleLabel && row.vehicleLabel !== "noch offen" && row.vehicleLabel !== "-").length;
+    const openVehicles = rows.filter((row) => row.dayActive && (!row.vehicleLabel || row.vehicleLabel === "noch offen" || row.vehicleLabel === "-")).length;
+
+    const record = {
+      status: "Veröffentlicht",
+      publishedAt,
+      publishedBy: "Admin Enes",
+      publishedDate: state.selectedDate,
+      signature,
+      lastNotifiedSignature: signature,
+      changed: false,
+      changedAt: "",
+      changedBy: "",
+      plannedEmployees,
+      assignedVehicles,
+      openVehicles,
+      driverRows: rows
+    };
+
+    persistDayState(state.selectedDate, {
+      publishedPlan: record,
+      confirmed: true,
+      needsReview: false,
+      history: [V25.createHistoryEntry("Freigabe", previous ? "Morgenplan veröffentlicht" : "Morgenplan veröffentlicht"), ...state.planning.history]
+    });
+
+    const changed = Boolean(previous) && previous.signature && previous.signature !== signature;
+    rows.forEach((row) => {
+      if (!row.dayActive && row.status === "Frei") return;
+      const statusLine = row.status === "Urlaub" || row.status === "Krank" || row.status === "Frei"
+        ? `Status: ${row.status}`
+        : `Arbeitszeit: ${row.shiftStart || "-"} – ${row.shiftEnd || "-"} Uhr`;
+      const vehicleLine = row.status === "Urlaub" || row.status === "Krank" || row.status === "Frei"
+        ? ""
+        : `\nFahrzeug: ${row.vehicleLabel || "Fahrzeug wird noch zugeteilt"}`;
+      if (P.addEmployeeMessage) {
+        P.addEmployeeMessage(state.personnel, {
+          employeeId: row.employeeId,
+          title: changed ? "Dein Plan für morgen wurde geändert." : "Dein Plan für morgen ist da.",
+          text: `${formatDate(state.selectedDate)}\n${statusLine}${vehicleLine}`,
+          category: changed ? "Dienstplanaenderung" : "Planveroeffentlichung",
+          priority: changed ? "wichtig" : "normal",
+          recipients: "einzelne Mitarbeiter",
+          createdBy: "Admin Enes",
+          eventType: changed ? "SHIFT_CHANGED" : "PLAN_PUBLISHED"
+        });
+      }
+    });
+
+    persistDayState(state.selectedDate, {
+      publishedPlan: record
+    });
+    state.planning = buildPlanning();
+    renderTomorrowPreparation();
+    renderToolbar();
+    return { plannedEmployees, assignedVehicles, openVehicles, changed, publishedAt };
   }
 
   function syncAppointmentsToCockpit() {
@@ -1913,6 +2095,21 @@
 
     const saveBtn = document.querySelector("[data-plan-save]");
     if (saveBtn) saveBtn.addEventListener("click", () => { savePlanningStatus(); syncAppointmentsToCockpit(); renderAll(); });
+
+    const publishBtn = document.querySelector("[data-plan-publish]");
+    if (publishBtn) publishBtn.addEventListener("click", () => {
+      const rows = buildTomorrowPublicationRows();
+      const plannedEmployees = rows.filter((row) => row.dayActive && row.status !== "Urlaub" && row.status !== "Krank").length;
+      const assignedVehicles = rows.filter((row) => row.dayActive && row.vehicleLabel && row.vehicleLabel !== "noch offen" && row.vehicleLabel !== "-").length;
+      const openVehicles = rows.filter((row) => row.dayActive && (!row.vehicleLabel || row.vehicleLabel === "noch offen" || row.vehicleLabel === "-")).length;
+      const dateText = formatDate(state.selectedDate);
+      const warningText = openVehicles > 0 ? `\n\nWarnung: ${openVehicles} Mitarbeiter haben noch kein Fahrzeug.` : "";
+      const confirmText = `Plan für ${dateText} veröffentlichen?\n\n${plannedEmployees} Mitarbeiter erhalten ihren morgigen Dienstplan.\n${assignedVehicles} Fahrzeuge zugewiesen.${warningText}`;
+      if (!window.confirm(confirmText)) return;
+      publishTomorrowPlan();
+      syncAppointmentsToCockpit();
+      renderAll();
+    });
 
     const confirmBtn = document.querySelector("[data-plan-confirm]");
     if (confirmBtn) confirmBtn.addEventListener("click", () => {
