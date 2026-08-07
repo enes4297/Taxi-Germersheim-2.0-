@@ -3,6 +3,7 @@
   const mercedesVKlasseImagePath = "images/mercedes-v-klasse.jpg";
   const QUALITY_STORAGE_KEY = "adminV18QualityState";
   const VIEW_STORAGE_KEY = "adminVehicleViewV211";
+  const LIVE_DISPO_KEY = "adminLiveDispoV131";
 
   // Spater kann hier ein API-Array direkt gemappt werden.
   const vehicleSource = [
@@ -172,9 +173,11 @@
     return {
       ...rawVehicle,
       category: resolveVehicleCategory(rawVehicle),
+      wheelchairSuitable: normalizeText(rawVehicle.type).includes("rollstuhl") || normalizeText(rawVehicle.plate).includes("rollstuhl"),
       imagePath: resolveVehicleImagePath(rawVehicle),
       nextServiceInDays,
       tuvInDays,
+      insuranceInDays: daysUntil(rawVehicle.insuranceUntil),
       history: {
         lastService: shiftDate(rawVehicle.nextService, -95),
         lastHu: shiftDate(rawVehicle.tuvDate, -180),
@@ -204,6 +207,25 @@
   }
 
   const vehicles = vehicleSource.map(normalizeVehicle);
+
+  function applyOperationalOverlay() {
+    const dispo = (() => {
+      try {
+        return JSON.parse(localStorage.getItem(LIVE_DISPO_KEY) || "{}");
+      } catch {
+        return {};
+      }
+    })();
+    const rows = Array.isArray(dispo.vehicles) ? dispo.vehicles : [];
+    vehicles.forEach((vehicle) => {
+      const live = rows.find((row) => normalizePlate(row.plate || row.name || "") === normalizePlate(vehicle.plate));
+      if (!live) return;
+      if (live.driverName) vehicle.currentDriver = live.driverName;
+      if (live.status && ["Verfügbar", "Unterwegs", "Pause", "Werkstatt", "Gesperrt"].includes(live.status)) {
+        vehicle.status = live.status;
+      }
+    });
+  }
 
   function normalizePlate(value) {
     return normalizeText(String(value || "").replace(/\s+/g, ""));
@@ -412,6 +434,23 @@
     return { className: "is-medium", label: tireStatus };
   }
 
+  function getVehicleWarnings(vehicle) {
+    const warnings = [];
+    const tuv = getCountdownMeta(vehicle.tuvInDays);
+    const service = getCountdownMeta(vehicle.nextServiceInDays);
+    const insurance = getCountdownMeta(vehicle.insuranceInDays);
+    if (vehicle.tuvInDays <= 30) warnings.push(`TÜV fällig am ${formatDate(vehicle.tuvDate)}`);
+    if (vehicle.nextServiceInDays <= 30) warnings.push(`Service fällig am ${formatDate(vehicle.nextService)}`);
+    if (vehicle.insuranceInDays <= 45) warnings.push(`Versicherung prüfen bis ${formatDate(vehicle.insuranceUntil)}`);
+    if (normalizeText(vehicle.tireStatus).includes("wechsel") || normalizeText(vehicle.tireStatus).includes("pruf") || normalizeText(vehicle.tireStatus).includes("prüf")) {
+      warnings.push("Reifen prüfen");
+    }
+    if (!warnings.length && (tuv.className === "is-critical" || service.className === "is-critical" || insurance.className === "is-critical")) {
+      warnings.push("Frist prüfen");
+    }
+    return warnings;
+  }
+
   function renderStats() {
     const stats = {
       total: vehicles.length,
@@ -533,10 +572,15 @@
 
         <dl class="vehicle-meta-list">
           <div><dt>Aktueller Fahrer</dt><dd class="vehicle-driver-slot"></dd></div>
+          <div><dt>Rollstuhlgeeignet</dt><dd>${vehicle.wheelchairSuitable ? "Ja" : "Nein"}</dd></div>
           <div><dt>Kilometerstand</dt><dd>${formatKm(vehicle.odometerKm)}</dd></div>
           <div><dt>Nächster Service</dt><dd>${formatDate(vehicle.nextService)}</dd></div>
           <div><dt>TÜV</dt><dd>${formatDate(vehicle.tuvDate)}</dd></div>
+          <div><dt>Versicherung</dt><dd>${formatDate(vehicle.insuranceUntil)}</dd></div>
+          <div><dt>Reifenstatus</dt><dd>${vehicle.tireStatus}</dd></div>
         </dl>
+
+        <p class="vehicle-note">${getVehicleWarnings(vehicle).join(" · ") || "Keine aktuellen Warnhinweise"}</p>
 
         <div class="vehicle-card-actions">
           <button class="admin-btn vehicle-btn-muted" type="button" data-vehicle-action="details" data-vehicle-id="${vehicle.id}">Details</button>
@@ -588,7 +632,7 @@
         <span>${formatKm(vehicle.odometerKm)}</span>
         <span>${formatDate(vehicle.nextService)}</span>
         <span>${formatDate(vehicle.tuvDate)}</span>
-        <span><button class="admin-btn vehicle-btn-muted vehicle-row-action" type="button" data-vehicle-action="details" data-vehicle-id="${vehicle.id}">Details</button></span>
+        <span><button class="admin-btn vehicle-btn-muted vehicle-row-action" type="button" data-vehicle-action="details" data-vehicle-id="${vehicle.id}">Details</button><small class="vehicle-compact-hint">${getVehicleWarnings(vehicle)[0] || ""}</small></span>
       `;
 
       const statusSlot = row.querySelector(".vehicle-compact-status");
@@ -609,7 +653,7 @@
       row.innerHTML = `
         <td>${vehicle.name}</td>
         <td>${vehicle.plate}</td>
-        <td>${vehicle.type}</td>
+        <td>${vehicle.type} · ${vehicle.seats} Sitze · ${vehicle.wheelchairSuitable ? "Rollstuhl" : "Standard"}</td>
         <td class="vehicle-table-status"></td>
         <td>${vehicle.currentDriver}</td>
         <td>${formatDate(vehicle.nextService)}</td>
@@ -862,6 +906,7 @@
   }
 
   applyQualityOverlays();
+  applyOperationalOverlay();
   loadSavedView();
   syncViewUi();
   syncFilterUi();

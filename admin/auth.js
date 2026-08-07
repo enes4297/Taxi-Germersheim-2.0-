@@ -320,14 +320,11 @@
   ];
 
   const SIDEBAR_GROUPS = [
-    { key: "betrieb", label: "Betrieb", items: ["Dashboard", "Live-Dispo", "Live-Karte", "Telefonzentrale", "Fahrten"] },
-    { key: "kunden", label: "Kunden", items: ["Kunden", "Serienfahrten", "Pruefen und Klaeren"] },
-    { key: "flotte", label: "Flotte", items: ["Fahrzeuge", "Fahrzeugübergaben", "Werkstatt"] },
-    { key: "personal", label: "Personal", items: ["Fahrer", "Mitarbeiter", "Personaluebersicht", "Schichtplanung", "Urlaubsplanung", "Abwesenheiten", "Dokumentfristen", "Schulungen", "Mitteilungen", "Mitarbeiterportal", "Personalaufgaben"] },
-    { key: "finanzen", label: "Finanzen", items: ["Abrechnungszentrale", "Krankenkassen", "Rechnungen", "Zahlungen", "Mahnwesen", "Monatsabschluss", "Controlling", "Kassenübersicht"] },
-    { key: "qualitaet", label: "Qualität", items: ["Qualitaet & Sicherheit", "Qualitaetsuebersicht", "Beschwerden", "Vorfaelle", "Unfaelle", "Fundbuero", "Pruefungen", "Massnahmen", "Qualitaetsberichte"] },
-    { key: "management", label: "Management", items: ["Unternehmenssteuerung", "Geschaeftsfuehrer-Dashboard", "Betriebssteuerung", "Kapazitaetsplanung", "Nachfrageprognose", "Szenarien", "Ziele", "Entscheidungscenter", "Geschaeftsberichte", "Statistiken"] },
-    { key: "system", label: "System", items: ["Aufgaben-Center", "Benachrichtigungs-Center", "Mein Arbeitsplatz", "Einstellungen", "Benutzer", "Verlauf", "Export & Backup", "Dokumente", "Hilfe"] }
+    { key: "betrieb", label: "Betrieb", items: ["Dashboard", "Telefonzentrale", "Tagesplanung", "Fahrten", "Termin-Cockpit", "Live-Dispo", "Live-Karte"] },
+    { key: "kunden", label: "Kunden", items: ["Kunden", "Serienfahrten", "Krankenkassen"] },
+    { key: "personal", label: "Personal", items: ["Mitarbeiter", "Fahrer", "Personaluebersicht", "Abwesenheiten", "Urlaubsplanung", "Dokumentfristen", "Schichtplanung"] },
+    { key: "flotte", label: "Flotte", items: ["Fahrzeuge", "Werkstatt", "Fahrzeugübergaben"] },
+    { key: "organisation", label: "Organisation", items: ["Aufgaben-Center", "Benachrichtigungs-Center", "Einstellungen", "Verlauf", "Dokumente", "Hilfe", "Mein Arbeitsplatz", "Benutzer", "Export & Backup"] }
   ];
 
   Object.entries(V20_NAV_BY_ROLE).forEach(([role, labels]) => {
@@ -640,14 +637,12 @@
     wrap.innerHTML = [
       '<button class="admin-btn admin-btn-primary admin-quick-create-main" type="button" aria-haspopup="true" aria-expanded="false" data-admin-quick-create-toggle>+ Neu</button>',
       '<div class="admin-quick-create-menu" data-admin-quick-create-menu hidden>',
-      '<a class="admin-quick-create-item" href="termin-schnellerfassung.html" title="Termin mobil und mit einer Hand vormerken"><span aria-hidden="true">📱</span><b>+ Termin</b><small>mobil</small></a>',
-      '<a class="admin-quick-create-item" href="termin-cockpit.html" title="Neuen Termin schnell erfassen"><span aria-hidden="true">🚕</span><b>Neuer Termin</b><small>Strg+Alt+F</small></a>',
+      '<a class="admin-quick-create-item" href="termin-schnellerfassung.html" title="Neue Fahrt erfassen"><span aria-hidden="true">🚕</span><b>Neue Fahrt</b><small>Strg+Alt+F</small></a>',
       '<a class="admin-quick-create-item" href="kunden.html" title="Neuen Kunden erfassen"><span aria-hidden="true">👤</span><b>Neuer Kunde</b><small>Strg+Alt+K</small></a>',
-      '<a class="admin-quick-create-item" href="fahrer.html" title="Neuen Fahrer anlegen"><span aria-hidden="true">🧑‍✈️</span><b>Neuer Fahrer</b><small>Strg+Alt+R</small></a>',
+      '<a class="admin-quick-create-item" href="mitarbeiter.html" title="Neuen Mitarbeiter anlegen"><span aria-hidden="true">🧑‍💼</span><b>Neuer Mitarbeiter</b><small>Strg+Alt+M</small></a>',
       '<a class="admin-quick-create-item" href="fahrzeuge.html" title="Neues Fahrzeug anlegen"><span aria-hidden="true">🚗</span><b>Neues Fahrzeug</b><small>Strg+Alt+V</small></a>',
-      '<a class="admin-quick-create-item" href="rechnungen.html" title="Neue Rechnung erstellen"><span aria-hidden="true">🧾</span><b>Neue Rechnung</b><small>Strg+Alt+B</small></a>',
       '<a class="admin-quick-create-item" href="aufgaben-center.html" title="Neue Aufgabe im Aufgaben-Center"><span aria-hidden="true">✅</span><b>Neue Aufgabe</b><small>Strg+Alt+A</small></a>',
-      '<a class="admin-quick-create-item" href="serienfahrten.html" title="Neue Serienfahrt erstellen"><span aria-hidden="true">🔁</span><b>Neue Serienfahrt</b><small>Strg+Alt+S</small></a>',
+      '<a class="admin-quick-create-item" href="abwesenheiten.html" title="Neue Abwesenheit erfassen"><span aria-hidden="true">📅</span><b>Abwesenheit</b><small>Strg+Alt+U</small></a>',
       "</div>"
     ].join("");
 

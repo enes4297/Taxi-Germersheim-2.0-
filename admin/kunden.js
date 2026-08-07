@@ -4,7 +4,9 @@
     customers: "adminSharedCustomersV14",
     tasks: "adminSharedTasksV14",
     callbacks: "adminSharedCallbacksV14",
-    rideInbox: "adminSharedRideInboxV14"
+    rideInbox: "adminSharedRideInboxV14",
+    series: "adminSharedSeriesV14",
+    cockpit: "adminTerminCockpitV22Phase1"
   };
 
   const DEFAULT_CUSTOMERS = [
@@ -157,6 +159,11 @@
     Krankenkasse: "customer-type-medical",
     Firmenkunde: "customer-type-company",
     Firmenkunden: "customer-type-company",
+    Geschäftskunde: "customer-type-company",
+    Einrichtung: "customer-type-medical",
+    Bahnunternehmen: "customer-type-company",
+    Pflegeeinrichtung: "customer-type-medical",
+    Krankenfahrt: "customer-type-medical",
     VIP: "customer-type-vip",
     Schülerfahrt: "customer-type-school",
     Patient: "customer-type-medical"
@@ -169,7 +176,7 @@
     searchTerm: "",
     activeFilter: "Alle",
     selectedCustomerId: "",
-    profileTab: "basis",
+    profileTab: "uebersicht",
     modalContext: null
   };
 
@@ -179,6 +186,17 @@
       if (!raw) return deepClone(fallback);
       const parsed = JSON.parse(raw);
       return Array.isArray(parsed) ? parsed.map(normalizeCustomerShape) : deepClone(fallback);
+    } catch {
+      return deepClone(fallback);
+    }
+  }
+
+  function loadRawArray(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return deepClone(fallback);
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : deepClone(fallback);
     } catch {
       return deepClone(fallback);
     }
@@ -296,13 +314,32 @@
     return state.customers.find((item) => item.id === state.selectedCustomerId) || null;
   }
 
+  function normalizedCustomerType(customer) {
+    const text = normalizeText(customer.type || "");
+    if (text.includes("bahn")) return "Bahnunternehmen";
+    if (text.includes("pflege")) return "Pflegeeinrichtung";
+    if (text.includes("einrichtung")) return "Einrichtung";
+    if (text.includes("geschaft") || text.includes("geschaeft") || text.includes("firmen")) return "Geschäftskunde";
+    if (text.includes("krank") || text.includes("patient")) return "Krankenfahrt";
+    return "Privatkunde";
+  }
+
+  function isMedicalType(customer) {
+    return normalizedCustomerType(customer) === "Krankenfahrt" || normalizedCustomerType(customer) === "Pflegeeinrichtung" || normalizedCustomerType(customer) === "Einrichtung";
+  }
+
+  function isBusinessType(customer) {
+    return ["Geschäftskunde", "Bahnunternehmen", "Einrichtung", "Pflegeeinrichtung"].includes(normalizedCustomerType(customer));
+  }
+
   function matchesFilter(customer) {
     if (state.activeFilter === "Alle") return true;
-    if (state.activeFilter === "Stammkunden") return customer.type === "Stammkunde";
-    if (state.activeFilter === "Krankenkasse") return customer.type === "Krankenkasse" || customer.type === "Patient";
-    if (state.activeFilter === "Firmenkunden") return customer.type === "Firmenkunde";
-    if (state.activeFilter === "Patient") return customer.type === "Patient";
-    if (state.activeFilter === "VIP") return customer.type === "VIP" || /vip|gold|platin/i.test(customer.rewardsStatus || "");
+    if (state.activeFilter === "Privatkunde") return normalizedCustomerType(customer) === "Privatkunde";
+    if (state.activeFilter === "Krankenfahrt") return normalizedCustomerType(customer) === "Krankenfahrt";
+    if (state.activeFilter === "Geschäftskunde") return normalizedCustomerType(customer) === "Geschäftskunde";
+    if (state.activeFilter === "Einrichtung") return normalizedCustomerType(customer) === "Einrichtung";
+    if (state.activeFilter === "Bahnunternehmen") return normalizedCustomerType(customer) === "Bahnunternehmen";
+    if (state.activeFilter === "Pflegeeinrichtung") return normalizedCustomerType(customer) === "Pflegeeinrichtung";
     if (state.activeFilter === "Rückfrage offen") return Boolean(customer.openQuestion);
     return true;
   }
@@ -377,30 +414,43 @@
         card.style.borderColor = "rgba(255,217,106,0.5)";
       }
 
-      const lastRide = customer.rides && customer.rides.length ? `${formatDateDisplay(customer.rides[0].date)} ${customer.rides[0].time || ""}` : "-";
-      const nextRide = customer.openRide || "-";
+      const rides = Array.isArray(customer.rides) ? customer.rides : [];
+      const sorted = rides.slice().sort((a, b) => `${String(b.date || "")} ${String(b.time || "")}`.localeCompare(`${String(a.date || "")} ${String(a.time || "")}`, "de"));
+      const lastRide = sorted.length ? `${formatDateDisplay(sorted[0].date)} ${sorted[0].time || ""}` : "-";
+      const nextCandidate = rides
+        .filter((ride) => !["Abgeschlossen", "Storniert"].includes(String(ride.status || "")))
+        .sort((a, b) => `${String(a.date || "")} ${String(a.time || "")}`.localeCompare(`${String(b.date || "")} ${String(b.time || "")}`, "de"))[0] || null;
+      const nextRide = nextCandidate ? `${formatDateDisplay(nextCandidate.date)} ${nextCandidate.time || ""}` : "-";
+      const openRides = rides.filter((ride) => !["Abgeschlossen", "Storniert"].includes(String(ride.status || ""))).length;
+      const address = ((customer.addresses || []).find((item) => item.isDefault) || (customer.addresses || [])[0] || {}).fullAddress || "-";
+      const typeLabel = normalizedCustomerType(customer);
 
       card.innerHTML = `
         <header class="customer-card-head">
           <div>
             <h2>${getCustomerLabel(customer)}</h2>
-            <span class="customer-type-badge ${typeMeta[customer.type] || "customer-type-private"}">${customer.type}</span>
+            <span class="customer-type-badge ${typeMeta[typeLabel] || "customer-type-private"}">${typeLabel}</span>
           </div>
-          <span class="customer-rewards">${customer.rewardsStatus || "Basis"}</span>
+          <span class="customer-rewards">${customer.status || "Aktiv"}</span>
         </header>
 
         <dl class="customer-meta-list">
           <div><dt>Telefon</dt><dd>${customer.phone || "-"}</dd></div>
+          <div><dt>Adresse</dt><dd>${address}</dd></div>
+          <div><dt>Kundentyp</dt><dd>${typeLabel}</dd></div>
           <div><dt>Letzte Fahrt</dt><dd>${lastRide}</dd></div>
-          <div><dt>Lieblingsziel</dt><dd>${customer.favoriteDestination || "-"}</dd></div>
-          <div><dt>Offene Fahrt</dt><dd class="customer-next-ride">${nextRide}</dd></div>
+          <div><dt>Nächste Fahrt</dt><dd class="customer-next-ride">${nextRide}</dd></div>
+          <div><dt>Offene Fahrten</dt><dd>${openRides}</dd></div>
+          <div><dt>Hinweis</dt><dd>${customer.importantHint || "-"}</dd></div>
         </dl>
 
         ${customer.openQuestion ? "<p class='customer-question'>Rückfrage offen</p>" : ""}
 
         <div class="customer-card-actions">
-          <button class="admin-btn" type="button" data-customer-action="select" data-customer-id="${customer.id}">Öffnen</button>
-          <button class="admin-btn customer-btn-muted" type="button" data-customer-action="ride" data-customer-id="${customer.id}">Neue Fahrt</button>
+          <button class="admin-btn customer-btn-muted" type="button" data-customer-action="ride" data-customer-id="${customer.id}">Fahrt erstellen</button>
+          <button class="admin-btn customer-btn-muted" type="button" data-customer-action="call" data-customer-id="${customer.id}">Anrufen</button>
+          <button class="admin-btn customer-btn-muted" type="button" data-customer-action="edit" data-customer-id="${customer.id}">Bearbeiten</button>
+          <button class="admin-btn" type="button" data-customer-action="select" data-customer-id="${customer.id}">Details</button>
         </div>
       `;
 
@@ -425,20 +475,22 @@
     const profileId = document.querySelector("[data-customer-profile-id]");
     const top = document.querySelector("[data-customer-profile-top]");
 
-    const basisPane = document.querySelector('[data-customer-profile-pane="basis"]');
-    const dokuPane = document.querySelector('[data-customer-profile-pane="doku"]');
+    const uebersichtPane = document.querySelector('[data-customer-profile-pane="uebersicht"]');
     const fahrtenPane = document.querySelector('[data-customer-profile-pane="fahrten"]');
-    const aufgabenPane = document.querySelector('[data-customer-profile-pane="aufgaben"]');
+    const serienPane = document.querySelector('[data-customer-profile-pane="serienfahrten"]');
+    const abrechnungPane = document.querySelector('[data-customer-profile-pane="abrechnung"]');
+    const notizenPane = document.querySelector('[data-customer-profile-pane="notizen"]');
 
-    if (!customer || !profileId || !top || !basisPane || !dokuPane || !fahrtenPane || !aufgabenPane) return;
+    if (!customer || !profileId || !top || !uebersichtPane || !fahrtenPane || !serienPane || !abrechnungPane || !notizenPane) return;
 
     profileId.textContent = customer.customerNumber || customer.id;
+    const defaultAddress = customer.addresses.find((item) => item.isDefault) || customer.addresses[0];
 
     top.innerHTML = `
       <strong>${getCustomerLabel(customer)}</strong>
-      <p>${customer.type} · ${customer.status}${customer.locked ? " · gesperrt" : ""}</p>
+      <p>${normalizedCustomerType(customer)} · ${customer.status}${customer.locked ? " · gesperrt" : ""}</p>
       <p>Telefon: ${customer.phone || "-"}${customer.altPhone ? ` · Alt: ${customer.altPhone}` : ""}</p>
-      <p>E-Mail: ${customer.email || "-"}</p>
+      <p>Adresse: ${defaultAddress ? defaultAddress.fullAddress : "-"}</p>
       ${customer.importantHint ? `<p class="customer-profile-alert">${customer.importantHint}</p>` : ""}
       <div class="customer-extra-tags">
         <span class="customer-extra-tag">Abrechnung: ${customer.billingType || "-"}</span>
@@ -452,44 +504,41 @@
       </div>
     `;
 
-    const defaultAddress = customer.addresses.find((item) => item.isDefault) || customer.addresses[0];
+    const seriesRows = loadRawArray(STORAGE_KEYS.series, []).filter((row) => row.customerId === customer.id || normalizeText(row.customerLabel || "") === normalizeText(getCustomerLabel(customer)));
 
-    basisPane.innerHTML = `
+    uebersichtPane.innerHTML = `
       <dl class="customer-profile-list">
-        <div><dt>Hauptadresse</dt><dd>${defaultAddress ? defaultAddress.fullAddress : "-"}</dd></div>
-        <div><dt>Geburtsdatum</dt><dd>${customer.birthDate || "-"}</dd></div>
-        <div><dt>Versicherungsnummer</dt><dd>${customer.insuranceNumber || "-"}</dd></div>
-        <div><dt>Lieblingsziel</dt><dd>${customer.favoriteDestination || "-"}</dd></div>
+        <div><dt>Kunde</dt><dd>${getCustomerLabel(customer)}</dd></div>
+        <div><dt>Telefon</dt><dd>${customer.phone || "-"}</dd></div>
+        <div><dt>Adresse</dt><dd>${defaultAddress ? defaultAddress.fullAddress : "-"}</dd></div>
+        <div><dt>Kundentyp</dt><dd>${normalizedCustomerType(customer)}</dd></div>
+        <div><dt>Status</dt><dd>${customer.status || "Aktiv"}</dd></div>
         <div><dt>Erstellt</dt><dd>${formatDateDisplay(customer.createdAt)}</dd></div>
         <div><dt>Aktualisiert</dt><dd>${formatDateDisplay(customer.updatedAt)}</dd></div>
       </dl>
-      <div class="customer-profile-note-list">
-        ${(customer.notes || []).slice(0, 6).map((note) => `
-          <article class="customer-mini-item">
-            <strong>${note.type || "Notiz"}${note.pinned ? " · Angeheftet" : ""}</strong>
-            <p>${note.text || "-"}</p>
-            <small>${formatDateTimeDisplay(note.at)}</small>
-          </article>
-        `).join("") || '<div class="customer-profile-empty">Keine Notizen vorhanden.</div>'}
-      </div>
-    `;
-
-    dokuPane.innerHTML = `
-      <dl class="customer-profile-list">
-        <div><dt>Genehmigungsstatus</dt><dd>${customer.permitStatus || "-"}</dd></div>
-        <div><dt>Transportschein</dt><dd>${customer.transportFormStatus || "-"}</dd></div>
-        <div><dt>Versicherung</dt><dd>${customer.insurance || "-"}</dd></div>
-        <div><dt>Abrechnungsart</dt><dd>${customer.billingType || "-"}</dd></div>
-      </dl>
-      <div class="customer-profile-history">
-        ${(customer.communication || []).slice(0, 8).map((entry) => `
-          <article class="customer-mini-item">
-            <strong>${entry.type || "Eintrag"}</strong>
-            <p>${entry.text || "-"}</p>
-            <small>${formatDateTimeDisplay(entry.at)}</small>
-          </article>
-        `).join("") || '<div class="customer-profile-empty">Kein Kommunikationsverlauf vorhanden.</div>'}
-      </div>
+      ${isMedicalType(customer) ? `
+        <dl class="customer-profile-list">
+          <div><dt>Krankenkasse</dt><dd>${customer.insurance || "-"}</dd></div>
+          <div><dt>Genehmigung vorhanden</dt><dd>${customer.permitStatus || "-"}</dd></div>
+          <div><dt>Genehmigung gültig bis</dt><dd>${formatDateDisplay(customer.permitValidUntil)}</dd></div>
+          <div><dt>Beförderungsart</dt><dd>${customer.transportKind || customer.rideTypePreference || "-"}</dd></div>
+          <div><dt>Rollstuhl</dt><dd>${customer.wheelchairRequired ? "Ja" : "Nein"}</dd></div>
+          <div><dt>Begleitperson</dt><dd>${customer.companionRequired ? "Ja" : "Nein"}</dd></div>
+          <div><dt>Besondere Hinweise</dt><dd>${customer.medicalHint || customer.importantHint || "-"}</dd></div>
+        </dl>
+      ` : ""}
+      ${isBusinessType(customer) ? `
+        <dl class="customer-profile-list">
+          <div><dt>Firmenname</dt><dd>${customer.companyName || getCustomerLabel(customer)}</dd></div>
+          <div><dt>Ansprechpartner</dt><dd>${customer.contactPerson || "-"}</dd></div>
+          <div><dt>Telefonnummer</dt><dd>${customer.phone || "-"}</dd></div>
+          <div><dt>E-Mail</dt><dd>${customer.email || "-"}</dd></div>
+          <div><dt>Rechnungsadresse</dt><dd>${customer.billingAddress || "-"}</dd></div>
+          <div><dt>Kundennummer</dt><dd>${customer.customerNumber || "-"}</dd></div>
+          <div><dt>Interne Hinweise</dt><dd>${customer.internalBusinessNote || "-"}</dd></div>
+          <div><dt>Zahlungsart</dt><dd>${customer.billingType || "-"}</dd></div>
+        </dl>
+      ` : ""}
     `;
 
     fahrtenPane.innerHTML = `
@@ -508,11 +557,43 @@
       </div>
     `;
 
+    serienPane.innerHTML = `
+      <div class="customer-profile-history">
+        ${seriesRows.map((row) => `
+          <article class="customer-mini-item">
+            <strong>${row.id || "-"} · ${row.rideType || "Serie"}</strong>
+            <p>${row.pickup || "-"} → ${row.destination || "-"}</p>
+            <p>Tage: ${(row.days || []).join("/") || "-"} · ${row.pickupTime || "-"} Uhr</p>
+            <p>Status: ${row.status || "aktiv"}</p>
+          </article>
+        `).join("") || '<div class="customer-profile-empty">Keine Serienfahrten vorhanden.</div>'}
+      </div>
+    `;
+
+    abrechnungPane.innerHTML = `
+      <dl class="customer-profile-list">
+        <div><dt>Abrechnungsart</dt><dd>${customer.billingType || "-"}</dd></div>
+        <div><dt>Versicherung</dt><dd>${customer.insurance || "-"}</dd></div>
+        <div><dt>Versicherungsnummer</dt><dd>${customer.insuranceNumber || "-"}</dd></div>
+        <div><dt>Genehmigungsstatus</dt><dd>${customer.permitStatus || "-"}</dd></div>
+        <div><dt>Transportschein</dt><dd>${customer.transportFormStatus || "-"}</dd></div>
+        <div><dt>Umsatz (Demo)</dt><dd>${formatEuro(customer.revenueDemo || 0)}</dd></div>
+      </dl>
+    `;
+
     const customerTasks = state.tasks.filter((item) => item.customerId === customer.id);
     const customerCallbacks = state.callbacks.filter((item) => item.customerId === customer.id);
 
-    aufgabenPane.innerHTML = `
+    notizenPane.innerHTML = `
       <div class="customer-profile-task-list">
+        ${(customer.notes || []).slice(0, 12).map((note) => `
+          <article class="customer-mini-item">
+            <strong>${note.type || "Notiz"}${note.pinned ? " · Angeheftet" : ""}</strong>
+            <p>${note.text || "-"}</p>
+            <small>${formatDateTimeDisplay(note.at)}</small>
+          </article>
+        `).join("") || '<div class="customer-profile-empty">Keine Notizen vorhanden.</div>'}
+
         ${customerTasks.map((task) => `
           <article class="customer-mini-item">
             <strong>${task.title}</strong>
@@ -589,20 +670,29 @@
     }) || null;
   }
 
-  function openNewCustomerModal() {
+  function openNewCustomerModal(preselectedType = "") {
+    const typeOptions = ["Privatkunde", "Krankenfahrt", "Geschäftskunde", "Einrichtung", "Bahnunternehmen", "Pflegeeinrichtung"];
     openModal(
       "Neuen Kunden anlegen",
       `
         <form class="customer-modal-grid" data-customer-new-form>
           <label><span>Name / Firma</span><input class="driver-search-input" name="displayName" required></label>
-          <label><span>Kundentyp</span><select class="driver-search-input" name="type"><option>Privatkunde</option><option>Stammkunde</option><option>Patient</option><option>Firmenkunde</option><option>VIP</option></select></label>
+          <label><span>Kundentyp</span><select class="driver-search-input" name="type">${typeOptions.map((item) => `<option value="${item}"${preselectedType === item ? " selected" : ""}>${item}</option>`).join("")}</select></label>
           <label><span>Telefon</span><input class="driver-search-input" name="phone" required></label>
           <label><span>E-Mail</span><input class="driver-search-input" name="email"></label>
           <label><span>Geburtsdatum</span><input class="driver-search-input" type="date" name="birthDate"></label>
           <label><span>Versicherungsnummer</span><input class="driver-search-input" name="insuranceNumber"></label>
           <label><span>Versicherung</span><input class="driver-search-input" name="insurance"></label>
+          <label><span>Ansprechpartner</span><input class="driver-search-input" name="contactPerson"></label>
+          <label><span>Kundennummer extern</span><input class="driver-search-input" name="externalCustomerNo"></label>
+          <label class="full"><span>Rechnungsadresse</span><input class="driver-search-input" name="billingAddress"></label>
+          <label><span>Genehmigung gültig bis</span><input class="driver-search-input" type="date" name="permitValidUntil"></label>
+          <label><span>Beförderungsart</span><input class="driver-search-input" name="transportKind" placeholder="z. B. sitzend, Tragestuhl"></label>
+          <label><span>Rollstuhl</span><select class="driver-search-input" name="wheelchairRequired"><option>Nein</option><option>Ja</option></select></label>
+          <label><span>Begleitperson</span><select class="driver-search-input" name="companionRequired"><option>Nein</option><option>Ja</option></select></label>
           <label><span>Abrechnung</span><select class="driver-search-input" name="billingType"><option>Privat</option><option>Krankenkasse</option><option>Monatsrechnung</option><option>Firmenkonto</option></select></label>
           <label class="full"><span>Hauptadresse</span><input class="driver-search-input" name="address" required></label>
+          <label class="full"><span>Interne Hinweise</span><textarea class="driver-search-input" name="internalBusinessNote"></textarea></label>
           <label class="full"><span>Wichtiger Hinweis</span><textarea class="driver-search-input" name="importantHint"></textarea></label>
         </form>
         <p class="customer-modal-warning">Beim Speichern wird automatisch eine Dublettenprüfung durchgeführt.</p>
@@ -645,12 +735,21 @@
       birthDate: payload.birthDate || "",
       insurance: payload.insurance || "",
       insuranceNumber: payload.insuranceNumber || "",
-      permitStatus: payload.type === "Patient" ? "angefragt" : "nicht erforderlich",
-      transportFormStatus: payload.type === "Patient" ? "offen" : "vorhanden",
+      permitStatus: payload.type === "Krankenfahrt" ? "angefragt" : "nicht erforderlich",
+      permitValidUntil: payload.permitValidUntil || "",
+      transportKind: payload.transportKind || "",
+      transportFormStatus: payload.type === "Krankenfahrt" ? "offen" : "vorhanden",
       billingType: payload.billingType || "Privat",
       openQuestion: false,
       favoriteDestination: "",
       rewardsStatus: "Basis",
+      companyName: payload.type === "Geschäftskunde" || payload.type === "Bahnunternehmen" ? payload.displayName : "",
+      contactPerson: payload.contactPerson || "",
+      externalCustomerNo: payload.externalCustomerNo || "",
+      billingAddress: payload.billingAddress || "",
+      internalBusinessNote: payload.internalBusinessNote || "",
+      wheelchairRequired: payload.wheelchairRequired === "Ja",
+      companionRequired: payload.companionRequired === "Ja",
       ridesCount: 0,
       revenueDemo: 0,
       notes: [],
@@ -744,6 +843,7 @@
     const inbox = loadRideInbox();
     inbox.unshift(payload);
     localStorage.setItem(STORAGE_KEYS.rideInbox, JSON.stringify(inbox.slice(0, 120)));
+    syncRideToCockpit(payload, customer);
 
     customer.rides.unshift({
       id: payload.id,
@@ -761,6 +861,40 @@
 
     saveShared();
     renderAll();
+  }
+
+  function syncRideToCockpit(payload, customer) {
+    const store = loadObject(STORAGE_KEYS.cockpit, { appointments: [] });
+    store.appointments = Array.isArray(store.appointments) ? store.appointments : [];
+    store.appointments.unshift({
+      id: payload.id,
+      date: payload.date,
+      time: payload.time,
+      customer: payload.customer,
+      phone: payload.phone,
+      pickup: payload.pickup,
+      destination: payload.destination,
+      rideType: payload.rideType,
+      type: payload.rideType,
+      status: "Offen",
+      planStatus: "Offen",
+      billing: payload.billing,
+      note: payload.notes,
+      customerId: customer.id,
+      customerType: normalizedCustomerType(customer)
+    });
+    localStorage.setItem(STORAGE_KEYS.cockpit, JSON.stringify(store));
+  }
+
+  function loadObject(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return deepClone(fallback);
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : deepClone(fallback);
+    } catch {
+      return deepClone(fallback);
+    }
   }
 
   function loadRideInbox() {
@@ -854,6 +988,7 @@
       if (topAction) {
         const action = topAction.getAttribute("data-customer-top-action");
         if (action === "new") openNewCustomerModal();
+        if (action === "newBusiness") openNewCustomerModal("Geschäftskunde");
         if (action === "duplicate") openDuplicateReport();
         if (action === "reset") resetFilters();
         if (action === "phone") window.location.href = "telefonzentrale.html";
@@ -893,6 +1028,11 @@
 
         if (action === "ride") {
           createRideForCustomer(customer);
+          return;
+        }
+
+        if (action === "edit") {
+          openNoteModal(customer.id);
           return;
         }
 

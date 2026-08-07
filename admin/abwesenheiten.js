@@ -15,6 +15,13 @@
     { key: "offen", label: "Offen" }
   ];
 
+  function daysBetween(start, end) {
+    const a = new Date(`${start}T00:00:00`).getTime();
+    const b = new Date(`${end}T00:00:00`).getTime();
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
+    return Math.max(1, Math.floor((b - a) / 86400000) + 1);
+  }
+
   function empName(id) {
     const e = P.getEmployee(state.data, id);
     return e ? `${e.firstName} ${e.lastName}` : id || "-";
@@ -91,7 +98,7 @@
     if (filter === "urlaub") return false;
     if (filter === "schulung") return kind === "schulung" || kind === "fortbildung";
     if (filter === "vertretung") return open && !row.replacementId;
-    if (filter === "offen") return open && ["angefordert", "fehlt", "unvollstaendig", "angekuendigt"].includes(proof);
+    if (filter === "offen") return open && (["angefordert", "fehlt", "unvollstaendig", "angekuendigt"].includes(proof) || ["beantragt", "in pruefung"].includes(normalize(row.status)));
     return activeRows.includes(row);
   }
 
@@ -147,7 +154,7 @@
       }
       const period = toDisplayRange(row.start, row.expectedEnd || row.start);
       const open = normalize(row.status) !== "abgeschlossen";
-      return `<tr><td>${empName(row.employeeId)}</td><td>${row.kind || "-"}</td><td>${period}</td><td>${statusBadge(row.status)}</td><td>${row.replacementId ? empName(row.replacementId) : "-"}</td><td>${(row.affectedShifts || []).join(", ") || "-"}</td><td><button class="admin-btn admin-btn-secondary" type="button" data-abs-detail="${row.id}">Details</button>${open ? `<button class="admin-btn admin-btn-primary" type="button" data-abs-return="${row.id}">Rückkehr erfassen</button>` : ""}</td></tr>`;
+      return `<tr><td>${empName(row.employeeId)}</td><td>${row.kind || "-"}</td><td>${period}</td><td>${statusBadge(row.status)}</td><td>${row.replacementId ? empName(row.replacementId) : "-"}</td><td>${(row.affectedShifts || []).join(", ") || "-"}</td><td><button class="admin-btn admin-btn-secondary" type="button" data-abs-detail="${row.id}">Details</button>${open ? `<button class="admin-btn admin-btn-primary" type="button" data-abs-decide="approve" data-abs-id="${row.id}">Genehmigen</button><button class="admin-btn admin-btn-secondary" type="button" data-abs-decide="reject" data-abs-id="${row.id}">Ablehnen</button>` : ""}${open ? `<button class="admin-btn admin-btn-secondary" type="button" data-abs-return="${row.id}">Rückkehr erfassen</button>` : ""}</td></tr>`;
     }).join("");
   }
 
@@ -187,6 +194,7 @@
       { label: "Nachweisstatus", value: row.proofStatus || "-" },
       { label: "Vertretung", value: row.replacementId ? empName(row.replacementId) : "-" },
       { label: "Betroffene Schichten", value: (row.affectedShifts || []).join(", ") || row.comment || "-" },
+      { label: "Anzahl Tage", value: daysBetween(row.start, row.expectedEnd || row.start) },
       { label: "Notiz", value: row.note || row.internalNote || "-", full: true }
     ].map((item) => `<div class="person-detail-card${item.full ? " full" : ""}"><small>${item.label}</small><strong>${item.value}</strong></div>`).join("");
     if (returnButton) returnButton.hidden = isVacation || normalize(row.status) === "abgeschlossen";
@@ -271,6 +279,25 @@
         return;
       }
 
+      const decision = event.target.closest("[data-abs-decide]");
+      if (decision) {
+        const id = decision.getAttribute("data-abs-id") || "";
+        const action = decision.getAttribute("data-abs-decide") || "";
+        const row = state.data.absences.find((entry) => entry.id === id);
+        if (!row) return;
+        row.status = action === "approve" ? "Genehmigt" : "Abgelehnt";
+        if (action === "reject") {
+          row.returnedAt = currentDayIso();
+          row.expectedEnd = currentDayIso();
+        }
+        if (typeof P.saveState === "function") P.saveState(state.data);
+        state.data = P.loadState();
+        renderKpis();
+        renderFilters();
+        renderTable();
+        return;
+      }
+
       const detailReturn = event.target.closest("[data-abs-detail-return]");
       if (detailReturn && state.selectedId) {
         P.markReturn(state.data, state.selectedId, currentDayIso(), true);
@@ -308,7 +335,7 @@
           proofStatus: String(fd.get("proofStatus") || "angekündigt"),
           replacementId: String(fd.get("replacementId") || ""),
           note: String(fd.get("note") || ""),
-          status: "gemeldet",
+          status: "Beantragt",
           affectedShifts: String(fd.get("affectedShifts") || "").split(";").map((x) => x.trim()).filter(Boolean)
         });
         state.data = P.loadState();

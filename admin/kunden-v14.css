@@ -6,11 +6,12 @@
 .customer-profile-top strong { font-size: 18px; }
 .customer-profile-top p { margin: 0; font-size: 13px; color: rgba(255,255,255,0.84); }
 .customer-profile-alert { margin: 0; border: 1px dashed rgba(255,163,122,0.45); border-radius: 10px; padding: 7px 9px; color: #ffd2bf; background: rgba(255,163,122,0.11); font-size: 12px; }
-.customer-profile-tabs { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 6px; }
+.customer-profile-tabs { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 6px; }
 .customer-profile-tab { min-height: 32px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.84); font-size: 11px; cursor: pointer; }
 .customer-profile-tab.is-active { border-color: rgba(255,217,106,0.5); background: rgba(255,217,106,0.14); color: var(--gold); }
 .customer-profile-pane { display: none; border: 1px solid var(--line); border-radius: 12px; padding: 10px; gap: 8px; background: rgba(255,255,255,0.02); }
 .customer-profile-pane.is-visible { display: grid; }
+.customer-card-actions .admin-btn { min-height: 30px; font-size: 11px; padding: 0 9px; }
 .customer-profile-list { margin: 0; display: grid; gap: 7px; }
 .customer-profile-list div { display: grid; gap: 2px; }
 .customer-profile-list dt { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }

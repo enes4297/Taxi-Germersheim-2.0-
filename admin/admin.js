@@ -1,5 +1,10 @@
 (() => {
-  const rides = [
+  const P = window.AdminPersonnelDemo || null;
+  const COCKPIT_KEY = "adminTerminCockpitV22Phase1";
+  const LIVE_DISPO_KEY = "adminLiveDispoV131";
+  const CUSTOMER_KEY = "adminSharedCustomersV14";
+  const SERIES_KEY = "adminSharedSeriesV14";
+  const fallbackRides = [
     {
       id: "R-100",
       time: "07:20",
@@ -152,6 +157,8 @@
     }
   ];
 
+  let rides = [];
+
   const statusClassMap = {
     Offen: "ride-status-open",
     Bestätigt: "ride-status-confirmed",
@@ -173,9 +180,129 @@
   };
 
   const state = {
-    activeFilter: "Alle",
+    activeFilter: "Heute",
     searchTerm: ""
   };
+
+  function safeParse(raw) {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function todayIso() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  }
+
+  function tomorrowIso() {
+    const now = new Date();
+    now.setDate(now.getDate() + 1);
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  }
+
+  function weekEndIso() {
+    const now = new Date();
+    const day = now.getDay() || 7;
+    now.setDate(now.getDate() + (7 - day));
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  }
+
+  function nowMinutes() {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  }
+
+  function toMinutes(time) {
+    const [h, m] = String(time || "00:00").split(":").map((v) => Number(v));
+    return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+  }
+
+  function normalizeStatus(raw) {
+    const n = normalize(raw);
+    if (n.includes("storniert")) return "Storniert";
+    if (n.includes("abgeschlossen")) return "Abgeschlossen";
+    if (n.includes("unterwegs")) return "Unterwegs";
+    if (n.includes("zugewiesen")) return "Fahrer zugewiesen";
+    if (n.includes("bestatigt")) return "Bestätigt";
+    if (n.includes("konflikt")) return "Konflikt";
+    return "Offen";
+  }
+
+  function normalizeRideType(raw) {
+    const text = String(raw || "Taxi").trim();
+    const n = normalize(text);
+    if (n.includes("kranken")) return "Krankenfahrt";
+    if (n.includes("rollstuhl")) return "Rollstuhlfahrt";
+    if (n.includes("schuler")) return "Schülerfahrt";
+    if (n.includes("grossraum") || n.includes("großraum")) return "Großraum";
+    if (n.includes("kurier")) return "Kurier";
+    if (n.includes("flughafen")) return "Flughafen";
+    return text || "Taxi";
+  }
+
+  function formatDate(value) {
+    const text = String(value || "").trim();
+    if (!text) return "-";
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return text;
+    return `${match[3]}.${match[2]}.${match[1]}`;
+  }
+
+  function loadCustomers() {
+    const customers = safeParse(localStorage.getItem(CUSTOMER_KEY));
+    return Array.isArray(customers) ? customers : [];
+  }
+
+  function inferCustomerType(ride, customers) {
+    const row = customers.find((customer) => normalize(customer.id) === normalize(ride.customerId || "") || normalize(customer.displayName || "") === normalize(ride.customer || ""));
+    const typeText = normalize((row && row.type) || ride.customerType || "");
+    if (typeText.includes("geschaft") || typeText.includes("geschaeft") || typeText.includes("firma") || typeText.includes("bahn") || typeText.includes("pflege") || typeText.includes("einrichtung")) return "Geschäftskunde";
+    if (typeText.includes("krank") || typeText.includes("patient")) return "Krankenfahrt";
+    return "Privatkunde";
+  }
+
+  function loadRides() {
+    const payload = safeParse(localStorage.getItem(COCKPIT_KEY)) || {};
+    const rows = Array.isArray(payload.appointments) ? payload.appointments : [];
+    const customers = loadCustomers();
+    const seriesRows = safeParse(localStorage.getItem(SERIES_KEY));
+    const series = Array.isArray(seriesRows) ? seriesRows : [];
+    const mapped = rows
+      .map((row) => ({
+        id: row.id || `R-${Math.floor(Math.random() * 10000)}`,
+        time: row.time || "",
+        customer: row.customer || row.name || "Unbekannt",
+        phone: row.phone || "-",
+        pickup: row.pickup || "-",
+        destination: row.destination || "-",
+        rideType: normalizeRideType(row.rideType || row.type || "Taxi"),
+        status: normalizeStatus(row.status || row.planStatus || "Offen"),
+        driver: row.driverName || row.driver || "-",
+        vehicle: row.vehicleLabel || row.vehicle || "-",
+        priceDemo: Number(row.price || row.amount || 0),
+        paymentDemo: row.payment || row.billing || "-",
+        noteDemo: row.note || row.special || "-",
+        date: row.date || todayIso(),
+        customerId: row.customerId || "",
+        customerType: inferCustomerType({ ...row, customer: row.customer || row.name || "" }, customers),
+        isSeries: Boolean(row.seriesId) || series.some((entry) => normalize(entry.customerLabel || "") === normalize(row.customer || row.name || "") && normalize(entry.pickup || "") === normalize(row.pickup || "") && normalize(entry.destination || "") === normalize(row.destination || ""))
+      }));
+    if (mapped.length) {
+      rides = mapped.sort((a, b) => `${String(a.date || "")} ${String(a.time || "99:99")}`.localeCompare(`${String(b.date || "")} ${String(b.time || "99:99")}`, "de"));
+      return;
+    }
+    const today = todayIso();
+    const tomorrow = tomorrowIso();
+    rides = fallbackRides.map((ride, index) => ({
+      ...ride,
+      date: index % 4 === 0 ? tomorrow : today,
+      customerType: normalize(ride.paymentDemo).includes("firmen") ? "Geschäftskunde" : "Privatkunde",
+      isSeries: normalize(ride.noteDemo).includes("wiederkehr")
+    }));
+  }
 
   function formatEuro(value) {
     return `${Number(value || 0).toFixed(2).replace('.', ',')} EUR`;
@@ -196,17 +323,17 @@
   }
 
   function matchesFilter(ride) {
-    if (state.activeFilter === "Alle") return true;
-
+    const today = todayIso();
+    const tomorrow = tomorrowIso();
+    const weekEnd = weekEndIso();
     const filter = state.activeFilter;
-    if (["Offen", "Bestätigt", "Unterwegs", "Abgeschlossen", "Storniert"].includes(filter)) {
-      return ride.status === filter;
-    }
-
-    if (["Krankenfahrt", "Flughafen"].includes(filter)) {
-      return ride.rideType === filter;
-    }
-
+    if (filter === "Heute") return ride.date === today;
+    if (filter === "Morgen") return ride.date === tomorrow;
+    if (filter === "Diese Woche") return ride.date >= today && ride.date <= weekEnd;
+    if (filter === "Offen") return ["Offen", "Konflikt"].includes(ride.status);
+    if (filter === "Krankenfahrt") return ride.rideType === "Krankenfahrt";
+    if (filter === "Serienfahrt") return ride.isSeries;
+    if (filter === "Geschäftskunde") return ride.customerType === "Geschäftskunde";
     return true;
   }
 
@@ -215,7 +342,9 @@
 
     const search = normalize(state.searchTerm);
     return [
+      ride.id,
       ride.customer,
+      ride.phone,
       ride.driver,
       ride.vehicle,
       ride.pickup,
@@ -229,11 +358,13 @@
   }
 
   function renderStats() {
+    const today = todayIso();
+    const tomorrow = tomorrowIso();
     const stats = {
-      today: rides.length,
+      today: rides.filter((ride) => ride.date === today).length,
       open: rides.filter((ride) => ride.status === "Offen").length,
-      confirmed: rides.filter((ride) => ride.status === "Bestätigt").length,
-      onRoute: rides.filter((ride) => ride.status === "Unterwegs").length,
+      confirmed: rides.filter((ride) => ["Bestätigt", "Fahrer zugewiesen"].includes(ride.status)).length,
+      onRoute: rides.filter((ride) => ride.date === tomorrow).length,
       completed: rides.filter((ride) => ride.status === "Abgeschlossen").length,
       cancelled: rides.filter((ride) => ride.status === "Storniert").length
     };
@@ -246,13 +377,125 @@
     });
   }
 
+  function renderOperationalStats() {
+    const personnel = P && typeof P.loadState === "function" ? P.loadState() : { employees: [], vacations: [], absences: [] };
+    const dispo = safeParse(localStorage.getItem(LIVE_DISPO_KEY)) || { vehicles: [] };
+    const vehicles = Array.isArray(dispo.vehicles) ? dispo.vehicles : [];
+    const now = nowMinutes();
+
+    const drivers = (personnel.employees || []).filter((emp) => emp.role === "Fahrer");
+    const onDuty = drivers.filter((emp) => {
+      const n = normalize(emp.status);
+      return !n.includes("krank") && !n.includes("urlaub") && !n.includes("abwes") && !n.includes("gesperrt");
+    });
+
+    const availableDrivers = onDuty.filter((emp) => {
+      const shift = String(emp.todayShift || "").match(/^(\d{2}:\d{2})-(\d{2}:\d{2})$/);
+      if (!shift) return false;
+      const start = toMinutes(shift[1]);
+      const endRaw = toMinutes(shift[2]);
+      const end = endRaw <= start ? endRaw + 1440 : endRaw;
+      const current = now < start ? now + 1440 : now;
+      const inShift = current >= start && current <= end;
+      if (!inShift) return false;
+      const hasRide = rides.some((ride) => {
+        if (normalize(ride.driver) !== normalize(`${emp.firstName || ""} ${emp.lastName || ""}`.trim())) return false;
+        const rideStart = toMinutes(ride.time);
+        const rideEnd = rideStart + 45;
+        return current >= rideStart && current <= rideEnd && ["Unterwegs", "Bestätigt", "Fahrer zugewiesen"].includes(ride.status);
+      });
+      return !hasRide;
+    });
+
+    const availableVehicles = vehicles.filter((vehicle) => {
+      const text = normalize(`${vehicle.status || ""} ${vehicle.workshopStatus || ""}`);
+      return !text.includes("werkstatt") && !text.includes("gesperrt") && !text.includes("unterwegs");
+    }).length;
+
+    const conflictCount = rides.filter((ride) => ride.status === "Konflikt" || (ride.status === "Offen" && toMinutes(ride.time) <= now)).length;
+
+    const values = {
+      today: rides.length,
+      open: rides.filter((ride) => ["Offen", "Konflikt"].includes(ride.status)).length,
+      onDuty: onDuty.length,
+      availableDrivers: availableDrivers.length,
+      availableVehicles,
+      conflicts: conflictCount
+    };
+    Object.entries(values).forEach(([key, value]) => {
+      const node = document.querySelector(`[data-ride-operational="${key}"]`);
+      if (node) node.textContent = String(value);
+    });
+  }
+
+  function renderNextRides() {
+    const node = document.querySelector("[data-ride-next-list]");
+    if (!node) return;
+    const now = nowMinutes();
+    const upcoming = rides
+      .filter((ride) => toMinutes(ride.time) >= now && ["Offen", "Bestätigt", "Fahrer zugewiesen", "Unterwegs"].includes(ride.status))
+      .sort((a, b) => toMinutes(a.time) - toMinutes(b.time))
+      .slice(0, 4);
+    if (!upcoming.length) {
+      node.innerHTML = '<p class="m-note">Als Nächstes: aktuell keine offenen Termine.</p>';
+      return;
+    }
+    node.innerHTML = `
+      <h3>Als Nächstes</h3>
+      ${upcoming.map((ride) => `<article class="ride-next-item"><strong>${formatDate(ride.date)} · ${ride.time} Uhr · ${ride.customer}</strong><p>${ride.pickup} → ${ride.destination}</p><small>${ride.rideType} · ${ride.driver}</small></article>`).join("")}
+    `;
+  }
+
+  function renderManagementStats() {
+    const personnel = P && typeof P.loadState === "function" ? P.loadState() : { vacations: [], documents: [] };
+    const docs = Array.isArray(personnel.documents) ? personnel.documents : [];
+    const vacations = Array.isArray(personnel.vacations) ? personnel.vacations : [];
+    const tasks = safeParse(localStorage.getItem("adminSystemCenterV21")) || { tasksManual: [], tasksOverrides: {}, notificationsManual: [] };
+    const now = nowMinutes();
+    const tomorrow = tomorrowIso();
+
+    const vehicleDeadlines = rides.filter((ride) => ride.status === "Konflikt").length + (safeParse(localStorage.getItem(LIVE_DISPO_KEY))?.vehicles || []).filter((vehicle) => {
+      const status = normalize(`${vehicle.status || ""} ${vehicle.workshopStatus || ""}`);
+      return status.includes("werkstatt") || status.includes("gesperrt");
+    }).length;
+
+    const staffDeadlines = docs.filter((doc) => {
+      const date = String(doc.validUntil || "");
+      if (!date) return false;
+      const diff = Math.floor((new Date(`${date}T00:00:00`).getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000);
+      return diff <= 30;
+    }).length;
+
+    const vacOpen = vacations.filter((row) => ["beantragt", "in Pruefung"].includes(String(row.status || ""))).length;
+    const tasksOpen = (Array.isArray(tasks.tasksManual) ? tasks.tasksManual : []).filter((row) => !["erledigt", "storniert"].includes(normalize(row.status))).length;
+    const approvalsOpen = (Array.isArray(tasks.notificationsManual) ? tasks.notificationsManual : []).filter((row) => !["gelesen", "erledigt", "archiviert"].includes(normalize(row.status))).length;
+    const tomorrowRides = rides.filter((ride) => ride.date === tomorrow).length;
+    const tomorrowDriversOpen = rides.filter((ride) => ride.date === tomorrow && (!ride.driver || ride.driver === "-" || ride.status === "Offen" || ride.status === "Konflikt")).length;
+    const tomorrowConflicts = rides.filter((ride) => ride.date === tomorrow && ride.status === "Konflikt").length;
+
+    const values = {
+      staffDeadlines,
+      vehicleDeadlines,
+      vacOpen,
+      tasksOpen,
+      approvalsOpen,
+      tomorrowRides,
+      tomorrowDriversOpen,
+      tomorrowConflicts
+    };
+    Object.entries(values).forEach(([key, value]) => {
+      const node = document.querySelector(`[data-ride-mgmt="${key}"]`);
+      if (node) node.textContent = String(value);
+    });
+  }
+
   function buildRideCard(ride) {
     const primary = getPrimaryAction(ride);
     return `
       <article class="ride-card">
         <header class="ride-card-head">
           <div>
-            <h2>${ride.time} - ${ride.customer}</h2>
+            <h2>${formatDate(ride.date)} · ${ride.time} · ${ride.customer}</h2>
             <span class="ride-type-badge ${typeClassMap[ride.rideType] || "ride-type-taxi"}">${ride.rideType}</span>
           </div>
           <span class="status-pill ${statusClassMap[ride.status] || "ride-status-open"}">${ride.status}</span>
@@ -349,21 +592,46 @@
 
   function buildDetailsModal(ride) {
     return `
-      <dl class="ride-modal-list">
-        <div><dt>Fahrtzeit</dt><dd>${ride.time}</dd></div>
-        <div><dt>Kunde</dt><dd>${ride.customer}</dd></div>
-        <div><dt>Telefonnummer Demo</dt><dd>${ride.phone}</dd></div>
-        <div><dt>Abholort</dt><dd>${ride.pickup}</dd></div>
-        <div><dt>Ziel</dt><dd>${ride.destination}</dd></div>
-        <div><dt>Fahrttyp</dt><dd>${ride.rideType}</dd></div>
-        <div><dt>Status</dt><dd>${ride.status}</dd></div>
-        <div><dt>Fahrer</dt><dd>${ride.driver}</dd></div>
-        <div><dt>Fahrzeug</dt><dd>${ride.vehicle}</dd></div>
-        <div><dt>Preis</dt><dd>${formatEuro(ride.priceDemo)}</dd></div>
-        <div><dt>Zahlungsart</dt><dd>${ride.paymentDemo}</dd></div>
-        <div><dt>Hinweis</dt><dd>${ride.noteDemo}</dd></div>
-      </dl>
-      <p class="ride-modal-note">Interne Notiz: Demo-Daten - später Backend-Anbindung möglich</p>
+      <div class="ride-modal-block">
+        <strong>FAHRT</strong>
+        <dl class="ride-modal-list">
+          <div><dt>Datum</dt><dd>${formatDate(ride.date)}</dd></div>
+          <div><dt>Uhrzeit</dt><dd>${ride.time}</dd></div>
+          <div><dt>Abholung</dt><dd>${ride.pickup}</dd></div>
+          <div><dt>Ziel</dt><dd>${ride.destination}</dd></div>
+          <div><dt>Personen</dt><dd>${ride.persons || 1}</dd></div>
+          <div><dt>Fahrtart</dt><dd>${ride.rideType}</dd></div>
+        </dl>
+      </div>
+      <div class="ride-modal-block">
+        <strong>KUNDE</strong>
+        <dl class="ride-modal-list">
+          <div><dt>Name</dt><dd>${ride.customer}</dd></div>
+          <div><dt>Telefonnummer</dt><dd>${ride.phone}</dd></div>
+          <div><dt>Relevanter Hinweis</dt><dd>${ride.noteDemo || "-"}</dd></div>
+        </dl>
+      </div>
+      <div class="ride-modal-block">
+        <strong>DISPOSITION</strong>
+        <dl class="ride-modal-list">
+          <div><dt>Fahrer</dt><dd>${ride.driver}</dd></div>
+          <div><dt>Fahrzeug</dt><dd>${ride.vehicle}</dd></div>
+          <div><dt>Status</dt><dd>${ride.status}</dd></div>
+          <div><dt>Konfliktstatus</dt><dd>${ride.status === "Konflikt" ? "Konflikt" : "kein Konflikt"}</dd></div>
+        </dl>
+      </div>
+      <div class="ride-modal-block">
+        <strong>ABRECHNUNG</strong>
+        <dl class="ride-modal-list">
+          <div><dt>Art</dt><dd>${ride.paymentDemo}</dd></div>
+          <div><dt>Betrag</dt><dd>${formatEuro(ride.priceDemo)}</dd></div>
+          <div><dt>Status</dt><dd>${ride.status === "Abgeschlossen" ? "abgeschlossen" : "noch offen"}</dd></div>
+        </dl>
+      </div>
+      <div class="ride-modal-block">
+        <strong>NOTIZEN</strong>
+        <p class="ride-modal-note">${ride.noteDemo || "Keine interne Dispositionsnotiz"}</p>
+      </div>
     `;
   }
 
@@ -408,12 +676,12 @@
     document.addEventListener("click", (event) => {
       const resetButton = event.target.closest("[data-ride-reset]");
       if (resetButton) {
-        state.activeFilter = "Alle";
+        state.activeFilter = "Heute";
         state.searchTerm = "";
         const searchInput = document.querySelector("[data-ride-search]");
         if (searchInput) searchInput.value = "";
         document.querySelectorAll("[data-ride-filter]").forEach((item) => {
-          item.classList.toggle("is-active", (item.getAttribute("data-ride-filter") || "") === "Alle");
+          item.classList.toggle("is-active", (item.getAttribute("data-ride-filter") || "") === "Heute");
         });
         renderRides();
         return;
@@ -459,7 +727,11 @@
     });
   }
 
+  loadRides();
   renderStats();
+  renderOperationalStats();
+  renderManagementStats();
+  renderNextRides();
   bindSearch();
   bindFilters();
   bindActions();

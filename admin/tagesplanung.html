@@ -38,6 +38,7 @@
           <button class="admin-btn admin-btn-secondary" type="button" data-day-shortcut="today">Heute</button>
           <button class="admin-btn" type="button" data-day-shortcut="tomorrow">Morgen</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-day-shortcut="dayAfter">Übermorgen</button>
+          <button class="admin-btn" type="button" data-tp-mode-toggle>Morgen vorbereiten</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-plan-toggle-map>Karte anzeigen</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-plan-recalculate>Planung neu berechnen</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-plan-save>Plan speichern</button>
@@ -73,7 +74,34 @@
         <div class="tp-service-list" data-tp-service-list></div>
       </section>
 
-      <section class="admin-panel tp-intake-panel" aria-label="Minimale Terminaufnahme">
+      <section class="admin-panel tp-tomorrow-panel" aria-label="Morgen vorbereiten" data-tp-tomorrow-panel hidden>
+        <div class="admin-panel-head tp-tomorrow-head">
+          <div>
+            <h2>Morgen vorbereiten</h2>
+            <small data-tp-tomorrow-date>Datum: -</small>
+          </div>
+          <div class="tp-inline-actions">
+            <button class="admin-btn admin-btn-secondary" type="button" data-tp-suggest-open>Vorschläge erstellen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-tp-apply-conflictfree>Alle konfliktfreien Vorschläge übernehmen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-tp-mode-close>Zur Tagesplanung</button>
+          </div>
+        </div>
+        <div class="tp-tomorrow-status" data-tp-tomorrow-status></div>
+        <div class="tp-tomorrow-kpis" data-tp-tomorrow-kpis></div>
+        <div class="tp-inline-actions tp-tomorrow-filters">
+          <button class="tp-filter-chip is-active" type="button" data-tp-tomorrow-filter="alle">Alle</button>
+          <button class="tp-filter-chip" type="button" data-tp-tomorrow-filter="offen">Offen</button>
+          <button class="tp-filter-chip" type="button" data-tp-tomorrow-filter="zugewiesen">Zugewiesen</button>
+          <button class="tp-filter-chip" type="button" data-tp-tomorrow-filter="konflikte">Konflikte</button>
+          <button class="tp-filter-chip" type="button" data-tp-tomorrow-filter="kranken">Krankenfahrten</button>
+          <button class="tp-filter-chip" type="button" data-tp-tomorrow-filter="serien">Serienfahrten</button>
+        </div>
+        <div class="tp-tomorrow-prepared" data-tp-tomorrow-prepared></div>
+        <div class="tp-tomorrow-list" data-tp-tomorrow-list></div>
+        <div class="tp-tomorrow-timeline" data-tp-timeline></div>
+      </section>
+
+      <section class="admin-panel tp-intake-panel" aria-label="Minimale Terminaufnahme" data-tp-day-workspace>
         <div class="admin-panel-head">
           <h2>Terminaufnahme</h2>
           <small>Pflichtfelder für eine Erfassung in unter 20 Sekunden, weitere Angaben nur bei Bedarf.</small>
@@ -121,7 +149,7 @@
         </form>
       </section>
 
-      <section class="tp-layout" aria-label="Tagesplanung Arbeitsbereich">
+      <section class="tp-layout" aria-label="Tagesplanung Arbeitsbereich" data-tp-day-workspace>
         <section class="tp-column tp-column-left">
           <section class="admin-panel" aria-label="Termine des ausgewählten Tages">
             <div class="admin-panel-head">
