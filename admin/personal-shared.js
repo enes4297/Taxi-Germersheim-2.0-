@@ -1150,6 +1150,54 @@
     return row;
   }
 
+  function reviewEmployeeDocument(state, documentId, status, by) {
+    const row = state.documents.find((doc) => doc.id === documentId);
+    if (!row) return null;
+    row.status = status;
+    row.checkedAt = todayIso();
+    row.checkedBy = by || "Admin";
+    if (status === "gueltig") {
+      row.reminderActive = false;
+    }
+    state.notifications.unshift({ id: `PN-${Date.now()}`, at: nowStamp(), title: "Dokument geprüft", priority: "normal", ref: row.id });
+    applyDocumentLockSync(state);
+    saveState(state);
+    return row;
+  }
+
+  function publishEmployeePlanForDate(state, employeeId, dateIso, payload = {}) {
+    const employee = getEmployee(state, employeeId);
+    if (!employee) return null;
+    const store = getPlanningStore();
+    const day = store.days[dateIso] || {};
+    const existingRows = Array.isArray(day.publishedPlan && day.publishedPlan.driverRows) ? day.publishedPlan.driverRows : [];
+    const nextRow = {
+      employeeId,
+      status: payload.status || employee.status || "im Dienst",
+      shiftStart: payload.shiftStart || employee.todayShift || "08:00",
+      shiftEnd: payload.shiftEnd || "16:00",
+      vehicleLabel: payload.vehicleLabel || employee.activeVehicle || employee.preferredVehicle || "",
+      vehicle: payload.vehicle || employee.activeVehicle || employee.preferredVehicle || "",
+      note: payload.note || "",
+      published: true
+    };
+    day.publishedPlan = {
+      publishedAt: payload.publishedAt || nowStamp(),
+      publishedBy: payload.publishedBy || "Admin",
+      changed: Boolean(payload.changed),
+      driverRows: existingRows.filter((row) => row.employeeId !== employeeId).concat(nextRow)
+    };
+    day.draftPlan = day.draftPlan || { driverRows: [] };
+    day.draftPlan.driverRows = Array.isArray(day.draftPlan.driverRows)
+      ? day.draftPlan.driverRows.filter((row) => row.employeeId !== employeeId).concat({ ...nextRow, published: false })
+      : [{ ...nextRow, published: false }];
+    store.days[dateIso] = day;
+    localStorage.setItem(PLAN_KEY, JSON.stringify(store));
+    state.notifications.unshift({ id: `PN-${Date.now()}`, at: nowStamp(), title: "Plan veröffentlicht", priority: "normal", ref: employeeId });
+    saveState(state);
+    return day.publishedPlan;
+  }
+
   function markReturn(state, absenceId, returnedAt, ready) {
     const row = state.absences.find((a) => a.id === absenceId);
     if (!row) return null;
@@ -1301,6 +1349,8 @@
     decideVacationRequest,
     addAbsence,
     submitEmployeeDocument,
+    reviewEmployeeDocument,
+    publishEmployeePlanForDate,
     markReturn,
     getDashboardStats,
     buildPersonalWarnings,

@@ -1,0 +1,11 @@
+{
+  "name": "Taxi Germersheim Mitarbeiter",
+  "short_name": "TG Mitarbeiter",
+  "description": "Mitarbeiterportal für Taxi Germersheim",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090b12",
+  "theme_color": "#090b12",
+  "orientation": "portrait"
+}

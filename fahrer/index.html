@@ -3,8 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Taxi Germersheim - Fahrer-Portal</title>
+  <title>Taxi Germersheim - Mitarbeiterportal</title>
   <meta name="robots" content="noindex,nofollow">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Taxi Germersheim Mitarbeiter">
+  <meta name="theme-color" content="#090b12">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -12,130 +16,32 @@
     <section class="driver-login" data-screen="login">
       <header class="driver-login-head">
         <img src="../logo.png" alt="Taxi Germersheim Logo">
-        <h1>Fahrer-Portal</h1>
-        <p>Demo-Anmeldung ohne echtes Backend</p>
-      </header>
-      <div class="driver-select-grid" data-driver-select-grid></div>
-      <p class="demo-note">Hinweis: Keine echte Anmeldung, keine GPS- und keine Telefonanbindung.</p>
-    </section>
-
-    <section class="driver-dashboard" data-screen="dashboard" hidden>
-      <header class="driver-top">
-        <div class="driver-identity" data-driver-identity></div>
-        <div class="driver-top-actions">
-          <button class="driver-btn ghost" type="button" data-driver-action="switch">Fahrer wechseln</button>
-          <button class="driver-btn danger" type="button" data-driver-action="reset">Fahrer-Demo zurücksetzen</button>
-        </div>
+        <h1>Taxi Germersheim</h1>
+        <p>MITARBEITER</p>
       </header>
 
-      <section class="driver-status-cards" data-driver-status-cards></section>
+      <form class="driver-login-form" data-employee-login-form>
+        <label class="driver-login-field">
+          <span>Benutzername / Mitarbeiterkennung</span>
+          <input class="driver-input" type="text" name="username" autocomplete="username" placeholder="z. B. demo" required>
+        </label>
+        <label class="driver-login-field">
+          <span>Passwort</span>
+          <input class="driver-input" type="password" name="password" autocomplete="current-password" placeholder="demo" required>
+        </label>
+        <label class="driver-login-check">
+          <input type="checkbox" name="remember">
+          <span>Angemeldet bleiben</span>
+        </label>
+        <button class="driver-btn primary" type="submit">Anmelden</button>
+      </form>
 
-      <section class="driver-quick-actions">
-        <button class="driver-btn primary" type="button" data-driver-action="startShift">Schicht starten</button>
-        <button class="driver-btn primary" type="button" data-driver-action="takeVehicle">Fahrzeug übernehmen</button>
-        <button class="driver-btn" type="button" data-driver-action="openOrder">Auftrag öffnen</button>
-        <button class="driver-btn" type="button" data-driver-action="pause">Pause starten</button>
-        <button class="driver-btn" type="button" data-driver-action="contactCenter">Zentrale kontaktieren</button>
-        <button class="driver-btn warning" type="button" data-driver-action="problem">Problem melden</button>
-        <button class="driver-btn danger" type="button" data-driver-action="endShift">Schicht beenden</button>
-      </section>
-
-      <nav class="driver-mobile-nav" aria-label="Fahrer Navigation">
-        <button class="driver-mobile-tab is-active" type="button" data-driver-tab="start">Start</button>
-        <button class="driver-mobile-tab" type="button" data-driver-tab="orders">Aufträge</button>
-        <button class="driver-mobile-tab" type="button" data-driver-tab="vehicle">Fahrzeug</button>
-        <button class="driver-mobile-tab" type="button" data-driver-tab="alerts">Meldungen</button>
-        <button class="driver-mobile-tab" type="button" data-driver-tab="shift">Schicht</button>
-      </nav>
-
-      <section class="driver-pane is-visible" data-driver-pane="start">
-        <article class="driver-card">
-          <h2>Aktueller Status</h2>
-          <div data-driver-current-status></div>
-        </article>
-        <article class="driver-card">
-          <h2>Schichtzeit (Demo)</h2>
-          <div data-driver-worktime></div>
-        </article>
-        <article class="driver-card">
-          <h2>Benachrichtigungen</h2>
-          <div data-driver-notifications></div>
-        </article>
-      </section>
-
-      <section class="driver-pane" data-driver-pane="orders">
-        <article class="driver-card">
-          <h2>Auftragseingang</h2>
-          <div data-driver-order-inbox></div>
-        </article>
-        <article class="driver-card">
-          <h2>Aktiver Auftrag</h2>
-          <div data-driver-active-order></div>
-        </article>
-      </section>
-
-      <section class="driver-pane" data-driver-pane="vehicle">
-        <article class="driver-card">
-          <h2>Fahrzeugcheck / Schäden</h2>
-          <div class="driver-card-actions-inline">
-            <button class="driver-btn" type="button" data-driver-action="vehicleCheck">Checkliste</button>
-            <button class="driver-btn warning" type="button" data-driver-action="damage">Schaden erfassen</button>
-            <button class="driver-btn" type="button" data-driver-action="fuel">Tanken</button>
-            <button class="driver-btn" type="button" data-driver-action="charge">Laden</button>
-            <button class="driver-btn" type="button" data-driver-action="cleaning">Reinigung</button>
-          </div>
-          <div data-driver-vehicle-overview></div>
-        </article>
-      </section>
-
-      <section class="driver-pane" data-driver-pane="alerts">
-        <article class="driver-card">
-          <h2>Problem- und Notfallmeldungen</h2>
-          <div class="driver-card-actions-inline">
-            <button class="driver-btn warning" type="button" data-driver-action="problem">Problem melden</button>
-            <button class="driver-btn danger" type="button" data-driver-action="accident">Unfallmeldung</button>
-            <button class="driver-btn" type="button" data-driver-action="fund">Fundsache melden</button>
-            <button class="driver-btn" type="button" data-driver-action="statement">Stellungnahme abgeben</button>
-            <button class="driver-btn" type="button" data-driver-action="qualityTasks">offene Massnahmen</button>
-            <button class="driver-btn" type="button" data-driver-action="confirmInspection">Pruefung bestaetigen</button>
-            <button class="driver-btn" type="button" data-driver-action="answerQuestion">Rueckfrage beantworten</button>
-            <button class="driver-btn" type="button" data-driver-action="qualityHints">wichtige Hinweise</button>
-          </div>
-          <div data-driver-problem-list></div>
-        </article>
-      </section>
-
-      <section class="driver-pane" data-driver-pane="shift">
-        <article class="driver-card">
-          <h2>Zahlungen und Kasse</h2>
-          <div class="driver-card-actions-inline">
-            <button class="driver-btn" type="button" data-driver-action="payment">Zahlung erfassen</button>
-            <button class="driver-btn" type="button" data-driver-action="cash">Bargeldübersicht</button>
-            <button class="driver-btn" type="button" data-driver-action="handover">Schichtübergabe</button>
-          </div>
-          <div data-driver-cash-overview></div>
-        </article>
-      </section>
+      <p class="demo-note" data-login-message hidden></p>
+      <p class="demo-note">Demo-Zugang: Benutzername <strong>demo</strong> · Passwort <strong>demo</strong></p>
+      <p class="demo-note">Hinweis: Diese Demo-Ansicht ist für die lokale Entwicklung gedacht und kann später leicht deaktiviert werden.</p>
     </section>
   </main>
 
-  <div class="driver-modal" data-driver-modal hidden>
-    <div class="driver-modal-backdrop" data-driver-modal-close></div>
-    <section class="driver-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="driver-modal-title">
-      <header class="driver-modal-head">
-        <h3 id="driver-modal-title" data-driver-modal-title>Fahrer-Portal</h3>
-        <button class="driver-btn ghost" type="button" data-driver-modal-close>Schließen</button>
-      </header>
-      <div class="driver-modal-body" data-driver-modal-body></div>
-      <footer class="driver-modal-foot" data-driver-modal-foot>
-        <button class="driver-btn" type="button" data-driver-modal-close>Fertig</button>
-      </footer>
-    </section>
-  </div>
-
-  <script src="../admin/qualitaet-shared.js"></script>
-  <script src="../admin/ui-visible-terms.js"></script>
-  <script src="../admin/ui-text.js"></script>
-  <script src="app.js"></script>
+  <script src="mitarbeiter-login.js"></script>
 </body>
 </html>

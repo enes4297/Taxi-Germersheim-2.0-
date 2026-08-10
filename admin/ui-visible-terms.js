@@ -65,7 +65,15 @@
     [/Zugewiesen an/g, "Zugewiesen an"],
     [/Verknuepfung/g, "Verknüpfung"],
     [/Oeffnen/g, "Öffnen"],
-    [/oeffnen/g, "öffnen"]
+    [/oeffnen/g, "öffnen"],
+    [/Moeglich/g, "Möglich"],
+    [/moeglich/g, "möglich"],
+    [/Vollstaendig/g, "Vollständig"],
+    [/vollstaendig/g, "vollständig"],
+    [/Schluessel/g, "Schlüssel"],
+    [/schluessel/g, "schlüssel"],
+    [/Grossraumfahrzeug/g, "Großraumfahrzeug"],
+    [/grossraumfahrzeug/g, "großraumfahrzeug"]
   ];
 
   window.AdminUiVisibleTerms = terms;

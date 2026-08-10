@@ -115,6 +115,82 @@
   gap: 10px;
 }
 
+.person-cockpit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+  gap: 14px;
+}
+
+.person-cockpit-card {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.person-cockpit-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.person-cockpit-stat {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.person-cockpit-stat strong {
+  display: block;
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+.person-cockpit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.person-cockpit-actions button,
+.person-cockpit-form button {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  border-radius: 10px;
+  padding: 7px 10px;
+}
+
+.person-cockpit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.person-cockpit-item {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.person-cockpit-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.person-cockpit-form input,
+.person-cockpit-form textarea {
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  padding: 8px;
+}
+
 .person-item {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
@@ -342,6 +418,10 @@
   }
 
   .person-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .person-cockpit-grid {
     grid-template-columns: 1fr;
   }
 

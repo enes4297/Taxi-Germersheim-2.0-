@@ -5,48 +5,233 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Mitarbeiterportal</title>
   <meta name="robots" content="noindex,nofollow">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Taxi Germersheim Mitarbeiter">
+  <meta name="theme-color" content="#090b12">
   <script src="../admin/personal-shared.js"></script>
   <script src="../admin/qualitaet-shared.js"></script>
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
-  <main class="driver-app">
-    <section class="driver-dashboard" style="display:block">
-      <header class="driver-top">
-        <div class="driver-identity"><span class="driver-avatar">MA</span><div class="driver-identity-meta"><strong data-portal-name>Mitarbeiter</strong><small data-portal-role>Rolle</small><small data-portal-status>Status</small></div></div>
-        <div class="driver-top-actions"><button class="driver-btn ghost" type="button" data-portal-switch>Mitarbeiter wechseln</button></div>
-      </header>
+  <div class="portal-shell">
+    <header class="portal-header">
+      <div class="portal-brand">
+        <div class="portal-brand-mark">TG</div>
+        <div>
+          <p class="portal-eyebrow">Mitarbeiter</p>
+          <h1>Taxi Germersheim</h1>
+        </div>
+      </div>
+      <div class="portal-header-actions">
+        <button class="icon-btn" type="button" data-portal-open-messages aria-label="Mitteilungen öffnen">
+          <span class="icon">🔔</span>
+          <span class="badge" data-portal-message-badge>0</span>
+        </button>
+        <div class="portal-avatar" data-portal-avatar>EM</div>
+      </div>
+      <div class="portal-welcome">
+        <p class="portal-greeting" data-portal-greeting>Guten Tag</p>
+        <p class="portal-date" data-portal-date>Montag, 10.08.2026</p>
+      </div>
+    </header>
 
-      <nav class="driver-mobile-nav" aria-label="Mitarbeiter Navigation">
-        <button class="driver-mobile-tab is-active" type="button" data-portal-tab="start">Start</button>
-        <button class="driver-mobile-tab" type="button" data-portal-tab="dienstplan">Dienstplan</button>
-        <button class="driver-mobile-tab" type="button" data-portal-tab="urlaub">Urlaub</button>
-        <button class="driver-mobile-tab" type="button" data-portal-tab="krank">Krankmeldung</button>
-        <button class="driver-mobile-tab" type="button" data-portal-tab="dokumente">Dokumente</button>
-        <button class="driver-mobile-tab" type="button" data-portal-tab="mitteilungen">Mitteilungen</button>
-      </nav>
-
-      <section class="driver-pane is-visible" data-portal-pane="start">
-        <article class="driver-card driver-hero-card"><h2>Willkommen im Mitarbeiterportal</h2><div data-portal-summary></div><p class="demo-note">Nur organisatorische Demo-Daten. Keine Fahrtenverwaltung, keine Disposition, keine Qualitätsmodule.</p></article>
-        <article class="driver-card"><h2>Heute und morgen</h2><div data-portal-kpis></div></article>
+    <main class="portal-content">
+      <section class="portal-home-grid">
+        <article class="panel-card hero-card" data-portal-hero></article>
+        <article class="panel-card" data-portal-tomorrow></article>
+        <article class="panel-card" data-portal-priority></article>
       </section>
 
-      <section class="driver-pane" data-portal-pane="dienstplan"><article class="driver-card"><h2>Dienstplan</h2><div data-portal-shift-list></div></article></section>
+      <section class="panel-card">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Schnellaktionen</p>
+            <h2>Direkt loslegen</h2>
+          </div>
+        </div>
+        <div class="quick-actions" aria-label="Schnellaktionen">
+          <button class="quick-action-card" type="button" data-portal-quick-action="dienstplan">
+            <span class="quick-icon">🗓️</span>
+            <strong>Dienstplan</strong>
+            <span>Ansicht öffnen</span>
+          </button>
+          <button class="quick-action-card" type="button" data-portal-quick-action="urlaub">
+            <span class="quick-icon">🌴</span>
+            <strong>Urlaub beantragen</strong>
+            <span>Formular direkt öffnen</span>
+          </button>
+          <button class="quick-action-card" type="button" data-portal-quick-action="krank">
+            <span class="quick-icon">🩺</span>
+            <strong>Krank melden</strong>
+            <span>Schnell einreichen</span>
+          </button>
+          <button class="quick-action-card" type="button" data-portal-quick-action="dokumente">
+            <span class="quick-icon">📄</span>
+            <strong>Dokument einreichen</strong>
+            <span>Foto oder Datei</span>
+          </button>
+        </div>
+      </section>
 
-      <section class="driver-pane" data-portal-pane="urlaub"><article class="driver-card"><h2>Urlaub</h2><div class="driver-summary-grid" data-portal-vac-summary></div><form data-portal-vac-form><div class="driver-list"><article class="driver-item"><label>Start<input type="date" name="start" required></label><label>Ende<input type="date" name="end" required></label><label>Art<select name="type"><option>Erholungsurlaub</option><option>Resturlaub</option><option>Sonderurlaub</option><option>unbezahlter Urlaub</option><option>halber Urlaubstag</option></select></label><label>Kommentar<input name="comment"></label><button class="driver-btn primary" type="submit">Antrag senden</button></article></div></form><div data-portal-vac-list></div></article></section>
+      <section class="portal-section is-open" data-portal-section="dienstplan" aria-expanded="true">
+        <button class="section-toggle" type="button" data-portal-section-toggle="dienstplan">
+          <span>Mein Dienstplan</span>
+          <small>Diese Woche</small>
+        </button>
+        <div class="section-body">
+          <div data-portal-shift-list></div>
+        </div>
+      </section>
 
-      <section class="driver-pane" data-portal-pane="krank"><article class="driver-card"><h2>Krankmeldung</h2><div class="driver-summary-grid" data-portal-absence-summary></div><form data-portal-absence-form><div class="driver-list"><article class="driver-item"><label>Beginn<input type="date" name="start" required></label><label>Voraussichtliches Ende<input type="date" name="expectedEnd" required></label><label>Übermittlung<select name="via"><option>Telefonisch</option><option>Mitarbeiterportal</option><option>Persönlich</option></select></label><label>Hinweis<input name="note" placeholder="z. B. Rückruf gewünscht"></label><button class="driver-btn warning" type="submit">Krankmeldung senden</button></article></div></form><div data-portal-absence-list></div></article></section>
+      <section class="portal-section" data-portal-section="urlaub" aria-expanded="false">
+        <button class="section-toggle" type="button" data-portal-section-toggle="urlaub">
+          <span>Urlaub</span>
+          <small>1 Antrag</small>
+        </button>
+        <div class="section-body" hidden>
+          <div class="summary-row" data-portal-vac-summary></div>
+          <div class="section-feedback" data-portal-vac-feedback hidden></div>
+          <form class="portal-form" data-portal-vac-form>
+            <label>
+              <span>Von</span>
+              <input type="date" name="start" data-date-input="start" required>
+              <small class="field-hint" data-date-output="start">TT.MM.JJJJ</small>
+            </label>
+            <label>
+              <span>Bis</span>
+              <input type="date" name="end" data-date-input="end" required>
+              <small class="field-hint" data-date-output="end">TT.MM.JJJJ</small>
+            </label>
+            <label>
+              <span>Notiz</span>
+              <input type="text" name="comment" placeholder="Optional">
+            </label>
+            <button class="btn btn-primary" type="submit">Urlaub senden</button>
+          </form>
+          <div data-portal-vac-list></div>
+        </div>
+      </section>
 
-      <section class="driver-pane" data-portal-pane="dokumente"><article class="driver-card"><h2>Dokumente</h2><div data-portal-doc-list></div><form data-portal-doc-form><div class="driver-list"><article class="driver-item"><label>Dokumenttyp<select name="type"><option>Führerschein</option><option>Personenbeförderungsschein</option><option>Versicherung</option><option>Sonstiges Dokument</option></select></label><label>Hinweis<input name="note" placeholder="Dokumentstatus oder Rückfrage"></label><label>Datei<input type="file" name="demoFile" accept=".pdf,.jpg,.jpeg,.png"></label><button class="driver-btn" type="submit">Dokument einreichen</button></article></div></form></article></section>
+      <section class="portal-section" data-portal-section="krank" aria-expanded="false">
+        <button class="section-toggle" type="button" data-portal-section-toggle="krank">
+          <span>Krankmeldung</span>
+          <small>Einfach melden</small>
+        </button>
+        <div class="section-body" hidden>
+          <div class="section-feedback" data-portal-absence-feedback hidden></div>
+          <form class="portal-form" data-portal-absence-form>
+            <label>
+              <span>Krank ab</span>
+              <input type="date" name="start" data-date-input="absence-start" required>
+              <small class="field-hint" data-date-output="absence-start">TT.MM.JJJJ</small>
+            </label>
+            <label>
+              <span>Voraussichtlich bis</span>
+              <input type="date" name="expectedEnd" data-date-input="absence-end" required>
+              <small class="field-hint" data-date-output="absence-end">TT.MM.JJJJ</small>
+            </label>
+            <label>
+              <span>Krankenschein / AU</span>
+              <div class="upload-shell">
+                <input class="upload-input" type="file" name="demoFile" accept="image/jpeg,image/png,application/pdf" capture="environment" data-portal-doc-input>
+                <button class="upload-trigger" type="button" data-portal-upload-trigger>📷 Foto oder Datei auswählen</button>
+                <div class="upload-preview" data-portal-upload-preview hidden></div>
+                <div class="upload-meta">
+                  <span data-portal-upload-filename>Keine Datei ausgewählt</span>
+                  <button class="upload-remove" type="button" data-portal-upload-remove>Entfernen</button>
+                </div>
+              </div>
+            </label>
+            <label>
+              <span>Notiz</span>
+              <input type="text" name="note" placeholder="Optional">
+            </label>
+            <button class="btn btn-warning" type="submit">Krankmeldung senden</button>
+          </form>
+          <div data-portal-absence-list></div>
+        </div>
+      </section>
 
-      <section class="driver-pane" data-portal-pane="mitteilungen"><article class="driver-card"><h2>Mitteilungen</h2><div data-portal-msg-list></div></article></section>
-    </section>
-  </main>
+      <section class="portal-section" data-portal-section="dokumente" aria-expanded="false">
+        <button class="section-toggle" type="button" data-portal-section-toggle="dokumente">
+          <span>Meine Dokumente</span>
+          <small>Aktueller Stand</small>
+        </button>
+        <div class="section-body" hidden>
+          <form class="portal-form" data-portal-doc-form>
+            <div class="doc-type-grid" role="radiogroup" aria-label="Dokumentart">
+              <button class="doc-type-card is-selected" type="button" data-doc-type="Führerschein">
+                <span>🪪</span>
+                <strong>Führerschein</strong>
+              </button>
+              <button class="doc-type-card" type="button" data-doc-type="Personenbeförderungsschein">
+                <span>🚕</span>
+                <strong>Personenbeförderungsschein</strong>
+              </button>
+              <button class="doc-type-card" type="button" data-doc-type="Krankenschein / AU">
+                <span>🩺</span>
+                <strong>Krankenschein / AU</strong>
+              </button>
+              <button class="doc-type-card" type="button" data-doc-type="Sonstiges">
+                <span>📄</span>
+                <strong>Sonstiges</strong>
+              </button>
+            </div>
+            <input type="hidden" name="type" value="Führerschein" data-portal-doc-type-hidden>
+            <label>
+              <span>Dokument</span>
+              <div class="upload-shell">
+                <input class="upload-input" type="file" name="demoFile" accept="image/jpeg,image/png,application/pdf" capture="environment" data-portal-doc-input>
+                <button class="upload-trigger" type="button" data-portal-upload-trigger>📷 Dokument fotografieren oder auswählen</button>
+                <div class="upload-preview" data-portal-upload-preview hidden></div>
+                <div class="upload-meta">
+                  <span data-portal-upload-filename>Keine Datei ausgewählt</span>
+                  <button class="upload-remove" type="button" data-portal-upload-remove>Entfernen</button>
+                </div>
+              </div>
+            </label>
+            <label>
+              <span>Hinweis</span>
+              <input type="text" name="note" placeholder="Optional">
+            </label>
+            <button class="btn btn-primary" type="submit">Dokument senden</button>
+          </form>
+          <div data-portal-doc-list></div>
+        </div>
+      </section>
+
+      <section class="portal-section" data-portal-section="mitteilungen" aria-expanded="false">
+        <button class="section-toggle" type="button" data-portal-section-toggle="mitteilungen">
+          <span>Mitteilungen</span>
+          <small>1 neu</small>
+        </button>
+        <div class="section-body" hidden>
+          <div data-portal-msg-list></div>
+        </div>
+      </section>
+
+      <section class="portal-section" data-portal-section="profil" aria-expanded="false">
+        <button class="section-toggle" type="button" data-portal-section-toggle="profil">
+          <span>Profil</span>
+          <small>Meine Daten</small>
+        </button>
+        <div class="section-body" hidden>
+          <div class="profile-card">
+            <p class="profile-label">Mein Profil</p>
+            <strong data-portal-name></strong>
+            <p data-portal-role></p>
+            <p data-portal-status></p>
+            <button class="btn btn-ghost" type="button" data-portal-logout>Abmelden</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <div class="driver-modal" data-portal-modal hidden>
     <div class="driver-modal-backdrop" data-portal-close></div>
     <section class="driver-modal-dialog" role="dialog" aria-modal="true">
-      <header class="driver-modal-head"><h3 data-portal-modal-title>Mitarbeiterportal</h3><button class="driver-btn ghost" type="button" data-portal-close>Schliessen</button></header>
+      <header class="driver-modal-head"><h3 data-portal-modal-title>Mitarbeiterportal</h3><button class="driver-btn ghost" type="button" data-portal-close>Schließen</button></header>
       <div class="driver-modal-body" data-portal-modal-body></div>
       <footer class="driver-modal-foot"><button class="driver-btn" type="button" data-portal-close>Fertig</button></footer>
     </section>
