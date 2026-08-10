@@ -3,25 +3,14 @@
 
 create extension if not exists "uuid-ossp";
 
-create table if not exists public.profiles (
-  id uuid primary key default uuid_generate_v4(),
-  auth_user_id uuid,
-  employee_id uuid null,
-  display_name text,
-  role text not null default 'employee',
-  active boolean not null default true,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
 create table if not exists public.employees (
   id uuid primary key default uuid_generate_v4(),
-  first_name text,
-  last_name text,
+  first_name text not null,
+  last_name text not null,
   phone text,
   email text,
   employment_type text,
-  status text,
+  status text not null default 'active',
   active boolean not null default true,
   portal_active boolean not null default true,
   created_at timestamptz not null default now(),
@@ -46,12 +35,72 @@ create table if not exists public.vehicles (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.profiles (
+  id uuid primary key default uuid_generate_v4(),
+  auth_user_id uuid references auth.users(id) on delete cascade,
+  employee_id uuid references public.employees(id) on delete set null,
+  display_name text,
+  role text not null default 'employee',
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.document_types (
+  id uuid primary key default uuid_generate_v4(),
+  key text not null unique,
+  label text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.ride_series (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.document_submissions (
+  id uuid primary key default uuid_generate_v4(),
+  employee_id uuid not null references public.employees(id) on delete restrict,
+  document_type_id uuid references public.document_types(id) on delete set null,
+  file_path text,
+  file_name text,
+  mime_type text,
+  status text not null default 'submitted',
+  note text,
+  submitted_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  reviewed_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.employee_documents (
+  id uuid primary key default uuid_generate_v4(),
+  employee_id uuid not null references public.employees(id) on delete restrict,
+  document_type_id uuid references public.document_types(id) on delete set null,
+  document_number text,
+  issued_at date,
+  valid_until date,
+  issuing_authority text,
+  status text not null default 'submitted',
+  review_status text,
+  reminder_days integer,
+  note text,
+  file_path text,
+  reviewed_at timestamptz,
+  reviewed_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.shifts (
   id uuid primary key default uuid_generate_v4(),
   employee_id uuid not null references public.employees(id) on delete restrict,
   shift_date date not null,
-  start_time text,
-  end_time text,
+  start_time time,
+  end_time time,
   status text not null default 'draft',
   vehicle_id uuid references public.vehicles(id) on delete set null,
   note text,
@@ -107,58 +156,16 @@ create table if not exists public.sickness_reports (
   expected_end_date date,
   note text,
   submission_source text,
-  document_submission_id uuid,
+  document_submission_id uuid references public.document_submissions(id) on delete set null,
   status text not null default 'submitted',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists public.document_types (
-  id uuid primary key default uuid_generate_v4(),
-  key text not null unique,
-  label text not null,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.employee_documents (
-  id uuid primary key default uuid_generate_v4(),
-  employee_id uuid not null references public.employees(id) on delete restrict,
-  document_type_id uuid references public.document_types(id) on delete set null,
-  document_number text,
-  issued_at date,
-  valid_until date,
-  issuing_authority text,
-  status text not null default 'submitted',
-  review_status text,
-  reminder_days integer,
-  note text,
-  file_path text,
-  reviewed_at timestamptz,
-  reviewed_by text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists public.document_submissions (
-  id uuid primary key default uuid_generate_v4(),
-  employee_id uuid not null references public.employees(id) on delete restrict,
-  document_type_id uuid references public.document_types(id) on delete set null,
-  file_path text,
-  file_name text,
-  mime_type text,
-  status text not null default 'submitted',
-  note text,
-  submitted_at timestamptz not null default now(),
-  reviewed_at timestamptz,
-  reviewed_by text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 create table if not exists public.notifications (
   id uuid primary key default uuid_generate_v4(),
-  user_id uuid,
-  employee_id uuid,
+  user_id uuid references auth.users(id) on delete set null,
+  employee_id uuid references public.employees(id) on delete set null,
   type text not null,
   title text not null,
   message text,
@@ -173,7 +180,7 @@ create table if not exists public.tasks (
   id uuid primary key default uuid_generate_v4(),
   title text not null,
   description text,
-  assignee_user_id uuid,
+  assignee_user_id uuid references auth.users(id) on delete set null,
   due_date date,
   priority text,
   status text not null default 'open',
@@ -200,24 +207,34 @@ create table if not exists public.rides (
   employee_id uuid references public.employees(id) on delete set null,
   vehicle_id uuid references public.vehicles(id) on delete set null,
   ride_date date,
-  ride_time text,
+  ride_time time,
   pickup text,
   destination text,
   ride_type text,
   status text,
   passengers integer,
   note text,
-  series_id uuid,
+  series_id uuid references public.ride_series(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.ride_series (
-  id uuid primary key default uuid_generate_v4(),
-  name text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+alter table public.employees enable row level security;
+alter table public.vehicles enable row level security;
+alter table public.profiles enable row level security;
+alter table public.document_types enable row level security;
+alter table public.ride_series enable row level security;
+alter table public.document_submissions enable row level security;
+alter table public.employee_documents enable row level security;
+alter table public.shifts enable row level security;
+alter table public.plan_publications enable row level security;
+alter table public.absences enable row level security;
+alter table public.vacation_requests enable row level security;
+alter table public.sickness_reports enable row level security;
+alter table public.notifications enable row level security;
+alter table public.tasks enable row level security;
+alter table public.customers enable row level security;
+alter table public.rides enable row level security;
 
 create index if not exists idx_shifts_employee_id on public.shifts(employee_id);
 create index if not exists idx_shifts_shift_date on public.shifts(shift_date);
@@ -228,3 +245,4 @@ create index if not exists idx_vacation_requests_employee_id on public.vacation_
 create index if not exists idx_employee_documents_employee_id on public.employee_documents(employee_id);
 create index if not exists idx_notifications_employee_id on public.notifications(employee_id);
 create index if not exists idx_rides_customer_id on public.rides(customer_id);
+create index if not exists idx_rides_series_id on public.rides(series_id);
