@@ -25,15 +25,79 @@
     const loggedIn = localStorage.getItem(KEY_LOGGED_IN);
     const user = localStorage.getItem(KEY_USER);
     const role = localStorage.getItem(KEY_ROLE);
-    if (loggedIn !== "true" || !user || !role) return null;
-    return { loggedIn, user, role };
+    if (loggedIn === "true" && user && role) {
+      return { loggedIn, user, role };
+    }
+    return null;
   }
 
   function isValidSession(session) {
     if (!session || session.loggedIn !== "true") return false;
+    const knownRoles = ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt", "Personalverwaltung", "Qualitaetsmanagement", "Mitarbeiter"];
+    if (knownRoles.includes(session.role)) return true;
     const user = DEMO_USERS[session.user];
     if (!user) return false;
     return user.role === session.role;
+  }
+
+  async function ensureAuthBridge() {
+    if (window.TaxiSupabaseAuth && typeof window.TaxiSupabaseAuth.signInWithPassword === "function") {
+      return window.TaxiSupabaseAuth;
+    }
+
+    const existingScript = document.querySelector('script[src$="supabase-auth.js"]');
+    if (existingScript) {
+      await new Promise((resolve) => {
+        existingScript.addEventListener("load", () => resolve(), { once: true });
+      });
+      return window.TaxiSupabaseAuth;
+    }
+
+    const script = document.createElement("script");
+    script.src = "supabase-auth.js";
+    script.async = false;
+    script.onload = () => {};
+    script.onerror = () => {};
+    document.head.appendChild(script);
+
+    await new Promise((resolve) => {
+      script.addEventListener("load", () => resolve(), { once: true });
+      script.addEventListener("error", () => resolve(), { once: true });
+    });
+
+    return window.TaxiSupabaseAuth;
+  }
+
+  async function loginWithSupabaseOrDemo(username, password) {
+    const authBridge = await ensureAuthBridge();
+    if (authBridge && typeof authBridge.signInWithPassword === "function") {
+      try {
+        const result = await authBridge.signInWithPassword(username, password);
+        createDemoSession(result.user?.email || username, result.role);
+        redirectToAdmin(result.role);
+        return true;
+      } catch (error) {
+        const demoUser = DEMO_USERS[username];
+        if (demoUser && demoUser.password === password) {
+          createDemoSession(username, demoUser.role);
+          redirectToAdmin(demoUser.role);
+          return true;
+        }
+
+        setError(error.message || "Anmeldung fehlgeschlagen.");
+        return false;
+      }
+    }
+
+    const demoUser = DEMO_USERS[username];
+    if (!demoUser || demoUser.password !== password) {
+      setError("Login fehlgeschlagen. Bitte Zugangsdaten prüfen.");
+      return false;
+    }
+
+    createDemoSession(username, demoUser.role);
+    redirectToAdmin(demoUser.role);
+    return true;
   }
 
   function setError(message) {
@@ -294,25 +358,22 @@
       toggleButton.addEventListener("click", togglePasswordVisibility);
     }
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       const formData = new FormData(form);
       const username = String(formData.get("username") || "").trim();
       const password = String(formData.get("password") || "");
-      const user = DEMO_USERS[username];
-
-      if (!user || user.password !== password) {
-        setError("Login fehlgeschlagen. Bitte Demo-Zugang prüfen.");
-        return;
-      }
-
       const remember = Boolean(form.querySelector("[data-login-remember]")?.checked);
       localStorage.setItem(KEY_LOGIN_REMEMBER, remember ? "true" : "false");
 
+      if (!username || !password) {
+        setError("Bitte E-Mail und Passwort eingeben.");
+        return;
+      }
+
       setError("");
-      createDemoSession(username, user.role);
-      redirectToAdmin(user.role);
+      await loginWithSupabaseOrDemo(username, password);
     });
   }
 

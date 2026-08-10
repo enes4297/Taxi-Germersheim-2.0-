@@ -384,6 +384,14 @@
     }
   }
 
+  function ensureSupabaseBridge() {
+    if (window.TaxiSupabaseAuth && typeof window.TaxiSupabaseAuth.readStoredSession === "function") {
+      return window.TaxiSupabaseAuth;
+    }
+
+    return null;
+  }
+
   function saveSession(user, role) {
     localStorage.setItem(KEY_LOGGED_IN, "true");
     localStorage.setItem(KEY_USER, user);
@@ -397,6 +405,11 @@
         loginAt: new Date().toISOString()
       })
     );
+
+    const bridge = ensureSupabaseBridge();
+    if (bridge && typeof bridge.saveStoredSession === "function") {
+      bridge.saveStoredSession(user, role);
+    }
   }
 
   function clearSession() {
@@ -405,9 +418,22 @@
     localStorage.removeItem(KEY_ROLE);
     localStorage.removeItem(KEY_NOTICE);
     localStorage.removeItem(LEGACY_STORAGE_KEY);
+
+    const bridge = ensureSupabaseBridge();
+    if (bridge && typeof bridge.clearStoredSession === "function") {
+      bridge.clearStoredSession();
+    }
   }
 
   function readSession() {
+    const bridge = ensureSupabaseBridge();
+    if (bridge && typeof bridge.readStoredSession === "function") {
+      const storedSession = bridge.readStoredSession();
+      if (storedSession && storedSession.loggedIn === "true" && storedSession.user && storedSession.role) {
+        return { loggedIn: storedSession.loggedIn, user: storedSession.user, role: storedSession.role };
+      }
+    }
+
     const loggedIn = localStorage.getItem(KEY_LOGGED_IN);
     const user = localStorage.getItem(KEY_USER);
     const role = localStorage.getItem(KEY_ROLE);
@@ -428,6 +454,8 @@
 
   function isValidSession(session) {
     if (!session || session.loggedIn !== "true") return false;
+    const knownRoles = ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt", "Personalverwaltung", "Qualitaetsmanagement", "Mitarbeiter"];
+    if (knownRoles.includes(session.role)) return true;
     const userMeta = DEMO_USERS[session.user];
     if (!userMeta) return false;
     return userMeta.role === session.role;
@@ -1880,6 +1908,11 @@
   }
 
   function logout() {
+    const bridge = ensureSupabaseBridge();
+    if (bridge && typeof bridge.signOut === "function") {
+      bridge.signOut().catch(() => {});
+    }
+
     clearSession();
     redirectToLogin();
   }
