@@ -119,16 +119,24 @@
     return state.config || DEFAULT_CONFIG;
   }
 
+  function getSupabaseConfig() {
+    const globalConfig = window.TaxiSupabaseConfig && typeof window.TaxiSupabaseConfig === "object" ? window.TaxiSupabaseConfig : null;
+    const stateConfig = getBackendConfig();
+    const url = String(globalConfig?.url || stateConfig.supabaseUrl || "").trim();
+    const publishableKey = String(globalConfig?.publishableKey || stateConfig.supabasePublishableKey || "").trim();
+    const isConfigured = Boolean(url && publishableKey && !url.includes("HIER_EINTRAGEN") && !publishableKey.includes("HIER_EINTRAGEN"));
+    return { url, publishableKey, isConfigured };
+  }
+
   function isSupabaseConfigured() {
-    const config = getBackendConfig();
-    return Boolean(config.supabaseUrl && config.supabasePublishableKey);
+    return getSupabaseConfig().isConfigured;
   }
 
   function resolveBackendMode() {
     const config = getBackendConfig();
-    if (config.backendType === "supabase" && isSupabaseConfigured()) return "supabase";
-    if (config.backendMode === "supabase" && isSupabaseConfigured()) return "supabase";
-    return "local";
+    const explicit = String(config.backendType || config.backendMode || "").toLowerCase();
+    if ((explicit === "supabase" || explicit === "backend") && isSupabaseConfigured()) return "supabase";
+    return isSupabaseConfigured() ? "supabase" : "local";
   }
 
   function readState() {
@@ -163,15 +171,481 @@
     return writeState(state);
   }
 
-  function getEmployees() {
+  let supabaseClientPromise = null;
+  let lastEmployeeError = null;
+
+  function setEmployeeError(message) {
+    lastEmployeeError = message;
+    return message;
+  }
+
+  function clearEmployeeError() {
+    lastEmployeeError = null;
+  }
+
+  function getEmployeeError() {
+    return lastEmployeeError;
+  }
+
+  function mapEmploymentTypeToDb(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "full_time" || normalized === "festangestellt" || normalized === "vollzeit") return "full_time";
+    if (normalized === "part_time" || normalized === "teilzeit") return "part_time";
+    if (normalized === "mini_job" || normalized === "minijob") return "mini_job";
+    return "other";
+  }
+
+  function mapEmploymentTypeToUi(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "full_time" || normalized === "festangestellt" || normalized === "vollzeit") return "Festangestellt";
+    if (normalized === "part_time" || normalized === "teilzeit") return "Teilzeit";
+    if (normalized === "mini_job" || normalized === "minijob") return "Minijob";
+    if (normalized === "springer" || normalized === "aushilfe") return "Sonstiges";
+    if (normalized === "other" || normalized === "sonstiges") return "Sonstiges";
+    return String(value || "Festangestellt");
+  }
+
+  function mapEmployeeToSupabase(payload = {}) {
+    const statusValue = String(payload.status || "aktiv").trim();
+    const active = payload.active !== undefined ? Boolean(payload.active) : !["gesperrt", "inactive", "inaktiv", "deaktiviert"].includes(statusValue.toLowerCase());
+    return {
+      first_name: String(payload.firstName || payload.vorname || "").trim(),
+      last_name: String(payload.lastName || payload.nachname || "").trim(),
+      phone: String(payload.phone || "").trim() || null,
+      email: String(payload.email || "").trim() || null,
+      employment_type: mapEmploymentTypeToDb(payload.employmentType || payload.employment_type || "Vollzeit"),
+      status: statusValue || (active ? "active" : "inactive"),
+      active,
+      portal_active: payload.portalActive !== false && payload.portal_active !== false
+    };
+  }
+
+  function mapEmployeeFromSupabase(row = {}) {
+    const active = row.active !== undefined ? Boolean(row.active) : true;
+    return normalizeEmployee({
+      ...row,
+      id: row.id,
+      employeeId: row.id,
+      firstName: row.first_name || row.firstName || "",
+      lastName: row.last_name || row.lastName || "",
+      phone: row.phone || "",
+      email: row.email || "",
+      employmentType: mapEmploymentTypeToUi(row.employment_type || row.employmentType || "Vollzeit"),
+      status: row.status || (active ? "aktiv" : "gesperrt"),
+      active,
+      portalActive: row.portal_active !== false,
+      createdAt: row.created_at || row.createdAt || nowIso(),
+      updatedAt: row.updated_at || row.updatedAt || nowIso()
+    });
+  }
+
+  function mapVehicleStatusToDb(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized.includes("unterwegs") || normalized.includes("onroute") || normalized.includes("in service") || normalized.includes("in_service")) return "in_service";
+    if (normalized.includes("pause")) return "pause";
+    if (normalized.includes("werkstatt") || normalized.includes("workshop") || normalized.includes("wartung") || normalized.includes("service")) return "workshop";
+    if (normalized.includes("gesperrt") || normalized.includes("blocked") || normalized.includes("inactive") || normalized.includes("deaktiv")) return "blocked";
+    return "available";
+  }
+
+  function mapVehicleStatusToUi(value, active = true) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized.includes("in_service") || normalized.includes("unterwegs") || normalized.includes("onroute") || normalized.includes("busy")) return "Unterwegs";
+    if (normalized.includes("pause")) return "Pause";
+    if (normalized.includes("werkstatt") || normalized.includes("workshop") || normalized.includes("wartung") || normalized.includes("service")) return "Werkstatt";
+    if (normalized.includes("blocked") || normalized.includes("gesperrt") || normalized.includes("inactive") || normalized.includes("deaktiv") || !active) return "Gesperrt";
+    return "Verfügbar";
+  }
+
+  function mapVehicleToSupabase(payload = {}) {
+    const active = payload.active !== undefined ? Boolean(payload.active) : true;
+    const statusValue = String(payload.status || (active ? "Verfügbar" : "Gesperrt")).trim();
+    return {
+      name: String(payload.name || "").trim(),
+      license_plate: String(payload.plate || payload.licensePlate || payload.license_plate || "").trim() || null,
+      vehicle_type: String(payload.type || payload.vehicleType || payload.vehicle_type || "").trim() || null,
+      seats: Number(payload.seats) || null,
+      wheelchair_accessible: payload.wheelchairAccessible !== undefined ? Boolean(payload.wheelchairAccessible) : Boolean(payload.wheelchairSuitable),
+      status: mapVehicleStatusToDb(statusValue),
+      mileage: Number(payload.odometerKm || payload.mileage || 0) || 0,
+      tuv_due_date: payload.tuvDueDate || payload.tuvDate || payload.tuv_due_date || null,
+      service_due_date: payload.serviceDueDate || payload.nextService || payload.service_due_date || null,
+      insurance_due_date: payload.insuranceDueDate || payload.insuranceUntil || payload.insurance_due_date || null,
+      tire_status: String(payload.tireStatus || "").trim() || null,
+      active
+    };
+  }
+
+  function mapVehicleFromSupabase(row = {}) {
+    const active = row.active !== undefined ? Boolean(row.active) : true;
+    return {
+      id: row.id,
+      name: String(row.name || "").trim(),
+      plate: row.license_plate || row.plate || "",
+      type: row.vehicle_type || row.type || "",
+      seats: Number(row.seats) || 0,
+      status: mapVehicleStatusToUi(row.status, active),
+      currentDriver: row.currentDriver || "",
+      odometerKm: Number(row.mileage || row.odometerKm || 0) || 0,
+      nextService: row.service_due_date || row.nextService || "",
+      tuvDate: row.tuv_due_date || row.tuvDate || "",
+      insuranceUntil: row.insurance_due_date || row.insuranceUntil || "",
+      tireStatus: row.tire_status || row.tireStatus || "Gut",
+      wheelchairSuitable: Boolean(row.wheelchair_accessible ?? row.wheelchairSuitable),
+      active,
+      createdAt: row.created_at || row.createdAt || null,
+      updatedAt: row.updated_at || row.updatedAt || null,
+      hint: row.hint || ""
+    };
+  }
+
+  function ensureSupabaseClient() {
+    if (supabaseClientPromise) {
+      return supabaseClientPromise;
+    }
+
+    supabaseClientPromise = (async () => {
+      const config = getSupabaseConfig();
+      if (!config.isConfigured) {
+        return null;
+      }
+
+      if (window.supabase && typeof window.supabase.createClient === "function") {
+        return window.supabase.createClient(config.url, config.publishableKey);
+      }
+
+      const loadScript = (src) => new Promise((resolve, reject) => {
+        const existing = document.querySelector(`script[src="${src}"]`);
+        if (existing) {
+          if (existing.dataset.loaded === "true") {
+            resolve();
+            return;
+          }
+          existing.addEventListener("load", () => resolve(), { once: true });
+          existing.addEventListener("error", () => reject(new Error(`Script konnte nicht geladen werden: ${src}`)), { once: true });
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = src;
+        script.async = true;
+        script.onload = () => {
+          script.dataset.loaded = "true";
+          resolve();
+        };
+        script.onerror = () => reject(new Error(`Script konnte nicht geladen werden: ${src}`));
+        document.head.appendChild(script);
+      });
+
+      try {
+        await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js");
+      } catch (error) {
+        setEmployeeError("Mitarbeiter konnten nicht geladen werden.");
+        return null;
+      }
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        setEmployeeError("Mitarbeiter konnten nicht geladen werden.");
+        return null;
+      }
+
+      return window.supabase.createClient(config.url, config.publishableKey);
+    })();
+
+    return supabaseClientPromise;
+  }
+
+  function syncLocalEmployeeCache(employees) {
+    const state = getState();
+    state.employees = ensureArray(employees, []).map((employee) => normalizeEmployee(employee));
+    saveState(state);
+    return state.employees;
+  }
+
+  async function refreshEmployeeCacheFromSupabase() {
+    const mode = resolveBackendMode();
+    if (mode !== "supabase") {
+      clearEmployeeError();
+      return getState().employees;
+    }
+
+    const client = await ensureSupabaseClient();
+    if (!client) {
+      return [];
+    }
+
+    const { data, error } = await client
+      .from("employees")
+      .select("id, first_name, last_name, phone, email, employment_type, status, active, portal_active, created_at, updated_at")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setEmployeeError("Mitarbeiter konnten nicht geladen werden.");
+      return [];
+    }
+
+    clearEmployeeError();
+    return syncLocalEmployeeCache((data || []).map(mapEmployeeFromSupabase));
+  }
+
+  async function getEmployees() {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      return refreshEmployeeCacheFromSupabase();
+    }
+
+    clearEmployeeError();
     return getState().employees;
   }
 
-  function getEmployee(employeeId) {
-    return getEmployees().find((employee) => String(employee.id) === String(employeeId) || String(employee.employeeId) === String(employeeId)) || null;
+  function syncLocalVehicleCache(vehicles) {
+    const state = getState();
+    state.vehicles = ensureArray(vehicles, []).map((vehicle) => ({ ...vehicle }));
+    saveState(state);
+    return state.vehicles;
   }
 
-  function createEmployee(payload) {
+  async function refreshVehicleCacheFromSupabase() {
+    const mode = resolveBackendMode();
+    if (mode !== "supabase") {
+      clearEmployeeError();
+      return getState().vehicles;
+    }
+
+    const client = await ensureSupabaseClient();
+    if (!client) {
+      return [];
+    }
+
+    const { data, error } = await client
+      .from("vehicles")
+      .select("id, name, license_plate, vehicle_type, seats, wheelchair_accessible, status, mileage, tuv_due_date, service_due_date, insurance_due_date, tire_status, active, created_at, updated_at")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setEmployeeError("Fahrzeuge konnten nicht geladen werden.");
+      return [];
+    }
+
+    clearEmployeeError();
+    return syncLocalVehicleCache((data || []).map(mapVehicleFromSupabase));
+  }
+
+  async function getEmployees() {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      return refreshEmployeeCacheFromSupabase();
+    }
+
+    clearEmployeeError();
+    return getState().employees;
+  }
+
+  async function getVehicle(vehicleId) {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      const client = await ensureSupabaseClient();
+      if (!client) {
+        setEmployeeError("Fahrzeug konnte nicht geladen werden.");
+        return null;
+      }
+
+      const { data, error } = await client
+        .from("vehicles")
+        .select("id, name, license_plate, vehicle_type, seats, wheelchair_accessible, status, mileage, tuv_due_date, service_due_date, insurance_due_date, tire_status, active, created_at, updated_at")
+        .eq("id", String(vehicleId))
+        .maybeSingle();
+
+      if (error) {
+        setEmployeeError("Fahrzeug konnte nicht geladen werden.");
+        return null;
+      }
+
+      if (!data) {
+        clearEmployeeError();
+        return null;
+      }
+
+      clearEmployeeError();
+      return mapVehicleFromSupabase(data);
+    }
+
+    const vehicles = getState().vehicles;
+    return vehicles.find((vehicle) => String(vehicle.id) === String(vehicleId)) || null;
+  }
+
+  async function getVehicles() {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      return refreshVehicleCacheFromSupabase();
+    }
+
+    clearEmployeeError();
+    return getState().vehicles;
+  }
+
+  async function createVehicle(payload) {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      const client = await ensureSupabaseClient();
+      if (!client) {
+        setEmployeeError("Fahrzeug konnte nicht angelegt werden.");
+        return null;
+      }
+
+      const prepared = mapVehicleToSupabase(payload);
+      const { data, error } = await client
+        .from("vehicles")
+        .insert(prepared)
+        .select("id, name, license_plate, vehicle_type, seats, wheelchair_accessible, status, mileage, tuv_due_date, service_due_date, insurance_due_date, tire_status, active, created_at, updated_at")
+        .single();
+
+      if (error) {
+        setEmployeeError("Fahrzeug konnte nicht angelegt werden.");
+        return null;
+      }
+
+      const created = mapVehicleFromSupabase(data);
+      await refreshVehicleCacheFromSupabase();
+      clearEmployeeError();
+      return created;
+    }
+
+    const state = getState();
+    const vehicle = {
+      id: payload.id || createId("veh"),
+      name: String(payload.name || "").trim(),
+      plate: String(payload.plate || payload.licensePlate || "").trim(),
+      type: String(payload.type || payload.vehicleType || "").trim(),
+      seats: Number(payload.seats) || 0,
+      status: payload.status || "Verfügbar",
+      currentDriver: payload.currentDriver || "",
+      odometerKm: Number(payload.odometerKm || payload.mileage || 0) || 0,
+      nextService: payload.nextService || "",
+      tuvDate: payload.tuvDate || "",
+      insuranceUntil: payload.insuranceUntil || "",
+      tireStatus: payload.tireStatus || "Gut",
+      wheelchairSuitable: Boolean(payload.wheelchairAccessible ?? payload.wheelchairSuitable),
+      active: payload.active !== undefined ? Boolean(payload.active) : true,
+      hint: payload.hint || ""
+    };
+    state.vehicles.unshift(vehicle);
+    saveState(state);
+    return vehicle;
+  }
+
+  async function updateVehicle(vehicleId, updates) {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      const client = await ensureSupabaseClient();
+      if (!client) {
+        setEmployeeError("Fahrzeug konnte nicht aktualisiert werden.");
+        return null;
+      }
+
+      const prepared = mapVehicleToSupabase({ ...updates, id: vehicleId });
+      const { data, error } = await client
+        .from("vehicles")
+        .update(prepared)
+        .eq("id", String(vehicleId))
+        .select("id, name, license_plate, vehicle_type, seats, wheelchair_accessible, status, mileage, tuv_due_date, service_due_date, insurance_due_date, tire_status, active, created_at, updated_at")
+        .maybeSingle();
+
+      if (error) {
+        setEmployeeError("Fahrzeug konnte nicht aktualisiert werden.");
+        return null;
+      }
+
+      const updated = data ? mapVehicleFromSupabase(data) : null;
+      await refreshVehicleCacheFromSupabase();
+      clearEmployeeError();
+      return updated;
+    }
+
+    const state = getState();
+    const vehicle = state.vehicles.find((item) => String(item.id) === String(vehicleId));
+    if (!vehicle) return null;
+    Object.assign(vehicle, {
+      ...vehicle,
+      ...updates,
+      id: vehicle.id,
+      status: updates.status || vehicle.status,
+      plate: updates.plate || updates.licensePlate || vehicle.plate,
+      type: updates.type || updates.vehicleType || vehicle.type,
+      seats: updates.seats || vehicle.seats,
+      odometerKm: updates.odometerKm || updates.mileage || vehicle.odometerKm,
+      nextService: updates.nextService || updates.serviceDueDate || vehicle.nextService,
+      tuvDate: updates.tuvDate || updates.tuvDueDate || vehicle.tuvDate,
+      insuranceUntil: updates.insuranceUntil || updates.insuranceDueDate || vehicle.insuranceUntil,
+      tireStatus: updates.tireStatus || vehicle.tireStatus,
+      wheelchairSuitable: updates.wheelchairAccessible !== undefined ? Boolean(updates.wheelchairAccessible) : Boolean(updates.wheelchairSuitable ?? vehicle.wheelchairSuitable),
+      active: updates.active !== undefined ? Boolean(updates.active) : vehicle.active,
+      hint: updates.hint || vehicle.hint
+    });
+    saveState(state);
+    return vehicle;
+  }
+
+  async function getEmployee(employeeId) {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      const client = await ensureSupabaseClient();
+      if (!client) {
+        setEmployeeError("Mitarbeiter konnten nicht geladen werden.");
+        return null;
+      }
+
+      const { data, error } = await client
+        .from("employees")
+        .select("id, first_name, last_name, phone, email, employment_type, status, active, portal_active, created_at, updated_at")
+        .eq("id", String(employeeId))
+        .maybeSingle();
+
+      if (error) {
+        setEmployeeError("Mitarbeiter konnten nicht geladen werden.");
+        return null;
+      }
+
+      if (!data) {
+        clearEmployeeError();
+        return null;
+      }
+
+      clearEmployeeError();
+      return mapEmployeeFromSupabase(data);
+    }
+
+    const employees = getState().employees;
+    return employees.find((employee) => String(employee.id) === String(employeeId) || String(employee.employeeId) === String(employeeId)) || null;
+  }
+
+  async function createEmployee(payload) {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      const client = await ensureSupabaseClient();
+      if (!client) {
+        setEmployeeError("Mitarbeiter konnten nicht angelegt werden.");
+        return null;
+      }
+
+      const prepared = mapEmployeeToSupabase(payload);
+      const { data, error } = await client
+        .from("employees")
+        .insert(prepared)
+        .select("id, first_name, last_name, phone, email, employment_type, status, active, portal_active, created_at, updated_at")
+        .single();
+
+      if (error) {
+        setEmployeeError("Mitarbeiter konnten nicht angelegt werden.");
+        return null;
+      }
+
+      const created = mapEmployeeFromSupabase(data);
+      await refreshEmployeeCacheFromSupabase();
+      clearEmployeeError();
+      return created;
+    }
+
     const state = getState();
     const employee = normalizeEmployee({
       ...payload,
@@ -195,7 +669,34 @@
     return employee;
   }
 
-  function updateEmployee(employeeId, updates) {
+  async function updateEmployee(employeeId, updates) {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      const client = await ensureSupabaseClient();
+      if (!client) {
+        setEmployeeError("Mitarbeiter konnten nicht aktualisiert werden.");
+        return null;
+      }
+
+      const prepared = mapEmployeeToSupabase(updates);
+      const { data, error } = await client
+        .from("employees")
+        .update(prepared)
+        .eq("id", String(employeeId))
+        .select("id, first_name, last_name, phone, email, employment_type, status, active, portal_active, created_at, updated_at")
+        .maybeSingle();
+
+      if (error) {
+        setEmployeeError("Mitarbeiter konnten nicht aktualisiert werden.");
+        return null;
+      }
+
+      const updated = data ? mapEmployeeFromSupabase(data) : null;
+      await refreshEmployeeCacheFromSupabase();
+      clearEmployeeError();
+      return updated;
+    }
+
     const state = getState();
     const employee = state.employees.find((item) => String(item.id) === String(employeeId) || String(item.employeeId) === String(employeeId));
     if (!employee) return null;
@@ -327,12 +828,14 @@
     return {
       name: "supabase",
       configured: isSupabaseConfigured(),
-      getEmployees: () => [],
-      getEmployee: () => null,
-      createEmployee: () => null,
-      updateEmployee: () => null,
-      getVehicles: () => [],
-      saveVehicle: () => null,
+      getEmployees,
+      getEmployee,
+      createEmployee,
+      updateEmployee,
+      getVehicles,
+      getVehicle,
+      createVehicle,
+      updateVehicle,
       getShifts: () => [],
       saveShift: () => null,
       createVacationRequest: () => null,
@@ -377,6 +880,8 @@
     updateEmployee,
     getVehicles,
     getVehicle,
+    createVehicle,
+    updateVehicle,
     getShifts: () => getState().shifts,
     saveShift,
     publishPlan,
@@ -393,6 +898,8 @@
     isSupabaseConfigured,
     getActiveAdapter,
     createSupabaseAdapter,
+    getLastError: () => getEmployeeError(),
+    clearLastError: () => clearEmployeeError(),
     authSignIn,
     authSignOut,
     getCurrentUser

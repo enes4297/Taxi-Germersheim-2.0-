@@ -153,7 +153,11 @@
     view: "compact"
   };
 
+  let vehicles = [];
+
   function daysUntil(dateValue) {
+    if (!dateValue) return 9999;
+
     const date = new Date(`${dateValue}T00:00:00`);
     const diffMs = date.getTime() - referenceDate.getTime();
     return Math.ceil(diffMs / 86400000);
@@ -206,7 +210,10 @@
     return "";
   }
 
-  const vehicles = vehicleSource.map(normalizeVehicle);
+  function getVehicleDataService() {
+    const service = window.TaxiDataService || window.TaxiData || null;
+    return service && typeof service === "object" ? service : null;
+  }
 
   function applyOperationalOverlay() {
     const dispo = (() => {
@@ -281,6 +288,42 @@
       .toLocaleLowerCase("de-DE")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function seedFallbackVehicles() {
+    vehicles = vehicleSource.map(normalizeVehicle);
+    applyQualityOverlays();
+    applyOperationalOverlay();
+    updateVehicleViews();
+  }
+
+  async function loadVehiclesFromService() {
+    const service = getVehicleDataService();
+    const fallback = vehicleSource.map(normalizeVehicle);
+
+    if (!service || typeof service.getVehicles !== "function") {
+      vehicles = fallback;
+      applyQualityOverlays();
+      applyOperationalOverlay();
+      updateVehicleViews();
+      return;
+    }
+
+    const backendMode = typeof service.resolveBackendMode === "function" ? service.resolveBackendMode() : "local";
+    if (backendMode !== "supabase") {
+      vehicles = fallback;
+      applyQualityOverlays();
+      applyOperationalOverlay();
+      updateVehicleViews();
+      return;
+    }
+
+    const data = await service.getVehicles();
+    const nextVehicles = Array.isArray(data) ? data.map(normalizeVehicle) : fallback;
+    vehicles = nextVehicles;
+    applyQualityOverlays();
+    applyOperationalOverlay();
+    updateVehicleViews();
   }
 
   function formatDate(value) {
@@ -700,6 +743,83 @@
     document.body.classList.remove("admin-modal-open");
   }
 
+  function buildVehicleFormHtml(vehicle = null) {
+    const isEdit = Boolean(vehicle);
+    const nameValue = vehicle?.name || "";
+    const plateValue = vehicle?.plate || "";
+    const typeValue = vehicle?.type || "";
+    const seatsValue = vehicle?.seats || 4;
+    const statusValue = vehicle?.status || "Verfügbar";
+    const mileageValue = vehicle?.odometerKm || 0;
+    const nextServiceValue = vehicle?.nextService || "";
+    const tuvValue = vehicle?.tuvDate || "";
+    const insuranceValue = vehicle?.insuranceUntil || "";
+    const tireValue = vehicle?.tireStatus || "Gut";
+    const wheelchairValue = vehicle?.wheelchairSuitable ? "true" : "false";
+
+    return `
+      <form class="vehicle-form" data-vehicle-form>
+        <input type="hidden" name="vehicleId" value="${vehicle?.id || ""}">
+        <label>
+          Fahrzeugname
+          <input name="name" required value="${nameValue}">
+        </label>
+        <label>
+          Kennzeichen
+          <input name="plate" value="${plateValue}">
+        </label>
+        <label>
+          Typ
+          <input name="type" value="${typeValue}">
+        </label>
+        <label>
+          Sitzplätze
+          <input name="seats" type="number" min="1" value="${seatsValue}">
+        </label>
+        <label>
+          Status
+          <select name="status">
+            <option ${statusValue === "Verfügbar" ? "selected" : ""}>Verfügbar</option>
+            <option ${statusValue === "Unterwegs" ? "selected" : ""}>Unterwegs</option>
+            <option ${statusValue === "Pause" ? "selected" : ""}>Pause</option>
+            <option ${statusValue === "Werkstatt" ? "selected" : ""}>Werkstatt</option>
+            <option ${statusValue === "Gesperrt" ? "selected" : ""}>Gesperrt</option>
+          </select>
+        </label>
+        <label>
+          Kilometerstand
+          <input name="mileage" type="number" min="0" value="${mileageValue}">
+        </label>
+        <label>
+          Nächster Service
+          <input name="nextService" type="date" value="${nextServiceValue}">
+        </label>
+        <label>
+          TÜV bis
+          <input name="tuvDate" type="date" value="${tuvValue}">
+        </label>
+        <label>
+          Versicherung bis
+          <input name="insuranceUntil" type="date" value="${insuranceValue}">
+        </label>
+        <label>
+          Reifenstatus
+          <input name="tireStatus" value="${tireValue}">
+        </label>
+        <label>
+          Rollstuhlgeeignet
+          <select name="wheelchairAccessible">
+            <option value="true" ${wheelchairValue === "true" ? "selected" : ""}>Ja</option>
+            <option value="false" ${wheelchairValue === "false" ? "selected" : ""}>Nein</option>
+          </select>
+        </label>
+        <div class="vehicle-form-actions">
+          <button class="admin-btn" type="submit">${isEdit ? "Änderungen speichern" : "Fahrzeug anlegen"}</button>
+        </div>
+      </form>
+    `;
+  }
+
   function buildDetailsModal(vehicle) {
     const serviceMeta = getCountdownMeta(vehicle.nextServiceInDays);
     const tuvMeta = getCountdownMeta(vehicle.tuvInDays);
@@ -731,6 +851,9 @@
           <li>Letzte HU: ${formatDate(vehicle.history.lastHu)}</li>
           <li>Letzter Fahrerwechsel: ${formatDate(vehicle.history.lastDriverChange)}</li>
         </ul>
+      </div>
+      <div class="vehicle-modal-actions">
+        <button class="admin-btn" type="button" data-vehicle-edit-open="${vehicle.id}">Fahrzeug bearbeiten</button>
       </div>
       <p class="vehicle-modal-note">Demo-Daten – später Backend-Anbindung möglich</p>
     `;
@@ -838,16 +961,100 @@
     openModal(`Status ändern: ${vehicle.name}`, buildActionModal(vehicle, "status"));
   }
 
+  async function persistVehicleStatus(vehicleId, nextStatus, hint) {
+    const service = getVehicleDataService();
+    if (service && typeof service.updateVehicle === "function") {
+      const updated = await service.updateVehicle(vehicleId, { status: nextStatus, hint });
+      if (updated) {
+        const existing = vehicles.find((vehicle) => String(vehicle.id) === String(vehicleId));
+        if (existing) {
+          Object.assign(existing, normalizeVehicle({ ...existing, ...updated, id: updated.id }));
+        } else {
+          vehicles.unshift(normalizeVehicle(updated));
+        }
+        applyQualityOverlays();
+        applyOperationalOverlay();
+        updateVehicleViews();
+        return;
+      }
+    }
+
+    const vehicle = getVehicleById(vehicleId);
+    if (!vehicle) return;
+    vehicle.status = nextStatus;
+    if (hint) vehicle.hint = hint;
+    updateVehicleViews();
+  }
+
+  async function submitVehicleForm(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const vehicleId = String(formData.get("vehicleId") || "").trim();
+    const payload = {
+      name: String(formData.get("name") || "").trim(),
+      plate: String(formData.get("plate") || "").trim(),
+      type: String(formData.get("type") || "").trim(),
+      seats: Number(formData.get("seats") || 0),
+      status: String(formData.get("status") || "Verfügbar").trim(),
+      odometerKm: Number(formData.get("mileage") || 0),
+      nextService: String(formData.get("nextService") || "").trim(),
+      tuvDate: String(formData.get("tuvDate") || "").trim(),
+      insuranceUntil: String(formData.get("insuranceUntil") || "").trim(),
+      tireStatus: String(formData.get("tireStatus") || "Gut").trim(),
+      wheelchairAccessible: String(formData.get("wheelchairAccessible") || "false") === "true"
+    };
+
+    if (!payload.name) return;
+
+    const service = getVehicleDataService();
+    if (service && typeof service.createVehicle === "function") {
+      if (vehicleId) {
+        if (typeof service.updateVehicle === "function") {
+          await service.updateVehicle(vehicleId, payload);
+        }
+      } else {
+        await service.createVehicle(payload);
+      }
+    }
+
+    closeModal();
+    await loadVehiclesFromService();
+  }
+
   function bindVehicleActions() {
     document.addEventListener("click", (event) => {
+      const addButton = event.target.closest("[data-vehicle-add]");
+      if (addButton) {
+        openModal("Fahrzeug hinzufügen", buildVehicleFormHtml());
+        const form = document.querySelector("[data-vehicle-form]");
+        if (form) {
+          form.addEventListener("submit", submitVehicleForm, { once: true });
+        }
+        return;
+      }
+
+      const editOpenButton = event.target.closest("[data-vehicle-edit-open]");
+      if (editOpenButton) {
+        const vehicleId = editOpenButton.getAttribute("data-vehicle-edit-open") || "";
+        const vehicle = getVehicleById(vehicleId);
+        if (vehicle) {
+          openModal("Fahrzeug bearbeiten", buildVehicleFormHtml(vehicle));
+          const form = document.querySelector("[data-vehicle-form]");
+          if (form) {
+            form.addEventListener("submit", submitVehicleForm, { once: true });
+          }
+        }
+        return;
+      }
+
       const statusSave = event.target.closest("[data-vehicle-status-save]");
       if (statusSave) {
         const vehicleId = statusSave.getAttribute("data-vehicle-status-save") || "";
         const vehicle = getVehicleById(vehicleId);
         const select = document.querySelector("[data-vehicle-status-select]");
         if (!vehicle || !select) return;
-        vehicle.status = String(select.value || "Verfügbar");
-        updateVehicleViews();
+        void persistVehicleStatus(vehicleId, String(select.value || "Verfügbar"), vehicle.hint || "");
         closeModal();
         return;
       }
@@ -905,8 +1112,7 @@
     });
   }
 
-  applyQualityOverlays();
-  applyOperationalOverlay();
+  seedFallbackVehicles();
   loadSavedView();
   syncViewUi();
   syncFilterUi();
@@ -917,5 +1123,5 @@
   bindVehicleActions();
   bindModalClose();
   bindDisabledNavItems();
-  updateVehicleViews();
+  void loadVehiclesFromService();
 })();
