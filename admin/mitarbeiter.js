@@ -1,6 +1,7 @@
 (() => {
   const P = window.AdminPersonnelDemo;
   const S = window.AdminSystemCenter || {};
+  const D = window.TaxiData || window.TaxiDataService || null;
   const state = {
     data: P.loadState(),
     filter: "alle",
@@ -175,6 +176,63 @@
     return rows;
   }
 
+  function renderCockpit() {
+    const node = document.querySelector("[data-emp-cockpit]");
+    if (!node) return;
+
+    const stats = P.getDashboardStats(state.data);
+    const pendingVacations = state.data.vacations.filter((v) => ["beantragt", "in Pruefung"].includes(v.status)).slice(0, 4);
+    const pendingDocs = state.data.documents.filter((d) => d.status === "eingereicht").slice(0, 4);
+    const pendingAbsences = state.data.absences.filter((a) => a.status !== "abgeschlossen").slice(0, 4);
+    const employee = state.data.employees.find((e) => e.id === state.selectedEmployeeId) || state.data.employees[0] || null;
+
+    node.innerHTML = `
+      <div class="person-cockpit-grid">
+        <section class="person-cockpit-card">
+          <h3>Heute im Fokus</h3>
+          <p class="person-meta">Kurzüberblick für Disposition und Personal.</p>
+          <div class="person-cockpit-stats">
+            <div class="person-cockpit-stat"><strong>${stats.totalEmployees}</strong><span>Mitarbeiter</span></div>
+            <div class="person-cockpit-stat"><strong>${stats.driversOnDuty}</strong><span>Fahrer im Dienst</span></div>
+            <div class="person-cockpit-stat"><strong>${stats.availableDriversToday}</strong><span>verfügbare Fahrer</span></div>
+            <div class="person-cockpit-stat"><strong>${stats.openVacationRequests}</strong><span>offene Urlaubsanträge</span></div>
+            <div class="person-cockpit-stat"><strong>${stats.openDocumentEntries}</strong><span>offene Dokumente</span></div>
+            <div class="person-cockpit-stat"><strong>${stats.sickToday}</strong><span>krank gemeldet</span></div>
+          </div>
+          <div class="person-cockpit-actions">
+            <button type="button" data-cockpit-select="${employee ? employee.id : ""}">Aktiver Mitarbeiter</button>
+            <button type="button" data-cockpit-plan="publish">Plan veröffentlichen</button>
+            <button type="button" data-cockpit-docs="review">Dokumente prüfen</button>
+            <button type="button" data-cockpit-message="send">Mitteilung senden</button>
+          </div>
+          <div class="person-cockpit-form">
+            <label>Kurznachricht für aktuelle Auswahl
+              <textarea data-cockpit-message-text placeholder="z. B. Umplanung wegen Krankheit"></textarea>
+            </label>
+            <button type="button" data-cockpit-send-message>Mitteilung speichern</button>
+          </div>
+        </section>
+        <section class="person-cockpit-card">
+          <h3>Offene Punkte</h3>
+          <div class="person-cockpit-list">
+            ${pendingVacations.length ? pendingVacations.map((v) => {
+              const emp = P.getEmployee(state.data, v.employeeId);
+              return `<div class="person-cockpit-item"><strong>${emp ? fullName(emp) : v.employeeId}</strong><p>${formatDateRange(v.start, v.end)} · ${v.status}</p><div class="person-cockpit-actions"><button type="button" data-cockpit-vacation="approve" data-cockpit-id="${v.id}">Genehmigen</button><button type="button" data-cockpit-vacation="reject" data-cockpit-id="${v.id}">Ablehnen</button></div></div>`;
+            }).join("") : `<div class="person-cockpit-item"><p>Keine offenen Urlaubsanträge.</p></div>`}
+            ${pendingDocs.length ? pendingDocs.map((doc) => {
+              const emp = P.getEmployee(state.data, doc.employeeId);
+              return `<div class="person-cockpit-item"><strong>${emp ? fullName(emp) : doc.employeeId}</strong><p>${displayDocType(doc.type)} · ${displayStatusText(doc.status)}</p><div class="person-cockpit-actions"><button type="button" data-cockpit-doc="valid" data-cockpit-id="${doc.id}">Gültig</button><button type="button" data-cockpit-doc="missing" data-cockpit-id="${doc.id}">Fehlt</button></div></div>`;
+            }).join("") : `<div class="person-cockpit-item"><p>Keine offenen Dokumente.</p></div>`}
+            ${pendingAbsences.length ? pendingAbsences.map((a) => {
+              const emp = P.getEmployee(state.data, a.employeeId);
+              return `<div class="person-cockpit-item"><strong>${emp ? fullName(emp) : a.employeeId}</strong><p>${a.kind} · ${a.status}</p><div class="person-cockpit-actions"><button type="button" data-cockpit-absence="return" data-cockpit-id="${a.id}">Rückkehr</button></div></div>`;
+            }).join("") : `<div class="person-cockpit-item"><p>Keine offenen Abwesenheiten.</p></div>`}
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
   function renderList() {
     const node = document.querySelector("[data-emp-list]");
     if (!node) return;
@@ -260,6 +318,7 @@
       return;
     }
     state.selectedEmployeeId = emp.id;
+    renderCockpit();
 
     const docs = P.listEmployeeDocs(state.data, emp.id);
     const trainings = P.listEmployeeTrainings(state.data, emp.id);
@@ -409,14 +468,108 @@
   }
 
   function createEmployee(payload) {
-    const created = P.addEmployee(state.data, payload);
+    const created = D && typeof D.createEmployee === "function"
+      ? D.createEmployee(payload)
+      : P.addEmployee(state.data, payload);
     state.data = P.loadState();
-    state.selectedEmployeeId = created.id;
+    state.selectedEmployeeId = created && created.id ? created.id : (created && created.employeeId) || state.selectedEmployeeId;
     renderList();
     renderProfile();
   }
 
   function bind() {
+    document.addEventListener("click", (event) => {
+      const refresh = event.target.closest("[data-cockpit-refresh]");
+      if (refresh) {
+        state.data = P.loadState();
+        renderCockpit();
+        renderList();
+        renderProfile();
+        return;
+      }
+
+      const select = event.target.closest("[data-cockpit-select]");
+      if (select) {
+        const id = select.getAttribute("data-cockpit-select") || "";
+        state.selectedEmployeeId = id;
+        renderCockpit();
+        renderProfile();
+        return;
+      }
+
+      const plan = event.target.closest("[data-cockpit-plan]");
+      if (plan) {
+        const employee = state.data.employees.find((e) => e.id === state.selectedEmployeeId) || state.data.employees[0] || null;
+        if (employee) {
+          P.publishEmployeePlanForDate(state.data, employee.id, P.todayIso(), { shiftStart: "08:00", shiftEnd: "16:00", vehicleLabel: employee.activeVehicle || employee.preferredVehicle || "", publishedBy: "Admin" });
+          state.data = P.loadState();
+          renderCockpit();
+          renderProfile();
+        }
+        return;
+      }
+
+      const docsReview = event.target.closest("[data-cockpit-docs]");
+      if (docsReview) {
+        const employee = state.data.employees.find((e) => e.id === state.selectedEmployeeId) || state.data.employees[0] || null;
+        if (employee) {
+          const docs = P.listEmployeeDocs(state.data, employee.id).filter((d) => d.status === "eingereicht");
+          docs.forEach((doc) => P.reviewEmployeeDocument(state.data, doc.id, "gueltig", "Admin"));
+          state.data = P.loadState();
+          renderCockpit();
+          renderProfile();
+        }
+        return;
+      }
+
+      const sendMessage = event.target.closest("[data-cockpit-send-message]");
+      if (sendMessage) {
+        const employee = state.data.employees.find((e) => e.id === state.selectedEmployeeId) || state.data.employees[0] || null;
+        const textarea = document.querySelector("[data-cockpit-message-text]");
+        const text = textarea ? textarea.value.trim() : "";
+        if (employee && text) {
+          P.addEmployeeMessage(state.data, { employeeIds: [employee.id], title: "Admin-Hinweis", body: text, category: "Personal", priority: "normal", source: "Admin" });
+          state.data = P.loadState();
+          renderCockpit();
+          renderProfile();
+          if (textarea) textarea.value = "";
+        }
+        return;
+      }
+
+      const vacationAction = event.target.closest("[data-cockpit-vacation]");
+      if (vacationAction) {
+        const id = vacationAction.getAttribute("data-cockpit-id") || "";
+        const decision = vacationAction.getAttribute("data-cockpit-vacation") === "approve" ? "genehmigt" : "abgelehnt";
+        P.decideVacationRequest(state.data, id, decision, "Admin", decision === "genehmigt" ? "Genehmigt aus der Zentrale" : "Abgelehnt aus der Zentrale");
+        state.data = P.loadState();
+        renderCockpit();
+        renderProfile();
+        return;
+      }
+
+      const docAction = event.target.closest("[data-cockpit-doc]");
+      if (docAction) {
+        const id = docAction.getAttribute("data-cockpit-id") || "";
+        const status = docAction.getAttribute("data-cockpit-doc") === "valid" ? "gueltig" : "fehlt";
+        P.reviewEmployeeDocument(state.data, id, status, "Admin");
+        state.data = P.loadState();
+        renderCockpit();
+        renderProfile();
+        return;
+      }
+
+      const absenceAction = event.target.closest("[data-cockpit-absence]");
+      if (absenceAction) {
+        const id = absenceAction.getAttribute("data-cockpit-id") || "";
+        P.markReturn(state.data, id, P.todayIso(), true);
+        state.data = P.loadState();
+        renderCockpit();
+        renderProfile();
+        return;
+      }
+    });
+
     document.addEventListener("input", (event) => {
       const search = event.target.closest("[data-emp-search]");
       if (!search) return;
@@ -539,6 +692,11 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    if (window.AdminUiText) {
+      window.AdminUiText.normalizeDocument(document);
+      window.AdminUiText.observeDocument(document);
+    }
+
     state.selectedEmployeeId = (state.data.ui && state.data.ui.selectedEmployeeId) || (state.data.employees[0] && state.data.employees[0].id) || "";
     renderList();
     renderProfile();
