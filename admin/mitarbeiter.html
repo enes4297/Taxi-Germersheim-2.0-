@@ -7,6 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <script src="auth.js"></script>
   <script src="personal-shared.js"></script>
+  <script src="supabase-config.js"></script>
   <script src="taxi-data-service.js"></script>
   <script src="ui-visible-terms.js"></script>
   <script src="ui-text.js"></script>
@@ -88,7 +89,13 @@
     </section>
 
     <section class="admin-panel">
-      <div class="admin-panel-head"><h2>Neuen Mitarbeiter anlegen</h2></div>
+      <div class="admin-panel-head">
+        <h2 data-emp-form-title>Neuen Mitarbeiter anlegen</h2>
+        <div class="person-actions">
+          <button class="admin-btn admin-btn-secondary" type="button" data-emp-add>Mitarbeiter hinzufügen</button>
+        </div>
+      </div>
+      <div data-emp-form-panel hidden>
       <form class="person-form-grid" data-emp-form>
         <label>Vorname<input name="firstName" required></label>
         <label>Nachname<input name="lastName" required></label>
@@ -113,11 +120,10 @@
         </label>
         <label>Beschäftigungsart
           <select name="employmentType">
-            <option>Vollzeit</option>
+            <option>Festangestellt</option>
             <option>Teilzeit</option>
             <option>Minijob</option>
-            <option>Aushilfe</option>
-            <option>Springer</option>
+            <option>Sonstiges</option>
           </select>
         </label>
 
@@ -216,8 +222,12 @@
           <select name="credentialsIssued"><option value="true">Ja</option><option value="false">Nein</option></select>
         </label>
 
-        <div class="person-actions"><button class="admin-btn" type="submit">Mitarbeiter anlegen</button></div>
+        <div class="person-actions">
+          <button class="admin-btn" type="submit" data-emp-form-submit>Mitarbeiter anlegen</button>
+        </div>
       </form>
+      </div>
+      <p class="person-meta" data-emp-feedback role="status" aria-live="polite"></p>
       <p class="person-meta">Hinweis: Keine Bank-, Steuer- oder Gehaltsdaten werden verarbeitet.</p>
     </section>
 

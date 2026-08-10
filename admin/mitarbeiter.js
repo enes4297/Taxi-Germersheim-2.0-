@@ -3,14 +3,16 @@
   const S = window.AdminSystemCenter || {};
   const D = window.TaxiData || window.TaxiDataService || null;
   const state = {
-    data: P.loadState(),
+    data: P && typeof P.loadState === "function" ? P.loadState() : { employees: [], vacations: [], absences: [], documents: [], history: [], ui: {} },
     filter: "alle",
     search: "",
     sort: "name",
     view: "cards",
     selectedEmployeeId: "",
     profileTab: "Übersicht",
-    pendingPayload: null
+    pendingPayload: null,
+    editEmployeeId: "",
+    formVisible: false
   };
 
   const TABS = [
@@ -233,13 +235,42 @@
     `;
   }
 
+  async function syncStateFromService() {
+    const fallbackState = P && typeof P.loadState === "function" ? P.loadState() : null;
+    if (D && typeof D.getEmployees === "function") {
+      const employees = await D.getEmployees();
+      if (Array.isArray(employees)) {
+        const nextState = {
+          ...(fallbackState || {}),
+          ...state.data,
+          employees
+        };
+        state.data = nextState;
+        return state.data;
+      }
+    }
+
+    if (fallbackState) {
+      state.data = fallbackState;
+    }
+    return state.data;
+  }
+
+  async function refreshEmployeesFromDataService() {
+    const refreshedState = await syncStateFromService();
+    state.data = { ...(refreshedState || {}), employees: Array.isArray(refreshedState?.employees) ? refreshedState.employees : [] };
+    renderList();
+    renderProfile();
+  }
+
   function renderList() {
     const node = document.querySelector("[data-emp-list]");
     if (!node) return;
 
     const rows = sortedEmployees();
     if (!rows.length) {
-      node.innerHTML = '<article class="admin-empty-state"><strong>Keine Mitarbeiter gefunden</strong></article>';
+      const errorText = D && typeof D.getLastError === "function" ? D.getLastError() : "";
+      node.innerHTML = `<article class="admin-empty-state"><strong>${errorText || "Noch keine Mitarbeiter angelegt."}</strong></article>`;
       return;
     }
 
@@ -377,7 +408,7 @@
       content = `<div class="person-list"><article class="person-item"><strong>Interne Notizen</strong><p>${emp.internalNotes || "Keine Notiz"}</p><p>${emp.profileNote || ""}</p></article></div>`;
     }
 
-    panel.innerHTML = `<div class="person-profile-head"><span class="person-avatar">${(emp.firstName || "?").slice(0, 1)}${(emp.lastName || "").slice(0, 1)}</span><div><strong>${fullName(emp)}</strong><p>${emp.employeeId} · ${emp.role} · ${statusBadge(emp.status)}</p></div></div><div class="person-profile-tabs">${tabButtons}</div><div class="person-item">${content}</div>`;
+    panel.innerHTML = `<div class="person-profile-head"><span class="person-avatar">${(emp.firstName || "?").slice(0, 1)}${(emp.lastName || "").slice(0, 1)}</span><div><strong>${fullName(emp)}</strong><p>${emp.employeeId} · ${emp.role} · ${statusBadge(emp.status)}</p></div><div class="person-actions"><button class="admin-btn admin-btn-secondary" type="button" data-emp-edit="${emp.id}">Bearbeiten</button></div></div><div class="person-profile-tabs">${tabButtons}</div><div class="person-item">${content}</div>`;
   }
 
   function openModal(title, body, foot) {
@@ -390,6 +421,122 @@
     b.innerHTML = body;
     f.innerHTML = foot || '<button class="admin-btn admin-btn-secondary" type="button" data-emp-close>Schließen</button>';
     m.hidden = false;
+  }
+
+  function normalizeEmploymentTypeForForm(value) {
+    const text = String(value || "").trim();
+    if (!text) return "Festangestellt";
+    const normalized = text.toLowerCase();
+    if (["full_time", "festangestellt", "vollzeit"].includes(normalized)) return "Festangestellt";
+    if (["part_time", "teilzeit"].includes(normalized)) return "Teilzeit";
+    if (["mini_job", "minijob"].includes(normalized)) return "Minijob";
+    return "Sonstiges";
+  }
+
+  function setFormPanelVisible(visible) {
+    const panel = document.querySelector("[data-emp-form-panel]");
+    if (panel) {
+      panel.hidden = !visible;
+    }
+    state.formVisible = Boolean(visible);
+  }
+
+  function setFormMode(mode) {
+    const title = document.querySelector("[data-emp-form-title]");
+    const submit = document.querySelector("[data-emp-form-submit]");
+    if (title) {
+      title.textContent = mode === "edit" ? "Mitarbeiter bearbeiten" : "Neuen Mitarbeiter anlegen";
+    }
+    if (submit) {
+      submit.textContent = mode === "edit" ? "Änderungen speichern" : "Mitarbeiter anlegen";
+    }
+  }
+
+  function setFormFeedback(message, type = "info") {
+    const node = document.querySelector("[data-emp-feedback]");
+    if (!node) return;
+    node.textContent = message || "";
+    node.dataset.state = type;
+    node.style.color = type === "error" ? "#b91c1c" : type === "success" ? "#166534" : "";
+  }
+
+  function clearFormFeedback() {
+    setFormFeedback("");
+  }
+
+  function fillFormFromEmployee(employee) {
+    const form = document.querySelector("[data-emp-form]");
+    if (!form || !employee) return;
+
+    const values = {
+      firstName: employee.firstName || employee.first_name || "",
+      lastName: employee.lastName || employee.last_name || "",
+      birthDate: employee.birthDate || employee.birth_date || "",
+      birthPlace: employee.birthPlace || employee.birth_place || "",
+      phone: employee.phone || "",
+      altPhone: employee.altPhone || employee.alt_phone || "",
+      email: employee.email || "",
+      address: employee.address || "",
+      language: employee.language || "",
+      employeeId: employee.employeeId || employee.id || "",
+      role: employee.role || "Fahrer",
+      employmentType: normalizeEmploymentTypeForForm(employee.employmentType || employee.employment_type || ""),
+      status: employee.status || "aktiv",
+      entryDate: employee.entryDate || employee.entry_date || "",
+      probationUntil: employee.probationUntil || employee.probation_until || "",
+      contractStart: employee.contractStart || employee.contract_start || "",
+      contractEnd: employee.contractEnd || employee.contract_end || "",
+      location: employee.location || "",
+      shiftModel: employee.shiftModel || employee.shift_model || "",
+      preferredHours: employee.preferredHours || employee.preferred_hours || "",
+      licenseClass: employee.licenseClass || employee.license_class || "",
+      licenseNo: employee.licenseNo || employee.license_no || "",
+      licenseValidUntil: employee.licenseValidUntil || employee.license_valid_until || "",
+      licenseCheckedAt: employee.licenseCheckedAt || employee.license_checked_at || "",
+      licenseCheckedBy: employee.licenseCheckedBy || employee.license_checked_by || "",
+      pPermit: employee.pPermit || employee.p_permit || "Nein",
+      pPermitValidUntil: employee.pPermitValidUntil || employee.p_permit_valid_until || "",
+      pPermitCheckedAt: employee.pPermitCheckedAt || employee.p_permit_checked_at || "",
+      pPermitCheckedBy: employee.pPermitCheckedBy || employee.p_permit_checked_by || "",
+      documentStatus: employee.documentStatus || employee.document_status || "ungeprüft",
+      preferredVehicle: employee.preferredVehicle || employee.preferred_vehicle || "",
+      allowedVehicles: Array.isArray(employee.allowedVehicles) ? employee.allowedVehicles.join(",") : String(employee.allowedVehicles || ""),
+      blockedVehicles: Array.isArray(employee.blockedVehicles) ? employee.blockedVehicles.join(",") : String(employee.blockedVehicles || ""),
+      fixedVehicle: employee.fixedVehicle || employee.fixed_vehicle || "",
+      replacementVehicles: Array.isArray(employee.replacementVehicles) ? employee.replacementVehicles.join(",") : String(employee.replacementVehicles || ""),
+      preferredServiceType: employee.preferredServiceType || employee.preferred_service_type || "",
+      wheelchairSkill: employee.wheelchairSkill ? "true" : "false",
+      largeVehicleSkill: employee.largeVehicleSkill ? "true" : "false",
+      evTraining: employee.evTraining ? "true" : "false",
+      qualifications: Array.isArray(employee.qualifications) ? employee.qualifications.join(",") : String(employee.qualifications || ""),
+      emName: employee.emergency && employee.emergency.name ? employee.emergency.name : "",
+      emRelation: employee.emergency && employee.emergency.relation ? employee.emergency.relation : "",
+      emPhone: employee.emergency && employee.emergency.phone ? employee.emergency.phone : "",
+      emAltPhone: employee.emergency && employee.emergency.altPhone ? employee.emergency.altPhone : "",
+      internalContact: employee.internalContact || employee.internal_contact || "",
+      internalNotes: employee.internalNotes || employee.internal_notes || "",
+      onboardingDocsDone: employee.onboardingDocsDone ? "true" : "false",
+      clothingIssued: employee.clothingIssued ? "true" : "false",
+      keysIssued: employee.keysIssued ? "true" : "false",
+      tabletIssued: employee.tabletIssued ? "true" : "false",
+      credentialsIssued: employee.credentialsIssued ? "true" : "false"
+    };
+
+    Object.entries(values).forEach(([name, value]) => {
+      const field = form.querySelector(`[name="${name}"]`);
+      if (field) {
+        field.value = value;
+      }
+    });
+  }
+
+  function resetEditMode() {
+    state.editEmployeeId = "";
+    setFormMode("create");
+    const form = document.querySelector("[data-emp-form]");
+    if (form) {
+      form.reset();
+    }
   }
 
   function closeModal() {
@@ -467,21 +614,54 @@
     };
   }
 
-  function createEmployee(payload) {
-    const created = D && typeof D.createEmployee === "function"
-      ? D.createEmployee(payload)
-      : P.addEmployee(state.data, payload);
-    state.data = P.loadState();
-    state.selectedEmployeeId = created && created.id ? created.id : (created && created.employeeId) || state.selectedEmployeeId;
+  async function createEmployee(payload) {
+    if (!D || typeof D.createEmployee !== "function") {
+      setFormFeedback("Mitarbeiter konnte nicht gespeichert werden.", "error");
+      return null;
+    }
+
+    const created = await D.createEmployee(payload);
+
+    if (created && created.id) {
+      state.selectedEmployeeId = created.id;
+    }
+
+    await syncStateFromService();
+    await refreshEmployeesFromDataService();
+    renderCockpit();
     renderList();
     renderProfile();
+    return created;
+  }
+
+  async function saveEmployee(payload) {
+    if (state.editEmployeeId) {
+      if (!D || typeof D.updateEmployee !== "function") {
+        setFormFeedback("Mitarbeiter konnte nicht gespeichert werden.", "error");
+        return null;
+      }
+
+      const updated = await D.updateEmployee(state.editEmployeeId, payload);
+      if (updated && updated.id) {
+        state.selectedEmployeeId = updated.id;
+      }
+      state.editEmployeeId = "";
+      await syncStateFromService();
+      await refreshEmployeesFromDataService();
+      renderCockpit();
+      renderList();
+      renderProfile();
+      return updated;
+    }
+
+    return createEmployee(payload);
   }
 
   function bind() {
-    document.addEventListener("click", (event) => {
+    document.addEventListener("click", async (event) => {
       const refresh = event.target.closest("[data-cockpit-refresh]");
       if (refresh) {
-        state.data = P.loadState();
+        await syncStateFromService();
         renderCockpit();
         renderList();
         renderProfile();
@@ -502,7 +682,7 @@
         const employee = state.data.employees.find((e) => e.id === state.selectedEmployeeId) || state.data.employees[0] || null;
         if (employee) {
           P.publishEmployeePlanForDate(state.data, employee.id, P.todayIso(), { shiftStart: "08:00", shiftEnd: "16:00", vehicleLabel: employee.activeVehicle || employee.preferredVehicle || "", publishedBy: "Admin" });
-          state.data = P.loadState();
+          await syncStateFromService();
           renderCockpit();
           renderProfile();
         }
@@ -515,7 +695,7 @@
         if (employee) {
           const docs = P.listEmployeeDocs(state.data, employee.id).filter((d) => d.status === "eingereicht");
           docs.forEach((doc) => P.reviewEmployeeDocument(state.data, doc.id, "gueltig", "Admin"));
-          state.data = P.loadState();
+          await syncStateFromService();
           renderCockpit();
           renderProfile();
         }
@@ -529,7 +709,7 @@
         const text = textarea ? textarea.value.trim() : "";
         if (employee && text) {
           P.addEmployeeMessage(state.data, { employeeIds: [employee.id], title: "Admin-Hinweis", body: text, category: "Personal", priority: "normal", source: "Admin" });
-          state.data = P.loadState();
+          await syncStateFromService();
           renderCockpit();
           renderProfile();
           if (textarea) textarea.value = "";
@@ -542,7 +722,7 @@
         const id = vacationAction.getAttribute("data-cockpit-id") || "";
         const decision = vacationAction.getAttribute("data-cockpit-vacation") === "approve" ? "genehmigt" : "abgelehnt";
         P.decideVacationRequest(state.data, id, decision, "Admin", decision === "genehmigt" ? "Genehmigt aus der Zentrale" : "Abgelehnt aus der Zentrale");
-        state.data = P.loadState();
+        await syncStateFromService();
         renderCockpit();
         renderProfile();
         return;
@@ -553,7 +733,7 @@
         const id = docAction.getAttribute("data-cockpit-id") || "";
         const status = docAction.getAttribute("data-cockpit-doc") === "valid" ? "gueltig" : "fehlt";
         P.reviewEmployeeDocument(state.data, id, status, "Admin");
-        state.data = P.loadState();
+        await syncStateFromService();
         renderCockpit();
         renderProfile();
         return;
@@ -563,7 +743,7 @@
       if (absenceAction) {
         const id = absenceAction.getAttribute("data-cockpit-id") || "";
         P.markReturn(state.data, id, P.todayIso(), true);
-        state.data = P.loadState();
+        await syncStateFromService();
         renderCockpit();
         renderProfile();
         return;
@@ -591,9 +771,21 @@
       }
     });
 
-    document.addEventListener("click", (event) => {
+    document.addEventListener("click", async (event) => {
       if (event.target.closest("[data-emp-close]")) {
         closeModal();
+        return;
+      }
+
+      const addEmployee = event.target.closest("[data-emp-add]");
+      if (addEmployee) {
+        resetEditMode();
+        clearFormFeedback();
+        setFormPanelVisible(true);
+        const form = document.querySelector("[data-emp-form]");
+        if (form) {
+          form.reset();
+        }
         return;
       }
 
@@ -615,6 +807,22 @@
       if (tab) {
         state.profileTab = tab.getAttribute("data-emp-tab") || "Übersicht";
         renderProfile();
+        return;
+      }
+
+      const edit = event.target.closest("[data-emp-edit]");
+      if (edit) {
+        const id = edit.getAttribute("data-emp-edit") || "";
+        const emp = state.data.employees.find((entry) => entry.id === id);
+        if (emp) {
+          state.editEmployeeId = id;
+          state.selectedEmployeeId = id;
+          clearFormFeedback();
+          fillFormFromEmployee(emp);
+          setFormMode("edit");
+          setFormPanelVisible(true);
+          renderProfile();
+        }
         return;
       }
 
@@ -668,14 +876,22 @@
 
     const form = document.querySelector("[data-emp-form]");
     if (form) {
-      form.addEventListener("submit", (event) => {
+      form.addEventListener("submit", async (event) => {
         event.preventDefault();
         const payload = payloadFromForm(form);
-        const dups = P.checkDuplicate(state.data, payload);
+        const dups = P && typeof P.checkDuplicate === "function" ? P.checkDuplicate(state.data, payload) : [];
 
         if (!dups.length) {
-          createEmployee(payload);
-          form.reset();
+          const saved = await saveEmployee(payload);
+          if (saved && saved.id) {
+            setFormFeedback(state.editEmployeeId ? "Mitarbeiter wurde gespeichert." : "Mitarbeiter wurde angelegt.", "success");
+            setFormPanelVisible(false);
+            form.reset();
+            resetEditMode();
+            await refreshEmployeesFromDataService();
+            return;
+          }
+          setFormFeedback("Mitarbeiter konnte nicht gespeichert werden.", "error");
           return;
         }
 
@@ -691,15 +907,21 @@
     }
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
     if (window.AdminUiText) {
       window.AdminUiText.normalizeDocument(document);
       window.AdminUiText.observeDocument(document);
     }
 
     state.selectedEmployeeId = (state.data.ui && state.data.ui.selectedEmployeeId) || (state.data.employees[0] && state.data.employees[0].id) || "";
+    setFormPanelVisible(false);
+    setFormMode("create");
+    clearFormFeedback();
+    bind();
+
+    await syncStateFromService();
+    state.data = { ...(state.data || {}), employees: Array.isArray(state.data.employees) ? state.data.employees : [] };
     renderList();
     renderProfile();
-    bind();
   });
 })();
