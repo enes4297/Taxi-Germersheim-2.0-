@@ -49,6 +49,17 @@
     return `${formatDate(start)} bis ${formatDate(end)}`;
   }
 
+  function formatShiftLabel(value) {
+    const text = String(value || "").trim();
+    if (!text) return "-";
+    const compact = text
+      .replace(/\s*[–-]\s*/g, " – ")
+      .replace(/\s+uhr$/i, "")
+      .trim();
+    if (/^\d{2}:\d{2}\s–\s\d{2}:\d{2}$/.test(compact)) return `${compact} Uhr`;
+    return compact;
+  }
+
   function weekdayDateLabel(value) {
     const text = String(value || "").trim();
     const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -56,6 +67,15 @@
     const date = new Date(`${text}T00:00:00`);
     const weekday = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(date);
     return `${weekday}, ${formatDate(text)}`;
+  }
+
+  function weekdayShortLabel(value) {
+    const text = String(value || "").trim();
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return formatDate(text);
+    const date = new Date(`${text}T00:00:00`);
+    const weekday = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(date);
+    return `${weekday}, ${match[3]}.${match[2]}.`;
   }
 
   function tomorrowIso() {
@@ -82,6 +102,19 @@
       .replace(/Personenbefoerderungsschein/g, "Personenbeförderungsschein")
       .replace(/Krankenschein \/ AU/g, "Krankenschein / AU")
       .replace(/Fuehrerschein/g, "Führerschein");
+  }
+
+  function visibleLabel(value) {
+    return String(value || "")
+      .replace(/ae/g, "ä")
+      .replace(/oe/g, "ö")
+      .replace(/ue/g, "ü")
+      .replace(/Ae/g, "Ä")
+      .replace(/Oe/g, "Ö")
+      .replace(/Ue/g, "Ü")
+      .replace(/AE/g, "Ä")
+      .replace(/OE/g, "Ö")
+      .replace(/UE/g, "Ü");
   }
 
   function openModal(title, body) {
@@ -116,34 +149,19 @@
 
     const now = new Date();
     const hour = now.getHours();
-    const greeting = hour < 12 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
+    const greetingBase = hour < 12 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
+    const fullName = `${e.firstName} ${e.lastName}`;
     const weekday = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(now);
-    const dateLabel = `${weekday}, ${now.toLocaleDateString("de-DE")}`;
+    const dateLabel = `${weekday}, ${new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(now)}`;
 
-    if (nameNode) nameNode.textContent = `${e.firstName} ${e.lastName}`;
+    if (nameNode) nameNode.textContent = fullName;
+    document.querySelectorAll("[data-portal-name]").forEach((el) => { el.textContent = fullName; });
     if (roleNode) roleNode.textContent = `${e.role} · ${e.employeeId}`;
     if (statusNode) statusNode.textContent = `Status: ${e.status}${snap && snap.unreadMessages ? ` · ${snap.unreadMessages} neue Mitteilungen` : ""}`;
     if (avatarNode) avatarNode.textContent = `${e.firstName.charAt(0)}${e.lastName.charAt(0)}`.toUpperCase();
-    if (greetingNode) greetingNode.textContent = greeting;
+    if (greetingNode) greetingNode.textContent = `${greetingBase}, ${fullName}`;
     if (dateNode) dateNode.textContent = dateLabel;
     if (messageBadge) messageBadge.textContent = snap && snap.unreadMessages ? String(snap.unreadMessages) : "0";
-  }
-
-  function getPriorityAlert(snap) {
-    const docs = (state.data.documents || []).filter((d) => d.employeeId === state.employeeId);
-    const issues = [];
-    const critical = docs.find((d) => d.type === "Führerschein" && d.status === "abgelaufen");
-    if (critical) {
-      issues.push({ level: "KRITISCH", title: "Führerschein abgelaufen", text: "Bitte reiche einen aktuellen Führerschein ein.", action: "Jetzt einreichen", kind: "danger" });
-    }
-    const missingPbs = docs.find((d) => d.type === "Personenbeförderungsschein" && ["fehlt", "abgelaufen", "laeuft bald ab"].includes(d.status));
-    if (missingPbs) {
-      issues.push({ level: "WICHTIG", title: "Personenbeförderungsschein", text: missingPbs.status === "abgelaufen" ? "Das Dokument ist abgelaufen." : missingPbs.status === "fehlt" ? "Bitte reiche das Dokument ein." : "Läuft bald ab.", action: "Jetzt einreichen", kind: missingPbs.status === "abgelaufen" ? "danger" : "warn" });
-    }
-    if (!critical && !missingPbs && snap && snap.alerts && snap.alerts[0]) {
-      issues.push({ level: "INFO", title: snap.alerts[0].title, text: snap.alerts[0].text, action: "Mehr ansehen", kind: "info" });
-    }
-    return issues[0] || null;
   }
 
   function renderHome() {
@@ -155,16 +173,16 @@
     const snap = portalSnapshot(e.id);
     const hero = document.querySelector("[data-portal-hero]");
     const tomorrowNode = document.querySelector("[data-portal-tomorrow]");
-    const priorityNode = document.querySelector("[data-portal-priority]");
-    if (!hero || !tomorrowNode || !priorityNode) return;
+    if (!hero || !tomorrowNode) return;
 
     const todayPlan = snap.todayPlan || {};
     const tomorrowPlan = snap.tomorrowPlan || {};
     const todayVehicle = todayPlan.vehicleText || e.activeVehicle || "-";
-    const todayShift = todayPlan.shiftText || e.todayShift || "kein Dienst hinterlegt";
+    const todayShift = formatShiftLabel(todayPlan.shiftText || e.todayShift || "kein Dienst hinterlegt");
     const tomorrowVehicle = tomorrowPlan.published && tomorrowPlan.vehicleText ? tomorrowPlan.vehicleText : "";
-    const tomorrowShift = tomorrowPlan.published ? (tomorrowPlan.shiftText || "Plan wird noch erstellt.") : "Plan wird noch erstellt.";
-    const priority = getPriorityAlert(snap);
+    const tomorrowShift = tomorrowPlan.published ? formatShiftLabel(tomorrowPlan.shiftText || "Plan noch nicht veröffentlicht") : "Plan noch nicht veröffentlicht";
+    const todayStatus = todayPlan.status || "Im Dienst";
+    const isFreeToday = /frei|urlaub|krank|kein dienst/i.test(`${todayShift} ${todayStatus}`);
 
     hero.innerHTML = `
       <div class="panel-head">
@@ -172,13 +190,13 @@
           <p class="panel-kicker">Heute</p>
           <h2>${weekdayDateLabel(P.todayIso())}</h2>
         </div>
-        <span class="status-pill active">● Im Dienst</span>
+        <span class="status-pill ${isFreeToday ? "neutral" : "active"}">${isFreeToday ? "Heute frei" : "Heute geplant"}</span>
       </div>
-      <p class="hero-title">Heute</p>
-      <p class="hero-time">${todayShift}</p>
+      <p class="hero-title">${isFreeToday ? "Heute frei" : "Arbeitszeit"}</p>
+      <p class="hero-time">${isFreeToday ? "Heute frei" : todayShift}</p>
       <div class="hero-vehicle">
-        <div class="hero-meta-row"><span>Mein Fahrzeug</span><strong>${todayVehicle}</strong></div>
-        <div class="hero-meta-row"><span>Fahrzeugtyp</span><strong>${todayPlan.vehicleModel || "Mercedes V-Klasse"}</strong></div>
+        <div class="hero-meta-row"><span>Fahrzeug</span><strong>${isFreeToday ? "Kein Fahrzeug" : todayVehicle}</strong></div>
+        ${!isFreeToday && todayPlan.vehicleModel ? `<div class="hero-meta-row"><span>Typ</span><strong>${todayPlan.vehicleModel}</strong></div>` : ""}
       </div>
     `;
 
@@ -188,39 +206,12 @@
           <p class="panel-kicker">Morgen</p>
           <h2>${weekdayDateLabel(tomorrowIso())}</h2>
         </div>
-        <span class="status-pill ${tomorrowPlan.published ? "info" : "neutral"}">${tomorrowPlan.published ? "● veröffentlicht" : "● offen"}</span>
+        <span class="status-pill ${tomorrowPlan.published ? "info" : "neutral"}">${tomorrowPlan.published ? "Veröffentlicht" : "Noch nicht veröffentlicht"}</span>
       </div>
-      <p class="hero-title">Nächster Einsatz</p>
+      <p class="hero-title">${tomorrowPlan.published ? "Arbeitszeit" : "Morgen"}</p>
       <p class="hero-time">${tomorrowShift}</p>
-      ${tomorrowVehicle ? `<div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>${tomorrowVehicle}</strong></div></div>` : ""}
+      <div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>${tomorrowVehicle || (tomorrowPlan.published ? "Noch offen" : "Plan noch nicht veröffentlicht")}</strong></div></div>
     `;
-
-    if (priority) {
-      priorityNode.innerHTML = `
-        <div class="panel-head">
-          <div>
-            <p class="panel-kicker">Wichtiger Hinweis</p>
-            <h2>${priority.level}</h2>
-          </div>
-          <span class="status-pill ${priority.kind}">${priority.level}</span>
-        </div>
-        <p class="hero-title">${priority.title}</p>
-        <p class="hero-time">${priority.text}</p>
-        <button class="btn btn-primary" type="button" data-portal-priority-action>${priority.action}</button>
-      `;
-    } else {
-      priorityNode.innerHTML = `
-        <div class="panel-head">
-          <div>
-            <p class="panel-kicker">Wichtiger Hinweis</p>
-            <h2>Alles aktuell</h2>
-          </div>
-          <span class="status-pill info">INFO</span>
-        </div>
-        <p class="hero-title">Keine dringenden Hinweise.</p>
-        <p class="hero-time">Alles ist aktuell.</p>
-      `;
-    }
   }
 
   function renderVacations() {
@@ -234,7 +225,7 @@
       const quota = vacationQuota(e.id);
       summary.innerHTML = `<div class="summary-row"><article class="summary-chip"><strong>Resturlaub</strong><p>${quota.remaining} Tage verfügbar</p></article><article class="summary-chip"><strong>Beantragt</strong><p>${quota.requested} Tage in Prüfung</p></article></div>`;
     }
-    list.innerHTML = vacs.length ? `<div class="driver-list">${vacs.map((v) => `<article class="driver-item"><strong>${v.type}</strong><p>${formatPeriod(v.start, v.end)}</p><p>Status: ${v.status}</p><div class="driver-item-actions"><button class="driver-btn" type="button" data-portal-vac-open="${v.id}">Details</button>${["beantragt", "in Pruefung"].includes(v.status) ? `<button class="driver-btn warning" type="button" data-portal-vac-withdraw="${v.id}">Antrag zurückziehen</button>` : ""}</div></article>`).join("")}</div>` : '<p class="demo-note">Keine Urlaubsanträge.</p>';
+    list.innerHTML = vacs.length ? `<div class="driver-list">${vacs.map((v) => `<article class="driver-item compact-item"><strong>${formatPeriod(v.start, v.end)}</strong><p>${visibleLabel(v.status)}</p><div class="driver-item-actions"><button class="driver-btn" type="button" data-portal-vac-open="${v.id}">Ansehen</button>${["beantragt", "in Pruefung"].includes(v.status) ? `<button class="driver-btn warning" type="button" data-portal-vac-withdraw="${v.id}">Zurückziehen</button>` : ""}</div></article>`).join("")}</div>` : '<p class="demo-note">Noch kein Urlaubsantrag vorhanden.</p>';
   }
 
   function renderShiftArea() {
@@ -245,24 +236,35 @@
     if (!e) return;
     const node = document.querySelector("[data-portal-shift-list]");
     if (!node) return;
-    const snap = portalSnapshot(e.id);
-    const todayPlan = snap.todayPlan || {};
-    const tomorrowPlan = snap.tomorrowPlan || {};
-    node.innerHTML = `
-      <div class="driver-list">
-        <article class="driver-item">
-          <strong>Heute · ${weekdayDateLabel(P.todayIso())}</strong>
-          <p>${todayPlan.shiftText || e.todayShift || "kein Dienst hinterlegt"}</p>
-          ${todayPlan.vehicleText ? `<p>Fahrzeug: ${todayPlan.vehicleText}</p>` : ""}
-          <span class="status-pill active">Im Dienst</span>
-        </article>
-        <article class="driver-item">
-          <strong>Morgen · ${weekdayDateLabel(tomorrowIso())}</strong>
-          <p>${tomorrowPlan.published ? (tomorrowPlan.shiftText || "Plan wird noch erstellt.") : "Plan wird noch erstellt."}</p>
-          ${tomorrowPlan.published && tomorrowPlan.vehicleText ? `<p>Fahrzeug: ${tomorrowPlan.vehicleText}</p>` : ""}
-          <span class="status-pill ${tomorrowPlan.published ? "info" : "neutral"}">${tomorrowPlan.published ? "veröffentlicht" : "noch nicht veröffentlicht"}</span>
-        </article>
-      </div>`;
+    const today = P.todayIso();
+    const todayDate = new Date(`${today}T00:00:00`);
+    const dowToday = todayDate.getDay();
+    const diffToMonday = (dowToday === 0 ? -6 : 1 - dowToday);
+    const monday = new Date(`${today}T00:00:00`);
+    monday.setDate(monday.getDate() + diffToMonday);
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const current = new Date(monday);
+      current.setDate(monday.getDate() + index);
+      return `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
+    });
+
+    node.innerHTML = `<div class="week-list">${days.map((day) => {
+      const plan = P.getEmployeeDayPlan ? P.getEmployeeDayPlan(state.data, e.id, day) : null;
+      const shiftText = formatShiftLabel(plan?.shiftText || "Frei");
+      const vehicleText = plan?.vehicleText || "";
+      const isWorking = !/frei|urlaub|krank|kein dienst|nicht veröffentlicht/i.test(`${plan?.status || ""} ${shiftText}`) && shiftText !== "-";
+      const isToday = day === today;
+      return `<article class="week-row${isWorking ? " is-working" : ""}${isToday ? " is-today" : ""}">
+        <div class="week-row-main">
+          <strong>${weekdayShortLabel(day)}</strong>
+          <p>${isWorking ? shiftText : "Frei"}</p>
+        </div>
+        <div class="week-row-side">
+          ${isWorking ? `<span>${vehicleText || "Fahrzeug offen"}</span>` : `<span>Frei</span>`}
+          <small>${isToday ? "Heute" : (plan?.published === false ? "Nicht veröffentlicht" : "")}</small>
+        </div>
+      </article>`;
+    }).join("")}</div>`;
   }
 
   function renderDocs() {
@@ -274,8 +276,8 @@
     node.innerHTML = docs.length ? `<div class="driver-list">${docs.map((d) => {
       const statusText = d.status === "abgelaufen" ? "Abgelaufen" : d.status === "fehlt" ? "Fehlt" : d.status === "laeuft bald ab" ? "Läuft bald ab" : "Gültig";
       const chipClass = d.status === "abgelaufen" || d.status === "fehlt" ? "danger" : d.status === "laeuft bald ab" ? "warn" : "info";
-      return `<article class="doc-card"><div class="doc-card-head"><div><strong>${displayTypeLabel(d.type)}</strong><p>${d.validUntil ? `Bis ${formatDate(d.validUntil)}` : "Bitte aktualisieren"}</p></div><span class="status-pill ${chipClass}">${statusText}</span></div><button class="btn btn-primary" type="button">Neu einreichen</button></article>`;
-    }).join("")}</div>` : '<p class="demo-note">Noch keine Dokumente eingereicht.</p>';
+      return `<article class="doc-card"><div class="doc-card-head"><div><strong>${displayTypeLabel(d.type)}</strong><p>${d.validUntil ? `Gültig bis ${formatDate(d.validUntil)}` : "Bitte bei Bedarf neu senden"}</p></div><span class="status-pill ${chipClass}">${statusText}</span></div></article>`;
+    }).join("")}</div>` : '<p class="demo-note">Noch kein Dokument gesendet.</p>';
   }
 
   function renderAbsences() {
@@ -284,7 +286,7 @@
     const node = document.querySelector("[data-portal-absence-list]");
     if (!node) return;
     const absences = state.data.absences.filter((a) => a.employeeId === e.id);
-    node.innerHTML = absences.length ? `<div class="driver-list">${absences.map((a) => `<article class="driver-item"><strong>${a.kind}</strong><p>${formatPeriod(a.start, a.expectedEnd)}</p><p>Status: ${a.status}</p><p>${a.note || ""}</p></article>`).join("")}</div>` : '<p class="demo-note">Keine Krankmeldungen oder sonstigen Abwesenheiten.</p>';
+    node.innerHTML = absences.length ? `<div class="driver-list">${absences.map((a) => `<article class="driver-item compact-item"><strong>${formatPeriod(a.start, a.expectedEnd)}</strong><p>${visibleLabel(a.kind)} · ${visibleLabel(a.status)}</p>${a.note ? `<p>${visibleLabel(a.note)}</p>` : ""}</article>`).join("")}</div>` : '<p class="demo-note">Noch keine Krankmeldung gesendet.</p>';
   }
 
   function renderMessages() {
@@ -293,7 +295,38 @@
     const node = document.querySelector("[data-portal-msg-list]");
     if (!node) return;
     const msgs = state.data.messages.filter((m) => (m.employeeIds || []).includes(e.id));
-    node.innerHTML = msgs.length ? `<div class="driver-list">${msgs.map((m) => `<article class="driver-item"><strong>${m.title}</strong><p>${m.text}</p><p>Priorität: ${m.priority}</p><div class="driver-item-actions"><button class="driver-btn" type="button" data-portal-msg-read="${m.id}">Gelesen markieren</button>${m.confirmRequired ? `<button class="driver-btn" type="button" data-portal-msg-confirm="${m.id}">Bestätigen</button>` : ""}</div></article>`).join("")}</div>` : '<p class="demo-note">Keine Mitteilungen.</p>';
+    node.innerHTML = msgs.length ? `<div class="driver-list">${msgs.map((m) => `<article class="driver-item compact-item"><strong>${visibleLabel(m.title)}</strong><p>${visibleLabel(m.text)}</p><div class="driver-item-actions"><button class="driver-btn" type="button" data-portal-msg-read="${m.id}">Gelesen</button>${m.confirmRequired ? `<button class="driver-btn" type="button" data-portal-msg-confirm="${m.id}">Bestätigen</button>` : ""}</div></article>`).join("")}</div>` : '<p class="demo-note">Keine neuen Mitteilungen.</p>';
+  }
+
+  function renderMessageSummary() {
+    const node = document.querySelector("[data-portal-message-summary]");
+    const badge = document.querySelector("[data-portal-message-badge]");
+    if (!node) return;
+
+    if (state.supabaseEmployee) {
+      if (badge) badge.textContent = "0";
+      node.innerHTML = '<div class="message-summary-card"><strong>Keine neuen Mitteilungen</strong><p>Zurzeit liegt nichts Neues für dich vor.</p></div>';
+      return;
+    }
+
+    const e = emp();
+    if (!e) return;
+    const msgs = state.data.messages.filter((m) => (m.employeeIds || []).includes(e.id));
+    const unread = msgs.filter((m) => !(m.reads || {})[e.id]);
+    if (badge) badge.textContent = String(unread.length);
+
+    if (!unread.length) {
+      node.innerHTML = '<div class="message-summary-card"><strong>Keine neuen Mitteilungen</strong><p>Alles Wichtige ist bereits gelesen.</p></div>';
+      return;
+    }
+
+    const newest = unread[0];
+    node.innerHTML = `
+      <div class="message-summary-card is-new">
+        <strong>${unread.length} neue Mitteilung${unread.length > 1 ? "en" : ""}</strong>
+        <p>${visibleLabel(newest.title)}</p>
+        <small>${visibleLabel(newest.text)}</small>
+      </div>`;
   }
 
   /* ------------------------------------------------------------------ */
@@ -395,15 +428,17 @@
     const h = now.getHours();
     const greeting = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
     const weekday = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(now);
-    const dateLabel = `${weekday}, ${now.toLocaleDateString("de-DE")}`;
+    const dateLabel = `${weekday}, ${new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(now)}`;
     const fullName = `${se.first_name || ""} ${se.last_name || ""}`.trim() || "Mitarbeiter";
     const initials = `${(se.first_name || "M").charAt(0)}${(se.last_name || "A").charAt(0)}`.toUpperCase();
 
     if (nameNode) nameNode.textContent = fullName;
     document.querySelectorAll("[data-portal-name]").forEach(el => { el.textContent = fullName; });
     if (roleNode) roleNode.textContent = se.employment_type || "Mitarbeiter";
+    const statusNode = document.querySelector("[data-portal-status]");
+    if (statusNode) statusNode.textContent = "Angemeldet";
     if (avatarNode) avatarNode.textContent = initials;
-    if (greetingNode) greetingNode.textContent = greeting;
+    if (greetingNode) greetingNode.textContent = `${greeting}, ${fullName}`;
     if (dateNode) dateNode.textContent = dateLabel;
     if (messageBadge) messageBadge.textContent = "0";
   }
@@ -411,8 +446,7 @@
   function renderHomeSupabase() {
     const hero = document.querySelector("[data-portal-hero]");
     const tomorrowNode = document.querySelector("[data-portal-tomorrow]");
-    const priorityNode = document.querySelector("[data-portal-priority]");
-    if (!hero || !tomorrowNode || !priorityNode) return;
+    if (!hero || !tomorrowNode) return;
 
     const today = todayIso();
     const tomorrow = addDays(today, 1);
@@ -429,13 +463,13 @@
             <p class="panel-kicker">Heute</p>
             <h2>${weekdayName(today)}, ${formatDateDE(today)}</h2>
           </div>
-          <span class="status-pill active">● Im Dienst</span>
+            <span class="status-pill active">Heute geplant</span>
         </div>
-        <p class="hero-title">Meine Schicht</p>
+          <p class="hero-title">Arbeitszeit</p>
         <p class="hero-time">${formatShiftTime(todayShift.start_time, todayShift.end_time)}</p>
         <div class="hero-vehicle">
           <div class="hero-meta-row"><span>Fahrzeug</span><strong>${vehicleLabel(todayVehicle)}</strong></div>
-          ${todayVehicle?.vehicle_type ? `<div class="hero-meta-row"><span>Fahrzeugtyp</span><strong>${todayVehicle.vehicle_type}</strong></div>` : ""}
+            ${todayVehicle?.vehicle_type ? `<div class="hero-meta-row"><span>Typ</span><strong>${todayVehicle.vehicle_type}</strong></div>` : ""}
         </div>`;
     } else {
       hero.innerHTML = `
@@ -444,10 +478,11 @@
             <p class="panel-kicker">Heute</p>
             <h2>${weekdayName(today)}, ${formatDateDE(today)}</h2>
           </div>
-          <span class="status-pill neutral">● Kein Dienst</span>
+            <span class="status-pill neutral">Heute frei</span>
         </div>
-        <p class="hero-title">Kein Dienst heute</p>
-        <p class="hero-time">Für heute ist keine veröffentlichte Schicht eingetragen.</p>`;
+          <p class="hero-title">Heute frei</p>
+          <p class="hero-time">Heute frei</p>
+          <div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>Kein Fahrzeug</strong></div></div>`;
     }
 
     /* Morgen */
@@ -458,9 +493,9 @@
             <p class="panel-kicker">Morgen</p>
             <h2>${weekdayName(tomorrow)}, ${formatDateDE(tomorrow)}</h2>
           </div>
-          <span class="status-pill info">● Veröffentlicht</span>
+            <span class="status-pill info">Veröffentlicht</span>
         </div>
-        <p class="hero-title">Nächster Einsatz</p>
+          <p class="hero-title">Arbeitszeit</p>
         <p class="hero-time">${formatShiftTime(tomorrowShift.start_time, tomorrowShift.end_time)}</p>
         ${tomorrowVehicle ? `<div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>${vehicleLabel(tomorrowVehicle)}</strong></div></div>` : ""}`;
     } else {
@@ -470,23 +505,12 @@
             <p class="panel-kicker">Morgen</p>
             <h2>${weekdayName(tomorrow)}, ${formatDateDE(tomorrow)}</h2>
           </div>
-          <span class="status-pill neutral">● Nicht veröffentlicht</span>
+            <span class="status-pill neutral">Noch nicht veröffentlicht</span>
         </div>
         <p class="hero-title">Plan nicht veröffentlicht</p>
-        <p class="hero-time">Der Plan für morgen wurde noch nicht veröffentlicht.</p>`;
+          <p class="hero-time">Plan noch nicht veröffentlicht</p>
+          <div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>Noch offen</strong></div></div>`;
     }
-
-    /* Prioritätsbereich – leer halten für Supabase-Nutzer */
-    priorityNode.innerHTML = `
-      <div class="panel-head">
-        <div>
-          <p class="panel-kicker">Wichtiger Hinweis</p>
-          <h2>Alles aktuell</h2>
-        </div>
-        <span class="status-pill info">INFO</span>
-      </div>
-      <p class="hero-title">Keine dringenden Hinweise.</p>
-      <p class="hero-time">Alles ist aktuell.</p>`;
   }
 
   function renderShiftAreaSupabase() {
@@ -504,26 +528,35 @@
     const items = days.map((day) => {
       const shift = shiftForDate(day);
       const vehicle = vehicleForShift(shift);
-      const dayLabel = `${weekdayName(day)}, ${formatDateDE(day)}`;
+      const dayLabel = weekdayShortLabel(day);
       const isToday = day === today;
 
       if (shift) {
-        return `<article class="driver-item${isToday ? " is-today" : ""}">
-          <strong>${dayLabel}${isToday ? " · Heute" : ""}</strong>
-          <p>${formatShiftTime(shift.start_time, shift.end_time)}</p>
-          ${vehicle ? `<p>Fahrzeug: ${vehicleLabel(vehicle)}</p>` : ""}
-          <span class="status-pill active">Eingeplant</span>
+        return `<article class="week-row is-working${isToday ? " is-today" : ""}">
+          <div class="week-row-main">
+            <strong>${dayLabel}</strong>
+            <p>${formatShiftTime(shift.start_time, shift.end_time)}</p>
+          </div>
+          <div class="week-row-side">
+            <span>${vehicle ? vehicleLabel(vehicle) : "Fahrzeug offen"}</span>
+            <small>${isToday ? "Heute" : "Veröffentlicht"}</small>
+          </div>
         </article>`;
       } else {
-        return `<article class="driver-item${isToday ? " is-today" : ""}">
-          <strong>${dayLabel}${isToday ? " · Heute" : ""}</strong>
-          <p>Frei</p>
-          <span class="status-pill neutral">Frei</span>
+        return `<article class="week-row${isToday ? " is-today" : ""}">
+          <div class="week-row-main">
+            <strong>${dayLabel}</strong>
+            <p>Frei</p>
+          </div>
+          <div class="week-row-side">
+            <span>Frei</span>
+            <small>${isToday ? "Heute" : ""}</small>
+          </div>
         </article>`;
       }
     }).join("");
 
-    node.innerHTML = `<div class="driver-list">${items}</div>`;
+    node.innerHTML = `<div class="week-list">${items}</div>`;
   }
 
   function render() {
@@ -533,6 +566,7 @@
     renderShiftArea();
     renderDocs();
     renderMessages();
+    renderMessageSummary();
     renderAbsences();
   }
 
@@ -550,18 +584,24 @@
     const allowed = ["dienstplan", "urlaub", "krank", "dokumente", "mitteilungen", "profil"];
     const safeSection = allowed.includes(section) ? section : "dienstplan";
     state.activeSection = safeSection;
+    const overlay = document.querySelector("[data-portal-overlay]");
+    const isDrawer = safeSection !== "dienstplan";
 
     document.querySelectorAll("[data-portal-section]").forEach((panel) => {
-      const isActive = (panel.getAttribute("data-portal-section") || "") === safeSection;
+      const isActive = (panel.getAttribute("data-portal-section") || "") === safeSection && isDrawer;
       panel.classList.toggle("is-open", isActive);
       panel.setAttribute("aria-expanded", isActive ? "true" : "false");
-      const body = panel.querySelector(".section-body");
-      if (body) body.hidden = !isActive;
+      panel.hidden = !isActive;
     });
 
+    if (overlay) {
+      overlay.hidden = !isDrawer;
+      document.body.classList.toggle("portal-overlay-open", isDrawer);
+    }
+
+    if (isDrawer) return;
     if (options.scroll !== false) {
-      const target = document.querySelector(`[data-portal-section="${safeSection}"]`);
-      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.querySelector("[data-portal-week-panel]")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
 
@@ -625,6 +665,11 @@
         return;
       }
 
+      if (event.target.closest("[data-portal-close-drawer]")) {
+        setActiveSection("dienstplan", { scroll: false });
+        return;
+      }
+
       const sectionToggle = event.target.closest("[data-portal-section-toggle]");
       if (sectionToggle) {
         setActiveSection(sectionToggle.getAttribute("data-portal-section-toggle") || "dienstplan");
@@ -651,9 +696,8 @@
         return;
       }
 
-      if (event.target.closest("[data-portal-priority-action]")) {
-        setActiveSection("dokumente");
-        selectDocumentType("Führerschein");
+      if (event.target.closest("[data-portal-open-profile]")) {
+        setActiveSection("profil");
         return;
       }
 
@@ -686,7 +730,7 @@
       if (open) {
         const row = state.data.vacations.find((v) => v.id === open.getAttribute("data-portal-vac-open"));
         if (!row) return;
-        openModal(`Antrag ${row.id}`, `<p>Status: ${row.status}</p><p>Zeitraum: ${row.start} bis ${row.end}</p><p>Notiz: ${row.decisionNote || row.internalNote || "-"}</p>`);
+        openModal(`Antrag ${row.id}`, `<p>Status: ${visibleLabel(row.status)}</p><p>Zeitraum: ${formatDate(row.start)} bis ${formatDate(row.end)}</p><p>Notiz: ${visibleLabel(row.decisionNote || row.internalNote || "-")}</p>`);
         return;
       }
 
@@ -724,6 +768,10 @@
     /* ESC schließt das Benutzermenü */
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
+        const overlay = document.querySelector("[data-portal-overlay]");
+        if (overlay && !overlay.hidden) {
+          setActiveSection("dienstplan", { scroll: false });
+        }
         const menu = document.querySelector("[data-portal-user-menu]");
         if (menu && !menu.hidden) {
           menu.hidden = true;
@@ -754,12 +802,14 @@
         state.data = P.loadState();
         renderVacations();
         renderHome();
+        renderMessageSummary();
         vacForm.reset();
         const feedback = document.querySelector("[data-portal-vac-feedback]");
         if (feedback) {
           feedback.hidden = false;
-          feedback.textContent = "Urlaubsantrag wurde eingereicht.";
+          feedback.textContent = "✓ Urlaubsantrag wurde gesendet.";
         }
+        openModal("Urlaub gesendet", "<p>✓ Urlaubsantrag wurde gesendet.</p>");
       });
     }
 
@@ -783,13 +833,14 @@
         state.data = P.loadState();
         renderAbsences();
         renderHome();
+        renderMessageSummary();
         absenceForm.reset();
         const feedback = document.querySelector("[data-portal-absence-feedback]");
         if (feedback) {
           feedback.hidden = false;
-          feedback.textContent = "Krankmeldung wurde gesendet.";
+          feedback.textContent = "✓ Krankmeldung wurde gesendet.";
         }
-        openModal("Krankmeldung eingereicht", "<p>Die Krankmeldung wurde an die Personalverwaltung übergeben.</p><p>Bitte das ärztliche Attest nachreichen, sobald es vorliegt.</p>");
+        openModal("Krankmeldung gesendet", "<p>✓ Krankmeldung wurde gesendet.</p>");
       });
     }
 
@@ -809,11 +860,17 @@
           demoFileType: file ? file.type : ""
         });
         state.data = P.loadState();
-        openModal("Dokument eingereicht", `<p>${file ? file.name : "Das Dokument"} wurde an die Verwaltung übergeben.</p><p>Status: neu eingereicht.</p>`);
         docForm.reset();
         renderDocs();
         renderHome();
+        renderMessageSummary();
         selectDocumentType("Führerschein");
+        const feedback = document.querySelector("[data-portal-doc-feedback]");
+        if (feedback) {
+          feedback.hidden = false;
+          feedback.textContent = "✓ Dokument wurde gesendet.";
+        }
+        openModal("Dokument gesendet", "<p>✓ Dokument wurde gesendet.</p>");
       });
     }
   }
