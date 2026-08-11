@@ -37,6 +37,7 @@
             <div class="portal-user-menu" data-portal-user-menu hidden>
               <p class="portal-user-menu-name" data-portal-name>—</p>
               <hr class="portal-user-menu-divider">
+              <button class="portal-user-menu-btn portal-user-menu-btn-neutral" type="button" data-portal-open-profile>Profil anzeigen</button>
               <button class="portal-user-menu-btn" type="button" data-portal-logout>Abmelden</button>
             </div>
           </div>
@@ -51,7 +52,6 @@
       <section class="portal-home-grid">
         <article class="panel-card hero-card" data-portal-hero></article>
         <article class="panel-card" data-portal-tomorrow></article>
-        <article class="panel-card" data-portal-priority></article>
       </section>
 
       <section class="panel-card">
@@ -65,42 +65,62 @@
           <button class="quick-action-card" type="button" data-portal-quick-action="dienstplan">
             <span class="quick-icon">🗓️</span>
             <strong>Dienstplan</strong>
-            <span>Ansicht öffnen</span>
+            <span>Meine Woche ansehen</span>
           </button>
           <button class="quick-action-card" type="button" data-portal-quick-action="urlaub">
             <span class="quick-icon">🌴</span>
-            <strong>Urlaub beantragen</strong>
-            <span>Formular direkt öffnen</span>
+            <strong>Urlaub</strong>
+            <span>Urlaub beantragen</span>
           </button>
           <button class="quick-action-card" type="button" data-portal-quick-action="krank">
             <span class="quick-icon">🩺</span>
             <strong>Krank melden</strong>
-            <span>Schnell einreichen</span>
+            <span>Krankmeldung senden</span>
           </button>
           <button class="quick-action-card" type="button" data-portal-quick-action="dokumente">
             <span class="quick-icon">📄</span>
-            <strong>Dokument einreichen</strong>
-            <span>Foto oder Datei</span>
+            <strong>Dokument senden</strong>
+            <span>Foto oder Datei senden</span>
           </button>
         </div>
       </section>
 
-      <section class="portal-section is-open" data-portal-section="dienstplan" aria-expanded="true">
-        <button class="section-toggle" type="button" data-portal-section-toggle="dienstplan">
-          <span>Mein Dienstplan</span>
-          <small>Diese Woche</small>
-        </button>
-        <div class="section-body">
-          <div data-portal-shift-list></div>
+      <section class="panel-card week-panel" data-portal-week-panel>
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Dienstplan</p>
+            <h2>Meine Woche</h2>
+          </div>
+          <span class="status-pill info">7 Tage</span>
         </div>
+        <div data-portal-shift-list></div>
       </section>
 
-      <section class="portal-section" data-portal-section="urlaub" aria-expanded="false">
-        <button class="section-toggle" type="button" data-portal-section-toggle="urlaub">
-          <span>Urlaub</span>
-          <small>1 Antrag</small>
-        </button>
-        <div class="section-body" hidden>
+      <section class="panel-card compact-info-card">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Mitteilungen</p>
+            <h2>Neuigkeiten</h2>
+          </div>
+          <button class="btn btn-ghost btn-compact" type="button" data-portal-open-messages>Öffnen</button>
+        </div>
+        <div data-portal-message-summary></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="portal-overlay" data-portal-overlay hidden>
+    <div class="portal-overlay-backdrop" data-portal-close-drawer></div>
+    <div class="portal-drawer-shell">
+      <section class="portal-section portal-drawer" data-portal-section="urlaub" aria-expanded="false" hidden>
+        <div class="section-titlebar">
+          <div>
+            <p class="panel-kicker">Schnellaktion</p>
+            <h2>Urlaub beantragen</h2>
+          </div>
+          <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
+        </div>
+        <div class="section-body">
           <div class="summary-row" data-portal-vac-summary></div>
           <div class="section-feedback" data-portal-vac-feedback hidden></div>
           <form class="portal-form" data-portal-vac-form>
@@ -118,18 +138,21 @@
               <span>Notiz</span>
               <input type="text" name="comment" placeholder="Optional">
             </label>
-            <button class="btn btn-primary" type="submit">Urlaub senden</button>
+            <button class="btn btn-primary" type="submit">Urlaubsantrag senden</button>
           </form>
           <div data-portal-vac-list></div>
         </div>
       </section>
 
-      <section class="portal-section" data-portal-section="krank" aria-expanded="false">
-        <button class="section-toggle" type="button" data-portal-section-toggle="krank">
-          <span>Krankmeldung</span>
-          <small>Einfach melden</small>
-        </button>
-        <div class="section-body" hidden>
+      <section class="portal-section portal-drawer" data-portal-section="krank" aria-expanded="false" hidden>
+        <div class="section-titlebar">
+          <div>
+            <p class="panel-kicker">Schnellaktion</p>
+            <h2>Krankmeldung senden</h2>
+          </div>
+          <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
+        </div>
+        <div class="section-body">
           <div class="section-feedback" data-portal-absence-feedback hidden></div>
           <form class="portal-form" data-portal-absence-form>
             <label>
@@ -164,12 +187,16 @@
         </div>
       </section>
 
-      <section class="portal-section" data-portal-section="dokumente" aria-expanded="false">
-        <button class="section-toggle" type="button" data-portal-section-toggle="dokumente">
-          <span>Meine Dokumente</span>
-          <small>Aktueller Stand</small>
-        </button>
-        <div class="section-body" hidden>
+      <section class="portal-section portal-drawer" data-portal-section="dokumente" aria-expanded="false" hidden>
+        <div class="section-titlebar">
+          <div>
+            <p class="panel-kicker">Schnellaktion</p>
+            <h2>Dokument senden</h2>
+          </div>
+          <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
+        </div>
+        <div class="section-body">
+          <div class="section-feedback" data-portal-doc-feedback hidden></div>
           <form class="portal-form" data-portal-doc-form>
             <div class="doc-type-grid" role="radiogroup" aria-label="Dokumentart">
               <button class="doc-type-card is-selected" type="button" data-doc-type="Führerschein">
@@ -191,7 +218,7 @@
             </div>
             <input type="hidden" name="type" value="Führerschein" data-portal-doc-type-hidden>
             <label>
-              <span>Dokument</span>
+              <span>Foto aufnehmen oder Datei auswählen</span>
               <div class="upload-shell">
                 <input class="upload-input" type="file" name="demoFile" accept="image/jpeg,image/png,application/pdf" capture="environment" data-portal-doc-input>
                 <button class="upload-trigger" type="button" data-portal-upload-trigger>📷 Dokument fotografieren oder auswählen</button>
@@ -212,31 +239,38 @@
         </div>
       </section>
 
-      <section class="portal-section" data-portal-section="mitteilungen" aria-expanded="false">
-        <button class="section-toggle" type="button" data-portal-section-toggle="mitteilungen">
-          <span>Mitteilungen</span>
-          <small>1 neu</small>
-        </button>
-        <div class="section-body" hidden>
+      <section class="portal-section portal-drawer" data-portal-section="mitteilungen" aria-expanded="false" hidden>
+        <div class="section-titlebar">
+          <div>
+            <p class="panel-kicker">Übersicht</p>
+            <h2>Mitteilungen</h2>
+          </div>
+          <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
+        </div>
+        <div class="section-body">
           <div data-portal-msg-list></div>
         </div>
       </section>
 
-      <section class="portal-section" data-portal-section="profil" aria-expanded="false">
-        <button class="section-toggle" type="button" data-portal-section-toggle="profil">
-          <span>Profil</span>
-          <small>Meine Daten</small>
-        </button>
-        <div class="section-body" hidden>
+      <section class="portal-section portal-drawer" data-portal-section="profil" aria-expanded="false" hidden>
+        <div class="section-titlebar">
+          <div>
+            <p class="panel-kicker">TF</p>
+            <h2>Mein Profil</h2>
+          </div>
+          <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
+        </div>
+        <div class="section-body">
           <div class="profile-card">
             <p class="profile-label">Mein Profil</p>
             <strong data-portal-name></strong>
             <p data-portal-role></p>
             <p data-portal-status></p>
+            <button class="btn btn-warning" type="button" data-portal-logout>Abmelden</button>
           </div>
         </div>
       </section>
-    </main>
+    </div>
   </div>
 
   <div class="driver-modal" data-portal-modal hidden>
