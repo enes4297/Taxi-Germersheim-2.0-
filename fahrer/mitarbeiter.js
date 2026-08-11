@@ -400,6 +400,7 @@
     const initials = `${(se.first_name || "M").charAt(0)}${(se.last_name || "A").charAt(0)}`.toUpperCase();
 
     if (nameNode) nameNode.textContent = fullName;
+    document.querySelectorAll("[data-portal-name]").forEach(el => { el.textContent = fullName; });
     if (roleNode) roleNode.textContent = se.employment_type || "Mitarbeiter";
     if (avatarNode) avatarNode.textContent = initials;
     if (greetingNode) greetingNode.textContent = greeting;
@@ -492,31 +493,31 @@
     const node = document.querySelector("[data-portal-shift-list]");
     if (!node) return;
 
-    if (state.supabaseShifts.length === 0) {
-      node.innerHTML = `<p class="demo-note">Keine veröffentlichten Schichten vorhanden.</p>`;
-      return;
-    }
-
-    /* Zeige die nächsten 14 Tage */
+    /* Aktuelle Kalenderwoche: Montag bis Sonntag */
     const today = todayIso();
-    const days = Array.from({ length: 14 }, (_, i) => addDays(today, i));
+    const todayDate = new Date(`${today}T00:00:00`);
+    const dowToday = todayDate.getDay(); /* 0=So, 1=Mo … 6=Sa */
+    const diffToMonday = (dowToday === 0 ? -6 : 1 - dowToday); /* Montag dieser Woche */
+    const monday = addDays(today, diffToMonday);
+    const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i)); /* Mo–So */
 
     const items = days.map((day) => {
       const shift = shiftForDate(day);
       const vehicle = vehicleForShift(shift);
       const dayLabel = `${weekdayName(day)}, ${formatDateDE(day)}`;
+      const isToday = day === today;
 
       if (shift) {
-        return `<article class="driver-item">
-          <strong>${dayLabel}</strong>
+        return `<article class="driver-item${isToday ? " is-today" : ""}">
+          <strong>${dayLabel}${isToday ? " · Heute" : ""}</strong>
           <p>${formatShiftTime(shift.start_time, shift.end_time)}</p>
           ${vehicle ? `<p>Fahrzeug: ${vehicleLabel(vehicle)}</p>` : ""}
           <span class="status-pill active">Eingeplant</span>
         </article>`;
       } else {
-        return `<article class="driver-item">
-          <strong>${dayLabel}</strong>
-          <p>Kein Dienst</p>
+        return `<article class="driver-item${isToday ? " is-today" : ""}">
+          <strong>${dayLabel}${isToday ? " · Heute" : ""}</strong>
+          <p>Frei</p>
           <span class="status-pill neutral">Frei</span>
         </article>`;
       }
@@ -661,6 +662,26 @@
         return;
       }
 
+      /* Avatar → Benutzermenü öffnen/schließen */
+      if (event.target.closest("[data-portal-avatar]")) {
+        const menu = document.querySelector("[data-portal-user-menu]");
+        const btn = document.querySelector("[data-portal-avatar]");
+        if (!menu) return;
+        const willOpen = menu.hidden;
+        menu.hidden = !willOpen;
+        btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        return;
+      }
+
+      /* Außerhalb des Avatar-Wrappers klicken → Menü schließen */
+      if (!event.target.closest("[data-portal-avatar-wrap]")) {
+        const menu = document.querySelector("[data-portal-user-menu]");
+        if (menu && !menu.hidden) {
+          menu.hidden = true;
+          document.querySelector("[data-portal-avatar]")?.setAttribute("aria-expanded", "false");
+        }
+      }
+
       const open = event.target.closest("[data-portal-vac-open]");
       if (open) {
         const row = state.data.vacations.find((v) => v.id === open.getAttribute("data-portal-vac-open"));
@@ -697,6 +718,17 @@
         state.data = P.loadState();
         renderMessages();
         return;
+      }
+    });
+
+    /* ESC schließt das Benutzermenü */
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        const menu = document.querySelector("[data-portal-user-menu]");
+        if (menu && !menu.hidden) {
+          menu.hidden = true;
+          document.querySelector("[data-portal-avatar]")?.setAttribute("aria-expanded", "false");
+        }
       }
     });
 
@@ -823,5 +855,81 @@
     bindUploadUI();
     selectDocumentType("Führerschein");
     setActiveSection("dienstplan", { scroll: false });
+
+    /* Auto-Logout nur für Supabase-Nutzer starten */
+    if (isSupabase) initIdleTimer();
   });
+
+  /* ------------------------------------------------------------------ */
+  /* Automatischer Logout nach 30 Minuten Inaktivität                  */
+  /* ------------------------------------------------------------------ */
+
+  function initIdleTimer() {
+    const TIMEOUT_MS  = 30 * 60 * 1000; /* 30 Minuten */
+    const WARN_MS     = 28 * 60 * 1000; /* Warnung ab 28 Minuten */
+    const TICK_MS     = 10 * 1000;      /* Prüfintervall: 10 Sekunden */
+    const STAMP_KEY   = "tgEmpLastActivity";
+
+    let warnShown  = false;
+    let tickHandle = null;
+
+    /* --- Zeitstempel setzen / Warnung ggf. wegblenden --- */
+    function touch() {
+      localStorage.setItem(STAMP_KEY, String(Date.now()));
+      if (warnShown) {
+        warnShown = false;
+        const banner = document.querySelector("[data-portal-idle-warning]");
+        if (banner) banner.hidden = true;
+      }
+    }
+
+    /* --- Warnung einblenden --- */
+    function showWarn() {
+      if (warnShown) return;
+      warnShown = true;
+      const banner = document.querySelector("[data-portal-idle-warning]");
+      if (banner) banner.hidden = false;
+    }
+
+    /* --- Prüfen ob Timeout abgelaufen --- */
+    async function check() {
+      const raw = localStorage.getItem(STAMP_KEY);
+      if (!raw) return; /* Noch nicht initialisiert */
+      const elapsed = Date.now() - Number(raw);
+
+      if (elapsed >= TIMEOUT_MS) {
+        clearInterval(tickHandle);
+        const banner = document.querySelector("[data-portal-idle-warning]");
+        if (banner) banner.hidden = true;
+        localStorage.removeItem(STAMP_KEY);
+        await ES.signOut();
+        window.location.replace("index.html");
+        return;
+      }
+
+      if (elapsed >= WARN_MS) {
+        showWarn();
+      }
+    }
+
+    /* --- Nur echte Nutzeraktionen erfassen (KEIN scroll/mousemove) --- */
+    /* scroll wird bewusst NICHT verwendet: scrollIntoView() bei          */
+    /* setActiveSection() würde den Timer sofort zurücksetzen.           */
+    ["click", "keydown", "touchstart", "pointerdown"].forEach((evt) => {
+      document.addEventListener(evt, touch, { passive: true, capture: true });
+    });
+
+    /* --- Rückkehr aus Hintergrund/Standby sofort prüfen --- */
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) check();
+    });
+
+    /* --- Initialen Zeitstempel setzen und Timer starten.             */
+    /* WICHTIG: touch() erst NACH vollständiger Initialisierung aufrufen */
+    /* damit keine Init-Events den Startpunkt verfälschen.              */
+    setTimeout(() => {
+      touch();
+      tickHandle = setInterval(check, TICK_MS);
+    }, 500); /* 500 ms Verzögerung: Init-Scrolls/Klicks ignorieren */
+  }
 })();

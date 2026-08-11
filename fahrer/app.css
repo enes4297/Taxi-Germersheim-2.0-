@@ -184,6 +184,90 @@ body[data-portal-loading]::before {
 .driver-btn.warning { background: rgba(255,183,112,0.16); color: var(--warn); border-color: rgba(255,183,112,0.24); }
 .driver-btn.danger { background: rgba(255,141,141,0.16); color: var(--danger); border-color: rgba(255,141,141,0.24); }
 
+/* ----------------------------------------------------------------- *//* Inaktivitäts-Warnung                                             */
+/* ----------------------------------------------------------------- */
+.portal-idle-warning {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  background: rgba(255,183,112,0.18);
+  border: 1px solid rgba(255,183,112,0.45);
+  border-radius: 14px;
+  padding: 12px 20px;
+  color: var(--warn);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: var(--shadow);
+  max-width: min(480px, calc(100% - 32px));
+}
+.portal-idle-warning[hidden] { display: none; }
+.portal-idle-warning p { margin: 0; }
+
+/* ----------------------------------------------------------------- *//* Avatar-Benutzermen\u00fc                                               */
+/* ----------------------------------------------------------------- */
+.portal-avatar-wrap {
+  position: relative;
+}
+
+.portal-avatar {
+  /* bestehende Stile beibehalten, als Button */
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.portal-user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  border: 1px solid rgba(240,201,107,0.28);
+  border-radius: 16px;
+  background: #0e121c;
+  box-shadow: var(--shadow);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  z-index: 200;
+}
+
+.portal-user-menu[hidden] { display: none; }
+
+.portal-user-menu-name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  padding: 2px 4px;
+}
+
+.portal-user-menu-divider {
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin: 0;
+}
+
+.portal-user-menu-btn {
+  border: 1px solid rgba(255,141,141,0.28);
+  border-radius: 10px;
+  background: rgba(255,141,141,0.1);
+  color: var(--danger);
+  min-height: 38px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.portal-user-menu-btn:hover {
+  background: rgba(255,141,141,0.18);
+}
+
 /* ----------------------------------------------------------------- */
 /* Login-Seite (fahrer/index.html)                                   */
 /* ----------------------------------------------------------------- */

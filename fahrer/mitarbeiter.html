@@ -14,6 +14,10 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body data-portal-loading>
+  <!-- Inaktivitäts-Warnung (automatisch ausgeblendet) -->
+  <div class="portal-idle-warning" data-portal-idle-warning hidden>
+    <p>Du wirst wegen Inaktivität in Kürze automatisch abgemeldet. Tippe oder klicke, um angemeldet zu bleiben.</p>
+  </div>
   <div class="portal-shell">
     <header class="portal-header">
       <div class="portal-brand">
@@ -24,12 +28,19 @@
         </div>
       </div>
       <div class="portal-header-actions">
-        <button class="icon-btn" type="button" data-portal-open-messages aria-label="Mitteilungen öffnen">
-          <span class="icon">🔔</span>
-          <span class="badge" data-portal-message-badge>0</span>
-        </button>
-        <div class="portal-avatar" data-portal-avatar>EM</div>
-      </div>
+          <button class="icon-btn" type="button" data-portal-open-messages aria-label="Mitteilungen öffnen">
+            <span class="icon">🔔</span>
+            <span class="badge" data-portal-message-badge>0</span>
+          </button>
+          <div class="portal-avatar-wrap">
+            <button class="portal-avatar" type="button" data-portal-avatar aria-haspopup="true" aria-expanded="false">EM</button>
+            <div class="portal-user-menu" data-portal-user-menu hidden>
+              <p class="portal-user-menu-name" data-portal-name>—</p>
+              <hr class="portal-user-menu-divider">
+              <button class="portal-user-menu-btn" type="button" data-portal-logout>Abmelden</button>
+            </div>
+          </div>
+        </div>
       <div class="portal-welcome">
         <p class="portal-greeting" data-portal-greeting>Guten Tag</p>
         <p class="portal-date" data-portal-date>Montag, 10.08.2026</p>
@@ -222,7 +233,6 @@
             <strong data-portal-name></strong>
             <p data-portal-role></p>
             <p data-portal-status></p>
-            <button class="btn btn-ghost" type="button" data-portal-logout>Abmelden</button>
           </div>
         </div>
       </section>
