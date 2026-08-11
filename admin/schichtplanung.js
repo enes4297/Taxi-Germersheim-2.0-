@@ -1,6 +1,7 @@
 (() => {
   const P = window.AdminPersonnelDemo;
   const S = window.AdminSystemCenter || {};
+  const D = window.TaxiData || window.TaxiDataService || null;
   const COCKPIT_KEY = "adminTerminCockpitV22Phase1";
   const LIVE_DISPO_KEY = "adminLiveDispoV131";
   const STORE_KEY = "adminV22DispatchPlanner";
@@ -39,6 +40,7 @@
   const state = {
     personnel: null,
     planner: null,
+    vehicleCatalog: [],
     activeFilter: "Alle",
     searchTerm: "",
     selectedTomorrow: new Set(),
@@ -46,6 +48,8 @@
     dateToday: "",
     dateTomorrow: ""
   };
+
+  let planningLoadError = "";
 
   function safeParse(raw) {
     try {
@@ -145,11 +149,31 @@
   }
 
   function loadPlanner() {
+    const useSupabase = D && typeof D.resolveBackendMode === "function" && D.resolveBackendMode() === "supabase";
+    if (useSupabase) {
+      return ensurePlannerShape({
+        version: 1,
+        updatedAt: nowStamp(),
+        templates: SHIFT_TEMPLATES_DEFAULT,
+        todayAssignments: [],
+        tomorrowPlan: [],
+        suggestions: [],
+        confirmedPlan: [],
+        phoneStatusByDriver: {}
+      });
+    }
+
     const parsed = safeParse(localStorage.getItem(STORE_KEY));
     return ensurePlannerShape(parsed);
   }
 
   function savePlanner() {
+    const useSupabase = D && typeof D.resolveBackendMode === "function" && D.resolveBackendMode() === "supabase";
+    if (useSupabase) {
+      state.planner.updatedAt = nowStamp();
+      return;
+    }
+
     state.planner.updatedAt = nowStamp();
     localStorage.setItem(STORE_KEY, JSON.stringify(state.planner));
   }
@@ -159,12 +183,168 @@
     return P.loadState();
   }
 
+  function buildPlannerRowsFromShifts(shifts) {
+    const template = findTemplateById("day");
+    const employees = (state.personnel.employees || []).filter((emp) => emp.role === "Fahrer");
+    const todayMap = new Map();
+    const tomorrowMap = new Map();
+
+    (Array.isArray(shifts) ? shifts : []).forEach((shift) => {
+      const employeeId = String(shift.employeeId || shift.employee_id || "");
+      if (!employeeId) return;
+      const dateKey = String(shift.date || shift.shift_date || "");
+      if (dateKey === String(state.dateToday)) {
+        todayMap.set(employeeId, shift);
+      }
+      if (dateKey === String(state.dateTomorrow)) {
+        tomorrowMap.set(employeeId, shift);
+      }
+    });
+
+    state.planner.todayAssignments = employees.map((emp) => {
+      const matching = todayMap.get(String(emp.id));
+      const start = matching?.startTime || matching?.start || template.start;
+      const end = matching?.endTime || matching?.end || template.end;
+      const vehicle = matching?.vehicle || matching?.vehicleId || pickDefaultVehicle(emp);
+      return {
+        id: matching?.id ? `TOD-${matching.id}` : uid("TOD"),
+        date: state.dateToday,
+        employeeId: emp.id,
+        employmentType: emp.employmentType || "Vollzeit",
+        start,
+        end,
+        shiftTemplateId: template.id,
+        status: matching?.status || (normalize(emp.status).includes("dienst") ? "im Dienst" : "verfügbar"),
+        vehicle,
+        licenseStatus: getDocStatus(emp.id, "Fuehrerschein"),
+        permitStatus: getDocStatus(emp.id, "Personenbefoerderungsschein"),
+        qualifications: Array.isArray(emp.qualifications) ? emp.qualifications : [],
+        dayAvailability: employeeAvailabilityOnDate(emp, state.dateToday),
+        availabilityFrom: "",
+        availabilityTo: "",
+        currentRide: "",
+        nextRide: "",
+        reserve: false,
+        exceptionNote: matching?.note || "",
+        sourceId: matching?.id || null,
+        planStatus: matching?.planStatus || matching?.plan_status || "draft"
+      };
+    });
+
+    state.planner.tomorrowPlan = employees.map((emp) => {
+      const matching = tomorrowMap.get(String(emp.id));
+      const start = matching?.startTime || matching?.start || template.start;
+      const end = matching?.endTime || matching?.end || template.end;
+      const vehicle = matching?.vehicle || matching?.vehicleId || "";
+      const active = Boolean(matching && (matching.planStatus === "published" || matching.plan_status === "published" || matching.status === "planned"));
+      return {
+        id: matching?.id ? `TOM-${matching.id}` : uid("TOM"),
+        date: state.dateTomorrow,
+        employeeId: emp.id,
+        active,
+        reserve: false,
+        shiftTemplateId: template.id,
+        start,
+        end,
+        vehicle,
+        preferredServiceType: "",
+        note: matching?.note || "",
+        dayAvailability: employeeAvailabilityOnDate(emp, state.dateTomorrow),
+        exceptionNote: "",
+        sourceId: matching?.id || null,
+        planStatus: matching?.planStatus || matching?.plan_status || "draft"
+      };
+    });
+  }
+
+  async function syncPublicationStateFromService() {
+    if (!D || typeof D.getPlanPublications !== "function") return;
+    const publications = await D.getPlanPublications(state.dateTomorrow);
+    const publication = Array.isArray(publications) ? publications.find((item) => String(item.date || item.plan_date || "") === String(state.dateTomorrow)) : null;
+    if (publication) {
+      state.planner.publicationStatus = String(publication.status || "draft");
+      state.planner.publication = publication;
+      state.planner.publishedAt = publication.publishedAt || publication.published_at || "";
+      return;
+    }
+    state.planner.publicationStatus = state.planner.publicationStatus || "draft";
+    state.planner.publication = null;
+    state.planner.publishedAt = "";
+  }
+
+  async function syncPlanningDataFromService() {
+    planningLoadError = "";
+    if (!D || typeof D.getEmployees !== "function") return;
+
+    try {
+      const employees = await D.getEmployees();
+      if (Array.isArray(employees)) {
+        const personnel = loadPersonnel();
+        personnel.employees = employees;
+        if (D && typeof D.resolveBackendMode === "function" && D.resolveBackendMode() !== "supabase" && P && typeof P.saveState === "function") {
+          P.saveState(personnel);
+        }
+        state.personnel = personnel;
+      }
+    } catch (error) {
+      planningLoadError = "Mitarbeiter konnten nicht geladen werden.";
+    }
+
+    try {
+      if (D && typeof D.getVehicles === "function") {
+        const vehicles = await D.getVehicles();
+        state.vehicleCatalog = Array.isArray(vehicles) ? vehicles : [];
+      } else {
+        state.vehicleCatalog = [];
+      }
+    } catch (error) {
+      planningLoadError = planningLoadError || "Fahrzeuge konnten nicht geladen werden.";
+    }
+
+    try {
+      if (D && typeof D.getShifts === "function") {
+        const shifts = await D.getShifts();
+        if (Array.isArray(shifts)) {
+          buildPlannerRowsFromShifts(shifts);
+        }
+      }
+    } catch (error) {
+      planningLoadError = planningLoadError || "Schichten konnten nicht geladen werden.";
+    }
+
+    try {
+      await syncPublicationStateFromService();
+    } catch (error) {
+      planningLoadError = planningLoadError || "Planstatus konnte nicht geladen werden.";
+    }
+  }
+
   function loadCockpitAppointments() {
     const parsed = safeParse(localStorage.getItem(COCKPIT_KEY)) || {};
     return Array.isArray(parsed.appointments) ? parsed.appointments : [];
   }
 
+  function mapVehicleStatusForPlanning(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized.includes("in_service") || normalized.includes("unterwegs") || normalized.includes("busy") || normalized.includes("onroute")) return "Unterwegs";
+    if (normalized.includes("pause")) return "Pause";
+    if (normalized.includes("workshop") || normalized.includes("werkstatt") || normalized.includes("service")) return "Werkstatt";
+    if (normalized.includes("blocked") || normalized.includes("gesperrt") || normalized.includes("inactive") || normalized.includes("deaktiv")) return "Gesperrt";
+    return "Verfügbar";
+  }
+
   function loadVehicles() {
+    const useSupabase = D && typeof D.resolveBackendMode === "function" && D.resolveBackendMode() === "supabase";
+    if (useSupabase) {
+      const rows = Array.isArray(state.vehicleCatalog) ? state.vehicleCatalog : [];
+      if (!rows.length) return [];
+      return rows.map((vehicle) => ({
+        plate: String(vehicle.licensePlate || vehicle.plate || vehicle.name || vehicle.id || "-").trim(),
+        status: mapVehicleStatusForPlanning(vehicle.status),
+        type: String(vehicle.vehicleType || vehicle.type || "Normales Taxi").trim()
+      }));
+    }
+
     const live = safeParse(localStorage.getItem(LIVE_DISPO_KEY)) || {};
     if (Array.isArray(live.vehicles) && live.vehicles.length) {
       return live.vehicles.map((v) => ({
@@ -851,12 +1031,30 @@
   function renderQuickInfo() {
     const node = document.querySelector("[data-shift-feedback]");
     if (!node) return;
+
+    if (planningLoadError) {
+      node.textContent = planningLoadError;
+      return;
+    }
+
+    const lastError = D && typeof D.getLastError === "function" ? D.getLastError() : "";
+    if (lastError) {
+      node.textContent = lastError;
+      return;
+    }
+
     const activeTomorrow = state.planner.tomorrowPlan.filter((x) => x.active).length;
     const reserveTomorrow = state.planner.tomorrowPlan.filter((x) => x.active && x.reserve).length;
-    node.textContent = `Plan für morgen: ${activeTomorrow} aktiv, davon ${reserveTomorrow} Reserve. Letzte Aktualisierung ${formatDateTime(state.planner.updatedAt)}.`;
+    const publicationTag = state.planner.publicationStatus === "published" ? "Veröffentlicht" : "Entwurf";
+    node.textContent = `Plan für morgen: ${activeTomorrow} aktiv, davon ${reserveTomorrow} Reserve. Status: ${publicationTag}. Letzte Aktualisierung ${formatDateTime(state.planner.updatedAt)}.`;
   }
 
   function persistToCockpitBridge() {
+    const useSupabase = D && typeof D.resolveBackendMode === "function" && D.resolveBackendMode() === "supabase";
+    if (useSupabase) {
+      return;
+    }
+
     const bridge = {
       version: 1,
       updatedAt: nowStamp(),
@@ -1077,22 +1275,26 @@
   function bindToolbar() {
     const planBtn = document.querySelector("[data-plan-generate]");
     if (planBtn) {
-      planBtn.addEventListener("click", () => {
+      planBtn.addEventListener("click", async () => {
         prepareDemoSuggestions();
         persistToCockpitBridge();
         renderSuggestions();
         renderQuickInfo();
+        await syncPlanningDataFromService();
+        renderAll();
       });
     }
 
     const acceptAllBtn = document.querySelector("[data-plan-accept-all]");
     if (acceptAllBtn) {
-      acceptAllBtn.addEventListener("click", () => {
+      acceptAllBtn.addEventListener("click", async () => {
         acceptAllSuggestions();
         persistToCockpitBridge();
         savePlanner();
         renderDriverDayPlans();
         renderSuggestions();
+        await syncPlanningDataFromService();
+        renderAll();
       });
     }
 
@@ -1110,17 +1312,60 @@
 
     const saveBtn = document.querySelector("[data-plan-save]");
     if (saveBtn) {
-      saveBtn.addEventListener("click", () => {
+      saveBtn.addEventListener("click", async () => {
+        D?.clearLastError?.();
         syncBackToPersonnel();
         savePlanner();
         persistToCockpitBridge();
+
+        const todayRows = state.planner.todayAssignments || [];
+        for (const row of todayRows) {
+          if (!row.employeeId) continue;
+          const saved = await D?.saveShift?.({
+            id: row.sourceId || (row.id && !String(row.id).startsWith("TOD") ? row.id : null),
+            employeeId: row.employeeId,
+            date: state.dateToday,
+            startTime: row.start,
+            endTime: row.end,
+            status: row.status || "draft",
+            vehicleId: row.vehicle || null,
+            note: row.exceptionNote || row.note || "",
+            planStatus: row.planStatus || "draft"
+          });
+          if (!saved) {
+            renderQuickInfo();
+            return;
+          }
+        }
+
+        const tomorrowRows = state.planner.tomorrowPlan || [];
+        for (const row of tomorrowRows) {
+          if (!row.employeeId) continue;
+          const saved = await D?.saveShift?.({
+            id: row.sourceId || (row.id && !String(row.id).startsWith("TOM") ? row.id : null),
+            employeeId: row.employeeId,
+            date: state.dateTomorrow,
+            startTime: row.start,
+            endTime: row.end,
+            status: row.active ? "planned" : "draft",
+            vehicleId: row.vehicle || null,
+            note: row.note || "",
+            planStatus: row.planStatus || (row.active ? "draft" : "draft")
+          });
+          if (!saved) {
+            renderQuickInfo();
+            return;
+          }
+        }
+
+        await syncPlanningDataFromService();
         renderAll();
       });
     }
   }
 
   function bindActions() {
-    document.addEventListener("click", (event) => {
+    document.addEventListener("click", async (event) => {
       const resetBtn = event.target.closest("[data-shift-reset]");
       if (resetBtn) {
         state.activeFilter = "Alle";
@@ -1238,6 +1483,43 @@
         if (kind === "callback") changePhoneStatus(driverId, "Rückruf erforderlich");
         savePlanner();
         renderDriverDayPlans();
+      }
+
+      const publishAction = event.target.closest("[data-plan-publish]");
+      if (publishAction) {
+        D?.clearLastError?.();
+        const payload = { date: state.dateTomorrow, status: "published", version: 1, publishedAt: new Date().toISOString(), publishedBy: "Admin" };
+        const publication = await D?.publishPlan?.(payload);
+        if (!publication) {
+          renderQuickInfo();
+          return;
+        }
+
+        for (const row of state.planner.tomorrowPlan) {
+          if (!row.employeeId) continue;
+          const saved = await D?.saveShift?.({
+            id: row.sourceId || (row.id && !String(row.id).startsWith("TOM") ? row.id : null),
+            employeeId: row.employeeId,
+            date: state.dateTomorrow,
+            startTime: row.start,
+            endTime: row.end,
+            status: row.active ? "planned" : "draft",
+            vehicleId: row.vehicle || null,
+            note: row.note || "",
+            planStatus: row.active ? "published" : "draft"
+          });
+          if (!saved) {
+            renderQuickInfo();
+            return;
+          }
+        }
+
+        state.planner.publicationStatus = String(publication.status || "published");
+        state.planner.publication = publication;
+        state.planner.publishedAt = publication.publishedAt || publication.published_at || payload.publishedAt || "";
+        savePlanner();
+        await syncPlanningDataFromService();
+        renderAll();
       }
     });
 
@@ -1398,7 +1680,7 @@
     node.innerHTML = state.planner.templates.map((t) => `<option value="${t.id}">${t.name}</option>`).join("");
   }
 
-  function init() {
+  async function init() {
     state.dateToday = todayIso();
     state.dateTomorrow = addDaysIso(state.dateToday, 1);
 
@@ -1416,7 +1698,17 @@
     savePlanner();
     persistToCockpitBridge();
     renderAll();
+
+    try {
+      await syncPlanningDataFromService();
+    } catch (error) {
+      planningLoadError = "Planung konnte nicht geladen werden.";
+    } finally {
+      renderAll();
+    }
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", () => {
+    init();
+  });
 })();

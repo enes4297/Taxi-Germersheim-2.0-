@@ -659,6 +659,16 @@
 
   function bind() {
     document.addEventListener("click", async (event) => {
+      const submitButton = event.target.closest("[data-emp-form-submit]");
+      if (submitButton) {
+        const form = submitButton.closest("form");
+        if (form) {
+          event.preventDefault();
+          form.requestSubmit();
+          return;
+        }
+      }
+
       const refresh = event.target.closest("[data-cockpit-refresh]");
       if (refresh) {
         await syncStateFromService();

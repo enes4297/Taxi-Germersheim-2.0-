@@ -115,8 +115,16 @@
   }
 
   function getBackendConfig() {
-    const state = getState();
-    return state.config || DEFAULT_CONFIG;
+    if (runtimeState && runtimeState.config && typeof runtimeState.config === "object") {
+      return { ...DEFAULT_CONFIG, ...runtimeState.config };
+    }
+
+    const persistedState = safeParse(localStorage.getItem(LEGACY_STATE_KEY));
+    const persistedConfig = persistedState && typeof persistedState === "object" && persistedState.config && typeof persistedState.config === "object"
+      ? persistedState.config
+      : null;
+
+    return { ...DEFAULT_CONFIG, ...(persistedConfig || {}) };
   }
 
   function getSupabaseConfig() {
@@ -140,6 +148,14 @@
   }
 
   function readState() {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      if (!runtimeState) {
+        runtimeState = ensureStateShape({});
+      }
+      return runtimeState;
+    }
+
     const fromPersonnel = window.AdminPersonnelDemo && typeof window.AdminPersonnelDemo.loadState === "function"
       ? window.AdminPersonnelDemo.loadState()
       : null;
@@ -155,6 +171,12 @@
   function writeState(state) {
     const next = ensureStateShape(state);
     next.updatedAt = nowStamp();
+
+    if (resolveBackendMode() === "supabase") {
+      runtimeState = next;
+      return next;
+    }
+
     if (window.AdminPersonnelDemo && typeof window.AdminPersonnelDemo.saveState === "function") {
       window.AdminPersonnelDemo.saveState(next);
       return next;
@@ -173,6 +195,40 @@
 
   let supabaseClientPromise = null;
   let lastEmployeeError = null;
+  let runtimeState = null;
+
+  async function ensureSupabaseAuthBridge() {
+    if (window.TaxiSupabaseAuth && typeof window.TaxiSupabaseAuth.getClient === "function") {
+      return window.TaxiSupabaseAuth;
+    }
+
+    const existingScript = document.querySelector('script[src$="supabase-auth.js"]');
+    if (existingScript) {
+      await new Promise((resolve) => {
+        if (window.TaxiSupabaseAuth && typeof window.TaxiSupabaseAuth.getClient === "function") {
+          resolve();
+          return;
+        }
+        existingScript.addEventListener("load", () => resolve(), { once: true });
+        existingScript.addEventListener("error", () => resolve(), { once: true });
+      });
+      return window.TaxiSupabaseAuth || null;
+    }
+
+    const script = document.createElement("script");
+    script.src = "supabase-auth.js";
+    script.async = false;
+    script.onload = () => {};
+    script.onerror = () => {};
+    document.head.appendChild(script);
+
+    await new Promise((resolve) => {
+      script.addEventListener("load", () => resolve(), { once: true });
+      script.addEventListener("error", () => resolve(), { once: true });
+    });
+
+    return window.TaxiSupabaseAuth || null;
+  }
 
   function setEmployeeError(message) {
     lastEmployeeError = message;
@@ -299,7 +355,7 @@
     };
   }
 
-  function ensureSupabaseClient() {
+  async function ensureSupabaseClient() {
     if (supabaseClientPromise) {
       return supabaseClientPromise;
     }
@@ -308,6 +364,32 @@
       const config = getSupabaseConfig();
       if (!config.isConfigured) {
         return null;
+      }
+
+      const authBridge = await ensureSupabaseAuthBridge();
+      if (authBridge && typeof authBridge.getClient === "function") {
+        try {
+          if (typeof authBridge.restoreSupabaseSession === "function") {
+            await authBridge.restoreSupabaseSession();
+          }
+          const sharedClient = await authBridge.getClient();
+          if (!sharedClient) {
+            return null;
+          }
+
+          if (sharedClient.auth && typeof sharedClient.auth.getSession === "function") {
+            const { data, error } = await sharedClient.auth.getSession();
+            if (error || !data?.session?.user) {
+              setEmployeeError("Bitte melden Sie sich mit einem aktiven Supabase-Account an.");
+              return null;
+            }
+          }
+
+          return sharedClient;
+        } catch (error) {
+          setEmployeeError("Supabase-Session konnte nicht wiederhergestellt werden.");
+          return null;
+        }
       }
 
       if (window.supabase && typeof window.supabase.createClient === "function") {
@@ -369,9 +451,11 @@
       return getState().employees;
     }
 
+    await ensureSupabaseAuthBridge();
     const client = await ensureSupabaseClient();
     if (!client) {
-      return [];
+      clearEmployeeError();
+      return getState().employees;
     }
 
     const { data, error } = await client
@@ -380,8 +464,8 @@
       .order("created_at", { ascending: false });
 
     if (error) {
-      setEmployeeError("Mitarbeiter konnten nicht geladen werden.");
-      return [];
+      clearEmployeeError();
+      return getState().employees;
     }
 
     clearEmployeeError();
@@ -412,9 +496,11 @@
       return getState().vehicles;
     }
 
+    await ensureSupabaseAuthBridge();
     const client = await ensureSupabaseClient();
     if (!client) {
-      return [];
+      setEmployeeError("Fahrzeuge konnten nicht geladen werden.");
+      return getState().vehicles;
     }
 
     const { data, error } = await client
@@ -424,21 +510,11 @@
 
     if (error) {
       setEmployeeError("Fahrzeuge konnten nicht geladen werden.");
-      return [];
+      return getState().vehicles;
     }
 
     clearEmployeeError();
     return syncLocalVehicleCache((data || []).map(mapVehicleFromSupabase));
-  }
-
-  async function getEmployees() {
-    const mode = resolveBackendMode();
-    if (mode === "supabase") {
-      return refreshEmployeeCacheFromSupabase();
-    }
-
-    clearEmployeeError();
-    return getState().employees;
   }
 
   async function getVehicle(vehicleId) {
@@ -706,7 +782,7 @@
     return employee;
   }
 
-  function getVehicles() {
+  function getVehiclesFromLocalState() {
     const state = getState();
     if (state.vehicles && state.vehicles.length) return state.vehicles;
     state.vehicles = buildVehicleCatalog(state);
@@ -714,11 +790,187 @@
     return state.vehicles;
   }
 
-  function getVehicle(vehicleId) {
-    return getVehicles().find((vehicle) => String(vehicle.id) === String(vehicleId)) || null;
+  function getVehicleFromLocalState(vehicleId) {
+    return getVehiclesFromLocalState().find((vehicle) => String(vehicle.id) === String(vehicleId)) || null;
   }
 
-  function saveShift(payload) {
+  function mapShiftToSupabase(payload = {}) {
+    const state = getState();
+    const vehicleCandidate = String(payload.vehicleId || payload.vehicle || "").trim();
+    let vehicleId = null;
+    if (vehicleCandidate) {
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(vehicleCandidate)) {
+        vehicleId = vehicleCandidate;
+      } else {
+        const match = (state.vehicles || []).find((vehicle) => {
+          const plate = String(vehicle.plate || vehicle.licensePlate || "").trim().toLowerCase();
+          const name = String(vehicle.name || "").trim().toLowerCase();
+          return (plate && plate === vehicleCandidate.toLowerCase()) || (name && name === vehicleCandidate.toLowerCase());
+        });
+        vehicleId = match ? match.id : null;
+      }
+    }
+
+    return {
+      employee_id: payload.employeeId || payload.employee_id || null,
+      shift_date: payload.date || payload.shift_date || null,
+      start_time: payload.startTime || payload.start_time || payload.start || null,
+      end_time: payload.endTime || payload.end_time || payload.end || null,
+      status: payload.status || "draft",
+      vehicle_id: vehicleId,
+      note: payload.note || payload.notiz || null,
+      plan_status: payload.planStatus || payload.plan_status || "draft",
+      created_by: payload.createdBy || payload.created_by || null,
+      updated_by: payload.updatedBy || payload.updated_by || null
+    };
+  }
+
+  function mapShiftFromSupabase(row = {}) {
+    return {
+      id: row.id,
+      employeeId: row.employee_id || row.employeeId || null,
+      date: row.shift_date || row.date || null,
+      startTime: row.start_time || row.start || "",
+      endTime: row.end_time || row.end || "",
+      start: row.start_time || row.start || "",
+      end: row.end_time || row.end || "",
+      status: row.status || "draft",
+      vehicleId: row.vehicle_id || row.vehicleId || null,
+      vehicle: row.vehicle_id || row.vehicleId || "",
+      note: row.note || "",
+      planStatus: row.plan_status || row.planStatus || "draft"
+    };
+  }
+
+  function mapPlanPublicationToSupabase(payload = {}) {
+    return {
+      plan_date: payload.date || payload.plan_date || nowIso(),
+      status: payload.status || "draft",
+      version: Number(payload.version || 1),
+      published_at: payload.publishedAt || payload.published_at || null,
+      published_by: payload.publishedBy || payload.published_by || null
+    };
+  }
+
+  function mapPlanPublicationFromSupabase(row = {}) {
+    return {
+      id: row.id,
+      date: row.plan_date || row.date || null,
+      status: row.status || "draft",
+      version: Number(row.version || 1),
+      publishedAt: row.published_at || row.publishedAt || null,
+      publishedBy: row.published_by || row.publishedBy || null,
+      createdAt: row.created_at || row.createdAt || null,
+      updatedAt: row.updated_at || row.updatedAt || null
+    };
+  }
+
+  async function getShifts() {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      await ensureSupabaseAuthBridge();
+      const client = await ensureSupabaseClient();
+      if (!client) {
+        setEmployeeError("Planung konnte nicht geladen werden.");
+        return [];
+      }
+
+      const sessionCheck = client.auth && typeof client.auth.getSession === "function"
+        ? await client.auth.getSession()
+        : null;
+      if (!sessionCheck?.data?.session?.user) {
+        setEmployeeError("Bitte melden Sie sich mit einem aktiven Supabase-Account an.");
+        return [];
+      }
+
+      const { data, error } = await client
+        .from("shifts")
+        .select("id, employee_id, shift_date, start_time, end_time, status, vehicle_id, note, plan_status, created_by, updated_by, created_at, updated_at")
+        .order("shift_date", { ascending: true });
+
+      if (error) {
+        setEmployeeError("Planung konnte nicht geladen werden.");
+        return [];
+      }
+
+      clearEmployeeError();
+      const next = ensureArray((data || []).map(mapShiftFromSupabase), []);
+      const state = getState();
+      state.shifts = next;
+      saveState(state);
+      return next;
+    }
+
+    clearEmployeeError();
+    return getState().shifts;
+  }
+
+  async function saveShift(payload) {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      await ensureSupabaseAuthBridge();
+      const client = await ensureSupabaseClient();
+      if (!client) {
+        setEmployeeError("Schicht konnte nicht gespeichert werden.");
+        return null;
+      }
+
+      const prepared = mapShiftToSupabase(payload);
+      const shiftId = payload && String(payload.id || payload.sourceId || payload.backendId || payload.supabaseId || "").trim();
+      let query;
+      let targetId = null;
+
+      try {
+        if (shiftId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(shiftId)) {
+          targetId = shiftId;
+          query = client.from("shifts").update(prepared).eq("id", targetId);
+        } else if (prepared.employee_id && prepared.shift_date) {
+          const { data: existingRow, error: existingError } = await client
+            .from("shifts")
+            .select("id")
+            .eq("employee_id", prepared.employee_id)
+            .eq("shift_date", prepared.shift_date)
+            .maybeSingle();
+
+          if (existingError) {
+            throw existingError;
+          }
+
+          if (existingRow?.id) {
+            targetId = existingRow.id;
+            query = client.from("shifts").update(prepared).eq("id", targetId);
+          } else {
+            query = client.from("shifts").insert(prepared);
+          }
+        } else {
+          query = client.from("shifts").insert(prepared);
+        }
+
+        const { data, error } = await query.select("id, employee_id, shift_date, start_time, end_time, status, vehicle_id, note, plan_status, created_by, updated_by, created_at, updated_at").maybeSingle();
+
+        if (error) {
+          throw error;
+        }
+
+        const saved = mapShiftFromSupabase(data || { ...prepared, id: shiftId || null });
+        const state = getState();
+        const existingIndex = state.shifts.findIndex((item) => String(item.id || "") === String(shiftId || ""));
+        if (existingIndex >= 0) {
+          state.shifts[existingIndex] = { ...state.shifts[existingIndex], ...saved };
+        } else {
+          state.shifts.push(saved);
+        }
+        saveState(state);
+        clearEmployeeError();
+        return saved;
+      } catch (error) {
+        console.error("saveShift Supabase error:", JSON.stringify({ code: error?.code, message: error?.message, details: error?.details, hint: error?.hint, status: error?.status }));
+        const detail = error?.message ? ` (${error.message})` : (error?.code ? ` (Code: ${error.code})` : "");
+        setEmployeeError(`Schicht konnte nicht gespeichert werden.${detail}`);
+        return null;
+      }
+    }
+
     const state = getState();
     const shift = {
       id: payload.id || createId("shift"),
@@ -755,7 +1007,95 @@
     return shift;
   }
 
-  function publishPlan(payload) {
+  async function getPlanPublications(date) {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      await ensureSupabaseAuthBridge();
+      const client = await ensureSupabaseClient();
+      if (!client) {
+        clearEmployeeError();
+        return [];
+      }
+
+      const sessionCheck = client.auth && typeof client.auth.getSession === "function"
+        ? await client.auth.getSession()
+        : null;
+      if (!sessionCheck?.data?.session?.user) {
+        setEmployeeError("Bitte melden Sie sich mit einem aktiven Supabase-Account an.");
+        return [];
+      }
+
+      let query = client.from("plan_publications").select("id, plan_date, status, version, published_at, published_by, created_at, updated_at").order("created_at", { ascending: false });
+      if (date) {
+        query = query.eq("plan_date", String(date));
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        setEmployeeError("Planung konnte nicht geladen werden.");
+        return [];
+      }
+
+      clearEmployeeError();
+      return (data || []).map(mapPlanPublicationFromSupabase);
+    }
+
+    clearEmployeeError();
+    return getState().plans || [];
+  }
+
+  async function publishPlan(payload) {
+    const mode = resolveBackendMode();
+    if (mode === "supabase") {
+      await ensureSupabaseAuthBridge();
+      const client = await ensureSupabaseClient();
+      if (!client) {
+        setEmployeeError("Plan konnte nicht veröffentlicht werden.");
+        return null;
+      }
+
+      const sessionCheck = client.auth && typeof client.auth.getSession === "function"
+        ? await client.auth.getSession()
+        : null;
+      if (!sessionCheck?.data?.session?.user) {
+        setEmployeeError("Bitte melden Sie sich mit einem aktiven Supabase-Account an.");
+        return null;
+      }
+
+      const prepared = mapPlanPublicationToSupabase(payload);
+      const existing = await client.from("plan_publications").select("id").eq("plan_date", prepared.plan_date).maybeSingle();
+      if (existing.error) {
+        setEmployeeError("Plan konnte nicht veröffentlicht werden.");
+        return null;
+      }
+
+      try {
+        const { data, error } = existing.data
+          ? await client.from("plan_publications").update(prepared).eq("plan_date", prepared.plan_date).select("id, plan_date, status, version, published_at, published_by, created_at, updated_at").maybeSingle()
+          : await client.from("plan_publications").insert(prepared).select("id, plan_date, status, version, published_at, published_by, created_at, updated_at").maybeSingle();
+
+        if (error) {
+          throw error;
+        }
+
+        const state = getState();
+        const plan = mapPlanPublicationFromSupabase(data || prepared);
+        state.plans = ensureArray(state.plans, []);
+        const existingIndex = state.plans.findIndex((item) => String(item.date || "") === String(plan.date || ""));
+        if (existingIndex >= 0) {
+          state.plans[existingIndex] = { ...state.plans[existingIndex], ...plan };
+        } else {
+          state.plans.unshift(plan);
+        }
+        saveState(state);
+        clearEmployeeError();
+        return plan;
+      } catch (error) {
+        setEmployeeError("Schicht konnte nicht gespeichert werden.");
+        return null;
+      }
+    }
+
     const state = getState();
     const planVersion = Number(state.planVersion || 0) + 1;
     const plan = {
@@ -836,8 +1176,8 @@
       getVehicle,
       createVehicle,
       updateVehicle,
-      getShifts: () => [],
-      saveShift: () => null,
+      getShifts,
+      saveShift,
       createVacationRequest: () => null,
       approveVacationRequest: () => null,
       createSicknessReport: () => null,
@@ -845,7 +1185,8 @@
       approveDocument: () => null,
       getNotifications: () => [],
       markNotificationRead: () => null,
-      publishPlan: () => null
+      publishPlan,
+      getPlanPublications
     };
   }
 
@@ -882,9 +1223,10 @@
     getVehicle,
     createVehicle,
     updateVehicle,
-    getShifts: () => getState().shifts,
+    getShifts,
     saveShift,
     publishPlan,
+    getPlanPublications,
     getNotifications,
     markNotificationRead,
     getConfig,
@@ -898,6 +1240,8 @@
     isSupabaseConfigured,
     getActiveAdapter,
     createSupabaseAdapter,
+    ensureSupabaseAuthBridge,
+    ensureSupabaseClient,
     getLastError: () => getEmployeeError(),
     clearLastError: () => clearEmployeeError(),
     authSignIn,
