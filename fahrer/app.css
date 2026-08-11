@@ -21,6 +21,18 @@ body {
   font-family: "Segoe UI", "Inter", "Trebuchet MS", sans-serif;
 }
 button, input, select { font: inherit; }
+
+/* Ladestate: Portalinhalt erst nach Auth-Prüfung sichtbar */
+body[data-portal-loading] .portal-shell { visibility: hidden; }
+body[data-portal-loading]::before {
+  content: "Mitarbeiterportal wird geladen …";
+  display: block;
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
 .driver-app, .portal-shell {
   width: min(1040px, 100%);
   margin: 0 auto;
@@ -171,6 +183,104 @@ button, input, select { font: inherit; }
 .driver-btn.primary { background: rgba(240,201,107,0.16); color: var(--gold); border-color: rgba(240,201,107,0.28); }
 .driver-btn.warning { background: rgba(255,183,112,0.16); color: var(--warn); border-color: rgba(255,183,112,0.24); }
 .driver-btn.danger { background: rgba(255,141,141,0.16); color: var(--danger); border-color: rgba(255,141,141,0.24); }
+
+/* ----------------------------------------------------------------- */
+/* Login-Seite (fahrer/index.html)                                   */
+/* ----------------------------------------------------------------- */
+.driver-login {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.driver-login-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.driver-login-head img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.driver-login-head h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.driver-login-head p {
+  margin: 0;
+  color: var(--gold);
+  letter-spacing: 0.18em;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.driver-login-form {
+  width: 100%;
+  max-width: 380px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(17,20,30,0.94);
+  padding: 28px 24px;
+  display: grid;
+  gap: 16px;
+  box-shadow: var(--shadow);
+}
+
+.driver-login-form .driver-btn.primary {
+  width: 100%;
+  min-height: 50px;
+  font-size: 15px;
+}
+
+.driver-login-field {
+  display: grid;
+  gap: 6px;
+}
+
+.driver-login-field span {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.driver-input {
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  background: rgba(10,12,18,0.95);
+  color: var(--text);
+  min-height: 48px;
+  padding: 0 14px;
+  font-size: 15px;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+
+.driver-input:focus {
+  outline: none;
+  border-color: rgba(240,201,107,0.45);
+}
+
+.driver-login-message.is-error {
+  color: var(--danger);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ----------------------------------------------------------------- */
+/* Responsive                                                         */
+/* ----------------------------------------------------------------- */
 @media (max-width: 920px) {
   .portal-home-grid { grid-template-columns: 1fr; }
   .quick-actions { grid-template-columns: repeat(2, minmax(0,1fr)); }

@@ -1,30 +1,39 @@
 (() => {
   const P = window.AdminPersonnelDemo;
+  const ES = window.EmployeeSupabase || null;
   const STORAGE_KEY = "tgEmployeeDemoSession";
-  const state = { data: P.loadState(), employeeId: "MA-101", activeSection: "dienstplan" };
+  const state = {
+    data: P ? P.loadState() : { employees: [], documents: [], vacations: [], absences: [], messages: [] },
+    employeeId: "MA-101",
+    activeSection: "dienstplan",
+    supabaseEmployee: null, /* { id, first_name, last_name, ... } */
+    supabaseShifts: [],     /* veröffentlichte Schichten aus Supabase */
+    supabaseVehicles: {}    /* { vehicleId: vehicleObjekt } */
+  };
 
-  function requireSession() {
+  function requireDemoSession() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        window.location.replace("index.html");
-        return false;
-      }
+      if (!raw) { window.location.replace("index.html"); return false; }
       const session = JSON.parse(raw);
-      if (!session || !session.authenticated) {
-        window.location.replace("index.html");
-        return false;
-      }
+      if (!session || !session.authenticated) { window.location.replace("index.html"); return false; }
       return true;
-    } catch (error) {
+    } catch {
       window.location.replace("index.html");
       return false;
     }
   }
 
   function logout() {
-    localStorage.removeItem(STORAGE_KEY);
-    window.location.replace("index.html");
+    if (ES && ES.isConfigured()) {
+      ES.signOut().finally(() => {
+        localStorage.removeItem(STORAGE_KEY);
+        window.location.replace("index.html");
+      });
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+      window.location.replace("index.html");
+    }
   }
 
   function formatDate(value) {
@@ -91,6 +100,9 @@
   }
 
   function renderIdentity() {
+    /* Supabase-Nutzer: eigene Funktion verwenden */
+    if (state.supabaseEmployee) { renderIdentitySupabase(); return; }
+
     const e = emp();
     if (!e) return;
     const nameNode = document.querySelector("[data-portal-name]");
@@ -135,6 +147,9 @@
   }
 
   function renderHome() {
+    /* Supabase-Nutzer: eigene Funktion verwenden */
+    if (ES && ES.isConfigured()) { renderHomeSupabase(); return; }
+
     const e = emp();
     if (!e) return;
     const snap = portalSnapshot(e.id);
@@ -223,6 +238,9 @@
   }
 
   function renderShiftArea() {
+    /* Supabase-Nutzer: eigene Funktion verwenden */
+    if (ES && ES.isConfigured()) { renderShiftAreaSupabase(); return; }
+
     const e = emp();
     if (!e) return;
     const node = document.querySelector("[data-portal-shift-list]");
@@ -276,6 +294,235 @@
     if (!node) return;
     const msgs = state.data.messages.filter((m) => (m.employeeIds || []).includes(e.id));
     node.innerHTML = msgs.length ? `<div class="driver-list">${msgs.map((m) => `<article class="driver-item"><strong>${m.title}</strong><p>${m.text}</p><p>Priorität: ${m.priority}</p><div class="driver-item-actions"><button class="driver-btn" type="button" data-portal-msg-read="${m.id}">Gelesen markieren</button>${m.confirmRequired ? `<button class="driver-btn" type="button" data-portal-msg-confirm="${m.id}">Bestätigen</button>` : ""}</div></article>`).join("")}</div>` : '<p class="demo-note">Keine Mitteilungen.</p>';
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Supabase-Hilfsfunktionen                                           */
+  /* ------------------------------------------------------------------ */
+
+  function todayIso() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  function addDays(baseIso, n) {
+    const d = new Date(`${baseIso}T00:00:00`);
+    d.setDate(d.getDate() + n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  function formatDateDE(isoDate) {
+    const m = String(isoDate || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return isoDate || "-";
+    return `${m[3]}.${m[2]}.${m[1]}`;
+  }
+
+  function formatTime(timeStr) {
+    /* "06:00:00" → "06:00" */
+    return String(timeStr || "").slice(0, 5) || "-";
+  }
+
+  function formatShiftTime(start, end) {
+    const s = formatTime(start);
+    const e = formatTime(end);
+    if (s === "-" && e === "-") return "kein Dienst";
+    return `${s} – ${e} Uhr`;
+  }
+
+  function weekdayName(isoDate) {
+    const d = new Date(`${isoDate}T00:00:00`);
+    return new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(d);
+  }
+
+  function vehicleLabel(v) {
+    if (!v) return "nicht zugewiesen";
+    const parts = [];
+    if (v.name) parts.push(v.name);
+    if (v.license_plate) parts.push(v.license_plate);
+    return parts.join(" · ") || "-";
+  }
+
+  function shiftForDate(isoDate) {
+    return state.supabaseShifts.find((s) => s.shift_date === isoDate) || null;
+  }
+
+  function vehicleForShift(shift) {
+    if (!shift?.vehicle_id) return null;
+    return state.supabaseVehicles[shift.vehicle_id] || null;
+  }
+
+  /**
+   * Alle benötigten Supabase-Daten laden.
+   */
+  async function loadSupabaseData() {
+    if (!ES || !ES.isConfigured()) return;
+    try {
+      const [employee, shifts] = await Promise.all([
+        ES.getMyEmployee(),
+        ES.getMyPublishedShifts()
+      ]);
+      state.supabaseEmployee = employee;
+      state.supabaseShifts = Array.isArray(shifts) ? shifts : [];
+
+      /* Fahrzeuge für alle Schichten parallel laden */
+      const vehicleIds = [...new Set(
+        state.supabaseShifts.map((s) => s.vehicle_id).filter(Boolean)
+      )];
+      const vehicleResults = await Promise.all(vehicleIds.map((id) => ES.getVehicle(id)));
+      vehicleIds.forEach((id, i) => {
+        if (vehicleResults[i]) state.supabaseVehicles[id] = vehicleResults[i];
+      });
+    } catch (err) {
+      console.error("Dienstplandaten konnten nicht geladen werden.", err?.message);
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Überschriebene Render-Funktionen mit Supabase-Daten                */
+  /* ------------------------------------------------------------------ */
+
+  function renderIdentitySupabase() {
+    const se = state.supabaseEmployee;
+    if (!se) return;
+    const nameNode = document.querySelector("[data-portal-name]");
+    const roleNode = document.querySelector("[data-portal-role]");
+    const avatarNode = document.querySelector("[data-portal-avatar]");
+    const greetingNode = document.querySelector("[data-portal-greeting]");
+    const dateNode = document.querySelector("[data-portal-date]");
+    const messageBadge = document.querySelector("[data-portal-message-badge]");
+
+    const now = new Date();
+    const h = now.getHours();
+    const greeting = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
+    const weekday = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(now);
+    const dateLabel = `${weekday}, ${now.toLocaleDateString("de-DE")}`;
+    const fullName = `${se.first_name || ""} ${se.last_name || ""}`.trim() || "Mitarbeiter";
+    const initials = `${(se.first_name || "M").charAt(0)}${(se.last_name || "A").charAt(0)}`.toUpperCase();
+
+    if (nameNode) nameNode.textContent = fullName;
+    if (roleNode) roleNode.textContent = se.employment_type || "Mitarbeiter";
+    if (avatarNode) avatarNode.textContent = initials;
+    if (greetingNode) greetingNode.textContent = greeting;
+    if (dateNode) dateNode.textContent = dateLabel;
+    if (messageBadge) messageBadge.textContent = "0";
+  }
+
+  function renderHomeSupabase() {
+    const hero = document.querySelector("[data-portal-hero]");
+    const tomorrowNode = document.querySelector("[data-portal-tomorrow]");
+    const priorityNode = document.querySelector("[data-portal-priority]");
+    if (!hero || !tomorrowNode || !priorityNode) return;
+
+    const today = todayIso();
+    const tomorrow = addDays(today, 1);
+    const todayShift = shiftForDate(today);
+    const tomorrowShift = shiftForDate(tomorrow);
+    const todayVehicle = vehicleForShift(todayShift);
+    const tomorrowVehicle = vehicleForShift(tomorrowShift);
+
+    /* Heute */
+    if (todayShift) {
+      hero.innerHTML = `
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Heute</p>
+            <h2>${weekdayName(today)}, ${formatDateDE(today)}</h2>
+          </div>
+          <span class="status-pill active">● Im Dienst</span>
+        </div>
+        <p class="hero-title">Meine Schicht</p>
+        <p class="hero-time">${formatShiftTime(todayShift.start_time, todayShift.end_time)}</p>
+        <div class="hero-vehicle">
+          <div class="hero-meta-row"><span>Fahrzeug</span><strong>${vehicleLabel(todayVehicle)}</strong></div>
+          ${todayVehicle?.vehicle_type ? `<div class="hero-meta-row"><span>Fahrzeugtyp</span><strong>${todayVehicle.vehicle_type}</strong></div>` : ""}
+        </div>`;
+    } else {
+      hero.innerHTML = `
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Heute</p>
+            <h2>${weekdayName(today)}, ${formatDateDE(today)}</h2>
+          </div>
+          <span class="status-pill neutral">● Kein Dienst</span>
+        </div>
+        <p class="hero-title">Kein Dienst heute</p>
+        <p class="hero-time">Für heute ist keine veröffentlichte Schicht eingetragen.</p>`;
+    }
+
+    /* Morgen */
+    if (tomorrowShift) {
+      tomorrowNode.innerHTML = `
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Morgen</p>
+            <h2>${weekdayName(tomorrow)}, ${formatDateDE(tomorrow)}</h2>
+          </div>
+          <span class="status-pill info">● Veröffentlicht</span>
+        </div>
+        <p class="hero-title">Nächster Einsatz</p>
+        <p class="hero-time">${formatShiftTime(tomorrowShift.start_time, tomorrowShift.end_time)}</p>
+        ${tomorrowVehicle ? `<div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>${vehicleLabel(tomorrowVehicle)}</strong></div></div>` : ""}`;
+    } else {
+      tomorrowNode.innerHTML = `
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Morgen</p>
+            <h2>${weekdayName(tomorrow)}, ${formatDateDE(tomorrow)}</h2>
+          </div>
+          <span class="status-pill neutral">● Nicht veröffentlicht</span>
+        </div>
+        <p class="hero-title">Plan nicht veröffentlicht</p>
+        <p class="hero-time">Der Plan für morgen wurde noch nicht veröffentlicht.</p>`;
+    }
+
+    /* Prioritätsbereich – leer halten für Supabase-Nutzer */
+    priorityNode.innerHTML = `
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Wichtiger Hinweis</p>
+          <h2>Alles aktuell</h2>
+        </div>
+        <span class="status-pill info">INFO</span>
+      </div>
+      <p class="hero-title">Keine dringenden Hinweise.</p>
+      <p class="hero-time">Alles ist aktuell.</p>`;
+  }
+
+  function renderShiftAreaSupabase() {
+    const node = document.querySelector("[data-portal-shift-list]");
+    if (!node) return;
+
+    if (state.supabaseShifts.length === 0) {
+      node.innerHTML = `<p class="demo-note">Keine veröffentlichten Schichten vorhanden.</p>`;
+      return;
+    }
+
+    /* Zeige die nächsten 14 Tage */
+    const today = todayIso();
+    const days = Array.from({ length: 14 }, (_, i) => addDays(today, i));
+
+    const items = days.map((day) => {
+      const shift = shiftForDate(day);
+      const vehicle = vehicleForShift(shift);
+      const dayLabel = `${weekdayName(day)}, ${formatDateDE(day)}`;
+
+      if (shift) {
+        return `<article class="driver-item">
+          <strong>${dayLabel}</strong>
+          <p>${formatShiftTime(shift.start_time, shift.end_time)}</p>
+          ${vehicle ? `<p>Fahrzeug: ${vehicleLabel(vehicle)}</p>` : ""}
+          <span class="status-pill active">Eingeplant</span>
+        </article>`;
+      } else {
+        return `<article class="driver-item">
+          <strong>${dayLabel}</strong>
+          <p>Kein Dienst</p>
+          <span class="status-pill neutral">Frei</span>
+        </article>`;
+      }
+    }).join("");
+
+    node.innerHTML = `<div class="driver-list">${items}</div>`;
   }
 
   function render() {
@@ -539,8 +786,31 @@
     }
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    if (!requireSession()) return;
+  document.addEventListener("DOMContentLoaded", async () => {
+    /* Seite ist zunächst ausgeblendet (data-portal-loading am body). */
+    /* Nach Auth-Prüfung wird das Attribut entfernt. */
+
+    const isSupabase = ES && ES.isConfigured();
+
+    if (isSupabase) {
+      /* ---- Supabase-Session prüfen ---- */
+      const sessionResult = await ES.checkSession();
+      if (!sessionResult) {
+        localStorage.removeItem("tgEmployeeDemoSession");
+        window.location.replace("index.html");
+        return;
+      }
+      state.employeeId = sessionResult.employeeId;
+
+      /* Schichten und Mitarbeiterdaten laden */
+      await loadSupabaseData();
+    } else {
+      /* ---- Demo-Modus ---- */
+      if (!requireDemoSession()) return;
+    }
+
+    /* Ladestate aufheben */
+    document.body.removeAttribute("data-portal-loading");
 
     if (window.AdminUiText) {
       window.AdminUiText.normalizeDocument(document);

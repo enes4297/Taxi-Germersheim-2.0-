@@ -22,26 +22,23 @@
 
       <form class="driver-login-form" data-employee-login-form>
         <label class="driver-login-field">
-          <span>Benutzername / Mitarbeiterkennung</span>
-          <input class="driver-input" type="text" name="username" autocomplete="username" placeholder="z. B. demo" required>
+          <span>E-Mail-Adresse</span>
+          <input class="driver-input" type="email" name="email" autocomplete="email" placeholder="max@example.com" required>
         </label>
         <label class="driver-login-field">
           <span>Passwort</span>
-          <input class="driver-input" type="password" name="password" autocomplete="current-password" placeholder="demo" required>
-        </label>
-        <label class="driver-login-check">
-          <input type="checkbox" name="remember">
-          <span>Angemeldet bleiben</span>
+          <input class="driver-input" type="password" name="password" autocomplete="current-password" required>
         </label>
         <button class="driver-btn primary" type="submit">Anmelden</button>
       </form>
 
       <p class="demo-note" data-login-message hidden></p>
-      <p class="demo-note">Demo-Zugang: Benutzername <strong>demo</strong> · Passwort <strong>demo</strong></p>
-      <p class="demo-note">Hinweis: Diese Demo-Ansicht ist für die lokale Entwicklung gedacht und kann später leicht deaktiviert werden.</p>
+      <p class="demo-note" data-demo-hint hidden>Demo-Zugang: <strong>demo</strong> / <strong>demo</strong></p>
     </section>
   </main>
 
+  <script src="../admin/supabase-config.js"></script>
+  <script src="employee-supabase.js"></script>
   <script src="mitarbeiter-login.js"></script>
 </body>
 </html>

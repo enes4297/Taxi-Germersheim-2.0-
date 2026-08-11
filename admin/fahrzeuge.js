@@ -154,6 +154,7 @@
   };
 
   let vehicles = [];
+  let vehicleLoadError = "";
 
   function daysUntil(dateValue) {
     if (!dateValue) return 9999;
@@ -292,6 +293,7 @@
 
   function seedFallbackVehicles() {
     vehicles = vehicleSource.map(normalizeVehicle);
+    vehicleLoadError = "";
     applyQualityOverlays();
     applyOperationalOverlay();
     updateVehicleViews();
@@ -303,6 +305,7 @@
 
     if (!service || typeof service.getVehicles !== "function") {
       vehicles = fallback;
+      vehicleLoadError = "";
       applyQualityOverlays();
       applyOperationalOverlay();
       updateVehicleViews();
@@ -312,18 +315,31 @@
     const backendMode = typeof service.resolveBackendMode === "function" ? service.resolveBackendMode() : "local";
     if (backendMode !== "supabase") {
       vehicles = fallback;
+      vehicleLoadError = "";
       applyQualityOverlays();
       applyOperationalOverlay();
       updateVehicleViews();
       return;
     }
 
-    const data = await service.getVehicles();
-    const nextVehicles = Array.isArray(data) ? data.map(normalizeVehicle) : fallback;
-    vehicles = nextVehicles;
-    applyQualityOverlays();
-    applyOperationalOverlay();
-    updateVehicleViews();
+    try {
+      const data = await service.getVehicles();
+      if (!Array.isArray(data)) {
+        throw new Error(service.getLastError?.() || "Fahrzeuge konnten nicht geladen werden.");
+      }
+
+      const nextVehicles = data.map(normalizeVehicle);
+      vehicles = nextVehicles;
+      vehicleLoadError = "";
+      applyQualityOverlays();
+      applyOperationalOverlay();
+      updateVehicleViews();
+      return;
+    } catch (error) {
+      vehicleLoadError = service.getLastError?.() || "Fahrzeuge konnten nicht geladen werden.";
+      vehicles = [];
+      updateVehicleViews();
+    }
   }
 
   function formatDate(value) {
@@ -593,7 +609,8 @@
     if (!filtered.length) {
       const empty = document.createElement("article");
       empty.className = "vehicle-empty admin-empty-state";
-      empty.innerHTML = "<strong>🚗 Keine Einträge gefunden</strong><p>Keine Einträge gefunden.</p><button class='admin-btn admin-btn-secondary admin-empty-reset' type='button' data-vehicle-reset>Filter zurücksetzen</button>";
+      const message = vehicleLoadError || "Keine Einträge gefunden.";
+      empty.innerHTML = `<strong>🚗 ${message}</strong><p>${message}</p><button class='admin-btn admin-btn-secondary admin-empty-reset' type='button' data-vehicle-reset>Filter zurücksetzen</button>`;
       grid.append(empty);
       return;
     }
@@ -655,7 +672,8 @@
     list.innerHTML = "";
 
     if (!filtered.length) {
-      list.innerHTML = "<article class='vehicle-empty admin-empty-state'><strong>🚗 Keine Einträge gefunden</strong><p>Bitte Filter oder Suche anpassen.</p><button class='admin-btn admin-btn-secondary admin-empty-reset' type='button' data-vehicle-reset>Filter zurücksetzen</button></article>";
+      const message = vehicleLoadError || "Bitte Filter oder Suche anpassen.";
+      list.innerHTML = `<article class='vehicle-empty admin-empty-state'><strong>🚗 ${message}</strong><p>${message}</p><button class='admin-btn admin-btn-secondary admin-empty-reset' type='button' data-vehicle-reset>Filter zurücksetzen</button></article>`;
       return;
     }
 
@@ -1112,7 +1130,6 @@
     });
   }
 
-  seedFallbackVehicles();
   loadSavedView();
   syncViewUi();
   syncFilterUi();
@@ -1123,5 +1140,8 @@
   bindVehicleActions();
   bindModalClose();
   bindDisabledNavItems();
+  vehicles = [];
+  vehicleLoadError = "";
+  updateVehicleViews();
   void loadVehiclesFromService();
 })();

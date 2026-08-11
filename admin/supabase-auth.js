@@ -115,7 +115,9 @@
         return null;
       }
 
-      return supabaseLib.createClient(config.url, config.publishableKey);
+      const client = supabaseLib.createClient(config.url, config.publishableKey);
+      window.TaxiSupabaseClient = client;
+      return client;
     })();
 
     return clientPromise;
@@ -158,10 +160,21 @@
     }
 
     const role = mapProfileRoleToAdminRole(profile.role);
-    saveStoredSession(data.user?.email || data.user?.id || email, role, {
+    const sessionPayload = {
       authUserId: data.user?.id || null,
-      profileRole: profile.role
-    });
+      profileRole: profile.role,
+      email: data.user?.email || email,
+      role
+    };
+
+    saveStoredSession(data.user?.email || data.user?.id || email, role, sessionPayload);
+    window.TaxiSupabaseSession = {
+      session: data.session,
+      user: data.user,
+      profile,
+      role,
+      ...sessionPayload
+    };
 
     return {
       session: data.session,
@@ -180,6 +193,7 @@
     const { data, error } = await client.auth.getSession();
     if (error || !data.session?.user) {
       clearStoredSession();
+      window.TaxiSupabaseSession = null;
       return null;
     }
 
@@ -187,14 +201,26 @@
     if (!profile || profile.active !== true || !ALLOWED_PROFILE_ROLES.includes(profile.role)) {
       await client.auth.signOut();
       clearStoredSession();
+      window.TaxiSupabaseSession = null;
       return null;
     }
 
     const role = mapProfileRoleToAdminRole(profile.role);
-    saveStoredSession(data.session.user.email || data.session.user.id, role, {
+    const sessionPayload = {
       authUserId: data.session.user.id,
-      profileRole: profile.role
-    });
+      profileRole: profile.role,
+      email: data.session.user.email || data.session.user.id,
+      role
+    };
+
+    saveStoredSession(data.session.user.email || data.session.user.id, role, sessionPayload);
+    window.TaxiSupabaseSession = {
+      session: data.session,
+      user: data.session.user,
+      profile,
+      role,
+      ...sessionPayload
+    };
 
     return {
       user: data.session.user,
@@ -221,6 +247,8 @@
     readStoredSession,
     saveStoredSession,
     clearStoredSession,
+    getClient,
+    getSharedClient: () => window.TaxiSupabaseClient || null,
     signInWithPassword,
     restoreSupabaseSession,
     signOut,
