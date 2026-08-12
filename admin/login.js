@@ -70,23 +70,28 @@
 
   async function loginWithSupabaseOrDemo(username, password) {
     const authBridge = await ensureAuthBridge();
-    if (authBridge && typeof authBridge.signInWithPassword === "function") {
+    const supabaseConfigured = Boolean(window.TaxiSupabaseConfig?.isConfigured === true);
+
+    if (supabaseConfigured && authBridge && typeof authBridge.signInWithPassword === "function") {
       try {
         const result = await authBridge.signInWithPassword(username, password);
-        createDemoSession(result.user?.email || username, result.role);
         redirectToAdmin(result.role);
         return true;
       } catch (error) {
-        const demoUser = DEMO_USERS[username];
-        if (demoUser && demoUser.password === password) {
-          createDemoSession(username, demoUser.role);
-          redirectToAdmin(demoUser.role);
-          return true;
+        const message = (error && error.message) || "E-Mail oder Passwort ist nicht korrekt.";
+        if (message.toLowerCase().includes("zugriff verweigert") || message.toLowerCase().includes("nur berechtigte")) {
+          setError("Zugriff verweigert. Nur berechtigte interne Benutzer dürfen sich anmelden.");
+        } else {
+          setError("E-Mail oder Passwort ist nicht korrekt.");
         }
-
-        setError(error.message || "Anmeldung fehlgeschlagen.");
+        console.error("Supabase-Admin-Login fehlgeschlagen.", message);
         return false;
       }
+    }
+
+    if (supabaseConfigured) {
+      setError("E-Mail oder Passwort ist nicht korrekt.");
+      return false;
     }
 
     const demoUser = DEMO_USERS[username];
@@ -349,6 +354,170 @@
     });
   }
 
+  function parseRecoveryHash() {
+    const raw = window.location.hash || "";
+    if (!raw) return null;
+    const hash = raw.startsWith("#") ? raw.slice(1) : raw;
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    const type = params.get("type");
+    if (type === "recovery" && accessToken && refreshToken) {
+      return { accessToken, refreshToken };
+    }
+    return null;
+  }
+
+  function toggleRecoveryMode(isRecovery) {
+    const form = document.querySelector("[data-login-form]");
+    const card = document.querySelector(".admin-login-card");
+    if (!card) return;
+
+    const existingRecovery = card.querySelector("[data-recovery-password-form]");
+    if (existingRecovery) {
+      existingRecovery.hidden = !isRecovery;
+    }
+
+    if (form) {
+      form.hidden = isRecovery;
+    }
+
+    const heading = card.querySelector(".admin-login-head h1");
+    const sub = card.querySelector(".admin-login-head p");
+    if (heading && isRecovery) {
+      heading.textContent = "Neues Passwort festlegen";
+    }
+    if (sub && isRecovery) {
+      sub.textContent = "Bitte legen Sie ein neues Admin-Passwort fest.";
+    }
+
+    if (!existingRecovery && isRecovery) {
+      const recoveryTemplate = document.createElement("div");
+      recoveryTemplate.setAttribute("data-recovery-password-form", "");
+      recoveryTemplate.innerHTML = `
+        <div class="admin-recovery-password-wrap" style="margin-top: 1.25rem;">
+          <div class="admin-login-error" data-recovery-password-error hidden></div>
+          <form class="admin-login-form" data-admin-password-reset-form novalidate>
+            <label for="admin-new-password">Neues Passwort</label>
+            <input id="admin-new-password" name="newPassword" type="password" autocomplete="new-password" required>
+
+            <label for="admin-new-password-confirm">Passwort wiederholen</label>
+            <input id="admin-new-password-confirm" name="confirmPassword" type="password" autocomplete="new-password" required>
+
+            <button class="admin-btn" type="submit">Passwort speichern</button>
+          </form>
+        </div>
+      `;
+      card.appendChild(recoveryTemplate);
+
+      const resetForm = recoveryTemplate.querySelector("[data-admin-password-reset-form]");
+      if (resetForm) {
+        resetForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const fd = new FormData(resetForm);
+          const newPassword = String(fd.get("newPassword") || "").trim();
+          const confirmPassword = String(fd.get("confirmPassword") || "").trim();
+          const errorNode = recoveryTemplate.querySelector("[data-recovery-password-error]");
+
+          if (!newPassword || !confirmPassword) {
+            if (errorNode) {
+              errorNode.hidden = false;
+              errorNode.textContent = "Bitte beide Felder ausfüllen.";
+            }
+            return;
+          }
+
+          if (newPassword.length < 8) {
+            if (errorNode) {
+              errorNode.hidden = false;
+              errorNode.textContent = "Das Passwort muss mindestens 8 Zeichen lang sein.";
+            }
+            return;
+          }
+
+          if (newPassword !== confirmPassword) {
+            if (errorNode) {
+              errorNode.hidden = false;
+              errorNode.textContent = "Die Passwörter stimmen nicht überein.";
+            }
+            return;
+          }
+
+          try {
+            const authBridge = await ensureAuthBridge();
+            const client = authBridge && typeof authBridge.getClient === "function" ? await authBridge.getClient() : null;
+            if (!client) {
+              throw new Error("Supabase Auth ist nicht verfügbar.");
+            }
+
+            const { error } = await client.auth.updateUser({ password: newPassword });
+            if (error) {
+              console.error("Recovery-UpdateUser fehlgeschlagen.", error.message);
+              if (errorNode) {
+                errorNode.hidden = false;
+                errorNode.textContent = "Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.";
+              }
+              return;
+            }
+
+            if (errorNode) {
+              errorNode.hidden = false;
+              errorNode.classList.add("is-success");
+              errorNode.textContent = "✓ Passwort wurde erfolgreich geändert.";
+            }
+
+            setTimeout(() => {
+              window.location.href = "login.html";
+            }, 1200);
+          } catch (error) {
+            console.error("Recovery-UpdateUser fehlgeschlagen.", error?.message || error);
+            if (errorNode) {
+              errorNode.hidden = false;
+              errorNode.textContent = "Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.";
+            }
+          }
+        });
+      }
+    }
+  }
+
+  async function initRecoveryMode() {
+    const authBridge = await ensureAuthBridge();
+    const client = authBridge && typeof authBridge.getClient === "function" ? await authBridge.getClient() : null;
+    if (!client) {
+      return false;
+    }
+
+    const recoveryTokens = parseRecoveryHash();
+    if (recoveryTokens) {
+      try {
+        const { data, error } = await client.auth.setSession({
+          access_token: recoveryTokens.accessToken,
+          refresh_token: recoveryTokens.refreshToken
+        });
+
+        if (!error && data?.session) {
+          toggleRecoveryMode(true);
+          return true;
+        }
+      } catch (error) {
+        console.error("Recovery-Session konnte nicht gesetzt werden.", error?.message || error);
+      }
+
+      toggleRecoveryMode(true);
+      return true;
+    }
+
+    const { data: sessionData, error: sessionError } = await client.auth.getSession();
+    if (!sessionError && sessionData?.session && window.location.hash.includes("type=recovery")) {
+      toggleRecoveryMode(true);
+      return true;
+    }
+
+    toggleRecoveryMode(false);
+    return false;
+  }
+
   function bindLogin() {
     const form = document.querySelector("[data-login-form]");
     if (!form) return;
@@ -364,8 +533,6 @@
       const formData = new FormData(form);
       const username = String(formData.get("username") || "").trim();
       const password = String(formData.get("password") || "");
-      const remember = Boolean(form.querySelector("[data-login-remember]")?.checked);
-      localStorage.setItem(KEY_LOGIN_REMEMBER, remember ? "true" : "false");
 
       if (!username || !password) {
         setError("Bitte E-Mail und Passwort eingeben.");
@@ -386,5 +553,6 @@
     }
     bindLogin();
     bindRecoveryLinks();
+    initRecoveryMode();
   }
 })();

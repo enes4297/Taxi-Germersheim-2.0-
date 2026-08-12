@@ -8,7 +8,8 @@
     activeSection: "dienstplan",
     supabaseEmployee: null, /* { id, first_name, last_name, ... } */
     supabaseShifts: [],     /* veröffentlichte Schichten aus Supabase */
-    supabaseVehicles: {}    /* { vehicleId: vehicleObjekt } */
+    supabaseVehicles: {},   /* { vehicleId: vehicleObjekt } */
+    supabaseVacationRequests: []
   };
 
   function requireDemoSession() {
@@ -75,7 +76,7 @@
     if (!match) return formatDate(text);
     const date = new Date(`${text}T00:00:00`);
     const weekday = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(date);
-    return `${weekday}, ${match[3]}.${match[2]}.`;
+    return `${weekday}, ${match[3]}.${match[2]}.${match[1]}`;
   }
 
   function tomorrowIso() {
@@ -194,10 +195,7 @@
       </div>
       <p class="hero-title">${isFreeToday ? "Heute frei" : "Arbeitszeit"}</p>
       <p class="hero-time">${isFreeToday ? "Heute frei" : todayShift}</p>
-      <div class="hero-vehicle">
-        <div class="hero-meta-row"><span>Fahrzeug</span><strong>${isFreeToday ? "Kein Fahrzeug" : todayVehicle}</strong></div>
-        ${!isFreeToday && todayPlan.vehicleModel ? `<div class="hero-meta-row"><span>Typ</span><strong>${todayPlan.vehicleModel}</strong></div>` : ""}
-      </div>
+      ${!isFreeToday ? `<div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>${todayVehicle}</strong></div></div>` : ""}
     `;
 
     tomorrowNode.innerHTML = `
@@ -208,13 +206,68 @@
         </div>
         <span class="status-pill ${tomorrowPlan.published ? "info" : "neutral"}">${tomorrowPlan.published ? "Veröffentlicht" : "Noch nicht veröffentlicht"}</span>
       </div>
-      <p class="hero-title">${tomorrowPlan.published ? "Arbeitszeit" : "Morgen"}</p>
-      <p class="hero-time">${tomorrowShift}</p>
-      <div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>${tomorrowVehicle || (tomorrowPlan.published ? "Noch offen" : "Plan noch nicht veröffentlicht")}</strong></div></div>
+      <p class="hero-title">${tomorrowPlan.published ? "Arbeitszeit" : "Plan noch offen"}</p>
+      <p class="hero-time">${tomorrowPlan.published ? tomorrowShift : "Sobald dein Plan veröffentlicht ist, siehst du ihn hier."}</p>
+      ${tomorrowPlan.published && tomorrowVehicle ? `<div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>${tomorrowVehicle}</strong></div></div>` : ""}
+    `;
+  }
+
+  function vacationStatusText(status) {
+    const normalized = String(status || "").trim().toLowerCase();
+    if (normalized === "approved") return "Genehmigt";
+    if (normalized === "rejected") return "Abgelehnt";
+    return "Offen";
+  }
+
+  function vacationStatusClass(status) {
+    const normalized = String(status || "").trim().toLowerCase();
+    if (normalized === "approved") return "active";
+    if (normalized === "rejected") return "danger";
+    return "warn";
+  }
+
+  function renderVacationsSupabase() {
+    const list = document.querySelector("[data-portal-vac-list]");
+    const summary = document.querySelector("[data-portal-vac-summary]");
+    if (!list) return;
+
+    const vacs = Array.isArray(state.supabaseVacationRequests) ? state.supabaseVacationRequests : [];
+    if (summary) {
+      summary.innerHTML = '<div class="summary-row"><article class="summary-chip"><strong>Meine Urlaubsanträge</strong><p>Übersicht deiner aktuellen Anträge</p></article></div>';
+    }
+
+    if (!vacs.length) {
+      list.innerHTML = '<div class="driver-list"><article class="driver-item compact-item"><strong>Meine Urlaubsanträge</strong><p>Keine Urlaubsanträge vorhanden.</p></article></div>';
+      return;
+    }
+
+    list.innerHTML = `
+      <div class="driver-list">
+        <div class="panel-head" style="margin-bottom: -4px;">
+          <div>
+            <p class="panel-kicker">Urlaub</p>
+            <h2>Meine Urlaubsanträge</h2>
+          </div>
+        </div>
+        ${vacs.map((v) => `
+          <article class="driver-item compact-item">
+            <strong>${formatDate(v.start_date)} – ${formatDate(v.end_date)}</strong>
+            <div class="driver-item-actions">
+              <span class="status-pill ${vacationStatusClass(v.status)}">${vacationStatusText(v.status)}</span>
+            </div>
+            ${v.note ? `<p>${visibleLabel(v.note)}</p>` : ""}
+          </article>
+        `).join("")}
+      </div>
     `;
   }
 
   function renderVacations() {
+    if (ES && ES.isConfigured()) {
+      renderVacationsSupabase();
+      return;
+    }
+
     const e = emp();
     if (!e) return;
     const list = document.querySelector("[data-portal-vac-list]");
@@ -257,11 +310,11 @@
       return `<article class="week-row${isWorking ? " is-working" : ""}${isToday ? " is-today" : ""}">
         <div class="week-row-main">
           <strong>${weekdayShortLabel(day)}</strong>
-          <p>${isWorking ? shiftText : "Frei"}</p>
+          ${isWorking ? `<p>${shiftText}</p>` : ""}
         </div>
         <div class="week-row-side">
           ${isWorking ? `<span>${vehicleText || "Fahrzeug offen"}</span>` : `<span>Frei</span>`}
-          <small>${isToday ? "Heute" : (plan?.published === false ? "Nicht veröffentlicht" : "")}</small>
+          ${isWorking && isToday ? "<small>Heute</small>" : (isWorking && plan?.published === false ? "<small>Nicht veröffentlicht</small>" : "")}
         </div>
       </article>`;
     }).join("")}</div>`;
@@ -405,6 +458,9 @@
       vehicleIds.forEach((id, i) => {
         if (vehicleResults[i]) state.supabaseVehicles[id] = vehicleResults[i];
       });
+
+      const vacationRequests = await ES.getMyVacationRequests();
+      state.supabaseVacationRequests = Array.isArray(vacationRequests) ? vacationRequests : [];
     } catch (err) {
       console.error("Dienstplandaten konnten nicht geladen werden.", err?.message);
     }
@@ -467,10 +523,7 @@
         </div>
           <p class="hero-title">Arbeitszeit</p>
         <p class="hero-time">${formatShiftTime(todayShift.start_time, todayShift.end_time)}</p>
-        <div class="hero-vehicle">
-          <div class="hero-meta-row"><span>Fahrzeug</span><strong>${vehicleLabel(todayVehicle)}</strong></div>
-            ${todayVehicle?.vehicle_type ? `<div class="hero-meta-row"><span>Typ</span><strong>${todayVehicle.vehicle_type}</strong></div>` : ""}
-        </div>`;
+        ${todayVehicle ? `<div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>${vehicleLabel(todayVehicle)}</strong></div></div>` : ""}`;
     } else {
       hero.innerHTML = `
         <div class="panel-head">
@@ -481,8 +534,7 @@
             <span class="status-pill neutral">Heute frei</span>
         </div>
           <p class="hero-title">Heute frei</p>
-          <p class="hero-time">Heute frei</p>
-          <div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>Kein Fahrzeug</strong></div></div>`;
+          <p class="hero-time">Heute frei</p>`;
     }
 
     /* Morgen */
@@ -507,9 +559,8 @@
           </div>
             <span class="status-pill neutral">Noch nicht veröffentlicht</span>
         </div>
-        <p class="hero-title">Plan nicht veröffentlicht</p>
-          <p class="hero-time">Plan noch nicht veröffentlicht</p>
-          <div class="hero-vehicle"><div class="hero-meta-row"><span>Fahrzeug</span><strong>Noch offen</strong></div></div>`;
+        <p class="hero-title">Plan noch offen</p>
+          <p class="hero-time">Sobald dein Plan veröffentlicht ist, siehst du ihn hier.</p>`;
     }
   }
 
@@ -546,11 +597,9 @@
         return `<article class="week-row${isToday ? " is-today" : ""}">
           <div class="week-row-main">
             <strong>${dayLabel}</strong>
-            <p>Frei</p>
           </div>
           <div class="week-row-side">
             <span>Frei</span>
-            <small>${isToday ? "Heute" : ""}</small>
           </div>
         </article>`;
       }
@@ -782,18 +831,65 @@
 
     const vacForm = document.querySelector("[data-portal-vac-form]");
     if (vacForm) {
-      vacForm.addEventListener("submit", (event) => {
+      vacForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const fd = new FormData(vacForm);
+        const startDate = String(fd.get("start") || "").trim();
+        const endDate = String(fd.get("end") || "").trim();
+        const note = String(fd.get("comment") || "").trim();
+        const feedback = document.querySelector("[data-portal-vac-feedback]");
+
+        if (!startDate || !endDate || endDate < startDate) {
+          if (feedback) {
+            feedback.hidden = false;
+            feedback.classList.add("is-error");
+            feedback.textContent = "Bitte wähle einen gültigen Zeitraum.";
+          }
+          return;
+        }
+
+        if (ES && ES.isConfigured()) {
+          try {
+            const result = await ES.createVacationRequest({ startDate, endDate, note });
+            if (!result?.ok) {
+              if (feedback) {
+                feedback.hidden = false;
+                feedback.classList.add("is-error");
+                feedback.textContent = "Urlaubsantrag konnte nicht gesendet werden. Bitte versuche es noch einmal.";
+              }
+              return;
+            }
+
+            vacForm.reset();
+            state.supabaseVacationRequests = Array.isArray(await ES.getMyVacationRequests()) ? await ES.getMyVacationRequests() : [];
+            renderVacations();
+            if (feedback) {
+              feedback.hidden = false;
+              feedback.classList.remove("is-error");
+              feedback.textContent = "✓ Urlaubsantrag wurde gesendet.";
+            }
+            openModal("Urlaub gesendet", "<p>✓ Urlaubsantrag wurde gesendet.</p>");
+            return;
+          } catch (err) {
+            console.error("Urlaubsantrag konnte nicht gesendet werden.", err?.message || err);
+            if (feedback) {
+              feedback.hidden = false;
+              feedback.classList.add("is-error");
+              feedback.textContent = "Urlaubsantrag konnte nicht gesendet werden. Bitte versuche es noch einmal.";
+            }
+            return;
+          }
+        }
+
         P.addVacationRequest(state.data, {
           employeeId: state.employeeId,
-          start: String(fd.get("start") || ""),
-          end: String(fd.get("end") || ""),
+          start: startDate,
+          end: endDate,
           halfDay: false,
           workDaysDemo: 1,
           type: "Erholungsurlaub",
           replacementId: "",
-          comment: String(fd.get("comment") || ""),
+          comment: note,
           internalNote: "Portal-Antrag",
           requester: state.employeeId,
           createdAt: P.todayIso(),
@@ -804,9 +900,9 @@
         renderHome();
         renderMessageSummary();
         vacForm.reset();
-        const feedback = document.querySelector("[data-portal-vac-feedback]");
         if (feedback) {
           feedback.hidden = false;
+          feedback.classList.remove("is-error");
           feedback.textContent = "✓ Urlaubsantrag wurde gesendet.";
         }
         openModal("Urlaub gesendet", "<p>✓ Urlaubsantrag wurde gesendet.</p>");
