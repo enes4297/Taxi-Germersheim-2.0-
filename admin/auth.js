@@ -389,7 +389,16 @@
       return window.TaxiSupabaseAuth;
     }
 
-    return null;
+    const existingScript = document.querySelector('script[src$="supabase-auth.js"]');
+    if (existingScript) {
+      return window.TaxiSupabaseAuth || null;
+    }
+
+    const script = document.createElement("script");
+    script.src = "supabase-auth.js";
+    script.async = false;
+    document.head.appendChild(script);
+    return window.TaxiSupabaseAuth || null;
   }
 
   function saveSession(user, role) {
@@ -437,6 +446,10 @@
     const loggedIn = localStorage.getItem(KEY_LOGGED_IN);
     const user = localStorage.getItem(KEY_USER);
     const role = localStorage.getItem(KEY_ROLE);
+
+    if (window.TaxiSupabaseConfig?.isConfigured === true) {
+      return null;
+    }
 
     if (loggedIn === "true" && user && role) {
       return { loggedIn, user, role };

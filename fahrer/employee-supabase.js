@@ -171,6 +171,61 @@
   }
 
   /**
+   * Eigene Urlaubsanträge laden.
+   * RLS erlaubt nur die Einträge des aktuell angemeldeten Mitarbeiters.
+   */
+  async function getMyVacationRequests() {
+    const cl = await client();
+    if (!cl) return [];
+    const { data, error } = await cl
+      .from("vacation_requests")
+      .select("id, employee_id, start_date, end_date, note, status, submitted_at, processed_at, processed_by, created_at, updated_at")
+      .order("start_date", { ascending: true });
+    if (error) {
+      console.error("Urlaubsanträge konnten nicht geladen werden.", error.code);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Neuer Urlaubsantrag für den aktuell angemeldeten Mitarbeiter.
+   * employee_id wird aus dem Profil des eingeloggten Benutzers abgeleitet.
+   */
+  async function createVacationRequest({ startDate, endDate, note }) {
+    const cl = await client();
+    if (!cl) {
+      return { ok: false, error: "SUPABASE_NOT_CONFIGURED" };
+    }
+
+    const session = await checkSession();
+    if (!session?.employeeId) {
+      return { ok: false, error: "NO_EMPLOYEE_PROFILE" };
+    }
+
+    const payload = {
+      employee_id: session.employeeId,
+      start_date: startDate,
+      end_date: endDate,
+      note: note ? String(note).trim() : null,
+      status: "requested"
+    };
+
+    const { data, error } = await cl
+      .from("vacation_requests")
+      .insert(payload)
+      .select("id, employee_id, start_date, end_date, note, status")
+      .single();
+
+    if (error) {
+      console.error("Urlaubsantrag konnte nicht gespeichert werden.", error.message || error.code);
+      return { ok: false, error: error.message || "INSERT_FAILED" };
+    }
+
+    return { ok: true, data };
+  }
+
+  /**
    * Fahrzeug für eine Schicht laden (nur name, Kennzeichen, Fahrzeugtyp).
    * RLS erlaubt nur Fahrzeuge, die dem eigenen Mitarbeiter in einer veröffentlichten Schicht zugewiesen sind.
    */
@@ -214,6 +269,8 @@
     signOut,
     getMyEmployee,
     getMyPublishedShifts,
+    getMyVacationRequests,
+    createVacationRequest,
     getVehicle,
     isPlanPublished
   };
