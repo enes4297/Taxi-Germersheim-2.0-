@@ -1,43 +1,21 @@
 // Nur Demo-Rollen. Kein echter Zugriffsschutz ohne Backend.
 (() => {
-  const KEY_LOGGED_IN = "demoAdminLoggedIn";
-  const KEY_USER = "demoAdminUser";
-  const KEY_ROLE = "demoAdminRole";
-  const LEGACY_STORAGE_KEY = "taxiAdminDemoSession";
-  const KEY_LOGIN_REMEMBER = "demoAdminRememberLogin";
+  const DEMO_AUTH_KEYS = [
+    "demoAdminLoggedIn",
+    "demoAdminUser",
+    "demoAdminRole",
+    "demo-auth-v2",
+    "taxiAdminDemoSession",
+    "demoAdminRememberLogin",
+    "demoAdminPermissionNotice"
+  ];
 
-  const DEMO_USERS = {
-    admin: { password: "Taxi2026!", role: "Chef" },
-    enes: { password: "Enes2026!", role: "Chef" },
-    fatih: { password: "Fatih2026!", role: "Chef" },
-    geschaeft: { password: "Leitung2026!", role: "Geschaeftsleitung" },
-    dispo: { password: "Dispo2026!", role: "Disposition" },
-    disponent: { password: "Dispo2026!", role: "Disposition" },
-    billing: { password: "Rechnung2026!", role: "Buchhaltung" },
-    abrechnung: { password: "Rechnung2026!", role: "Buchhaltung" },
-    fahrer: { password: "Fahrer2026!", role: "Fahrer" },
-    personal: { password: "Personal2026!", role: "Personalverwaltung" },
-    qualitaet: { password: "Quali2026!", role: "Qualitaetsmanagement" },
-    mitarbeiter: { password: "Mitarbeiter2026!", role: "Mitarbeiter" }
-  };
-
-  function readSession() {
-    const loggedIn = localStorage.getItem(KEY_LOGGED_IN);
-    const user = localStorage.getItem(KEY_USER);
-    const role = localStorage.getItem(KEY_ROLE);
-    if (loggedIn === "true" && user && role) {
-      return { loggedIn, user, role };
-    }
-    return null;
+  function cleanupLegacyDemoAuthKeys() {
+    DEMO_AUTH_KEYS.forEach((key) => localStorage.removeItem(key));
   }
 
-  function isValidSession(session) {
-    if (!session || session.loggedIn !== "true") return false;
-    const knownRoles = ["Chef", "Geschaeftsleitung", "Disposition", "Buchhaltung", "Fahrer", "Werkstatt", "Personalverwaltung", "Qualitaetsmanagement", "Mitarbeiter"];
-    if (knownRoles.includes(session.role)) return true;
-    const user = DEMO_USERS[session.user];
-    if (!user) return false;
-    return user.role === session.role;
+  function isValidAdminProfile(profile) {
+    return Boolean(profile && profile.active === true && ["admin", "dispatcher"].includes(profile.role));
   }
 
   async function ensureAuthBridge() {
@@ -68,41 +46,42 @@
     return window.TaxiSupabaseAuth;
   }
 
-  async function loginWithSupabaseOrDemo(username, password) {
+  async function loginWithSupabase(username, password) {
+    cleanupLegacyDemoAuthKeys();
     const authBridge = await ensureAuthBridge();
     const supabaseConfigured = Boolean(window.TaxiSupabaseConfig?.isConfigured === true);
 
-    if (supabaseConfigured && authBridge && typeof authBridge.signInWithPassword === "function") {
-      try {
-        const result = await authBridge.signInWithPassword(username, password);
-        redirectToAdmin(result.role);
-        return true;
-      } catch (error) {
-        const message = (error && error.message) || "E-Mail oder Passwort ist nicht korrekt.";
-        if (message.toLowerCase().includes("zugriff verweigert") || message.toLowerCase().includes("nur berechtigte")) {
-          setError("Zugriff verweigert. Nur berechtigte interne Benutzer dürfen sich anmelden.");
-        } else {
-          setError("E-Mail oder Passwort ist nicht korrekt.");
-        }
-        console.error("Supabase-Admin-Login fehlgeschlagen.", message);
-        return false;
+    if (!supabaseConfigured || !authBridge || typeof authBridge.signInWithPassword !== "function") {
+      setError("Supabase Auth ist derzeit nicht verfügbar. Bitte Zugangsdaten prüfen oder später erneut versuchen.");
+      return false;
+    }
+
+    try {
+      const result = await authBridge.signInWithPassword({ email: username, password });
+      const session = result?.session;
+      const user = result?.user;
+      const profile = result?.profile;
+
+      if (!session || !user) {
+        throw new Error("Keine gültige Supabase-Session nach der Anmeldung.");
       }
-    }
 
-    if (supabaseConfigured) {
-      setError("E-Mail oder Passwort ist nicht korrekt.");
+      if (!isValidAdminProfile(profile)) {
+        throw new Error("Zugriff verweigert. Nur aktive Admins oder Dispatcher dürfen sich anmelden.");
+      }
+
+      window.location.replace("index.html");
+      return true;
+    } catch (error) {
+      const message = (error && error.message) || "E-Mail oder Passwort ist nicht korrekt.";
+      if (message.toLowerCase().includes("zugriff verweigert") || message.toLowerCase().includes("nur aktive admins") || message.toLowerCase().includes("nur berechtigte")) {
+        setError("Zugriff verweigert. Nur aktive Admins oder Dispatcher dürfen sich anmelden.");
+      } else {
+        setError("E-Mail oder Passwort ist nicht korrekt.");
+      }
+      console.error("Supabase-Admin-Login fehlgeschlagen.", message);
       return false;
     }
-
-    const demoUser = DEMO_USERS[username];
-    if (!demoUser || demoUser.password !== password) {
-      setError("Login fehlgeschlagen. Bitte Zugangsdaten prüfen.");
-      return false;
-    }
-
-    createDemoSession(username, demoUser.role);
-    redirectToAdmin(demoUser.role);
-    return true;
   }
 
   function setError(message) {
@@ -113,40 +92,7 @@
     errorNode.textContent = message;
   }
 
-  function createDemoSession(username, role) {
-    localStorage.setItem(KEY_LOGGED_IN, "true");
-    localStorage.setItem(KEY_USER, username);
-    localStorage.setItem(KEY_ROLE, role);
-
-    localStorage.setItem(
-      LEGACY_STORAGE_KEY,
-      JSON.stringify({
-        username,
-        role,
-        token: "demo-auth-v2",
-        loginAt: new Date().toISOString()
-      })
-    );
-  }
-
-  function redirectToAdmin(role) {
-    const roleTarget = {
-      Geschaeftsleitung: "geschaeftsfuehrer-dashboard.html",
-      Disposition: "live-dispo.html",
-      Personalverwaltung: "personaluebersicht.html",
-      Buchhaltung: "abrechnungszentrale.html"
-    };
-
-    const target = roleTarget[role];
-    if (target) {
-      window.location.replace(target);
-      return;
-    }
-
-    if (role === "Geschaeftsleitung") {
-      window.location.replace("geschaeftsfuehrer-dashboard.html");
-      return;
-    }
+  function redirectToAdmin() {
     window.location.replace("index.html");
   }
 
@@ -540,13 +486,49 @@
       }
 
       setError("");
-      await loginWithSupabaseOrDemo(username, password);
+      await loginWithSupabase(username, password);
     });
   }
 
-  if (isValidSession(readSession())) {
-    redirectToAdmin((readSession() || {}).role || "");
-  } else {
+  async function initializeLoginPage() {
+    cleanupLegacyDemoAuthKeys();
+
+    const params = new URLSearchParams(window.location.search || "");
+    const authReason = params.get("auth_reason");
+    if (authReason) {
+      console.log("admin auth_reason:", authReason);
+    }
+
+    const authBridge = await ensureAuthBridge();
+    if (!authBridge || typeof authBridge.getClient !== "function") {
+      if (window.AdminUiText) {
+        window.AdminUiText.normalizeDocument(document);
+        window.AdminUiText.observeDocument(document);
+      }
+      bindLogin();
+      bindRecoveryLinks();
+      initRecoveryMode();
+      return;
+    }
+
+    const client = await authBridge.getClient();
+    if (!client) {
+      if (window.AdminUiText) {
+        window.AdminUiText.normalizeDocument(document);
+        window.AdminUiText.observeDocument(document);
+      }
+      bindLogin();
+      bindRecoveryLinks();
+      initRecoveryMode();
+      return;
+    }
+
+    try {
+      await client.auth.getSession();
+    } catch (error) {
+      console.warn("Echte Sessionprüfung auf Loginseite fehlgeschlagen.", error);
+    }
+
     if (window.AdminUiText) {
       window.AdminUiText.normalizeDocument(document);
       window.AdminUiText.observeDocument(document);
@@ -555,4 +537,6 @@
     bindRecoveryLinks();
     initRecoveryMode();
   }
+
+  initializeLoginPage();
 })();

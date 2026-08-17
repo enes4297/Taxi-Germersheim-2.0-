@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Termin schnell aufnehmen</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
   <script src="termin-intake-shared.js"></script>
-  <link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="termin-schnellerfassung.css">
-</head>
+      </head>
 <body>
   <div class="admin-shell ts-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -32,7 +34,7 @@
           <p>Sprach- und Terminverarbeitung erfolgt derzeit nur als lokale Demo.</p>
         </div>
         <div class="admin-topbar-actions ts-topbar-actions">
-          <a class="admin-btn admin-btn-secondary" href="termin-cockpit.html">Noch zu prüfen</a>
+          <a class="admin-btn admin-btn-secondary" href="termin-cockpit.html">Noch zu prÃƒÂ¼fen</a>
           <a class="admin-btn admin-btn-secondary" href="tagesplanung.html">Tagesplanung</a>
         </div>
       </header>
@@ -67,7 +69,7 @@
         <section class="admin-panel ts-pane" data-intake-pane="form">
           <div class="admin-panel-head">
             <h2>Schnellformular</h2>
-            <small>Nur die nötigsten Felder sofort sichtbar.</small>
+            <small>Nur die nÃƒÂ¶tigsten Felder sofort sichtbar.</small>
           </div>
           <form class="ts-form" data-quick-form>
             <label>Kunde oder Name<input name="customer" required></label>
@@ -78,11 +80,11 @@
             <div class="ts-shortcuts">
               <button type="button" class="ts-chip" data-shortcut-date="today">Heute</button>
               <button type="button" class="ts-chip" data-shortcut-date="tomorrow">Morgen</button>
-              <button type="button" class="ts-chip" data-shortcut-date="dayAfter">Übermorgen</button>
+              <button type="button" class="ts-chip" data-shortcut-date="dayAfter">ÃƒÅ“bermorgen</button>
               <button type="button" class="ts-chip" data-shortcut-time="now">Jetzt</button>
               <button type="button" class="ts-chip" data-shortcut-time="plus30">In 30 Minuten</button>
-              <button type="button" class="ts-chip" data-shortcut-return="open">Rückfahrt offen</button>
-              <button type="button" class="ts-chip" data-shortcut-return="sameRoute">Gleiche Strecke zurück</button>
+              <button type="button" class="ts-chip" data-shortcut-return="open">RÃƒÂ¼ckfahrt offen</button>
+              <button type="button" class="ts-chip" data-shortcut-return="sameRoute">Gleiche Strecke zurÃƒÂ¼ck</button>
             </div>
             <details class="ts-more">
               <summary>Weitere Angaben</summary>
@@ -91,9 +93,9 @@
                 <label>Fahrtart<select name="rideType"><option>Taxi</option><option>Krankenfahrt</option><option>Serienfahrt</option><option>Flughafenfahrt</option><option>Firmenfahrt</option></select></label>
                 <label>Rollstuhl<select name="wheelchair"><option value="Nein">Nein</option><option value="Ja">Ja</option></select></label>
                 <label>Personenanzahl<input type="number" min="1" max="8" name="persons" value="1"></label>
-                <label>Rückfahrtzeit<input type="time" name="returnTime"></label>
+                <label>RÃƒÂ¼ckfahrtzeit<input type="time" name="returnTime"></label>
                 <label>Krankenkasse<input name="insurance"></label>
-                <label>Priorität<select name="priority"><option>niedrig</option><option selected>mittel</option><option>hoch</option><option>dringend</option></select></label>
+                <label>PrioritÃƒÂ¤t<select name="priority"><option>niedrig</option><option selected>mittel</option><option>hoch</option><option>dringend</option></select></label>
                 <label class="full">Notiz<textarea name="note"></textarea></label>
               </div>
             </details>
@@ -104,15 +106,15 @@
         <section class="admin-panel ts-pane" data-intake-pane="note">
           <div class="admin-panel-head">
             <h2>Nur Notiz</h2>
-            <small>Für Situationen ohne Zeit für eine vollständige Erfassung.</small>
+            <small>FÃƒÂ¼r Situationen ohne Zeit fÃƒÂ¼r eine vollstÃƒÂ¤ndige Erfassung.</small>
           </div>
           <form class="ts-form" data-note-form>
-            <label>Was muss später eingetragen werden?
-              <textarea name="note" required placeholder="Müller morgen 8 Uhr Dialyse Speyer, Rückfahrt offen."></textarea>
+            <label>Was muss spÃƒÂ¤ter eingetragen werden?
+              <textarea name="note" required placeholder="MÃƒÂ¼ller morgen 8 Uhr Dialyse Speyer, RÃƒÂ¼ckfahrt offen."></textarea>
             </label>
-            <label>Erinnerung<select name="reminder"><option value="">keine</option><option>heute</option><option>später</option><option>morgen früh</option></select></label>
+            <label>Erinnerung<select name="reminder"><option value="">keine</option><option>heute</option><option>spÃƒÂ¤ter</option><option>morgen frÃƒÂ¼h</option></select></label>
             <label>Datum<input type="date" name="date"></label>
-            <label>Priorität<select name="priority"><option>niedrig</option><option selected>mittel</option><option>hoch</option><option>dringend</option></select></label>
+            <label>PrioritÃƒÂ¤t<select name="priority"><option>niedrig</option><option selected>mittel</option><option>hoch</option><option>dringend</option></select></label>
           </form>
         </section>
       </section>
@@ -122,13 +124,13 @@
           <h2>Zuletzt vorgemerkt</h2>
           <small>Lokal gespeichert</small>
         </div>
-        <p class="m-note" data-mobile-save-feedback>Bereit für schnelle Erfassung.</p>
+        <p class="m-note" data-mobile-save-feedback>Bereit fÃƒÂ¼r schnelle Erfassung.</p>
         <div class="ts-last-list" data-last-entries></div>
       </section>
 
       <div class="ts-bottom-bar">
         <button class="admin-btn" type="button" data-primary-save>Termin vormerken</button>
-        <button class="admin-btn admin-btn-secondary" type="button" data-secondary-save>Speichern und prüfen</button>
+        <button class="admin-btn admin-btn-secondary" type="button" data-secondary-save>Speichern und prÃƒÂ¼fen</button>
       </div>
     </main>
   </div>
@@ -136,3 +138,7 @@
   <script src="termin-schnellerfassung.js"></script>
 </body>
 </html>
+
+
+
+

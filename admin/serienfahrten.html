@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Serienfahrten</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
-  <link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="serienfahrten.css">
-</head>
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -45,14 +47,14 @@
       </header>
 
       <section class="admin-panel series-overview">
-        <div class="admin-panel-head"><h2>Übersicht</h2></div>
+        <div class="admin-panel-head"><h2>ÃƒÅ“bersicht</h2></div>
         <div class="series-overview-grid">
           <article class="series-overview-card"><small>Aktive Serien</small><strong data-series-stat="active">0</strong></article>
           <article class="series-overview-card"><small>Pausiert</small><strong data-series-stat="paused">0</strong></article>
           <article class="series-overview-card"><small>Heute geplant</small><strong data-series-stat="today">0</strong></article>
           <article class="series-overview-card"><small>Offene Konflikte</small><strong data-series-stat="conflicts">0</strong></article>
-          <article class="series-overview-card"><small>Mit Rückfahrt</small><strong data-series-stat="return">0</strong></article>
-          <article class="series-overview-card"><small>Nächste 7 Tage</small><strong data-series-stat="next7">0</strong></article>
+          <article class="series-overview-card"><small>Mit RÃƒÂ¼ckfahrt</small><strong data-series-stat="return">0</strong></article>
+          <article class="series-overview-card"><small>NÃƒÂ¤chste 7 Tage</small><strong data-series-stat="next7">0</strong></article>
         </div>
       </section>
 
@@ -60,7 +62,7 @@
         <article class="admin-panel series-form-panel">
           <div class="admin-panel-head">
             <h2>Neue Serienfahrt</h2>
-            <button class="admin-btn admin-btn-secondary" type="button" data-series-action="resetForm">Zurücksetzen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-series-action="resetForm">ZurÃƒÂ¼cksetzen</button>
           </div>
 
           <form class="series-form" data-series-form>
@@ -71,7 +73,7 @@
             <label><span>Startdatum</span><input class="driver-search-input" type="date" name="startDate" required></label>
             <label><span>Enddatum (optional)</span><input class="driver-search-input" type="date" name="endDate"></label>
             <label><span>Abholzeit</span><input class="driver-search-input" type="time" name="pickupTime" required></label>
-            <label><span>Rückfahrtzeit</span><input class="driver-search-input" type="time" name="returnTime"></label>
+            <label><span>RÃƒÂ¼ckfahrtzeit</span><input class="driver-search-input" type="time" name="returnTime"></label>
             <label><span>Tage</span>
               <div class="series-days">
                 <label><input type="checkbox" name="days" value="Mo">Mo</label>
@@ -83,7 +85,7 @@
                 <label><input type="checkbox" name="days" value="So">So</label>
               </div>
             </label>
-            <label><span>Priorität</span><select class="series-select" name="priority"><option>Hoch</option><option selected>Mittel</option><option>Niedrig</option></select></label>
+            <label><span>PrioritÃƒÂ¤t</span><select class="series-select" name="priority"><option>Hoch</option><option selected>Mittel</option><option>Niedrig</option></select></label>
             <label><span>Rollstuhl</span><select class="series-select" name="wheelchair"><option>Nein</option><option>Ja</option></select></label>
             <label><span>Begleitperson</span><select class="series-select" name="companion"><option>Nein</option><option>Ja</option></select></label>
             <label class="full"><span>Ausnahmen / Feiertage</span><textarea class="driver-search-input" name="exceptions" placeholder="z. B. 24.12.2026;31.12.2026"></textarea></label>
@@ -91,7 +93,7 @@
             <label class="full"><span>Notizen</span><textarea class="driver-search-input" name="notes"></textarea></label>
             <div class="series-form-actions full">
               <button class="admin-btn" type="submit">Serienfahrt speichern</button>
-              <button class="admin-btn admin-btn-secondary" type="button" data-series-action="openDispo">In Live-Dispo öffnen</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-series-action="openDispo">In Live-Dispo ÃƒÂ¶ffnen</button>
             </div>
           </form>
         </article>
@@ -103,7 +105,7 @@
           </section>
 
           <section class="series-block">
-            <div class="admin-panel-head"><h3>Nächste Fahrten (14 Tage)</h3></div>
+            <div class="admin-panel-head"><h3>NÃƒÂ¤chste Fahrten (14 Tage)</h3></div>
             <div class="series-calendar" data-series-calendar></div>
           </section>
 
@@ -119,10 +121,10 @@
         <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="series-modal-title">
           <header class="admin-modal-head">
             <h3 id="series-modal-title" data-series-modal-title>Serienfahrt</h3>
-            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-series-modal-close>✕</button>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schlieÃƒÅ¸en" data-series-modal-close>Ã¢Å“â€¢</button>
           </header>
           <div class="admin-modal-body" data-series-modal-body></div>
-          <footer class="admin-modal-foot"><button class="admin-btn admin-btn-secondary" type="button" data-series-modal-close>Schließen</button></footer>
+          <footer class="admin-modal-foot"><button class="admin-btn admin-btn-secondary" type="button" data-series-modal-close>SchlieÃƒÅ¸en</button></footer>
         </section>
       </div>
     </main>
@@ -131,3 +133,7 @@
   <script src="serienfahrten.js"></script>
 </body>
 </html>
+
+
+
+

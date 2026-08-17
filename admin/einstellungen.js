@@ -64,7 +64,13 @@
     const coreState = window.AdminPlanningDemoV25.loadState();
     const assignments = coreState.pajAssignments || {};
 
-    vehicleSelect.innerHTML = vehicles.map((vehicle) => `<option value="${vehicle.id}">${vehicle.plate || vehicle.name || vehicle.id}</option>`).join("");
+    const vehicleOptions = vehicles
+      .filter((vehicle) => String(vehicle?.id || "").trim())
+      .map((vehicle) => `<option value="${vehicle.id}">${vehicle.plate || vehicle.name || vehicle.id}</option>`);
+    vehicleSelect.innerHTML = vehicleOptions.length
+      ? vehicleOptions.join("")
+      : '<option value="" selected disabled>Kein Fahrzeug verfügbar</option>';
+    vehicleSelect.disabled = vehicleOptions.length === 0;
 
     const rows = vehicles.map((vehicle) => {
       const row = assignments[vehicle.id];

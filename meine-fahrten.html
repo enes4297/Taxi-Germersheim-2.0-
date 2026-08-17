@@ -132,17 +132,57 @@
     </a>
   </nav>
 
-  <script src="customer-auth-demo.js"></script>
+  <script src="customer-auth.js"></script>
   <script src="script.js"></script>
   <script src="customer-journey-demo.js"></script>
   <script>
-    (function () {
-      if (window.CustomerAuthDemo && window.CustomerAuthDemo.requireLogin({
+    (async function () {
+      const auth = window.CustomerAuth || null;
+      if (auth && typeof auth.requireLoginAsync === 'function') {
+        const gated = await auth.requireLoginAsync({
+          targetSelector: '#customer-rides',
+          pageTitle: 'Meine Fahrten',
+          gateTitle: 'Bitte zuerst anmelden',
+          gateDescription: 'Melde dich an, um deine Fahrten zu sehen.',
+          gateButtons: [
+            { label: 'Zur Anmeldung', href: 'anmelden.html' },
+            { label: 'Zur Startseite', href: 'index.html' }
+          ]
+        });
+        if (gated) {
+          return;
+        }
+      } else if (auth && typeof auth.requireLogin === 'function' && auth.requireLogin({
         targetSelector: '#customer-rides',
-        pageTitle: 'Meine Fahrten'
+        pageTitle: 'Meine Fahrten',
+        gateTitle: 'Bitte zuerst anmelden',
+        gateDescription: 'Melde dich an, um deine Fahrten zu sehen.',
+        gateButtons: [
+          { label: 'Zur Anmeldung', href: 'anmelden.html' },
+          { label: 'Zur Startseite', href: 'index.html' }
+        ]
       })) {
         return;
       }
+
+      if (auth && typeof auth.patchNav === 'function') {
+        auth.patchNav();
+      }
+
+      const rideLists = document.querySelectorAll('.journey-list');
+      const rideSections = document.querySelectorAll('.journey-section');
+      const emptyMessage = 'Deine Fahrten werden hier angezeigt, sobald die Fahrtenhistorie mit deinem Kundenkonto verbunden ist.';
+
+      rideLists.forEach(function (list) {
+        list.innerHTML = '<div class="journey-empty-state">' + emptyMessage + '</div>';
+      });
+
+      rideSections.forEach(function (section) {
+        const count = section.querySelector('.journey-pill');
+        if (count) {
+          count.textContent = '0';
+        }
+      });
 
       const DEMO = window.CustomerJourneyDemo;
       if (!DEMO || !Array.isArray(DEMO.rides)) return;

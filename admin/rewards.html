@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxi Germersheim - Rewards Management</title>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
+  <script src="auth.js"></script>
+  <script src="sidebar.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="rewards.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Interne Navigation">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Taxi Germersheim Logo">
+        <div><strong>Dispatcher</strong><small>Interner Bereich</small></div>
+      </div>
+      <nav class="admin-nav" data-admin-sidebar></nav>
+    </aside>
+
+    <main class="admin-main rewards-main">
+      <header class="admin-topbar">
+        <div class="admin-topbar-title">
+          <h1>Rewards Management</h1>
+          <p>Treueprogramm, Punkte, Level und Gutscheine zentral verwalten.</p>
+        </div>
+        <div class="admin-topbar-actions">
+          <button class="admin-btn admin-btn-secondary" type="button" data-rewards-action="member-add">+ Rewards-Mitglied</button>
+          <button class="admin-btn" type="button" data-rewards-action="points-add">+ Punkte buchen</button>
+        </div>
+      </header>
+
+      <section class="rewards-kpis" aria-label="Rewards-Kennzahlen" data-rewards-kpis></section>
+
+      <section class="admin-panel rewards-members-panel">
+        <div class="admin-panel-head">
+          <div><h2>Rewards-Mitglieder</h2><small>Supabase-Konten mit nachvollziehbarem Punkte-Ledger</small></div>
+          <span class="rewards-result-count" data-rewards-result-count></span>
+        </div>
+        <div class="rewards-filters">
+          <label class="rewards-field rewards-search"><span>Suche</span><input type="search" placeholder="Name, Telefon oder E-Mail suchen" data-rewards-search></label>
+          <label class="rewards-field"><span>Level</span><select data-rewards-level-filter><option value="Alle">Alle Level</option><option>Bronze</option><option>Silber</option><option>Gold</option><option>Platin</option><option>VIP</option></select></label>
+          <label class="rewards-field"><span>Status</span><select data-rewards-status-filter><option value="Alle">Alle</option><option>Aktiv</option><option>Pausiert</option><option>Gesperrt</option></select></label>
+          <label class="rewards-field"><span>Sortierung</span><select data-rewards-sort><option value="points-desc">Punktestand</option><option value="level-desc">Level</option><option value="activity-desc">Letzte Aktivität</option><option value="rides-desc">Qualifizierende Fahrten</option></select></label>
+          <label class="rewards-check"><input type="checkbox" data-rewards-voucher-only><span>Nur mit Gutschein</span></label>
+        </div>
+        <div class="admin-table-wrap rewards-table-wrap">
+          <table class="admin-table rewards-members-table">
+            <thead><tr><th>Kunde</th><th>Telefon</th><th>Level</th><th>Punktestand</th><th>Qualifizierende Fahrten</th><th>Letzte Aktivität</th><th>Offene Gutscheine</th><th>Status</th><th>Aktionen</th></tr></thead>
+            <tbody data-rewards-members></tbody>
+          </table>
+        </div>
+        <div class="admin-empty-state" data-rewards-members-empty hidden><strong>Keine Rewards-Mitglieder gefunden.</strong><p>Keine Ergebnisse für diese Filter.</p><button class="admin-btn admin-btn-secondary" type="button" data-rewards-reset-filter>Filter zurücksetzen</button></div>
+      </section>
+
+      <section class="rewards-info-grid">
+        <article class="admin-panel rewards-rule-card">
+          <div class="admin-panel-head"><h2>Was zählt für Rewards?</h2><span class="rewards-badge is-gold">Regelkarte</span></div>
+          <p class="rewards-rule-intro">Punktevergabe gemäß hinterlegter Rewards-Regel.</p>
+          <div class="rewards-rule-list">
+            <div class="is-eligible"><strong>Normale Taxifahrten</strong><span>punkteberechtigt</span></div>
+            <div><strong>Krankenfahrten</strong><span>nicht punkteberechtigt</span></div>
+            <div><strong>Dialysefahrten</strong><span>nicht punkteberechtigt</span></div>
+            <div><strong>Flughafenfahrten</strong><span>nicht punkteberechtigt</span></div>
+          </div>
+          <div class="rewards-rule-facts"><p><span>Geburtstagsbonus</span><strong>200 Punkte</strong></p><p><span>VIP</span><strong>ab 100 qualifizierenden Fahrten</strong></p></div>
+        </article>
+
+        <article class="admin-panel">
+          <div class="admin-panel-head"><h2>Automatische Boni</h2><label class="rewards-toggle"><input type="checkbox" checked><span>Aktiv</span></label></div>
+          <div class="rewards-bonus-row"><div><strong>Geburtstagsbonus</strong><p>Die automatische Jahresbuchung ist noch nicht aktiviert.</p></div><strong>200 Punkte</strong></div>
+          <small>Automatische Fahrtverbuchung wartet auf echte Fahrtenintegration.</small>
+        </article>
+
+        <article class="admin-panel rewards-yumaks-card">
+          <div class="admin-panel-head"><h2>Yumaks Box</h2></div>
+          <p>Besonderer Überraschungsgewinn im Rewards-Programm.</p>
+          <dl class="rewards-compact-stats">
+            <div><dt>Heute gewonnen</dt><dd data-yumaks-today>0</dd></div>
+            <div><dt>Dieser Monat</dt><dd data-yumaks-month>0</dd></div>
+            <div><dt>Noch auszugeben</dt><dd data-yumaks-pending>0</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="admin-panel rewards-wheel-panel">
+        <div class="admin-panel-head"><div><h2>Glücksrad</h2><small>Feste Gewinnoptionen des Rewards-Programms</small></div><button class="admin-btn admin-btn-secondary" type="button" data-rewards-action="wheel-config">Glücksrad konfigurieren</button></div>
+        <div class="rewards-wheel-layout">
+          <div class="rewards-wheel-stats">
+            <article><small>Status</small><strong data-wheel-status>Aktiv</strong></article>
+            <article><small>Teilnahmen heute</small><strong data-wheel-participations>0</strong></article>
+            <article><small>Gewinne heute</small><strong data-wheel-wins>0</strong></article>
+            <article><small>Ausgegebene Gutscheine</small><strong data-wheel-gift-vouchers>0</strong></article>
+          </div>
+          <div><label class="rewards-toggle rewards-wheel-toggle"><input type="checkbox" checked><span>Aktiv</span></label><div class="rewards-prizes" aria-label="Mögliche Gewinne"><span>5 Punkte</span><span>10 Punkte</span><span>20 Punkte</span><span>30 Punkte</span><span>50 Punkte</span><span>20 € Gutschein</span><span>Yumaks Box</span></div></div>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><div><h2>Gutscheine</h2><small>Ausgestellte Rewards-Gutscheine</small></div><button class="admin-btn admin-btn-secondary" type="button" data-rewards-action="voucher-issue">+ Gutschein ausstellen</button></div>
+        <div class="admin-table-wrap"><table class="admin-table rewards-voucher-table"><thead><tr><th>Gutscheincode</th><th>Kunde</th><th>Wert</th><th>Status</th><th>Ausgestellt am</th><th>Gültig bis</th><th>Eingelöst am</th><th>Aktionen</th></tr></thead><tbody data-rewards-vouchers></tbody></table></div>
+        <div class="admin-empty-state" data-rewards-vouchers-empty hidden><strong>Keine Gutscheine vorhanden.</strong><p>Eine bestehende Gutschein-Persistenz wurde im Projekt nicht gefunden.</p></div>
+      </section>
+
+      <section class="admin-panel">
+        <div class="admin-panel-head"><div><h2>Rewards-Einstellungen</h2><small>Backendstatus und vorbereitete Funktionen</small></div><button class="admin-btn admin-btn-secondary" type="button" data-rewards-action="settings-review">Einstellungen prüfen</button></div>
+        <div class="rewards-settings-grid">
+          <article><div><strong>Rewards-Programm</strong><small>Gesamtes Treueprogramm</small></div><label class="rewards-toggle"><input type="checkbox" checked><span>Aktiv</span></label></article>
+          <article><div><strong>Geburtstagsbonus</strong><small>200 Punkte</small></div><label class="rewards-toggle"><input type="checkbox" checked><span>Aktiv</span></label></article>
+          <article><div><strong>Glücksrad</strong><small>Tägliche Teilnahme</small></div><label class="rewards-toggle"><input type="checkbox" checked><span>Aktiv</span></label></article>
+          <article><div><strong>Yumaks Box</strong><small>Überraschungsgewinn</small></div><label class="rewards-toggle"><input type="checkbox" checked><span>Aktiv</span></label></article>
+          <article><div><strong>Gutschein-Nutzung</strong><small>Rewards-Gutscheine einlösen</small></div><label class="rewards-toggle"><input type="checkbox" checked><span>Aktiv</span></label></article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <aside class="rewards-drawer" aria-labelledby="rewards-drawer-title" data-rewards-drawer hidden>
+    <div class="rewards-drawer-head"><div><small>Rewards-Mitglied</small><h2 id="rewards-drawer-title" data-rewards-drawer-title>Mitglieddetails</h2></div><button class="admin-icon-btn" type="button" aria-label="Detailansicht schließen" data-rewards-drawer-close>✕</button></div>
+    <div class="rewards-drawer-body" data-rewards-drawer-body></div>
+  </aside>
+  <div class="rewards-drawer-backdrop" data-rewards-drawer-close hidden></div>
+
+  <div class="admin-modal" data-rewards-modal hidden>
+    <div class="admin-modal-backdrop" data-rewards-modal-close></div>
+    <section class="admin-modal-dialog rewards-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="rewards-modal-title">
+      <header class="admin-modal-head"><h3 id="rewards-modal-title" data-rewards-modal-title>Rewards-Aktion</h3><button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-rewards-modal-close>✕</button></header>
+      <div class="admin-modal-body" data-rewards-modal-body></div>
+      <footer class="admin-modal-foot" data-rewards-modal-foot></footer>
+    </section>
+  </div>
+
+  <div class="rewards-toast" role="status" aria-live="polite" data-rewards-toast hidden></div>
+  <script src="rewards.js"></script>
+</body>
+</html>
