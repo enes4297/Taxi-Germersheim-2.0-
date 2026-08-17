@@ -4,102 +4,159 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Registrieren | Taxi Germersheim</title>
-  <meta name="description" content="Demo-Registrierung fuer neue Kundinnen und Kunden von Taxi Germersheim inklusive Vorbereitung fuer die Konto-Einrichtung." />
+  <meta name="description" content="Konto für Taxi Germersheim erstellen und Fahrten, Rewards und Gutscheine zentral verwalten." />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="public-visual-repair.css" />
   <link rel="stylesheet" href="auth-demo.css" />
 </head>
-<body class="auth-page">
-  <nav class="public-compact-nav" aria-label="Öffentliche Schnellnavigation">
-    <a class="public-back-home" data-public-back href="index.html">Zurück</a>
-    <div class="public-compact-nav-links">
-      <a href="index.html?page=services">Leistungen</a>
-      <a href="flotte.html">Fahrzeugflotte</a>
-      <a href="index.html?page=booking">Zur Buchung ohne Konto</a>
-    </div>
-  </nav>
-  <main class="auth-shell" aria-labelledby="authRegisterTitle">
-    <a class="auth-brand" href="index.html">
+<body class="auth-page auth-page--premium auth-page--register">
+  <header class="public-auth-header" aria-label="Öffentliche Navigation">
+    <a class="public-auth-brand" href="index.html" aria-label="Taxi Germersheim Startseite">
       <img src="logo.png" alt="Taxi Germersheim" />
       <span>Taxi Germersheim</span>
     </a>
 
-    <header class="auth-head">
-      <h1 id="authRegisterTitle">Demo-Konto erstellen</h1>
-      <p>Registrierung fuer das Kundenportal als Frontend-Demo ohne echte Verifizierung oder Backend.</p>
-    </header>
-
-    <form id="registerForm" class="auth-form" novalidate>
-      <div class="onboarding-grid cols-2">
-        <div class="auth-field">
-          <label for="regFirstName">Vorname</label>
-          <input id="regFirstName" name="firstName" type="text" autocomplete="given-name" required />
-        </div>
-        <div class="auth-field">
-          <label for="regLastName">Nachname</label>
-          <input id="regLastName" name="lastName" type="text" autocomplete="family-name" required />
-        </div>
-      </div>
-
-      <div class="auth-field">
-        <label for="regEmail">E-Mail</label>
-        <input id="regEmail" name="email" type="email" autocomplete="email" required />
-      </div>
-
-      <div class="auth-field">
-        <label for="regPhone">Telefon</label>
-        <input id="regPhone" name="phone" type="tel" autocomplete="tel" placeholder="z. B. +49 123 456789" required />
-      </div>
-
-      <div class="auth-field">
-        <label for="regPassword">Passwort</label>
-        <div class="auth-pass-wrap">
-          <input id="regPassword" name="password" type="password" minlength="8" autocomplete="new-password" required />
-          <button class="auth-pass-toggle" type="button" data-target="regPassword" aria-label="Passwort anzeigen">Anzeigen</button>
-        </div>
-      </div>
-
-      <div class="auth-strength" aria-hidden="true"><i id="passwordStrengthBar"></i></div>
-      <ul id="passwordRules" class="auth-rule-list" aria-live="polite">
-        <li data-rule="len">Mindestens 8 Zeichen</li>
-        <li data-rule="upper">Mindestens 1 Grossbuchstabe</li>
-        <li data-rule="number">Mindestens 1 Zahl</li>
-      </ul>
-
-      <div class="auth-field">
-        <label for="regPasswordConfirm">Passwort bestätigen</label>
-        <input id="regPasswordConfirm" name="passwordConfirm" type="password" minlength="8" autocomplete="new-password" required />
-      </div>
-
-      <label class="auth-check" for="regTerms">
-        <input id="regTerms" name="termsAccepted" type="checkbox" required />
-        <span>Ich akzeptiere die Demo-Nutzungsbedingungen und Datenschutzhinweise.</span>
-      </label>
-
-      <p id="registerError" class="auth-error" aria-live="assertive"></p>
-      <button class="auth-submit" type="submit">Registrieren und einrichten</button>
-    </form>
-
-    <nav class="auth-links" aria-label="Registrierung Hilfslinks">
-      <a href="anmelden.html">Schon ein Konto? Anmelden</a>
-      <a href="index.html">Zur Startseite</a>
-      <a href="index.html?page=booking">Ohne Anmeldung fortfahren</a>
+    <nav class="public-auth-nav" aria-label="Hauptnavigation">
+      <a href="index.html">Startseite</a>
+      <a href="index.html?page=services">Leistungen</a>
+      <a href="flotte.html">Fahrzeugflotte</a>
+      <a href="rewards.html">Rewards</a>
+      <a href="hilfe-kontakt.html">Kontakt</a>
     </nav>
+
+    <a class="public-auth-cta" href="index.html?page=booking">Ohne Konto buchen</a>
+  </header>
+
+  <main class="auth-shell auth-shell--register" aria-labelledby="authRegisterTitle">
+    <section class="auth-register-hero" aria-label="Warum ein Konto sinnvoll ist">
+      <p class="auth-register-eyebrow">DEIN TAXI-GERMERSHEIM-KONTO</p>
+      <h1 id="authRegisterTitle">Konto erstellen</h1>
+      <p class="auth-register-subline">Erstelle dein Taxi-Germersheim-Konto in wenigen Schritten.</p>
+    </section>
+
+    <div class="auth-register-surface" aria-label="Registrierungsbereich">
+
+      <section class="auth-card auth-register-card" aria-label="Registrierungsformular">
+        <div class="auth-card-header">
+          <h2 class="auth-card-kicker">Konto erstellen</h2>
+          <p class="auth-card-subtitle">In weniger als einer Minute startklar.</p>
+        </div>
+
+        <form id="registerForm" class="auth-form auth-register-form" novalidate>
+          <div class="auth-form-section">
+            <p class="auth-form-section-title">Persönliche Daten</p>
+            <div class="auth-register-field-row">
+              <div class="auth-field">
+                <label for="regFirstName">Vorname</label>
+                <input id="regFirstName" name="firstName" type="text" autocomplete="given-name" required />
+              </div>
+              <div class="auth-field">
+                <label for="regLastName">Nachname</label>
+                <input id="regLastName" name="lastName" type="text" autocomplete="family-name" required />
+              </div>
+            </div>
+
+            <div class="auth-field">
+              <label for="regEmail">E-Mail-Adresse</label>
+              <input id="regEmail" name="email" type="email" autocomplete="email" required />
+            </div>
+
+            <div class="auth-field">
+              <label for="regPhone">Telefon</label>
+              <input id="regPhone" name="phone" type="tel" autocomplete="tel" placeholder="z. B. +49 123 456789" required />
+            </div>
+          </div>
+
+          <div class="auth-form-section">
+            <p class="auth-form-section-title">Sicherheit</p>
+
+            <div class="auth-field">
+              <label for="regPassword">Passwort</label>
+              <div class="auth-pass-wrap auth-register-pass-wrap">
+                <input id="regPassword" name="password" type="password" minlength="8" autocomplete="new-password" required />
+                <span class="auth-register-toggle-slot" aria-hidden="true">
+                  <button class="auth-pass-toggle auth-register-pass-toggle" type="button" data-target="regPassword" aria-label="Passwort anzeigen">Anzeigen</button>
+                </span>
+              </div>
+            </div>
+
+            <div class="auth-password-strength" aria-live="polite">
+              <div class="auth-strength auth-register-strength" aria-hidden="true"><i id="passwordStrengthBar"></i></div>
+              <div class="auth-strength-meta">
+                <span id="passwordStrengthText" class="auth-strength-text"> </span>
+              </div>
+            </div>
+            <ul id="passwordRules" class="auth-rule-list auth-register-rule-list" aria-live="polite">
+              <li data-rule="len">8 Zeichen</li>
+              <li data-rule="upper">Großbuchstabe</li>
+              <li data-rule="number">Zahl</li>
+            </ul>
+
+            <div class="auth-field">
+              <label for="regPasswordConfirm">Passwort bestätigen</label>
+              <input id="regPasswordConfirm" name="passwordConfirm" type="password" minlength="8" autocomplete="new-password" required />
+            </div>
+          </div>
+
+          <label class="auth-check auth-register-check" for="regTerms">
+            <input id="regTerms" name="termsAccepted" type="checkbox" required />
+            <span>Ich akzeptiere die <a href="datenschutz.html">Nutzungsbedingungen</a> und <a href="datenschutz.html">Datenschutzhinweise</a>.</span>
+          </label>
+
+          <p id="registerError" class="auth-error" aria-live="assertive"></p>
+          <button class="auth-submit" type="submit">Konto erstellen</button>
+        </form>
+
+        <div class="auth-split-links">
+          <span>Du hast bereits ein Konto?</span>
+          <a href="anmelden.html">Anmelden</a>
+        </div>
+
+        <div class="auth-trust" aria-label="Sichere Anmeldung">
+          <span class="auth-trust-icon" aria-hidden="true"></span>
+          <span>Dein Konto. Deine Daten. Sicher verwaltet.</span>
+        </div>
+      </section>
+    </div>
   </main>
 
-  <script src="customer-auth-demo.js"></script>
+  <footer class="auth-footer" aria-label="Footer der Auth-Seite">
+    <a href="datenschutz.html">Datenschutz</a>
+    <a href="impressum.html">Impressum</a>
+    <a href="hilfe-kontakt.html">Kontakt</a>
+  </footer>
+
+  <script src="customer-auth.js"></script>
   <script>
     (function () {
       var form = document.getElementById("registerForm");
       var error = document.getElementById("registerError");
       var passwordInput = document.getElementById("regPassword");
-      var passwordConfirmInput = document.getElementById("regPasswordConfirm");
       var rulesContainer = document.getElementById("passwordRules");
       var strengthBar = document.getElementById("passwordStrengthBar");
+      var strengthText = document.getElementById("passwordStrengthText");
 
-      if (window.CustomerAuthDemo && window.CustomerAuthDemo.isLoggedIn()) {
-        window.location.replace("meinkonto.html");
-        return;
+      async function redirectOnSession() {
+        const auth = window.CustomerAuth;
+        if (auth && typeof auth.hydrateSession === "function") {
+          await auth.hydrateSession();
+        }
+
+        const snapshot = auth && typeof auth.getSessionSnapshot === "function" ? auth.getSessionSnapshot() : null;
+        const hasValidCustomerSession = Boolean(
+          snapshot &&
+          snapshot.session &&
+          snapshot.user &&
+          snapshot.user.id &&
+          snapshot.user.is_anonymous !== true &&
+          (snapshot.linked === true || Boolean(snapshot.customerId))
+        );
+
+        if (hasValidCustomerSession) {
+          window.location.replace("meinkonto.html");
+          return true;
+        }
+        return false;
       }
 
       function evaluatePassword(password) {
@@ -117,7 +174,28 @@
 
       function renderPasswordState(password) {
         var result = evaluatePassword(password);
+        var strengthContainer = strengthBar.closest(".auth-password-strength");
+        var hasInput = Boolean((password || "").length);
+        var fulfilled = Object.keys(result.rules).filter(function (ruleKey) {
+          return result.rules[ruleKey];
+        }).length;
+
+        strengthContainer.style.display = hasInput ? "grid" : "none";
         strengthBar.style.setProperty("--auth-strength", String(result.score) + "%");
+
+        if (result.score <= 33) {
+          strengthText.textContent = "Schwach";
+          strengthText.style.color = "#e97a69";
+          strengthBar.style.backgroundColor = "#e97a69";
+        } else if (result.score <= 66) {
+          strengthText.textContent = "Mittel";
+          strengthText.style.color = "#f0b35c";
+          strengthBar.style.backgroundColor = "#f0b35c";
+        } else {
+          strengthText.textContent = "Stark";
+          strengthText.style.color = "#8adca0";
+          strengthBar.style.backgroundColor = "#8adca0";
+        }
 
         Object.keys(result.rules).forEach(function (ruleKey) {
           var item = rulesContainer.querySelector('[data-rule="' + ruleKey + '"]');
@@ -144,7 +222,7 @@
         });
       });
 
-      form.addEventListener("submit", function (event) {
+      form.addEventListener("submit", async function (event) {
         event.preventDefault();
         error.textContent = "";
 
@@ -183,22 +261,30 @@
         }
 
         if (!termsAccepted) {
-          error.textContent = "Bitte die Demo-Bedingungen akzeptieren.";
+          error.textContent = "Bitte die Nutzungsbedingungen akzeptieren.";
           return;
         }
 
-        var profileDraft = {
-          fullName: firstName + " " + lastName,
-          firstName: firstName,
-          lastName: lastName,
-          email: email,
-          phone: phone,
-          registeredAt: Date.now()
-        };
+        const auth = window.CustomerAuth;
+        if (!auth || typeof auth.signUp !== "function") {
+          error.textContent = "Registrierung ist derzeit nicht verfügbar.";
+          return;
+        }
 
-        sessionStorage.setItem("taxiCustomerDemoRegistrationDraft", JSON.stringify(profileDraft));
-        window.location.href = "konto-einrichtung.html";
+        try {
+          await auth.signUp(email, password, {
+            firstName: firstName,
+            lastName: lastName,
+            fullName: firstName + " " + lastName,
+            phone: phone
+          });
+          window.location.href = "anmelden.html?registered=1";
+        } catch (registerError) {
+          error.textContent = registerError && registerError.message ? registerError.message : "Registrierung fehlgeschlagen.";
+        }
       });
+
+      redirectOnSession();
     })();
   </script>
 </body>

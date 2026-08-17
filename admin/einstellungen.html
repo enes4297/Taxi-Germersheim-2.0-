@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Einstellungen</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
+  <script src="sidebar.js"></script>
   <script src="planung-v25-shared.js"></script>
-  <link rel="stylesheet" href="admin.css">
-</head>
+<link rel="stylesheet" href="admin.css">
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -20,25 +23,13 @@
         </div>
       </div>
 
-      <nav class="admin-nav">
-        <a class="admin-nav-item" href="index.html">Dashboard</a>
-        <a class="admin-nav-item" href="index.html">Fahrten</a>
-        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
-        <a class="admin-nav-item" href="kunden.html">Kunden</a>
-        <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
-        <a class="admin-nav-item" href="schichtplanung.html">Schichtplanung</a>
-        <a class="admin-nav-item" href="#" aria-disabled="true">Rewards</a>
-        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
-        <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
-        <a class="admin-nav-item is-active" href="einstellungen.html" aria-current="page">Einstellungen</a>
-        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
-      </nav>
+      <nav class="admin-nav" data-admin-sidebar></nav>
     </aside>
 
     <main class="admin-main">
       <header class="admin-topbar">
         <div class="admin-topbar-title">
-          <h1>Admin Einstellungen</h1>
+          <h1>Admin-Einstellungen</h1>
           <p>Unternehmensprofil, Benachrichtigungen und Systemstatus mit Demo-Daten</p>
         </div>
 
@@ -55,7 +46,7 @@
         </div>
       </header>
 
-      <section class="settings-grid" aria-label="Admin Einstellungen">
+      <section class="settings-grid" aria-label="Admin-Einstellungen">
         <article class="admin-panel settings-card" data-settings-roles="Chef" data-settings-section="company">
           <div class="admin-panel-head">
             <h2>Unternehmensprofil</h2>
@@ -251,3 +242,7 @@
   <script src="einstellungen.js"></script>
 </body>
 </html>
+
+
+
+

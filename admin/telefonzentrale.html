@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Telefonzentrale</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
   <script src="personal-shared.js"></script>
-  <link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="telefonzentrale.css">
-</head>
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -38,12 +40,12 @@
       <header class="admin-topbar">
         <div class="admin-topbar-title">
           <h1>Telefonzentrale</h1>
-          <p>Schnelle Fahrtannahme, Kundeninfos, Rückrufe und Aufgaben - nur Demo ohne Telefonanlage</p>
+          <p>Schnelle Fahrtannahme, Kundeninfos, RÃƒÂ¼ckrufe und Aufgaben - nur Demo ohne Telefonanlage</p>
         </div>
         <div class="admin-topbar-actions">
           <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
           <button class="admin-icon-btn" type="button" aria-label="Hinweise">
-            <span>📞</span>
+            <span>Ã°Å¸â€œÅ¾</span>
             <b data-call-open-count>0</b>
           </button>
           <button class="admin-user" type="button" aria-label="Benutzer">
@@ -71,9 +73,9 @@
             <div class="call-action-grid">
               <button class="admin-btn" type="button" title="Anruf annehmen" data-call-action="accept">Annehmen</button>
               <button class="admin-btn admin-btn-secondary" type="button" title="Anruf halten" data-call-action="hold">Halten</button>
-              <button class="admin-btn admin-btn-secondary" type="button" title="Gespräch fortsetzen" data-call-action="resume">Fortsetzen</button>
+              <button class="admin-btn admin-btn-secondary" type="button" title="GesprÃƒÂ¤ch fortsetzen" data-call-action="resume">Fortsetzen</button>
               <button class="admin-btn admin-btn-danger" type="button" title="Anruf beenden" data-call-action="end">Beenden</button>
-              <button class="admin-btn admin-btn-warning" type="button" title="Rückruf eintragen" data-call-action="callback">Rückruf eintragen</button>
+              <button class="admin-btn admin-btn-warning" type="button" title="RÃƒÂ¼ckruf eintragen" data-call-action="callback">RÃƒÂ¼ckruf eintragen</button>
               <button class="admin-btn admin-btn-secondary" type="button" title="Neuen Kunden aus Anruf anlegen" data-call-action="newCustomer">Neuen Kunden anlegen</button>
             </div>
           </article>
@@ -82,7 +84,7 @@
             <div class="call-last-list" data-call-last-list></div>
           </article>
         </div>
-        <p class="call-feedback" data-call-feedback>Bereit für eingehende Demo-Anrufe.</p>
+        <p class="call-feedback" data-call-feedback>Bereit fÃƒÂ¼r eingehende Demo-Anrufe.</p>
       </section>
 
       <nav class="call-mobile-tabs" aria-label="Telefonzentrale Mobilnavigation">
@@ -96,7 +98,7 @@
         <article class="admin-panel call-col-left" data-call-pane="anruf">
           <div class="admin-panel-head">
             <h2>Kundensuche</h2>
-            <span class="call-mini">Live-Suche während Eingabe</span>
+            <span class="call-mini">Live-Suche wÃƒÂ¤hrend Eingabe</span>
           </div>
           <label class="driver-label" for="call-search-input">Suche nach Name, Telefonnummer oder Adresse</label>
           <input id="call-search-input" class="driver-search-input" type="search" autocomplete="off" placeholder="Kunde suchen..." data-call-search>
@@ -110,7 +112,7 @@
           <section class="call-card-sub">
             <h3>Stammadressen</h3>
             <div class="call-address-actions">
-              <button class="admin-btn admin-btn-secondary" type="button" data-call-address-action="add">Adresse hinzufügen</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-call-address-action="add">Adresse hinzufÃƒÂ¼gen</button>
               <button class="admin-btn admin-btn-secondary" type="button" data-call-address-action="edit">Adresse bearbeiten</button>
               <button class="admin-btn admin-btn-secondary" type="button" data-call-address-action="default">Standard setzen</button>
             </div>
@@ -121,7 +123,7 @@
         <article class="admin-panel call-col-center" data-call-pane="fahrt">
           <div class="admin-panel-head">
             <h2>Schnelle Fahrtannahme</h2>
-            <button class="admin-btn admin-btn-secondary" type="button" title="Formular auf Anfang setzen" data-call-reset-form>Formular zurücksetzen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" title="Formular auf Anfang setzen" data-call-reset-form>Formular zurÃƒÂ¼cksetzen</button>
           </div>
 
           <div class="call-fast-buttons">
@@ -131,8 +133,8 @@
             <button class="call-chip" type="button" data-call-fast="60">In 60 Minuten</button>
             <button class="call-chip" type="button" data-call-fast="today">Heute</button>
             <button class="call-chip" type="button" data-call-fast="tomorrow">Morgen</button>
-            <button class="call-chip" type="button" data-call-fast="returnOpen">Rückfahrt offen</button>
-            <button class="call-chip" type="button" data-call-fast="sameBack">Gleiche Strecke zurück</button>
+            <button class="call-chip" type="button" data-call-fast="returnOpen">RÃƒÂ¼ckfahrt offen</button>
+            <button class="call-chip" type="button" data-call-fast="sameBack">Gleiche Strecke zurÃƒÂ¼ck</button>
           </div>
 
           <form class="call-ride-form" data-call-ride-form>
@@ -144,8 +146,8 @@
             <label><span>Uhrzeit</span><input class="driver-search-input" type="time" name="time" required></label>
             <label><span>Fahrtart</span><select class="call-select" name="rideType" data-call-ride-type></select></label>
             <label><span>Personenanzahl</span><input class="driver-search-input" type="number" min="1" max="8" name="persons" value="1"></label>
-            <label><span>Hin- und Rückfahrt</span><select class="call-select" name="returnTrip"><option>Nein</option><option>Ja</option></select></label>
-            <label><span>Rückfahrtzeit</span><input class="driver-search-input" type="time" name="returnTime"></label>
+            <label><span>Hin- und RÃƒÂ¼ckfahrt</span><select class="call-select" name="returnTrip"><option>Nein</option><option>Ja</option></select></label>
+            <label><span>RÃƒÂ¼ckfahrtzeit</span><input class="driver-search-input" type="time" name="returnTime"></label>
             <details class="call-more-fields full">
               <summary>Weitere Angaben</summary>
               <div class="call-more-grid">
@@ -153,8 +155,8 @@
                 <label><span>Rollstuhl</span><select class="call-select" name="wheelchair"><option>Nein</option><option>Ja</option></select></label>
                 <label><span>Rollator</span><select class="call-select" name="rollator"><option>Nein</option><option>Ja</option></select></label>
                 <label><span>Begleitperson</span><select class="call-select" name="companion"><option>Nein</option><option>Ja</option></select></label>
-                <label><span>Gepäck</span><input class="driver-search-input" name="luggage"></label>
-                <label><span>Priorität</span><select class="call-select" name="priority"><option>Hoch</option><option selected>Mittel</option><option>Niedrig</option></select></label>
+                <label><span>GepÃƒÂ¤ck</span><input class="driver-search-input" name="luggage"></label>
+                <label><span>PrioritÃƒÂ¤t</span><select class="call-select" name="priority"><option>Hoch</option><option selected>Mittel</option><option>Niedrig</option></select></label>
                 <label><span>Zahlungsart</span><select class="call-select" name="payment"><option>Bar</option><option>Karte</option><option>Rechnung</option><option>Krankenkasse</option></select></label>
                 <label><span>Abrechnungsart</span><select class="call-select" name="billing"><option>Privat</option><option>Firmenkonto</option><option>Krankenkasse</option><option>Monatsrechnung</option></select></label>
                 <label class="full"><span>Notizen</span><textarea class="driver-search-input" name="notes"></textarea></label>
@@ -162,7 +164,7 @@
             </details>
             <div class="call-form-actions full">
               <button class="admin-btn" type="submit">Fahrt speichern</button>
-              <button class="admin-btn admin-btn-secondary" type="button" data-call-action="openDispo">In Live-Dispo öffnen</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-call-action="openDispo">In Live-Dispo ÃƒÂ¶ffnen</button>
             </div>
           </form>
 
@@ -178,7 +180,7 @@
             <button class="call-right-tab" type="button" data-call-right-tab="open">Offene Fahrten</button>
             <button class="call-right-tab" type="button" data-call-right-tab="series">Serienfahrten</button>
             <button class="call-right-tab" type="button" data-call-right-tab="tasks">Aufgaben</button>
-            <button class="call-right-tab" type="button" data-call-right-tab="callbacks">Rückrufe</button>
+            <button class="call-right-tab" type="button" data-call-right-tab="callbacks">RÃƒÂ¼ckrufe</button>
           </div>
           <section class="call-card-sub" data-call-right-content></section>
         </article>
@@ -189,11 +191,11 @@
         <section class="admin-modal-dialog call-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="call-modal-title">
           <header class="admin-modal-head">
             <h3 id="call-modal-title" data-call-modal-title>Telefonzentrale</h3>
-            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-call-modal-close>✕</button>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schlieÃƒÅ¸en" data-call-modal-close>Ã¢Å“â€¢</button>
           </header>
           <div class="admin-modal-body" data-call-modal-body></div>
           <footer class="admin-modal-foot" data-call-modal-foot>
-            <button class="admin-btn admin-btn-secondary" type="button" data-call-modal-close>Schließen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-call-modal-close>SchlieÃƒÅ¸en</button>
           </footer>
         </section>
       </div>
@@ -203,3 +205,7 @@
   <script src="telefonzentrale.js"></script>
 </body>
 </html>
+
+
+
+

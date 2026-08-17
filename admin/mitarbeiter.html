@@ -5,16 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Mitarbeiter</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
   <script src="personal-shared.js"></script>
   <script src="supabase-config.js"></script>
-  <script src="supabase-auth.js"></script>
   <script src="taxi-data-service.js"></script>
   <script src="ui-visible-terms.js"></script>
   <script src="ui-text.js"></script>
-  <link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="personal.css">
-</head>
+                </head>
 <body>
 <div class="admin-shell">
   <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -29,7 +30,7 @@
     <header class="admin-topbar">
       <div class="admin-topbar-title">
         <h1>Mitarbeiterverwaltung</h1>
-        <p>Mitarbeiterliste, Akte und Einsatzprofil für Disposition (Demo)</p>
+        <p>Mitarbeiterliste, Akte und Einsatzprofil fÃƒÂ¼r Disposition (Demo)</p>
       </div>
     </header>
 
@@ -56,8 +57,8 @@
           <option>krank</option>
           <option>Dokument laeuft ab</option>
           <option>Schulung offen</option>
-          <option>Führerschein ungültig</option>
-          <option>Taxischein ungültig</option>
+          <option>FÃƒÂ¼hrerschein ungÃƒÂ¼ltig</option>
+          <option>Taxischein ungÃƒÂ¼ltig</option>
         </select>
       </label>
       <label>Sortierung
@@ -93,7 +94,7 @@
       <div class="admin-panel-head">
         <h2 data-emp-form-title>Neuen Mitarbeiter anlegen</h2>
         <div class="person-actions">
-          <button class="admin-btn admin-btn-secondary" type="button" data-emp-add>Mitarbeiter hinzufügen</button>
+          <button class="admin-btn admin-btn-secondary" type="button" data-emp-add>Mitarbeiter hinzufÃƒÂ¼gen</button>
         </div>
       </div>
       <div data-emp-form-panel hidden>
@@ -119,7 +120,7 @@
             <option>Admin</option>
           </select>
         </label>
-        <label>Beschäftigungsart
+        <label>BeschÃƒÂ¤ftigungsart
           <select name="employmentType">
             <option>Festangestellt</option>
             <option>Teilzeit</option>
@@ -149,30 +150,30 @@
 
         <label>Schichtmodell<input name="shiftModel"></label>
         <label>Bevorzugte Arbeitszeiten<input name="preferredHours"></label>
-        <label>Führerscheinklasse<input name="licenseClass"></label>
+        <label>FÃƒÂ¼hrerscheinklasse<input name="licenseClass"></label>
 
-        <label>Führerscheinnummer<input name="licenseNo"></label>
-        <label>Führerschein gültig bis<input type="date" name="licenseValidUntil"></label>
-        <label>Führerschein geprüft am<input type="date" name="licenseCheckedAt"></label>
+        <label>FÃƒÂ¼hrerscheinnummer<input name="licenseNo"></label>
+        <label>FÃƒÂ¼hrerschein gÃƒÂ¼ltig bis<input type="date" name="licenseValidUntil"></label>
+        <label>FÃƒÂ¼hrerschein geprÃƒÂ¼ft am<input type="date" name="licenseCheckedAt"></label>
 
-        <label>Führerschein geprüft durch<input name="licenseCheckedBy"></label>
-        <label>Taxischein / Personenbeförderungsschein vorhanden
+        <label>FÃƒÂ¼hrerschein geprÃƒÂ¼ft durch<input name="licenseCheckedBy"></label>
+        <label>Taxischein / PersonenbefÃƒÂ¶rderungsschein vorhanden
           <select name="pPermit">
             <option>Ja</option>
             <option>Nein</option>
           </select>
         </label>
-        <label>Taxischein gültig bis<input type="date" name="pPermitValidUntil"></label>
+        <label>Taxischein gÃƒÂ¼ltig bis<input type="date" name="pPermitValidUntil"></label>
 
-        <label>Taxischein geprüft am<input type="date" name="pPermitCheckedAt"></label>
-        <label>Taxischein geprüft durch<input name="pPermitCheckedBy"></label>
+        <label>Taxischein geprÃƒÂ¼ft am<input type="date" name="pPermitCheckedAt"></label>
+        <label>Taxischein geprÃƒÂ¼ft durch<input name="pPermitCheckedBy"></label>
         <label>Dokumentstatus
           <select name="documentStatus">
-            <option>gültig</option>
-            <option>läuft bald ab</option>
+            <option>gÃƒÂ¼ltig</option>
+            <option>lÃƒÂ¤uft bald ab</option>
             <option>abgelaufen</option>
             <option>fehlt</option>
-            <option>ungeprüft</option>
+            <option>ungeprÃƒÂ¼ft</option>
             <option>gesperrt</option>
           </select>
         </label>
@@ -242,7 +243,7 @@
       <section class="admin-modal-dialog" role="dialog" aria-modal="true">
         <header class="admin-modal-head">
           <h3 data-emp-modal-title>Dublette erkannt</h3>
-          <button class="admin-icon-btn" type="button" data-emp-close>✕</button>
+          <button class="admin-icon-btn" type="button" data-emp-close>Ã¢Å“â€¢</button>
         </header>
         <div class="admin-modal-body" data-emp-modal-body></div>
         <footer class="admin-modal-foot" data-emp-modal-foot>
@@ -255,3 +256,4 @@
 <script src="mitarbeiter.js"></script>
 </body>
 </html>
+

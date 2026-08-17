@@ -824,8 +824,8 @@
             <div><dt>Schichtende</dt><dd>${row.end}</dd></div>
             <div><dt>Zugewiesenes Fahrzeug</dt><dd>${row.vehicle || "-"}</dd></div>
             <div><dt>Führerscheinstatus</dt><dd>${row.licenseStatus}</dd></div>
-            <div><dt>Taxischein/Personenbeförderungsscheinstatus</dt><dd>${row.permitStatus}</dd></div>
-            <div><dt>Qualifikationen</dt><dd>${Array.isArray(row.qualifications) && row.qualifications.length ? row.qualifications.join(", ") : "-"}</dd></div>
+            <div class="shift-meta-wide"><dt>Taxischein/Personenbeförderungsscheinstatus</dt><dd>${row.permitStatus}</dd></div>
+            <div class="shift-meta-wide"><dt>Qualifikationen</dt><dd>${Array.isArray(row.qualifications) && row.qualifications.length ? row.qualifications.join(", ") : "-"}</dd></div>
             <div><dt>Verfügbare Zeit</dt><dd>${availabilityParts.join(" · ")}</dd></div>
             <div><dt>Aktuelle Fahrt</dt><dd>${row.currentRide || "-"}</dd></div>
             <div><dt>Nächste Fahrt</dt><dd>${row.nextRide || "-"}</dd></div>

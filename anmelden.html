@@ -9,64 +9,88 @@
   <link rel="stylesheet" href="public-visual-repair.css" />
   <link rel="stylesheet" href="auth-demo.css" />
 </head>
-<body class="auth-page">
-  <nav class="public-compact-nav" aria-label="Öffentliche Schnellnavigation">
-    <a class="public-back-home" data-public-back href="index.html">Zurück</a>
-    <div class="public-compact-nav-links">
-      <a href="index.html?page=services">Leistungen</a>
-      <a href="flotte.html">Fahrzeugflotte</a>
-      <a href="index.html?page=booking">Zur Buchung ohne Konto</a>
-    </div>
-  </nav>
-  <main class="auth-shell" aria-labelledby="authLoginTitle">
-    <a class="auth-brand" href="index.html">
+<body class="auth-page auth-page--premium">
+  <header class="public-auth-header" aria-label="Öffentliche Navigation">
+    <a class="public-auth-brand" href="index.html" aria-label="Taxi Germersheim Startseite">
       <img src="logo.png" alt="Taxi Germersheim" />
       <span>Taxi Germersheim</span>
     </a>
 
-    <header class="auth-head">
-      <h1 id="authLoginTitle">Willkommen zurück</h1>
-      <p>Demo-Login für den Kundenbereich. Keine echte Konto-Prüfung und keine Sicherheitsgarantie.</p>
-    </header>
-
-    <p id="authLoginNotice" class="auth-success" aria-live="polite"></p>
-
-    <form id="loginForm" class="auth-form" novalidate>
-      <div class="auth-field">
-        <label for="loginEmail">E-Mail</label>
-        <input id="loginEmail" name="email" type="email" autocomplete="email" required />
-      </div>
-
-      <div class="auth-field">
-        <label for="loginPassword">Passwort</label>
-        <div class="auth-pass-wrap">
-          <input id="loginPassword" name="password" type="password" autocomplete="current-password" minlength="8" required />
-          <button class="auth-pass-toggle" type="button" data-target="loginPassword" aria-label="Passwort anzeigen">Anzeigen</button>
-        </div>
-      </div>
-
-      <div class="auth-inline">
-        <label class="auth-check" for="rememberMe">
-          <input id="rememberMe" name="rememberMe" type="checkbox" />
-          <span>Eingeloggt bleiben (Demo)</span>
-        </label>
-        <a href="passwort-vergessen.html">Passwort vergessen?</a>
-      </div>
-
-      <p id="loginError" class="auth-error" aria-live="assertive"></p>
-      <button class="auth-submit" type="submit">Anmelden</button>
-    </form>
-
-    <nav class="auth-links" aria-label="Login Hilfslinks">
-      <a href="registrieren.html">Neu hier? Jetzt registrieren</a>
-      <a href="index.html">Zur Startseite</a>
-      <a href="index.html?page=booking">Ohne Anmeldung fortfahren</a>
+    <nav class="public-auth-nav" aria-label="Hauptnavigation">
+      <a href="index.html">Startseite</a>
+      <a href="index.html?page=services">Leistungen</a>
+      <a href="flotte.html">Fahrzeugflotte</a>
+      <a href="rewards.html">Rewards</a>
+      <a href="hilfe-kontakt.html">Kontakt</a>
     </nav>
 
-    <p class="auth-note">Testdaten: Jede gültige E-Mail + Passwort mit mindestens 8 Zeichen.</p>
+    <a class="public-auth-cta" href="index.html?page=booking">Ohne Konto buchen</a>
+  </header>
+
+  <main class="auth-shell auth-shell--split" aria-labelledby="authLoginTitle">
+    <section class="auth-spotlight" aria-label="Warum ein Konto sinnvoll ist">
+      <h1 id="authLoginTitle">Willkommen zurück</h1>
+      <p class="auth-spotlight-copy">Melde dich an, um deine Fahrten, Rewards und Gutscheine an einem Ort zu verwalten.</p>
+
+      <ul class="auth-benefits" aria-label="Vorteile des Kontos">
+        <li>Fahrten im Blick behalten</li>
+        <li>Rewards &amp; Gutscheine verwalten</li>
+        <li>Persönliche Daten sicher verwalten</li>
+      </ul>
+    </section>
+
+    <section class="auth-card" aria-label="Anmeldeformular">
+      <div class="auth-card-header">
+        <h2 class="auth-card-kicker">Anmelden</h2>
+        <p class="auth-card-subtitle">Mit deinem Taxi-Germersheim-Konto fortfahren.</p>
+      </div>
+
+      <p id="authLoginNotice" class="auth-success" aria-live="polite"></p>
+
+      <form id="loginForm" class="auth-form" novalidate>
+        <div class="auth-field">
+          <label for="loginEmail">E-Mail-Adresse</label>
+          <input id="loginEmail" name="email" type="email" autocomplete="email" required />
+        </div>
+
+        <div class="auth-field">
+          <label for="loginPassword">Passwort</label>
+          <div class="auth-pass-wrap">
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" minlength="8" required />
+            <span class="password-toggle-slot" aria-hidden="true">
+              <button class="auth-pass-toggle" type="button" data-target="loginPassword" aria-label="Passwort anzeigen">Anzeigen</button>
+            </span>
+          </div>
+        </div>
+
+        <div class="auth-inline">
+          <span class="auth-inline-spacer" aria-hidden="true"></span>
+          <a href="passwort-vergessen.html">Passwort vergessen?</a>
+        </div>
+
+        <p id="loginError" class="auth-error" aria-live="assertive"></p>
+        <button class="auth-submit" type="submit">Anmelden</button>
+      </form>
+
+      <div class="auth-split-links">
+        <span>Noch kein Konto?</span>
+        <a href="registrieren.html">Jetzt registrieren</a>
+      </div>
+
+      <div class="auth-trust" aria-label="Sichere Anmeldung">
+        <span class="auth-trust-icon" aria-hidden="true"></span>
+        <span>Sichere Anmeldung für dein Taxi-Germersheim-Konto</span>
+      </div>
+    </section>
   </main>
 
-  <script src="customer-auth-demo.js"></script>
+  <footer class="auth-footer" aria-label="Footer der Auth-Seite">
+    <a href="datenschutz.html">Datenschutz</a>
+    <a href="impressum.html">Impressum</a>
+    <a href="hilfe-kontakt.html">Kontakt</a>
+  </footer>
+
+  <script src="customer-auth.js"></script>
   <script>
     (function () {
       var notice = document.getElementById("authLoginNotice");
@@ -74,15 +98,10 @@
       var form = document.getElementById("loginForm");
       var params = new URLSearchParams(window.location.search);
 
-      if (window.CustomerAuthDemo && window.CustomerAuthDemo.isLoggedIn()) {
-        window.location.replace("meinkonto.html");
-        return;
-      }
-
       if (params.get("registered") === "1") {
-        notice.textContent = "Registrierung erfolgreich. Bitte jetzt anmelden.";
+        notice.textContent = "Registrierung erfolgreich. Bitte bestätige zuerst deine E-Mail-Adresse.";
       } else if (params.get("loggedOut") === "1") {
-        notice.textContent = "Sie wurden aus dem Demo-Konto abgemeldet.";
+        notice.textContent = "Sie wurden abgemeldet.";
       }
 
       document.querySelectorAll(".auth-pass-toggle").forEach(function (toggle) {
@@ -97,13 +116,12 @@
         });
       });
 
-      form.addEventListener("submit", function (event) {
+      form.addEventListener("submit", async function (event) {
         event.preventDefault();
         error.textContent = "";
 
         var emailInput = form.elements.email;
         var passwordInput = form.elements.password;
-        var rememberInput = form.elements.rememberMe;
 
         var email = (emailInput.value || "").trim();
         var password = (passwordInput.value || "").trim();
@@ -121,21 +139,22 @@
           return;
         }
 
-        var profile = {
-          fullName: "Demo Kunde",
-          email: email,
-          phone: "+49 7274 000000",
-          avatarColor: "amber",
-          registeredAt: Date.now()
-        };
+        try {
+          const auth = window.CustomerAuth;
+          if (!auth || typeof auth.signInWithPassword !== "function") {
+            throw new Error("E-Mail oder Passwort ist falsch.");
+          }
 
-        window.CustomerAuthDemo.setLoginState(profile, {
-          rememberMe: !!rememberInput.checked,
-          onboardingComplete: true,
-          source: "login"
-        });
+          const result = await auth.signInWithPassword(email, password);
+          if (!result || !result.customer_id) {
+            throw new Error("Die Anmeldung konnte nicht abgeschlossen werden.");
+          }
 
-        window.location.href = "meinkonto.html";
+          window.location.href = "meinkonto.html";
+        } catch (loginError) {
+          const message = loginError && loginError.message ? loginError.message : "E-Mail oder Passwort ist falsch.";
+          error.textContent = message === "CUSTOMER_NOT_FOUND" ? "Dein Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte kontaktiere uns." : message;
+        }
       });
     })();
   </script>
