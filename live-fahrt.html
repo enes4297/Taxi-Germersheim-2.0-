@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="auth-demo.css" />
   <link rel="stylesheet" href="live-ride.css" />
 </head>
-<body>
+<body class="auth-pending">
   <div class="background" aria-hidden="true"></div>
   <div class="ambient" aria-hidden="true"></div>
 
@@ -239,15 +239,24 @@
     </a>
   </nav>
 
-  <script src="customer-auth-demo.js"></script>
+  <script src="customer-auth.js"></script>
   <script src="script.js"></script>
   <script src="customer-journey-demo.js"></script>
   <script>
-    (function () {
-      if (window.CustomerAuthDemo && window.CustomerAuthDemo.requireLogin({
+    (async function () {
+      const auth = window.CustomerAuth || null;
+      if (auth && typeof auth.hydrateSession === 'function') {
+        await auth.hydrateSession();
+      }
+
+      const gated = !auth || typeof auth.requireLogin !== 'function' || auth.requireLogin({
         targetSelector: '#live-ride-page',
-        pageTitle: 'Aktive Fahrt'
-      })) {
+        pageTitle: 'Aktive Fahrt',
+        gateDescription: 'Melde dich an, um diesen Bereich zu sehen.'
+      });
+      document.body.classList.remove('auth-pending');
+
+      if (gated) {
         return;
       }
 

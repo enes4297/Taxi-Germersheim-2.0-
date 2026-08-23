@@ -17,39 +17,51 @@
   <meta property="og:image" content="logo.png">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="public-visual-repair.css">
-  <link rel="stylesheet" href="auth-demo.css">
+  <link rel="stylesheet" href="public-premium-v2.css">
 </head>
-<body>
+<body class="public-premium public-fleet">
   <main class="app">
     <header class="topbar">
-      <div class="brand"><a href="index.html"><img src="logo.png" alt="Taxi Germersheim GmbH"></a></div>
+      <div class="brand">
+        <a href="index.html" aria-label="Taxi Germersheim Startseite">
+          <img src="logo.png" alt="Taxi Germersheim GmbH">
+          <span>Taxi Germersheim</span>
+        </a>
+      </div>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen">
         <span class="menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
       </button>
-      <nav class="site-nav">
+      <nav class="site-nav" aria-label="Hauptnavigation">
         <a href="index.html">Startseite</a>
-        <a href="index.html?page=services">Leistungen</a>
+        <div class="nav-item nav-item-services">
+          <button type="button" class="nav-trigger" data-nav-toggle="services" aria-expanded="false">Leistungen <span>▼</span></button>
+          <div class="nav-dropdown" aria-label="Leistungen">
+            <a href="index.html?page=booking&amp;service=taxi">Taxi</a>
+            <a href="index.html?page=medical">Krankenfahrten</a>
+            <a href="index.html?page=booking&amp;service=wheelchair">Rollstuhlfahrten</a>
+            <a href="index.html?page=booking&amp;service=airport">Flughafentransfer</a>
+            <a href="index.html?page=booking&amp;service=courier">Kurierfahrten</a>
+            <a href="spezialfahrten.html">Spezialfahrten</a>
+          </div>
+        </div>
         <a href="flotte.html" class="active">Fahrzeugflotte</a>
-        <a href="meinkonto.html">Mein Konto</a>
         <a href="rewards.html">Rewards</a>
-        <a href="index.html?page=why">Über uns</a>
-        <a href="index.html#kontakt">Kontakt</a>
+        <a href="hilfe-kontakt.html">Kontakt</a>
+        <a class="mobile-session-link" href="anmelden.html" data-session-link>Anmelden</a>
       </nav>
       <div class="site-nav-backdrop" aria-hidden="true"></div>
       <div class="top-actions">
-        <a id="headerBookBtn" class="button nav-book-btn" href="index.html?page=booking">Jetzt buchen</a>
+        <a class="nav-session-link" href="anmelden.html" data-session-link>Anmelden</a>
       </div>
     </header>
 
     <section id="fleet" class="screen active simple fleet-page fleet-v44">
-      <header class="page-head"><a href="index.html" class="page-head-link" data-public-back aria-label="Zurück">‹</a><h2>Fahrzeugflotte</h2><i></i></header>
-
-      <article class="fleet-v44-hero">
-        <small>PREMIUM FAHRZEUGÜBERSICHT</small>
+      <header class="public-page-head">
+        <p class="public-eyebrow">Fahrzeugflotte</p>
         <h1>Unsere Fahrzeugflotte</h1>
         <p>Unsere Flotte ist auf zuverlässige Taxi-, Transfer- und Spezialfahrten ausgelegt. Alle Fahrzeuge werden täglich einsatzbereit gehalten und passend zum Fahrtbedarf eingeplant.</p>
         <p class="fleet-v44-note">Hinweis: Das aktuelle Sprinter-Rollstuhlfahrzeug wird planmäßig durch ein moderneres Fahrzeug ersetzt.</p>
-      </article>
+      </header>
 
       <section class="fleet-v44-filter" aria-label="Flottenfilter">
         <button type="button" class="is-active" data-fleet-filter="all">Alle</button>
@@ -144,55 +156,16 @@
     </section>
   </main>
 
-  <footer id="kontakt" class="site-footer">
-    <div class="footer-content">
-      <div class="footer-brand">
-        <img class="footer-logo" src="logo.png" alt="Taxi Germersheim GmbH">
-        <strong>Taxi Germersheim</strong>
-        <p>Sicher. Zuverlässig. Pünktlich.</p>
-        <small>24 Stunden täglich für Sie erreichbar.</small>
-        <small class="footer-availability">24/7 erreichbar per Telefon und WhatsApp</small>
-      </div>
-
-      <div class="footer-column footer-services">
-        <strong>Leistungen</strong>
-        <a href="index.html?page=booking">Taxi</a>
-        <a href="index.html?page=medical">Krankenfahrten</a>
-        <a href="index.html?page=booking">Rollstuhlfahrten</a>
-        <a href="index.html?page=booking">Flughafentransfer</a>
-        <a href="index.html?page=booking">Kurierfahrten</a>
-      </div>
-
-      <div class="footer-column footer-contact">
-        <strong>Kontakt</strong>
-        <a class="footer-cta-primary" href="tel:072743567"><i data-icon="phone"></i><span>Jetzt anrufen: 07274 3567</span></a>
-        <a class="footer-cta-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer"><i data-icon="yumak"></i><span>WhatsApp-Nachricht senden</span></a>
-        <a class="footer-contact-link" href="mailto:info@taxigermersheim.de"><i data-icon="profile"></i><span>E-Mail: info@taxigermersheim.de</span></a>
-        <a class="footer-contact-link" href="https://maps.google.com/?q=Friedrich-Ebert-Stra%C3%9Fe+8,+76726+Germersheim" target="_blank" rel="noreferrer"><i data-icon="pin"></i><span>Adresse: Friedrich-Ebert-Straße 8<br>76726 Germersheim</span></a>
-      </div>
-
-      <div class="footer-column footer-quicklinks">
-        <strong>Schnellzugriff</strong>
-        <a href="index.html">Startseite</a>
+  <footer id="kontakt" class="site-footer public-footer">
+    <div class="public-footer-row">
+      <p>© 2026 Taxi Germersheim GmbH</p>
+      <div class="public-footer-links">
         <a href="index.html?page=why">Über uns</a>
-        <a href="flotte.html">Fahrzeugflotte</a>
-        <a href="meinkonto.html">Mein Konto</a>
-        <a href="rewards.html">Rewards</a>
-        <a href="index.html#kontakt">Kontakt</a>
-        <a href="index.html?page=booking">Jetzt buchen</a>
-        <a href="index.html?page=faq">FAQ</a>
-      </div>
-    </div>
-
-    <div class="footer-bottom-line">
-      <p>© 2026 Taxi Germersheim.<br>Alle Rechte vorbehalten.</p>
-      <div class="footer-bottom-links">
         <a href="datenschutz.html">Datenschutz</a>
         <a href="impressum.html">Impressum</a>
+        <a href="hilfe-kontakt.html">Kontakt</a>
       </div>
     </div>
-
-    <div class="footer-bottom" aria-hidden="true"></div>
   </footer>
 
   <section id="cookieBanner" class="consent-banner" hidden role="region" aria-label="Cookie und Dienste Zustimmung">
@@ -229,16 +202,13 @@
 
       function createFleetPlaceholder(vehicleName) {
         var safeName = String(vehicleName || "Fahrzeug").replace(/[<>&"']/g, "");
-        var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900' role='img' aria-label='Platzhalter Fahrzeugbild'>"
-          + "<defs><linearGradient id='fleetBg' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='%231d2230'/><stop offset='55%' stop-color='%23101723'/><stop offset='100%' stop-color='%23090d15'/></linearGradient></defs>"
-          + "<rect width='1600' height='900' fill='url(%23fleetBg)'/>"
-          + "<g opacity='0.25'><circle cx='1320' cy='180' r='260' fill='%23f7d685'/><circle cx='300' cy='760' r='280' fill='%238ea3c8'/></g>"
-          + "<rect x='90' y='90' width='1420' height='720' rx='34' fill='none' stroke='%23d7b56a' stroke-opacity='0.52' stroke-width='4'/>"
-          + "<path d='M430 585h745l84 58H338z' fill='none' stroke='%23f8dca0' stroke-width='14' stroke-linecap='round' stroke-linejoin='round'/>"
-          + "<circle cx='560' cy='656' r='58' fill='none' stroke='%23f8dca0' stroke-width='12'/><circle cx='1060' cy='656' r='58' fill='none' stroke='%23f8dca0' stroke-width='12'/>"
-          + "<text x='140' y='170' fill='%23f8dca0' font-size='36' font-family='Georgia, serif' font-weight='700'>Premium-Flotte</text>"
-          + "<text x='140' y='760' fill='%23ffffff' fill-opacity='0.92' font-size='52' font-family='Georgia, serif' font-weight='700'>" + safeName + "</text>"
-          + "<text x='140' y='810' fill='%23ffffff' fill-opacity='0.64' font-size='30' font-family='Arial, sans-serif'>Originalbild wird vorbereitet</text>"
+        var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900' role='img' aria-label='Fahrzeugbild folgt'>"
+          + "<rect width='1600' height='900' fill='%230d0e12'/>"
+          + "<rect x='90' y='90' width='1420' height='720' rx='34' fill='none' stroke='%23d7b56a' stroke-opacity='0.38' stroke-width='4'/>"
+          + "<circle cx='800' cy='380' r='92' fill='none' stroke='%23f0cf77' stroke-opacity='0.7' stroke-width='6'/>"
+          + "<text x='800' y='404' text-anchor='middle' fill='%23f0cf77' font-size='62' font-family='Georgia, serif' font-weight='700'>TG</text>"
+          + "<text x='800' y='565' text-anchor='middle' fill='%23ffffff' fill-opacity='0.92' font-size='52' font-family='Georgia, serif' font-weight='700'>" + safeName + "</text>"
+          + "<text x='800' y='635' text-anchor='middle' fill='%23ffffff' fill-opacity='0.64' font-size='30' font-family='Arial, sans-serif'>Fahrzeugbild folgt</text>"
           + "</svg>";
         return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
       }
@@ -273,7 +243,8 @@
       });
     })();
   </script>
-  <script src="customer-auth-demo.js"></script>
+  <script src="customer-auth.js"></script>
   <script src="script.js"></script>
+  <script src="public-premium-v2.js"></script>
 </body>
 </html>

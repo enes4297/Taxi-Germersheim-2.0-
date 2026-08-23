@@ -672,7 +672,7 @@
     }
   </style>
 </head>
-<body>
+<body class="auth-pending">
   <main class="app">
     <header class="topbar">
       <div class="brand">
@@ -789,18 +789,18 @@
     (async function () {
       const auth = window.CustomerAuth || null;
 
-      if (auth && typeof auth.requireLoginAsync === "function") {
-        const gated = await auth.requireLoginAsync({
-          targetSelector: '#customer-account',
-          pageTitle: 'Mein Konto'
-        });
-        if (gated) {
-          return;
-        }
-      } else if (auth && typeof auth.requireLogin === "function" && auth.requireLogin({
+      if (auth && typeof auth.hydrateSession === "function") {
+        await auth.hydrateSession();
+      }
+
+      const gated = !auth || typeof auth.requireLogin !== "function" || auth.requireLogin({
         targetSelector: '#customer-account',
-        pageTitle: 'Mein Konto'
-      })) {
+        pageTitle: 'Mein Konto',
+        gateDescription: 'Melde dich an, um diesen Bereich zu sehen.'
+      });
+      document.body.classList.remove('auth-pending');
+
+      if (gated) {
         return;
       }
 

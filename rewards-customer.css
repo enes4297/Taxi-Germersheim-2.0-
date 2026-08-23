@@ -1,0 +1,595 @@
+:root {
+  --rewards-surface: #111216;
+  --rewards-surface-soft: #0d0e12;
+  --rewards-border: rgba(255, 255, 255, 0.09);
+  --rewards-text: rgba(255, 255, 255, 0.92);
+  --rewards-muted: rgba(255, 255, 255, 0.66);
+  --rewards-gold: #f0cf77;
+  --rewards-gold-soft: rgba(240, 207, 119, 0.09);
+}
+
+html,
+body.rewards-v2-body {
+  min-height: 100%;
+  background: #07080a !important;
+}
+
+body.rewards-v2-body {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  flex-direction: column;
+}
+
+.rewards-v2-app {
+  flex: 1 0 auto;
+  min-height: auto;
+  padding: 18px 24px 64px;
+}
+
+.rewards-v2-body .topbar {
+  width: min(1120px, 100%);
+  margin: 0 auto 50px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 12px 18px;
+  border: 1px solid var(--rewards-border);
+  border-radius: 20px;
+  background: rgba(15, 16, 20, 0.96);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
+}
+
+.rewards-v2-body .brand {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.rewards-v2-body .brand a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.rewards-v2-body .brand img {
+  display: block;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: contain;
+}
+
+.rewards-v2-body .brand span {
+  color: var(--rewards-text);
+  font-size: 0.96rem;
+  letter-spacing: 0.04em;
+}
+
+.rewards-v2-body .brand span::after {
+  content: " GmbH";
+}
+
+.rewards-v2-body .site-nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px 18px;
+}
+
+.rewards-v2-body .site-nav a {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.rewards-v2-body .site-nav a:hover,
+.rewards-v2-body .site-nav a:focus-visible,
+.rewards-v2-body .site-nav a.active {
+  transform: none;
+  background: transparent;
+  color: #ffe7a6;
+}
+
+.rewards-v2-body .top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.rewards-v2-body .nav-book-btn,
+.rewards-secondary-link,
+.rewards-card-link {
+  display: inline-flex;
+  width: auto;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid rgba(240, 207, 119, 0.3);
+  border-radius: 12px;
+  background: rgba(240, 207, 119, 0.06);
+  color: #ffe7a6;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  text-decoration: none;
+  text-transform: none;
+  white-space: nowrap;
+  box-shadow: none;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.rewards-v2-body .nav-book-btn {
+  min-width: 136px;
+}
+
+.rewards-v2-body .nav-book-btn:hover,
+.rewards-v2-body .nav-book-btn:focus-visible,
+.rewards-secondary-link:hover,
+.rewards-secondary-link:focus-visible,
+.rewards-card-link:hover,
+.rewards-card-link:focus-visible {
+  transform: none;
+  border-color: rgba(240, 207, 119, 0.46);
+  background: rgba(240, 207, 119, 0.1);
+  box-shadow: none;
+}
+
+#rewards.rewards-customer {
+  display: block;
+  padding: 0;
+}
+
+#rewards.rewards-customer [hidden] {
+  display: none;
+}
+
+.customer-rewards-shell {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 32px;
+}
+
+.rewards-page-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.rewards-page-head > div {
+  display: grid;
+  gap: 8px;
+}
+
+.rewards-eyebrow,
+.rewards-account-head p,
+.rewards-card-label {
+  margin: 0;
+  color: var(--rewards-gold);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rewards-page-head h1 {
+  margin: 0;
+  color: #fff;
+  font-family: var(--serif);
+  font-size: clamp(2.35rem, 4vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.03;
+  letter-spacing: 0;
+}
+
+.rewards-intro {
+  max-width: 650px;
+  margin: 0;
+  color: var(--rewards-muted);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.customer-rewards-content {
+  display: grid;
+  gap: 24px;
+}
+
+.rewards-account-card,
+.rewards-info-card,
+.customer-rewards-loading,
+.customer-rewards-error {
+  margin: 0;
+  border: 1px solid var(--rewards-border);
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--rewards-surface), var(--rewards-surface-soft));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+.rewards-account-card {
+  padding: 24px;
+  display: grid;
+  gap: 22px;
+}
+
+#rewards.rewards-customer .rewards-account-card {
+  margin-bottom: 0 !important;
+}
+
+.rewards-account-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.rewards-account-head > div {
+  display: grid;
+  gap: 7px;
+}
+
+.rewards-account-head h2,
+.rewards-info-card h2 {
+  margin: 0;
+  color: #fff;
+  font-family: var(--serif);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.rewards-account-head h2 {
+  font-size: clamp(1.8rem, 3vw, 2.45rem);
+  line-height: 1.08;
+}
+
+.rewards-status {
+  display: inline-flex;
+  min-height: 29px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 11px;
+  border: 1px solid rgba(240, 207, 119, 0.3);
+  border-radius: 999px;
+  background: var(--rewards-gold-soft);
+  color: var(--rewards-gold);
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.customer-rewards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--rewards-border);
+}
+
+.customer-rewards-grid article {
+  min-width: 0;
+  min-height: 104px;
+  padding: 20px 18px 4px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  border-right: 1px solid var(--rewards-border);
+}
+
+.customer-rewards-grid article:last-child {
+  border-right: 0;
+}
+
+.customer-rewards-grid small {
+  color: var(--rewards-muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.customer-rewards-grid strong {
+  color: var(--rewards-text);
+  font-family: inherit;
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.customer-rewards-grid article.is-accent strong {
+  color: var(--rewards-gold);
+}
+
+.customer-rewards-grid span {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+#rewards.rewards-customer .rewards-info-grid {
+  margin-bottom: 0 !important;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.rewards-info-card {
+  min-height: 178px;
+  padding: 22px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.rewards-info-card > div {
+  display: grid;
+  gap: 8px;
+}
+
+.rewards-info-card h2 {
+  font-size: 1.45rem;
+  line-height: 1.15;
+}
+
+.rewards-info-card p:not(.rewards-card-label) {
+  max-width: 440px;
+  margin: 0;
+  color: var(--rewards-muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.rewards-info-card small {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.rewards-card-link {
+  flex: 0 0 auto;
+  align-self: flex-end;
+}
+
+.customer-rewards-loading,
+.customer-rewards-error {
+  min-height: 140px;
+  padding: 30px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.customer-rewards-loading span {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.13);
+  border-top-color: var(--rewards-gold);
+  border-radius: 50%;
+  animation: rewards-loading-spin 0.8s linear infinite;
+}
+
+.customer-rewards-loading p,
+.customer-rewards-error p,
+.customer-rewards-error strong {
+  margin: 0;
+}
+
+.customer-rewards-loading p,
+.customer-rewards-error p {
+  color: var(--rewards-muted);
+  font-size: 0.86rem;
+}
+
+.customer-rewards-error strong {
+  color: var(--rewards-text);
+}
+
+.rewards-footer {
+  margin-top: 0;
+  padding: 18px 24px 30px;
+  border-top: 1px solid var(--rewards-border);
+  background: rgba(7, 8, 10, 0.9);
+}
+
+.rewards-footer-row {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.rewards-footer-row p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.84rem;
+}
+
+.rewards-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.rewards-footer-links a {
+  color: #ffe7a6;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+@keyframes rewards-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 940px) {
+  .rewards-v2-body .topbar {
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+  }
+
+  .rewards-v2-body .site-nav {
+    display: none;
+  }
+
+  .customer-rewards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .customer-rewards-grid article:nth-child(2) {
+    border-right: 0;
+  }
+
+  .customer-rewards-grid article:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--rewards-border);
+  }
+}
+
+@media (max-width: 700px) {
+  .rewards-v2-app {
+    padding: 12px 16px 52px;
+  }
+
+  .rewards-v2-body .topbar {
+    margin-bottom: 42px;
+    padding: 10px 12px;
+    border-radius: 18px;
+  }
+
+  .rewards-v2-body .brand span {
+    font-size: 0.82rem;
+  }
+
+  .rewards-v2-body .brand span::after {
+    content: "";
+  }
+
+  .rewards-v2-body .nav-book-btn {
+    min-width: 112px;
+    min-height: 40px;
+    height: 40px;
+    padding: 0 12px;
+  }
+
+  .customer-rewards-shell {
+    gap: 28px;
+  }
+
+  .rewards-page-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .rewards-page-head h1 {
+    font-size: 2.25rem;
+  }
+
+  .rewards-account-card,
+  .rewards-info-card {
+    border-radius: 18px;
+  }
+
+  .rewards-account-card {
+    padding: 20px;
+  }
+
+  .rewards-account-head h2 {
+    font-size: 1.75rem;
+  }
+
+  .customer-rewards-grid article {
+    min-height: 98px;
+    padding: 17px 12px 4px;
+  }
+
+  .customer-rewards-grid strong {
+    font-size: 1.65rem;
+  }
+
+  .rewards-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rewards-info-card {
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .rewards-card-link {
+    align-self: flex-start;
+  }
+
+  .rewards-footer {
+    padding: 18px 16px 24px;
+  }
+
+  .rewards-footer-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .rewards-footer-links {
+    width: 100%;
+    justify-content: space-between;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 390px) {
+  .rewards-v2-app {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .rewards-v2-body .brand img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .rewards-v2-body .brand span {
+    font-size: 0.76rem;
+  }
+
+  .rewards-v2-body .nav-book-btn {
+    min-width: 104px;
+    padding: 0 10px;
+    font-size: 0.74rem;
+  }
+
+  .rewards-account-head {
+    gap: 12px;
+  }
+
+  .customer-rewards-grid small {
+    font-size: 0.61rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-rewards-loading span {
+    animation: none;
+  }
+}

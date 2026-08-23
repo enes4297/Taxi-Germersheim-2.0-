@@ -6,8 +6,8 @@
     wheelchair: "Rollstuhlfahrten",
     series: "Serienfahrten",
     airport: "Flughafentransfers",
-    business: "Firmen- und Geschaeftskunden",
-    student: "Schuelerfahrten",
+    business: "Firmen- und Geschäftskunden",
+    student: "Schülerfahrten",
     courier: "Kurierfahrten"
   };
 
@@ -15,13 +15,13 @@
     medical: {
       title: "Krankenfahrten",
       icon: "assets/icons/Route.svg",
-      description: "Fahrten zu Arzt, Klinik, Therapie sowie stationaerer Aufnahme und Entlassung als strukturierte Demo-Anfrage.",
+      description: "Fahrten zu Arzt, Klinik, Therapie sowie stationärer Aufnahme und Entlassung persönlich vorbereiten.",
       benefits: [
-        "Sitzende Befoerderung und Rollstuhlbeforderung moeglich",
-        "Hin- und Rueckfahrt in einer Anfrage vorbereitbar",
+        "Sitzende Beförderung und Rollstuhlbeförderung möglich",
+        "Hin- und Rückfahrt gemeinsam planbar",
         "Transparenter Hinweis zu Verordnung und Genehmigung"
       ],
-      notice: "Je nach Fahrt koennen Verordnung und Genehmigung der Krankenkasse erforderlich sein. Keine verbindliche Kostenuebernahme und keine medizinische Beratung.",
+      notice: "Je nach Fahrt können Verordnung und Genehmigung der Krankenkasse erforderlich sein. Eine verbindliche Kostenübernahme kann hier nicht zugesagt werden.",
       fields: [
         { id: "name", label: "Name", type: "text", required: true },
         { id: "phone", label: "Telefonnummer", type: "tel", required: true },
@@ -29,8 +29,8 @@
         { id: "destination", label: "Behandlungsort", type: "text", required: true },
         { id: "date", label: "Datum", type: "date", required: true },
         { id: "time", label: "Uhrzeit", type: "time", required: true },
-        { id: "roundtrip", label: "Hin- und Rueckfahrt", type: "select", required: true, options: ["Nur Hinfahrt", "Hin- und Rueckfahrt"] },
-        { id: "rideType", label: "Fahrttyp", type: "select", required: true, options: ["Krankenfahrt", "Dialyse", "Chemo", "Strahlentherapie", "Ambulante Behandlung", "Stationaere Aufnahme/Entlassung"] },
+        { id: "roundtrip", label: "Hin- und Rückfahrt", type: "select", required: true, options: ["Nur Hinfahrt", "Hin- und Rückfahrt"] },
+        { id: "rideType", label: "Fahrttyp", type: "select", required: true, options: ["Krankenfahrt", "Dialyse", "Chemo", "Strahlentherapie", "Ambulante Behandlung", "Stationäre Aufnahme/Entlassung"] },
         { id: "insurance", label: "Krankenkasse (optional)", type: "text", required: false },
         { id: "prescription", label: "Verordnung vorhanden", type: "select", required: true, options: ["Ja", "Nein", "Unklar"] },
         { id: "approval", label: "Genehmigung vorhanden", type: "select", required: true, options: ["Ja", "Nein", "Unklar"] },
@@ -51,13 +51,13 @@
     wheelchair: {
       title: "Rollstuhlfahrten",
       icon: "assets/icons/Wheelchair%20Vehicle.svg",
-      description: "Bereich fuer barrierearme Fahrten mit Rampe/Fahrzeugeinstieg, Sicherung und optionaler Begleitperson.",
+      description: "Barrierearme Fahrten mit Rampe, Sicherung und optionaler Begleitperson persönlich planen.",
       benefits: [
-        "Manueller und elektrischer Rollstuhl auswahlbar",
+        "Manueller und elektrischer Rollstuhl auswählbar",
         "Faltbar/nicht faltbar und Umsteigen abfragbar",
-        "Zugangssituation vorab als Demo erfassbar"
+        "Zugangssituation vorab abstimmbar"
       ],
-      notice: "Keine medizinischen Behauptungen. Anfrage bleibt Demo ohne echte Uebertragung.",
+      notice: "Bitte teilen Sie uns Rollstuhltyp und Zugangssituation möglichst genau mit.",
       fields: [
         { id: "name", label: "Name", type: "text", required: true },
         { id: "phone", label: "Telefonnummer", type: "tel", required: true },
@@ -70,32 +70,32 @@
         { id: "canTransfer", label: "Person kann umsteigen", type: "select", required: true, options: ["Ja", "Nein"] },
         { id: "companion", label: "Begleitperson", type: "select", required: true, options: ["Keine", "Eine Begleitperson", "Mehrere Begleitpersonen"] },
         { id: "stairSituation", label: "Treppen / besondere Zugangssituation", type: "textarea", required: false },
-        { id: "dimensions", label: "Masse / Gewicht (optional)", type: "text", required: false },
-        { id: "notes", label: "Zusaetzliche Hinweise", type: "textarea", required: false }
+        { id: "dimensions", label: "Maße / Gewicht (optional)", type: "text", required: false },
+        { id: "notes", label: "Zusätzliche Hinweise", type: "textarea", required: false }
       ]
     },
     series: {
       title: "Serienfahrten",
       icon: "assets/icons/Calendar.svg",
-      description: "Regelmaessige Fahrten mit Wochenstruktur, Hin- und Rueckfahrt sowie Demo-Pruefansicht vor dem Absenden.",
+      description: "Regelmäßige Fahrten mit Wochenstruktur sowie Hin- und Rückfahrt persönlich vorbereiten.",
       benefits: [
         "Dialyse M/W/F als Beispiel hinterlegbar",
-        "Taegliche Schueler- oder Therapiefahrten planbar",
-        "Vor dem Absenden gibt es eine Wochenzusammenfassung"
+        "Tägliche Schüler- oder Therapiefahrten planbar",
+        "Wochenzusammenfassung vor der Abstimmung"
       ],
-      notice: "Serienfahrt wird erst nach persoenlicher Bestaetigung verbindlich.",
+      notice: "Eine Serienfahrt wird erst nach persönlicher Bestätigung verbindlich.",
       fields: [
         { id: "name", label: "Name", type: "text", required: true },
         { id: "phone", label: "Telefonnummer", type: "tel", required: true },
         { id: "startDate", label: "Startdatum", type: "date", required: true },
         { id: "endDate", label: "Enddatum (optional)", type: "date", required: false },
         { id: "weekdays", label: "Wochentage", type: "multicheck", required: true, options: ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"] },
-        { id: "direction", label: "Fahrtart", type: "select", required: true, options: ["Nur Hinfahrt", "Hin- und Rueckfahrt"] },
+        { id: "direction", label: "Fahrtart", type: "select", required: true, options: ["Nur Hinfahrt", "Hin- und Rückfahrt"] },
         { id: "pickup", label: "Abholadresse", type: "text", required: true },
         { id: "destination", label: "Zieladresse", type: "text", required: true },
         { id: "outboundTime", label: "Uhrzeit Hinfahrt", type: "time", required: true },
-        { id: "returnTime", label: "Uhrzeit Rueckfahrt", type: "time", required: false },
-        { id: "rideType", label: "Fahrttyp", type: "select", required: true, options: ["Dialyse", "Schuelerfahrt", "Therapiefahrt", "Firmenfahrt", "Standardfahrt"] },
+        { id: "returnTime", label: "Uhrzeit Rückfahrt", type: "time", required: false },
+        { id: "rideType", label: "Fahrttyp", type: "select", required: true, options: ["Dialyse", "Schülerfahrt", "Therapiefahrt", "Firmenfahrt", "Standardfahrt"] },
         { id: "companion", label: "Begleitperson", type: "select", required: true, options: ["Keine", "Begleitperson eingeplant"] },
         { id: "remark", label: "Bemerkung", type: "textarea", required: false }
       ]
@@ -103,13 +103,13 @@
     airport: {
       title: "Flughafentransfers",
       icon: "assets/icons/Route.svg",
-      description: "Transfers fuer FRA, FKB, STR oder weitere Flughaefen auf Anfrage, mit strukturierter Demo-Abfrage.",
+      description: "Transfers für FRA, FKB, STR oder weitere Flughäfen auf Anfrage persönlich vorbereiten.",
       benefits: [
         "Terminal und Flugnummer optional",
-        "Normales Taxi oder Grossraumtaxi auswaehlbar",
-        "Festpreisanfrage als Demo vorbereitbar"
+        "Normales Taxi oder Großraumtaxi auswählbar",
+        "Festpreisanfrage persönlich abstimmbar"
       ],
-      notice: "Preis wird erst nach Pruefung bestaetigt. Flugverfolgung ist nur als spaetere Funktion vorgesehen, keine echte Flugabfrage.",
+      notice: "Der Preis wird erst nach persönlicher Prüfung bestätigt.",
       fields: [
         { id: "name", label: "Name", type: "text", required: true },
         { id: "phone", label: "Telefonnummer", type: "tel", required: true },
@@ -121,23 +121,23 @@
         { id: "pickupTime", label: "Abholzeit", type: "time", required: true },
         { id: "persons", label: "Anzahl Personen", type: "number", required: true },
         { id: "bags", label: "Anzahl Koffer", type: "number", required: true },
-        { id: "childSeat", label: "Kindersitz benoetigt", type: "select", required: true, options: ["Nein", "Ja, 1", "Ja, 2+"] },
-        { id: "vehicleType", label: "Taxiart", type: "select", required: true, options: ["Normales Taxi", "Grossraumtaxi"] },
-        { id: "roundtrip", label: "Hin- und Rueckfahrt", type: "select", required: true, options: ["Nur Hinfahrt", "Hin- und Rueckfahrt"] },
-        { id: "returnFlightDate", label: "Rueckflugdatum (optional)", type: "date", required: false },
-        { id: "fixedPrice", label: "Festpreisanfrage Demo", type: "select", required: true, options: ["Ja", "Nein"] }
+        { id: "childSeat", label: "Kindersitz benötigt", type: "select", required: true, options: ["Nein", "Ja, 1", "Ja, 2+"] },
+        { id: "vehicleType", label: "Taxiart", type: "select", required: true, options: ["Normales Taxi", "Großraumtaxi"] },
+        { id: "roundtrip", label: "Hin- und Rückfahrt", type: "select", required: true, options: ["Nur Hinfahrt", "Hin- und Rückfahrt"] },
+        { id: "returnFlightDate", label: "Rückflugdatum (optional)", type: "date", required: false },
+        { id: "fixedPrice", label: "Festpreisanfrage", type: "select", required: true, options: ["Ja", "Nein"] }
       ]
     },
     business: {
       title: "Firmenkonto",
       icon: "assets/icons/Profile.svg",
-      description: "Bereich fuer Firmen- und Geschaeftskunden mit Monatsrechnung, Ansprechpartnern und wiederkehrenden Leistungen.",
+      description: "Planung für Firmen- und Geschäftskunden mit Ansprechpartnern und wiederkehrenden Leistungen.",
       benefits: [
         "Mitarbeiterfahrten, Flughafentransfers und Kurierfahrten kombinierbar",
         "Bahn- und Schichtpersonal kann als Leistung markiert werden",
-        "Individuelle Vereinbarungen als Demo erfassbar"
+        "Individuelle Vereinbarungen persönlich abstimmbar"
       ],
-      notice: "Keine echte Registrierung und keine Bonitaetspruefung. Anfrage bleibt unverbindliche Demo.",
+      notice: "Vereinbarungen und Abrechnung werden persönlich geprüft und bestätigt.",
       fields: [
         { id: "company", label: "Firmenname", type: "text", required: true },
         { id: "contact", label: "Ansprechpartner", type: "text", required: true },
@@ -145,52 +145,52 @@
         { id: "email", label: "E-Mail", type: "email", required: true },
         { id: "billingAddress", label: "Rechnungsadresse", type: "textarea", required: true },
         { id: "ridesPerMonth", label: "Erwartete Fahrten pro Monat", type: "number", required: true },
-        { id: "services", label: "Gewuenschte Leistungen", type: "multicheck", required: true, options: ["Zentrale Buchung", "Wiederkehrende Fahrten", "Monatsrechnung", "Flughafentransfers", "Mitarbeiterfahrten", "Kurierfahrten", "Bahn- und Schichtpersonal"] },
+        { id: "services", label: "Gewünschte Leistungen", type: "multicheck", required: true, options: ["Zentrale Buchung", "Wiederkehrende Fahrten", "Monatsrechnung", "Flughafentransfers", "Mitarbeiterfahrten", "Kurierfahrten", "Bahn- und Schichtpersonal"] },
         { id: "invoiceMode", label: "Rechnungswunsch", type: "select", required: true, options: ["Monatsrechnung", "Wochenrechnung", "Einzelfahrten"] },
         { id: "remark", label: "Bemerkung", type: "textarea", required: false }
       ]
     },
     student: {
-      title: "Schuelerfahrten",
+      title: "Schülerfahrten",
       icon: "assets/icons/Route.svg",
-      description: "Regelmaessige Schuelerbefoerderung mit festen Abholzeiten, Hin- und Rueckfahrt und individueller Abstimmung.",
+      description: "Regelmäßige Schülerbeförderung mit festen Abholzeiten, Hin- und Rückfahrt und individueller Abstimmung.",
       benefits: [
         "Wochentage und Zeitfenster klar definierbar",
-        "Abstimmung mit Eltern, Schule oder Traeger als Demo vorbereitet",
+        "Abstimmung mit Eltern, Schule oder Träger",
         "Begleitbedarf direkt abfragbar"
       ],
-      notice: "Individuelle Anfrage erforderlich. Keine automatische Zusage ohne persoenliche Rueckmeldung.",
+      notice: "Eine persönliche Abstimmung und Bestätigung ist erforderlich.",
       fields: [
         { id: "name", label: "Ansprechpartner", type: "text", required: true },
         { id: "phone", label: "Telefonnummer", type: "tel", required: true },
-        { id: "passengers", label: "Anzahl Fahrgaeste", type: "number", required: true },
+        { id: "passengers", label: "Anzahl Fahrgäste", type: "number", required: true },
         { id: "pickup", label: "Abholort", type: "text", required: true },
         { id: "destination", label: "Ziel", type: "text", required: true },
         { id: "weekdays", label: "Wochentage", type: "multicheck", required: true, options: ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"] },
-        { id: "times", label: "Uhrzeiten", type: "text", required: true, placeholder: "z. B. Hinfahrt 07:15, Rueckfahrt 13:20" },
-        { id: "support", label: "Begleitbedarf", type: "select", required: true, options: ["Kein Begleitbedarf", "Begleitperson noetig", "Individuell zu klaeren"] },
+        { id: "times", label: "Uhrzeiten", type: "text", required: true, placeholder: "z. B. Hinfahrt 07:15, Rückfahrt 13:20" },
+        { id: "support", label: "Begleitbedarf", type: "select", required: true, options: ["Kein Begleitbedarf", "Begleitperson nötig", "Individuell zu klären"] },
         { id: "period", label: "Zeitraum", type: "text", required: true, placeholder: "z. B. Schuljahr 2026/27" }
       ]
     },
     courier: {
       title: "Kurierfahrten",
       icon: "assets/icons/Route.svg",
-      description: "Direktfahrten fuer Dokumente, Ersatzteile und kleine Sendungen inklusive Zeitfenster als Demo-Anfrage.",
+      description: "Direktfahrten für Dokumente, Ersatzteile und kleine Sendungen inklusive Zeitfenster vorbereiten.",
       benefits: [
-        "Zeitkritische Zustellung als Demo markierbar",
-        "Kontakte fuer Abholung und Empfang erfassbar",
-        "Hinweis auf Ausschluss verbotener Gueter integriert"
+        "Zeitkritische Zustellung kennzeichnen",
+        "Kontakte für Abholung und Empfang erfassen",
+        "Sendungsart und Größe angeben"
       ],
-      notice: "Keine gefaehrlichen oder gesetzlich verbotenen Gueter. Keine echte Beauftragung durch dieses Demo-Formular.",
+      notice: "Gefährliche oder gesetzlich verbotene Güter sind ausgeschlossen. Eine Beauftragung erfolgt erst nach persönlicher Bestätigung.",
       fields: [
         { id: "name", label: "Name", type: "text", required: true },
         { id: "phone", label: "Telefonnummer", type: "tel", required: true },
         { id: "pickup", label: "Abholadresse", type: "text", required: true },
         { id: "destination", label: "Zieladresse", type: "text", required: true },
         { id: "shipmentType", label: "Art der Sendung", type: "text", required: true },
-        { id: "shipmentSize", label: "Ungefaehre Groesse", type: "select", required: true, options: ["Dokumente", "Kleine Sendung", "Mittelgrosse Sendung"] },
+        { id: "shipmentSize", label: "Ungefähre Größe", type: "select", required: true, options: ["Dokumente", "Kleine Sendung", "Mittelgroße Sendung"] },
         { id: "pickupTime", label: "Abholzeit", type: "time", required: true },
-        { id: "latestDelivery", label: "Spaeteste Zustellung", type: "time", required: true },
+        { id: "latestDelivery", label: "Späteste Zustellung", type: "time", required: true },
         { id: "pickupContact", label: "Ansprechpartner Abholung", type: "text", required: true },
         { id: "dropContact", label: "Ansprechpartner Empfang", type: "text", required: true }
       ]
@@ -233,7 +233,7 @@
       input = document.createElement("select");
       var placeholderOpt = document.createElement("option");
       placeholderOpt.value = "";
-      placeholderOpt.textContent = "Bitte waehlen";
+      placeholderOpt.textContent = "Bitte wählen";
       input.appendChild(placeholderOpt);
       (field.options || []).forEach(function (opt) {
         var option = document.createElement("option");
@@ -329,7 +329,7 @@
       if (field.type === "multicheck") {
         if (!Array.isArray(value) || !value.length) {
           ok = false;
-          err.textContent = "Bitte mindestens eine Option waehlen.";
+          err.textContent = "Bitte mindestens eine Option wählen.";
         } else {
           err.textContent = "";
         }
@@ -338,19 +338,19 @@
 
       if (!value) {
         ok = false;
-        err.textContent = "Bitte dieses Pflichtfeld ausfuellen.";
+        err.textContent = "Bitte dieses Pflichtfeld ausfüllen.";
         return;
       }
 
       if (field.type === "email" && value.indexOf("@") === -1) {
         ok = false;
-        err.textContent = "Bitte eine gueltige E-Mail-Adresse eingeben.";
+        err.textContent = "Bitte eine gültige E-Mail-Adresse eingeben.";
         return;
       }
 
       if (field.type === "tel" && value.length < 6) {
         ok = false;
-        err.textContent = "Bitte eine gueltige Telefonnummer eingeben.";
+        err.textContent = "Bitte eine gültige Telefonnummer eingeben.";
         return;
       }
 
@@ -428,8 +428,6 @@
 
     var reviewButton = q("showSummaryBtn");
     var editButton = q("editSummaryBtn");
-    var submitButton = q("submitDemoRequestBtn");
-    var privacyCheckbox = q("sf-privacy");
 
     var activeFields = [];
 
@@ -459,8 +457,8 @@
         '<b>Wochenzusammenfassung</b>' +
         '<span>Tage: ' + humanizeValue(weekdays) + '</span>' +
         '<span>Hinfahrt: ' + (outbound || '-') + '</span>' +
-        '<span>Rueckfahrt: ' + (back || (direction === 'Nur Hinfahrt' ? 'Nicht erforderlich' : '-')) + '</span>' +
-        '<span>Hinweis: Serienfahrt wird erst nach persoenlicher Bestaetigung verbindlich.</span>';
+        '<span>Rückfahrt: ' + (back || (direction === 'Nur Hinfahrt' ? 'Nicht erforderlich' : '-')) + '</span>' +
+        '<span>Hinweis: Eine Serienfahrt wird erst nach persönlicher Bestätigung verbindlich.</span>';
     }
 
     function mountService(service) {
@@ -470,7 +468,6 @@
       clearErrors(activeFields);
       if (successText) successText.textContent = "";
       if (summaryList) summaryList.innerHTML = "";
-      if (privacyCheckbox) privacyCheckbox.checked = false;
       closeModal();
 
       if (sectionTitle) sectionTitle.textContent = config.title;
@@ -491,9 +488,9 @@
         infoGrid.innerHTML = "";
         var infoRows = [
           { k: "Leistung", v: config.title },
-          { k: "Anfrageart", v: "Strukturierte Demo-Anfrage" },
-          { k: "Uebertragung", v: "Keine echte Versendung" },
-          { k: "Datenschutz", v: "Bestaetigung vor Demo-Absenden" }
+          { k: "Planung", v: "Angaben lokal vorbereiten" },
+          { k: "Übertragung", v: "Keine automatische Versendung" },
+          { k: "Abschluss", v: "Persönliche Bestätigung erforderlich" }
         ];
         infoRows.forEach(function (row) {
           var box = document.createElement("div");
@@ -569,22 +566,6 @@
       editButton.addEventListener("click", closeModal);
     }
 
-    if (submitButton) {
-      submitButton.addEventListener("click", function () {
-        var privacyErr = q("sf-privacy-error");
-        if (!privacyCheckbox || !privacyCheckbox.checked) {
-          if (privacyErr) privacyErr.textContent = "Bitte Datenschutzhinweis bestaetigen.";
-          return;
-        }
-        if (privacyErr) privacyErr.textContent = "";
-
-        closeModal();
-        if (successText) {
-          successText.textContent = "Vielen Dank. Ihre Anfrage wurde als Demo erfasst und noch nicht uebertragen.";
-        }
-      });
-    }
-
     var modal = q("specialSummaryModal");
     if (modal) {
       modal.addEventListener("click", function (event) {
@@ -609,7 +590,7 @@
     mount();
   }
 
-  window.SpecialServicesDemo = {
+  window.SpecialServices = {
     keys: SERVICE_KEY,
     list: LIST.slice(),
     getConfig: getConfig

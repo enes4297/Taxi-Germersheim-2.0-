@@ -170,7 +170,7 @@
     {label:'Fahrer zugewiesen',detail:'Ein Fahrer wurde Ihrer Fahrt fest zugeordnet.'},
     {label:'Fahrer unterwegs',detail:'Ihr Fahrer ist auf dem Weg zum Abholort.'},
     {label:'Fahrer angekommen',detail:'Der Fahrer wartet am angegebenen Treffpunkt.'},
-    {label:'Fahrt läuft',detail:'Die Fahrt ist gestartet und wird live als Demo verfolgt.'},
+    {label:'Fahrt läuft',detail:'Die Fahrt wurde als gestartet markiert. Eine Live-Übertragung ist derzeit nicht verfügbar.'},
     {label:'Fahrt abgeschlossen',detail:'Die Fahrt wurde abgeschlossen und kann bewertet werden.'}
   ];
   const RIDE_TRACKING_STAGE_TIMINGS=[0,18000,36000,56000,76000,96000,118000];
@@ -1610,7 +1610,7 @@
           createRideTrackingStateFromBooking({...payload,rideType:bookingStepState.service});
           form.reset();
           syncFormState();
-          setStatus('Demo-Anfrage vorbereitet. Ihre aktuelle Fahrt wird jetzt angezeigt.',false);
+          setStatus('Anfrage lokal vorbereitet. Bitte bestätigen Sie die Fahrt telefonisch oder per WhatsApp.',false);
           show('ride-status');
         }else{
           setStatus('Der Versand konnte nicht abgeschlossen werden. Bitte rufen Sie uns an oder schreiben Sie per WhatsApp.',true);
@@ -1628,6 +1628,33 @@
     if(page==='rewards') return null;
     if(page && $('#'+page)) return page;
     return null;
+  }
+  function applyPublicBookingParams(){
+    const params=new URLSearchParams(window.location.search);
+    if(params.get('page')!=='booking') return;
+
+    const requestedService=params.get('specialService') || params.get('service') || '';
+    const serviceMap={
+      medical:'medical',
+      dialysis:'medical',
+      chemo:'medical',
+      wheelchair:'wheelchair',
+      airport:'airport',
+      taxi:'taxi',
+      courier:'taxi',
+      series:'taxi',
+      business:'taxi',
+      student:'taxi'
+    };
+    if(serviceMap[requestedService]) setService(serviceMap[requestedService]);
+
+    const pickup=params.get('pickup');
+    const destination=params.get('destination');
+    const pickupInput=$('#startAddress');
+    const destinationInput=$('#targetAddress');
+    if(pickup && pickupInput) pickupInput.value=pickup;
+    if(destination && destinationInput) destinationInput.value=destination;
+    syncBookingSummary();
   }
   function inject(){
     $$('[data-icon]').forEach(el=>{
@@ -7225,6 +7252,7 @@
 
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);
+    applyPublicBookingParams();
 
     // Single delegation point keeps interaction logic centralized and avoids many per-node listeners.
     document.addEventListener('click',e=>handleGlobalClick(e,nav));

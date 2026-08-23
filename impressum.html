@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#050505">
+  <meta name="theme-color" content="#07080a">
   <title>Impressum - Taxi Germersheim GmbH in Germersheim</title>
   <meta name="description" content="Impressum der Taxi Germersheim GmbH in Germersheim mit allen gesetzlichen Pflichtangaben, Kontaktdaten und Registerinformationen.">
   <meta name="robots" content="index,follow">
@@ -16,141 +16,104 @@
   <meta property="og:url" content="impressum.html">
   <meta property="og:image" content="logo.png">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="auth-demo.css">
+  <link rel="stylesheet" href="public-visual-repair.css">
+  <link rel="stylesheet" href="legal-pages.css">
 </head>
-<body>
-  <main class="app">
+<body class="legal-v2-body">
+  <div class="legal-v2-app">
     <header class="topbar">
-      <div class="brand"><a href="index.html"><img src="logo.png" alt="Taxi Germersheim GmbH"></a></div>
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen">
-        <span class="menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
-      </button>
-      <nav class="site-nav">
+      <div class="brand">
+        <a href="index.html" aria-label="Taxi Germersheim Startseite">
+          <img src="logo.png" alt="Taxi Germersheim GmbH">
+          <span>Taxi Germersheim</span>
+        </a>
+      </div>
+      <nav class="site-nav" aria-label="Hauptnavigation">
         <a href="index.html">Startseite</a>
         <a href="index.html?page=services">Leistungen</a>
         <a href="flotte.html">Fahrzeugflotte</a>
-        <a href="meinkonto.html">Mein Konto</a>
         <a href="rewards.html">Rewards</a>
-        <a href="index.html?page=why">Über uns</a>
-        <a href="index.html#kontakt">Kontakt</a>
+        <a href="hilfe-kontakt.html">Kontakt</a>
       </nav>
-      <div class="site-nav-backdrop" aria-hidden="true"></div>
       <div class="top-actions">
-        <a id="headerBookBtn" class="button nav-book-btn" href="index.html?page=booking">Jetzt buchen</a>
+        <a class="button nav-book-btn" href="anmelden.html" data-session-link>Anmelden</a>
       </div>
     </header>
 
-    <section id="impressum" class="screen active simple legal-page">
-      <header class="page-head"><a href="index.html" class="page-head-link" data-public-back aria-label="Zurück">‹</a><h2>Impressum</h2><i></i></header>
+    <main class="legal-page">
+      <div class="legal-shell">
+        <header class="legal-page-head">
+          <p class="legal-eyebrow">Rechtliches</p>
+          <h1>Impressum</h1>
+          <p>Rechtliche Angaben zu Taxi Germersheim GmbH.</p>
+        </header>
 
-      <article class="legal-hero">
-        <small>Rechtliche Angaben</small>
-        <h1>Taxi Germersheim GmbH</h1>
-        <p>Alle gesetzlichen Pflichtangaben im Überblick.</p>
-      </article>
-
-      <section class="legal-grid" aria-label="Impressumsangaben">
-        <article class="legal-card legal-card-company">
-          <div class="legal-card-head"><i data-icon="home"></i><b>Unternehmensdaten</b></div>
-          <div class="legal-row">
+        <section class="legal-content-grid" aria-label="Impressumsangaben">
+          <article class="legal-content-card">
+            <p class="legal-card-label">Unternehmen</p>
+            <h2>Unternehmensdaten</h2>
             <p>Taxi Germersheim GmbH<br>Friedrich-Ebert-Straße 8<br>76726 Germersheim<br>Deutschland</p>
-          </div>
-        </article>
+          </article>
 
-        <article class="legal-card legal-card-contact">
-          <div class="legal-card-head"><i data-icon="phone"></i><b>Kontakt</b></div>
-          <div class="legal-row">
-            <b>Telefon</b>
-            <p><a href="tel:072743567">07274 3567</a></p>
-          </div>
-          <div class="legal-row">
-            <b>E-Mail</b>
-            <p><a href="mailto:info@taxigermersheim.de">info@taxigermersheim.de</a></p>
-          </div>
-        </article>
+          <article class="legal-content-card">
+            <p class="legal-card-label">Erreichbarkeit</p>
+            <h2>Kontakt</h2>
+            <div class="legal-data-list">
+              <div class="legal-data-row">
+                <strong>Telefon</strong>
+                <p><a href="tel:072743567">07274 3567</a></p>
+              </div>
+              <div class="legal-data-row">
+                <strong>E-Mail</strong>
+                <p><a href="mailto:info@taxigermersheim.de">info@taxigermersheim.de</a></p>
+              </div>
+            </div>
+          </article>
 
-        <article class="legal-card legal-card-management">
-          <div class="legal-card-head"><i data-icon="user"></i><b>Geschäftsführung</b></div>
-          <div class="legal-row">
+          <article class="legal-content-card">
+            <p class="legal-card-label">Vertretung</p>
+            <h2>Geschäftsführung</h2>
             <p>Ismet Enes Carman<br>Sermin Duman</p>
-          </div>
-        </article>
+          </article>
 
-        <article class="legal-card legal-card-register">
-          <div class="legal-card-head"><i data-icon="booking"></i><b>Registerdaten</b></div>
-          <div class="legal-row">
-            <b>Registergericht</b>
-            <p>Amtsgericht Landau in der Pfalz</p>
-          </div>
-          <div class="legal-row">
-            <b>Registernummer</b>
-            <p>HRB 33841</p>
-          </div>
-          <div class="legal-row">
-            <b>Steuernummer</b>
-            <p>41/650/23698</p>
-          </div>
-        </article>
+          <article class="legal-content-card">
+            <p class="legal-card-label">Register</p>
+            <h2>Registerdaten</h2>
+            <div class="legal-data-list">
+              <div class="legal-data-row">
+                <strong>Registergericht</strong>
+                <p>Amtsgericht Landau in der Pfalz</p>
+              </div>
+              <div class="legal-data-row">
+                <strong>Registernummer</strong>
+                <p>HRB 33841</p>
+              </div>
+              <div class="legal-data-row">
+                <strong>Steuernummer</strong>
+                <p>41/650/23698</p>
+              </div>
+            </div>
+          </article>
 
-        <article class="legal-card legal-card-authority">
-          <div class="legal-card-head"><i data-icon="pin"></i><b>Genehmigungsbehörde</b></div>
-          <div class="legal-row">
+          <article class="legal-content-card legal-content-card--wide">
+            <p class="legal-card-label">Behörde</p>
+            <h2>Genehmigungsbehörde</h2>
             <p>Kreisverwaltung Germersheim<br>Luitpoldplatz 1<br>76726 Germersheim</p>
-          </div>
-        </article>
-      </section>
-    </section>
-  </main>
-
-  <footer id="kontakt" class="site-footer">
-    <div class="footer-content">
-      <div class="footer-brand">
-        <img class="footer-logo" src="logo.png" alt="Taxi Germersheim GmbH">
-        <strong>Taxi Germersheim</strong>
-        <p>Sicher. Zuverlässig. Pünktlich.</p>
-        <small>24 Stunden täglich für Sie erreichbar.</small>
-        <small class="footer-availability">24/7 erreichbar per Telefon und WhatsApp</small>
+          </article>
+        </section>
       </div>
+    </main>
+  </div>
 
-      <div class="footer-column footer-services">
-        <strong>Leistungen</strong>
-        <a href="index.html?page=booking">Taxi</a>
-        <a href="index.html?page=medical">Krankenfahrten</a>
-        <a href="index.html?page=booking">Rollstuhlfahrten</a>
-        <a href="index.html?page=booking">Flughafentransfer</a>
-        <a href="index.html?page=booking">Kurierfahrten</a>
-      </div>
-
-      <div class="footer-column footer-contact">
-        <strong>Kontakt</strong>
-        <a class="footer-cta-primary" href="tel:072743567"><i data-icon="phone"></i><span>Jetzt anrufen: 07274 3567</span></a>
-        <a class="footer-cta-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer"><i data-icon="yumak"></i><span>WhatsApp-Nachricht senden</span></a>
-        <a class="footer-contact-link" href="mailto:info@taxigermersheim.de"><i data-icon="profile"></i><span>E-Mail: info@taxigermersheim.de</span></a>
-        <a class="footer-contact-link" href="https://maps.google.com/?q=Friedrich-Ebert-Stra%C3%9Fe+8,+76726+Germersheim" target="_blank" rel="noreferrer"><i data-icon="pin"></i><span>Adresse: Friedrich-Ebert-Straße 8<br>76726 Germersheim</span></a>
-      </div>
-
-      <div class="footer-column footer-quicklinks">
-        <strong>Schnellzugriff</strong>
-        <a href="index.html">Startseite</a>
-        <a href="index.html?page=why">Über uns</a>
-        <a href="flotte.html">Fahrzeugflotte</a>
-        <a href="meinkonto.html">Mein Konto</a>
-        <a href="rewards.html">Rewards</a>
-        <a href="index.html#kontakt">Kontakt</a>
-        <a href="index.html?page=booking">Jetzt buchen</a>
-        <a href="index.html?page=faq">FAQ</a>
-      </div>
-    </div>
-
-    <div class="footer-bottom-line">
-      <p>© 2026 Taxi Germersheim.<br>Alle Rechte vorbehalten.</p>
-      <div class="footer-bottom-links">
+  <footer class="site-footer legal-footer">
+    <div class="legal-footer-row">
+      <p>&copy; 2026 Taxi Germersheim GmbH</p>
+      <div class="legal-footer-links">
         <a href="datenschutz.html">Datenschutz</a>
         <a href="impressum.html">Impressum</a>
+        <a href="hilfe-kontakt.html">Kontakt</a>
       </div>
     </div>
-
-    <div class="footer-bottom" aria-hidden="true"></div>
   </footer>
 
   <section id="cookieBanner" class="consent-banner" hidden role="region" aria-label="Cookie und Dienste Zustimmung">
@@ -165,7 +128,23 @@
       <button id="cookieSettings" type="button" class="button">Einstellungen</button>
     </div>
   </section>
-  <script src="customer-auth-demo.js"></script>
+
+  <script src="customer-auth.js"></script>
+  <script>
+    (async function () {
+      const auth = window.CustomerAuth || null;
+      if (auth && typeof auth.hydrateSession === 'function') {
+        await auth.hydrateSession();
+      }
+
+      const sessionLink = document.querySelector('[data-session-link]');
+      const isLoggedIn = auth && typeof auth.isLoggedIn === 'function' && auth.isLoggedIn();
+      if (sessionLink && isLoggedIn) {
+        sessionLink.href = 'meinkonto.html';
+        sessionLink.textContent = 'Mein Konto';
+      }
+    })();
+  </script>
   <script src="script.js"></script>
 </body>
 </html>
