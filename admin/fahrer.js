@@ -171,7 +171,23 @@
   function formatDate(value) {
     const date = new Date(`${value}T00:00:00`);
     if (Number.isNaN(date.getTime())) return value;
-    return new Intl.DateTimeFormat("de-DE").format(date);
+    return new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    }).format(date);
+  }
+
+  function formatDateTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value || "-";
+    return new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(date);
   }
 
   function normalizeText(value) {
@@ -566,9 +582,9 @@
           <p>Aktuelle Fahrt: ${currentOrder ? currentOrder.id : "-"}</p>
           <p>Nächster Auftrag: ${nextOrder ? nextOrder.id : "-"}</p>
           <p>Schichtdauer: ${calcV15ShiftDuration(driver)} h · Pause: ${driver.breakTotalMin || 0} Min</p>
-          <p>Letzte Statusmeldung: ${driver.lastStatusAt ? new Date(driver.lastStatusAt).toLocaleString("de-DE") : "-"}</p>
+          <p>Letzte Statusmeldung: ${driver.lastStatusAt ? formatDateTime(driver.lastStatusAt) : "-"}</p>
           <p>Demo-Standort: ${currentOrder ? currentOrder.customer.pickup : "Germersheim Zentrum"}</p>
-          <p>Letzter Fahrzeugcheck: ${lastCheck ? `${new Date(lastCheck.at).toLocaleString("de-DE")} · ${lastCheck.overall}` : "-"}</p>
+          <p>Letzter Fahrzeugcheck: ${lastCheck ? `${formatDateTime(lastCheck.at)} · ${lastCheck.overall}` : "-"}</p>
           <div class="driver-live-tags">
             ${(warnings.length ? warnings : ["keine offene Warnung"]).map((entry) => `<span class="driver-live-tag">${entry}</span>`).join("")}
           </div>
@@ -639,8 +655,8 @@
             <dl class="driver-modal-list">
               <div><dt>Fahrer</dt><dd>${driver.name}</dd></div>
               <div><dt>Fahrzeug</dt><dd>${driver.currentVehicleId || "-"}</dd></div>
-              <div><dt>Schichtbeginn</dt><dd>${driver.shiftStart ? new Date(driver.shiftStart).toLocaleString("de-DE") : "-"}</dd></div>
-              <div><dt>Schichtende</dt><dd>${driver.shiftEnd ? new Date(driver.shiftEnd).toLocaleString("de-DE") : "-"}</dd></div>
+              <div><dt>Schichtbeginn</dt><dd>${driver.shiftStart ? formatDateTime(driver.shiftStart) : "-"}</dd></div>
+              <div><dt>Schichtende</dt><dd>${driver.shiftEnd ? formatDateTime(driver.shiftEnd) : "-"}</dd></div>
               <div><dt>Arbeitszeit</dt><dd>${calcV15ShiftDuration(driver)} h</dd></div>
               <div><dt>Pausen</dt><dd>${driver.breakTotalMin || 0} Min</dd></div>
               <div><dt>Aufträge</dt><dd>${driver.ridesDone || 0}</dd></div>
@@ -659,7 +675,7 @@
         openModal(
           `Fahrzeugcheck: ${driver.name}`,
           latest
-            ? `<p class="driver-modal-note">Letzter Check: ${new Date(latest.at).toLocaleString("de-DE")} · Ergebnis: ${latest.overall}</p>`
+            ? `<p class="driver-modal-note">Letzter Check: ${formatDateTime(latest.at)} · Ergebnis: ${latest.overall}</p>`
             : "<p class=\"driver-modal-note\">Noch kein Fahrzeugcheck vorhanden.</p>"
         );
       }

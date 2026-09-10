@@ -10,20 +10,20 @@
 
 ## Kundenkonto pflegen
 
-- Seite: kundenkonto.html
-- Dashboard-Bereich: section mit id account und Klasse account-page
-- Kartenstruktur: article.account-card mit data-account-card
-- Datenfelder: über data-account-field für spätere API/Backend-Anbindung vorbereitet
-- Profilbild austauschen: src der account-avatar in kundenkonto.html ersetzen
-- Styles: dedizierter Block Kundenkonto Seite in style.css
+- Hauptseite: meinkonto.html
+- Legacy-Alias: kundenkonto.html leitet ohne eigene Kontodaten auf meinkonto.html weiter
+- Unterseiten: meine-fahrten.html, live-fahrt.html, wallet-gutscheine.html und kunden-einstellungen.html
+- Profil- und Sessiondaten: customer-auth.js
+- Rewards-Übersicht: Supabase-RPC get_my_rewards_overview
+- Styles: gemeinsame Kundensektionen in public-system.css
 
 ## Rewards pflegen
 
 - Seite: rewards.html
-- Level-System: rewards-level-grid in rewards.html
-- Abzeichen / Belohnungen / Punkte: eigene Karten mit data-rewards-field vorbereitet
-- Glücksrad: rewards-wheel-placeholder ist als spätere Erweiterungsfläche vorgesehen
-- Styles: dedizierter Block Rewards Seite in style.css
+- Datenquelle: Supabase-RPC get_my_rewards_overview
+- Rendering und Formatierung: rewards-customer.js
+- Ohne erfolgreiche Session oder RPC bleiben Kontowerte leer beziehungsweise werden als Gedankenstrich dargestellt
+- Styles: Rewards-Bereich in public-system.css
 
 ## Abzeichen-System pflegen
 
@@ -31,4 +31,4 @@
 - Kategorien: Fahrten, Treue, Krankenfahrten, Flughafen, Geheim, Saison
 - Statuslogik im Design: is-unlocked und is-locked
 - Geheime Abzeichen: is-secret ohne Fortschrittsanzeige
-- Kundenkonto-Übersicht: kompakte Badge-Vorschau in kundenkonto.html
+- Das aktuelle backendgebundene Kundenkonto zeigt keine lokalen Demo-Abzeichen.

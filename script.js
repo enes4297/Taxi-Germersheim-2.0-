@@ -85,8 +85,8 @@
     },
     pointsByRide:{
       taxi:10,
-      airport:15,
-      medical:5,
+      airport:0,
+      medical:0,
       wheelchair:10
     }
   };
@@ -145,13 +145,37 @@
   ];
   let addressConfigCache=null;
   let streetDirectoryCache=null;
+
+  async function loadAddressConfig(){
+    if(!addressConfigCache){
+      addressConfigCache=fetch('assets/data/address-config.json',{cache:'no-store'})
+        .then(response=>response.ok?response.json():Promise.reject(new Error('Adresskonfiguration nicht verfügbar')))
+        .then(config=>({
+          allowedCities:Array.isArray(config?.allowedCities)?config.allowedCities:defaultAddressConfig.allowedCities,
+          popularPlaces:Array.isArray(config?.popularPlaces)?config.popularPlaces:defaultAddressConfig.popularPlaces
+        }))
+        .catch(()=>defaultAddressConfig);
+    }
+    return addressConfigCache;
+  }
+
+  async function loadStreetDirectory(){
+    if(!streetDirectoryCache){
+      streetDirectoryCache=fetch('assets/data/streets-germersheim.json',{cache:'no-store'})
+        .then(response=>response.ok?response.json():Promise.reject(new Error('Straßenverzeichnis nicht verfügbar')))
+        .then(rows=>Array.isArray(rows)?rows:[])
+        .catch(()=>[]);
+    }
+    return streetDirectoryCache;
+  }
+
   let mapContainers={};
   const bookingRouteState={
     distanceText:'-',
     durationText:'-',
     distanceKm:null,
     durationMin:null,
-    source:'demo'
+    source:'google-maps'
   };
   const CONSENT_STORAGE_KEY='taxiGermersheimCookieConsent';
   const CONSENT_ALL='all';
@@ -164,26 +188,9 @@
   };
   const BOOKING_REBOOK_STORAGE_KEY='taxiBookingRebookState';
   const RIDE_TRACKING_STORAGE_KEY='taxiCurrentRideTrackingState';
-  const RIDE_TRACKING_STEPS=[
-    {label:'Anfrage eingegangen',detail:'Ihre Buchung wurde erfasst und im System vorbereitet.'},
-    {label:'Disposition prüft',detail:'Unser Team prüft Fahrzeug, Route und Verfügbarkeit.'},
-    {label:'Fahrer zugewiesen',detail:'Ein Fahrer wurde Ihrer Fahrt fest zugeordnet.'},
-    {label:'Fahrer unterwegs',detail:'Ihr Fahrer ist auf dem Weg zum Abholort.'},
-    {label:'Fahrer angekommen',detail:'Der Fahrer wartet am angegebenen Treffpunkt.'},
-    {label:'Fahrt läuft',detail:'Die Fahrt ist gestartet und wird live als Demo verfolgt.'},
-    {label:'Fahrt abgeschlossen',detail:'Die Fahrt wurde abgeschlossen und kann bewertet werden.'}
-  ];
-  const RIDE_TRACKING_STAGE_TIMINGS=[0,18000,36000,56000,76000,96000,118000];
-  const CONTACT_SERVICE_CONFIG={
-    // Set provider to 'formspree' or 'emailjs' when real transport is connected.
-    provider:null,
-    formspreeEndpoint:'',
-    emailjs:{
-      serviceId:'',
-      templateId:'',
-      publicKey:''
-    }
-  };
+  function resolveRideTrackingSnapshot(){
+    return null;
+  }
 
   function saveBookingBridgeState(partial){
     try{
@@ -199,10 +206,27 @@
       };
       localStorage.setItem(key,JSON.stringify(next));
     }catch(_err){
-      // localStorage optional in demo mode.
+      // localStorage is optional.
     }
   }
 
+  function handleRewardEvent(type,payload){
+    const eventType=String(type || '').trim();
+    if(!eventType) return;
+    try{
+      if(window.rewardsEngine && typeof window.rewardsEngine.processEvent==='function'){
+        window.rewardsEngine.processEvent(eventType,payload || {});
+      }
+    }catch(_err){
+      // Keep legacy dispatch even if engine processing fails.
+    }
+    const detail={
+      type:eventType,
+      payload:payload && typeof payload==='object' ? payload : {},
+      timestamp:Date.now()
+    };
+    document.dispatchEvent(new CustomEvent('rewards:rewardEvent',{detail}));
+  }
   function writeBookingRebookState(partial){
     try{
       const next={
@@ -213,7 +237,7 @@
       };
       localStorage.setItem(BOOKING_REBOOK_STORAGE_KEY,JSON.stringify(next));
     }catch(_err){
-      // localStorage optional in demo mode.
+      // localStorage is optional.
     }
   }
 
@@ -235,141 +259,6 @@
     }catch(_err){
       return null;
     }
-  }
-
-  function getRideDriverPreset(rideType){
-    const key=String(rideType || 'taxi').trim().toLowerCase();
-    if(key==='medical') return {driverName:'Sabine Hoffmann',vehicleType:'Mercedes V-Klasse',licensePlate:'GER-MH 612',phone:'07274 3567',baseEtaMinutes:11};
-    if(key==='airport') return {driverName:'Michael Becker',vehicleType:'Mercedes E-Klasse',licensePlate:'GER-TG 247',phone:'07274 3567',baseEtaMinutes:14};
-    if(key==='wheelchair') return {driverName:'Ali Demir',vehicleType:'Rollstuhlfahrzeug',licensePlate:'GER-RF 118',phone:'07274 3567',baseEtaMinutes:13};
-    return {driverName:'Julia Schneider',vehicleType:'Taxi Limousine',licensePlate:'GER-TX 401',phone:'07274 3567',baseEtaMinutes:9};
-  }
-
-  function buildRideTrackingState(partial){
-    const driverPreset=getRideDriverPreset(partial?.rideType);
-    return {
-      id:String(partial?.id || `ride-track-${Date.now()}`),
-      customerName:String(partial?.customerName || 'Max Mustermann').trim() || 'Max Mustermann',
-      pickup:String(partial?.pickup || 'Germersheim Zentrum').trim() || 'Germersheim Zentrum',
-      destination:String(partial?.destination || 'Speyer').trim() || 'Speyer',
-      rideType:String(partial?.rideType || 'taxi').trim().toLowerCase() || 'taxi',
-      createdAt:Number(partial?.createdAt || Date.now()),
-      statusIndex:Math.max(0,Math.min(RIDE_TRACKING_STEPS.length-1,Number(partial?.statusIndex ?? 0) || 0)),
-      simulationEnabled:partial?.simulationEnabled!==false,
-      ratingSubmitted:Boolean(partial?.ratingSubmitted),
-      driverName:String(partial?.driverName || driverPreset.driverName).trim() || driverPreset.driverName,
-      vehicleType:String(partial?.vehicleType || driverPreset.vehicleType).trim() || driverPreset.vehicleType,
-      licensePlate:String(partial?.licensePlate || driverPreset.licensePlate).trim() || driverPreset.licensePlate,
-      phone:String(partial?.phone || driverPreset.phone).trim() || driverPreset.phone,
-      baseEtaMinutes:Math.max(1,Math.round(Number(partial?.baseEtaMinutes || driverPreset.baseEtaMinutes) || driverPreset.baseEtaMinutes))
-    };
-  }
-
-  function getDefaultRideTrackingState(){
-    return buildRideTrackingState({
-      customerName:'Max Mustermann',
-      pickup:'Germersheim Zentrum',
-      destination:'Speyer Zentrum',
-      rideType:'taxi',
-      createdAt:Date.now()-42000,
-      statusIndex:2,
-      simulationEnabled:true
-    });
-  }
-
-  function writeRideTrackingState(next){
-    try{
-      localStorage.setItem(RIDE_TRACKING_STORAGE_KEY,JSON.stringify(buildRideTrackingState(next)));
-      document.dispatchEvent(new CustomEvent('ride-tracking:update'));
-    }catch(_err){
-      // localStorage optional in demo mode.
-    }
-  }
-
-  function readRideTrackingState(seedIfMissing=false){
-    try{
-      const raw=localStorage.getItem(RIDE_TRACKING_STORAGE_KEY);
-      if(!raw){
-        if(!seedIfMissing) return null;
-        const seeded=getDefaultRideTrackingState();
-        writeRideTrackingState(seeded);
-        return seeded;
-      }
-      const parsed=JSON.parse(raw);
-      return buildRideTrackingState(parsed);
-    }catch(_err){
-      if(!seedIfMissing) return null;
-      const seeded=getDefaultRideTrackingState();
-      writeRideTrackingState(seeded);
-      return seeded;
-    }
-  }
-
-  function resolveRideTrackingSnapshot(seedIfMissing=false){
-    const base=readRideTrackingState(seedIfMissing);
-    if(!base) return null;
-    let activeIndex=Math.max(0,Math.min(RIDE_TRACKING_STEPS.length-1,Number(base.statusIndex || 0)));
-
-    if(base.simulationEnabled){
-      const elapsed=Math.max(0,Date.now()-Math.max(0,Number(base.createdAt || Date.now())));
-      for(let i=RIDE_TRACKING_STAGE_TIMINGS.length-1;i>=0;i--){
-        if(elapsed>=RIDE_TRACKING_STAGE_TIMINGS[i]){
-          activeIndex=i;
-          break;
-        }
-      }
-    }
-
-    const statusMeta=RIDE_TRACKING_STEPS[activeIndex] || RIDE_TRACKING_STEPS[0];
-    const arrivalText=activeIndex<4 ? `${Math.max(1,base.baseEtaMinutes-activeIndex*2)} Min.` : activeIndex===4 ? 'Jetzt angekommen' : activeIndex===5 ? 'Fahrt läuft' : 'Abgeschlossen';
-    return {
-      ...base,
-      activeIndex,
-      isCompleted:activeIndex>=RIDE_TRACKING_STEPS.length-1,
-      statusLabel:statusMeta.label,
-      statusDetail:statusMeta.detail,
-      route:`${base.pickup} → ${base.destination}`,
-      arrivalText,
-      steps:RIDE_TRACKING_STEPS.map((step,index)=>({
-        ...step,
-        index,
-        isComplete:index<activeIndex,
-        isActive:index===activeIndex
-      }))
-    };
-  }
-
-  function createRideTrackingStateFromBooking(payload){
-    const next=buildRideTrackingState({
-      customerName:String(payload?.name || 'Max Mustermann').trim() || 'Max Mustermann',
-      pickup:String(payload?.pickup || '').trim(),
-      destination:String(payload?.destination || '').trim(),
-      rideType:String(payload?.rideType || 'taxi').trim().toLowerCase() || 'taxi',
-      createdAt:Date.now(),
-      statusIndex:0,
-      simulationEnabled:true,
-      ratingSubmitted:false
-    });
-    writeRideTrackingState(next);
-    return next;
-  }
-
-  function handleRewardEvent(type,payload){
-    const eventType=String(type || '').trim();
-    if(!eventType) return;
-    try{
-      if(window.rewardsEngine && typeof window.rewardsEngine.processEvent==='function'){
-        window.rewardsEngine.processEvent(eventType,payload || {});
-      }
-    }catch(_err){
-      // Keep legacy dispatch even if engine processing fails.
-    }
-    const detail={
-      type:eventType,
-      payload:payload && typeof payload==='object' ? payload : {},
-      timestamp:Date.now()
-    };
-    document.dispatchEvent(new CustomEvent('rewards:rewardEvent',{detail}));
   }
   try{
     if(!window.handleRewardEvent) window.handleRewardEvent=handleRewardEvent;
@@ -867,7 +756,31 @@
     }
   }
 
-    function parseStreetQuery(query){
+  function normalizeText(value){
+    return String(value||'')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .replace(/ß/g,'ss')
+      .toLowerCase()
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+
+  function buildAddressLabel(entry){
+    const street=[entry?.street,entry?.houseNumber].filter(Boolean).join(' ');
+    const location=[entry?.postalCode,entry?.city].filter(Boolean).join(' ');
+    return [entry?.title,street,location].filter(Boolean).join(', ');
+  }
+
+  function createAddressView(entry){
+    const street=[entry?.street,entry?.houseNumber].filter(Boolean).join(' ');
+    const location=[entry?.postalCode,entry?.city].filter(Boolean).join(' ');
+    const primary=entry?.title||street||location||'Adresse';
+    const secondary=[entry?.title?street:'',location].filter(value=>value && value!==primary).join(', ');
+    return {...entry,primary,secondary,label:buildAddressLabel(entry)};
+  }
+
+  function parseStreetQuery(query){
     const safeQuery=String(query||'').trim();
     if(!safeQuery) return {houseNumber:'',textQuery:''};
 
@@ -1099,129 +1012,16 @@
     return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
   }
 
-  function lookupDemoCoordinate(address){
-    const value=String(address || '')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g,'')
-      .replace(/ß/g,'ss')
-      .replace(/[^a-z0-9\s-]/g,' ')
-      .replace(/\s+/g,' ')
-      .trim();
-    const hints=[
-      {keys:['germersheim','bahnhof germersheim','friedrich-ebert'],lat:49.2238,lon:8.3668},
-      {keys:['sondernheim'],lat:49.1992,lon:8.3396},
-      {keys:['speyer'],lat:49.3173,lon:8.4311},
-      {keys:['landau'],lat:49.1982,lon:8.1166},
-      {keys:['karlsruhe'],lat:49.0069,lon:8.4037},
-      {keys:['mannheim'],lat:49.4875,lon:8.4660},
-      {keys:['heidelberg'],lat:49.3988,lon:8.6724},
-      {keys:['flughafen frankfurt','frankfurt terminal'],lat:50.0379,lon:8.5622},
-      {keys:['flughafen','rheinmuenster','baden-baden'],lat:48.7794,lon:8.0805},
-      {keys:['krankenhaus'],lat:49.2143,lon:8.3624}
-    ];
-
-    const matched=hints.find(entry=>entry.keys.some(key=>value.includes(key)));
-    if(matched) return {lat:matched.lat,lon:matched.lon};
-
-    const baseLat=49.2238;
-    const baseLon=8.3668;
-    let hash=0;
-    for(let i=0;i<value.length;i+=1) hash=(hash*31 + value.charCodeAt(i)) % 100000;
-    return {
-      lat:baseLat + ((hash % 700) / 10000),
-      lon:baseLon + (((Math.floor(hash / 7) % 700) - 350) / 10000)
-    };
-  }
-
-  function calculateDistanceKm(a,b){
-    const toRad=value=>(value*Math.PI)/180;
-    const radius=6371;
-    const dLat=toRad(b.lat-a.lat);
-    const dLon=toRad(b.lon-a.lon);
-    const lat1=toRad(a.lat);
-    const lat2=toRad(b.lat);
-    const h=Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
-    return 2*radius*Math.asin(Math.sqrt(h));
-  }
-
-  function estimateRouteMetrics(origin,destination){
-    if(!origin || !destination) return null;
-    const from=lookupDemoCoordinate(origin);
-    const to=lookupDemoCoordinate(destination);
-    const distance=Math.max(1,calculateDistanceKm(from,to));
-    const avgSpeedKmH=42;
-    const minutes=Math.max(4,Math.round((distance/avgSpeedKmH)*60));
-    return {
-      distanceKm:distance,
-      durationMin:minutes,
-      source:'demo'
-    };
-  }
-
-  function formatDistanceText(distanceKm){
-    if(!Number.isFinite(distanceKm)) return '-';
-    return `${distanceKm.toFixed(1).replace('.',',')} km`;
-  }
-
-  function formatDurationText(durationMin){
-    if(!Number.isFinite(durationMin)) return '-';
-    return `${Math.round(durationMin)} min`;
-  }
-
-  function getEstimatedRewardPoints(){
-    return REWARDS_RULES.pointsByRide[bookingStepState.service] || REWARDS_RULES.pointsByRide.taxi;
-  }
-
-  function formatPriceText(value){
-    if(!Number.isFinite(value)) return 'Bitte Fahrzeug wählen';
-    return `${value.toFixed(2).replace('.',',')} EUR`;
-  }
-
-  function calculateVehicleEstimate(distanceKm,vehicleKey){
-    const vehicle=bookingVehicleCatalog[vehicleKey];
-    if(!vehicle || !Number.isFinite(distanceKm)) return null;
-    const serviceFactor=bookingStepState.service==='airport' ? 1.12 : bookingStepState.service==='medical' ? 1.08 : bookingStepState.service==='wheelchair' ? 1.15 : 1;
-    const price=Math.max(vehicle.minimum,vehicle.baseFare + (distanceKm * vehicle.perKm * serviceFactor));
-    return Number(price.toFixed(2));
-  }
-
-  function getFallbackFareEstimate(distanceKm){
-    const estimates=Object.keys(bookingVehicleCatalog)
-      .map(key=>calculateVehicleEstimate(distanceKm,key))
-      .filter(value=>Number.isFinite(value));
-    if(!estimates.length) return null;
-    return Math.min(...estimates);
-  }
-
-  function getFarePreviewText(distanceKm){
-    if(bookingStepState.selectedVehicle){
-      return formatPriceText(calculateVehicleEstimate(distanceKm,bookingStepState.selectedVehicle));
-    }
-    const fallback=getFallbackFareEstimate(distanceKm);
-    return Number.isFinite(fallback) ? `ab ${formatPriceText(fallback)}` : 'Bitte Fahrzeug wählen';
-  }
-
-  function syncVehiclePriceCards(distanceKm){
-    Object.keys(bookingVehicleCatalog).forEach(key=>{
-      const node=$(`[data-vehicle-price="${key}"]`);
-      if(!node) return;
-      const price=calculateVehicleEstimate(distanceKm,key);
-      node.textContent=`Geschätzter Preis: ab ${formatPriceText(price)}`;
-    });
-  }
-
   // Keep exactly one Wunschfahrzeug active and mirror that state into buttons, badges and the live summary.
   function syncVehicleSelectionSummary(){
     const vehicleNode=$('[data-booking-summary-vehicle]');
     const statusNode=$('[data-booking-summary-vehicle-status]');
     const priceNode=$('[data-booking-summary-price]');
     const vehicle=bookingVehicleCatalog[bookingStepState.selectedVehicle] || null;
-    const priceText=getFarePreviewText(bookingRouteState.distanceKm);
 
-    if(vehicleNode) vehicleNode.textContent=vehicle ? vehicle.label : 'Kein Wunsch gespeichert';
-    if(statusNode) statusNode.textContent=vehicle ? vehicle.status : 'Bitte Wunsch wählen';
-    if(priceNode) priceNode.textContent=priceText;
+    if(vehicleNode) vehicleNode.textContent=vehicle ? vehicle.label : 'Kein Fahrzeugwunsch';
+    if(statusNode) statusNode.textContent='';
+    if(priceNode) priceNode.textContent='Preis auf Anfrage';
 
     $$('[data-vehicle-card]').forEach(card=>{
       const selected=card.dataset.vehicleCard===bookingStepState.selectedVehicle;
@@ -1260,36 +1060,23 @@
     const durationNode=$('[data-booking-duration]');
     const serviceNode=$('[data-booking-route-service]');
     const routeModeNode=$('[data-booking-route-mode]');
-    const pointsNode=$('[data-booking-route-points]');
     const yumakHintNode=$('[data-booking-yumak-hint]');
-    const summaryDistanceNode=$('[data-booking-summary-distance]');
-    const summaryDurationNode=$('[data-booking-summary-duration]');
     const summaryRouteModeNode=$('[data-booking-summary-route-mode]');
-    const summaryPointsNode=$('[data-booking-summary-points]');
     const vehiclePanel=$('[data-booking-vehicle-panel]');
     const fareOverview=$('[data-booking-fare-overview]');
-    const fareDistanceNode=$('[data-fare-distance]');
-    const fareDurationNode=$('[data-fare-duration]');
     const fareServiceNode=$('[data-fare-service]');
     const farePassengersNode=$('[data-fare-passengers]');
     const fareVehicleNode=$('[data-fare-vehicle]');
-    const farePointsNode=$('[data-fare-points]');
     const farePriceNode=$('[data-fare-price]');
-    const fareRewardsNote=$('[data-fare-rewards-note]');
-    const fareVoucherNote=$('[data-fare-voucher-note]');
-    const points=getEstimatedRewardPoints();
     const routeService=services[bookingStepState.service]?.[0] || 'Normale Taxifahrt';
     const passengersText=String($('#bookingPassengers')?.value || '1');
 
     if(startPreview) startPreview.value=start || '-';
     if(serviceNode) serviceNode.textContent=routeService;
-    if(routeModeNode) routeModeNode.textContent='Autofahrt';
-    if(pointsNode) pointsNode.textContent=`ca. ${points}`;
-    if(summaryRouteModeNode) summaryRouteModeNode.textContent='Autofahrt';
-    if(summaryPointsNode) summaryPointsNode.textContent=`ca. ${points}`;
+    if(routeModeNode) routeModeNode.textContent=start && target ? 'Google Maps' : '-';
+    if(summaryRouteModeNode) summaryRouteModeNode.textContent=start && target ? 'Google Maps' : '-';
     if(fareServiceNode) fareServiceNode.textContent=routeService;
     if(farePassengersNode) farePassengersNode.textContent=passengersText;
-    if(farePointsNode) farePointsNode.textContent=`ca. ${points}`;
 
     if(!start || !target){
       bookingRouteState.distanceText='-';
@@ -1299,59 +1086,34 @@
       bookingStepState.selectedVehicle='';
       if(distanceNode) distanceNode.textContent='-';
       if(durationNode) durationNode.textContent='-';
-      if(summaryDistanceNode) summaryDistanceNode.textContent='-';
-      if(summaryDurationNode) summaryDurationNode.textContent='-';
       if(vehiclePanel) vehiclePanel.hidden=true;
       if(fareOverview) fareOverview.hidden=true;
-      syncVehiclePriceCards(null);
       syncVehicleSelectionSummary();
-      if(fareDistanceNode) fareDistanceNode.textContent='-';
-      if(fareDurationNode) fareDurationNode.textContent='-';
-      if(fareVehicleNode) fareVehicleNode.textContent='Kein Wunsch gespeichert';
-      if(farePriceNode) farePriceNode.textContent='Bitte Fahrzeug wählen';
-      if(fareRewardsNote) fareRewardsNote.textContent=`Mit dieser Fahrt erhältst du voraussichtlich ca. ${points} Punkte.`;
-      if(fareVoucherNote) fareVoucherNote.hidden=true;
-      if(yumakHintNode) yumakHintNode.textContent='Perfekt! Das sind ungefähr 7,5 km und 11 Minuten.';
+      if(fareVehicleNode) fareVehicleNode.textContent='Kein Fahrzeugwunsch';
+      if(farePriceNode) farePriceNode.textContent='Preis auf Anfrage';
+      if(yumakHintNode) yumakHintNode.textContent='Route wird nach der Adressbestätigung angezeigt.';
       return;
     }
 
-    const metrics=estimateRouteMetrics(start,target);
-    const distanceText=formatDistanceText(metrics?.distanceKm);
-    const durationText=formatDurationText(metrics?.durationMin);
+    bookingRouteState.distanceText='-';
+    bookingRouteState.durationText='-';
+    bookingRouteState.distanceKm=null;
+    bookingRouteState.durationMin=null;
+    bookingRouteState.source='google-maps';
 
-    bookingRouteState.distanceText=distanceText;
-    bookingRouteState.durationText=durationText;
-    bookingRouteState.distanceKm=metrics?.distanceKm || null;
-    bookingRouteState.durationMin=metrics?.durationMin || null;
-    bookingRouteState.source=metrics?.source || 'demo';
-
-    if(distanceNode) distanceNode.textContent=distanceText;
-    if(durationNode) durationNode.textContent=durationText;
-    if(summaryDistanceNode) summaryDistanceNode.textContent=distanceText;
-    if(summaryDurationNode) summaryDurationNode.textContent=durationText;
+    if(distanceNode) distanceNode.textContent='In Google Maps';
+    if(durationNode) durationNode.textContent='In Google Maps';
+    if(routeModeNode) routeModeNode.textContent='Google Maps';
+    if(summaryRouteModeNode) summaryRouteModeNode.textContent='Google Maps';
     if(vehiclePanel) vehiclePanel.hidden=false;
     if(fareOverview) fareOverview.hidden=false;
-    syncVehiclePriceCards(metrics?.distanceKm);
     syncVehicleSelectionSummary();
-    if(fareDistanceNode) fareDistanceNode.textContent=distanceText;
-    if(fareDurationNode) fareDurationNode.textContent=durationText;
-    if(fareVehicleNode) fareVehicleNode.textContent=bookingVehicleCatalog[bookingStepState.selectedVehicle]?.label || 'Kein Wunsch gespeichert';
-    if(farePriceNode) farePriceNode.textContent=getFarePreviewText(metrics?.distanceKm);
-    if(fareRewardsNote) fareRewardsNote.textContent=`Mit dieser Fahrt erhältst du voraussichtlich ca. ${points} Punkte.`;
-    if(fareVoucherNote){
-      let hasVoucher=false;
-      try{
-        const raw=localStorage.getItem('taxiRewardsEngineState');
-        if(raw) hasVoucher=Number(JSON.parse(raw)?.voucherBalance || 0)>0;
-      }catch(_err){
-        hasVoucher=false;
-      }
-      fareVoucherNote.hidden=!hasVoucher;
-    }
+    if(fareVehicleNode) fareVehicleNode.textContent=bookingVehicleCatalog[bookingStepState.selectedVehicle]?.label || 'Kein Fahrzeugwunsch';
+    if(farePriceNode) farePriceNode.textContent='Preis auf Anfrage';
     if(yumakHintNode){
       if(bookingStepState.service==='medical') yumakHintNode.textContent='Für Krankenfahrten helfen wir dir gerne bei Fragen zur Kostenübernahme.';
       else if(bookingStepState.service==='airport') yumakHintNode.textContent='Plane bitte genug Zeit für Check-in und Gepäck ein.';
-      else yumakHintNode.textContent=`Perfekt! Das sind ungefähr ${distanceText} und ${durationText}.`;
+      else yumakHintNode.textContent='Die Route wird ausschließlich über Google Maps dargestellt.';
     }
   }
   function getStoredCookieConsent(){
@@ -1477,7 +1239,6 @@
     const privacy=$('#requestPrivacy');
     const submit=$('#requestSubmit');
     const status=$('#requestStatus');
-    const requiredFields=$$('[required]',form);
 
     function setStatus(message,isError){
       if(!status) return;
@@ -1491,75 +1252,8 @@
       delete status.dataset.state;
     }
 
-    function getPayload(){
-      const data=new FormData(form);
-      return {
-        name:(data.get('name')||'').toString().trim(),
-        phone:(data.get('phone')||'').toString().trim(),
-        email:(data.get('email')||'').toString().trim(),
-        pickup:(data.get('pickup')||'').toString().trim(),
-        destination:(data.get('destination')||'').toString().trim(),
-        date:(data.get('date')||'').toString().trim(),
-        time:(data.get('time')||'').toString().trim(),
-        passengers:(data.get('passengers')||'').toString().trim(),
-        message:(data.get('message')||'').toString().trim(),
-        privacyAccepted:!!privacy?.checked
-      };
-    }
-
-    function validateRequiredFields(){
-      requiredFields.forEach(field=>field.removeAttribute('aria-invalid'));
-
-      const invalidFields=requiredFields.filter(field=>{
-        if(field.type==='checkbox') return !field.checked;
-        if(field.type==='email') return !field.value.trim() || !field.checkValidity();
-        return !field.value.trim() || !field.checkValidity();
-      });
-
-      invalidFields.forEach(field=>field.setAttribute('aria-invalid','true'));
-      return invalidFields;
-    }
-
-    async function sendContactRequest(payload){
-      if(CONTACT_SERVICE_CONFIG.provider==='formspree'){
-        if(!CONTACT_SERVICE_CONFIG.formspreeEndpoint) throw new Error('not_configured');
-        const response=await fetch(CONTACT_SERVICE_CONFIG.formspreeEndpoint,{
-          method:'POST',
-          headers:{
-            'Accept':'application/json',
-            'Content-Type':'application/json'
-          },
-          body:JSON.stringify(payload)
-        });
-        if(!response.ok) throw new Error('send_failed');
-        return;
-      }
-
-      if(CONTACT_SERVICE_CONFIG.provider==='emailjs'){
-        const {serviceId,templateId,publicKey}=CONTACT_SERVICE_CONFIG.emailjs;
-        if(!serviceId || !templateId || !publicKey) throw new Error('not_configured');
-
-        const response=await fetch('https://api.emailjs.com/api/v1.0/email/send',{
-          method:'POST',
-          headers:{
-            'Content-Type':'application/json'
-          },
-          body:JSON.stringify({
-            service_id:serviceId,
-            template_id:templateId,
-            user_id:publicKey,
-            template_params:payload
-          })
-        });
-        if(!response.ok) throw new Error('send_failed');
-        return;
-      }
-
-      throw new Error('not_configured');
-    }
-
     function syncFormState(){
-      const allowSubmit=!!privacy?.checked;
+      const allowSubmit=!!privacy?.checked && form.dataset.prepared!=='true';
       if(submit) submit.disabled=!allowSubmit;
     }
 
@@ -1574,50 +1268,24 @@
       if(e.target?.hasAttribute?.('aria-invalid')) e.target.removeAttribute('aria-invalid');
     });
 
-    form.addEventListener('submit',async e=>{
+    form.addEventListener('submit',e=>{
       e.preventDefault();
-      const invalidFields=validateRequiredFields();
-      if(invalidFields.length){
-        setStatus('Bitte füllen Sie alle Pflichtfelder korrekt aus und bestätigen Sie den Datenschutz.',true);
-        invalidFields[0].focus();
+      const payload=getBookingPayload();
+      const bookingComplete=payload.pickup && payload.destination && payload.name && payload.phone && (!isLaterPlanSelected() || (payload.date && payload.time));
+      if(!bookingComplete || !privacy?.checked){
+        if(!privacy?.checked) privacy?.setAttribute('aria-invalid','true');
+        setStatus('Bitte prüfen Sie die Pflichtangaben und bestätigen Sie den Datenschutz.',true);
+        if(!privacy?.checked) privacy?.focus();
         return;
       }
 
-      const payload=getPayload();
       if(submit) submit.disabled=true;
-
-      try{
-        await sendContactRequest(payload);
-        saveBookingBridgeState({
-          customer:payload.name,
-          rideType:bookingStepState.service,
-          pickup:payload.pickup,
-          destination:payload.destination
-        });
-        createRideTrackingStateFromBooking({...payload,rideType:bookingStepState.service});
-        form.reset();
-        syncFormState();
-        setStatus('Ihre Anfrage wurde erfolgreich gesendet. Ihre aktuelle Fahrt wird jetzt vorbereitet.',false);
-        show('ride-status');
-      }catch(error){
-        if(error?.message==='not_configured'){
-          saveBookingBridgeState({
-            customer:payload.name,
-            rideType:bookingStepState.service,
-            pickup:payload.pickup,
-            destination:payload.destination
-          });
-          createRideTrackingStateFromBooking({...payload,rideType:bookingStepState.service});
-          form.reset();
-          syncFormState();
-          setStatus('Demo-Anfrage vorbereitet. Ihre aktuelle Fahrt wird jetzt angezeigt.',false);
-          show('ride-status');
-        }else{
-          setStatus('Der Versand konnte nicht abgeschlossen werden. Bitte rufen Sie uns an oder schreiben Sie per WhatsApp.',true);
-        }
-      }finally{
-        syncFormState();
-      }
+      form.dataset.prepared='true';
+      syncBookingHandoff(payload);
+      const handoff=$('[data-booking-handoff]',form);
+      if(handoff) handoff.hidden=false;
+      setStatus('Ihre Fahrt ist vorbereitet. Bitte schließen Sie Ihre Anfrage telefonisch oder über WhatsApp ab.',false);
+      syncFormState();
     });
 
     syncFormState();
@@ -1628,6 +1296,33 @@
     if(page==='rewards') return null;
     if(page && $('#'+page)) return page;
     return null;
+  }
+  function applyPublicBookingParams(){
+    const params=new URLSearchParams(window.location.search);
+    if(params.get('page')!=='booking') return;
+
+    const requestedService=params.get('specialService') || params.get('service') || '';
+    const serviceMap={
+      medical:'medical',
+      dialysis:'medical',
+      chemo:'medical',
+      wheelchair:'wheelchair',
+      airport:'airport',
+      taxi:'taxi',
+      courier:'taxi',
+      series:'taxi',
+      business:'taxi',
+      student:'taxi'
+    };
+    if(serviceMap[requestedService]) setService(serviceMap[requestedService]);
+
+    const pickup=params.get('pickup');
+    const destination=params.get('destination');
+    const pickupInput=$('#startAddress');
+    const destinationInput=$('#targetAddress');
+    if(pickup && pickupInput) pickupInput.value=pickup;
+    if(destination && destinationInput) destinationInput.value=destination;
+    syncBookingSummary();
   }
   function inject(){
     $$('[data-icon]').forEach(el=>{
@@ -1736,15 +1431,15 @@
   const bookingStepState={
     current:1,
     total:7,
+    furthest:1,
     service:'taxi',
     selectedVehicle:''
   };
 
-  // Premium vehicle wish cards use static availability today and keep demo pricing for later backend integration.
   const bookingVehicleCatalog={
-    limousine:{label:'Limousine',baseFare:4.8,perKm:2.2,minimum:12.5,status:'Wunsch gespeichert'},
-    van:{label:'Großraumtaxi',baseFare:7.4,perKm:2.85,minimum:18.5,status:'Wunsch gespeichert'},
-    wheelchair:{label:'Rollstuhlfahrzeug',baseFare:8.4,perKm:3.1,minimum:21.5,status:'Wunsch gespeichert'}
+    limousine:{label:'Limousine'},
+    van:{label:'Großraumtaxi'},
+    wheelchair:{label:'Rollstuhlfahrzeug'}
   };
 
   function getBookingRoot(){
@@ -1757,9 +1452,31 @@
 
   function formatBookingDate(dateValue){
     if(!dateValue) return '-';
-    const date=new Date(`${dateValue}T00:00:00`);
-    if(Number.isNaN(date.getTime())) return dateValue;
-    return date.toLocaleDateString('de-DE');
+    const parts=String(dateValue).split('-');
+    if(parts.length===3 && parts[0].length===4) return `${parts[2].padStart(2,'0')}.${parts[1].padStart(2,'0')}.${parts[0]}`;
+    return dateValue;
+  }
+
+  function openNativeDatePicker(input){
+    if(!input) return;
+    try{
+      if(typeof input.showPicker==='function'){
+        input.showPicker();
+        return;
+      }
+    }catch(_err){}
+    input.focus();
+    input.click();
+  }
+
+  function bindDateDisplay(display, input){
+    if(!display || !input || display.dataset.dateBound==='true') return;
+    display.dataset.dateBound='true';
+    display.addEventListener('click',()=>openNativeDatePicker(input));
+    const wrapper=display.parentElement;
+    wrapper?.addEventListener('click',event=>{
+      if(event.target===wrapper || event.target.closest('i')) openNativeDatePicker(input);
+    });
   }
 
   function getActiveBookingStep(){
@@ -1789,8 +1506,11 @@
 
   function updateBookingScheduleVisibility(){
     const timeFields=$('[data-booking-time-fields]');
+    const dateField=$('[data-booking-date-field]');
+    const later=isLaterPlanSelected();
     if(!timeFields) return;
-    timeFields.hidden=!isLaterPlanSelected();
+    timeFields.hidden=!later;
+    if(dateField) dateField.hidden=!later;
   }
 
   function getBookingTimeSummaryText(timeValue){
@@ -1802,33 +1522,82 @@
     return $$('.pb-option-grid button.active').map(button=>button.textContent.trim()).filter(Boolean);
   }
 
-  function syncBookingRequestForm(){
-    const start=$('#startAddress')?.value?.trim() || '';
-    const target=$('#targetAddress')?.value?.trim() || '';
+  const bookingTripLabels={
+    oneway:'Hinfahrt',
+    return:'Rückfahrt',
+    round:'Hin- & Rückfahrt',
+    repeat:'Regelmäßig'
+  };
+
+  function getBookingTripLabel(){
+    const selected=$('.trip-grid button.active');
+    return bookingTripLabels[selected?.dataset.trip] || 'Hinfahrt';
+  }
+
+  function getBookingPayload(){
     const date=$('#bookingDate')?.value || '';
     const time=$('#bookingTime')?.value || '';
-    const passengers=$('#bookingPassengers')?.value || '1';
-    const note=$('#bookingNote')?.value?.trim() || '';
-    const name=$('#customerName')?.value?.trim() || '';
-    const phone=$('#customerPhone')?.value?.trim() || '';
+    return {
+      pickup:$('#startAddress')?.value?.trim() || '',
+      destination:$('#targetAddress')?.value?.trim() || '',
+      trip:getBookingTripLabel(),
+      service:services[bookingStepState.service]?.[0] || 'Normale Taxifahrt',
+      rideType:bookingStepState.service,
+      schedule:isLaterPlanSelected() ? `${formatBookingDate(date)}, ${time || '-'}` : 'So schnell wie möglich',
+      date:isLaterPlanSelected() ? date : '',
+      time:isLaterPlanSelected() ? time : '',
+      passengers:String($('#bookingPassengers')?.value || '1'),
+      vehicle:bookingVehicleCatalog[bookingStepState.selectedVehicle]?.label || 'Kein Fahrzeugwunsch',
+      options:collectBookingOptions(),
+      name:$('#customerName')?.value?.trim() || '',
+      phone:$('#customerPhone')?.value?.trim() || '',
+      note:$('#bookingNote')?.value?.trim() || ''
+    };
+  }
 
-    const pickupField=$('#requestPickup');
-    const destinationField=$('#requestDestination');
-    const dateField=$('#requestDate');
-    const timeField=$('#requestTime');
-    const passengersField=$('#requestPassengers');
-    const messageField=$('#requestMessage');
-    const nameField=$('#requestName');
-    const phoneField=$('#requestPhone');
+  function buildBookingWhatsappText(payload){
+    const lines=[
+      'Guten Tag, ich möchte folgende Fahrt anfragen:',
+      `Abholort: ${payload.pickup}`,
+      `Ziel: ${payload.destination}`,
+      `Fahrtverlauf: ${payload.trip}`,
+      `Fahrtart: ${payload.service}`,
+      `Termin: ${payload.schedule}`,
+      `Fahrgäste: ${payload.passengers}`,
+      `Fahrzeugwunsch: ${payload.vehicle}`,
+      `Optionen: ${payload.options.length ? payload.options.join(', ') : 'Keine'}`,
+      `Name: ${payload.name}`,
+      `Telefon: ${payload.phone}`
+    ];
+    if(payload.note) lines.push(`Notiz: ${payload.note}`);
+    return lines.join('\n');
+  }
 
-    if(pickupField) pickupField.value=start;
-    if(destinationField) destinationField.value=target;
-    if(dateField) dateField.value=date;
-    if(timeField) timeField.value=time;
-    if(passengersField) passengersField.value=passengers;
-    if(messageField) messageField.value=note;
-    if(nameField && !nameField.value.trim()) nameField.value=name;
-    if(phoneField && !phoneField.value.trim()) phoneField.value=phone;
+  function syncBookingHandoff(payload=getBookingPayload()){
+    const whatsapp=$('#requestWhatsapp');
+    if(whatsapp) whatsapp.href=`https://wa.me/4972743567?text=${encodeURIComponent(buildBookingWhatsappText(payload))}`;
+  }
+
+  function syncFinalBookingOverview(payload=getBookingPayload()){
+    const values={
+      start:payload.pickup || '-',
+      target:payload.destination || '-',
+      trip:payload.trip,
+      service:payload.service,
+      schedule:payload.schedule,
+      passengers:payload.passengers,
+      vehicle:payload.vehicle,
+      options:payload.options.length ? payload.options.join(', ') : 'Keine',
+      contact:[payload.name,payload.phone].filter(Boolean).join(' · ') || '-',
+      note:payload.note || '-'
+    };
+    Object.entries(values).forEach(([key,value])=>{
+      const node=$(`[data-booking-final-${key}]`);
+      if(node) node.textContent=value;
+    });
+    const noteRow=$('[data-booking-final-note-row]');
+    if(noteRow) noteRow.hidden=!payload.note;
+    syncBookingHandoff(payload);
   }
 
   function syncBookingSummary(){
@@ -1836,51 +1605,64 @@
     const target=$('#targetAddress')?.value?.trim() || '-';
     const date=$('#bookingDate')?.value || '';
     const time=$('#bookingTime')?.value || '';
-    const options=collectBookingOptions();
-    const serviceName=services[bookingStepState.service]?.[0] || 'Normale Taxifahrt';
+    const payload=getBookingPayload();
+    const options=payload.options;
+    const serviceName=payload.service;
 
     const startNode=$('[data-booking-summary-start]');
     const targetNode=$('[data-booking-summary-target]');
     const dateNode=$('[data-booking-summary-date]');
     const timeNode=$('[data-booking-summary-time]');
     const serviceNode=$('[data-booking-summary-service]');
+    const tripNode=$('[data-booking-summary-trip]');
+    const passengersNode=$('[data-booking-summary-passengers]');
     const optionsNode=$('[data-booking-summary-options]');
-    const rewardsHint=$('[data-booking-rewards-hint]');
-    const voucherHint=$('[data-booking-voucher-hint]');
+    const contactNode=$('[data-booking-summary-contact]');
+    const noteNode=$('[data-booking-summary-note]');
+    const summaryRows={
+      start:startNode?.closest('li'),
+      target:targetNode?.closest('li'),
+      route:$('[data-booking-summary-route-mode]')?.closest('li'),
+      trip:tripNode?.closest('li'),
+      date:dateNode?.closest('li'),
+      time:timeNode?.closest('li'),
+      service:serviceNode?.closest('li'),
+      passengers:passengersNode?.closest('li'),
+      vehicle:$('[data-booking-summary-vehicle]')?.closest('li'),
+      options:optionsNode?.closest('li'),
+      contact:contactNode?.closest('li'),
+      note:noteNode?.closest('li')
+    };
+    Object.values(summaryRows).forEach(row=>{ if(row) row.hidden=true; });
+    if(summaryRows.start) summaryRows.start.hidden=start==='-';
+    if(summaryRows.target) summaryRows.target.hidden=target==='-' || bookingStepState.current<2;
+    if(summaryRows.route) summaryRows.route.hidden=start==='-' || target==='-' || bookingStepState.current<2;
+    if(summaryRows.trip) summaryRows.trip.hidden=bookingStepState.current<3;
+    if(summaryRows.date) summaryRows.date.hidden=!isLaterPlanSelected() || bookingStepState.current<4;
+    if(summaryRows.time) summaryRows.time.hidden=!isLaterPlanSelected() || bookingStepState.current<4;
+    if(summaryRows.service) summaryRows.service.hidden=bookingStepState.current<3;
+    if(summaryRows.passengers) summaryRows.passengers.hidden=bookingStepState.current<5;
+    if(summaryRows.vehicle) summaryRows.vehicle.hidden=bookingStepState.current<6;
+    if(summaryRows.options) summaryRows.options.hidden=bookingStepState.current<6;
+    if(summaryRows.contact) summaryRows.contact.hidden=bookingStepState.current<6;
+    if(summaryRows.note) summaryRows.note.hidden=bookingStepState.current<6 || !payload.note;
 
     if(startNode) startNode.textContent=start;
     if(targetNode) targetNode.textContent=target;
-    if(dateNode) dateNode.textContent=formatBookingDate(date);
+    if(dateNode) dateNode.textContent=isLaterPlanSelected() ? formatBookingDate(date) : '-';
+    const dateDisplay=$('[data-booking-date-display]');
+    if(dateDisplay) dateDisplay.textContent=isLaterPlanSelected() ? formatBookingDate(date) : 'TT.MM.JJJJ';
     if(timeNode) timeNode.textContent=getBookingTimeSummaryText(time);
     if(serviceNode) serviceNode.textContent=serviceName;
+    if(tripNode) tripNode.textContent=payload.trip;
+    if(passengersNode) passengersNode.textContent=payload.passengers;
     if(optionsNode) optionsNode.textContent=options.length ? options.join(', ') : 'Keine';
-
-    if(rewardsHint){
-      const showRewards=start!=='-' && target!=='-';
-      rewardsHint.hidden=!showRewards;
-      if(showRewards){
-        const points=getEstimatedRewardPoints();
-        rewardsHint.textContent=`Mit dieser Fahrt erhältst du ca. ${points} Punkte.`;
-      }
-    }
-
-    if(voucherHint){
-      let hasVoucher=false;
-      try{
-        const raw=localStorage.getItem('taxiRewardsEngineState');
-        if(raw){
-          const parsed=JSON.parse(raw);
-          hasVoucher=Number(parsed?.voucherBalance || 0)>0;
-        }
-      }catch(_err){
-        hasVoucher=false;
-      }
-      voucherHint.hidden=!hasVoucher;
-      if(hasVoucher) voucherHint.textContent='Gutschein-Guthaben verfügbar.';
-    }
+    if(contactNode) contactNode.textContent=[payload.name,payload.phone].filter(Boolean).join(' · ') || '-';
+    if(noteNode) noteNode.textContent=payload.note || '-';
 
     syncBookingRouteMetrics();
-    syncBookingRequestForm();
+    if(summaryRows.route) summaryRows.route.hidden=start==='-' || target==='-' || bookingStepState.current<2;
+    syncFinalBookingOverview(payload);
   }
 
   function updateBookingProgress(){
@@ -1903,6 +1685,9 @@
   function showBookingStep(step){
     const normalized=Math.max(1,Math.min(bookingStepState.total,step));
     bookingStepState.current=normalized;
+    bookingStepState.furthest=Math.max(bookingStepState.furthest,normalized);
+    const root=getBookingRoot();
+    if(root) root.dataset.currentStep=String(normalized);
     $$('[data-booking-step]').forEach(panel=>{
       const panelStep=Number(panel.dataset.bookingStep || 0);
       const active=panelStep===normalized;
@@ -1919,20 +1704,21 @@
     const target=$('#targetAddress')?.value?.trim() || '';
     const date=$('#bookingDate')?.value || '';
     const time=$('#bookingTime')?.value || '';
+    const name=$('#customerName')?.value?.trim() || '';
     const phone=$('#customerPhone')?.value?.trim() || '';
     const passengers=Number($('#bookingPassengers')?.value || 1);
     if(step===1) return !!start;
     if(step===2) return !!target;
     if(step===4 && isLaterPlanSelected()) return !!date && !!time;
-    if(step===5) return passengers>=1;
-    if(step===6) return !!phone;
+    if(step===5) return passengers>=1 && passengers<=8;
+    if(step===6) return !!name && !!phone;
     return true;
   }
 
   function handleBookingStepAction(action){
     if(action==='next'){
       if(!isBookingStepValid(bookingStepState.current)){
-        const message=bookingStepState.current===1 ? 'Bitte geben Sie einen gültigen Abholort ein.' : bookingStepState.current===2 ? 'Bitte geben Sie ein gültiges Ziel ein.' : bookingStepState.current===4 ? 'Bitte wählen Sie Datum und Uhrzeit für die geplante Fahrt.' : 'Bitte fuellen Sie die erforderlichen Felder in diesem Schritt aus.';
+        const message=bookingStepState.current===1 ? 'Bitte geben Sie einen gültigen Abholort ein.' : bookingStepState.current===2 ? 'Bitte geben Sie ein gültiges Ziel ein.' : bookingStepState.current===4 ? 'Bitte wählen Sie Datum und Uhrzeit für die geplante Fahrt.' : bookingStepState.current===5 ? 'Bitte wählen Sie zwischen 1 und 8 Fahrgästen.' : 'Bitte geben Sie Ihren Namen und Ihre Telefonnummer ein.';
         setBookingStepFeedback(bookingStepState.current,message);
         return true;
       }
@@ -1955,11 +1741,12 @@
 
     const dateField=$('#bookingDate');
     const timeField=$('#bookingTime');
+    bindDateDisplay($('[data-booking-date-display]'),dateField);
     if(dateField && !dateField.value) dateField.valueAsDate=new Date();
     if(timeField && !timeField.value) timeField.value='12:00';
     applyRouteMapPresentationState($('#bookingRouteMapContainer'));
     initBookingPlacesAutocomplete();
-    renderBookingFavoriteAddresses();
+    renderBookingQuickTargets();
     updateBookingScheduleVisibility();
 
     const pendingRebook=consumeBookingRebookState();
@@ -1977,6 +1764,27 @@
     }
 
     showBookingStep(pendingRebook ? 2 : 1);
+    syncBookingSummary();
+    prefillBookingContactFromVerifiedSession();
+  }
+
+  async function prefillBookingContactFromVerifiedSession(){
+    const auth=window.CustomerAuth;
+    if(!auth || typeof auth.hydrateSession!=='function' || typeof auth.isLoggedIn!=='function') return;
+    try{
+      await auth.hydrateSession();
+    }catch(_err){
+      return;
+    }
+    if(!auth.isLoggedIn()) return;
+    const snapshot=typeof auth.getSessionSnapshot==='function' ? auth.getSessionSnapshot() : null;
+    const profile=snapshot?.profile || {};
+    const name=String(profile.fullName || [profile.firstName,profile.lastName].filter(Boolean).join(' ') || '').trim();
+    const phone=String(profile.phone || '').trim();
+    const nameField=$('#customerName');
+    const phoneField=$('#customerPhone');
+    if(nameField && !nameField.value.trim() && name && !name.includes('@')) nameField.value=name;
+    if(phoneField && !phoneField.value.trim() && phone) phoneField.value=phone;
     syncBookingSummary();
   }
 
@@ -2026,21 +1834,23 @@
     }
   }
 
-  function renderBookingFavoriteAddresses(){
-    const lists=$$('[data-booking-favorites-list]');
+  function renderBookingQuickTargets(){
+    const lists=$$('[data-booking-quick-list]');
     if(!lists.length) return;
-    const favorites=readCustomerFavoriteAddresses().slice(0,4);
+    const quickTargets=[
+      {label:'Bahnhof Germersheim',value:'Bahnhof Germersheim, Bahnhofstraße 23, 76726 Germersheim'},
+      {label:'Südpfalzklinik Germersheim',value:'Asklepios Südpfalzklinik, An Fronte Karl 2, 76726 Germersheim'}
+    ];
     lists.forEach(list=>{
-      const targetRole=String(list.dataset.bookingFavoritesList || '').trim().toLowerCase();
+      const targetRole=String(list.dataset.bookingQuickList || '').trim().toLowerCase();
       list.innerHTML='';
-      favorites.forEach(item=>{
+      quickTargets.forEach(item=>{
         const button=document.createElement('button');
         button.type='button';
         button.className='button secondary pb-favorite-button';
-        button.dataset.bookingFavoriteSelect='true';
-        button.dataset.favoriteTarget=targetRole || 'destination';
-        button.dataset.favoriteValue=item.value;
-        button.dataset.favoriteLabel=item.label;
+        button.dataset.bookingQuickSelect='true';
+        button.dataset.quickTarget=targetRole || 'destination';
+        button.dataset.quickValue=item.value;
 
         const label=document.createElement('span');
         label.className='pb-favorite-label';
@@ -2094,10 +1904,7 @@
     const start=$('#startAddress');
     const target=$('#targetAddress');
     const phone=$('#customerPhone');
-    const send=$('#sendRequest');
-    if(!start || !target || !phone || !send) return;
-    const ok=start.value.trim()&&target.value.trim()&&phone.value.trim();
-    send.textContent=ok?'Fahrtanfrage senden':'Fahrtanfrage nicht möglich';
+    if(!start || !target || !phone) return;
     syncBookingSummary();
   }
 
@@ -2131,6 +1938,16 @@
     if(go.dataset.service) setService(go.dataset.service);
 
     const target=String(go.dataset.go || '').trim();
+
+    if(target==='booking' && go.dataset.bookingSchedule){
+      const scheduleButtons=$$('.toggle button');
+      const planLater=go.dataset.bookingSchedule==='later';
+      const selectedButton=scheduleButtons[planLater ? 1 : 0];
+      if(selectedButton){
+        setSingleActive('.toggle button',selectedButton);
+        updateBookingScheduleVisibility();
+      }
+    }
 
     if(target==='rewards'){
       window.location.href='rewards.html';
@@ -2194,10 +2011,10 @@
       return;
     }
 
-    const favoriteBookingButton=e.target.closest('[data-booking-favorite-select]');
-    if(favoriteBookingButton){
-      const targetRole=String(favoriteBookingButton.dataset.favoriteTarget || 'destination').trim().toLowerCase();
-      const value=String(favoriteBookingButton.dataset.favoriteValue || '').trim();
+    const quickTargetButton=e.target.closest('[data-booking-quick-select]');
+    if(quickTargetButton){
+      const targetRole=String(quickTargetButton.dataset.quickTarget || 'destination').trim().toLowerCase();
+      const value=String(quickTargetButton.dataset.quickValue || '').trim();
       if(!value) return;
 
       const startField=$('#startAddress');
@@ -2226,10 +2043,10 @@
     const gotoButton=e.target.closest('[data-booking-step-goto]');
     if(gotoButton){
       const targetStep=Number(gotoButton.dataset.bookingStepGoto || 1);
-      if(targetStep<=bookingStepState.current || isBookingStepValid(bookingStepState.current)){
+      if(targetStep<=bookingStepState.furthest){
         showBookingStep(targetStep);
       }else{
-        alert('Bitte schliessen Sie zuerst den aktuellen Schritt ab.');
+        setBookingStepFeedback(bookingStepState.current,'Bitte schließen Sie zuerst den aktuellen Schritt ab.');
       }
       return;
     }
@@ -2249,6 +2066,7 @@
     const trip=e.target.closest('[data-trip]');
     if(trip){
       setSingleActive('.trip-grid button',trip);
+      syncBookingSummary();
       return;
     }
 
@@ -2818,6 +2636,10 @@
   }
   function initPremiumNavigation(){
     const nav=getNavigationElements();
+
+    if(document.body.classList.contains('tg-public') && nav.topbar?.classList.contains('tg-public-header')){
+      return nav;
+    }
 
     if(nav.menuToggle){
       nav.menuToggle.setAttribute('aria-expanded','false');
@@ -6815,7 +6637,7 @@
         editingAddressId='';
         if(submitButton) submitButton.textContent='Adresse speichern';
         render(next);
-        renderBookingFavoriteAddresses();
+        renderBookingQuickTargets();
       });
     }
 
@@ -6848,7 +6670,7 @@
           writeState(next);
           writeCustomerFavoriteAddresses(next.favoriteAddresses);
           render(next);
-          renderBookingFavoriteAddresses();
+          renderBookingQuickTargets();
           setFavoriteStatus('Adresse gelöscht.');
           return;
         }
@@ -7019,92 +6841,16 @@
     const root=$('#ride-status.ride-status-page');
     if(!root) return;
 
-    const timeline=$('[data-ride-track-timeline]',root);
+    try{
+      localStorage.removeItem(RIDE_TRACKING_STORAGE_KEY);
+    }catch(_err){
+      // Storage is optional; no public ride status is derived from it.
+    }
+
     const badge=$('[data-ride-track-badge]',root);
     const summary=$('[data-ride-track-summary]',root);
-    const routeNode=$('[data-ride-track-route]',root);
-    const driverNameNode=$('[data-ride-track-driver-name]',root);
-    const vehicleNode=$('[data-ride-track-vehicle]',root);
-    const plateNode=$('[data-ride-track-plate]',root);
-    const etaNode=$('[data-ride-track-eta]',root);
-    const phoneNode=$('[data-ride-track-phone]',root);
-    const completeNode=$('[data-ride-track-complete]',root);
-    const feedbackNode=$('[data-ride-track-feedback]',root);
-    let timerId=0;
-
-    function setFeedback(message){
-      if(!feedbackNode) return;
-      feedbackNode.textContent=message;
-      feedbackNode.hidden=!message;
-    }
-
-    function renderRideStatus(){
-      const snapshot=resolveRideTrackingSnapshot(true);
-      if(!snapshot || !timeline) return;
-
-      if(badge) badge.textContent=snapshot.statusLabel;
-      if(summary) summary.textContent=`${snapshot.customerName}, Ihre Fahrt von ${snapshot.pickup} nach ${snapshot.destination} befindet sich aktuell im Status „${snapshot.statusLabel}“.`;
-      if(routeNode) routeNode.textContent=snapshot.route;
-      if(driverNameNode) driverNameNode.textContent=snapshot.driverName;
-      if(vehicleNode) vehicleNode.textContent=snapshot.vehicleType;
-      if(plateNode) plateNode.textContent=snapshot.licensePlate;
-      if(etaNode) etaNode.textContent=snapshot.arrivalText;
-      if(phoneNode) phoneNode.setAttribute('href',`tel:${snapshot.phone}`);
-      if(completeNode) completeNode.hidden=!snapshot.isCompleted;
-
-      timeline.innerHTML='';
-      snapshot.steps.forEach(step=>{
-        const li=document.createElement('li');
-        if(step.isComplete) li.classList.add('is-complete');
-        if(step.isActive) li.classList.add('is-active');
-
-        const dot=document.createElement('span');
-        dot.className='ride-track-dot';
-        dot.setAttribute('aria-hidden','true');
-
-        const copy=document.createElement('div');
-        copy.className='ride-track-step';
-        const title=document.createElement('strong');
-        title.textContent=step.label;
-        const detail=document.createElement('small');
-        detail.textContent=step.detail;
-        copy.append(title,detail);
-
-        li.append(dot,copy);
-        timeline.append(li);
-      });
-    }
-
-    renderRideStatus();
-    document.addEventListener('ride-tracking:update',renderRideStatus);
-    timerId=window.setInterval(renderRideStatus,10000);
-
-    root.addEventListener('click',event=>{
-      const actionButton=event.target.closest('[data-current-ride-action]');
-      if(!actionButton) return;
-
-      const action=String(actionButton.dataset.currentRideAction || '').trim().toLowerCase();
-      const snapshot=resolveRideTrackingSnapshot(true);
-      if(!snapshot) return;
-
-      if(action==='rate'){
-        writeRideTrackingState({...snapshot,ratingSubmitted:true});
-        setFeedback('Danke. Ihre Bewertung ist als Demo vorgemerkt und wird später mit dem Kundenkonto verbunden.');
-        renderRideStatus();
-        return;
-      }
-
-      if(action==='rebook'){
-        writeBookingRebookState({pickup:snapshot.pickup,destination:snapshot.destination,rideType:snapshot.rideType});
-        saveBookingBridgeState({pickup:snapshot.pickup,destination:snapshot.destination,rideType:snapshot.rideType});
-        window.location.href='index.html?page=booking';
-        return;
-      }
-    });
-
-    window.addEventListener('beforeunload',()=>{
-      if(timerId) clearInterval(timerId);
-    },{once:true});
+    if(badge) badge.textContent='Keine Live-Daten';
+    if(summary) summary.textContent='Ein Live-Fahrtstatus ist derzeit nicht verfügbar. Es werden keine Fahrer-, Fahrzeug- oder Ankunftsdaten simuliert.';
   }
   function findSplashElement(){
     return document.querySelector('#splash, #splash-screen, .splash-screen, [data-splash], .site-loader, .splash');
@@ -7113,9 +6859,11 @@
   function isHomeLandingPage(){
     const path=(window.location.pathname || '').replace(/\\/g,'/').toLowerCase();
     const file=path.split('/').pop() || '';
-    return file==='' || file==='index.html';
+    const page=new URLSearchParams(window.location.search).get('page');
+    return (file==='' || file==='index.html') && !page;
   }
   function cleanupSplashState(previousOverflow=''){
+    document.documentElement.classList.remove('home-intro-active');
     document.body.classList.remove('splash-active','loading');
     document.body.removeAttribute('aria-busy');
     if(document.body.style.overflow==='hidden'){
@@ -7141,15 +6889,18 @@
     splash.dataset.hideBound='true';
 
     const previousOverflow=document.body.style.overflow;
+    document.documentElement.classList.add('home-intro-active');
+    document.body.classList.add('splash-active');
+    document.body.setAttribute('aria-busy','true');
     let isClosed=false;
     let hideTimer=0;
     let failSafeTimer=0;
     let removeTimer=0;
 
     function forceRemove(){
-      if(!splash.isConnected) return;
       splash.hidden=true;
-      splash.remove();
+      if(splash.isConnected) splash.remove();
+      cleanupSplashState(previousOverflow);
     }
 
     function closeSplash(){
@@ -7157,22 +6908,21 @@
       isClosed=true;
       splash.classList.add('splash-hide');
       splash.style.opacity='0';
-      splash.style.visibility='hidden';
       splash.style.pointerEvents='none';
-      cleanupSplashState(previousOverflow);
       removeTimer=window.setTimeout(()=>{
         forceRemove();
       },350);
     }
 
-    hideTimer=window.setTimeout(closeSplash,1200);
+    hideTimer=window.setTimeout(closeSplash,1650);
     failSafeTimer=window.setTimeout(()=>{
       closeSplash();
       forceRemove();
-    },3000);
+    },2600);
 
     splash.addEventListener('transitionend',event=>{
       if(event.target!==splash) return;
+      if(event.propertyName!=='opacity') return;
       if(!isClosed) return;
       forceRemove();
     });
@@ -7225,6 +6975,7 @@
 
     const initialScreen=resolveInitialScreen();
     if(initialScreen) show(initialScreen);
+    applyPublicBookingParams();
 
     // Single delegation point keeps interaction logic centralized and avoids many per-node listeners.
     document.addEventListener('click',e=>handleGlobalClick(e,nav));

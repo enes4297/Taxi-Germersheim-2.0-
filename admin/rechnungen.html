@@ -5,11 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Rechnungsmanagement</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
+  <script src="sidebar.js"></script>
   <script src="finanzen-shared.js"></script>
-  <link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="finanzen.css">
-</head>
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -21,24 +24,13 @@
         </div>
       </div>
 
-      <nav class="admin-nav">
-        <a class="admin-nav-item" href="#" aria-disabled="true">Dashboard</a>
-        <a class="admin-nav-item" href="index.html">Fahrten</a>
-        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
-        <a class="admin-nav-item" href="kunden.html">Kunden</a>
-        <a class="admin-nav-item is-active" href="rechnungen.html" aria-current="page">Rechnungen</a>
-        <a class="admin-nav-item" href="#" aria-disabled="true">Rewards</a>
-        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
-        <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
-        <a class="admin-nav-item" href="einstellungen.html">Einstellungen</a>
-        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
-      </nav>
+      <nav class="admin-nav" data-admin-sidebar></nav>
     </aside>
 
     <main class="admin-main">
       <header class="admin-topbar">
         <div class="admin-topbar-title">
-          <h1>Billing Management</h1>
+          <h1>Rechnungsverwaltung</h1>
           <p>Interne Rechnungsverwaltung mit Demo-Daten, ohne Backend</p>
         </div>
 
@@ -61,7 +53,7 @@
         </div>
         <div class="billing-overview-grid">
           <article class="billing-overview-card">
-            <small>📄 Rechnungen gesamt</small>
+            <small>🧾 Rechnungen gesamt</small>
             <strong data-billing-stat="total">0</strong>
           </article>
           <article class="billing-overview-card is-open">
@@ -73,7 +65,7 @@
             <strong data-billing-stat="paid">0</strong>
           </article>
           <article class="billing-overview-card is-overdue">
-            <small>⏰ Überfällig</small>
+            <small>⚠ Überfällig</small>
             <strong data-billing-stat="overdue">0</strong>
           </article>
           <article class="billing-overview-card is-medical">
@@ -104,10 +96,10 @@
           <button class="billing-filter-btn is-active" type="button" data-billing-filter="Alle">Alle</button>
           <button class="billing-filter-btn" type="button" data-billing-filter="Offen">Offen</button>
           <button class="billing-filter-btn" type="button" data-billing-filter="Bezahlt">Bezahlt</button>
-          <button class="billing-filter-btn" type="button" data-billing-filter="Überfällig">Überfällig</button>
+          <button class="billing-filter-btn" type="button" data-billing-filter="ÃƒÅ“berfÃƒÂ¤llig">Überfällig</button>
           <button class="billing-filter-btn" type="button" data-billing-filter="Krankenkasse">Krankenkasse</button>
           <button class="billing-filter-btn" type="button" data-billing-filter="Firmenkunden">Firmenkunden</button>
-          <button class="billing-filter-btn" type="button" data-billing-filter="In Prüfung">In Prüfung</button>
+          <button class="billing-filter-btn" type="button" data-billing-filter="In PrÃƒÂ¼fung">In Prüfung</button>
         </div>
       </section>
 
@@ -125,7 +117,7 @@
                 <th>Rechnungen</th>
                 <th>Gesamtbetrag</th>
                 <th>offen</th>
-                <th>ueberfaellig</th>
+                <th>überfällig</th>
                 <th>letzte Rechnung</th>
               </tr>
             </thead>
@@ -153,3 +145,7 @@
   <script src="rechnungen.js"></script>
 </body>
 </html>
+
+
+
+

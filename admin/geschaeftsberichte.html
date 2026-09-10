@@ -1,7 +1,15 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Taxi Germersheim - Geschaeftsberichte</title><meta name="robots" content="noindex,nofollow"><script src="auth.js"></script><script src="management-shared.js"></script><link rel="stylesheet" href="admin.css"><link rel="stylesheet" href="management.css"></head>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Taxi Germersheim - Geschaeftsberichte</title><meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
+  <script src="auth.js"></script>
+  <script src="management-shared.js"></script>
+<link rel="stylesheet" href="admin.css"><link rel="stylesheet" href="management.css">      </head>
 <body><div class="admin-shell"><aside class="admin-sidebar" aria-label="Interne Navigation"><div class="admin-sidebar-brand"><img src="../logo.png" alt="Taxi Germersheim Logo"><div><strong>Dispatcher</strong><small>Interner Bereich</small></div></div><nav class="admin-nav"><a class="admin-nav-item is-active" href="geschaeftsberichte.html">Geschaeftsberichte</a></nav></aside><main class="admin-main">
 <header class="admin-topbar"><div class="admin-topbar-title"><h1>Geschaeftsberichte</h1><p>Tages-, Wochen-, Monats- und Managementberichte mit Vorschau (Demo)</p></div><div class="admin-topbar-actions m-actions"><button class="admin-btn" type="button" data-rp-approve>Bericht freigeben</button></div></header>
 <section class="admin-panel"><div class="m-toolbar"><label>Berichtsart<select data-rp-type><option>Tagesbericht</option><option>Wochenbericht</option><option>Monatsbericht</option><option>Betriebsbericht</option><option>Kapazitaetsbericht</option><option>Personalbericht</option><option>Fahrzeugbericht</option><option>Qualitaetsbericht</option><option>Abrechnungsbericht</option><option>Firmenkundenbericht</option><option>Krankenfahrtenbericht</option><option selected>Managementbericht</option></select></label><label>Zeitraum<select data-rp-period><option value="3h">3h</option><option value="today" selected>heute</option><option value="tomorrow">morgen</option><option value="7d">7 Tage</option><option value="30d">30 Tage</option></select></label><label>Erstellt durch<input data-rp-author value="Geschaeftsleitung"></label><label>Export<select data-rp-export><option>PDF</option><option>XLSX</option><option>CSV</option><option>JSON</option></select></label><div class="m-actions"><button class="admin-btn" type="button" data-rp-build>Bericht erzeugen</button><button class="admin-btn admin-btn-secondary" type="button" data-rp-export-btn>Export Demo</button></div></div></section>
 <section class="admin-panel"><div class="admin-panel-head"><h2>Berichtsvorschau</h2></div><article class="m-item m-print" data-rp-preview></article></section>
 </main></div><script src="geschaeftsberichte.js"></script></body></html>
+
+
+

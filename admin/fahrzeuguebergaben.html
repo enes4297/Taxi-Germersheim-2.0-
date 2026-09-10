@@ -3,12 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Taxi Germersheim - Fahrzeugübergaben</title>
+  <title>Taxi Germersheim - FahrzeugÃƒÂ¼bergaben</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
-  <link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="fahrzeuguebergaben.css">
-</head>
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -20,7 +22,7 @@
         <a class="admin-nav-item" href="index.html">Dashboard</a>
         <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
         <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
-        <a class="admin-nav-item is-active" href="fahrzeuguebergaben.html" aria-current="page">Fahrzeugübergaben</a>
+        <a class="admin-nav-item is-active" href="fahrzeuguebergaben.html" aria-current="page">FahrzeugÃƒÂ¼bergaben</a>
         <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
       </nav>
     </aside>
@@ -28,8 +30,8 @@
     <main class="admin-main">
       <header class="admin-topbar">
         <div class="admin-topbar-title">
-          <h1>Fahrzeugübergaben</h1>
-          <p>V15 Demo-Übergaben aus dem Fahrer-Portal</p>
+          <h1>FahrzeugÃƒÂ¼bergaben</h1>
+          <p>V15 Demo-ÃƒÅ“bergaben aus dem Fahrer-Portal</p>
         </div>
         <div class="admin-topbar-actions">
           <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
@@ -38,30 +40,30 @@
       </header>
 
       <section class="admin-panel handover-overview">
-        <div class="admin-panel-head"><h2>Übergabe-Statistiken</h2></div>
+        <div class="admin-panel-head"><h2>ÃƒÅ“bergabe-Statistiken</h2></div>
         <div class="handover-overview-grid">
-          <article class="handover-overview-card"><small>Heutige Übergaben</small><strong data-handover-stat="today">0</strong></article>
+          <article class="handover-overview-card"><small>Heutige ÃƒÅ“bergaben</small><strong data-handover-stat="today">0</strong></article>
           <article class="handover-overview-card"><small>Offene Checks</small><strong data-handover-stat="openChecks">0</strong></article>
-          <article class="handover-overview-card"><small>Neue Schäden</small><strong data-handover-stat="newDamages">0</strong></article>
-          <article class="handover-overview-card"><small>Kritische Mängel</small><strong data-handover-stat="critical">0</strong></article>
-          <article class="handover-overview-card"><small>Ungeklärte Differenzen</small><strong data-handover-stat="cashDiff">0</strong></article>
+          <article class="handover-overview-card"><small>Neue SchÃƒÂ¤den</small><strong data-handover-stat="newDamages">0</strong></article>
+          <article class="handover-overview-card"><small>Kritische MÃƒÂ¤ngel</small><strong data-handover-stat="critical">0</strong></article>
+          <article class="handover-overview-card"><small>UngeklÃƒÂ¤rte Differenzen</small><strong data-handover-stat="cashDiff">0</strong></article>
           <article class="handover-overview-card"><small>Nicht fahrbereit</small><strong data-handover-stat="notDrivable">0</strong></article>
         </div>
       </section>
 
       <section class="admin-panel">
-        <div class="admin-panel-head"><h2>Übergabe-Tabelle</h2></div>
+        <div class="admin-panel-head"><h2>ÃƒÅ“bergabe-Tabelle</h2></div>
         <div class="admin-table-wrap">
           <table class="admin-table handover-table">
             <thead>
               <tr>
                 <th>Fahrzeug</th>
                 <th>Abgebender Fahrer</th>
-                <th>Übernehmender Fahrer</th>
-                <th>Übergabezeit</th>
+                <th>ÃƒÅ“bernehmender Fahrer</th>
+                <th>ÃƒÅ“bergabezeit</th>
                 <th>Kilometerstand</th>
                 <th>Tank/Akku</th>
-                <th>Schäden</th>
+                <th>SchÃƒÂ¤den</th>
                 <th>Sauberkeit</th>
                 <th>Status</th>
               </tr>
@@ -76,3 +78,7 @@
   <script src="fahrzeuguebergaben.js"></script>
 </body>
 </html>
+
+
+
+

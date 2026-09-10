@@ -1,7 +1,15 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Taxi Germersheim - Entscheidungscenter</title><meta name="robots" content="noindex,nofollow"><script src="auth.js"></script><script src="management-shared.js"></script><link rel="stylesheet" href="admin.css"><link rel="stylesheet" href="management.css"></head>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Taxi Germersheim - Entscheidungscenter</title><meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
+  <script src="auth.js"></script>
+  <script src="management-shared.js"></script>
+<link rel="stylesheet" href="admin.css"><link rel="stylesheet" href="management.css">      </head>
 <body><div class="admin-shell"><aside class="admin-sidebar" aria-label="Interne Navigation"><div class="admin-sidebar-brand"><img src="../logo.png" alt="Taxi Germersheim Logo"><div><strong>Dispatcher</strong><small>Interner Bereich</small></div></div><nav class="admin-nav"><a class="admin-nav-item is-active" href="entscheidungscenter.html">Entscheidungscenter</a></nav></aside><main class="admin-main">
 <header class="admin-topbar"><div class="admin-topbar-title"><h1>Entscheidungscenter</h1><p>Entscheidungsfaelle, Optionenvergleich und Verlauf (Demo)</p></div></header>
 <section class="admin-panel"><div class="admin-panel-head"><h2>Entscheidungsvorlage</h2></div><form class="m-form-grid" data-dc-form><label>Titel<input name="title" required></label><label>Ausgangslage<input name="situation"></label><label>Ziel<input name="target"></label><label>Option<input name="optionLabel" value="Option A"></label><label>Vorteile<input name="pros"></label><label>Nachteile<input name="cons"></label><label>Risiken<input name="risks"></label><label>Demo-Kosten<input type="number" name="costDemo" value="0"></label><label>Demo-Nutzen<input type="number" name="benefitDemo" value="0"></label><label>Bereiche<input name="areas" value="Betrieb"></label><label>Verantwortlicher<input name="owner" value="Geschaeftsleitung"></label><label>Frist<input type="date" name="dueDate"></label><label>Empfehlung<input name="recommendation" value="Weitere Pruefung"></label><label>Status<select name="status"><option>Entwurf</option><option>Informationen fehlen</option><option>in Pruefung</option><option>Geschaeftsleitung prueft</option><option>beschlossen</option><option>abgelehnt</option><option>zurueckgestellt</option><option>umgesetzt</option><option>Wirksamkeit pruefen</option></select></label><div class="full"><button class="admin-btn" type="submit">Entscheidungsfall speichern</button></div></form></section>
 <section class="admin-panel"><div class="admin-panel-head"><h2>Entscheidungsfaelle</h2></div><div class="m-list" data-dc-list></div></section>
 </main></div><script src="entscheidungscenter.js"></script></body></html>
+
+
+
