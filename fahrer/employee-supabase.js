@@ -226,6 +226,70 @@
   }
 
   /**
+   * Eigene Krankmeldungen laden.
+   * RLS (sickness_reports_select_self) beschränkt auf den eigenen Mitarbeiter.
+   * Es werden bewusst keine medizinischen Angaben geführt - die Tabelle
+   * enthält nur Zeitraum, Notiz, Quelle und Status.
+   */
+  async function getMySicknessReports() {
+    const cl = await client();
+    if (!cl) return [];
+    const { data, error } = await cl
+      .from("sickness_reports")
+      .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at")
+      .order("start_date", { ascending: false });
+    if (error) {
+      console.error("Krankmeldungen konnten nicht geladen werden.", error.code);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Neue Krankmeldung für den aktuell angemeldeten Mitarbeiter.
+   * employee_id wird aus dem Profil des eingeloggten Benutzers abgeleitet,
+   * nicht aus dem Formular - die Policy sickness_reports_employee_insert
+   * verlangt genau das und zusätzlich status = 'submitted'.
+   *
+   * Dateianhänge werden bewusst NICHT übertragen: document_submission_id
+   * bleibt null, solange es keinen Upload-Weg gibt.
+   */
+  async function createSicknessReport({ startDate, expectedEndDate, note }) {
+    const cl = await client();
+    if (!cl) {
+      return { ok: false, error: "SUPABASE_NOT_CONFIGURED" };
+    }
+
+    const session = await checkSession();
+    if (!session?.employeeId) {
+      return { ok: false, error: "NO_EMPLOYEE_PROFILE" };
+    }
+
+    const payload = {
+      employee_id: session.employeeId,
+      start_date: startDate,
+      expected_end_date: expectedEndDate || null,
+      note: note ? String(note).trim() : null,
+      submission_source: "Mitarbeiterportal",
+      document_submission_id: null,
+      status: "submitted"
+    };
+
+    const { data, error } = await cl
+      .from("sickness_reports")
+      .insert(payload)
+      .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at")
+      .single();
+
+    if (error) {
+      console.error("Krankmeldung konnte nicht gespeichert werden.", error.message || error.code);
+      return { ok: false, error: error.message || "INSERT_FAILED" };
+    }
+
+    return { ok: true, data };
+  }
+
+  /**
    * Fahrzeug für eine Schicht laden (nur name, Kennzeichen, Fahrzeugtyp).
    * RLS erlaubt nur Fahrzeuge, die dem eigenen Mitarbeiter in einer veröffentlichten Schicht zugewiesen sind.
    */
@@ -271,6 +335,8 @@
     getMyPublishedShifts,
     getMyVacationRequests,
     createVacationRequest,
+    getMySicknessReports,
+    createSicknessReport,
     getVehicle,
     isPlanPublished
   };

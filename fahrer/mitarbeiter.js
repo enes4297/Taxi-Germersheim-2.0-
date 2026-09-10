@@ -9,7 +9,8 @@
     supabaseEmployee: null, /* { id, first_name, last_name, ... } */
     supabaseShifts: [],     /* veröffentlichte Schichten aus Supabase */
     supabaseVehicles: {},   /* { vehicleId: vehicleObjekt } */
-    supabaseVacationRequests: []
+    supabaseVacationRequests: [],
+    supabaseSicknessReports: []  /* eigene Krankmeldungen aus Supabase */
   };
 
   function requireDemoSession() {
@@ -380,15 +381,65 @@
     }).join("")}</div>` : '<p class="demo-note">Noch kein Dokument erfasst.</p>';
   }
 
+  function sicknessStatusText(status) {
+    const map = {
+      submitted: "Eingegangen",
+      in_review: "In Prüfung",
+      accepted: "Anerkannt",
+      closed: "Abgeschlossen"
+    };
+    return map[String(status || "").toLowerCase()] || visibleLabel(status || "Eingegangen");
+  }
+
   function renderAbsences() {
-    const e = emp();
-    if (!e) return;
     const node = document.querySelector("[data-portal-absence-list]");
     if (!node) return;
-    const absences = state.data.absences.filter((a) => a.employeeId === e.id);
-    /* Krankmeldungen liegen ausschliesslich lokal vor - jeder Eintrag wird
-       deshalb sichtbar als nicht uebermittelt gekennzeichnet. */
-    node.innerHTML = absences.length ? `<div class="driver-list">${absences.map((a) => `<article class="driver-item compact-item"><strong>${formatPeriod(a.start, a.expectedEnd)}</strong><p>${visibleLabel(a.kind)} · ${visibleLabel(a.status)}</p>${a.note ? `<p>${visibleLabel(a.note)}</p>` : ""}<span class="status-pill warn">Nicht übermittelt</span></article>`).join("")}</div>` : '<p class="demo-note">Noch keine Krankmeldung erfasst.</p>';
+
+    /* Uebermittelte Krankmeldungen aus Supabase. */
+    const remote = Array.isArray(state.supabaseSicknessReports) ? state.supabaseSicknessReports : [];
+    const remoteHtml = remote.map((r) => `<article class="driver-item compact-item">
+      <strong>${formatPeriod(r.start_date, r.expected_end_date)}</strong>
+      <p>Krank · ${sicknessStatusText(r.status)}</p>
+      ${r.note ? `<p>${visibleLabel(r.note)}</p>` : ""}
+      <span class="status-pill active">Übermittelt</span>
+      <span class="status-pill neutral">Ohne Anhang</span>
+    </article>`).join("");
+
+    /* Aeltere Eintraege, die nur auf diesem Geraet liegen. Sie werden NICHT
+       automatisch nachtraeglich uebertragen und auch nicht geloescht. */
+    const supabaseMode = Boolean(ES && ES.isConfigured());
+    const e = emp();
+    const own = e ? state.data.absences.filter((a) => a.employeeId === e.id) : [];
+
+    /* Im Supabase-Modus laesst sich ein lokaler Altbestand keinem
+       angemeldeten Konto sicher zuordnen - die lokale Ablage nutzt eigene
+       IDs. Inhalte werden dort deshalb bewusst NICHT angezeigt (ein Geraet
+       kann geteilt sein). Stattdessen ein neutraler Hinweis, damit der
+       Bestand nicht stillschweigend verschwindet. */
+    const strandedCount = supabaseMode
+      ? state.data.absences.filter((a) => a.transmitted === false || a.via === "Mitarbeiterportal").length
+      : 0;
+
+    const localHtml = supabaseMode ? "" : own.map((a) => `<article class="driver-item compact-item">
+      <strong>${formatPeriod(a.start, a.expectedEnd)}</strong>
+      <p>${visibleLabel(a.kind)} · ${visibleLabel(a.status)}</p>
+      ${a.note ? `<p>${visibleLabel(a.note)}</p>` : ""}
+      <span class="status-pill warn">Nicht übermittelt</span>
+    </article>`).join("");
+
+    let hint = "";
+    if (supabaseMode && strandedCount > 0) {
+      hint = `<p class="demo-note" data-portal-absence-legacy-hint>Auf diesem Gerät liegen noch ${strandedCount} ältere, nicht übermittelte Einträge aus einer früheren Version. Sie werden nicht nachträglich übertragen – bitte bei Bedarf direkt bei der Zentrale melden.</p>`;
+    } else if (!supabaseMode && own.length) {
+      hint = '<p class="demo-note">Diese Einträge liegen nur auf diesem Gerät und wurden nicht übermittelt.</p>';
+    }
+
+    if (!remote.length && !localHtml && !hint) {
+      node.innerHTML = '<p class="demo-note">Noch keine Krankmeldung erfasst.</p>';
+      return;
+    }
+
+    node.innerHTML = `<div class="driver-list">${remoteHtml}${localHtml}</div>${hint}`;
   }
 
   function renderMessages() {
@@ -510,6 +561,13 @@
 
       const vacationRequests = await ES.getMyVacationRequests();
       state.supabaseVacationRequests = Array.isArray(vacationRequests) ? vacationRequests : [];
+
+      /* Eigene Krankmeldungen. Damit stehen sie auch nach einem Neuladen
+         wieder zur Verfuegung. */
+      if (typeof ES.getMySicknessReports === "function") {
+        const sickness = await ES.getMySicknessReports();
+        state.supabaseSicknessReports = Array.isArray(sickness) ? sickness : [];
+      }
     } catch (err) {
       console.error("Dienstplandaten konnten nicht geladen werden.", err?.message);
     }
@@ -944,25 +1002,78 @@
 
     const absenceForm = document.querySelector("[data-portal-absence-form]");
     if (absenceForm) {
-      absenceForm.addEventListener("submit", (event) => {
+      absenceForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const fd = new FormData(absenceForm);
+        const startDate = String(fd.get("start") || "").trim();
+        const expectedEnd = String(fd.get("expectedEnd") || "").trim();
+        const note = String(fd.get("note") || "").trim();
 
-        /* Krankmeldungen werden von diesem Portal an KEIN Backend gesendet:
-           Es gibt hier weder einen Schreibzugriff auf public.sickness_reports
-           noch einen Upload-Aufruf fuer den Krankenschein. Ob serverseitig
-           Ziele dafuer existieren, ist damit nicht gesagt - der Client nutzt
-           sie jedenfalls nicht. Der Eintrag bleibt lokal und wird deshalb
+        if (!startDate) {
+          reportError("[data-portal-absence-feedback]", "Bitte gib an, ab wann du krank bist.");
+          return;
+        }
+        if (expectedEnd && expectedEnd < startDate) {
+          reportError("[data-portal-absence-feedback]", "Das voraussichtliche Ende darf nicht vor dem Beginn liegen.");
+          return;
+        }
+
+        /* Echte Uebertragung nach public.sickness_reports.
+           Ein Dateianhang wird bewusst NICHT mitgeschickt. */
+        if (ES && ES.isConfigured() && typeof ES.createSicknessReport === "function") {
+          const submitBtn = absenceForm.querySelector('button[type="submit"]');
+          if (submitBtn) submitBtn.disabled = true;
+          try {
+            const result = await ES.createSicknessReport({
+              startDate,
+              expectedEndDate: expectedEnd || null,
+              note
+            });
+
+            /* Erfolg nur bei bestaetigtem Datensatz mit ID. */
+            if (!result?.ok || !result?.data?.id) {
+              reportError(
+                "[data-portal-absence-feedback]",
+                "Krankmeldung konnte nicht übermittelt werden. Deine Eingaben bleiben erhalten. Bitte versuche es noch einmal oder melde dich direkt bei der Zentrale."
+              );
+              return;
+            }
+
+            const reports = await ES.getMySicknessReports();
+            state.supabaseSicknessReports = Array.isArray(reports) ? reports : [result.data];
+            absenceForm.reset();
+            renderAbsences();
+            renderHome();
+            renderMessageSummary();
+            reportTransmitted(
+              "[data-portal-absence-feedback]",
+              "Krankmeldung übermittelt",
+              "Krankmeldung wurde übermittelt und liegt der Zentrale vor. Ein Nachweis wurde dabei nicht mitgesendet."
+            );
+            return;
+          } catch (err) {
+            console.error("Krankmeldung konnte nicht uebermittelt werden.", err?.message || err);
+            reportError(
+              "[data-portal-absence-feedback]",
+              "Krankmeldung konnte nicht übermittelt werden. Deine Eingaben bleiben erhalten. Bitte versuche es noch einmal oder melde dich direkt bei der Zentrale."
+            );
+            return;
+          } finally {
+            if (submitBtn) submitBtn.disabled = false;
+          }
+        }
+
+        /* Ohne Backend: Der Eintrag bleibt auf diesem Geraet und wird
            ausdruecklich als nicht uebermittelt gekennzeichnet. */
         P.addAbsence(state.data, {
           employeeId: state.employeeId,
           kind: "Krank",
-          start: String(fd.get("start") || P.todayIso()),
-          expectedEnd: String(fd.get("expectedEnd") || P.todayIso()),
+          start: startDate || P.todayIso(),
+          expectedEnd: expectedEnd || startDate || P.todayIso(),
           receivedAt: P.todayIso(),
           via: "Mitarbeiterportal",
           proofStatus: "angefordert",
-          note: String(fd.get("note") || ""),
+          note: note,
           status: "gemeldet",
           transmitted: false,
           affectedShifts: []
