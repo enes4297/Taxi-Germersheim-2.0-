@@ -113,10 +113,13 @@ grant execute on function private.is_unlinked_document(text) to authenticated;
 -- ===========================================================================
 -- 4) Rechte und Policies auf storage.objects
 -- ===========================================================================
-grant select, insert on storage.objects to authenticated;
--- Keine breiten Loeschrechte: Bereinigung laeuft ausschliesslich ueber die
--- kontrollierte Funktion in Abschnitt 5.
-revoke delete, update on storage.objects from authenticated;
+-- DELETE ist noetig, weil das Entfernen einer Datei ueber die Storage-API
+-- laufen MUSS (nur sie loescht auch das Objekt im Speicher, nicht bloss den
+-- Katalogeintrag). Die Storage-API prueft dabei die RLS auf storage.objects.
+-- Begrenzt wird das Recht durch die DELETE-Policy in Abschnitt 4 und
+-- zusaetzlich durch den Trigger in Abschnitt 5.
+grant select, insert, delete on storage.objects to authenticated;
+revoke update on storage.objects from authenticated;
 revoke all on storage.objects from anon;
 
 do $$
@@ -124,7 +127,8 @@ begin
   drop policy if exists employee_documents_insert_own   on storage.objects;
   drop policy if exists employee_documents_select_own   on storage.objects;
   drop policy if exists employee_documents_select_admin on storage.objects;
-  drop policy if exists employee_documents_delete_own   on storage.objects;
+  drop policy if exists employee_documents_delete_own       on storage.objects;
+  drop policy if exists employee_documents_delete_unlinked  on storage.objects;
 end
 $$;
 
@@ -164,74 +168,92 @@ create policy employee_documents_select_admin
     and private.is_admin()
   );
 
--- Bewusst KEINE UPDATE- und KEINE DELETE-Policy fuer Mitarbeiter.
+-- Loeschen: eigener Ordner, aktive Mitarbeiterberechtigung UND die Datei darf
+-- von keinem Datensatz referenziert sein. Der Aufruf erfolgt ueber die
+-- Storage-API (remove), damit auch das Objekt im Speicher entfernt wird -
+-- ein direktes SQL-DELETE wuerde nur den Katalogeintrag loeschen.
+-- Diese Policy ist die erste Huerde; die verbindliche Pruefung inklusive
+-- Sperre gegen gleichzeitiges Verknuepfen sitzt im Trigger in Abschnitt 5.
+create policy employee_documents_delete_unlinked
+  on storage.objects
+  as permissive
+  for delete
+  to authenticated
+  using (
+    bucket_id = 'employee-documents'
+    and (storage.foldername(name))[1] = (select auth.uid())::text
+    and private.is_active_employee()
+    and private.is_unlinked_document(name)
+  );
+
+-- Bewusst KEINE UPDATE-Policy: Dateien werden nicht ueberschrieben.
 
 
 -- ===========================================================================
--- 5) Kontrollierte Bereinigung genau eines verwaisten Uploads
+-- 5) Verbindliche Absicherung beim Loeschen
 -- ===========================================================================
--- Warum keine reine Policy?
---   Eine DELETE-Policy koennte die Verknuepfung nur zum Zeitpunkt ihrer
---   Auswertung pruefen. Ein gleichzeitiges Einfuegen in
---   document_submissions koennte danach committen - zurueck bliebe ein
---   Datensatz, dessen Datei nicht mehr existiert.
+-- WICHTIG: Es gibt hier bewusst KEINE SQL-Funktion, die aus storage.objects
+-- loescht. Ein direktes DELETE wuerde nur den Katalogeintrag entfernen, die
+-- Datei bliebe im Objektspeicher als Leiche zurueck. Dateioperationen laufen
+-- ausschliesslich ueber die Storage-API (remove), siehe
+-- https://supabase.com/docs/guides/storage/schema/design
 --
--- Loesung: beide Seiten sperren dieselbe Zeile in storage.objects.
---   - Diese Funktion nimmt die Sperre und prueft DANACH die Verknuepfung.
---   - Der Trigger in Abschnitt 6 nimmt beim Verknuepfen dieselbe Sperre.
+-- Die Storage-API setzt ein DELETE auf storage.objects ab und wertet dabei
+-- die RLS aus. Dieser BEFORE-DELETE-Trigger ist die verbindliche Pruefung:
+-- er laeuft innerhalb desselben Statements, nachdem PostgreSQL die Zeilensperre
+-- auf der zu loeschenden Zeile haelt.
+--
+-- Zusammenspiel gegen den Wettlauf:
+--   Loeschen:    PostgreSQL sperrt die Zeile in storage.objects, danach
+--                prueft dieser Trigger die Verknuepfung erneut.
+--   Verknuepfen: Der Trigger aus Abschnitt 6 nimmt auf derselben Zeile
+--                ein FOR UPDATE und blockiert damit, solange geloescht wird.
 --   Damit kann keine der beiden Seiten die andere uebersehen.
-create or replace function public.cleanup_my_orphan_document(p_path text)
-returns boolean
+create or replace function private.guard_document_object_delete()
+returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $$
-declare
-  v_object_id uuid;
 begin
-  if not private.is_active_employee() then
-    raise exception 'Not authorized' using errcode = '42501';
+  if old.bucket_id is distinct from 'employee-documents' then
+    return old;
   end if;
 
-  if p_path is null
-     or split_part(p_path, '/', 1) is distinct from (select auth.uid())::text then
-    raise exception 'Not authorized' using errcode = '42501';
+  -- Break-glass: der Dienstschluessel bleibt handlungsfaehig. Er ist im
+  -- Browser nicht verfuegbar und wird nur fuer Wartung verwendet.
+  if (select current_user) = 'service_role' then
+    return old;
   end if;
 
-  -- Erst sperren, dann pruefen.
-  select o.id
-  into v_object_id
-  from storage.objects as o
-  where o.bucket_id = 'employee-documents'
-    and o.name = p_path
-  for update;
-
-  if v_object_id is null then
-    return false;                       -- nichts zu bereinigen
-  end if;
-
-  if not private.is_unlinked_document(p_path) then
+  if not private.is_unlinked_document(old.name) then
     raise exception 'DOCUMENT_ALREADY_LINKED' using errcode = '42501';
   end if;
 
-  delete from storage.objects where id = v_object_id;
-  return true;
+  return old;
 end;
 $$;
 
-revoke all on function public.cleanup_my_orphan_document(text) from public;
-revoke all on function public.cleanup_my_orphan_document(text) from anon;
-grant execute on function public.cleanup_my_orphan_document(text) to authenticated;
+revoke all on function private.guard_document_object_delete() from public;
+revoke all on function private.guard_document_object_delete() from anon;
+revoke all on function private.guard_document_object_delete() from authenticated;
 
-comment on function public.cleanup_my_orphan_document(text) is
-  'Entfernt genau einen noch unverknuepften eigenen Upload. Sperrt die Zeile in storage.objects und prueft danach die Verknuepfung (011).';
+drop trigger if exists storage_objects_guard_delete on storage.objects;
+create trigger storage_objects_guard_delete
+  before delete on storage.objects
+  for each row
+  execute function private.guard_document_object_delete();
 
 
 -- ===========================================================================
--- 6) Gegenstueck: beim Verknuepfen dieselbe Zeile sperren
+-- 6) Gegenstueck: bei JEDEM Verknuepfen dieselbe Zeile sperren
 -- ===========================================================================
--- Verhindert, dass ein Datensatz auf eine Datei zeigt, die im selben Moment
--- bereinigt wird. Greift nur fuer Pfade im Nachweis-Bucket.
+-- Deckt alle Schreibwege ab, ueber die ein Dateipfad verknuepft werden kann:
+--   - INSERT auf document_submissions
+--   - UPDATE von document_submissions.file_path
+--   - INSERT auf employee_documents
+--   - UPDATE von employee_documents.file_path
+-- Greift nur fuer Pfade im Nachweis-Bucket; andere Pfade bleiben unberuehrt.
 create or replace function private.lock_document_object()
 returns trigger
 language plpgsql
@@ -242,6 +264,19 @@ declare
   v_exists boolean;
 begin
   if new.file_path is null then
+    return new;
+  end if;
+
+  -- Beim UPDATE nur pruefen, wenn sich der Pfad tatsaechlich aendert.
+  if tg_op = 'UPDATE' and new.file_path is not distinct from old.file_path then
+    return new;
+  end if;
+
+  -- Pfade ausserhalb des Nachweis-Buckets werden nicht eingeschraenkt.
+  if not exists (
+    select 1 from storage.objects as o
+    where o.bucket_id = 'employee-documents' and o.name = new.file_path
+  ) and split_part(new.file_path, '/', 1) !~ '^[0-9a-f-]{36}$' then
     return new;
   end if;
 
@@ -266,7 +301,13 @@ revoke all on function private.lock_document_object() from authenticated;
 
 drop trigger if exists document_submissions_lock_object on public.document_submissions;
 create trigger document_submissions_lock_object
-  before insert on public.document_submissions
+  before insert or update of file_path on public.document_submissions
+  for each row
+  execute function private.lock_document_object();
+
+drop trigger if exists employee_documents_lock_object on public.employee_documents;
+create trigger employee_documents_lock_object
+  before insert or update of file_path on public.employee_documents
   for each row
   execute function private.lock_document_object();
 
@@ -294,8 +335,32 @@ create policy document_submissions_employee_insert
 
 
 -- ===========================================================================
--- 8) Fremde Anhaenge an Krankmeldungen ausschliessen
+-- 8) Vorgangsschluessel und Schutz vor doppelten Krankmeldungen
+--    (enthaelt zugleich den Ausschluss fremder Anhaenge)
 -- ===========================================================================
+-- Geht die Serverantwort verloren, obwohl gespeichert wurde, wiederholt der
+-- Client den Aufruf. Ohne Eindeutigkeit entstuende ein zweiter Datensatz.
+--
+-- Bewusst KEINE fachliche Eindeutigkeit auf (employee_id, start_date): Das
+-- waere eine erfundene Geschaeftsregel und wuerde zwei getrennte Vorgaenge mit
+-- demselben Beginndatum faelschlich verschmelzen. Stattdessen ein technischer
+-- Vorgangsschluessel, den der Client je Sendevorgang einmal erzeugt und bei
+-- jeder Wiederholung unveraendert mitschickt.
+alter table public.sickness_reports
+  add column if not exists client_request_id uuid;
+
+comment on column public.sickness_reports.client_request_id is
+  'Technischer Vorgangsschluessel des Sendevorgangs. Bleibt ueber Wiederholungen gleich und verhindert Doppel nach verlorener Antwort (011).';
+
+-- Partiell, damit vorhandene Zeilen ohne Schluessel nicht kollidieren.
+-- Auf den Mitarbeiter bezogen, damit ein fremder Schluessel nicht belegt
+-- werden kann.
+create unique index if not exists uq_sickness_reports_client_request
+  on public.sickness_reports(employee_id, client_request_id)
+  where client_request_id is not null;
+
+-- Fuer Portal-Eintraege ist der Schluessel Pflicht. Nur so ist eine
+-- Wiederholung ueberhaupt erkennbar.
 drop policy if exists sickness_reports_employee_insert on public.sickness_reports;
 create policy sickness_reports_employee_insert
   on public.sickness_reports
@@ -306,6 +371,7 @@ create policy sickness_reports_employee_insert
     employee_id = private.current_user_employee_id()
     and status = 'submitted'
     and private.is_active_employee()
+    and client_request_id is not null
     and (
       document_submission_id is null
       or exists (
@@ -316,22 +382,6 @@ create policy sickness_reports_employee_insert
       )
     )
   );
-
-
--- ===========================================================================
--- 9) Keine doppelte Krankmeldung bei verlorener Antwort
--- ===========================================================================
--- Geht die Serverantwort verloren, obwohl gespeichert wurde, wiederholt der
--- Client den Aufruf. Ohne Eindeutigkeit entstuende ein zweiter Datensatz.
--- Fachlich gilt: je Mitarbeiter und Beginndatum genau eine Krankmeldung.
--- Der zweite Versuch scheitert dann mit SQLSTATE 23505 und wird vom Client
--- als "bereits gespeichert" behandelt.
---
--- Hinweis: Legt sich nur an, wenn keine Duplikate vorhanden sind. Bei
--- vorhandenen Duplikaten bricht die Migration hier bewusst ab, damit die
--- Daten zuerst geprueft werden.
-create unique index if not exists uq_sickness_reports_employee_start
-  on public.sickness_reports(employee_id, start_date);
 
 
 -- ===========================================================================

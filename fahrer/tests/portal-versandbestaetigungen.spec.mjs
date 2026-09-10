@@ -63,17 +63,24 @@ const ES_STUB = `
     if (mode === "backend-error") return { ok: false, error: "INSERT_FAILED" };
     if (mode === "ok-without-row") return { ok: true, data: {} };
     /* Verlorene Antwort: Der Server hatte beim ersten Mal bereits
-       gespeichert. Die echte Implementierung erkennt das an SQLSTATE 23505
-       und gibt den vorhandenen Datensatz zurueck, statt einen zweiten
-       anzulegen. */
+       gespeichert. Die echte Implementierung erkennt das am Konflikt auf
+       uq_sickness_reports_client_request UND vergleicht den Inhalt. */
     if (mode === "duplicate") {
       const vorhanden = (window.__TG_TEST.sicknessReports || [])
-        .find((r) => r.start_date === payload.startDate) || {
+        .find((r) => r.client_request_id === payload.clientRequestId) || {
           id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          start_date: payload.startDate, status: "submitted"
+          start_date: payload.startDate,
+          client_request_id: payload.clientRequestId,
+          status: "submitted"
         };
       return { ok: true, data: vorhanden, deduplicated: true };
     }
+    /* Gleicher Vorgangsschluessel, aber anderer Inhalt: darf NICHT still
+       als Erfolg gelten. */
+    if (mode === "duplicate-mismatch") {
+      return { ok: false, error: "REQUEST_ID_CONTENT_MISMATCH" };
+    }
+    if (!payload.clientRequestId) return { ok: false, error: "MISSING_REQUEST_ID" };
     const row = {
       id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
       employee_id: T.employeeId,
@@ -82,6 +89,8 @@ const ES_STUB = `
       note: payload.note || null,
       submission_source: "Mitarbeiterportal",
       status: "submitted",
+      client_request_id: payload.clientRequestId,
+      document_submission_id: payload.documentSubmissionId || null,
       created_at: new Date().toISOString()
     };
     (window.__TG_TEST.sicknessReports = window.__TG_TEST.sicknessReports || []).push(row);
@@ -840,6 +849,48 @@ test("K5 verlorene Antwort erzeugt keine zweite Krankmeldung", async ({ page }) 
 
   const gespeichert = await page.evaluate(() => window.__TG_TEST.sicknessReports.length);
   expect(gespeichert, "kein zweiter Datensatz").toBe(0);
+});
+
+test("K6 gleicher Vorgang mit anderem Inhalt wird NICHT still akzeptiert", async ({ page }) => {
+  await openPortal(page, { configured: true, sicknessMode: "duplicate-mismatch" });
+  await openSection(page, "krank");
+  await fillSickness(page);
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+
+  const fb = page.locator("[data-portal-absence-feedback]");
+  await expect(fb).toContainText("bereits mit anderen Angaben gespeichert");
+  await expect(fb).toHaveClass(/is-error/);
+  await expect(fb).not.toContainText("✓");
+  await expect(page.locator("[data-portal-modal]")).toBeHidden();
+});
+
+test("K7 Vorgangsschluessel bleibt ueber Wiederholungen gleich", async ({ page }) => {
+  await openPortal(page, { configured: true, sicknessMode: "backend-error" });
+  await openSection(page, "krank");
+  await fillSickness(page);
+
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+
+  const keys = await page.evaluate(() =>
+    window.__TG_CALLS.createSicknessReport.map((c) => c.clientRequestId));
+  expect(keys).toHaveLength(3);
+  expect(keys[0]).toBeTruthy();
+  expect(new Set(keys).size, "derselbe Schluessel bei jeder Wiederholung").toBe(1);
+
+  /* Nach Erfolg beginnt ein NEUER Vorgang mit neuem Schluessel. */
+  await page.evaluate(() => { window.__TG_TEST.sicknessMode = "success"; });
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+  await expect(page.locator("[data-portal-absence-feedback]")).toContainText("übermittelt");
+  /* Das Erfolgs-Modal wuerde den naechsten Klick abfangen. */
+  await page.click("[data-portal-close]");
+
+  await fillSickness(page, "2099-11-01", "2099-11-03");
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+  const alle = await page.evaluate(() =>
+    window.__TG_CALLS.createSicknessReport.map((c) => c.clientRequestId));
+  expect(alle[alle.length - 1]).not.toBe(keys[0]);
 });
 
 test("T13 Dokumentbereich verspricht keinen Versand", async ({ page }) => {

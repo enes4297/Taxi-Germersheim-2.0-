@@ -11,10 +11,62 @@ Stand 10.09.2026, Branch `feature/mitarbeiter-dokumentenupload`.
 
 | Prüfebene | Ergebnis | Art |
 |---|---|---|
-| RLS- und Policy-Tests, lokale PostgreSQL-Instanz | **40 von 40 bestanden** | echt, gegen PostgreSQL |
-| Browsertests Portal | **35 von 35 bestanden** | **simuliert**, Backend ersetzt |
+| RLS- und Policy-Tests, lokale PostgreSQL-Instanz | **46 von 46 bestanden** | echt, gegen PostgreSQL |
+| Nebenläufigkeit über **zwei echte Verbindungen** | **2 von 2 Fällen bestanden** | echt, gegen PostgreSQL |
+| Browsertests Portal | **37 von 37 bestanden** | **simuliert**, Backend ersetzt |
 | Browsertests Admin (Krankmeldungen + Dokumenteingang) | **10 von 10 bestanden** | **simuliert**, Backend ersetzt |
-| Echte Storage-API (Upload, Download, signierte URLs) | **nicht getestet** | — |
+| Echte Storage-API (Upload, Download, signierte URLs, Löschen der Datei) | **nicht getestet** | — |
+
+### Nebenläufigkeitstest — `13_concurrency_run.ps1`
+
+Zwei getrennte `psql`-Verbindungen, gezielt verschränkt (kein Lasttest):
+
+| Fall | Ablauf | Ergebnis |
+|---|---|---|
+| **A** | Löschen beginnt zuerst und hält die Transaktion; Verknüpfen läuft hinein | Verbindung B blockiert und meldet dann **`DOCUMENT_FILE_NOT_FOUND`**; 0 Verknüpfungen, 0 Dateien — **keine hängende Referenz** |
+| **B** | Verknüpfen beginnt zuerst und hält; Löschen läuft hinein | Löschversuch blockiert und meldet **`DOCUMENT_ALREADY_LINKED`**; 1 Verknüpfung, **Datei bleibt erhalten** |
+
+Fall B belegt, dass der `BEFORE DELETE`-Trigger im Rennen tatsächlich greift —
+die Policy allein hätte hier zum Auswertungszeitpunkt noch keine Verknüpfung
+gesehen.
+
+## Zweite Nachbesserung — Storage-API und Vorgangsschlüssel
+
+**a) Das direkte SQL-`DELETE` war falsch.** `cleanup_my_orphan_document`
+entfernte die Zeile aus `storage.objects` — das löscht nur den Katalogeintrag,
+die Datei bliebe im Objektspeicher zurück. Supabase verlangt Dateioperationen
+über die Storage-API. Die Funktion ist **ersatzlos entfernt**.
+
+Neu:
+- Der Client ruft `storage.from(bucket).remove([path])` auf. Nur dieser Weg
+  entfernt auch das Objekt selbst.
+- Die Storage-API setzt dabei ein `DELETE` auf `storage.objects` ab und wertet
+  die RLS aus. Die neue Policy `employee_documents_delete_unlinked` erlaubt das
+  nur im eigenen Ordner, nur aktiven Mitarbeitern und nur für unverknüpfte
+  Dateien.
+- Verbindlich abgesichert wird das durch den `BEFORE DELETE`-Trigger
+  `storage_objects_guard_delete`, der innerhalb desselben Statements läuft —
+  also unter der Zeilensperre.
+
+**b) Die Sperre deckte nur `INSERT` auf `document_submissions` ab.** Jetzt
+greift `private.lock_document_object()` auf **allen** Schreibwegen:
+`INSERT` und `UPDATE OF file_path`, sowohl auf `document_submissions` als auch
+auf `employee_documents`.
+
+**c) Die fachliche Eindeutigkeit `(employee_id, start_date)` war erfunden.**
+Sie hätte zwei getrennte Vorgänge mit demselben Beginndatum verschmolzen.
+Ersetzt durch einen technischen Vorgangsschlüssel:
+- neue Spalte `sickness_reports.client_request_id`,
+- partieller eindeutiger Index `(employee_id, client_request_id)`,
+- die Insert-Policy verlangt den Schlüssel für Portal-Einträge,
+- der Client erzeugt ihn **einmal je Sendevorgang** und schickt ihn bei jeder
+  Wiederholung unverändert mit; verworfen wird er erst nach bestätigtem Erfolg.
+
+**Ein Konflikt gilt nur dann als Erfolg**, wenn er auf genau diesem Index
+auftritt **und** der vorhandene Datensatz inhaltlich passt — Beginn, Ende,
+Notiz und Dokumentverknüpfung. Ein beliebiger `23505` wird **nicht** als
+Erfolg behandelt; bei abweichendem Inhalt meldet das Portal
+`REQUEST_ID_CONTENT_MISMATCH` als Fehler.
 
 ## Nachbesserung nach der Prüfung
 
@@ -197,14 +249,24 @@ Portalseite selbst zeigte, wodurch dort die App lief und weiterleitete.
   ab, bleibt eine Datei im eigenen Ordner liegen. Ein regelmäßiger Aufräumlauf
   bräuchte weiter reichende Rechte und ist bewusst **nicht** Teil dieses
   Schritts.
-- **Die Sperre gegen den Wettlauf ist gegen PostgreSQL geprüft, aber nicht
-  unter echter Last.** Getestet sind beide Richtungen einzeln (Test 34/35 und
-  37); ein tatsächlich gleichzeitiger Ablauf aus zwei Verbindungen wurde nicht
-  provoziert.
-- **Die Eindeutigkeit auf `sickness_reports(employee_id, start_date)` legt
-  sich nur an, wenn keine Duplikate vorhanden sind.** Beim Einspielen in
-  Produktion bricht die Migration sonst an dieser Stelle ab — das ist
-  beabsichtigt, damit die Daten zuerst geprüft werden.
+- **Die entscheidende offene Grenze: Das tatsächliche Entfernen der Datei aus
+  dem Objektspeicher ist nicht geprüft.** Die lokale Nachbildung enthält nur
+  `storage.objects` als Tabelle — keinen Storage-Dienst und keinen
+  Objektspeicher. Nachgewiesen ist ausschließlich die Datenbankseite: wer
+  löschen darf, wann das gefiltert wird und dass verknüpfte Dateien erhalten
+  bleiben. **Dass `remove()` auch die Datei selbst löscht, ist unbelegt.**
+
+  Konkret fehlt dafür: ein laufender `storage-api`-Dienst mit Objektspeicher.
+  Der bräuchte entweder Docker plus Supabase-CLI (beides ist auf diesem Rechner
+  nicht installiert und Docker benötigt Adminrechte) oder ein separates
+  Supabase-Testprojekt, das wir bewusst zurückgestellt haben. Ohne eines von
+  beiden lässt sich dieser Punkt nicht abschließen.
+- **Der Nebenläufigkeitstest deckt die Datenbankseite ab, nicht den
+  Storage-Dienst.** Ob die Storage-API bei einem abgelehnten `DELETE` das
+  Objekt unangetastet lässt, ist damit ebenfalls nicht belegt.
+- **Der eindeutige Index legt sich nur an, wenn keine Duplikate vorhanden
+  sind.** Da er partiell auf `client_request_id is not null` wirkt und die
+  Spalte neu ist, kann er beim Einspielen nicht an Altdaten scheitern.
 - **Disponenten sehen keine Nachweise.** `document_submissions_select_admin` und
   die Storage-Policy erlauben nur `profiles.role = 'admin'`. Das entspricht dem
   bestehenden Schema und wurde nicht umgangen.

@@ -30,6 +30,8 @@ declare
   v_pfad_frei    text;
   v_pfad_bestand text;
   v_bool         boolean;
+  v_vorgang_a    constant uuid := 'aaaa1111-2222-4333-8444-555566667777';
+  v_vorgang_b    constant uuid := 'bbbb1111-2222-4333-8444-555566667777';
   v_sub_id      uuid;
   v_sub_fremd   uuid;
   v_rows        integer;
@@ -262,9 +264,9 @@ begin
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
     insert into public.sickness_reports
-      (employee_id, start_date, expected_end_date, note, submission_source, document_submission_id, status)
+      (employee_id, start_date, expected_end_date, note, submission_source, document_submission_id, status, client_request_id)
     values (v_ma_emp, date '2099-06-20', date '2099-06-25', 'TESTDATA-012',
-            'Mitarbeiterportal', v_sub_id, 'submitted');
+            'Mitarbeiterportal', v_sub_id, 'submitted', gen_random_uuid());
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
@@ -289,9 +291,9 @@ begin
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
     insert into public.sickness_reports
-      (employee_id, start_date, note, submission_source, document_submission_id, status)
+      (employee_id, start_date, note, submission_source, document_submission_id, status, client_request_id)
     values (v_ma_emp, date '2099-06-26', 'TESTDATA-012 fremdanhang',
-            'Mitarbeiterportal', v_sub_fremd, 'submitted');
+            'Mitarbeiterportal', v_sub_fremd, 'submitted', gen_random_uuid());
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
@@ -321,9 +323,9 @@ begin
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_rows := -1; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
-  insert into _tg_doc values (21, 'Direktes DELETE fremder Datei verweigert',
+  insert into _tg_doc values (21, 'Fremde Datei wird von der Loesch-Policy gefiltert',
     coalesce(v_sqlstate || ' ' || v_message, v_rows::text || ' Zeile(n) geloescht'),
-    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+    case when v_sqlstate is null and v_rows = 0 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   begin
     perform set_config('role', 'authenticated', false);
@@ -337,9 +339,9 @@ begin
   /* Auch die EIGENE Datei ist per direktem DELETE nicht mehr entfernbar -
      Bereinigung laeuft ausschliesslich ueber cleanup_my_orphan_document
      (Tests 31 bis 35). */
-  insert into _tg_doc values (22, 'Direktes DELETE eigener Datei ebenfalls verweigert',
+  insert into _tg_doc values (22, 'Eigene VERKNUEPFTE Datei wird ebenfalls gefiltert',
     coalesce(v_sqlstate || ' ' || v_message, v_rows::text || ' Zeile(n) geloescht'),
-    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+    case when v_sqlstate is null and v_rows = 0 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   ---------------------------------------------------------------------------
   -- L) Dokumenteingang im Adminbereich
@@ -452,13 +454,14 @@ begin
     perform set_config('role', 'authenticated', false);
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_inaktiv_ma_uid, 'role', 'authenticated')::text, false);
-    perform public.cleanup_my_orphan_document(v_pfad_inaktiv);
+    delete from storage.objects where bucket_id = 'employee-documents' and name = v_pfad_inaktiv;
+    get diagnostics v_rows = row_count;
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
   insert into _tg_doc values (29, 'Inaktiver Mitarbeiter bereinigt: verweigert',
-    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
-    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+    coalesce(v_sqlstate || ' ' || v_message, v_rows::text || ' Zeile(n) geloescht'),
+    case when v_sqlstate is null and v_rows = 0 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   ---------------------------------------------------------------------------
   -- O) Kein direktes DELETE mehr fuer Mitarbeiter
@@ -472,9 +475,9 @@ begin
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; v_rows := -1; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
-  insert into _tg_doc values (30, 'Direktes DELETE auf storage.objects verweigert',
+  insert into _tg_doc values (30, 'Loeschen fremder Datei bewirkt nichts',
     coalesce(v_sqlstate || ' ' || v_message, v_rows::text || ' Zeile(n)'),
-    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+    case when v_sqlstate is null and v_rows = 0 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   ---------------------------------------------------------------------------
   -- P) Bereinigung nur fuer unverknuepfte Dateien
@@ -485,7 +488,9 @@ begin
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
     insert into storage.objects (bucket_id, name) values ('employee-documents', v_pfad_frei);
-    v_bool := public.cleanup_my_orphan_document(v_pfad_frei);
+    delete from storage.objects where bucket_id = 'employee-documents' and name = v_pfad_frei;
+    get diagnostics v_rows = row_count;
+    v_bool := v_rows = 1;
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; v_bool := null; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
@@ -516,13 +521,15 @@ begin
     perform set_config('role', 'authenticated', false);
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
-    perform public.cleanup_my_orphan_document(v_pfad_eigen2);
+    delete from storage.objects where bucket_id = 'employee-documents' and name = v_pfad_eigen2;
+    get diagnostics v_rows = row_count;
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
-  insert into _tg_doc values (34, 'Bereits EINGEREICHTE Datei kann nicht bereinigt werden',
-    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
-    case when v_sqlstate = '42501' and v_message like '%ALREADY_LINKED%'
+  insert into _tg_doc values (34, 'Bereits EINGEREICHTE Datei bleibt erhalten',
+    coalesce(v_sqlstate || ' ' || v_message, v_rows::text || ' Zeile(n) geloescht'),
+    case when v_sqlstate is null and v_rows = 0
+          and exists (select 1 from storage.objects where name = v_pfad_eigen2)
          then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   v_pfad_bestand := v_ma_uid::text || '/2099/testdata-012-bestand.pdf';
@@ -534,26 +541,29 @@ begin
     perform set_config('role', 'authenticated', false);
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
-    perform public.cleanup_my_orphan_document(v_pfad_bestand);
+    delete from storage.objects where bucket_id = 'employee-documents' and name = v_pfad_bestand;
+    get diagnostics v_rows = row_count;
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
-  insert into _tg_doc values (35, 'Im geprueften Bestand referenzierte Datei geschuetzt',
-    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
-    case when v_sqlstate = '42501' and v_message like '%ALREADY_LINKED%'
+  insert into _tg_doc values (35, 'Im geprueften Bestand referenzierte Datei bleibt erhalten',
+    coalesce(v_sqlstate || ' ' || v_message, v_rows::text || ' Zeile(n) geloescht'),
+    case when v_sqlstate is null and v_rows = 0
+          and exists (select 1 from storage.objects where name = v_pfad_bestand)
          then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   begin
     perform set_config('role', 'authenticated', false);
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_ma2_uid, 'role', 'authenticated')::text, false);
-    perform public.cleanup_my_orphan_document(v_pfad_eigen2);
+    delete from storage.objects where bucket_id = 'employee-documents' and name = v_pfad_eigen2;
+    get diagnostics v_rows = row_count;
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
-  insert into _tg_doc values (36, 'Fremder Pfad ueber die Funktion verweigert',
-    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
-    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+  insert into _tg_doc values (36, 'Fremder Mitarbeiter kann die Datei nicht loeschen',
+    coalesce(v_sqlstate || ' ' || v_message, v_rows::text || ' Zeile(n) geloescht'),
+    case when v_sqlstate is null and v_rows = 0 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   ---------------------------------------------------------------------------
   -- Q) Verknuepfen auf eine nicht vorhandene Datei
@@ -580,35 +590,114 @@ begin
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
     insert into public.sickness_reports
-      (employee_id, start_date, expected_end_date, note, submission_source, status)
+      (employee_id, start_date, expected_end_date, note, submission_source, status, client_request_id)
     values (v_ma_emp, date '2099-07-07', date '2099-07-09', 'TESTDATA-012 wiederholung',
-            'Mitarbeiterportal', 'submitted');
+            'Mitarbeiterportal', 'submitted', v_vorgang_a);
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
-  insert into _tg_doc values (38, 'Erste Krankmeldung wird gespeichert',
+  insert into _tg_doc values (38, 'Erste Krankmeldung mit Vorgangsschluessel gespeichert',
     coalesce(v_sqlstate || ' ' || v_message, 'ohne Fehler'),
     case when v_sqlstate is null then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
+  -- Antwort ging verloren: identische Wiederholung mit DEMSELBEN Schluessel.
   begin
     perform set_config('role', 'authenticated', false);
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
     insert into public.sickness_reports
-      (employee_id, start_date, expected_end_date, note, submission_source, status)
+      (employee_id, start_date, expected_end_date, note, submission_source, status, client_request_id)
     values (v_ma_emp, date '2099-07-07', date '2099-07-09', 'TESTDATA-012 wiederholung',
-            'Mitarbeiterportal', 'submitted');
+            'Mitarbeiterportal', 'submitted', v_vorgang_a);
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
-  insert into _tg_doc values (39, 'Wiederholung wird serverseitig abgewiesen (23505)',
+  insert into _tg_doc values (39, 'Wiederholung desselben Vorgangs abgewiesen (23505)',
+    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
+    case when v_sqlstate = '23505'
+          and v_message like '%uq_sickness_reports_client_request%'
+         then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  select count(*) into v_rows from public.sickness_reports
+   where employee_id = v_ma_emp and client_request_id = v_vorgang_a;
+  insert into _tg_doc values (40, 'Genau EINE Krankmeldung fuer diesen Vorgang',
+    v_rows::text || ' Zeile(n)', case when v_rows = 1 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  -- Gleicher Schluessel, VERAENDERTER Inhalt: darf nicht still durchgehen.
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
+    insert into public.sickness_reports
+      (employee_id, start_date, expected_end_date, note, submission_source, status, client_request_id)
+    values (v_ma_emp, date '2099-07-20', date '2099-07-25', 'TESTDATA-012 anderer inhalt',
+            'Mitarbeiterportal', 'submitted', v_vorgang_a);
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (41, 'Gleicher Schluessel mit anderem Inhalt abgewiesen',
     coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
     case when v_sqlstate = '23505' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   select count(*) into v_rows from public.sickness_reports
+   where employee_id = v_ma_emp and client_request_id = v_vorgang_a
+     and start_date = date '2099-07-07';
+  insert into _tg_doc values (42, 'Der bestehende Inhalt wurde nicht veraendert',
+    v_rows::text || ' Zeile(n) mit dem urspruenglichen Beginndatum',
+    case when v_rows = 1 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  -- ZWEI verschiedene Vorgaenge mit demselben Beginndatum: beide gueltig.
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
+    insert into public.sickness_reports
+      (employee_id, start_date, expected_end_date, note, submission_source, status, client_request_id)
+    values (v_ma_emp, date '2099-07-07', date '2099-07-08', 'TESTDATA-012 zweiter vorgang',
+            'Mitarbeiterportal', 'submitted', v_vorgang_b);
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (43, 'Zweiter Vorgang mit gleichem Beginndatum erlaubt',
+    coalesce(v_sqlstate || ' ' || v_message, 'ohne Fehler'),
+    case when v_sqlstate is null then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  select count(*) into v_rows from public.sickness_reports
    where employee_id = v_ma_emp and start_date = date '2099-07-07';
-  insert into _tg_doc values (40, 'Genau EINE Krankmeldung in der Datenbank',
-    v_rows::text || ' Zeile(n)', case when v_rows = 1 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+  insert into _tg_doc values (44, 'Beide Vorgaenge bleiben unterscheidbar',
+    v_rows::text || ' Zeile(n)', case when v_rows = 2 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  -- Ohne Vorgangsschluessel darf ein Portal-Eintrag gar nicht entstehen.
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
+    insert into public.sickness_reports
+      (employee_id, start_date, note, submission_source, status)
+    values (v_ma_emp, date '2099-08-01', 'TESTDATA-012 ohne schluessel',
+            'Mitarbeiterportal', 'submitted');
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (45, 'Krankmeldung ohne Vorgangsschluessel abgelehnt',
+    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
+    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  -- Ein fremder Vorgangsschluessel kollidiert nicht (Index ist je Mitarbeiter).
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma2_uid, 'role', 'authenticated')::text, false);
+    insert into public.sickness_reports
+      (employee_id, start_date, note, submission_source, status, client_request_id)
+    values (v_ma2_emp, date '2099-07-07', 'TESTDATA-012 anderer mitarbeiter',
+            'Mitarbeiterportal', 'submitted', v_vorgang_a);
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (46, 'Gleicher Schluessel bei anderem Mitarbeiter erlaubt',
+    coalesce(v_sqlstate || ' ' || v_message, 'ohne Fehler'),
+    case when v_sqlstate is null then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   ---------------------------------------------------------------------------
   -- Aufraeumen

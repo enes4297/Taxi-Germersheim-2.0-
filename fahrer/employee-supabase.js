@@ -327,16 +327,18 @@
       .single();
 
     if (error || !data?.id) {
-      /* Begrenzte Bereinigung ueber die kontrollierte Funktion. Der Client
-         hat KEIN Loeschrecht auf storage.objects - die Funktion prueft
-         serverseitig Berechtigung, Pfadzugehoerigkeit und ob die Datei noch
-         unverknuepft ist. */
+      /* Bereinigung ueber die Storage-API. Nur sie entfernt auch das Objekt
+         im Speicher - ein SQL-DELETE wuerde nur den Katalogeintrag loeschen.
+         Die Storage-API wertet dabei die RLS aus: Die DELETE-Policy erlaubt
+         nur den eigenen Ordner, nur aktiven Mitarbeitern und nur fuer
+         unverknuepfte Dateien; der BEFORE-DELETE-Trigger prueft das
+         verbindlich unter Zeilensperre. */
       let cleaned = false;
-      const cleanup = await cl.rpc("cleanup_my_orphan_document", { p_path: path });
+      const cleanup = await cl.storage.from(DOC_BUCKET).remove([path]);
       if (cleanup.error) {
         console.error("Verwaiste Datei konnte nicht entfernt werden.", cleanup.error.message);
       } else {
-        cleaned = cleanup.data === true;
+        cleaned = Array.isArray(cleanup.data) && cleanup.data.length > 0;
       }
       console.error("Einreichung konnte nicht gespeichert werden.", error?.message);
       return {
@@ -397,7 +399,18 @@
    * Dateianhänge werden bewusst NICHT übertragen: document_submission_id
    * bleibt null, solange es keinen Upload-Weg gibt.
    */
-  async function createSicknessReport({ startDate, expectedEndDate, note, documentSubmissionId }) {
+  /* Inhaltsvergleich fuer den Wiederholungsfall. Ein Konflikt gilt nur dann
+     als Erfolg, wenn der vorhandene Datensatz zum selben Vorgang UND zum
+     selben Inhalt gehoert - inklusive Dokumentverknuepfung. */
+  function sicknessMatches(row, payload) {
+    const gleich = (a, b) => (a == null ? null : String(a)) === (b == null ? null : String(b));
+    return gleich(row.start_date, payload.start_date)
+      && gleich(row.expected_end_date, payload.expected_end_date)
+      && gleich(row.note, payload.note)
+      && gleich(row.document_submission_id, payload.document_submission_id);
+  }
+
+  async function createSicknessReport({ startDate, expectedEndDate, note, documentSubmissionId, clientRequestId }) {
     const cl = await client();
     if (!cl) {
       return { ok: false, error: "SUPABASE_NOT_CONFIGURED" };
@@ -418,8 +431,14 @@
          Die Policy prueft serverseitig, dass die Einreichung dem eigenen
          Mitarbeiter gehoert - fremde IDs werden abgelehnt. */
       document_submission_id: documentSubmissionId || null,
+      /* Technischer Vorgangsschluessel: bleibt ueber Wiederholungen gleich. */
+      client_request_id: clientRequestId || null,
       status: "submitted"
     };
+
+    if (!payload.client_request_id) {
+      return { ok: false, error: "MISSING_REQUEST_ID" };
+    }
 
     const { data, error } = await cl
       .from("sickness_reports")
@@ -428,23 +447,32 @@
       .single();
 
     if (error) {
-      /* 23505 = Eindeutigkeitsverletzung auf (employee_id, start_date).
-         Das passiert genau dann, wenn der Server bereits gespeichert hatte,
-         die Antwort aber verloren ging und der Client es erneut versucht.
-         Es wird KEINE zweite Krankmeldung angelegt - stattdessen wird der
-         bereits vorhandene Datensatz zurueckgegeben. */
-      if (error.code === "23505") {
+      /* Wiederholung nach verlorener Antwort.
+         NUR der Konflikt auf genau unserem Vorgangsschluessel darf als
+         Erfolg gelten - ein beliebiger 23505 nicht. Zusaetzlich muss der
+         vorhandene Datensatz inhaltlich passen, sonst waere es eine
+         stillschweigend geschluckte Aenderung. */
+      const istVorgangskonflikt =
+        error.code === "23505" &&
+        String(error.message || "").includes("uq_sickness_reports_client_request");
+
+      if (istVorgangskonflikt) {
         const existing = await cl
           .from("sickness_reports")
-          .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at, document_submission_id")
+          .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at, document_submission_id, client_request_id")
           .eq("employee_id", session.employeeId)
-          .eq("start_date", startDate)
+          .eq("client_request_id", payload.client_request_id)
           .maybeSingle();
 
-        if (!existing.error && existing.data?.id) {
-          return { ok: true, data: existing.data, deduplicated: true };
+        if (existing.error || !existing.data?.id) {
+          return { ok: false, error: "ALREADY_SUBMITTED" };
         }
-        return { ok: false, error: "ALREADY_SUBMITTED" };
+        if (!sicknessMatches(existing.data, payload)) {
+          /* Gleicher Vorgang, anderer Inhalt: NICHT still als Erfolg
+             durchwinken. */
+          return { ok: false, error: "REQUEST_ID_CONTENT_MISMATCH", data: existing.data };
+        }
+        return { ok: true, data: existing.data, deduplicated: true };
       }
 
       console.error("Krankmeldung konnte nicht gespeichert werden.", error.message || error.code);

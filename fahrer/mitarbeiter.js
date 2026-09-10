@@ -17,8 +17,23 @@
        gespeichert werden konnte. Wird bei einem erneuten Versuch
        wiederverwendet, damit weder die Datei noch die Einreichung doppelt
        entsteht. */
-    pendingSicknessAttachment: null
+    pendingSicknessAttachment: null,
+    /* Technischer Vorgangsschluessel des laufenden Sendevorgangs. Bleibt
+       ueber Wiederholungen gleich und wird erst nach bestaetigtem Erfolg
+       verworfen - auch nach einer verlorenen Antwort. */
+    pendingSicknessRequestId: null
   };
+
+  function neueVorgangsId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    /* Rueckfall fuer aeltere Browser: RFC-4122-Variante aus Zufallswerten. */
+    const b = new Uint8Array(16);
+    (window.crypto || {}).getRandomValues?.(b);
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    const h = [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+    return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+  }
 
   function requireDemoSession() {
     try {
@@ -1214,13 +1229,28 @@
             }
 
             /* Schritt 2: Krankmeldung. Erst hier entsteht ein Datensatz -
-               ein Fehlschlag hinterlaesst also keine halbe Krankmeldung. */
+               ein Fehlschlag hinterlaesst also keine halbe Krankmeldung.
+               Der Vorgangsschluessel wird einmal erzeugt und bei jeder
+               Wiederholung unveraendert erneut gesendet. */
+            if (!state.pendingSicknessRequestId) {
+              state.pendingSicknessRequestId = neueVorgangsId();
+            }
+
             const result = await ES.createSicknessReport({
               startDate,
               expectedEndDate: expectedEnd || null,
               note,
-              documentSubmissionId: attachmentId
+              documentSubmissionId: attachmentId,
+              clientRequestId: state.pendingSicknessRequestId
             });
+
+            if (result?.error === "REQUEST_ID_CONTENT_MISMATCH") {
+              reportError(
+                "[data-portal-absence-feedback]",
+                "Diese Krankmeldung wurde bereits mit anderen Angaben gespeichert. Bitte lade die Seite neu und prüfe deine Einträge, bevor du es erneut versuchst."
+              );
+              return;
+            }
 
             /* Erfolg nur bei bestaetigtem Datensatz mit ID. */
             if (!result?.ok || !result?.data?.id) {
@@ -1232,7 +1262,11 @@
             }
 
             const mitAnhang = Boolean(attachmentId);
+            /* Erst jetzt, nach bestaetigtem Erfolg, wird der Vorgang
+               abgeschlossen. Ein neuer Sendevorgang bekommt einen neuen
+               Schluessel. */
             state.pendingSicknessAttachment = null;
+            state.pendingSicknessRequestId = null;
 
             const reports = await ES.getMySicknessReports();
             state.supabaseSicknessReports = Array.isArray(reports) ? reports : [result.data];
