@@ -75,12 +75,12 @@
           <button class="quick-action-card" type="button" data-portal-quick-action="krank">
             <span class="quick-icon">🩺</span>
             <strong>Krank melden</strong>
-            <span>Krankmeldung senden</span>
+            <span>Krankmeldung erfassen</span>
           </button>
           <button class="quick-action-card" type="button" data-portal-quick-action="dokumente">
             <span class="quick-icon">📄</span>
-            <strong>Dokument senden</strong>
-            <span>Foto oder Datei senden</span>
+            <strong>Dokument erfassen</strong>
+            <span>Foto oder Datei vermerken</span>
           </button>
         </div>
       </section>
@@ -148,11 +148,14 @@
         <div class="section-titlebar">
           <div>
             <p class="panel-kicker">Schnellaktion</p>
-            <h2>Krankmeldung senden</h2>
+            <h2>Krankmeldung erfassen</h2>
           </div>
           <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
         </div>
         <div class="section-body">
+          <div class="section-feedback is-warning" data-portal-absence-notice>
+            Krankmeldungen werden derzeit <strong>nicht automatisch übermittelt</strong>. Der Eintrag wird nur auf diesem Gerät gespeichert. Bitte melde dich zusätzlich direkt bei der Zentrale.
+          </div>
           <div class="section-feedback" data-portal-absence-feedback hidden></div>
           <form class="portal-form" data-portal-absence-form>
             <label>
@@ -181,7 +184,7 @@
               <span>Notiz</span>
               <input type="text" name="note" placeholder="Optional">
             </label>
-            <button class="btn btn-warning" type="submit">Krankmeldung senden</button>
+            <button class="btn btn-warning" type="submit">Krankmeldung speichern</button>
           </form>
           <div data-portal-absence-list></div>
         </div>
@@ -191,11 +194,14 @@
         <div class="section-titlebar">
           <div>
             <p class="panel-kicker">Schnellaktion</p>
-            <h2>Dokument senden</h2>
+            <h2>Dokument erfassen</h2>
           </div>
           <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
         </div>
         <div class="section-body">
+          <div class="section-feedback is-warning" data-portal-doc-notice>
+            Dokumente werden derzeit <strong>nicht automatisch übermittelt</strong>. Es wird nur der Dateiname auf diesem Gerät vermerkt – die Datei selbst wird nicht hochgeladen. Bitte reiche das Dokument zusätzlich direkt bei der Zentrale ein.
+          </div>
           <div class="section-feedback" data-portal-doc-feedback hidden></div>
           <form class="portal-form" data-portal-doc-form>
             <div class="doc-type-grid" role="radiogroup" aria-label="Dokumentart">
@@ -233,7 +239,7 @@
               <span>Hinweis</span>
               <input type="text" name="note" placeholder="Optional">
             </label>
-            <button class="btn btn-primary" type="submit">Dokument senden</button>
+            <button class="btn btn-primary" type="submit">Dokument speichern</button>
           </form>
           <div data-portal-doc-list></div>
         </div>
