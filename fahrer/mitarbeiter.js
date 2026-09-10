@@ -948,10 +948,12 @@
         event.preventDefault();
         const fd = new FormData(absenceForm);
 
-        /* Krankmeldungen werden derzeit an KEIN Backend uebertragen.
-           Es gibt keine Anbindung an public.sickness_reports und keinen
-           Storage fuer den Krankenschein. Der Eintrag bleibt lokal und wird
-           deshalb ausdruecklich als nicht uebermittelt gekennzeichnet. */
+        /* Krankmeldungen werden von diesem Portal an KEIN Backend gesendet:
+           Es gibt hier weder einen Schreibzugriff auf public.sickness_reports
+           noch einen Upload-Aufruf fuer den Krankenschein. Ob serverseitig
+           Ziele dafuer existieren, ist damit nicht gesagt - der Client nutzt
+           sie jedenfalls nicht. Der Eintrag bleibt lokal und wird deshalb
+           ausdruecklich als nicht uebermittelt gekennzeichnet. */
         P.addAbsence(state.data, {
           employeeId: state.employeeId,
           kind: "Krank",
@@ -982,10 +984,12 @@
         const fileInput = docForm.querySelector('input[type="file"]');
         const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
 
-        /* Dokumente werden derzeit an KEIN Backend uebertragen. Es existiert
-           kein Storage-Bucket; gespeichert wird nur der Dateiname, nicht die
-           Datei. Der Eintrag bleibt lokal und wird als nicht uebermittelt
-           gekennzeichnet. */
+        /* Dokumente werden von diesem Portal an KEIN Backend gesendet: Es
+           gibt hier keinen Upload-Aufruf und keinen Schreibzugriff auf
+           public.document_submissions. Gespeichert wird nur der Dateiname,
+           nicht die Datei. Ob serverseitig ein Storage-Ziel existiert, laesst
+           sich aus dem Client-Code nicht ableiten - genutzt wird es hier
+           nicht. Der Eintrag bleibt lokal und wird entsprechend markiert. */
         P.submitEmployeeDocument(state.data, {
           employeeId: state.employeeId,
           type: String(fd.get("type") || "Sonstiges"),
