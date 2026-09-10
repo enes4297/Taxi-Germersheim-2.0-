@@ -176,6 +176,18 @@ body.rewards-v2-body {
   gap: 8px;
 }
 
+.rewards-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.rewards-game-link {
+  border-color: rgba(240, 207, 119, 0.5);
+  background: rgba(240, 207, 119, 0.12);
+}
+
 .rewards-eyebrow,
 .rewards-account-head p,
 .rewards-card-label {
@@ -501,6 +513,10 @@ body.rewards-v2-body {
     align-items: flex-start;
     flex-direction: column;
     gap: 18px;
+  }
+
+  .rewards-page-actions {
+    justify-content: flex-start;
   }
 
   .rewards-page-head h1 {

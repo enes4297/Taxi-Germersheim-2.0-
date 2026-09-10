@@ -8,8 +8,10 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="special-services.css" />
   <link rel="stylesheet" href="public-premium-v2.css" />
+  <link rel="stylesheet" href="public-system.css" />
+  <script src="public-system.js" defer></script>
 </head>
-<body class="public-premium public-special public-special-request">
+<body class="public-premium public-special public-special-request tg-public" data-tg-page="services">
   <div class="public-app">
     <header class="topbar">
       <div class="brand">
@@ -47,14 +49,14 @@
 
   <main class="special-page" id="specialRequest">
     <div class="container special-shell">
-      <header class="public-page-head">
+      <header class="public-page-head" data-tg-reveal>
         <p class="public-eyebrow">Spezialfahrten</p>
         <h1 id="specialServiceTitle">Krankenfahrten</h1>
         <p id="specialServiceDescription">Bereiten Sie die wichtigsten Angaben für die persönliche Abstimmung vor.</p>
         <p class="special-note" id="specialServiceNotice">Hinweis wird je nach Leistung aktualisiert.</p>
       </header>
 
-      <section class="special-card" aria-label="Leistung wechseln">
+      <section class="special-card" aria-label="Leistung wechseln" data-tg-reveal>
         <h2>Leistung wählen</h2>
         <div class="special-tabs" id="specialServiceTabs" role="tablist" aria-label="Spezialleistung wechseln">
           <button class="special-tab" type="button" data-service="medical">Krankenfahrten</button>
@@ -69,7 +71,7 @@
         </div>
       </section>
 
-      <section class="special-card" aria-label="Leistungsdetails">
+      <section class="special-card" aria-label="Leistungsdetails" data-tg-reveal>
         <div class="special-service-top">
           <img id="specialServiceIcon" src="assets/icons/Route.svg" alt="Leistungsicon" />
           <div>
@@ -81,7 +83,7 @@
         <div class="special-info-grid" id="specialInfoGrid"></div>
       </section>
 
-      <section class="special-card" aria-label="Planungsformular">
+      <section class="special-card" aria-label="Planungsformular" data-tg-reveal>
         <h2>Anfrage vorbereiten</h2>
         <p class="special-request-note">Die Angaben werden nicht online versendet. Nutzen Sie anschließend den Buchungsassistenten oder stimmen Sie die Fahrt direkt mit uns ab.</p>
         <form id="specialServiceForm" class="special-form" novalidate>

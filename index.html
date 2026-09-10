@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" class="home-intro-active">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -15,162 +15,236 @@
   <meta property="og:description" content="Leistungen: Taxi, Krankenfahrten, Rollstuhlfahrten, Flughafentransfers und Kurierfahrten. 24/7 in Germersheim erreichbar.">
   <meta property="og:url" content="index.html">
   <meta property="og:image" content="logo.png">
+  <script>
+    if (new URLSearchParams(window.location.search).has('page')) {
+      document.documentElement.classList.remove('home-intro-active');
+    }
+  </script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="public-visual-repair.css">
   <link rel="stylesheet" href="public-premium-v2.css">
+  <link rel="stylesheet" href="public-system.css">
+  <link rel="stylesheet" href="home-luxury.css">
+  <link rel="stylesheet" href="public-states.css">
+  <script src="public-system.js" defer></script>
 </head>
-<body class="public-premium public-home">
+<body class="public-premium public-home tg-public" data-tg-page="home">
   <div id="splash" class="splash">
     <div class="splash-glow"></div>
-    <img src="logo.png" alt="Taxi Germersheim GmbH">
+    <img src="assets/brand/taxi-germersheim-logo.svg" alt="Taxi Germersheim GmbH">
   </div>
 
+  <header class="tg-public-header">
+    <div class="tg-brand">
+      <a href="index.html" aria-label="Taxi Germersheim Startseite">
+        <img src="assets/brand/taxi-germersheim-logo.svg" alt="Taxi Germersheim GmbH">
+      </a>
+    </div>
+    <button class="tg-menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen">
+      <span class="menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+    </button>
+    <nav class="tg-public-nav" aria-label="Hauptnavigation">
+      <a href="index.html" data-tg-nav="home">Startseite</a>
+      <div class="tg-nav-item tg-nav-services">
+        <button type="button" class="tg-nav-trigger" data-nav-toggle="services" data-tg-nav="services" aria-expanded="false">Leistungen <span>▼</span></button>
+        <div class="tg-nav-dropdown" aria-label="Leistungen">
+          <a href="index.html?page=booking&amp;service=taxi">Taxi</a>
+          <a href="index.html?page=medical">Krankenfahrten</a>
+          <a href="index.html?page=booking&amp;service=wheelchair">Rollstuhlfahrten</a>
+          <a href="index.html?page=booking&amp;service=airport">Flughafentransfer</a>
+          <a href="index.html?page=booking&amp;service=courier">Kurierfahrten</a>
+          <a href="spezialfahrten.html">Spezialfahrten</a>
+        </div>
+      </div>
+      <a href="flotte.html" data-tg-nav="fleet">Fahrzeugflotte</a>
+      <a href="rewards.html" data-tg-nav="rewards">Rewards</a>
+      <a href="hilfe-kontakt.html" data-tg-nav="contact">Kontakt</a>
+      <a class="tg-mobile-session-link" href="anmelden.html" data-session-link>Anmelden</a>
+    </nav>
+    <div class="tg-nav-backdrop" aria-hidden="true"></div>
+    <div class="tg-header-actions">
+      <a class="tg-session-link" href="anmelden.html" data-session-link>Anmelden</a>
+    </div>
+  </header>
+
   <main class="app">
-    <header class="topbar">
-        <div class="brand">
-          <a href="index.html" aria-label="Taxi Germersheim Startseite">
-            <img src="logo.png" alt="Taxi Germersheim GmbH">
-            <span>Taxi Germersheim</span>
+
+    <section id="home" class="screen active hl-home">
+      <section class="hl-hero hl-glow-scene" aria-labelledby="hl-hero-title" data-home-hero>
+        <div class="hl-hero-content">
+          <p class="hl-eyebrow hl-hero-kicker">Taxi Germersheim · 24/7 erreichbar</p>
+          <h1 id="hl-hero-title" class="hl-hero-title">
+            <span class="hl-mask-line"><span>Germersheim</span></span>
+            <span class="hl-mask-line"><span>fährt mit uns.</span></span>
+          </h1>
+          <p class="hl-hero-copy">Taxi · Krankenfahrt · Rollstuhl · Flughafen<br><strong>Sicher ans Ziel. Rund um die Uhr.</strong></p>
+          <div class="hl-action-group" data-hero-actions>
+            <a class="hl-button hl-button-primary" href="index.html?page=booking" data-go="booking">Fahrt anfragen</a>
+            <a class="hl-button hl-button-secondary" href="tel:072743567">Jetzt anrufen</a>
+            <a class="hl-button hl-button-tertiary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer">WhatsApp</a>
+          </div>
+        </div>
+        <div class="hl-hero-depth" aria-hidden="true"></div>
+      </section>
+
+      <section class="hl-booking hl-scene" aria-labelledby="home-question-title" data-reveal="up">
+        <header class="hl-section-head hl-booking-head">
+          <p class="hl-eyebrow">Direkt losfahren</p>
+          <h2 id="home-question-title" class="hl-title">Wohin dürfen wir Sie bringen?</h2>
+        </header>
+        <div class="hl-booking-choices" aria-label="Buchungszeitpunkt wählen">
+          <a class="hl-choice hl-choice-primary" href="index.html?page=booking" data-go="booking" data-booking-schedule="now">
+            <span class="hl-choice-number">01</span>
+            <span class="hl-choice-copy"><strong>Jetzt fahren</strong><span class="hl-choice-note">So schnell wie möglich</span></span>
+          </a>
+          <a class="hl-choice" href="index.html?page=booking" data-go="booking" data-booking-schedule="later">
+            <span class="hl-choice-number">02</span>
+            <span class="hl-choice-copy"><strong>Für später planen</strong><span class="hl-choice-note">Datum und Uhrzeit wählen</span></span>
           </a>
         </div>
-        <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen">
-          <span class="menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
-        </button>
-        <nav class="site-nav" aria-label="Hauptnavigation">
-          <button type="button" data-go="home" class="active">Startseite</button>
-          <div class="nav-item nav-item-services">
-            <button type="button" class="nav-trigger" data-nav-toggle="services" aria-expanded="false">Leistungen <span>▼</span></button>
-            <div class="nav-dropdown" aria-label="Leistungen">
-              <button type="button" data-go="booking" data-service="taxi">Taxi</button>
-              <button type="button" data-go="medical">Krankenfahrten</button>
-              <button type="button" data-go="booking" data-service="wheelchair">Rollstuhlfahrten</button>
-              <button type="button" data-go="booking" data-service="airport">Flughafentransfer</button>
-              <button type="button" data-go="booking" data-service="courier">Kurierfahrten</button>
-              <a href="spezialfahrten.html">Spezialfahrten</a>
+      </section>
+
+      <section class="hl-trust hl-scene" aria-label="Vertrauen bei Taxi Germersheim" data-reveal="up">
+        <div class="hl-trust-item"><strong>5,0 ★</strong><span>Google-Bewertung</span></div>
+        <div class="hl-trust-item"><strong>230+</strong><span>Bewertungen</span></div>
+        <div class="hl-trust-item"><strong>24/7</strong><span>erreichbar</span></div>
+      </section>
+
+      <section id="home-services" class="hl-services hl-scene" aria-labelledby="hl-services-title" data-service-experience>
+        <header class="hl-section-head" data-reveal="up">
+          <p class="hl-eyebrow">Leistungen</p>
+          <h2 id="hl-services-title" class="hl-title">Mobilität, die sich Ihrem Leben anpasst.</h2>
+        </header>
+        <div class="hl-services-layout">
+          <div class="hl-service-list" aria-label="Leistungsübersicht" data-reveal="left">
+            <a class="hl-service-tab is-active" href="#home-services" role="button" data-service-tab data-number="01" data-title="Taxi" data-description="Direkt und zuverlässig ans Ziel." aria-pressed="true">
+              <span>Taxi</span><span class="hl-service-note">Direkt und zuverlässig ans Ziel.</span>
+            </a>
+            <a class="hl-service-tab" href="#home-services" role="button" data-service-tab data-number="02" data-title="Krankenfahrten" data-description="Persönlich geplant und zuverlässig durchgeführt." aria-pressed="false">
+              <span>Krankenfahrten</span><span class="hl-service-note">Persönlich geplant und zuverlässig durchgeführt.</span>
+            </a>
+            <a class="hl-service-tab" href="#home-services" role="button" data-service-tab data-number="03" data-title="Rollstuhlfahrten" data-description="Barrierefreie Mobilität." aria-pressed="false">
+              <span>Rollstuhlfahrten</span><span class="hl-service-note">Barrierefreie Mobilität.</span>
+            </a>
+            <a class="hl-service-tab" href="#home-services" role="button" data-service-tab data-number="04" data-title="Flughafentransfer" data-description="Entspannt zum Flughafen und zurück." aria-pressed="false">
+              <span>Flughafentransfer</span><span class="hl-service-note">Entspannt zum Flughafen und zurück.</span>
+            </a>
+            <a class="hl-service-tab" href="#home-services" role="button" data-service-tab data-number="05" data-title="Kurierfahrten" data-description="Direkte Zustellung von A nach B." aria-pressed="false">
+              <span>Kurierfahrten</span><span class="hl-service-note">Direkte Zustellung von A nach B.</span>
+            </a>
+          </div>
+          <aside class="hl-service-display" aria-live="polite" data-service-display data-reveal="right">
+            <span class="hl-service-display-number" data-service-number>01</span>
+            <div class="hl-service-display-copy">
+              <p data-service-title>Taxi</p>
+              <strong data-service-description>Direkt und zuverlässig ans Ziel.</strong>
             </div>
-          </div>
-          <a href="flotte.html">Fahrzeugflotte</a>
-          <a href="rewards.html">Rewards</a>
-          <a href="hilfe-kontakt.html">Kontakt</a>
-          <a class="mobile-session-link" href="anmelden.html" data-session-link>Anmelden</a>
-        </nav>
-        <div class="site-nav-backdrop" aria-hidden="true"></div>
-        <div class="top-actions">
-          <a class="nav-session-link" href="anmelden.html" data-session-link>Anmelden</a>
+          </aside>
         </div>
-    </header>
-
-    <section id="home" class="screen active public-shell">
-
-      <section class="hero-panel">
-        <div class="hero-copy">
-          <h1>Sicher.<br>Zuverlässig.<br>Pünktlich.</h1>
-          <span class="hero-divider" aria-hidden="true"></span>
-          <p class="hero-trust">Ihr Premium-Fahrdienst in Germersheim: 24/7 erreichbar, moderne Fahrzeugflotte, Krankenfahrten aller Kassen, Rollstuhlfahrten und Flughafentransfers mit freundlichem Service.</p>
-          <div class="hero-actions">
-            <button class="destination" data-go="booking" type="button"><span>Fahrt anfragen</span><b>→</b></button>
-            <a class="button hero-contact-button" href="tel:072743567">Jetzt anrufen</a>
-            <a class="button hero-contact-button secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer">WhatsApp</a>
-          </div>
-        </div>
-        <div class="hero-image"><img src="logo.png" alt="Taxi Germersheim"></div>
+        <a class="hl-text-link" href="spezialfahrten.html">Alle Leistungen ansehen</a>
       </section>
 
-      <section id="home-services" class="services-section">
-        <div class="section-header"><small>Unsere Leistungen</small><h2>Vertrauensvolle Mobilität für jede Anforderung</h2></div>
-        <div class="service-grid">
-          <button class="service" data-service="taxi" data-go="booking" type="button">
-            <i data-icon="taxi"></i>
-            <span>
-              <b>Taxi</b>
-              <ul class="service-points" aria-label="Taxi Vorteile">
-                <li>24/7 erreichbar</li>
-                <li>Kurz- & Fernfahrten</li>
-                <li>Moderne Fahrzeuge</li>
-              </ul>
-            </span>
-            <em>›</em>
-          </button>
-          <button class="service" data-service="medical" data-go="booking" type="button">
-            <i data-icon="medical"></i>
-            <span>
-              <b>Krankenfahrten</b>
-              <ul class="service-points" aria-label="Krankenfahrten Vorteile">
-                <li>Alle Krankenkassen</li>
-                <li>Dialyse</li>
-                <li>Chemo & Bestrahlung</li>
-              </ul>
-            </span>
-            <em>›</em>
-          </button>
-          <button class="service" data-service="wheelchair" data-go="booking" type="button">
-            <i data-icon="wheelchair"></i>
-            <span>
-              <b>Rollstuhl</b>
-              <ul class="service-points" aria-label="Rollstuhlservice Vorteile">
-                <li>Barrierefreie Fahrzeuge</li>
-                <li>Geschulte Fahrer</li>
-                <li>Freundlicher Service</li>
-              </ul>
-            </span>
-            <em>›</em>
-          </button>
-          <button class="service" data-service="airport" data-go="booking" type="button">
-            <i data-icon="airport"></i>
-            <span>
-              <b>Flughafen</b>
-              <ul class="service-points" aria-label="Flughafentransfer Vorteile">
-                <li>FRA</li>
-                <li>STR</li>
-                <li>Pünktliche Abholung</li>
-              </ul>
-            </span>
-            <em>›</em>
-          </button>
+      <section class="hl-fleet hl-scene" aria-labelledby="hl-fleet-title">
+        <header class="hl-section-head" data-reveal="up">
+          <p class="hl-eyebrow">Flotte</p>
+          <h2 id="hl-fleet-title" class="hl-title">Für jede Fahrt das passende Fahrzeug.</h2>
+          <p>Komfortable Fahrzeuge für Alltag, Transfers und besondere Anforderungen.</p>
+        </header>
+        <div class="hl-fleet-list">
+          <article class="hl-vehicle" data-reveal="left">
+            <figure class="hl-vehicle-stage" data-fleet-stage>
+              <img src="admin/images/mercedes-e-klasse-ger-tx-100-premium.jpg.png" alt="Mercedes-Benz E 220 d T-Modell" loading="lazy" decoding="async" width="1448" height="1086">
+            </figure>
+            <div class="hl-vehicle-copy" data-reveal="right">
+              <p class="hl-vehicle-meta">Mercedes-Benz E-Klasse · GER TX 100</p>
+              <h3 class="hl-vehicle-title">Taxi</h3>
+              <p>Komfortabel durch Germersheim und Umgebung.</p>
+            </div>
+          </article>
+          <article class="hl-vehicle hl-vehicle-reverse" data-reveal="right">
+            <figure class="hl-vehicle-stage" data-fleet-stage>
+              <img src="admin/images/mercedes-v-klasse-ger-tx-800-premium.jpg.png" alt="Mercedes-Benz V-Klasse" loading="lazy" decoding="async" width="1398" height="1125">
+            </figure>
+            <div class="hl-vehicle-copy" data-reveal="left">
+              <p class="hl-vehicle-meta">Mercedes-Benz V-Klasse · GER TX 800</p>
+              <h3 class="hl-vehicle-title">Großraum</h3>
+              <p>Mehr Platz für Gruppe, Gepäck und Begleitung.</p>
+            </div>
+          </article>
+          <article class="hl-vehicle" data-reveal="left">
+            <figure class="hl-vehicle-stage" data-fleet-stage>
+              <img src="admin/images/vw-touran-ger-tx-200-premium.jpg.png" alt="VW Touran" loading="lazy" decoding="async" width="1448" height="1086">
+            </figure>
+            <div class="hl-vehicle-copy" data-reveal="right">
+              <p class="hl-vehicle-meta">Volkswagen Touran · GER TX 200</p>
+              <h3 class="hl-vehicle-title">Taxi</h3>
+              <p>Alltagstauglich und angenehm im Einstieg.</p>
+            </div>
+          </article>
+        </div>
+        <a class="hl-text-link" href="flotte.html">Unsere Fahrzeugflotte</a>
+      </section>
+
+      <section class="hl-special hl-scene hl-glow-scene" aria-labelledby="hl-special-title">
+        <header class="hl-section-head hl-special-head" data-reveal="left">
+          <p class="hl-eyebrow">Spezialfahrten</p>
+          <h2 id="hl-special-title" class="hl-title">Nicht jede Fahrt ist einfach.<br>Unsere Aufgabe trotzdem.</h2>
+          <p>Wir planen besondere Fahrten persönlich und zuverlässig.</p>
+          <a class="hl-text-link" href="spezialfahrten.html">Alle Spezialfahrten ansehen</a>
+        </header>
+        <ol class="hl-special-list" aria-label="Besondere Fahrten" data-reveal="right">
+          <li><a class="hl-special-row" href="spezialfahrten.html"><span>01</span><strong>Krankenfahrten</strong><span class="hl-special-note">Persönlich geplant und zuverlässig durchgeführt.</span></a></li>
+          <li><a class="hl-special-row" href="spezialfahrten.html"><span>02</span><strong>Dialysefahrten</strong><span class="hl-special-note">Verlässlich zu jedem wiederkehrenden Termin.</span></a></li>
+          <li><a class="hl-special-row" href="spezialfahrten.html"><span>03</span><strong>Chemo- und Strahlentherapie</strong><span class="hl-special-note">Ruhige Begleitung auf sensiblen Wegen.</span></a></li>
+          <li><a class="hl-special-row" href="spezialfahrten.html"><span>04</span><strong>Rollstuhlfahrten</strong><span class="hl-special-note">Barrierefreie Mobilität mit passender Ausstattung.</span></a></li>
+          <li><a class="hl-special-row" href="spezialfahrten.html"><span>05</span><strong>Serienfahrten</strong><span class="hl-special-note">Feste Abläufe, persönlich koordiniert.</span></a></li>
+          <li><a class="hl-special-row" href="spezialfahrten.html"><span>06</span><strong>Flughafentransfers</strong><span class="hl-special-note">Pünktlich zum Terminal und entspannt zurück.</span></a></li>
+        </ol>
+      </section>
+
+      <section class="hl-region hl-scene hl-glow-scene" aria-labelledby="hl-region-title">
+        <div class="hl-region-intro" data-reveal="left">
+          <p class="hl-eyebrow">Region</p>
+          <h2 id="hl-region-title" class="hl-title">Hier sind wir zuhause.</h2>
+          <p>Hier arbeiten wir.<br>Hier leben wir.<br>Hier kennen uns unsere Kunden.</p>
+        </div>
+        <div class="hl-region-stage" data-reveal="mask">
+          <span>76726</span>
+          <strong>Germersheim</strong>
+          <div class="hl-region-places" aria-label="Regionale Einsatzgebiete">
+            <span>Sondernheim</span><span>Rülzheim</span><span>Bellheim</span><span>Lingenfeld</span><span>Umgebung</span>
+          </div>
         </div>
       </section>
 
-      <section class="feature-grid">
-        <article class="feature-card rating" data-go="reviews">
-          <div class="rating-stack">
-            <span>★★★★★</span>
-            <strong>5,0</strong>
-            <small>230+ verifizierte Google-Bewertungen</small>
-            <p>Verlässlichkeit, Pünktlichkeit und freundlicher Service werden regelmäßig hervorgehoben.</p>
-            <span class="google-verified">Verifiziert auf Google</span>
-          </div>
-          <em>›</em>
-        </article>
-        <article class="feature-card wide" data-go="why">
-          <div class="why-content">
-            <b>Warum Taxi Germersheim?</b>
-            <ul class="why-list" aria-label="Vertrauensmerkmale">
-              <li>24/7 erreichbar</li>
-              <li>Zuverlässig und pünktlich</li>
-              <li>Freundlicher Service</li>
-              <li>Moderne Fahrzeuge</li>
-            </ul>
-          </div>
-          <em>›</em>
-        </article>
-        <article class="feature-card reward" data-go="rewards">
-          <div class="reward-layout">
-            <small class="reward-kicker">Rewards</small>
-            <h3>Vorteile für qualifizierende Fahrten.</h3>
-            <p>Entdecken Sie das Bonusprogramm von Taxi Germersheim.</p>
-            <a class="reward-link" href="rewards.html">Rewards entdecken</a>
-          </div>
-        </article>
+      <section class="hl-rewards hl-scene hl-glow-scene" aria-labelledby="hl-rewards-title" data-rewards-scene>
+        <header class="hl-section-head" data-reveal="up">
+          <p class="hl-eyebrow">Rewards</p>
+          <h2 id="hl-rewards-title" class="hl-title">Treue soll sich lohnen.</h2>
+          <p>Mit Taxi Germersheim Rewards Vorteile sammeln.</p>
+        </header>
+        <ol class="hl-reward-levels" aria-label="Rewards Level" data-reveal="up">
+          <li><a href="rewards.html" data-reward-level><span>01</span><strong>Bronze</strong></a></li>
+          <li><a href="rewards.html" data-reward-level><span>02</span><strong>Silber</strong></a></li>
+          <li class="hl-reward-gold"><a href="rewards.html" data-reward-level><span>03</span><strong>Gold</strong></a></li>
+          <li><a href="rewards.html" data-reward-level><span>04</span><strong>Platin</strong></a></li>
+          <li class="hl-reward-vip"><a href="rewards.html" data-reward-level><span>05</span><strong>VIP</strong></a></li>
+        </ol>
+        <a class="hl-text-link" href="rewards.html">Rewards entdecken</a>
       </section>
 
-      <section class="reviews-preview" aria-label="Google Bewertungen Vorschau">
-        <div class="reviews-preview-head">
-          <small>Google Bewertungen</small>
-          <h2>Taxi Germersheim auf Google</h2>
-          <p>Lesen Sie aktuelle Rückmeldungen direkt in unserem Google-Unternehmensprofil.</p>
-        </div>
-        <div class="reviews-preview-actions">
-          <a class="button reviews-google-link" href="https://www.google.com/search?sca_esv=fcf7c75390717087&amp;q=taxi+germersheim+gmbh&amp;si=APenkKm7iecQ4G6P-TsbSMFKIQtv3EFIqRAFw-i8uEbk55Z-_2UcArmxf9_zFOchf7zSOgE1vqwC5QCsOsPykSdmvmGiddJ4BrIAmA9N9xtRuVJrucDoQf8%3D&amp;uds=AJ5uw18DPBJOn80cbboS56WlwpSFiQ1XUwP1y1ya5B2_hS1m5UR9P2CkKCTO16qtD63UzN75PUZLCrAXExqNvQAEmlijIqgtlOmJC6ufsWUIy_PLLjPrD585d166nN5TSUZc_dEpfROd&amp;sa=X&amp;sqi=2&amp;ved=2ahUKEwi-55zk-NGVAxXuQvEDHZLICy8Q3PALegQIHBAE&amp;biw=1912&amp;bih=948&amp;dpr=1" target="_blank" rel="noopener noreferrer">Google-Bewertungen ansehen</a>
+      <section class="hl-social hl-scene" aria-labelledby="hl-social-title" data-reveal="up">
+        <div class="hl-social-score"><span id="hl-social-title">Google-Bewertung</span><strong>5,0 <span>★</span></strong></div>
+        <div class="hl-social-count"><strong>230+</strong><span>Google-Bewertungen</span></div>
+        <a class="hl-text-link" href="https://www.google.com/search?sca_esv=fcf7c75390717087&amp;q=taxi+germersheim+gmbh" target="_blank" rel="noopener noreferrer">Bewertungen ansehen</a>
+      </section>
+
+      <section class="hl-final hl-scene hl-glow-scene" aria-labelledby="hl-final-title">
+        <h2 id="hl-final-title" class="hl-title hl-final-title" data-reveal="mask"><span>Ihr nächstes Ziel?</span><span>Wir bringen Sie hin.</span></h2>
+        <div class="hl-action-group" data-reveal="up">
+          <a class="hl-button hl-button-primary" href="index.html?page=booking" data-go="booking">Fahrt buchen</a>
+          <a class="hl-button hl-button-secondary" href="tel:072743567">Jetzt anrufen</a>
+          <a class="hl-button hl-button-tertiary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer">WhatsApp</a>
         </div>
       </section>
     </section>
@@ -476,12 +550,12 @@
     </section>
 
     <section id="booking" class="screen booking-premium">
-      <header class="page-head"><button data-go="home" type="button">‹</button><h2>Buchen</h2><i></i></header>
+      <header class="page-head"><button data-go="home" type="button">‹</button><h2>Fahrt buchen</h2><i></i></header>
 
       <article class="panel intro">
-        <small>TAXI GERMERSHEIM GMBH</small>
-        <h1>Einfach und sicher buchen</h1>
-        <p>Schritt für Schritt zur Buchung. Schnell, klar und mobil optimiert.</p>
+        <small>FAHRT BUCHEN</small>
+        <h1>Einfach. Schnell. Sicher.</h1>
+        <p>In wenigen Schritten zu Ihrer Fahrt mit Taxi Germersheim.</p>
       </article>
 
       <div class="pb-progress">
@@ -493,25 +567,25 @@
       </div>
 
       <div class="steps pb-stepper" role="tablist" aria-label="Buchungsschritte">
-        <button type="button" class="active" data-booking-step-goto="1">Abholort</button>
-        <button type="button" data-booking-step-goto="2">Ziel</button>
-        <button type="button" data-booking-step-goto="3">Fahrtart</button>
-        <button type="button" data-booking-step-goto="4">Datum & Uhrzeit</button>
-        <button type="button" data-booking-step-goto="5">Fahrgäste</button>
-        <button type="button" data-booking-step-goto="6">Optionen</button>
-        <button type="button" data-booking-step-goto="7">Übersicht</button>
+        <button type="button" class="active" data-booking-step-goto="1"><span class="pb-step-label">Abholort</span></button>
+        <button type="button" data-booking-step-goto="2"><span class="pb-step-label">Ziel</span></button>
+        <button type="button" data-booking-step-goto="3"><span class="pb-step-label">Fahrtart</span></button>
+        <button type="button" data-booking-step-goto="4"><span class="pb-step-label">Datum & Uhrzeit</span></button>
+        <button type="button" data-booking-step-goto="5"><span class="pb-step-label">Fahrgäste</span></button>
+        <button type="button" data-booking-step-goto="6"><span class="pb-step-label">Optionen</span></button>
+        <button type="button" data-booking-step-goto="7"><span class="pb-step-label">Übersicht</span></button>
       </div>
 
       <section class="pb-shell" aria-label="Premium Buchung">
         <div class="pb-flow">
           <article class="panel pb-step is-active" data-booking-step="1">
-            <h3>Schritt 1 - Abholort</h3>
+            <h3>Wo dürfen wir Sie abholen?</h3>
             <label>STARTADRESSE</label>
             <div class="input pb-location-field" data-maps-autocomplete="pickup"><i data-icon="pin"></i><input id="startAddress" placeholder="Abholort eingeben" autocomplete="off" aria-autocomplete="list" aria-expanded="false"></div>
             <div class="pb-autocomplete-prep" data-autocomplete-list="pickup" hidden></div>
-            <section class="pb-favorites" aria-label="Lieblingsadressen Abholort" data-booking-favorites="pickup">
-              <p class="pb-favorites-title">Lieblingsadressen</p>
-              <div class="pb-favorites-list" data-booking-favorites-list="pickup"></div>
+            <section class="pb-favorites" aria-label="Schnellziele für den Abholort" data-booking-quick-targets="pickup">
+              <p class="pb-favorites-title">Schnellziele</p>
+              <div class="pb-favorites-list" data-booking-quick-list="pickup"></div>
             </section>
             <div id="startMapContainer" class="map-container"></div>
             <button class="outline" type="button" id="locationBtn"><i data-icon="location"></i>Aktuellen Standort verwenden</button>
@@ -520,117 +594,45 @@
           </article>
 
           <article class="panel pb-step" data-booking-step="2" hidden>
-            <h3>Schritt 2 - Ziel</h3>
+            <h3>Wohin möchten Sie fahren?</h3>
             <label>ABHOLORT</label>
             <div class="input pb-location-field pb-start-preview"><i data-icon="pin"></i><input id="bookingStartPreview" type="text" readonly value="-"></div>
             <label>ZIELADRESSE</label>
             <div class="input pb-location-field" data-maps-autocomplete="destination"><i data-icon="flag"></i><input id="targetAddress" placeholder="Zielort eingeben" autocomplete="off" aria-autocomplete="list" aria-expanded="false"></div>
             <div class="pb-autocomplete-prep" data-autocomplete-list="destination" hidden></div>
-            <section class="pb-favorites" aria-label="Lieblingsadressen Ziel" data-booking-favorites="destination">
-              <p class="pb-favorites-title">Lieblingsadressen</p>
-              <div class="pb-favorites-list" data-booking-favorites-list="destination"></div>
+            <section class="pb-favorites" aria-label="Schnellziele für das Fahrtziel" data-booking-quick-targets="destination">
+              <p class="pb-favorites-title">Schnellziele</p>
+              <div class="pb-favorites-list" data-booking-quick-list="destination"></div>
             </section>
-            <div class="chips">
-              <button type="button" data-preset="home" data-address="Zuhause">Zuhause</button>
-              <button type="button" data-preset="work" data-address="Arbeit">Arbeit</button>
-              <button type="button" data-preset="hospital" data-address="Krankenhaus" data-service="medical">Krankenhaus</button>
-              <button type="button" data-preset="airport" data-address="Flughafen">Flughafen</button>
-            </div>
 
             <section class="panel pb-route-panel" aria-label="Routenanzeige">
-              <small>GOOGLE MAPS VORBEREITUNG</small>
-              <h4>Route Start - Ziel</h4>
+              <small>ROUTE MIT GOOGLE MAPS</small>
+              <h4>Route von Start zu Ziel</h4>
               <p class="pb-route-note">Google Maps wird erst nach Ihrer Zustimmung geladen.</p>
               <div id="bookingRouteMapContainer" class="map-container"></div>
               <div class="pb-route-stats" aria-live="polite">
                 <p><span>Routing:</span> <b data-booking-route-mode>Autofahrt</b></p>
                 <p><span>Entfernung:</span> <b data-booking-distance>-</b></p>
                 <p><span>Geschätzte Fahrzeit:</span> <b data-booking-duration>-</b></p>
-                <p><span>Fahrtart:</span> <b data-booking-route-service>Taxi</b></p>
-                <p><span>Rewards-Punkte:</span> <b data-booking-route-points>ca. 15</b></p>
-                <p class="pb-route-fare-note">Fahrpreis wird nach Bestätigung berechnet.</p>
               </div>
-              <article class="pb-yumak-route-card" aria-live="polite"><p data-booking-yumak-hint>Perfekt! Das sind ungefähr 7,5 km und 11 Minuten.</p></article>
-            </section>
-
-            <section class="panel pb-vehicle-panel" data-booking-vehicle-panel hidden aria-label="Fahrzeugwunsch">
-              <small>FAHRZEUGWUNSCH</small>
-              <h4>Wählen Sie Ihr Wunschfahrzeug</h4>
-              <p class="pb-route-note">Wir versuchen Ihren Wunsch zu erfüllen. Je nach Verfügbarkeit kann jedoch ein gleichwertiges Fahrzeug eingesetzt werden.</p>
-              <div class="pb-vehicle-grid">
-                <article class="pb-vehicle-card" data-vehicle-card="limousine">
-                  <div class="pb-vehicle-head"><h5>Taxi Limousine</h5><span>1-4 Personen</span></div>
-                  <ul class="pb-vehicle-features">
-                    <li>Klimaanlage</li>
-                    <li>Komfort</li>
-                    <li>Ideal für Alltagsfahrten</li>
-                  </ul>
-                  <p class="pb-vehicle-availability is-high" data-vehicle-availability="limousine">🟢 Hohe Verfügbarkeit</p>
-                  <p class="pb-vehicle-saved" data-vehicle-saved="limousine" hidden>✓ Wunsch gespeichert</p>
-                  <button class="button" type="button" data-vehicle-select="limousine">Als Wunschfahrzeug auswählen</button>
-                </article>
-                <article class="pb-vehicle-card" data-vehicle-card="van">
-                  <div class="pb-vehicle-head"><h5>Großraumtaxi</h5><span>1-8 Personen</span></div>
-                  <ul class="pb-vehicle-features">
-                    <li>Viel Gepäck</li>
-                    <li>Ideal für Gruppen</li>
-                    <li>Flughafentransfer geeignet</li>
-                  </ul>
-                  <p class="pb-vehicle-availability is-medium" data-vehicle-availability="van">🟡 Begrenzt verfügbar</p>
-                  <p class="pb-vehicle-saved" data-vehicle-saved="van" hidden>✓ Wunsch gespeichert</p>
-                  <button class="button" type="button" data-vehicle-select="van">Als Wunschfahrzeug auswählen</button>
-                </article>
-                <article class="pb-vehicle-card" data-vehicle-card="wheelchair">
-                  <div class="pb-vehicle-head"><h5>Rollstuhlfahrzeug</h5><span>1-4 Personen</span></div>
-                  <ul class="pb-vehicle-features">
-                    <li>Rollstuhlrampe</li>
-                    <li>Sicherer Einstieg</li>
-                    <li>Speziell für Rollstuhlfahrer</li>
-                  </ul>
-                  <p class="pb-vehicle-availability is-low" data-vehicle-availability="wheelchair">🔴 Nur auf Anfrage</p>
-                  <p class="pb-vehicle-saved" data-vehicle-saved="wheelchair" hidden>✓ Wunsch gespeichert</p>
-                  <button class="button" type="button" data-vehicle-select="wheelchair">Als Wunschfahrzeug auswählen</button>
-                </article>
-              </div>
-            </section>
-
-            <section class="panel pb-fare-overview" data-booking-fare-overview hidden aria-label="Fahrtübersicht">
-              <small>FAHRTÜBERSICHT</small>
-              <h4>Unverbindliche Preisvorschau</h4>
-              <p class="pb-route-note">Der endgültige Fahrpreis kann je nach Verkehr, Wartezeit oder Streckenänderung abweichen.</p>
-
-              <div class="pb-fare-grid">
-                <p><span>📍 Entfernung</span><b data-fare-distance>-</b></p>
-                <p><span>🕒 Fahrzeit</span><b data-fare-duration>-</b></p>
-                <p><span>🚖 Fahrtart</span><b data-fare-service>Taxi</b></p>
-                <p><span>👥 Fahrgäste</span><b data-fare-passengers>1</b></p>
-                <p><span>🚐 Fahrzeugwunsch</span><b data-fare-vehicle>Kein Wunsch gespeichert</b></p>
-                <p><span>⭐ Rewards-Punkte</span><b data-fare-points>ca. 15</b></p>
-              </div>
-
-              <div class="pb-fare-price-box">
-                <span>💶 Geschätzter Fahrpreis</span>
-                <strong data-fare-price>Bitte Fahrzeug wählen</strong>
-              </div>
-
-              <p class="pb-fare-rewards-note" data-fare-rewards-note>Mit dieser Fahrt erhältst du voraussichtlich ca. 15 Punkte.</p>
-              <p class="pb-fare-voucher-note" data-fare-voucher-note hidden>Gutschein-Guthaben kann bei dieser Fahrt eingelöst werden.</p>
+              <article class="pb-yumak-route-card" aria-live="polite"><p data-booking-yumak-hint>Route wird nach der Adressbestätigung angezeigt.</p></article>
             </section>
             <p class="pb-step-feedback" data-booking-step-feedback hidden></p>
             <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurück</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
           <article class="panel pb-step" data-booking-step="3" hidden>
-            <h3>Schritt 3 - Fahrtart</h3>
-            <article class="panel selected"><small>GEWÄHLTER FAHRTTYP</small><h2 id="selectedTitle">Normale Taxifahrt</h2></article>
+            <h3>Wie möchten Sie fahren?</h3>
+            <article class="panel selected"><small>GEWÄHLTE FAHRTART</small><h2 id="selectedTitle">Normale Taxifahrt</h2></article>
             <div id="serviceLabel" class="service-label">NORMALE TAXIFAHRT</div>
+            <label>FAHRTVERLAUF</label>
             <div class="trip-grid">
               <button class="active" data-trip="oneway" type="button"><i data-icon="right"></i><b>Hinfahrt</b></button>
               <button data-trip="return" type="button"><i data-icon="left"></i><b>Rückfahrt</b></button>
               <button data-trip="round" type="button"><i data-icon="round"></i><b>Hin- & Rückfahrt</b></button>
               <button data-trip="repeat" type="button"><i data-icon="repeat"></i><b>Regelmäßig</b></button>
             </div>
-            <label>FAHRTTYP</label>
+            <label>FAHRTART</label>
             <div class="type-grid">
               <button class="active" data-service-select="taxi" type="button"><i data-icon="taxi"></i><b>Taxi</b></button>
               <button data-service-select="medical" type="button"><i data-icon="medical"></i><b>Krankenfahrt</b></button>
@@ -641,10 +643,12 @@
           </article>
 
           <article class="panel pb-step" data-booking-step="4" hidden>
-            <h3>Schritt 4 - Datum & Uhrzeit</h3>
+            <h3>Wann möchten Sie fahren?</h3>
             <div class="toggle"><button type="button" class="active">Jetzt fahren</button><button type="button">Für später planen</button></div>
-            <label>DATUM</label>
-            <div class="input"><i data-icon="booking"></i><input id="bookingDate" type="date"></div>
+            <div data-booking-date-field hidden>
+              <label>DATUM</label>
+              <div class="input pb-date-field"><i data-icon="booking"></i><button class="pb-date-display" type="button" data-booking-date-display>TT.MM.JJJJ</button><input id="bookingDate" type="date"></div>
+            </div>
             <div data-booking-time-fields hidden>
               <label>UHRZEIT</label>
               <div class="input"><i data-icon="round"></i><input id="bookingTime" type="time"></div>
@@ -654,20 +658,53 @@
           </article>
 
           <article class="panel pb-step" data-booking-step="5" hidden>
-            <h3>Schritt 5 - Fahrgastanzahl</h3>
+            <h3>Wie viele Personen fahren mit?</h3>
             <label>ANZAHL FAHRGÄSTE</label>
             <div class="input"><i data-icon="passengers"></i><input id="bookingPassengers" type="number" min="1" max="8" value="1"></div>
             <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurück</button><button class="button" type="button" data-booking-next>Weiter</button></div>
           </article>
 
           <article class="panel pb-step" data-booking-step="6" hidden>
-            <h3>Schritt 6 - Zusatzoptionen</h3>
+            <h3>Welche Wünsche haben Sie?</h3>
+            <section class="panel pb-vehicle-panel" data-booking-vehicle-panel hidden aria-label="Fahrzeugwunsch">
+              <small>FAHRZEUGWUNSCH</small>
+              <h4>Wählen Sie Ihr Wunschfahrzeug</h4>
+              <p class="pb-route-note">Wir versuchen Ihren Fahrzeugwunsch zu berücksichtigen. Die tatsächliche Zuteilung erfolgt nach Verfügbarkeit.</p>
+              <div class="pb-vehicle-grid">
+                <article class="pb-vehicle-card" data-vehicle-card="limousine">
+                  <div class="pb-vehicle-head"><h5>Taxi Limousine</h5><span>1-4 Personen</span></div>
+                  <ul class="pb-vehicle-features"><li>Klimaanlage</li><li>Komfort</li><li>Ideal für Alltagsfahrten</li></ul>
+                  <p class="pb-vehicle-saved" data-vehicle-saved="limousine" hidden>Wunsch gespeichert</p>
+                  <button class="button" type="button" data-vehicle-select="limousine">Als Wunschfahrzeug auswählen</button>
+                </article>
+                <article class="pb-vehicle-card" data-vehicle-card="van">
+                  <div class="pb-vehicle-head"><h5>Großraumtaxi</h5><span>1-8 Personen</span></div>
+                  <ul class="pb-vehicle-features"><li>Viel Gepäck</li><li>Ideal für Gruppen</li><li>Flughafentransfer geeignet</li></ul>
+                  <p class="pb-vehicle-saved" data-vehicle-saved="van" hidden>Wunsch gespeichert</p>
+                  <button class="button" type="button" data-vehicle-select="van">Als Wunschfahrzeug auswählen</button>
+                </article>
+                <article class="pb-vehicle-card" data-vehicle-card="wheelchair">
+                  <div class="pb-vehicle-head"><h5>Rollstuhlfahrzeug</h5><span>1-4 Personen</span></div>
+                  <ul class="pb-vehicle-features"><li>Rollstuhlrampe</li><li>Sicherer Einstieg</li><li>Speziell für Rollstuhlfahrer</li></ul>
+                  <p class="pb-vehicle-saved" data-vehicle-saved="wheelchair" hidden>Wunsch gespeichert</p>
+                  <button class="button" type="button" data-vehicle-select="wheelchair">Als Wunschfahrzeug auswählen</button>
+                </article>
+              </div>
+            </section>
+            <section class="panel pb-fare-overview" data-booking-fare-overview hidden aria-label="Preisauskunft">
+              <small>FAHRTÜBERSICHT</small>
+              <h4>Preisauskunft</h4>
+              <p class="pb-route-note">Da kein digitales Taxameter oder Dispositionssystem verbunden ist, nennen wir hier keinen berechneten Preis.</p>
+              <div class="pb-fare-grid">
+                <p><span>Fahrtart</span><b data-fare-service>Taxi</b></p>
+                <p><span>Fahrgäste</span><b data-fare-passengers>1</b></p>
+                <p><span>Fahrzeugwunsch</span><b data-fare-vehicle>Kein Fahrzeugwunsch</b></p>
+              </div>
+              <div class="pb-fare-price-box"><span>Fahrpreis</span><strong data-fare-price>Preis auf Anfrage</strong></div>
+            </section>
             <section id="medicalPanel" class="panel extra hidden"><h3>Zusatzangaben Krankenfahrt</h3><label>Krankenkasse</label><input placeholder="z. B. AOK, TK, Barmer"><label>Verordnung vorhanden?</label><div class="small-toggle"><button type="button">Ja</button><button type="button">Nein</button></div></section>
             <label>OPTIONEN</label>
             <div class="details pb-option-grid">
-              <button type="button"><i data-icon="wheelchair"></i>Rollstuhl</button>
-              <button type="button"><i data-icon="airport"></i>Flughafentransfer</button>
-              <button type="button"><i data-icon="medical"></i>Krankenfahrt</button>
               <button type="button"><i data-icon="pet"></i>Haustier</button>
               <button type="button"><i data-icon="child"></i>Kindersitz</button>
               <button type="button"><i data-icon="voucher"></i>Kartenzahlung</button>
@@ -680,54 +717,46 @@
           </article>
 
           <article class="panel pb-step" data-booking-step="7" hidden>
-            <h3>Schritt 7 - Übersicht</h3>
-            <article class="yumak-info"><i data-icon="yumak"></i><span><b>Yumak prüft mit.</b><small>Finale Datenkontrolle vor der Anfrage.</small></span></article>
-            <div class="actions"><button id="sendRequest" type="button">Fahrtanfrage nicht möglich</button><a href="tel:072743567"><i data-icon="phone"></i>Jetzt anrufen</a></div>
+            <h3>Ihre Fahrt im Überblick</h3>
+            <p class="pb-final-intro">Prüfen Sie Ihre Angaben. Es wird noch nichts online versendet.</p>
+
+            <dl class="pb-final-summary" aria-label="Abschließende Fahrtübersicht">
+              <div><dt>Abholort</dt><dd data-booking-final-start>-</dd></div>
+              <div><dt>Ziel</dt><dd data-booking-final-target>-</dd></div>
+              <div><dt>Fahrtverlauf</dt><dd data-booking-final-trip>Hinfahrt</dd></div>
+              <div><dt>Fahrtart</dt><dd data-booking-final-service>Normale Taxifahrt</dd></div>
+              <div><dt>Termin</dt><dd data-booking-final-schedule>So schnell wie möglich</dd></div>
+              <div><dt>Fahrgäste</dt><dd data-booking-final-passengers>1</dd></div>
+              <div><dt>Fahrzeugwunsch</dt><dd data-booking-final-vehicle>Kein Fahrzeugwunsch</dd></div>
+              <div><dt>Optionen</dt><dd data-booking-final-options>Keine</dd></div>
+              <div><dt>Kontakt</dt><dd data-booking-final-contact>-</dd></div>
+              <div data-booking-final-note-row hidden><dt>Notiz</dt><dd data-booking-final-note>-</dd></div>
+            </dl>
 
             <section class="panel request-prep" aria-labelledby="request-prep-title">
-              <small>Kontaktformular</small>
-              <h3 id="request-prep-title">Fahrtanfrage senden</h3>
-              <p class="request-prep-note">Der Online-Versand ist derzeit nicht verfügbar. Bitte schließen Sie Ihre Anfrage telefonisch oder per WhatsApp ab.</p>
+              <small>ANFRAGE ABSCHLIESSEN</small>
+              <h3 id="request-prep-title">Fahrt vorbereiten</h3>
+              <p class="request-prep-note">Der Online-Versand ist derzeit nicht verbunden. Nach der Vorbereitung können Sie Ihre Angaben per WhatsApp übergeben oder die Zentrale anrufen.</p>
 
               <form id="contactRequestForm" class="request-form" novalidate>
-                <div class="request-grid">
-                  <label for="requestName">Name</label>
-                  <input id="requestName" name="name" type="text" required>
-
-                  <label for="requestPhone">Telefon</label>
-                  <input id="requestPhone" name="phone" type="tel" required>
-
-                  <label for="requestEmail">E-Mail</label>
-                  <input id="requestEmail" name="email" type="email" required>
-
-                  <label for="requestPickup">Abholadresse</label>
-                  <input id="requestPickup" name="pickup" type="text" required>
-
-                  <label for="requestDestination">Zieladresse</label>
-                  <input id="requestDestination" name="destination" type="text" required>
-
-                  <label for="requestDate">Datum</label>
-                  <input id="requestDate" name="date" type="date" required>
-
-                  <label for="requestTime">Uhrzeit</label>
-                  <input id="requestTime" name="time" type="time" required>
-
-                  <label for="requestPassengers">Personenanzahl</label>
-                  <input id="requestPassengers" name="passengers" type="number" min="1" max="8" value="1" required>
-
-                  <label for="requestMessage">Nachricht / Besonderheiten</label>
-                  <textarea id="requestMessage" name="message" rows="4" placeholder="z. B. Kindersitz, Rollstuhl, zusätzliche Hinweise"></textarea>
-                </div>
-
                 <label class="request-consent">
                   <input id="requestPrivacy" name="privacy" type="checkbox" required>
-                  <span>Ich habe die Datenschutzerklärung gelesen und stimme der Verarbeitung meiner Angaben zur Bearbeitung meiner Anfrage zu.</span>
+                  <span>Ich habe die <a href="datenschutz.html">Datenschutzerklärung</a> gelesen und stimme der Verarbeitung meiner Angaben zur Bearbeitung meiner Anfrage zu.</span>
                 </label>
 
                 <div class="request-actions">
-                  <button id="requestSubmit" type="submit" class="button">Anfrage vorbereiten</button>
+                  <button id="requestSubmit" type="submit" class="button">Fahrt vorbereiten</button>
                   <p id="requestStatus" aria-live="polite"></p>
                 </div>
+
+                <section class="request-handoff" data-booking-handoff hidden aria-label="Direkte Anfragewege">
+                  <h4>Ihre Fahrt ist vorbereitet.</h4>
+                  <p>Übermitteln Sie die zusammengefassten Angaben jetzt direkt an Taxi Germersheim.</p>
+                  <div class="request-handoff-actions">
+                    <a id="requestWhatsapp" class="button" href="https://wa.me/4972743567" target="_blank" rel="noreferrer"><i data-icon="whatsapp"></i>Per WhatsApp anfragen</a>
+                    <a class="button secondary" href="tel:+4972743567"><i data-icon="phone"></i>07274 3567 anrufen</a>
+                  </div>
+                </section>
               </form>
             </section>
             <div class="pb-nav"><button class="button" type="button" data-booking-back>Zurück</button></div>
@@ -735,28 +764,22 @@
         </div>
 
         <aside class="panel pb-summary" aria-label="Live Zusammenfassung">
-          <small>LIVE-ZUSAMMENFASSUNG</small>
-          <h3>Ihre Buchung</h3>
+          <small>IHRE FAHRT</small>
+          <h3>Ihre Fahrt</h3>
           <ul>
             <li><span>Abholort</span><b data-booking-summary-start>-</b></li>
             <li><span>Ziel</span><b data-booking-summary-target>-</b></li>
-            <li><span>Entfernung</span><b data-booking-summary-distance>-</b></li>
-            <li><span>Fahrzeit</span><b data-booking-summary-duration>-</b></li>
-            <li><span>Routing</span><b data-booking-summary-route-mode>Autofahrt</b></li>
+            <li><span>Routing</span><b data-booking-summary-route-mode>Google Maps</b></li>
+            <li><span>Fahrtverlauf</span><b data-booking-summary-trip>Hinfahrt</b></li>
             <li><span>Datum</span><b data-booking-summary-date>-</b></li>
             <li><span>Uhrzeit</span><b data-booking-summary-time>-</b></li>
             <li><span>Fahrtart</span><b data-booking-summary-service>Taxi</b></li>
-            <li><span>Fahrzeugwunsch</span><b data-booking-summary-vehicle>Kein Wunsch gespeichert</b></li>
-            <li><span>Status</span><b data-booking-summary-vehicle-status>Bitte Wunsch wählen</b></li>
-            <li><span>Rewards-Punkte</span><b data-booking-summary-points>ca. 15</b></li>
-            <li><span>Geschätzter Preis</span><b data-booking-summary-price>Bitte Fahrzeug wählen</b></li>
+            <li><span>Fahrgäste</span><b data-booking-summary-passengers>1</b></li>
+            <li><span>Fahrzeugwunsch</span><b data-booking-summary-vehicle>Kein Fahrzeugwunsch</b></li>
             <li><span>Optionen</span><b data-booking-summary-options>Keine</b></li>
+            <li><span>Kontakt</span><b data-booking-summary-contact>-</b></li>
+            <li data-booking-summary-note-row hidden><span>Notiz</span><b data-booking-summary-note>-</b></li>
           </ul>
-          <p class="pb-summary-vehicle-note">Die endgültige Fahrzeugzuteilung erfolgt nach Verfügbarkeit.</p>
-          <p class="pb-summary-fare-note">Fahrpreis wird nach Bestätigung berechnet.</p>
-          <p class="pb-rewards-hint" data-booking-rewards-hint hidden>Mit dieser Fahrt erhältst du ca. 15 Punkte.</p>
-          <p class="pb-voucher-hint" data-booking-voucher-hint hidden>Gutschein-Guthaben verfügbar.</p>
-          <p class="pb-future-note">Eine Online-Statusübertragung ist derzeit nicht verfügbar.</p>
         </aside>
       </section>
     </section>
@@ -764,49 +787,17 @@
     <section id="ride-status" class="screen simple ride-status-page">
       <header class="page-head"><button data-go="booking" type="button">‹</button><h2>Meine aktuelle Fahrt</h2><i></i></header>
 
-      <article class="panel ride-track-hero">
-        <small>LIVE-STATUS</small>
-        <h1>Meine aktuelle Fahrt</h1>
-        <p data-ride-track-summary>Ihre Anfrage wurde lokal vorbereitet. Eine Live-Übertragung findet nicht statt.</p>
+      <article class="panel ride-track-hero ride-track-empty">
+        <small>FAHRTSTATUS</small>
+        <span class="ride-track-badge" data-ride-track-badge>Keine Live-Daten</span>
+        <h1>Keine aktive Fahrt verbunden</h1>
+        <p data-ride-track-summary>Ein Live-Fahrtstatus ist derzeit nicht verfügbar. Es werden keine Fahrer-, Fahrzeug- oder Ankunftsdaten simuliert.</p>
+        <div class="ride-track-side-actions">
+          <a class="button" href="tel:+4972743567">Zentrale anrufen</a>
+          <a class="button secondary" href="https://wa.me/4972743567" target="_blank" rel="noreferrer">WhatsApp öffnen</a>
+          <button class="button secondary" type="button" data-go="booking">Fahrt planen</button>
+        </div>
       </article>
-
-      <section class="ride-track-layout" aria-label="Statusverfolgung aktuelle Fahrt">
-        <article class="panel ride-track-panel">
-          <div class="ride-track-panel-head">
-            <div>
-              <small>STATUS-TIMELINE</small>
-              <h3>Fahrtstatus</h3>
-            </div>
-            <span class="ride-track-badge" data-ride-track-badge>Anfrage eingegangen</span>
-          </div>
-
-          <ol class="ride-track-timeline" data-ride-track-timeline aria-label="Fahrtstatus Timeline"></ol>
-
-          <div class="ride-track-complete" data-ride-track-complete hidden>
-            <p class="ride-track-complete-note">Ihre Fahrt ist abgeschlossen. Rewards-Vorteile und Bewertung werden als nächste Schritte vorbereitet.</p>
-            <div class="ride-track-complete-actions">
-              <button class="button" type="button" data-current-ride-action="rate">Fahrt bewerten</button>
-              <button class="button secondary" type="button" data-current-ride-action="rebook">Erneut buchen</button>
-            </div>
-          </div>
-          <p class="ride-track-feedback" data-ride-track-feedback hidden></p>
-        </article>
-
-        <aside class="panel ride-track-side">
-          <small>FAHRERINFORMATIONEN</small>
-          <h3 data-ride-track-route>Germersheim Zentrum → Speyer</h3>
-          <ul class="ride-track-driver-list">
-            <li><span>Fahrername</span><b data-ride-track-driver-name>Michael Becker</b></li>
-            <li><span>Fahrzeugtyp</span><b data-ride-track-vehicle>Mercedes E-Klasse</b></li>
-            <li><span>Kennzeichen</span><b data-ride-track-plate>GER-TG 247</b></li>
-            <li><span>Voraussichtliche Ankunft</span><b data-ride-track-eta>12 Min.</b></li>
-          </ul>
-          <div class="ride-track-side-actions">
-            <a class="button" href="tel:072743567" data-ride-track-phone>Fahrer anrufen</a>
-            <a class="button secondary" href="meinkonto.html">Zu Mein Konto</a>
-          </div>
-        </aside>
-      </section>
     </section>
 
     <section id="yumak" class="screen simple"><header class="page-head"><button data-go="home">‹</button><h2>Yumak</h2><i></i></header><article class="panel yumak-greeting"><img class="yumak-img yumak-avatar yumak-avatar-hero" src="yumak-avatar.png" alt="Yumak" loading="lazy" decoding="async"><h1>Hallo, ich bin Yumak 🐾</h1><p>Ich helfe dir später beim Buchen, Sammeln von Abzeichen und bei Fragen rund um Taxi Germersheim.</p></article><div class="yumak-features"><button class="yumak-card" data-go="booking" type="button"><i data-icon="booking"></i><div class="yumak-card-body"><b>Fahrt buchen</b><small>Ich helfe dir bei deiner Fahrt und beantworte Fragen.</small></div><span class="yumak-card-action">Fahrt starten</span></button><button class="yumak-card" data-go="rewards" type="button"><i data-icon="rewards"></i><div class="yumak-card-body"><b>Rewards</b><small>Erfahre mehr über Abzeichen, Punkte und Belohnungen.</small></div><span class="yumak-card-action">Rewards ansehen</span></button><button class="yumak-card" data-go="help-public" type="button"><i data-icon="phone"></i><div class="yumak-card-body"><b>Hilfe</b><small>24/7 Hilfe zu Buchung, Krankenfahrten und Unternehmen.</small></div><span class="yumak-card-action">Hilfe öffnen</span></button></div></section>
@@ -1102,7 +1093,7 @@
         </div>
         <div class="about-trust-grid">
           <article class="about-card about-trust-card"><b>Google-Bewertungen</b><p>Starke Rückmeldungen und verifizierte Sichtbarkeit stärken unser Profil im Alltag.</p></article>
-          <article class="about-card about-trust-card"><b>Kundenzufriedenheit</b><p>Freundlicher Umgang, klare Kommunikation und saubere Abläufe stehen bei uns im Mittelpunkt.</p></article>
+          <article class="about-card about-trust-card"><b>Zufriedene Kunden</b><p>Freundlicher Umgang, klare Kommunikation und saubere Abläufe stehen bei uns im Mittelpunkt.</p></article>
           <article class="about-card about-trust-card"><b>Erfahrung</b><p>Routine in der täglichen Fahrtplanung sorgt für Sicherheit und Verlässlichkeit.</p></article>
           <article class="about-card about-trust-card"><b>Regionale Nähe</b><p>Wir kennen Germersheim und die Umgebung und sind schnell vor Ort.</p></article>
         </div>
@@ -1148,5 +1139,6 @@
 <script src="customer-auth.js"></script>
 <script src="script.js"></script>
 <script src="public-premium-v2.js"></script>
+<script src="home-luxury.js"></script>
 </body>
 </html>

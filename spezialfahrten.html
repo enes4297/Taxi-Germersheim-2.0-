@@ -4,13 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Spezialfahrten | Taxi Germersheim</title>
-  <meta name="description" content="Spezialfahrten von Taxi Germersheim: Krankenfahrten, Serienfahrten, Rollstuhl, Flughafen, Firmen und mehr persönlich geplant." />
+  <meta name="description" content="Spezialfahrten von Taxi Germersheim für Mobilität, Gesundheit, Betreuung, Schule, Organisation sowie Kurier und Logistik." />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="public-visual-repair.css" />
   <link rel="stylesheet" href="special-services.css" />
   <link rel="stylesheet" href="public-premium-v2.css" />
+  <link rel="stylesheet" href="public-system.css" />
+  <script src="public-system.js" defer></script>
 </head>
-<body class="public-premium public-special">
+<body class="public-premium public-special tg-public" data-tg-page="services">
   <div class="public-app">
   <header class="topbar">
     <div class="brand">
@@ -48,70 +50,103 @@
 
   <main class="special-page" id="special-overview-page">
     <div class="container special-shell">
-      <header class="public-page-head">
+      <header class="public-page-head" data-tg-reveal>
         <p class="public-eyebrow">Spezialfahrten</p>
-        <h1>Besondere Fahrten.<br>Persönlich geplant.</h1>
-        <p>Individuelle Mobilität für medizinische Termine, wiederkehrende Fahrten, Unternehmen und besondere Anforderungen.</p>
+        <h1>Mobilität, wenn es darauf ankommt.</h1>
+        <p>Persönlich geplant. Zuverlässig durchgeführt.</p>
       </header>
 
-      <section class="special-card" aria-label="Leistungsübersicht">
+      <section class="special-card" aria-labelledby="special-services-title" data-tg-reveal>
         <div class="special-section-head">
-          <h2>Leistungen im Überblick</h2>
+          <h2 id="special-services-title">Leistungsspektrum</h2>
+          <p>Vier Bereiche, persönlich abgestimmt auf Anlass, Bedarf und Ablauf.</p>
         </div>
-        <div class="special-grid">
-          <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Krankenfahrten</h3><p class="special-service-description">Arzt, Klinik, ambulante oder stationäre Termine mit klaren Hinweisen zu Verordnung und Genehmigung.</p></div></div>
-            <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Sitzend oder im Rollstuhl möglich</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Hin- und Rückfahrt gemeinsam planbar</span></li></ul>
-            <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=medical">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=medical#specialRequest">Anfrage starten</a></div>
-          </article>
+        <div class="special-categories">
+          <section class="special-category" aria-labelledby="special-category-mobility">
+            <header class="special-category-head" data-tg-reveal>
+              <h3 id="special-category-mobility">Mobilität</h3>
+              <p>Für individuelle Wege, barrierearme Beförderung und planbare Transfers.</p>
+            </header>
+            <div class="special-grid">
+              <article class="special-service-card" data-tg-reveal>
+                <div class="special-service-top"><img src="assets/icons/Wheelchair%20Vehicle.svg" alt="" /><div><h4 class="special-service-title">Rollstuhlfahrten</h4><p class="special-service-description">Infos zu geeigneter Sicherung, Rampe, Fahrzeugeinstieg und Begleitperson.</p></div></div>
+                <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Manuellen oder elektrischen Rollstuhl angeben</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Zugangssituation vorab abstimmen</span></li></ul>
+                <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=wheelchair">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=wheelchair#specialRequest">Anfrage starten</a></div>
+              </article>
 
-          <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Calendar.svg" alt="" /><div><h3 class="special-service-title">Dialysefahrten</h3><p class="special-service-description">Regelmäßige Dialysetermine mit planbarer Wochenstruktur und stabiler Organisation.</p></div></div>
-            <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Wiederkehrende Termine gemeinsam planen</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Wochentage klar abstimmen</span></li></ul>
-            <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=dialysis">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=dialysis#specialRequest">Anfrage starten</a></div>
-          </article>
+              <article class="special-service-card" data-tg-reveal>
+                <div class="special-service-top"><img src="assets/icons/Calendar.svg" alt="" /><div><h4 class="special-service-title">Serienfahrten</h4><p class="special-service-description">Wiederkehrende Fahrten mit klarer Wochenstruktur und persönlicher Abstimmung.</p></div></div>
+                <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Feste Wochentage planbar</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Persönliche Bestätigung</span></li></ul>
+                <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=series">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=series#specialRequest">Anfrage starten</a></div>
+              </article>
 
-          <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Chemo- und Strahlentherapie</h3><p class="special-service-description">Fahrten zu Chemo- und Strahlentherapieterminen mit besonders sensibler Planung.</p></div></div>
-            <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Persönliche Terminabstimmung</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Hin- und Rückfahrt planbar</span></li></ul>
-            <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=chemo">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=chemo#specialRequest">Anfrage starten</a></div>
-          </article>
+              <article class="special-service-card" data-tg-reveal>
+                <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h4 class="special-service-title">Flughafentransfers</h4><p class="special-service-description">FRA, FKB, STR und weitere Flughäfen auf Anfrage mit persönlicher Planung.</p></div></div>
+                <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Terminal und Flugnummer optional</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Abholzeit individuell abstimmen</span></li></ul>
+                <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=airport">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=airport#specialRequest">Anfrage starten</a></div>
+              </article>
+            </div>
+          </section>
 
-          <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Wheelchair%20Vehicle.svg" alt="" /><div><h3 class="special-service-title">Rollstuhlfahrten</h3><p class="special-service-description">Infos zu geeigneter Sicherung, Rampe, Fahrzeugeinstieg und Begleitperson.</p></div></div>
-            <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Manuellen oder elektrischen Rollstuhl angeben</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Zugangssituation vorab abstimmen</span></li></ul>
-            <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=wheelchair">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=wheelchair#specialRequest">Anfrage starten</a></div>
-          </article>
+          <section class="special-category" aria-labelledby="special-category-health">
+            <header class="special-category-head" data-tg-reveal>
+              <h3 id="special-category-health">Gesundheit &amp; Betreuung</h3>
+              <p>Für Arzt, Klinik und wiederkehrende Behandlungen mit verlässlicher Terminabstimmung.</p>
+            </header>
+            <div class="special-grid">
+              <article class="special-service-card" data-tg-reveal>
+                <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h4 class="special-service-title">Krankenfahrten</h4><p class="special-service-description">Arzt, Reha, Krankenhaus sowie ambulante oder stationäre Termine mit klaren Hinweisen zu Verordnung und Genehmigung.</p></div></div>
+                <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Sitzend oder im Rollstuhl möglich</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Hin- und Rückfahrt gemeinsam planbar</span></li></ul>
+                <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=medical">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=medical#specialRequest">Anfrage starten</a></div>
+              </article>
 
-          <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Calendar.svg" alt="" /><div><h3 class="special-service-title">Serienfahrten</h3><p class="special-service-description">Wiederkehrende Fahrten mit klarer Wochenstruktur und persönlicher Abstimmung.</p></div></div>
-            <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Feste Wochentage planbar</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Persönliche Bestätigung</span></li></ul>
-            <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=series">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=series#specialRequest">Anfrage starten</a></div>
-          </article>
+              <article class="special-service-card" data-tg-reveal>
+                <div class="special-service-top"><img src="assets/icons/Calendar.svg" alt="" /><div><h4 class="special-service-title">Dialysefahrten</h4><p class="special-service-description">Regelmäßige Dialysetermine mit planbarer Wochenstruktur und stabiler Organisation.</p></div></div>
+                <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Wiederkehrende Termine gemeinsam planen</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Wochentage klar abstimmen</span></li></ul>
+                <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=dialysis">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=dialysis#specialRequest">Anfrage starten</a></div>
+              </article>
 
-          <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Flughafentransfers</h3><p class="special-service-description">FRA, FKB, STR und weitere Flughäfen auf Anfrage mit persönlicher Planung.</p></div></div>
-            <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Terminal und Flugnummer optional</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Abholzeit individuell abstimmen</span></li></ul>
-            <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=airport">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=airport#specialRequest">Anfrage starten</a></div>
-          </article>
+              <article class="special-service-card" data-tg-reveal>
+                <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h4 class="special-service-title">Chemo- und Strahlentherapie</h4><p class="special-service-description">Fahrten zu Chemo- und Strahlentherapieterminen mit besonders sensibler Planung.</p></div></div>
+                <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Persönliche Terminabstimmung</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Hin- und Rückfahrt planbar</span></li></ul>
+                <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=chemo">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=chemo#specialRequest">Anfrage starten</a></div>
+              </article>
+            </div>
+          </section>
 
-          <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Profile.svg" alt="" /><div><h3 class="special-service-title">Firmen- und Geschäftskunden</h3><p class="special-service-description">Individuelle Mobilitätslösungen mit festen Ansprechpartnern und zentraler Abstimmung.</p></div></div>
-            <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Mitarbeiter-, Flughafen- und Kurierfahrten</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Persönliche Vereinbarungen</span></li></ul>
-            <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=business">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=business#specialRequest">Anfrage starten</a></div>
-          </article>
+          <section class="special-category" aria-labelledby="special-category-school">
+            <header class="special-category-head" data-tg-reveal>
+              <h3 id="special-category-school">Schule &amp; Organisation</h3>
+              <p>Für regelmäßige Schülerbeförderung und abgestimmte Mobilität im Unternehmensalltag.</p>
+            </header>
+            <div class="special-grid">
+              <article class="special-service-card" data-tg-reveal>
+                <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h4 class="special-service-title">Schülerfahrten</h4><p class="special-service-description">Regelmäßige Schülerbeförderung mit festen Zeiten und individueller Abstimmung.</p></div></div>
+                <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Wochentage und Zeitraum erfassen</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Begleitbedarf abfragen</span></li></ul>
+                <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=student">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=student#specialRequest">Anfrage starten</a></div>
+              </article>
 
-          <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Schülerfahrten</h3><p class="special-service-description">Regelmäßige Schülerbeförderung mit festen Zeiten und individueller Abstimmung.</p></div></div>
-            <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Wochentage und Zeitraum erfassen</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Begleitbedarf abfragen</span></li></ul>
-            <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=student">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=student#specialRequest">Anfrage starten</a></div>
-          </article>
+              <article class="special-service-card" data-tg-reveal>
+                <div class="special-service-top"><img src="assets/icons/Profile.svg" alt="" /><div><h4 class="special-service-title">Firmen- und Geschäftskunden</h4><p class="special-service-description">Individuelle Mobilitätslösungen mit festen Ansprechpartnern und zentraler Abstimmung.</p></div></div>
+                <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Mitarbeiter-, Flughafen- und Kurierfahrten</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Persönliche Vereinbarungen</span></li></ul>
+                <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=business">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=business#specialRequest">Anfrage starten</a></div>
+              </article>
+            </div>
+          </section>
 
-          <article class="special-service-card">
-            <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h3 class="special-service-title">Kurierfahrten</h3><p class="special-service-description">Direktfahrten für Dokumente, Ersatzteile und kleine Sendungen mit persönlicher Abstimmung.</p></div></div>
-            <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Abhol- und Empfangskontakte abstimmen</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Zeitfenster individuell planen</span></li></ul>
-            <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=courier">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=courier#specialRequest">Anfrage starten</a></div>
-          </article>
+          <section class="special-category" aria-labelledby="special-category-courier">
+            <header class="special-category-head" data-tg-reveal>
+              <h3 id="special-category-courier">Kurier &amp; Logistik</h3>
+              <p>Für Dokumente, Ersatzteile und kleine Sendungen mit klar vereinbarten Zeitfenstern.</p>
+            </header>
+            <div class="special-grid">
+              <article class="special-service-card" data-tg-reveal>
+                <div class="special-service-top"><img src="assets/icons/Route.svg" alt="" /><div><h4 class="special-service-title">Kurierfahrten</h4><p class="special-service-description">Direktfahrten für Dokumente, Ersatzteile und kleine Sendungen mit persönlicher Abstimmung.</p></div></div>
+                <ul class="special-benefits"><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Abhol- und Empfangskontakte abstimmen</span></li><li><img src="assets/icons/Check%20Mark.svg" alt="" /><span>Zeitfenster individuell planen</span></li></ul>
+                <div class="special-actions"><a class="special-btn" href="spezial-anfrage.html?service=courier">Mehr erfahren</a><a class="special-btn primary" href="spezial-anfrage.html?service=courier#specialRequest">Anfrage starten</a></div>
+              </article>
+            </div>
+          </section>
         </div>
       </section>
     </div>

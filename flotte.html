@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#050505">
   <title>Fahrzeugflotte | Taxi Germersheim GmbH</title>
-  <meta name="description" content="Entdecken Sie die Premium-Fahrzeugflotte von Taxi Germersheim: Mercedes V-Klasse, Mercedes Sprinter Rollstuhlfahrzeug, Mercedes E-Klasse und VW Touran.">
+  <meta name="description" content="Entdecken Sie die Premium-Fahrzeugflotte von Taxi Germersheim: Mercedes V-Klasse, VW Rollstuhlfahrzeug, Mercedes E-Klasse und VW Touran.">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="flotte.html">
   <meta property="og:type" content="website">
@@ -18,14 +18,15 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="public-visual-repair.css">
   <link rel="stylesheet" href="public-premium-v2.css">
+  <link rel="stylesheet" href="public-system.css">
+  <script src="public-system.js" defer></script>
 </head>
-<body class="public-premium public-fleet">
+<body class="public-premium public-fleet tg-public" data-tg-page="fleet">
   <main class="app">
     <header class="topbar">
       <div class="brand">
         <a href="index.html" aria-label="Taxi Germersheim Startseite">
-          <img src="logo.png" alt="Taxi Germersheim GmbH">
-          <span>Taxi Germersheim</span>
+          <img src="assets/brand/taxi-germersheim-logo.svg" alt="Taxi Germersheim GmbH">
         </a>
       </div>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen">
@@ -33,7 +34,7 @@
       </button>
       <nav class="site-nav" aria-label="Hauptnavigation">
         <a href="index.html">Startseite</a>
-        <div class="nav-item nav-item-services">
+        <div class="nav-item services nav-item-services">
           <button type="button" class="nav-trigger" data-nav-toggle="services" aria-expanded="false">Leistungen <span>▼</span></button>
           <div class="nav-dropdown" aria-label="Leistungen">
             <a href="index.html?page=booking&amp;service=taxi">Taxi</a>
@@ -44,7 +45,7 @@
             <a href="spezialfahrten.html">Spezialfahrten</a>
           </div>
         </div>
-        <a href="flotte.html" class="active">Fahrzeugflotte</a>
+        <a href="flotte.html" class="active" aria-current="page">Fahrzeugflotte</a>
         <a href="rewards.html">Rewards</a>
         <a href="hilfe-kontakt.html">Kontakt</a>
         <a class="mobile-session-link" href="anmelden.html" data-session-link>Anmelden</a>
@@ -56,14 +57,13 @@
     </header>
 
     <section id="fleet" class="screen active simple fleet-page fleet-v44">
-      <header class="public-page-head">
+      <header class="public-page-head" data-tg-reveal>
         <p class="public-eyebrow">Fahrzeugflotte</p>
-        <h1>Unsere Fahrzeugflotte</h1>
+        <h1>Für jede Fahrt das passende Fahrzeug.</h1>
         <p>Unsere Flotte ist auf zuverlässige Taxi-, Transfer- und Spezialfahrten ausgelegt. Alle Fahrzeuge werden täglich einsatzbereit gehalten und passend zum Fahrtbedarf eingeplant.</p>
-        <p class="fleet-v44-note">Hinweis: Das aktuelle Sprinter-Rollstuhlfahrzeug wird planmäßig durch ein moderneres Fahrzeug ersetzt.</p>
       </header>
 
-      <section class="fleet-v44-filter" aria-label="Flottenfilter">
+      <section class="fleet-v44-filter" aria-label="Flottenfilter" data-tg-reveal>
         <button type="button" class="is-active" data-fleet-filter="all">Alle</button>
         <button type="button" data-fleet-filter="taxi">Taxi</button>
         <button type="button" data-fleet-filter="grossraum">Großraum</button>
@@ -72,85 +72,76 @@
       </section>
 
       <section class="fleet-v44-grid" aria-label="Fahrzeuge von Taxi Germersheim">
-        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="e220d">
+        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="e220d" data-tg-reveal>
           <figure class="fleet-v44-media">
             <img class="fleet-v44-media-image vehicle-image-e-class" data-fleet-image loading="lazy" decoding="async" alt="Mercedes-Benz E 220 d T-Modell in der Fahrzeugflotte">
           </figure>
-          <div class="fleet-v44-card-head"><h3>Mercedes-Benz E 220 d T-Modell</h3><span class="fleet-v44-plate">GER TX 100</span></div>
+          <div class="fleet-v44-card-head"><h3>Mercedes-Benz E 220 d T-Modell</h3><p class="fleet-v44-category">Taxi</p><span class="fleet-v44-plate">GER TX 100</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Taxi</b></li><li><span>Sitzplätze</span><b>4</b></li><li><span>Einsatzbereich</span><b>Alltag, Bahnhof, Klinikfahrten</b></li><li><span>Besonderheit</span><b>Komfortables T-Modell mit großem Kofferraum</b></li></ul>
-          <p class="fleet-v44-status">Status: Im täglichen Einsatz</p>
         </article>
 
-        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="touran-200">
+        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="touran-200" data-tg-reveal>
           <figure class="fleet-v44-media">
             <img class="fleet-v44-media-image vehicle-image-touran" data-fleet-image loading="lazy" decoding="async" alt="VW Touran GER TX 200 in der Fahrzeugflotte">
           </figure>
-          <div class="fleet-v44-card-head"><h3>VW Touran</h3><span class="fleet-v44-plate">GER TX 200</span></div>
+          <div class="fleet-v44-card-head"><h3>VW Touran</h3><p class="fleet-v44-category">Taxi</p><span class="fleet-v44-plate">GER TX 200</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Taxi</b></li><li><span>Sitzplätze</span><b>5</b></li><li><span>Einsatzbereich</span><b>Kurzstrecke, Stadtverkehr, Schülerfahrten</b></li><li><span>Besonderheit</span><b>Hohe Alltagstauglichkeit</b></li></ul>
-          <p class="fleet-v44-status">Status: Im täglichen Einsatz</p>
         </article>
 
-        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="touran-300">
+        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="touran-300" data-tg-reveal>
           <figure class="fleet-v44-media">
             <img class="fleet-v44-media-image vehicle-image-touran-tx300" data-fleet-image loading="lazy" decoding="async" alt="VW Touran GER TX 300 in der Fahrzeugflotte">
           </figure>
-          <div class="fleet-v44-card-head"><h3>VW Touran</h3><span class="fleet-v44-plate">GER TX 300</span></div>
+          <div class="fleet-v44-card-head"><h3>VW Touran</h3><p class="fleet-v44-category">Taxi</p><span class="fleet-v44-plate">GER TX 300</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Taxi</b></li><li><span>Sitzplätze</span><b>5</b></li><li><span>Einsatzbereich</span><b>Arzttermine, Besorgungsfahrten</b></li><li><span>Besonderheit</span><b>Komfortabler Einstieg</b></li></ul>
-          <p class="fleet-v44-status">Status: Im täglichen Einsatz</p>
         </article>
 
-        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="touran-400">
+        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="touran-400" data-tg-reveal>
           <figure class="fleet-v44-media">
             <img class="fleet-v44-media-image vehicle-image-touran-tx400" data-fleet-image loading="lazy" decoding="async" alt="VW Touran GER TX 400 in der Fahrzeugflotte">
           </figure>
-          <div class="fleet-v44-card-head"><h3>VW Touran</h3><span class="fleet-v44-plate">GER TX 400</span></div>
+          <div class="fleet-v44-card-head"><h3>VW Touran</h3><p class="fleet-v44-category">Taxi</p><span class="fleet-v44-plate">GER TX 400</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Taxi</b></li><li><span>Sitzplätze</span><b>5</b></li><li><span>Einsatzbereich</span><b>Regionalfahrten, Pendelverkehr</b></li><li><span>Besonderheit</span><b>Variabler Innenraum</b></li></ul>
-          <p class="fleet-v44-status">Status: Im täglichen Einsatz</p>
         </article>
 
-        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="b-klasse">
+        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="b-klasse" data-tg-reveal>
           <figure class="fleet-v44-media">
             <img class="fleet-v44-media-image" data-fleet-image loading="lazy" decoding="async" alt="Mercedes-Benz B-Klasse in der Fahrzeugflotte">
           </figure>
-          <div class="fleet-v44-card-head"><h3>Mercedes-Benz B-Klasse</h3><span class="fleet-v44-plate">GER TX 500</span></div>
+          <div class="fleet-v44-card-head"><h3>Mercedes-Benz B-Klasse</h3><p class="fleet-v44-category">Taxi</p><span class="fleet-v44-plate">GER TX 500</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Taxi</b></li><li><span>Sitzplätze</span><b>4</b></li><li><span>Einsatzbereich</span><b>Innenstadt und Kurztransfers</b></li><li><span>Besonderheit</span><b>Ruhiges Fahrverhalten</b></li></ul>
-          <p class="fleet-v44-status">Status: Im täglichen Einsatz</p>
         </article>
 
-        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="e-klasse-2020">
+        <article class="fleet-v44-card" data-fleet-category="taxi" data-vehicle-key="e-klasse-2020" data-tg-reveal>
           <figure class="fleet-v44-media">
             <img class="fleet-v44-media-image vehicle-image-e-class-white" data-fleet-image loading="lazy" decoding="async" alt="Mercedes-Benz E-Klasse in der Fahrzeugflotte">
           </figure>
-          <div class="fleet-v44-card-head"><h3>Mercedes-Benz E-Klasse (gelb, Baujahr 2020)</h3><span class="fleet-v44-plate">GER TX 600</span></div>
+          <div class="fleet-v44-card-head"><h3>Mercedes-Benz E-Klasse</h3><p class="fleet-v44-category">Taxi</p><span class="fleet-v44-plate">GER TX 600</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Taxi</b></li><li><span>Sitzplätze</span><b>4</b></li><li><span>Einsatzbereich</span><b>Business, Fernfahrten</b></li><li><span>Besonderheit</span><b>Premium-Limousine mit hohem Komfort</b></li></ul>
-          <p class="fleet-v44-status">Status: Im täglichen Einsatz</p>
         </article>
 
-        <article class="fleet-v44-card" data-fleet-category="elektro" data-vehicle-key="tesla-y">
+        <article class="fleet-v44-card" data-fleet-category="elektro" data-vehicle-key="tesla-y" data-tg-reveal>
           <figure class="fleet-v44-media">
             <img class="fleet-v44-media-image" data-fleet-image loading="lazy" decoding="async" alt="Tesla Model Y in der Fahrzeugflotte">
           </figure>
-          <div class="fleet-v44-card-head"><h3>Tesla Model Y</h3><span class="fleet-v44-plate">GER TX 700</span></div>
+          <div class="fleet-v44-card-head"><h3>Tesla Model Y</h3><p class="fleet-v44-category">Elektrotaxi</p><span class="fleet-v44-plate">GER TX 700</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Elektro</b></li><li><span>Sitzplätze</span><b>4</b></li><li><span>Einsatzbereich</span><b>Leise Stadt- und Regionalfahrten</b></li><li><span>Besonderheit</span><b>Elektrischer Antrieb</b></li></ul>
-          <p class="fleet-v44-status">Status: Im täglichen Einsatz</p>
         </article>
 
-        <article class="fleet-v44-card" data-fleet-category="grossraum" data-vehicle-key="v-klasse">
+        <article class="fleet-v44-card" data-fleet-category="grossraum" data-vehicle-key="v-klasse" data-tg-reveal>
           <figure class="fleet-v44-media">
             <img class="fleet-v44-media-image vehicle-image-v-class" data-fleet-image loading="lazy" decoding="async" alt="Mercedes-Benz V-Klasse in der Fahrzeugflotte">
           </figure>
-          <div class="fleet-v44-card-head"><h3>Mercedes-Benz V-Klasse</h3><span class="fleet-v44-plate">GER TX 800</span></div>
+          <div class="fleet-v44-card-head"><h3>Mercedes-Benz V-Klasse</h3><p class="fleet-v44-category">Großraumtaxi</p><span class="fleet-v44-plate">GER TX 800</span></div>
           <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Großraum</b></li><li><span>Sitzplätze</span><b>7</b></li><li><span>Einsatzbereich</span><b>Gruppen, Flughafentransfer, Firmenkunden</b></li><li><span>Besonderheit</span><b>Viel Platz für Gepäck</b></li></ul>
-          <p class="fleet-v44-status">Status: Im täglichen Einsatz</p>
         </article>
 
-        <article class="fleet-v44-card" data-fleet-category="rollstuhl" data-vehicle-key="sprinter-rollstuhl">
+        <article class="fleet-v44-card" data-fleet-category="rollstuhl" data-vehicle-key="vw-rollstuhl-900" data-tg-reveal>
           <figure class="fleet-v44-media">
-            <img class="fleet-v44-media-image" data-fleet-image loading="lazy" decoding="async" alt="Mercedes Sprinter Rollstuhlfahrzeug in der Fahrzeugflotte">
+            <img class="fleet-v44-media-image" data-fleet-image loading="lazy" decoding="async" alt="VW Rollstuhlfahrzeug in der Fahrzeugflotte">
           </figure>
-          <div class="fleet-v44-card-head"><h3>Mercedes Sprinter (Rollstuhlfahrzeug)</h3><span class="fleet-v44-plate">Bisheriges Spezialfahrzeug</span></div>
-          <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Rollstuhl</b></li><li><span>Sitzplätze</span><b>4 + 1 Rollstuhlplatz</b></li><li><span>Einsatzbereich</span><b>Barrierearme Spezialfahrten</b></li><li><span>Besonderheit</span><b>Rampe und Sicherungssystem</b></li></ul>
-          <p class="fleet-v44-status">Status: Übergangslösung, Ersatz in Planung</p>
+          <div class="fleet-v44-card-head"><h3>VW Rollstuhlfahrzeug</h3><p class="fleet-v44-category">Rollstuhlfahrzeug</p></div>
+          <ul class="fleet-v44-list"><li><span>Kategorie</span><b>Rollstuhl</b></li><li><span>Beschreibung</span><b>Barrierefrei und komfortabel unterwegs.</b></li></ul>
         </article>
       </section>
     </section>
@@ -196,22 +187,9 @@
         // "tesla-y": "assets/fleet/tesla-model-y.jpg",
         // "e-klasse-2020": "assets/fleet/mercedes-e-klasse.jpg",
         // "touran-200": "assets/fleet/vw-touran-200.jpg",
-        // "sprinter-rollstuhl": "assets/fleet/mercedes-sprinter.jpg",
-        "v-klasse": "admin/images/mercedes-v-klasse-ger-tx-800-premium.jpg.png"
+        "v-klasse": "admin/images/mercedes-v-klasse-ger-tx-800-premium.jpg.png",
+        "vw-rollstuhl-900": "admin/images/vw-rollstuhlfahrzeug-ger-tx-900-premium.jpg.jpeg"
       };
-
-      function createFleetPlaceholder(vehicleName) {
-        var safeName = String(vehicleName || "Fahrzeug").replace(/[<>&"']/g, "");
-        var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900' role='img' aria-label='Fahrzeugbild folgt'>"
-          + "<rect width='1600' height='900' fill='%230d0e12'/>"
-          + "<rect x='90' y='90' width='1420' height='720' rx='34' fill='none' stroke='%23d7b56a' stroke-opacity='0.38' stroke-width='4'/>"
-          + "<circle cx='800' cy='380' r='92' fill='none' stroke='%23f0cf77' stroke-opacity='0.7' stroke-width='6'/>"
-          + "<text x='800' y='404' text-anchor='middle' fill='%23f0cf77' font-size='62' font-family='Georgia, serif' font-weight='700'>TG</text>"
-          + "<text x='800' y='565' text-anchor='middle' fill='%23ffffff' fill-opacity='0.92' font-size='52' font-family='Georgia, serif' font-weight='700'>" + safeName + "</text>"
-          + "<text x='800' y='635' text-anchor='middle' fill='%23ffffff' fill-opacity='0.64' font-size='30' font-family='Arial, sans-serif'>Fahrzeugbild folgt</text>"
-          + "</svg>";
-        return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
-      }
 
       cards.forEach(function (card) {
         var imageNode = card.querySelector('[data-fleet-image]');
@@ -223,7 +201,7 @@
         var sourcePath = fleetImageCatalog[vehicleKey] || '';
 
         imageNode.alt = vehicleName + ' in der Fahrzeugflotte';
-        imageNode.src = sourcePath || createFleetPlaceholder(vehicleName);
+        if (sourcePath) imageNode.src = sourcePath;
         card.setAttribute('data-has-original-image', sourcePath ? 'true' : 'false');
       });
 

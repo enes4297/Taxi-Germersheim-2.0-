@@ -210,6 +210,138 @@
     return merged;
   }
 
+  function formatDateValue(value) {
+    if (!value) return "TT.MM.JJJJ";
+    var parts = value.split("-");
+    return parts.length === 3 ? parts[2] + "." + parts[1] + "." + parts[0] : "TT.MM.JJJJ";
+  }
+
+  function enhanceDateField(wrap, input) {
+    input.classList.add("special-native-date");
+    var display = document.createElement("button");
+    display.type = "button";
+    display.className = "special-date-display is-placeholder";
+    display.textContent = formatDateValue(input.value);
+    display.setAttribute("aria-label", "Datum auswählen");
+    display.addEventListener("click", function () {
+      if (typeof input.showPicker === "function") input.showPicker();
+      else input.focus();
+    });
+    input.addEventListener("input", function () {
+      display.textContent = formatDateValue(input.value);
+      display.classList.toggle("is-placeholder", !input.value);
+    });
+    wrap.insertBefore(display, input);
+  }
+
+  function enhanceSelect(wrap, select) {
+    select.classList.add("special-native-select");
+    var trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "special-select-trigger is-placeholder";
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
+
+    var list = document.createElement("div");
+    list.className = "special-select-menu";
+    list.setAttribute("role", "listbox");
+    list.hidden = true;
+
+    function sync() {
+      var selected = select.options[select.selectedIndex];
+      trigger.textContent = selected ? selected.textContent : "Bitte wählen";
+      trigger.classList.toggle("is-placeholder", !select.value);
+      list.querySelectorAll('[role="option"]').forEach(function (option) {
+        var active = option.dataset.value === select.value;
+        option.setAttribute("aria-selected", String(active));
+        option.classList.toggle("is-selected", active);
+      });
+    }
+
+    function close() {
+      list.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+      wrap.classList.remove("is-select-open");
+    }
+
+    function open() {
+      document.querySelectorAll(".special-field.is-select-open").forEach(function (other) {
+        if (other !== wrap && typeof other._closeSpecialSelect === "function") other._closeSpecialSelect();
+      });
+      list.hidden = false;
+      trigger.setAttribute("aria-expanded", "true");
+      wrap.classList.add("is-select-open");
+    }
+
+    wrap._closeSpecialSelect = close;
+
+    Array.from(select.options).forEach(function (option) {
+      var item = document.createElement("button");
+      item.type = "button";
+      item.className = "special-select-option";
+      item.setAttribute("role", "option");
+      item.dataset.value = option.value;
+      item.textContent = option.textContent;
+      item.addEventListener("click", function () {
+        select.value = option.value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        sync();
+        close();
+        trigger.focus();
+      });
+      list.appendChild(item);
+    });
+
+    trigger.addEventListener("click", function () {
+      if (list.hidden) open();
+      else close();
+    });
+    trigger.addEventListener("keydown", function (event) {
+      var options = Array.from(list.querySelectorAll('[role="option"]'));
+      var current = Math.max(0, options.findIndex(function (option) { return option.dataset.value === select.value; }));
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        if (list.hidden) open();
+        var next = event.key === "ArrowDown" ? Math.min(options.length - 1, current + 1) : Math.max(0, current - 1);
+        options[next]?.focus();
+      } else if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        if (list.hidden) open();
+        else options[current]?.click();
+      } else if (event.key === "Escape") {
+        close();
+      }
+    });
+    list.addEventListener("keydown", function (event) {
+      var options = Array.from(list.querySelectorAll('[role="option"]'));
+      var current = options.indexOf(document.activeElement);
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        var next = event.key === "ArrowDown" ? Math.min(options.length - 1, current + 1) : Math.max(0, current - 1);
+        options[next]?.focus();
+      } else if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        document.activeElement?.click();
+      } else if (event.key === "Escape") {
+        close();
+        trigger.focus();
+      }
+    });
+    select.addEventListener("change", sync);
+    wrap.appendChild(trigger);
+    wrap.appendChild(list);
+    sync();
+  }
+
+  function enhanceSpecialControls(root) {
+    root.querySelectorAll("select").forEach(function (select) {
+      enhanceSelect(select.closest(".special-field"), select);
+    });
+    root.querySelectorAll('input[type="date"]').forEach(function (input) {
+      enhanceDateField(input.closest(".special-field"), input);
+    });
+  }
+
   function fieldElement(field, presetValue) {
     var wrap = document.createElement("div");
     wrap.className = "special-field";
@@ -506,6 +638,7 @@
           var presetValue = config.preset && config.preset[field.id] ? config.preset[field.id] : "";
           fieldsRoot.appendChild(fieldElement(field, presetValue));
         });
+        enhanceSpecialControls(fieldsRoot);
       }
 
       setTabState();
@@ -578,7 +711,20 @@
     });
 
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") closeModal();
+      if (event.key === "Escape") {
+        document.querySelectorAll(".special-field.is-select-open").forEach(function (field) {
+          if (typeof field._closeSpecialSelect === "function") field._closeSpecialSelect();
+        });
+        closeModal();
+      }
+    });
+
+    document.addEventListener("click", function (event) {
+      if (!event.target.closest(".special-field.is-select-open")) {
+        document.querySelectorAll(".special-field.is-select-open").forEach(function (field) {
+          if (typeof field._closeSpecialSelect === "function") field._closeSpecialSelect();
+        });
+      }
     });
 
     mountService(initialService);

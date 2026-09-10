@@ -671,8 +671,10 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="public-system.css">
+  <script src="public-system.js" defer></script>
 </head>
-<body class="auth-pending">
+<body class="auth-pending tg-public" data-tg-page="none">
   <main class="app">
     <header class="topbar">
       <div class="brand">
@@ -805,9 +807,6 @@
       }
 
       const customerProfile = auth && typeof auth.getProfile === "function" ? auth.getProfile() : {};
-      const nav = document.querySelector('.site-nav');
-      const toggle = document.querySelector('.menu-toggle');
-      const backdrop = document.querySelector('.site-nav-backdrop');
 
       const nameNode = document.querySelector('[data-customer-name]');
       const memberNode = document.querySelector('[data-customer-member]');
@@ -843,30 +842,21 @@
       function formatLevelLabel(value, fallback) {
         const source = value === null || value === undefined || value === '' ? fallback : String(value).trim();
         if (!source || source === fallback) return fallback;
+        const labels = {
+          bronze: 'Bronze',
+          silver: 'Silber',
+          gold: 'Gold',
+          platinum: 'Platin',
+          vip: 'VIP'
+        };
+        const normalized = source.toLowerCase();
+        if (labels[normalized]) return labels[normalized];
         return source.charAt(0).toUpperCase() + source.slice(1).toLowerCase();
       }
 
       function setText(node, value, fallback) {
         if (!node) return;
         node.textContent = value && String(value).trim() ? String(value).trim() : fallback;
-      }
-
-      if (toggle && nav) {
-        toggle.addEventListener('click', function () {
-          const open = nav.classList.toggle('open');
-          toggle.setAttribute('aria-expanded', String(open));
-          if (backdrop) {
-            backdrop.classList.toggle('is-visible', open);
-          }
-        });
-      }
-
-      if (backdrop) {
-        backdrop.addEventListener('click', function () {
-          nav && nav.classList.remove('open');
-          toggle && toggle.setAttribute('aria-expanded', 'false');
-          backdrop.classList.remove('is-visible');
-        });
       }
 
       const sessionSnapshot = auth && typeof auth.getSessionSnapshot === 'function' ? auth.getSessionSnapshot() : null;

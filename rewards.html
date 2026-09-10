@@ -19,8 +19,10 @@
   <link rel="stylesheet" href="public-visual-repair.css">
   <link rel="stylesheet" href="auth-demo.css">
   <link rel="stylesheet" href="rewards-customer.css">
+  <link rel="stylesheet" href="public-system.css">
+  <script src="public-system.js" defer></script>
 </head>
-<body class="rewards-v2-body auth-pending">
+<body class="rewards-v2-body auth-pending tg-public" data-tg-page="rewards">
   <main class="app rewards-v2-app">
     <header class="topbar">
       <div class="brand">
@@ -49,7 +51,10 @@
             <h1 id="rewardsTitle">Rewards</h1>
             <p class="rewards-intro">Deine Punkte, dein Level und deine Rewards auf einen Blick.</p>
           </div>
-          <a class="rewards-secondary-link" href="wallet-gutscheine.html">Gutscheine ansehen</a>
+          <div class="rewards-page-actions">
+            <a class="rewards-secondary-link rewards-game-link" href="spiele.html">Zur Spielewelt</a>
+            <a class="rewards-secondary-link" href="wallet-gutscheine.html">Gutscheine ansehen</a>
+          </div>
         </header>
 
         <div class="customer-rewards-loading" data-rewards-loading role="status">
