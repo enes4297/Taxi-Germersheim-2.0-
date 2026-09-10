@@ -1,6 +1,19 @@
 # Testprotokoll — Krankmeldung nach Supabase
 
-Stand 10.09.2026, Branch `feature/mitarbeiter-krankmeldung-supabase`.
+Stand 10.09.2026, Branch `feature/mitarbeiter-krankmeldung-supabase`,
+am 10.09.2026 nach `dev` gemergt.
+
+## Status in einem Satz
+
+> **Lokal getestet — die echte Übertragung nach Supabase ist noch nicht
+> praktisch bestätigt.**
+
+Alle Nachweise unten stammen aus einer lokalen PostgreSQL-Instanz und aus
+Browsertests mit ersetztem Backend. Gegen die produktive Supabase-Instanz
+wurde **keine** Krankmeldung gesendet, **kein** Datensatz angelegt und
+**keine** Abfrage ausgeführt. Bevor das Portal produktiv genutzt wird, muss
+eine echte Übertragung einmal praktisch überprüft werden — sinnvollerweise mit
+einem eigens dafür angelegten Testkonto, nicht mit produktiven Personendaten.
 
 ## Ergebnis
 
