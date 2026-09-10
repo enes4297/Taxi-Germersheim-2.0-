@@ -225,6 +225,143 @@
     return { ok: true, data };
   }
 
+  const DOC_BUCKET = "employee-documents";
+  const DOC_MAX_BYTES = 10 * 1024 * 1024;
+  const DOC_MIME = ["application/pdf", "image/jpeg", "image/png"];
+
+  /**
+   * Dokumenttypen aus der Datenbank.
+   */
+  async function getDocumentTypes() {
+    const cl = await client();
+    if (!cl) return [];
+    const { data, error } = await cl
+      .from("document_types")
+      .select("id, key, label")
+      .order("label", { ascending: true });
+    if (error) {
+      console.error("Dokumenttypen konnten nicht geladen werden.", error.code);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Eigene Einreichungen laden.
+   * RLS (document_submissions_select_self) beschraenkt auf den eigenen
+   * Mitarbeiter.
+   */
+  async function getMyDocumentSubmissions() {
+    const cl = await client();
+    if (!cl) return [];
+    const { data, error } = await cl
+      .from("document_submissions")
+      .select("id, employee_id, document_type_id, file_path, file_name, mime_type, status, note, submitted_at, document_types(label)")
+      .order("submitted_at", { ascending: false });
+    if (error) {
+      console.error("Einreichungen konnten nicht geladen werden.", error.code);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Datei hochladen UND den zugehoerigen Datensatz anlegen.
+   *
+   * Ablauf und Fehlerbehandlung
+   *   1. Datei in den privaten Bucket, Pfad <auth.uid()>/<jahr>/<uuid>.<ext>.
+   *      Die Policy erzwingt serverseitig, dass der erste Ordner die eigene
+   *      auth.uid() ist - ein fremder Pfad ist nicht moeglich.
+   *   2. Datensatz in document_submissions mit genau diesem Pfad.
+   *   3. Scheitert Schritt 2, wird die soeben hochgeladene Datei wieder
+   *      entfernt, damit keine verwaiste Datei zurueckbleibt. Die Loeschung
+   *      ist durch die Policy auf den eigenen Ordner begrenzt.
+   *
+   * Rueckgabe { ok, data } nur, wenn BEIDES gespeichert ist.
+   */
+  async function uploadDocumentSubmission({ file, documentTypeId, note }) {
+    if (!file) return { ok: false, error: "NO_FILE" };
+    if (file.size > DOC_MAX_BYTES) return { ok: false, error: "FILE_TOO_LARGE" };
+    if (!DOC_MIME.includes(file.type)) return { ok: false, error: "FILE_TYPE_NOT_ALLOWED" };
+
+    const cl = await client();
+    if (!cl) return { ok: false, error: "SUPABASE_NOT_CONFIGURED" };
+
+    const session = await checkSession();
+    if (!session?.employeeId || !session?.user?.id) {
+      return { ok: false, error: "NO_EMPLOYEE_PROFILE" };
+    }
+
+    const ext = ({
+      "application/pdf": "pdf",
+      "image/jpeg": "jpg",
+      "image/png": "png"
+    })[file.type] || "bin";
+
+    /* Eindeutiger Name: kein Ueberschreiben, auch nicht eigener Dateien. */
+    const unique = (crypto?.randomUUID && crypto.randomUUID()) ||
+      `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const path = `${session.user.id}/${new Date().getFullYear()}/${unique}.${ext}`;
+
+    const uploaded = await cl.storage.from(DOC_BUCKET).upload(path, file, {
+      contentType: file.type,
+      upsert: false
+    });
+    if (uploaded.error) {
+      console.error("Datei konnte nicht hochgeladen werden.", uploaded.error.message);
+      return { ok: false, error: uploaded.error.message || "UPLOAD_FAILED", stage: "upload" };
+    }
+
+    const { data, error } = await cl
+      .from("document_submissions")
+      .insert({
+        employee_id: session.employeeId,
+        document_type_id: documentTypeId || null,
+        file_path: path,
+        file_name: file.name,
+        mime_type: file.type,
+        status: "submitted",
+        note: note ? String(note).trim() : null
+      })
+      .select("id, employee_id, document_type_id, file_path, file_name, mime_type, status, note, submitted_at")
+      .single();
+
+    if (error || !data?.id) {
+      /* Begrenzte Bereinigung: eigene, gerade hochgeladene Datei entfernen. */
+      const cleanup = await cl.storage.from(DOC_BUCKET).remove([path]);
+      if (cleanup.error) {
+        console.error("Verwaiste Datei konnte nicht entfernt werden.", cleanup.error.message);
+      }
+      console.error("Einreichung konnte nicht gespeichert werden.", error?.message);
+      return {
+        ok: false,
+        error: error?.message || "INSERT_FAILED",
+        stage: "record",
+        cleaned: !cleanup.error
+      };
+    }
+
+    return { ok: true, data };
+  }
+
+  /**
+   * Kurz gueltige signierte URL fuer eine eigene Datei.
+   * Der Bucket ist privat; es gibt keine oeffentlichen URLs.
+   */
+  async function getSignedDocumentUrl(filePath, expiresInSeconds = 60) {
+    if (!filePath) return null;
+    const cl = await client();
+    if (!cl) return null;
+    const { data, error } = await cl.storage
+      .from(DOC_BUCKET)
+      .createSignedUrl(filePath, expiresInSeconds);
+    if (error) {
+      console.error("Signierte URL konnte nicht erzeugt werden.", error.message);
+      return null;
+    }
+    return data?.signedUrl || null;
+  }
+
   /**
    * Eigene Krankmeldungen laden.
    * RLS (sickness_reports_select_self) beschränkt auf den eigenen Mitarbeiter.
@@ -236,7 +373,7 @@
     if (!cl) return [];
     const { data, error } = await cl
       .from("sickness_reports")
-      .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at")
+      .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at, document_submission_id")
       .order("start_date", { ascending: false });
     if (error) {
       console.error("Krankmeldungen konnten nicht geladen werden.", error.code);
@@ -254,7 +391,7 @@
    * Dateianhänge werden bewusst NICHT übertragen: document_submission_id
    * bleibt null, solange es keinen Upload-Weg gibt.
    */
-  async function createSicknessReport({ startDate, expectedEndDate, note }) {
+  async function createSicknessReport({ startDate, expectedEndDate, note, documentSubmissionId }) {
     const cl = await client();
     if (!cl) {
       return { ok: false, error: "SUPABASE_NOT_CONFIGURED" };
@@ -271,14 +408,17 @@
       expected_end_date: expectedEndDate || null,
       note: note ? String(note).trim() : null,
       submission_source: "Mitarbeiterportal",
-      document_submission_id: null,
+      /* Falls ein Nachweis eingereicht wurde, wird er hier verknuepft.
+         Die Policy prueft serverseitig, dass die Einreichung dem eigenen
+         Mitarbeiter gehoert - fremde IDs werden abgelehnt. */
+      document_submission_id: documentSubmissionId || null,
       status: "submitted"
     };
 
     const { data, error } = await cl
       .from("sickness_reports")
       .insert(payload)
-      .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at")
+      .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at, document_submission_id")
       .single();
 
     if (error) {
@@ -337,6 +477,10 @@
     createVacationRequest,
     getMySicknessReports,
     createSicknessReport,
+    getDocumentTypes,
+    getMyDocumentSubmissions,
+    uploadDocumentSubmission,
+    getSignedDocumentUrl,
     getVehicle,
     isPlanPublished
   };

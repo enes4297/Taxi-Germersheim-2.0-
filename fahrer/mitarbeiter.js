@@ -10,7 +10,14 @@
     supabaseShifts: [],     /* veröffentlichte Schichten aus Supabase */
     supabaseVehicles: {},   /* { vehicleId: vehicleObjekt } */
     supabaseVacationRequests: [],
-    supabaseSicknessReports: []  /* eigene Krankmeldungen aus Supabase */
+    supabaseSicknessReports: [],   /* eigene Krankmeldungen aus Supabase */
+    supabaseDocumentTypes: [],     /* aus public.document_types */
+    supabaseDocumentSubmissions: [],
+    /* Bereits hochgeladener Krankenschein, dessen Krankmeldung noch nicht
+       gespeichert werden konnte. Wird bei einem erneuten Versuch
+       wiederverwendet, damit weder die Datei noch die Einreichung doppelt
+       entsteht. */
+    pendingSicknessAttachment: null
   };
 
   function requireDemoSession() {
@@ -106,6 +113,19 @@
       .replace(/Fuehrerschein/g, "Führerschein");
   }
 
+  /* Echtes HTML-Escaping fuer Werte aus der Datenbank.
+     ACHTUNG: visibleLabel() darunter ist eine Umlaut-Transliteration fuer
+     Demo-Texte, KEIN Escaper - und es veraendert Zeichenfolgen wie "ue".
+     Fuer IDs und Datenbankinhalte deshalb immer escHtml() verwenden. */
+  function escHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function visibleLabel(value) {
     return String(value || "")
       .replace(/ae/g, "ä")
@@ -168,6 +188,32 @@
 
   function reportError(feedbackSelector, text) {
     setFeedback(feedbackSelector, text, "error");
+  }
+
+  /* Verstaendliche Meldung zu einem fehlgeschlagenen Upload. */
+  function uploadErrorText(result) {
+    switch (result?.error) {
+      case "FILE_TOO_LARGE":
+        return "Die Datei ist größer als 10 MB.";
+      case "FILE_TYPE_NOT_ALLOWED":
+        return "Nur PDF, JPEG und PNG sind erlaubt.";
+      case "NO_FILE":
+        return "Bitte wähle zuerst eine Datei aus.";
+      case "NO_EMPLOYEE_PROFILE":
+        return "Für dein Konto ist kein aktiver Mitarbeiterzugang hinterlegt.";
+      default:
+        return result?.stage === "record"
+          ? "Die Datei wurde übertragen, konnte aber nicht zugeordnet werden."
+          : "Die Datei konnte nicht übertragen werden.";
+    }
+  }
+
+  /* Dateiauswahl und Vorschau eines Formulars zuruecksetzen. */
+  function resetUploadFields(form) {
+    if (!form) return;
+    form.querySelectorAll('input[type="file"]').forEach((input) => { input.value = ""; });
+    form.querySelectorAll("[data-portal-upload-filename]").forEach((n) => { n.textContent = "Keine Datei ausgewählt"; });
+    form.querySelectorAll("[data-portal-upload-preview]").forEach((n) => { n.hidden = true; n.innerHTML = ""; });
   }
 
   function closeModal() {
@@ -364,11 +410,73 @@
     }).join("")}</div>`;
   }
 
+  /* Dokumenttypen aus der Datenbank in die Auswahl uebernehmen.
+     Markup und Klassen bleiben unveraendert - nur die Quelle wechselt. */
+  function renderDocumentTypes() {
+    const grid = document.querySelector(".doc-type-grid");
+    if (!grid) return;
+    const types = Array.isArray(state.supabaseDocumentTypes) ? state.supabaseDocumentTypes : [];
+    if (!types.length) return;
+
+    const ICONS = {
+      fuehrerschein: "🪪",
+      personenbefoerderungsschein: "🚕",
+      krankenschein_au: "🩺",
+      sonstiges: "📄"
+    };
+
+    grid.innerHTML = types.map((t, index) => `
+      <button class="doc-type-card${index === 0 ? " is-selected" : ""}" type="button"
+              data-doc-type="${escHtml(t.id)}" data-doc-type-label="${escHtml(t.label)}">
+        <span>${ICONS[t.key] || "📄"}</span>
+        <strong>${escHtml(t.label)}</strong>
+      </button>`).join("");
+
+    const hidden = document.querySelector("[data-portal-doc-type-hidden]");
+    if (hidden) hidden.value = types[0]?.id || "";
+  }
+
+  function documentTypeLabel(row) {
+    if (row?.document_types?.label) return row.document_types.label;
+    const match = state.supabaseDocumentTypes.find((t) => t.id === row?.document_type_id);
+    return match ? match.label : "Dokument";
+  }
+
   function renderDocs() {
-    const e = emp();
-    if (!e) return;
     const node = document.querySelector("[data-portal-doc-list]");
     if (!node) return;
+
+    const supabaseMode = Boolean(ES && ES.isConfigured());
+    if (supabaseMode) {
+      const subs = Array.isArray(state.supabaseDocumentSubmissions) ? state.supabaseDocumentSubmissions : [];
+      const strandedCount = state.data.documents.filter((d) => d.transmitted === false || Boolean(d.demoFileName)).length;
+      const hint = strandedCount > 0
+        ? `<p class="demo-note">Auf diesem Gerät liegen noch ${strandedCount} ältere, nicht übermittelte Dokumenteinträge aus einer früheren Version. Sie werden nicht nachträglich übertragen.</p>`
+        : "";
+
+      if (!subs.length) {
+        node.innerHTML = '<p class="demo-note">Noch kein Dokument übermittelt.</p>' + hint;
+        return;
+      }
+
+      node.innerHTML = `<div class="driver-list">${subs.map((s) => `
+        <article class="doc-card">
+          <div class="doc-card-head">
+            <div>
+              <strong>${escHtml(documentTypeLabel(s))}</strong>
+              <p>${escHtml(s.file_name || "Datei")} · ${escHtml(formatDate((s.submitted_at || "").slice(0, 10)))}</p>
+            </div>
+            <span class="status-pill active">Übermittelt</span>
+          </div>
+          <div class="driver-item-actions">
+            <button class="driver-btn" type="button" data-portal-doc-open="${escHtml(s.id)}">Ansehen</button>
+          </div>
+        </article>`).join("")}</div>${hint}`;
+      return;
+    }
+
+    const e = emp();
+    if (!e) return;
     const docs = state.data.documents.filter((d) => d.employeeId === e.id);
     node.innerHTML = docs.length ? `<div class="driver-list">${docs.map((d) => {
       const statusText = d.status === "abgelaufen" ? "Abgelaufen" : d.status === "fehlt" ? "Fehlt" : d.status === "laeuft bald ab" ? "Läuft bald ab" : "Gültig";
@@ -568,6 +676,16 @@
         const sickness = await ES.getMySicknessReports();
         state.supabaseSicknessReports = Array.isArray(sickness) ? sickness : [];
       }
+
+      /* Dokumenttypen und eigene Einreichungen. */
+      if (typeof ES.getDocumentTypes === "function") {
+        const types = await ES.getDocumentTypes();
+        state.supabaseDocumentTypes = Array.isArray(types) ? types : [];
+      }
+      if (typeof ES.getMyDocumentSubmissions === "function") {
+        const subs = await ES.getMyDocumentSubmissions();
+        state.supabaseDocumentSubmissions = Array.isArray(subs) ? subs : [];
+      }
     } catch (err) {
       console.error("Dienstplandaten konnten nicht geladen werden.", err?.message);
     }
@@ -736,6 +854,13 @@
     if (hidden) hidden.value = type;
   }
 
+  /* Erste verfuegbare Dokumentart auswaehlen - unabhaengig davon, ob die
+     Auswahl aus der Datenbank oder aus dem statischen Markup stammt. */
+  function selectFirstDocumentType() {
+    const first = document.querySelector("[data-doc-type]");
+    if (first) selectDocumentType(first.getAttribute("data-doc-type"));
+  }
+
   function setActiveSection(section, options = {}) {
     const allowed = ["dienstplan", "urlaub", "krank", "dokumente", "mitteilungen", "profil"];
     const safeSection = allowed.includes(section) ? section : "dienstplan";
@@ -836,7 +961,42 @@
       if (quick) {
         const target = quick.getAttribute("data-portal-quick-action") || "dienstplan";
         setActiveSection(target);
-        if (target === "dokumente") selectDocumentType("Führerschein");
+        if (target === "dokumente") selectFirstDocumentType();
+        return;
+      }
+
+      /* Eigenen Nachweis oeffnen. Der Bucket ist privat - es gibt keine
+         oeffentliche URL. Stattdessen eine nur kurz gueltige signierte URL,
+         die bei jedem Klick neu erzeugt wird. */
+      const docOpen = event.target.closest("[data-portal-doc-open]");
+      if (docOpen) {
+        const id = docOpen.getAttribute("data-portal-doc-open") || "";
+        const row = state.supabaseDocumentSubmissions.find((s) => s.id === id);
+        if (!row || !ES || typeof ES.getSignedDocumentUrl !== "function") return;
+
+        /* Das Fenster MUSS synchron im Klick geoeffnet werden. Ein
+           window.open() erst nach dem await wuerde vom Popup-Blocker
+           verworfen. Die signierte Adresse wird danach nachgereicht. */
+        const fenster = window.open("", "_blank");
+        if (fenster) {
+          try { fenster.opener = null; } catch (_e) { /* egal */ }
+        }
+
+        docOpen.disabled = true;
+        ES.getSignedDocumentUrl(row.file_path, 60)
+          .then((url) => {
+            if (url && fenster) {
+              fenster.location.href = url;
+            } else {
+              if (fenster) fenster.close();
+              reportError("[data-portal-doc-feedback]", "Das Dokument konnte nicht geöffnet werden. Bitte versuche es noch einmal.");
+            }
+          })
+          .catch(() => {
+            if (fenster) fenster.close();
+            reportError("[data-portal-doc-feedback]", "Das Dokument konnte nicht geöffnet werden. Bitte versuche es noch einmal.");
+          })
+          .finally(() => { docOpen.disabled = false; });
         return;
       }
 
@@ -1018,16 +1178,48 @@
           return;
         }
 
-        /* Echte Uebertragung nach public.sickness_reports.
-           Ein Dateianhang wird bewusst NICHT mitgeschickt. */
+        /* Echte Uebertragung nach public.sickness_reports, optional mit
+           angehaengtem Krankenschein. */
         if (ES && ES.isConfigured() && typeof ES.createSicknessReport === "function") {
           const submitBtn = absenceForm.querySelector('button[type="submit"]');
+          const fileInput = absenceForm.querySelector('input[type="file"]');
+          const file = fileInput?.files?.[0] || null;
           if (submitBtn) submitBtn.disabled = true;
           try {
+            /* Schritt 1: Anhang. Ein bereits erfolgreich hochgeladener
+               Nachweis aus einem vorherigen Versuch wird wiederverwendet -
+               so entstehen bei Wiederholungen keine Doppel. */
+            let attachmentId = state.pendingSicknessAttachment?.id || null;
+
+            if (file && !attachmentId) {
+              if (typeof ES.uploadDocumentSubmission !== "function") {
+                reportError("[data-portal-absence-feedback]", "Anhänge werden derzeit nicht unterstützt. Bitte reiche den Krankenschein direkt bei der Zentrale ein.");
+                return;
+              }
+              const typeId = state.supabaseDocumentTypes.find((t) => t.key === "krankenschein_au")?.id || null;
+              const up = await ES.uploadDocumentSubmission({
+                file,
+                documentTypeId: typeId,
+                note: "Krankenschein zur Krankmeldung"
+              });
+
+              if (!up?.ok || !up?.data?.id) {
+                /* Teilfehler: Der Nachweis fehlt. Es wird KEINE Krankmeldung
+                   angelegt, damit nichts als vollstaendig uebermittelt gilt. */
+                reportError("[data-portal-absence-feedback]", uploadErrorText(up) + " Die Krankmeldung wurde deshalb noch nicht gesendet. Deine Eingaben bleiben erhalten.");
+                return;
+              }
+              attachmentId = up.data.id;
+              state.pendingSicknessAttachment = { id: attachmentId, name: file.name };
+            }
+
+            /* Schritt 2: Krankmeldung. Erst hier entsteht ein Datensatz -
+               ein Fehlschlag hinterlaesst also keine halbe Krankmeldung. */
             const result = await ES.createSicknessReport({
               startDate,
               expectedEndDate: expectedEnd || null,
-              note
+              note,
+              documentSubmissionId: attachmentId
             });
 
             /* Erfolg nur bei bestaetigtem Datensatz mit ID. */
@@ -1039,16 +1231,27 @@
               return;
             }
 
+            const mitAnhang = Boolean(attachmentId);
+            state.pendingSicknessAttachment = null;
+
             const reports = await ES.getMySicknessReports();
             state.supabaseSicknessReports = Array.isArray(reports) ? reports : [result.data];
+            if (typeof ES.getMyDocumentSubmissions === "function") {
+              const subs = await ES.getMyDocumentSubmissions();
+              state.supabaseDocumentSubmissions = Array.isArray(subs) ? subs : state.supabaseDocumentSubmissions;
+            }
             absenceForm.reset();
+            resetUploadFields(absenceForm);
             renderAbsences();
+            renderDocs();
             renderHome();
             renderMessageSummary();
             reportTransmitted(
               "[data-portal-absence-feedback]",
               "Krankmeldung übermittelt",
-              "Krankmeldung wurde übermittelt und liegt der Zentrale vor. Ein Nachweis wurde dabei nicht mitgesendet."
+              mitAnhang
+                ? "Krankmeldung wurde mit Krankenschein übermittelt und liegt der Zentrale vor."
+                : "Krankmeldung wurde übermittelt und liegt der Zentrale vor. Es wurde kein Nachweis angehängt."
             );
             return;
           } catch (err) {
@@ -1089,11 +1292,60 @@
 
     const docForm = document.querySelector("[data-portal-doc-form]");
     if (docForm) {
-      docForm.addEventListener("submit", (event) => {
+      docForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const fd = new FormData(docForm);
         const fileInput = docForm.querySelector('input[type="file"]');
         const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+
+        /* Echter Upload: Datei in den privaten Bucket, danach der Datensatz.
+           Erfolg wird erst gemeldet, wenn BEIDES gespeichert ist. */
+        if (ES && ES.isConfigured() && typeof ES.uploadDocumentSubmission === "function") {
+          if (!file) {
+            reportError("[data-portal-doc-feedback]", "Bitte wähle zuerst eine Datei aus.");
+            return;
+          }
+          const submitBtn = docForm.querySelector('button[type="submit"]');
+          if (submitBtn) submitBtn.disabled = true;
+          try {
+            const result = await ES.uploadDocumentSubmission({
+              file,
+              documentTypeId: String(fd.get("type") || "") || null,
+              note: String(fd.get("note") || "")
+            });
+
+            if (!result?.ok || !result?.data?.id) {
+              let text = uploadErrorText(result);
+              if (result?.stage === "record") {
+                text += result.cleaned
+                  ? " Die hochgeladene Datei wurde wieder entfernt."
+                  : " Bitte melde dich bei der Zentrale.";
+              }
+              reportError("[data-portal-doc-feedback]", text + " Deine Eingaben bleiben erhalten.");
+              return;
+            }
+
+            const subs = await ES.getMyDocumentSubmissions();
+            state.supabaseDocumentSubmissions = Array.isArray(subs) ? subs : [result.data];
+            docForm.reset();
+            resetUploadFields(docForm);
+            renderDocs();
+            renderHome();
+            renderMessageSummary();
+            reportTransmitted(
+              "[data-portal-doc-feedback]",
+              "Dokument übermittelt",
+              "Dokument wurde übermittelt und liegt der Zentrale vor."
+            );
+            return;
+          } catch (err) {
+            console.error("Dokument konnte nicht uebermittelt werden.", err?.message || err);
+            reportError("[data-portal-doc-feedback]", "Das Dokument konnte nicht übermittelt werden. Deine Eingaben bleiben erhalten. Bitte versuche es noch einmal oder melde dich direkt bei der Zentrale.");
+            return;
+          } finally {
+            if (submitBtn) submitBtn.disabled = false;
+          }
+        }
 
         /* Dokumente werden von diesem Portal an KEIN Backend gesendet: Es
            gibt hier keinen Upload-Aufruf und keinen Schreibzugriff auf
@@ -1115,7 +1367,7 @@
         renderDocs();
         renderHome();
         renderMessageSummary();
-        selectDocumentType("Führerschein");
+        selectFirstDocumentType();
         reportNotTransmitted("[data-portal-doc-feedback]", "Dein Dokument");
       });
     }
@@ -1152,11 +1404,12 @@
       window.AdminUiText.observeDocument(document);
     }
 
+    renderDocumentTypes();
     render();
     bind();
     bindDateHints();
     bindUploadUI();
-    selectDocumentType("Führerschein");
+    selectFirstDocumentType();
     setActiveSection("dienstplan", { scroll: false });
 
     /* Auto-Logout nur für Supabase-Nutzer starten */

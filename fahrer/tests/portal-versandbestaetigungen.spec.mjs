@@ -35,7 +35,7 @@ function configStub(configured) {
 const ES_STUB = `
 (() => {
   const T = window.__TG_TEST || {};
-  window.__TG_CALLS = { createVacationRequest: [], createSicknessReport: [] };
+  window.__TG_CALLS = { createVacationRequest: [], createSicknessReport: [], uploadDocumentSubmission: [] };
 
   async function createVacationRequest(payload) {
     window.__TG_CALLS.createVacationRequest.push(payload);
@@ -76,10 +76,50 @@ const ES_STUB = `
     return { ok: true, data: row };
   }
 
+  async function uploadDocumentSubmission(payload) {
+    const T2 = window.__TG_TEST || {};
+    window.__TG_CALLS.uploadDocumentSubmission.push({
+      name: payload.file?.name, size: payload.file?.size, type: payload.file?.type,
+      documentTypeId: payload.documentTypeId, note: payload.note
+    });
+    const mode = T2.uploadMode || "success";
+    /* Die Groessen- und Typpruefung sitzt in der echten Implementierung vor
+       dem Netzaufruf - hier gleich nachgebildet. */
+    if (!payload.file) return { ok: false, error: "NO_FILE" };
+    if (payload.file.size > 10 * 1024 * 1024) return { ok: false, error: "FILE_TOO_LARGE" };
+    if (!["application/pdf", "image/jpeg", "image/png"].includes(payload.file.type)) {
+      return { ok: false, error: "FILE_TYPE_NOT_ALLOWED" };
+    }
+    if (mode === "throw") throw new Error("Netzwerk nicht erreichbar");
+    if (mode === "upload-error") return { ok: false, error: "UPLOAD_FAILED", stage: "upload" };
+    if (mode === "record-error") return { ok: false, error: "INSERT_FAILED", stage: "record", cleaned: true };
+    if (mode === "record-error-dirty") return { ok: false, error: "INSERT_FAILED", stage: "record", cleaned: false };
+
+    const row = {
+      id: "dddddddd-eeee-4fff-8aaa-" + String(window.__TG_CALLS.uploadDocumentSubmission.length).padStart(12, "0"),
+      employee_id: T2.employeeId,
+      document_type_id: payload.documentTypeId,
+      file_path: T2.authUserId + "/2099/" + payload.file.name,
+      file_name: payload.file.name,
+      mime_type: payload.file.type,
+      status: "submitted",
+      note: payload.note || null,
+      submitted_at: new Date().toISOString(),
+      document_types: { label: "Krankenschein / AU" }
+    };
+    (window.__TG_TEST.documentSubmissions = window.__TG_TEST.documentSubmissions || []).push(row);
+    return { ok: true, data: row };
+  }
+
   window.EmployeeSupabase = {
     isConfigured: () => Boolean((window.__TG_TEST || {}).configured),
     getMySicknessReports: async () => ((window.__TG_TEST || {}).sicknessReports || []).slice(),
     createSicknessReport,
+    getDocumentTypes: async () => ((window.__TG_TEST || {}).documentTypes || []).slice(),
+    getMyDocumentSubmissions: async () => ((window.__TG_TEST || {}).documentSubmissions || []).slice(),
+    uploadDocumentSubmission,
+    getSignedDocumentUrl: async (path) =>
+      (window.__TG_TEST || {}).signedUrlFails ? null : "/fahrer/manifest.webmanifest?signed=" + encodeURIComponent(path || ""),
     signIn: async () => ({ user: { id: T.authUserId }, employeeId: T.employeeId }),
     checkSession: async () =>
       (window.__TG_TEST || {}).configured
@@ -107,7 +147,7 @@ const ES_STUB = `
  * configured=true  -> Supabase-Modus mit Stub-Backend
  * configured=false -> lokaler Modus ohne Backend
  */
-async function openPortal(page, { configured = true, vacationMode = "success", sicknessMode = "success" } = {}) {
+async function openPortal(page, { configured = true, vacationMode = "success", sicknessMode = "success", uploadMode = "success" } = {}) {
   await page.route("**/admin/supabase-config.js", (route) =>
     route.fulfill({ status: 200, contentType: "text/javascript", body: configStub(configured) })
   );
@@ -133,7 +173,15 @@ async function openPortal(page, { configured = true, vacationMode = "success", s
       employeeId: configured ? "e0000000-0000-4000-8000-0000000000e1" : "MA-101",
       vacationRequests: [],
       sicknessReports: [],
-      sicknessMode
+      sicknessMode,
+      uploadMode,
+      documentSubmissions: [],
+      documentTypes: [
+        { id: "t-fuehrerschein", key: "fuehrerschein", label: "Führerschein" },
+        { id: "t-pbschein", key: "personenbefoerderungsschein", label: "Personenbeförderungsschein" },
+        { id: "t-krankenschein", key: "krankenschein_au", label: "Krankenschein / AU" },
+        { id: "t-sonstiges", key: "sonstiges", label: "Sonstiges" }
+      ]
     }
   );
 
@@ -284,10 +332,10 @@ test("T6 Krankmeldung wird uebermittelt und meldet Erfolg mit ID", async ({ page
   await openPortal(page, { configured: true, sicknessMode: "success" });
   await openSection(page, "krank");
 
-  /* Hinweis zum fehlenden Nachweis ist bereits vor dem Absenden sichtbar */
+  /* Hinweis zu Anhang und Grenzen ist bereits vor dem Absenden sichtbar */
   const notice = page.locator("[data-portal-absence-notice]");
   await expect(notice).toBeVisible();
-  await expect(notice).toContainText("Nachweis kann noch nicht mitgesendet werden");
+  await expect(notice).toContainText("höchstens 10 MB");
 
   await fillSickness(page);
   await page.click('[data-portal-absence-form] button[type="submit"]');
@@ -295,7 +343,7 @@ test("T6 Krankmeldung wird uebermittelt und meldet Erfolg mit ID", async ({ page
   const fb = page.locator("[data-portal-absence-feedback]");
   await expect(fb).toBeVisible();
   await expect(fb).toContainText("Krankmeldung wurde übermittelt und liegt der Zentrale vor");
-  await expect(fb).toContainText("Nachweis wurde dabei nicht mitgesendet");
+  await expect(fb).toContainText("Es wurde kein Nachweis angehängt");
   await expect(fb).not.toHaveClass(/is-error/);
   await expect(fb).not.toHaveClass(/is-warning/);
   await expect(page.locator("[data-portal-modal-title]")).toHaveText("Krankmeldung übermittelt");
@@ -358,18 +406,15 @@ test("T6d Krankmeldung: Netzwerkfehler meldet Fehler und stuerzt nicht ab", asyn
   await expect(page.locator('[data-portal-absence-form] button[type="submit"]')).toBeEnabled();
 });
 
-test("T6e Krankmeldung: Dateianhang ist deaktiviert und deutlich beschriftet", async ({ page }) => {
+test("T6e Krankmeldung: Dateianhang ist verfuegbar und mit Grenzen beschriftet", async ({ page }) => {
   await openPortal(page, { configured: true });
   await openSection(page, "krank");
 
   const fileInput = page.locator('[data-portal-absence-form] input[type="file"]');
-  await expect(fileInput).toBeDisabled();
-  const trigger = page.locator("[data-portal-absence-upload] .upload-trigger");
-  await expect(trigger).toBeDisabled();
-  await expect(trigger).toContainText("Dateianhang noch nicht verfügbar");
-  await expect(page.locator("[data-portal-absence-upload-hint]")).toContainText(
-    "Dateianhang noch nicht verfügbar"
-  );
+  await expect(fileInput).toBeEnabled();
+  await expect(fileInput).toHaveAttribute("accept", /application\/pdf/);
+  await expect(page.locator("[data-portal-absence-upload-hint]")).toContainText("höchstens 10 MB");
+  await expect(page.locator("[data-portal-absence-upload-hint]")).toContainText("PDF, JPEG oder PNG");
 });
 
 test("T6f Krankmeldung erscheint nach dem Neuladen weiterhin", async ({ page }) => {
@@ -415,13 +460,9 @@ test("T6g Krankmeldung ohne Backend meldet nicht uebermittelt", async ({ page })
 /* --------------------------------------------------------------------- */
 /* 7. Dokument ohne Uebertragung                                         */
 /* --------------------------------------------------------------------- */
-test("T7 Dokument meldet nie gesendet", async ({ page }) => {
-  await openPortal(page, { configured: true });
+test("T7 Dokument ohne Backend meldet nicht uebermittelt", async ({ page }) => {
+  await openPortal(page, { configured: false });
   await openSection(page, "dokumente");
-
-  const notice = page.locator("[data-portal-doc-notice]");
-  await expect(notice).toBeVisible();
-  await expect(notice).toContainText("nicht automatisch übermittelt");
 
   await page.click('[data-portal-doc-form] button[type="submit"]');
 
@@ -429,8 +470,6 @@ test("T7 Dokument meldet nie gesendet", async ({ page }) => {
   await expect(fb).toBeVisible();
   await expect(fb).toHaveText(NOT_TRANSMITTED);
   await expect(fb).toHaveClass(/is-warning/);
-  await expect(fb).not.toContainText("gesendet");
-
   await expect(page.locator("[data-portal-modal-title]")).toHaveText("Noch nicht übermittelt");
 });
 
@@ -556,6 +595,222 @@ test("T12 Zuruecknahme im lokalen Modus meldet keinen Servererfolg", async ({ pa
 /* --------------------------------------------------------------------- */
 /* 13. Nirgends im Portal steht faelschlich "gesendet"                   */
 /* --------------------------------------------------------------------- */
+/* --------------------------------------------------------------------- */
+/* U. Dokumentenupload                                                    */
+/* --------------------------------------------------------------------- */
+const PDF = { name: "nachweis.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 test") };
+const ZU_GROSS = { name: "gross.pdf", mimeType: "application/pdf", buffer: Buffer.alloc(11 * 1024 * 1024, 0x20) };
+const FALSCHER_TYP = { name: "liste.txt", mimeType: "text/plain", buffer: Buffer.from("kein erlaubter Typ") };
+
+async function setzeDatei(page, formSelector, datei) {
+  await page.setInputFiles(`${formSelector} input[type="file"]`, datei);
+}
+
+test("U1 Dokumenttypen kommen aus der Datenbank", async ({ page }) => {
+  await openPortal(page, { configured: true });
+  await openSection(page, "dokumente");
+
+  const karten = page.locator(".doc-type-grid [data-doc-type]");
+  await expect(karten).toHaveCount(4);
+  await expect(karten.nth(0)).toContainText("Führerschein");
+  await expect(karten.nth(2)).toContainText("Krankenschein / AU");
+
+  /* Das versteckte Feld traegt die ID, nicht die Beschriftung. */
+  await expect(page.locator("[data-portal-doc-type-hidden]")).toHaveValue("t-fuehrerschein");
+});
+
+test("U2 Dokument wird hochgeladen und erst danach als uebermittelt gemeldet", async ({ page }) => {
+  await openPortal(page, { configured: true, uploadMode: "success" });
+  await openSection(page, "dokumente");
+  await setzeDatei(page, "[data-portal-doc-form]", PDF);
+  await page.click('[data-portal-doc-form] button[type="submit"]');
+
+  const fb = page.locator("[data-portal-doc-feedback]");
+  await expect(fb).toContainText("Dokument wurde übermittelt und liegt der Zentrale vor");
+  await expect(fb).not.toHaveClass(/is-error/);
+  await expect(page.locator("[data-portal-modal-title]")).toHaveText("Dokument übermittelt");
+
+  const call = await page.evaluate(() => window.__TG_CALLS.uploadDocumentSubmission[0]);
+  expect(call).toMatchObject({ name: "nachweis.pdf", type: "application/pdf", documentTypeId: "t-fuehrerschein" });
+
+  const liste = page.locator("[data-portal-doc-list]");
+  await expect(liste).toContainText("Übermittelt");
+  await expect(liste).toContainText("nachweis.pdf");
+  await expect(liste).not.toContainText("Nicht übermittelt");
+});
+
+test("U3 zu grosse Datei wird abgelehnt", async ({ page }) => {
+  await openPortal(page, { configured: true });
+  await openSection(page, "dokumente");
+  await setzeDatei(page, "[data-portal-doc-form]", ZU_GROSS);
+  await page.click('[data-portal-doc-form] button[type="submit"]');
+
+  const fb = page.locator("[data-portal-doc-feedback]");
+  await expect(fb).toContainText("größer als 10 MB");
+  await expect(fb).toHaveClass(/is-error/);
+  await expect(page.locator("[data-portal-modal]")).toBeHidden();
+});
+
+test("U4 unerlaubter Dateityp wird abgelehnt", async ({ page }) => {
+  await openPortal(page, { configured: true });
+  await openSection(page, "dokumente");
+  await setzeDatei(page, "[data-portal-doc-form]", FALSCHER_TYP);
+  await page.click('[data-portal-doc-form] button[type="submit"]');
+
+  await expect(page.locator("[data-portal-doc-feedback]")).toContainText("Nur PDF, JPEG und PNG");
+  await expect(page.locator("[data-portal-modal]")).toBeHidden();
+});
+
+test("U5 Teilfehler: Datei uebertragen, Datensatz gescheitert - kein Erfolg", async ({ page }) => {
+  await openPortal(page, { configured: true, uploadMode: "record-error" });
+  await openSection(page, "dokumente");
+  await setzeDatei(page, "[data-portal-doc-form]", PDF);
+  await page.click('[data-portal-doc-form] button[type="submit"]');
+
+  const fb = page.locator("[data-portal-doc-feedback]");
+  await expect(fb).toContainText("konnte aber nicht zugeordnet werden");
+  await expect(fb).toContainText("Die hochgeladene Datei wurde wieder entfernt");
+  await expect(fb).toHaveClass(/is-error/);
+  await expect(page.locator("[data-portal-modal]")).toBeHidden();
+  await expect(page.locator("[data-portal-doc-list]")).not.toContainText("Übermittelt");
+});
+
+test("U6 Teilfehler ohne Bereinigung verweist an die Zentrale", async ({ page }) => {
+  await openPortal(page, { configured: true, uploadMode: "record-error-dirty" });
+  await openSection(page, "dokumente");
+  await setzeDatei(page, "[data-portal-doc-form]", PDF);
+  await page.click('[data-portal-doc-form] button[type="submit"]');
+
+  await expect(page.locator("[data-portal-doc-feedback]")).toContainText("Bitte melde dich bei der Zentrale");
+});
+
+test("U7 ohne Datei wird nichts hochgeladen", async ({ page }) => {
+  await openPortal(page, { configured: true });
+  await openSection(page, "dokumente");
+  await page.click('[data-portal-doc-form] button[type="submit"]');
+
+  await expect(page.locator("[data-portal-doc-feedback]")).toContainText("Bitte wähle zuerst eine Datei aus");
+  const calls = await page.evaluate(() => window.__TG_CALLS.uploadDocumentSubmission.length);
+  expect(calls).toBe(0);
+});
+
+test("U8 eigene Einreichung wird ueber eine signierte URL geoeffnet", async ({ page }) => {
+  await openPortal(page, { configured: true });
+  await openSection(page, "dokumente");
+  await setzeDatei(page, "[data-portal-doc-form]", PDF);
+  await page.click('[data-portal-doc-form] button[type="submit"]');
+  await page.click("[data-portal-close]");
+
+  const [popup] = await Promise.all([
+    page.waitForEvent("popup"),
+    page.click("[data-portal-doc-open]")
+  ]);
+  /* Das Fenster wird synchron im Klick geoeffnet (Popup-Blocker) und danach
+     auf die signierte Adresse umgeleitet. Keine oeffentliche URL. */
+  await popup.waitForURL(/signed=/, { timeout: 7000 });
+  expect(popup.url()).toContain("signed=");
+  await popup.close();
+});
+
+test("U9 Einreichungen erscheinen nach dem Neuladen weiterhin", async ({ page }) => {
+  await openPortal(page, { configured: true });
+  await openSection(page, "dokumente");
+  await setzeDatei(page, "[data-portal-doc-form]", PDF);
+  await page.click('[data-portal-doc-form] button[type="submit"]');
+  await expect(page.locator("[data-portal-doc-list]")).toContainText("nachweis.pdf");
+
+  const stored = await page.evaluate(() => window.__TG_TEST.documentSubmissions);
+  await page.addInitScript((rows) => {
+    const w = setInterval(() => {
+      if (window.__TG_TEST) { window.__TG_TEST.documentSubmissions = rows; clearInterval(w); }
+    }, 0);
+  }, stored);
+
+  await page.reload();
+  await expect(page.locator("body")).not.toHaveAttribute("data-portal-loading", /.*/);
+  await openSection(page, "dokumente");
+  await expect(page.locator("[data-portal-doc-list]")).toContainText("nachweis.pdf");
+  await expect(page.locator("[data-portal-doc-list]")).toContainText("Übermittelt");
+});
+
+/* --------------------------------------------------------------------- */
+/* K. Krankmeldung mit Anhang                                             */
+/* --------------------------------------------------------------------- */
+test("K1 Krankmeldung mit Krankenschein verknuepft den Anhang", async ({ page }) => {
+  await openPortal(page, { configured: true, sicknessMode: "success", uploadMode: "success" });
+  await openSection(page, "krank");
+  await fillSickness(page);
+  await setzeDatei(page, "[data-portal-absence-form]", PDF);
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+
+  const fb = page.locator("[data-portal-absence-feedback]");
+  await expect(fb).toContainText("mit Krankenschein übermittelt");
+
+  /* Der Anhang wird als Krankenschein-Typ hochgeladen und verknuepft. */
+  const up = await page.evaluate(() => window.__TG_CALLS.uploadDocumentSubmission[0]);
+  expect(up.documentTypeId).toBe("t-krankenschein");
+  const sick = await page.evaluate(() => window.__TG_CALLS.createSicknessReport[0]);
+  expect(sick.documentSubmissionId).toBeTruthy();
+});
+
+test("K2 ohne Anhang wird das ausdruecklich gesagt", async ({ page }) => {
+  await openPortal(page, { configured: true, sicknessMode: "success" });
+  await openSection(page, "krank");
+  await fillSickness(page);
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+
+  await expect(page.locator("[data-portal-absence-feedback]")).toContainText("Es wurde kein Nachweis angehängt");
+  const sick = await page.evaluate(() => window.__TG_CALLS.createSicknessReport[0]);
+  expect(sick.documentSubmissionId).toBeFalsy();
+});
+
+test("K3 Teilfehler beim Anhang: KEINE Krankmeldung wird angelegt", async ({ page }) => {
+  await openPortal(page, { configured: true, sicknessMode: "success", uploadMode: "upload-error" });
+  await openSection(page, "krank");
+  await fillSickness(page);
+  await setzeDatei(page, "[data-portal-absence-form]", PDF);
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+
+  const fb = page.locator("[data-portal-absence-feedback]");
+  await expect(fb).toContainText("Datei konnte nicht übertragen werden");
+  await expect(fb).toContainText("Krankmeldung wurde deshalb noch nicht gesendet");
+  await expect(fb).toHaveClass(/is-error/);
+
+  /* Entscheidend: keine halbe Krankmeldung in der Datenbank. */
+  const sickCalls = await page.evaluate(() => window.__TG_CALLS.createSicknessReport.length);
+  expect(sickCalls, "es darf keine Krankmeldung angelegt werden").toBe(0);
+
+  /* Eingaben bleiben erhalten */
+  await expect(page.locator('[data-portal-absence-form] input[name="start"]')).toHaveValue("2099-04-01");
+});
+
+test("K4 Wiederholung erzeugt weder doppelte Anhaenge noch doppelte Krankmeldungen", async ({ page }) => {
+  await openPortal(page, { configured: true, sicknessMode: "backend-error", uploadMode: "success" });
+  await openSection(page, "krank");
+  await fillSickness(page);
+  await setzeDatei(page, "[data-portal-absence-form]", PDF);
+
+  /* Erster Versuch: Anhang klappt, Krankmeldung scheitert. */
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+  await expect(page.locator("[data-portal-absence-feedback]")).toContainText(
+    "Krankmeldung konnte nicht übermittelt werden"
+  );
+
+  /* Zweiter Versuch nach Erholung des Backends. */
+  await page.evaluate(() => { window.__TG_TEST.sicknessMode = "success"; });
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+  await expect(page.locator("[data-portal-absence-feedback]")).toContainText("mit Krankenschein übermittelt");
+
+  const uploads = await page.evaluate(() => window.__TG_CALLS.uploadDocumentSubmission.length);
+  const sicks = await page.evaluate(() => window.__TG_CALLS.createSicknessReport);
+  expect(uploads, "Anhang darf nur einmal hochgeladen werden").toBe(1);
+  expect(sicks, "genau ein erfolgreicher Krankmeldungsversuch je Anlauf").toHaveLength(2);
+
+  /* In der Datenbank liegt genau EINE Krankmeldung. */
+  const gespeichert = await page.evaluate(() => window.__TG_TEST.sicknessReports.length);
+  expect(gespeichert, "nur eine gespeicherte Krankmeldung").toBe(1);
+});
+
 test("T13 Dokumentbereich verspricht keinen Versand", async ({ page }) => {
   await openPortal(page, { configured: true });
   await openSection(page, "dokumente");
