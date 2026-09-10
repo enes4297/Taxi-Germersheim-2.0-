@@ -75,7 +75,7 @@
           <button class="quick-action-card" type="button" data-portal-quick-action="krank">
             <span class="quick-icon">🩺</span>
             <strong>Krank melden</strong>
-            <span>Krankmeldung erfassen</span>
+            <span>Krankmeldung senden</span>
           </button>
           <button class="quick-action-card" type="button" data-portal-quick-action="dokumente">
             <span class="quick-icon">📄</span>
@@ -148,13 +148,13 @@
         <div class="section-titlebar">
           <div>
             <p class="panel-kicker">Schnellaktion</p>
-            <h2>Krankmeldung erfassen</h2>
+            <h2>Krankmeldung senden</h2>
           </div>
           <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
         </div>
         <div class="section-body">
           <div class="section-feedback is-warning" data-portal-absence-notice>
-            Krankmeldungen werden derzeit <strong>nicht automatisch übermittelt</strong>. Der Eintrag wird nur auf diesem Gerät gespeichert. Bitte melde dich zusätzlich direkt bei der Zentrale.
+            Die Krankmeldung wird an die Zentrale übermittelt. <strong>Ein Nachweis kann noch nicht mitgesendet werden</strong> – bitte reiche den Krankenschein zusätzlich direkt bei der Zentrale ein.
           </div>
           <div class="section-feedback" data-portal-absence-feedback hidden></div>
           <form class="portal-form" data-portal-absence-form>
@@ -170,21 +170,18 @@
             </label>
             <label>
               <span>Krankenschein / AU</span>
-              <div class="upload-shell">
-                <input class="upload-input" type="file" name="demoFile" accept="image/jpeg,image/png,application/pdf" capture="environment" data-portal-doc-input>
-                <button class="upload-trigger" type="button" data-portal-upload-trigger>📷 Foto oder Datei auswählen</button>
-                <div class="upload-preview" data-portal-upload-preview hidden></div>
-                <div class="upload-meta">
-                  <span data-portal-upload-filename>Keine Datei ausgewählt</span>
-                  <button class="upload-remove" type="button" data-portal-upload-remove>Entfernen</button>
-                </div>
+              <div class="upload-shell is-disabled" data-portal-absence-upload>
+                <input class="upload-input" type="file" name="demoFile" accept="image/jpeg,image/png,application/pdf" disabled aria-disabled="true">
+                <button class="upload-trigger" type="button" disabled aria-disabled="true">📷 Dateianhang noch nicht verfügbar</button>
               </div>
+              <small class="field-hint" data-portal-absence-upload-hint>Dateianhang noch nicht verfügbar. Bitte reiche den Krankenschein direkt bei der Zentrale ein.</small>
             </label>
             <label>
               <span>Notiz</span>
-              <input type="text" name="note" placeholder="Optional">
+              <input type="text" name="note" placeholder="Optional, z. B. Erreichbarkeit">
+              <small class="field-hint">Bitte keine Diagnosen oder medizinischen Angaben eintragen.</small>
             </label>
-            <button class="btn btn-warning" type="submit">Krankmeldung speichern</button>
+            <button class="btn btn-warning" type="submit">Krankmeldung senden</button>
           </form>
           <div data-portal-absence-list></div>
         </div>
