@@ -327,17 +327,23 @@
       .single();
 
     if (error || !data?.id) {
-      /* Begrenzte Bereinigung: eigene, gerade hochgeladene Datei entfernen. */
-      const cleanup = await cl.storage.from(DOC_BUCKET).remove([path]);
+      /* Begrenzte Bereinigung ueber die kontrollierte Funktion. Der Client
+         hat KEIN Loeschrecht auf storage.objects - die Funktion prueft
+         serverseitig Berechtigung, Pfadzugehoerigkeit und ob die Datei noch
+         unverknuepft ist. */
+      let cleaned = false;
+      const cleanup = await cl.rpc("cleanup_my_orphan_document", { p_path: path });
       if (cleanup.error) {
         console.error("Verwaiste Datei konnte nicht entfernt werden.", cleanup.error.message);
+      } else {
+        cleaned = cleanup.data === true;
       }
       console.error("Einreichung konnte nicht gespeichert werden.", error?.message);
       return {
         ok: false,
         error: error?.message || "INSERT_FAILED",
         stage: "record",
-        cleaned: !cleanup.error
+        cleaned
       };
     }
 
@@ -422,6 +428,25 @@
       .single();
 
     if (error) {
+      /* 23505 = Eindeutigkeitsverletzung auf (employee_id, start_date).
+         Das passiert genau dann, wenn der Server bereits gespeichert hatte,
+         die Antwort aber verloren ging und der Client es erneut versucht.
+         Es wird KEINE zweite Krankmeldung angelegt - stattdessen wird der
+         bereits vorhandene Datensatz zurueckgegeben. */
+      if (error.code === "23505") {
+        const existing = await cl
+          .from("sickness_reports")
+          .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at, document_submission_id")
+          .eq("employee_id", session.employeeId)
+          .eq("start_date", startDate)
+          .maybeSingle();
+
+        if (!existing.error && existing.data?.id) {
+          return { ok: true, data: existing.data, deduplicated: true };
+        }
+        return { ok: false, error: "ALREADY_SUBMITTED" };
+      }
+
       console.error("Krankmeldung konnte nicht gespeichert werden.", error.message || error.code);
       return { ok: false, error: error.message || "INSERT_FAILED" };
     }

@@ -62,6 +62,18 @@ const ES_STUB = `
     if (mode === "throw") throw new Error("Netzwerk nicht erreichbar");
     if (mode === "backend-error") return { ok: false, error: "INSERT_FAILED" };
     if (mode === "ok-without-row") return { ok: true, data: {} };
+    /* Verlorene Antwort: Der Server hatte beim ersten Mal bereits
+       gespeichert. Die echte Implementierung erkennt das an SQLSTATE 23505
+       und gibt den vorhandenen Datensatz zurueck, statt einen zweiten
+       anzulegen. */
+    if (mode === "duplicate") {
+      const vorhanden = (window.__TG_TEST.sicknessReports || [])
+        .find((r) => r.start_date === payload.startDate) || {
+          id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          start_date: payload.startDate, status: "submitted"
+        };
+      return { ok: true, data: vorhanden, deduplicated: true };
+    }
     const row = {
       id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
       employee_id: T.employeeId,
@@ -809,6 +821,25 @@ test("K4 Wiederholung erzeugt weder doppelte Anhaenge noch doppelte Krankmeldung
   /* In der Datenbank liegt genau EINE Krankmeldung. */
   const gespeichert = await page.evaluate(() => window.__TG_TEST.sicknessReports.length);
   expect(gespeichert, "nur eine gespeicherte Krankmeldung").toBe(1);
+});
+
+test("K5 verlorene Antwort erzeugt keine zweite Krankmeldung", async ({ page }) => {
+  /* Der Server hat bereits gespeichert, die Antwort ging verloren. Der
+     erneute Versuch laeuft in die Eindeutigkeit auf (employee_id, start_date)
+     und liefert den vorhandenen Datensatz zurueck.
+     ACHTUNG: Das hier ist nur die Oberflaeche. Den eigentlichen Nachweis
+     liefert der SQL-Test 39/40 gegen PostgreSQL. */
+  await openPortal(page, { configured: true, sicknessMode: "duplicate" });
+  await openSection(page, "krank");
+  await fillSickness(page);
+  await page.click('[data-portal-absence-form] button[type="submit"]');
+
+  const fb = page.locator("[data-portal-absence-feedback]");
+  await expect(fb).toContainText("Krankmeldung wurde übermittelt und liegt der Zentrale vor");
+  await expect(fb).not.toHaveClass(/is-error/);
+
+  const gespeichert = await page.evaluate(() => window.__TG_TEST.sicknessReports.length);
+  expect(gespeichert, "kein zweiter Datensatz").toBe(0);
 });
 
 test("T13 Dokumentbereich verspricht keinen Versand", async ({ page }) => {

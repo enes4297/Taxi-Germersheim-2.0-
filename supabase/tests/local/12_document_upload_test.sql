@@ -19,8 +19,17 @@ declare
   v_kunde_uid   uuid;
   v_inaktiv_uid uuid;
 
-  v_pfad_eigen  text;
-  v_pfad_fremd  text;
+  v_inaktiv_ma_uid constant uuid := '77777777-7777-4777-8777-777777777777';
+  v_inaktiv_emp    constant uuid := 'e0000000-0000-4000-8000-0000000000e4';
+
+  v_pfad_eigen   text;
+  v_pfad_eigen2  text;
+  v_pfad_fremd   text;
+  v_pfad_fremd2  text;
+  v_pfad_inaktiv text;
+  v_pfad_frei    text;
+  v_pfad_bestand text;
+  v_bool         boolean;
   v_sub_id      uuid;
   v_sub_fremd   uuid;
   v_rows        integer;
@@ -45,8 +54,14 @@ begin
   update public.profiles set employee_id = v_ma2_emp where auth_user_id = v_dispo_uid;
   v_ma2_uid := v_dispo_uid;
 
-  v_pfad_eigen := v_ma_uid::text || '/2099/testdata-012-eigen.pdf';
-  v_pfad_fremd := v_ma2_uid::text || '/2099/testdata-012-fremd.pdf';
+  v_pfad_eigen  := v_ma_uid::text  || '/2099/testdata-012-eigen.pdf';
+  v_pfad_fremd  := v_ma2_uid::text || '/2099/testdata-012-fremd.pdf';
+  v_pfad_fremd2 := v_ma2_uid::text || '/2099/testdata-012-fremd-vorhanden.pdf';
+
+  /* Eine EXISTIERENDE fremde Datei, damit Test 17 wirklich die Pfadbindung
+     der Policy prueft und nicht schon am Trigger scheitert. */
+  insert into storage.objects (bucket_id, name) values ('employee-documents', v_pfad_fremd2)
+  on conflict do nothing;
 
   ---------------------------------------------------------------------------
   -- A) Bucket-Einstellungen
@@ -231,11 +246,11 @@ begin
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
     insert into public.document_submissions (employee_id, file_path, status, note)
-    values (v_ma_emp, v_pfad_fremd, 'submitted', 'TESTDATA-012 fremdpfad');
+    values (v_ma_emp, v_pfad_fremd2, 'submitted', 'TESTDATA-012 fremdpfad');
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
-  insert into _tg_doc values (17, 'Fremder Dateipfad im eigenen Datensatz abgelehnt',
+  insert into _tg_doc values (17, 'Fremder (existierender) Dateipfad im eigenen Datensatz abgelehnt',
     coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
     case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
@@ -260,7 +275,11 @@ begin
   ---------------------------------------------------------------------------
   -- I) Krankmeldung mit FREMDEM Anhang
   ---------------------------------------------------------------------------
-  -- Fremde Einreichung als Eigentuemerrolle anlegen.
+  -- Fremde Einreichung als Eigentuemerrolle anlegen. Die zugehoerige Datei
+  -- muss dafuer existieren - der Trigger aus 011 verlangt das.
+  insert into storage.objects (bucket_id, name) values ('employee-documents', v_pfad_fremd)
+  on conflict do nothing;
+
   insert into public.document_submissions (employee_id, file_path, status, note)
   values (v_ma2_emp, v_pfad_fremd, 'submitted', 'TESTDATA-012 fremde einreichung')
   returning id into v_sub_fremd;
@@ -302,9 +321,9 @@ begin
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_rows := -1; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
-  insert into _tg_doc values (21, 'Fremde Datei kann nicht geloescht werden',
-    v_rows::text || ' Zeile(n) geloescht',
-    case when v_rows = 0 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+  insert into _tg_doc values (21, 'Direktes DELETE fremder Datei verweigert',
+    coalesce(v_sqlstate || ' ' || v_message, v_rows::text || ' Zeile(n) geloescht'),
+    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   begin
     perform set_config('role', 'authenticated', false);
@@ -315,9 +334,12 @@ begin
     v_sqlstate := null;
   exception when others then v_sqlstate := sqlstate; v_rows := -1; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
-  insert into _tg_doc values (22, 'Eigene verwaiste Datei kann bereinigt werden',
-    v_rows::text || ' Zeile(n) geloescht',
-    case when v_rows = 1 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+  /* Auch die EIGENE Datei ist per direktem DELETE nicht mehr entfernbar -
+     Bereinigung laeuft ausschliesslich ueber cleanup_my_orphan_document
+     (Tests 31 bis 35). */
+  insert into _tg_doc values (22, 'Direktes DELETE eigener Datei ebenfalls verweigert',
+    coalesce(v_sqlstate || ' ' || v_message, v_rows::text || ' Zeile(n) geloescht'),
+    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   ---------------------------------------------------------------------------
   -- L) Dokumenteingang im Adminbereich
@@ -348,13 +370,257 @@ begin
     v_rows::text || ' Zeile(n)', case when v_rows = 0 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
 
   ---------------------------------------------------------------------------
+  -- M) Nur AKTIVE MITARBEITER duerfen den eigenen Ordner nutzen
+  ---------------------------------------------------------------------------
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_kunde_uid, 'role', 'authenticated')::text, false);
+    insert into storage.objects (bucket_id, name)
+    values ('employee-documents', v_kunde_uid::text || '/2099/testdata-012-kunde.pdf');
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (25, 'Kunde laedt in den EIGENEN Ordner: verweigert',
+    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
+    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  update public.profiles set employee_id = null where auth_user_id = v_dispo_uid;
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_dispo_uid, 'role', 'authenticated')::text, false);
+    insert into storage.objects (bucket_id, name)
+    values ('employee-documents', v_dispo_uid::text || '/2099/testdata-012-dispo.pdf');
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (26, 'Disponent ohne Mitarbeiterberechtigung: verweigert',
+    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
+    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+  update public.profiles set employee_id = v_ma2_emp where auth_user_id = v_dispo_uid;
+
+  ---------------------------------------------------------------------------
+  -- N) Inaktiver Mitarbeiter: hochladen, lesen, bereinigen
+  ---------------------------------------------------------------------------
+  insert into auth.users (instance_id, id, aud, role, email, email_confirmed_at,
+                          raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+  values ('00000000-0000-0000-0000-000000000000', v_inaktiv_ma_uid, 'authenticated',
+          'authenticated', 'tg-test-012-inaktiv-ma@test.invalid', now(),
+          '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now())
+  on conflict (id) do nothing;
+
+  insert into public.employees (id, first_name, last_name, employment_type, status, active, portal_active)
+  values (v_inaktiv_emp, 'TESTDATA-012', 'Inaktiv', 'teilzeit', 'inactive', false, false)
+  on conflict (id) do update set active = false, portal_active = false;
+
+  insert into public.profiles (id, auth_user_id, employee_id, display_name, role, active)
+  values ('c0000000-0000-4000-8000-0000000000d1', v_inaktiv_ma_uid, v_inaktiv_emp,
+          'TESTDATA-012 Inaktiver Mitarbeiter', 'employee', true)
+  on conflict (id) do update set auth_user_id = excluded.auth_user_id,
+                                 employee_id  = excluded.employee_id, active = true;
+
+  v_pfad_inaktiv := v_inaktiv_ma_uid::text || '/2099/testdata-012-inaktiv.pdf';
+
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_inaktiv_ma_uid, 'role', 'authenticated')::text, false);
+    insert into storage.objects (bucket_id, name) values ('employee-documents', v_pfad_inaktiv);
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (27, 'Inaktiver Mitarbeiter laedt hoch: verweigert',
+    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
+    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  insert into storage.objects (bucket_id, name) values ('employee-documents', v_pfad_inaktiv)
+  on conflict do nothing;
+
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_inaktiv_ma_uid, 'role', 'authenticated')::text, false);
+    select count(*) into v_rows from storage.objects where name = v_pfad_inaktiv;
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_rows := -1; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (28, 'Inaktiver Mitarbeiter liest eigene Datei: verweigert',
+    v_rows::text || ' Zeile(n)', case when v_rows = 0 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_inaktiv_ma_uid, 'role', 'authenticated')::text, false);
+    perform public.cleanup_my_orphan_document(v_pfad_inaktiv);
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (29, 'Inaktiver Mitarbeiter bereinigt: verweigert',
+    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
+    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  ---------------------------------------------------------------------------
+  -- O) Kein direktes DELETE mehr fuer Mitarbeiter
+  ---------------------------------------------------------------------------
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
+    delete from storage.objects where name = v_pfad_inaktiv;
+    get diagnostics v_rows = row_count;
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; v_rows := -1; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (30, 'Direktes DELETE auf storage.objects verweigert',
+    coalesce(v_sqlstate || ' ' || v_message, v_rows::text || ' Zeile(n)'),
+    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  ---------------------------------------------------------------------------
+  -- P) Bereinigung nur fuer unverknuepfte Dateien
+  ---------------------------------------------------------------------------
+  v_pfad_frei := v_ma_uid::text || '/2099/testdata-012-frei.pdf';
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
+    insert into storage.objects (bucket_id, name) values ('employee-documents', v_pfad_frei);
+    v_bool := public.cleanup_my_orphan_document(v_pfad_frei);
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; v_bool := null; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (31, 'Eigener UNVERKNUEPFTER Upload wird bereinigt',
+    coalesce(v_bool::text, v_sqlstate || ' ' || v_message),
+    case when v_bool is true then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  select count(*) into v_rows from storage.objects where name = v_pfad_frei;
+  insert into _tg_doc values (32, 'Datei ist danach wirklich entfernt',
+    v_rows::text || ' Zeile(n)', case when v_rows = 0 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  v_pfad_eigen2 := v_ma_uid::text || '/2099/testdata-012-verknuepft.pdf';
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
+    insert into storage.objects (bucket_id, name) values ('employee-documents', v_pfad_eigen2);
+    insert into public.document_submissions (employee_id, file_path, file_name, mime_type, status, note)
+    values (v_ma_emp, v_pfad_eigen2, 'verknuepft.pdf', 'application/pdf', 'submitted', 'TESTDATA-012 verknuepft');
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (33, 'Einreichung mit vorhandener Datei erlaubt',
+    coalesce(v_sqlstate || ' ' || v_message, 'ohne Fehler'),
+    case when v_sqlstate is null then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
+    perform public.cleanup_my_orphan_document(v_pfad_eigen2);
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (34, 'Bereits EINGEREICHTE Datei kann nicht bereinigt werden',
+    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
+    case when v_sqlstate = '42501' and v_message like '%ALREADY_LINKED%'
+         then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  v_pfad_bestand := v_ma_uid::text || '/2099/testdata-012-bestand.pdf';
+  insert into storage.objects (bucket_id, name) values ('employee-documents', v_pfad_bestand);
+  insert into public.employee_documents (employee_id, file_path, status, note)
+  values (v_ma_emp, v_pfad_bestand, 'accepted', 'TESTDATA-012 bestand');
+
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
+    perform public.cleanup_my_orphan_document(v_pfad_bestand);
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (35, 'Im geprueften Bestand referenzierte Datei geschuetzt',
+    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
+    case when v_sqlstate = '42501' and v_message like '%ALREADY_LINKED%'
+         then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma2_uid, 'role', 'authenticated')::text, false);
+    perform public.cleanup_my_orphan_document(v_pfad_eigen2);
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (36, 'Fremder Pfad ueber die Funktion verweigert',
+    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
+    case when v_sqlstate = '42501' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  ---------------------------------------------------------------------------
+  -- Q) Verknuepfen auf eine nicht vorhandene Datei
+  ---------------------------------------------------------------------------
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
+    insert into public.document_submissions (employee_id, file_path, status, note)
+    values (v_ma_emp, v_ma_uid::text || '/2099/gibt-es-nicht.pdf', 'submitted', 'TESTDATA-012 fehlt');
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (37, 'Einreichung ohne vorhandene Datei abgelehnt',
+    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
+    case when coalesce(v_message, '') like '%DOCUMENT_FILE_NOT_FOUND%'
+         then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  ---------------------------------------------------------------------------
+  -- R) Keine zweite Krankmeldung bei verlorener Antwort
+  ---------------------------------------------------------------------------
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
+    insert into public.sickness_reports
+      (employee_id, start_date, expected_end_date, note, submission_source, status)
+    values (v_ma_emp, date '2099-07-07', date '2099-07-09', 'TESTDATA-012 wiederholung',
+            'Mitarbeiterportal', 'submitted');
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (38, 'Erste Krankmeldung wird gespeichert',
+    coalesce(v_sqlstate || ' ' || v_message, 'ohne Fehler'),
+    case when v_sqlstate is null then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  begin
+    perform set_config('role', 'authenticated', false);
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_ma_uid, 'role', 'authenticated')::text, false);
+    insert into public.sickness_reports
+      (employee_id, start_date, expected_end_date, note, submission_source, status)
+    values (v_ma_emp, date '2099-07-07', date '2099-07-09', 'TESTDATA-012 wiederholung',
+            'Mitarbeiterportal', 'submitted');
+    v_sqlstate := null;
+  exception when others then v_sqlstate := sqlstate; v_message := sqlerrm; end;
+  execute 'reset role'; perform set_config('request.jwt.claims', '', false);
+  insert into _tg_doc values (39, 'Wiederholung wird serverseitig abgewiesen (23505)',
+    coalesce(v_sqlstate || ' ' || v_message, 'DURCHGELAUFEN'),
+    case when v_sqlstate = '23505' then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  select count(*) into v_rows from public.sickness_reports
+   where employee_id = v_ma_emp and start_date = date '2099-07-07';
+  insert into _tg_doc values (40, 'Genau EINE Krankmeldung in der Datenbank',
+    v_rows::text || ' Zeile(n)', case when v_rows = 1 then 'BESTANDEN' else 'FEHLGESCHLAGEN' end);
+
+  ---------------------------------------------------------------------------
   -- Aufraeumen
   ---------------------------------------------------------------------------
   delete from public.sickness_reports      where note like 'TESTDATA-012%';
+  delete from public.employee_documents    where note like 'TESTDATA-012%';
   delete from public.document_submissions  where note like 'TESTDATA-012%';
   delete from storage.objects              where name like '%testdata-012%';
   update public.profiles set employee_id = null where auth_user_id = v_dispo_uid;
-  delete from public.employees where id = 'e0000000-0000-4000-8000-0000000000e3';
+  delete from public.profiles  where id = 'c0000000-0000-4000-8000-0000000000d1';
+  delete from public.employees where id in ('e0000000-0000-4000-8000-0000000000e3', v_inaktiv_emp);
+  delete from auth.users       where id = v_inaktiv_ma_uid;
 end
 $$;
 

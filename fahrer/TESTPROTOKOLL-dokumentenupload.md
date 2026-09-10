@@ -11,10 +11,35 @@ Stand 10.09.2026, Branch `feature/mitarbeiter-dokumentenupload`.
 
 | Prüfebene | Ergebnis | Art |
 |---|---|---|
-| RLS- und Policy-Tests, lokale PostgreSQL-Instanz | **24 von 24 bestanden** | echt, gegen PostgreSQL |
-| Browsertests Portal | **32 von 32 bestanden** | **simuliert**, Backend ersetzt |
+| RLS- und Policy-Tests, lokale PostgreSQL-Instanz | **40 von 40 bestanden** | echt, gegen PostgreSQL |
+| Browsertests Portal | **35 von 35 bestanden** | **simuliert**, Backend ersetzt |
 | Browsertests Admin (Krankmeldungen + Dokumenteingang) | **10 von 10 bestanden** | **simuliert**, Backend ersetzt |
 | Echte Storage-API (Upload, Download, signierte URLs) | **nicht getestet** | — |
+
+## Nachbesserung nach der Prüfung
+
+Zwei Berechtigungslücken der ersten Fassung wurden behoben:
+
+**1. Die Storage-Policies prüften nur den Pfad gegen `auth.uid()`.** Damit
+konnten auch Kunden, Disponenten ohne Mitarbeiterzuordnung und deaktivierte
+Mitarbeiter in ihrem eigenen Ordner arbeiten. Neu prüft
+`private.is_active_employee()` serverseitig eine vertrauenswürdige Zuordnung:
+aktives Profil → aktiver, portalfreigeschalteter Mitarbeiter. Der separate
+Lesezugriff aktiver Admins bleibt unverändert.
+
+**2. `delete_own` erlaubte das Löschen sämtlicher eigener Dateien.** Die
+DELETE-Policy wurde ersatzlos entfernt und `DELETE`/`UPDATE` auf
+`storage.objects` für `authenticated` widerrufen. Bereinigt wird nur noch über
+`public.cleanup_my_orphan_document(text)` — genau eine Datei, nur im eigenen
+Ordner, nur wenn sie von keinem Datensatz referenziert wird.
+
+**Zum Wettlauf zwischen Verknüpfen und Löschen:** Eine reine Policy genügt
+dafür nicht — sie prüft die Verknüpfung nur zum Auswertungszeitpunkt, ein
+gleichzeitiges `INSERT` könnte danach committen. Deshalb sperren beide Seiten
+dieselbe Zeile in `storage.objects`: Die Bereinigungsfunktion nimmt die Sperre
+und prüft **danach**; der Trigger `document_submissions_lock_object` nimmt beim
+Verknüpfen dieselbe Sperre und lehnt ab, wenn die Datei nicht mehr existiert
+(`23503 DOCUMENT_FILE_NOT_FOUND`). Damit kann keine Seite die andere übersehen.
 
 ## Was echt getestet wurde und was simuliert ist
 
@@ -67,6 +92,22 @@ verbindliche Grenze zieht der Storage-Dienst.
 | 22 | **Eigene** verwaiste Datei bereinigen | 1 Zeile |
 | 23 | Admin sieht den Dokumenteingang inkl. Namen | 2 Zeilen |
 | 24 | Kunde sieht keine Einreichungen | 0 Zeilen |
+| **25** | **Kunde lädt in den EIGENEN Ordner** | `42501 new row violates row-level security policy` |
+| **26** | **Disponent ohne Mitarbeiterberechtigung** | `42501` |
+| **27** | **Inaktiver Mitarbeiter lädt hoch** | `42501` |
+| **28** | **Inaktiver Mitarbeiter liest eigene Datei** | 0 Zeilen |
+| **29** | **Inaktiver Mitarbeiter bereinigt** | `42501 Not authorized` |
+| 30 | Direktes `DELETE` auf `storage.objects` | `42501 permission denied for table objects` |
+| 31 | Eigener **unverknüpfter** Upload wird bereinigt | `true` |
+| 32 | Datei ist danach wirklich entfernt | 0 Zeilen |
+| 33 | Einreichung mit vorhandener Datei erlaubt | ohne Fehler |
+| **34** | **Bereits eingereichte Datei** kann nicht bereinigt werden | `42501 DOCUMENT_ALREADY_LINKED` |
+| **35** | **Im geprüften Bestand referenzierte Datei** geschützt | `42501 DOCUMENT_ALREADY_LINKED` |
+| 36 | Fremder Pfad über die Funktion | `42501 Not authorized` |
+| 37 | Einreichung ohne vorhandene Datei (Wettlauf-Gegenstück) | `23503 DOCUMENT_FILE_NOT_FOUND` |
+| 38 | Erste Krankmeldung wird gespeichert | ohne Fehler |
+| **39** | **Wiederholung nach verlorener Antwort** | `23505 duplicate key value violates unique constraint "uq_sickness_reports_employee_start"` |
+| **40** | **Genau EINE Krankmeldung in der Datenbank** | 1 Zeile |
 
 ## 2. Browsertests Portal (Auswahl der neuen Fälle)
 
@@ -85,6 +126,24 @@ verbindliche Grenze zieht der Storage-Dienst.
 | K2 | Ohne Anhang wird das ausdrücklich gesagt | bestanden |
 | K3 | **Teilfehler beim Anhang → gar keine Krankmeldung angelegt** | bestanden |
 | K4 | Wiederholung: **1** Upload, **1** gespeicherte Krankmeldung | bestanden |
+| K5 | Verlorene Antwort → kein zweiter Datensatz, Erfolg wird gemeldet | bestanden |
+
+### Zur Wiederholung nach unklarem Netzwerkfehler
+
+Der Browsertest **K5** zeigt nur, dass die Oberfläche richtig reagiert. Er
+**beweist nicht**, dass kein zweiter Datensatz entsteht — das entscheidet die
+Datenbank. Der eigentliche Nachweis sind die SQL-Tests **39 und 40**: Der
+zweite identische `INSERT` scheitert an
+`uq_sickness_reports_employee_start` mit `23505`, und danach liegt genau
+**eine** Zeile in der Tabelle.
+
+Der Client erkennt `23505`, lädt den vorhandenen Datensatz und meldet Erfolg —
+statt einen zweiten anzulegen oder fälschlich einen Fehler zu zeigen.
+
+Fachliche Festlegung dabei: **je Mitarbeiter und Beginndatum genau eine
+Krankmeldung.** Das ist eine bewusste Einschränkung. Soll ein Mitarbeiter für
+denselben Beginntag mehrfach melden können, müsste die Eindeutigkeit anders
+geschnitten werden — etwa über einen vom Client mitgegebenen Vorgangsschlüssel.
 
 ## 3. Browsertests Admin
 
@@ -133,10 +192,19 @@ Portalseite selbst zeigte, wodurch dort die App lief und weiterleitete.
   eingebetteten Joins sind nicht abgedeckt.
 - **Kein GoTrue**: JWT-Ansprüche werden simuliert.
 - **Verwaiste Dateien**: Bereinigt wird nur der unmittelbare Fall „Upload
-  erfolgreich, Datensatz gescheitert". Bricht der Browser zwischen beiden
-  Schritten ab, bleibt eine Datei im eigenen Ordner liegen. Ein regelmäßiger
-  Aufräumlauf bräuchte weiter reichende Rechte und ist bewusst **nicht** Teil
-  dieses Schritts.
+  erfolgreich, Datensatz gescheitert", und zwar über
+  `cleanup_my_orphan_document`. Bricht der Browser zwischen beiden Schritten
+  ab, bleibt eine Datei im eigenen Ordner liegen. Ein regelmäßiger Aufräumlauf
+  bräuchte weiter reichende Rechte und ist bewusst **nicht** Teil dieses
+  Schritts.
+- **Die Sperre gegen den Wettlauf ist gegen PostgreSQL geprüft, aber nicht
+  unter echter Last.** Getestet sind beide Richtungen einzeln (Test 34/35 und
+  37); ein tatsächlich gleichzeitiger Ablauf aus zwei Verbindungen wurde nicht
+  provoziert.
+- **Die Eindeutigkeit auf `sickness_reports(employee_id, start_date)` legt
+  sich nur an, wenn keine Duplikate vorhanden sind.** Beim Einspielen in
+  Produktion bricht die Migration sonst an dieser Stelle ab — das ist
+  beabsichtigt, damit die Daten zuerst geprüft werden.
 - **Disponenten sehen keine Nachweise.** `document_submissions_select_admin` und
   die Storage-Policy erlauben nur `profiles.role = 'admin'`. Das entspricht dem
   bestehenden Schema und wurde nicht umgangen.
