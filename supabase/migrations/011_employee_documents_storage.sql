@@ -11,19 +11,23 @@
 --   1. den privaten Bucket 'employee-documents' (10 MB, nur PDF/JPEG/PNG)
 --   2. die vier Dokumenttypen, wiederholbar ohne Duplikate
 --   3. private.is_active_employee() als serverseitige Berechtigungspruefung
---   4. Storage-Policies fuer Upload und Lesen; Loeschen NICHT per Policy
---   5. public.cleanup_my_orphan_document() als kontrollierten Ablauf fuer
---      genau einen verwaisten Upload, mit Sperre gegen gleichzeitiges
---      Verknuepfen
---   6. verschaerfte Insert-Policies fuer document_submissions und
+--   4. Storage-Policies fuer Upload, Lesen und begrenztes Loeschen
+--   5. einen BEFORE-DELETE-Trigger auf storage.objects als verbindliche
+--      Pruefung gegen das Loeschen verknuepfter Nachweise
+--   6. Sperren auf allen Schreibwegen, ueber die ein Dateipfad verknuepft
+--      werden kann
+--   7. verschaerfte Insert-Policies fuer document_submissions und
 --      sickness_reports
---   7. eine Eindeutigkeit auf sickness_reports gegen doppelte Krankmeldungen
+--   8. einen technischen Vorgangsschluessel gegen doppelte Krankmeldungen
 --      bei verlorener Antwort
 --
 -- Ausdruecklich NICHT enthalten:
 --   - keine oeffentlichen Buckets, keine oeffentlichen URLs
 --   - keine UPDATE-Policy auf storage.objects (kein Ueberschreiben)
---   - KEINE breiten DELETE-Rechte fuer Mitarbeiter
+--   - KEIN SQL-DELETE auf storage.objects. Dateien werden ausschliesslich
+--     ueber die Storage-API entfernt, weil nur sie auch das Objekt im
+--     Speicher loescht und nicht bloss den Katalogeintrag:
+--     https://supabase.com/docs/guides/storage/schema/design
 --   - kein Freigabe- oder Pruefprozess
 --   - keine Aenderung an bestehenden Migrationsdateien
 --
