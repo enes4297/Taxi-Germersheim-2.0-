@@ -2,12 +2,21 @@
 --
 -- Berechtigungstest zu 010_rewards_read_function_guards.sql
 --
--- !!! NUR IN EINER TESTUMGEBUNG AUSFUEHREN !!!
---   Voraussetzung: 010_rewards_read_function_guards_seed.sql wurde eingespielt.
---   Es werden ausschliesslich die synthetischen TESTDATA-010-Konten verwendet.
---   Produktive Kunden- oder Mitarbeiter-IDs kommen in diesem Skript nicht vor
---   und duerfen hier auch nicht eingetragen werden - UUIDs von echten Konten
---   sind personenbezogene Daten.
+-- ===========================================================================
+-- NUR IN EINER AUSDRUECKLICH IDENTIFIZIERTEN, ISOLIERTEN TESTUMGEBUNG
+-- AUSFUEHREN. Voraussetzung: 010_rewards_read_function_guards_seed.sql
+-- wurde dort erfolgreich eingespielt.
+-- ===========================================================================
+--
+-- IDENTITAETEN
+--   Dieses Skript enthaelt KEINE fest verdrahteten Benutzer-IDs. Es liest alle
+--   Identitaeten aus tg_test.identities und die Kundenzuordnung aus
+--   tg_test.customer_map - denselben Tabellen, aus denen das Seed-Skript
+--   customers.auth_user_id und profiles.auth_user_id befuellt hat. Damit
+--   koennen Testdaten und simulierte JWT-Subjekte nicht auseinanderlaufen,
+--   auch wenn die Auth-Benutzer ueber die Supabase-Oberflaeche angelegt wurden.
+--   Produktive Kunden- oder Mitarbeiter-IDs kommen hier nicht vor und duerfen
+--   auch nicht eingetragen werden - UUIDs echter Konten sind personenbezogen.
 --
 -- LESEND
 --   Aufgerufen werden nur rewards_account_spin_balance, rewards_wheel_summary,
@@ -19,23 +28,87 @@
 -- PRUEFTIEFE
 --   - Erwartete Berechtigungsfehler muessen SQLSTATE 42501 melden.
 --     Ein beliebiger anderer Fehler gilt als FEHLGESCHLAGEN.
---   - Erfolgreiche Aufrufe werden gegen einen unabhaengig als Eigentuemerrolle
---     ermittelten Sollwert verglichen. Ein Aufruf, der zwar durchlaeuft, aber
---     einen falschen Wert liefert, gilt als FEHLGESCHLAGEN.
+--   - JEDER erfolgreiche Aufruf wird gegen einen unabhaengig als
+--     Eigentuemerrolle ermittelten Sollwert verglichen. Ein Aufruf, der zwar
+--     durchlaeuft, aber einen falschen Wert liefert, gilt als FEHLGESCHLAGEN.
 --   - Admin und Disponent werden getrennt geprueft.
---   - Ein inaktives Profil mit Rolle 'admin' weist nach, dass active ausgewertet wird.
+--   - Ein inaktives Profil mit Rolle 'admin' weist nach, dass active
+--     ausgewertet wird.
 --
 -- VORHER / NACHHER
---   Dieses Skript ist vor UND nach der Migration aussagekraeftig.
---   Vor der Migration MUESSEN fehlschlagen: 5, 6, 7, 9, 10, 11, 12, 19, 20, 21
---   (die Aufrufe laufen dort unberechtigt durch).
+--   Vor der Migration MUESSEN fehlschlagen: 5, 6, 7, 9, 10, 11, 12, 19, 20, 21.
 --   Die anonymen Tests 1 bis 3 sind bereits VOR der Migration bestanden:
 --   007_rewards_wheel.sql hat anon das EXECUTE-Recht entzogen, der Aufruf
 --   scheitert also schon am GRANT - ebenfalls mit SQLSTATE 42501.
 --   Nach der Migration muessen alle 22 Tests bestanden sein.
 
-drop table if exists _tg_test_ergebnisse;
-create temp table _tg_test_ergebnisse (
+
+-- ===========================================================================
+-- 0) Vorpruefung der Testdaten
+--    Bricht ab, wenn Seed fehlt oder die Sollwerte nicht exakt stimmen.
+-- ===========================================================================
+do $$
+declare
+  v_a integer;
+  v_b integer;
+  v_a_pos integer;
+  v_a_status text;
+begin
+  if to_regclass('tg_test.identities') is null
+     or to_regclass('tg_test.customer_map') is null then
+    raise exception 'ABBRUCH: tg_test.identities/customer_map fehlen. Bitte zuerst 010_rewards_read_function_guards_seed.sql ausfuehren.';
+  end if;
+
+  if (select count(*) from tg_test.identities) <> 6 then
+    raise exception 'ABBRUCH: tg_test.identities enthaelt % statt 6 Eintraege.',
+      (select count(*) from tg_test.identities);
+  end if;
+
+  select coalesce(sum(st.amount), 0),
+         count(*) filter (where st.amount > 0)
+    into v_a, v_a_pos
+  from tg_test.customer_map as m
+  join public.rewards_accounts as ra on ra.customer_id = m.customer_id
+  left join public.rewards_spin_transactions as st on st.rewards_account_id = ra.id
+  where m.schluessel = 'kunde_a';
+
+  select coalesce(sum(st.amount), 0)
+    into v_b
+  from tg_test.customer_map as m
+  join public.rewards_accounts as ra on ra.customer_id = m.customer_id
+  left join public.rewards_spin_transactions as st on st.rewards_account_id = ra.id
+  where m.schluessel = 'kunde_b';
+
+  select ra.status into v_a_status
+  from tg_test.customer_map as m
+  join public.rewards_accounts as ra on ra.customer_id = m.customer_id
+  where m.schluessel = 'kunde_a';
+
+  if v_a <> 2 then
+    raise exception 'ABBRUCH: Spin-Guthaben Kunde A ist %, erwartet exakt 2. Seed pruefen.', v_a;
+  end if;
+  if v_b <> 5 then
+    raise exception 'ABBRUCH: Spin-Guthaben Kunde B ist %, erwartet exakt 5. Seed pruefen.', v_b;
+  end if;
+  if v_a_pos < 1 then
+    raise exception 'ABBRUCH: Kunde A hat keinen positiven Spin-Posten. Test 22 wuerde zu frueh abbrechen.';
+  end if;
+  if v_a_status is distinct from 'active' then
+    raise exception 'ABBRUCH: Rewards-Konto Kunde A hat Status %, erwartet active.', v_a_status;
+  end if;
+
+  raise notice 'Vorpruefung bestanden: Guthaben A=2, B=5, Kontostatus A=active, positive Posten A=%.', v_a_pos;
+end
+$$;
+
+
+-- ===========================================================================
+-- 1) Ergebnistabelle
+--    pg_temp-qualifiziert, damit unter keinen Umstaenden eine gleichnamige
+--    dauerhafte Tabelle geloescht werden kann.
+-- ===========================================================================
+drop table if exists pg_temp._tg_test_ergebnisse;
+create temporary table _tg_test_ergebnisse (
   nr        int,
   akteur    text,
   funktion  text,
@@ -45,26 +118,34 @@ create temp table _tg_test_ergebnisse (
   status    text
 );
 
+
+-- ===========================================================================
+-- 2) Testlauf
+-- ===========================================================================
 do $$
 declare
-  ---------------------------------------------------------------------------
-  -- Synthetische Testidentitaeten aus dem Seed-Skript.
-  -- Nur anpassen, wenn die Auth-Benutzer ueber die Supabase-Oberflaeche
-  -- angelegt wurden (Variante A im Seed).
-  ---------------------------------------------------------------------------
-  v_kunde_a_uid     uuid := '11111111-1111-4111-8111-111111111111';
-  v_kunde_b_uid     uuid := '22222222-2222-4222-8222-222222222222';
-  v_mitarbeiter_uid uuid := '33333333-3333-4333-8333-333333333333';
-  v_admin_uid       uuid := '44444444-4444-4444-8444-444444444444';
-  v_disponent_uid   uuid := '55555555-5555-4555-8555-555555555555';
-  v_inaktiv_uid     uuid := '66666666-6666-4666-8666-666666666666';
+  -- Identitaeten ausschliesslich aus der gemeinsamen Zuordnung
+  v_kunde_a_uid     uuid;
+  v_kunde_b_uid     uuid;
+  v_mitarbeiter_uid uuid;
+  v_admin_uid       uuid;
+  v_disponent_uid   uuid;
+  v_inaktiv_uid     uuid;
 
-  v_kunde_a_cust constant uuid := 'a0000000-0000-4000-8000-0000000000a1';
-  v_kunde_b_cust constant uuid := 'b0000000-0000-4000-8000-0000000000b1';
-
-  -- Aus den Kunden-IDs abgeleitet, nicht fest verdrahtet:
   v_konto_a uuid;
   v_konto_b uuid;
+
+  -- Sollwert-SQL fuer die Tagesstatistik, einmal definiert und mehrfach genutzt
+  c_soll_summary constant text :=
+      'select to_jsonb(t)::text from ('
+   || 'select count(*) filter (where created_at::date = current_date) as spins_total,'
+   || ' count(*) filter (where prize_type in (''points_5'',''points_10'',''points_20'',''points_30'',''points_50'') and created_at::date = current_date) as points_wins_total,'
+   || ' count(*) filter (where prize_type = ''voucher_20'' and created_at::date = current_date) as vouchers_total,'
+   || ' count(*) filter (where prize_type = ''yumaks_box'' and created_at::date = current_date) as yumaks_box_total'
+   || ' from public.rewards_wheel_spins) as t';
+
+  c_soll_member constant text :=
+      'select count(distinct rewards_account_id)::text from public.rewards_wheel_spins where created_at::date = current_date';
 
   r          record;
   v_ist      text;
@@ -73,19 +154,29 @@ declare
   v_sqlstate text;
   v_message  text;
 begin
-  select id into v_konto_a from public.rewards_accounts where customer_id = v_kunde_a_cust;
-  select id into v_konto_b from public.rewards_accounts where customer_id = v_kunde_b_cust;
+  select auth_user_id into strict v_kunde_a_uid     from tg_test.identities where schluessel = 'kunde_a';
+  select auth_user_id into strict v_kunde_b_uid     from tg_test.identities where schluessel = 'kunde_b';
+  select auth_user_id into strict v_mitarbeiter_uid from tg_test.identities where schluessel = 'mitarbeiter';
+  select auth_user_id into strict v_admin_uid       from tg_test.identities where schluessel = 'admin';
+  select auth_user_id into strict v_disponent_uid   from tg_test.identities where schluessel = 'disponent';
+  select auth_user_id into strict v_inaktiv_uid     from tg_test.identities where schluessel = 'inaktiv';
 
-  if v_konto_a is null or v_konto_b is null then
-    raise exception 'Testdaten fehlen. Bitte zuerst 010_rewards_read_function_guards_seed.sql ausfuehren.';
-  end if;
+  select ra.id into strict v_konto_a
+  from tg_test.customer_map as m
+  join public.rewards_accounts as ra on ra.customer_id = m.customer_id
+  where m.schluessel = 'kunde_a';
+
+  select ra.id into strict v_konto_b
+  from tg_test.customer_map as m
+  join public.rewards_accounts as ra on ra.customer_id = m.customer_id
+  where m.schluessel = 'kunde_b';
 
   for r in
     select * from (values
       -- nr, Akteur, DB-Rolle, JWT-sub, Bezeichnung,
       --   auszufuehrendes SQL (als Testrolle),
       --   Erwartung OK/FEHLER, erwarteter SQLSTATE, erwartete Meldung,
-      --   SQL fuer den Sollwert (als Eigentuemerrolle, null = kein Wertvergleich)
+      --   SQL fuer den Sollwert (als Eigentuemerrolle)
 
       -- --- anonym: scheitert bereits am fehlenden EXECUTE-Recht (seit 007) ---
       ( 1,'anonym','anon',null::uuid,'spin_balance(Konto A)',
@@ -140,17 +231,10 @@ begin
         format('select coalesce(sum(amount),0)::text from public.rewards_spin_transactions where rewards_account_id = %L::uuid', v_konto_a)),
       (14,'Admin','authenticated',v_admin_uid,'wheel_summary(heute)',
         'select to_jsonb(t)::text from public.rewards_wheel_summary(current_date) as t',
-        'OK',null,null,
-        'select to_jsonb(t)::text from ('
-        || 'select count(*) filter (where created_at::date = current_date) as spins_total,'
-        || ' count(*) filter (where prize_type in (''points_5'',''points_10'',''points_20'',''points_30'',''points_50'') and created_at::date = current_date) as points_wins_total,'
-        || ' count(*) filter (where prize_type = ''voucher_20'' and created_at::date = current_date) as vouchers_total,'
-        || ' count(*) filter (where prize_type = ''yumaks_box'' and created_at::date = current_date) as yumaks_box_total'
-        || ' from public.rewards_wheel_spins) as t'),
+        'OK',null,null, c_soll_summary),
       (15,'Admin','authenticated',v_admin_uid,'active_member_count(heute)',
         'select public.rewards_wheel_active_member_count(current_date)::text',
-        'OK',null,null,
-        'select count(distinct rewards_account_id)::text from public.rewards_wheel_spins where created_at::date = current_date'),
+        'OK',null,null, c_soll_member),
 
       -- --- Disponent (role='dispatcher', active=true) ---
       (16,'Disponent','authenticated',v_disponent_uid,'spin_balance(fremdes Konto B)',
@@ -159,11 +243,10 @@ begin
         format('select coalesce(sum(amount),0)::text from public.rewards_spin_transactions where rewards_account_id = %L::uuid', v_konto_b)),
       (17,'Disponent','authenticated',v_disponent_uid,'wheel_summary(heute)',
         'select to_jsonb(t)::text from public.rewards_wheel_summary(current_date) as t',
-        'OK',null,null,null),
+        'OK',null,null, c_soll_summary),
       (18,'Disponent','authenticated',v_disponent_uid,'active_member_count(heute)',
         'select public.rewards_wheel_active_member_count(current_date)::text',
-        'OK',null,null,
-        'select count(distinct rewards_account_id)::text from public.rewards_wheel_spins where created_at::date = current_date'),
+        'OK',null,null, c_soll_member),
 
       -- --- Inaktives Profil mit Rolle 'admin': active muss ausgewertet werden ---
       (19,'Inaktiv (admin, active=false)','authenticated',v_inaktiv_uid,'spin_balance(fremdes Konto A)',
@@ -177,9 +260,10 @@ begin
         'FEHLER','42501',null,null),
 
       -- --- Regression: Kunden-Gluecksrad bleibt gesperrt ---
-      --     Kunde A ist verknuepft, Konto aktiv, positiver Spin-Posten vorhanden.
-      --     Die Funktion muss deshalb bis zur Endsperre durchlaufen und darf
-      --     NICHT vorher mit CUSTOMER_ACCOUNT_NOT_LINKED, REWARDS_ACCOUNT_PAUSED,
+      --     Kunde A ist verknuepft, Konto aktiv, positiver Spin-Posten vorhanden
+      --     (in Abschnitt 0 hart geprueft). Die Funktion muss deshalb bis zur
+      --     Endsperre durchlaufen und darf NICHT vorher mit
+      --     CUSTOMER_ACCOUNT_NOT_LINKED, REWARDS_ACCOUNT_PAUSED,
       --     REWARDS_ACCOUNT_BLOCKED oder REWARDS_NO_SPINS_AVAILABLE abbrechen.
       (22,'Kunde A','authenticated',v_kunde_a_uid,'spin_my_rewards_wheel() bleibt gesperrt',
         'select public.spin_my_rewards_wheel()::text',
@@ -220,7 +304,9 @@ begin
     if r.erwartet = 'OK' then
       if v_sqlstate is not null then
         v_status := 'FEHLGESCHLAGEN (unerwarteter Fehler ' || v_sqlstate || ': ' || v_message || ')';
-      elsif v_soll is not null and coalesce(v_ist, '<null>') is distinct from v_soll then
+      elsif r.sql_soll is null then
+        v_status := 'FEHLGESCHLAGEN (kein Sollwert definiert)';
+      elsif coalesce(v_ist, '<null>') is distinct from coalesce(v_soll, '<null>') then
         v_status := 'FEHLGESCHLAGEN (falscher Wert)';
       else
         v_status := 'BESTANDEN';
@@ -256,16 +342,14 @@ begin
 end
 $$;
 
--- ---------------------------------------------------------------------------
--- Einzelergebnisse
--- ---------------------------------------------------------------------------
+
+-- ===========================================================================
+-- 3) Ergebnisse
+-- ===========================================================================
 select nr, akteur, funktion, erwartet, sollwert, istwert, status
 from _tg_test_ergebnisse
 order by nr;
 
--- ---------------------------------------------------------------------------
--- Gesamtbewertung
--- ---------------------------------------------------------------------------
 select
   count(*)                                                as tests_gesamt,
   count(*) filter (where status = 'BESTANDEN')            as bestanden,
@@ -276,9 +360,10 @@ select
   end                                                     as gesamtergebnis
 from _tg_test_ergebnisse;
 
--- ---------------------------------------------------------------------------
--- Kontrolle der Ausfuehrungsrechte (unabhaengig von den Funktionsaufrufen)
--- ---------------------------------------------------------------------------
+
+-- ===========================================================================
+-- 4) Kontrolle der Ausfuehrungsrechte (unabhaengig von den Funktionsaufrufen)
+-- ===========================================================================
 select p.proname                                                   as funktion,
        has_function_privilege('anon',          p.oid, 'EXECUTE')   as anon_darf,
        has_function_privilege('authenticated', p.oid, 'EXECUTE')   as auth_darf,

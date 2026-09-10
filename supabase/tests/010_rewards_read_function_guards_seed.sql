@@ -2,136 +2,203 @@
 --
 -- Isolierte Testdaten fuer 010_rewards_read_function_guards_test.sql
 --
--- !!! NUR IN EINER TESTUMGEBUNG AUSFUEHREN !!!
---   Dieses Skript LEGT DATEN AN. Es darf nicht gegen die produktive Datenbank
---   laufen. Es werden ausschliesslich synthetische Konten mit erkennbaren
---   Test-UUIDs und .invalid-Adressen erzeugt. Es werden keine produktiven
---   Kunden- oder Mitarbeiterdaten gelesen, kopiert oder referenziert.
+-- ===========================================================================
+-- NUR IN EINER AUSDRUECKLICH IDENTIFIZIERTEN, ISOLIERTEN TESTUMGEBUNG
+-- AUSFUEHREN. Dieses Skript LEGT DATEN AN.
+-- ===========================================================================
 --
--- Sicherheitsabfrage
---   Abschnitt 0 bricht ab, wenn in public.customers bereits Datensaetze
---   existieren, die nicht zu diesem Testbestand gehoeren. Das verhindert ein
---   versehentliches Ausfuehren gegen Produktion. Bewusst uebersteuern:
---   set tg.allow_seed = 'yes';  vor dem Skript ausfuehren.
+-- WICHTIG ZUR SCHUTZABFRAGE IN ABSCHNITT 0
+--   Abschnitt 0 ist eine BEWUSSTE BESTAETIGUNG DURCH DIE AUSFUEHRENDE PERSON,
+--   KEIN technischer Nachweis einer Testumgebung. Das Skript kann nicht
+--   erkennen, gegen welche Datenbank es laeuft. Insbesondere ist eine leere
+--   Tabelle public.customers KEIN Beleg fuer eine Testumgebung - eine
+--   produktive Datenbank kann zu jedem Zeitpunkt ebenfalls leer sein.
+--   Die Verantwortung fuer die richtige Verbindung liegt vollstaendig bei der
+--   ausfuehrenden Person.
 --
 -- Erzeugt werden sechs Akteure:
---   Kunde A          verknuepft, Rewards-Konto aktiv, Spin-Guthaben vorhanden
---   Kunde B          verknuepft, Rewards-Konto aktiv, Spin-Guthaben vorhanden
---   Mitarbeiter      profiles.role='employee', active=true
---   Admin            profiles.role='admin', active=true
---   Disponent        profiles.role='dispatcher', active=true
---   Inaktiv          profiles.role='admin', active=FALSE
+--   kunde_a       Kunde, verknuepft, Rewards-Konto aktiv, Spin-Guthaben 2
+--   kunde_b       Kunde, verknuepft, Rewards-Konto aktiv, Spin-Guthaben 5
+--   mitarbeiter   profiles.role='employee',   active=true
+--   admin         profiles.role='admin',      active=true
+--   disponent     profiles.role='dispatcher', active=true
+--   inaktiv       profiles.role='admin',      active=FALSE
 --
 --   Hinweis zum inaktiven Profil: Es traegt bewusst die Rolle 'admin'. Nur so
 --   weist der Test nach, dass private.is_admin() das Feld active auswertet.
 --   Ein inaktives Profil mit role='employee' wuerde ohnehin an der Rolle
 --   scheitern und waere damit kein Beleg.
 --
--- Aufraeumen: Abschnitt 5 am Ende dieser Datei (auskommentiert).
+-- Aufraeumen: Abschnitt 6 am Ende dieser Datei (auskommentiert).
 
--- ---------------------------------------------------------------------------
--- 0) Schutz gegen versehentliche Ausfuehrung gegen Produktion
--- ---------------------------------------------------------------------------
+
+-- ===========================================================================
+-- 0) Bestaetigung der Testumgebung
+-- ===========================================================================
+-- Vor diesem Skript ausfuehren:
+--
+--   set tg.test_env = 'ICH-BESTAETIGE-ISOLIERTE-TESTUMGEBUNG';
+--
+-- Bitte vorher die unten ausgegebenen Verbindungsdaten pruefen.
+
 do $$
 declare
-  v_fremde bigint;
-  v_override text := current_setting('tg.allow_seed', true);
+  v_confirm text := current_setting('tg.test_env', true);
 begin
-  select count(*) into v_fremde
-  from public.customers
-  where id not in (
-    'a0000000-0000-4000-8000-0000000000a1'::uuid,
-    'b0000000-0000-4000-8000-0000000000b1'::uuid
-  );
+  raise notice 'Datenbank: %   Benutzer: %   Server: %',
+    current_database(), current_user, version();
 
-  if v_fremde > 0 and coalesce(v_override, '') <> 'yes' then
+  if coalesce(v_confirm, '') <> 'ICH-BESTAETIGE-ISOLIERTE-TESTUMGEBUNG' then
     raise exception
-      'ABBRUCH: public.customers enthaelt % fremde Datensaetze. Sieht nach Produktion aus. Wenn das wirklich eine Testumgebung ist: set tg.allow_seed = ''yes'';',
-      v_fremde;
+      'ABBRUCH: Testumgebung nicht bestaetigt. Pruefe die Verbindung (Datenbank: %) und fuehre dann aus: set tg.test_env = ''ICH-BESTAETIGE-ISOLIERTE-TESTUMGEBUNG'';',
+      current_database();
   end if;
 end
 $$;
 
--- ---------------------------------------------------------------------------
--- 1) Auth-Benutzer
--- ---------------------------------------------------------------------------
--- VARIANTE A (empfohlen):
---   Die sechs Benutzer im Testprojekt ueber Authentication > Users anlegen,
---   danach diesen Abschnitt 1 ueberspringen und im Testskript die echten
---   User-IDs eintragen.
+
+-- ===========================================================================
+-- 1) Gemeinsame Zuordnung der Testidentitaeten
+--    EINZIGE Quelle der Wahrheit. Seed UND Testskript lesen ausschliesslich
+--    aus tg_test.identities. Damit koennen customers.auth_user_id,
+--    profiles.auth_user_id und die im Test simulierten JWT-Subjekte nicht
+--    auseinanderlaufen.
 --
--- VARIANTE B (unten): direkter Insert in auth.users.
---   Achtung: Der Spaltenbestand von auth.users haengt von der Supabase-Version
---   ab. Schlaegt der Insert wegen NOT-NULL-Spalten fehl, ergaenze die leeren
---   Textspalten, z. B.:
---     confirmation_token, recovery_token, email_change, email_change_token_new,
---     email_change_token_current  jeweils mit ''
---   Passwoerter werden bewusst nicht gesetzt: Die Tests melden sich nicht an,
---   sondern simulieren den JWT-Anspruch.
+--    VARIANTE A (Benutzer ueber Supabase Authentication > Users angelegt):
+--      Nur die sechs auth_user_id-Werte im VALUES-Block unten ersetzen und
+--      danach Abschnitt 2 ueberspringen. Alles Weitere folgt automatisch.
+--
+--    VARIANTE B (Standard): Werte unveraendert lassen, Abschnitt 2 ausfuehren.
+-- ===========================================================================
+create schema if not exists tg_test;
+
+create table if not exists tg_test.identities (
+  schluessel   text primary key,
+  auth_user_id uuid not null unique,
+  email        text not null,
+  beschreibung text not null
+);
+
+insert into tg_test.identities (schluessel, auth_user_id, email, beschreibung)
+values
+  ('kunde_a',     '11111111-1111-4111-8111-111111111111', 'tg-test-kunde-a@test.invalid',     'Kunde A, verknuepft'),
+  ('kunde_b',     '22222222-2222-4222-8222-222222222222', 'tg-test-kunde-b@test.invalid',     'Kunde B, verknuepft'),
+  ('mitarbeiter', '33333333-3333-4333-8333-333333333333', 'tg-test-mitarbeiter@test.invalid', 'employee, active'),
+  ('admin',       '44444444-4444-4444-8444-444444444444', 'tg-test-admin@test.invalid',       'admin, active'),
+  ('disponent',   '55555555-5555-4555-8555-555555555555', 'tg-test-disponent@test.invalid',   'dispatcher, active'),
+  ('inaktiv',     '66666666-6666-4666-8666-666666666666', 'tg-test-inaktiv@test.invalid',     'admin, active=false')
+on conflict (schluessel) do update
+  set auth_user_id = excluded.auth_user_id,
+      email        = excluded.email,
+      beschreibung = excluded.beschreibung;
+
+-- Feste Zuordnung Kunde -> Kundendatensatz (unabhaengig von den Auth-IDs)
+create table if not exists tg_test.customer_map (
+  schluessel  text primary key references tg_test.identities(schluessel),
+  customer_id uuid not null unique,
+  name        text not null,
+  phone       text not null
+);
+
+insert into tg_test.customer_map (schluessel, customer_id, name, phone)
+values
+  ('kunde_a', 'a0000000-0000-4000-8000-0000000000a1', 'TESTDATA-010 Kunde A', '+49000000001'),
+  ('kunde_b', 'b0000000-0000-4000-8000-0000000000b1', 'TESTDATA-010 Kunde B', '+49000000002')
+on conflict (schluessel) do update
+  set customer_id = excluded.customer_id;
+
+
+-- ===========================================================================
+-- 2) Auth-Benutzer  (bei VARIANTE A ueberspringen)
+-- ===========================================================================
+-- Achtung: Der Spaltenbestand von auth.users haengt von der Supabase-Version
+-- ab. Schlaegt der Insert wegen NOT-NULL-Spalten fehl, ergaenze die leeren
+-- Textspalten, z. B. confirmation_token, recovery_token, email_change,
+-- email_change_token_new, email_change_token_current jeweils mit ''.
+-- Passwoerter werden bewusst nicht gesetzt: Die Tests melden sich nicht an,
+-- sondern simulieren den JWT-Anspruch.
 
 insert into auth.users (
   instance_id, id, aud, role, email,
   email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
   created_at, updated_at
 )
-values
-  ('00000000-0000-0000-0000-000000000000','11111111-1111-4111-8111-111111111111','authenticated','authenticated','tg-test-kunde-a@test.invalid',      now(),'{"provider":"email","providers":["email"]}'::jsonb,'{}'::jsonb, now(), now()),
-  ('00000000-0000-0000-0000-000000000000','22222222-2222-4222-8222-222222222222','authenticated','authenticated','tg-test-kunde-b@test.invalid',      now(),'{"provider":"email","providers":["email"]}'::jsonb,'{}'::jsonb, now(), now()),
-  ('00000000-0000-0000-0000-000000000000','33333333-3333-4333-8333-333333333333','authenticated','authenticated','tg-test-mitarbeiter@test.invalid',  now(),'{"provider":"email","providers":["email"]}'::jsonb,'{}'::jsonb, now(), now()),
-  ('00000000-0000-0000-0000-000000000000','44444444-4444-4444-8444-444444444444','authenticated','authenticated','tg-test-admin@test.invalid',        now(),'{"provider":"email","providers":["email"]}'::jsonb,'{}'::jsonb, now(), now()),
-  ('00000000-0000-0000-0000-000000000000','55555555-5555-4555-8555-555555555555','authenticated','authenticated','tg-test-disponent@test.invalid',    now(),'{"provider":"email","providers":["email"]}'::jsonb,'{}'::jsonb, now(), now()),
-  ('00000000-0000-0000-0000-000000000000','66666666-6666-4666-8666-666666666666','authenticated','authenticated','tg-test-inaktiv@test.invalid',      now(),'{"provider":"email","providers":["email"]}'::jsonb,'{}'::jsonb, now(), now())
+select
+  '00000000-0000-0000-0000-000000000000',
+  i.auth_user_id,
+  'authenticated',
+  'authenticated',
+  i.email,
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{}'::jsonb,
+  now(),
+  now()
+from tg_test.identities as i
 on conflict (id) do nothing;
 
--- ---------------------------------------------------------------------------
--- 2) Kunden
+
+-- ===========================================================================
+-- 3) Kunden
+--    auth_user_id kommt aus tg_test.identities - damit passt es zwangslaeufig
+--    zu den im Testskript simulierten JWT-Subjekten.
 --    Der Trigger customers_create_rewards_account (003) legt das zugehoerige
---    Rewards-Konto automatisch an. Es wird deshalb NICHT manuell eingefuegt.
--- ---------------------------------------------------------------------------
+--    Rewards-Konto automatisch an; es wird NICHT manuell eingefuegt.
+-- ===========================================================================
 insert into public.customers (id, customer_type, name, email, phone, auth_user_id)
-values
-  ('a0000000-0000-4000-8000-0000000000a1', 'privat', 'TESTDATA-010 Kunde A', 'tg-test-kunde-a@test.invalid', '+49000000001', '11111111-1111-4111-8111-111111111111'),
-  ('b0000000-0000-4000-8000-0000000000b1', 'privat', 'TESTDATA-010 Kunde B', 'tg-test-kunde-b@test.invalid', '+49000000002', '22222222-2222-4222-8222-222222222222')
+select m.customer_id, 'privat', m.name, i.email, m.phone, i.auth_user_id
+from tg_test.customer_map as m
+join tg_test.identities  as i on i.schluessel = m.schluessel
 on conflict (id) do update
   set auth_user_id = excluded.auth_user_id,
-      email        = excluded.email;
+      email        = excluded.email,
+      name         = excluded.name;
 
--- ---------------------------------------------------------------------------
--- 3) Mitarbeiter- und Verwaltungsprofile
--- ---------------------------------------------------------------------------
+
+-- ===========================================================================
+-- 4) Mitarbeiterstammsatz und Verwaltungsprofile
+--    auth_user_id ebenfalls aus tg_test.identities.
+-- ===========================================================================
 insert into public.employees (id, first_name, last_name, email, employment_type, status, active, portal_active)
-values ('e0000000-0000-4000-8000-0000000000e1', 'TESTDATA-010', 'Mitarbeiter', 'tg-test-mitarbeiter@test.invalid', 'vollzeit', 'active', true, true)
+select 'e0000000-0000-4000-8000-0000000000e1', 'TESTDATA-010', 'Mitarbeiter', i.email, 'vollzeit', 'active', true, true
+from tg_test.identities as i
+where i.schluessel = 'mitarbeiter'
 on conflict (id) do nothing;
 
 insert into public.profiles (id, auth_user_id, employee_id, display_name, role, active)
-values
-  ('c0000000-0000-4000-8000-0000000000c1','33333333-3333-4333-8333-333333333333','e0000000-0000-4000-8000-0000000000e1','TESTDATA-010 Mitarbeiter','employee',   true),
-  ('c0000000-0000-4000-8000-0000000000c2','44444444-4444-4444-8444-444444444444', null,                                  'TESTDATA-010 Admin',      'admin',      true),
-  ('c0000000-0000-4000-8000-0000000000c3','55555555-5555-4555-8555-555555555555', null,                                  'TESTDATA-010 Disponent',  'dispatcher', true),
-  ('c0000000-0000-4000-8000-0000000000c4','66666666-6666-4666-8666-666666666666', null,                                  'TESTDATA-010 Inaktiv',    'admin',      false)
+select v.pid, i.auth_user_id, v.employee_id, v.display_name, v.role, v.active
+from (values
+  ('c0000000-0000-4000-8000-0000000000c1'::uuid, 'mitarbeiter', 'e0000000-0000-4000-8000-0000000000e1'::uuid, 'TESTDATA-010 Mitarbeiter', 'employee',   true),
+  ('c0000000-0000-4000-8000-0000000000c2'::uuid, 'admin',       null::uuid,                                    'TESTDATA-010 Admin',      'admin',      true),
+  ('c0000000-0000-4000-8000-0000000000c3'::uuid, 'disponent',   null::uuid,                                    'TESTDATA-010 Disponent',  'dispatcher', true),
+  ('c0000000-0000-4000-8000-0000000000c4'::uuid, 'inaktiv',     null::uuid,                                    'TESTDATA-010 Inaktiv',    'admin',      false)
+) as v(pid, schluessel, employee_id, display_name, role, active)
+join tg_test.identities as i on i.schluessel = v.schluessel
 on conflict (id) do update
   set auth_user_id = excluded.auth_user_id,
       role         = excluded.role,
       active       = excluded.active;
 
--- ---------------------------------------------------------------------------
--- 4) Spin-Guthaben und Gluecksrad-Ergebnisse
+
+-- ===========================================================================
+-- 5) Spin-Guthaben und Gluecksrad-Ergebnisse
 --    Alle Testdatensaetze tragen reason = 'TESTDATA-010' bzw.
 --    spin_source = 'TESTDATA-010' und sind daran eindeutig erkennbar.
 --
---    Erwartete Spin-Guthaben nach diesem Seed:
---      Kunde A: +3 -1 = 2   (positiver Posten noetig fuer Test 22)
+--    Sollstand nach diesem Abschnitt:
+--      Kunde A: +3 -1 = 2   (der positive Posten ist Voraussetzung fuer Test 22)
 --      Kunde B: +5     = 5
--- ---------------------------------------------------------------------------
+-- ===========================================================================
 insert into public.rewards_spin_transactions
   (rewards_account_id, customer_id, amount, transaction_type, reason)
 select ra.id, ra.customer_id, v.amount, v.ttype, 'TESTDATA-010'
-from public.rewards_accounts as ra
+from tg_test.customer_map as m
+join public.rewards_accounts as ra on ra.customer_id = m.customer_id
 join (values
-  ('a0000000-0000-4000-8000-0000000000a1'::uuid,  3, 'manual_grant'),
-  ('a0000000-0000-4000-8000-0000000000a1'::uuid, -1, 'wheel_spin'),
-  ('b0000000-0000-4000-8000-0000000000b1'::uuid,  5, 'manual_grant')
-) as v(customer_id, amount, ttype) on v.customer_id = ra.customer_id
+  ('kunde_a',  3, 'manual_grant'),
+  ('kunde_a', -1, 'wheel_spin'),
+  ('kunde_b',  5, 'manual_grant')
+) as v(schluessel, amount, ttype) on v.schluessel = m.schluessel
 where not exists (
   select 1 from public.rewards_spin_transactions as st
   where st.rewards_account_id = ra.id and st.reason = 'TESTDATA-010'
@@ -140,52 +207,109 @@ where not exists (
 insert into public.rewards_wheel_spins
   (rewards_account_id, customer_id, prize_type, points_awarded, yumaks_box_won, spin_source)
 select ra.id, ra.customer_id, v.prize, v.pts, v.box, 'TESTDATA-010'
-from public.rewards_accounts as ra
+from tg_test.customer_map as m
+join public.rewards_accounts as ra on ra.customer_id = m.customer_id
 join (values
-  ('a0000000-0000-4000-8000-0000000000a1'::uuid, 'points_10',   10, false),
-  ('b0000000-0000-4000-8000-0000000000b1'::uuid, 'yumaks_box', null,  true)
-) as v(customer_id, prize, pts, box) on v.customer_id = ra.customer_id
+  ('kunde_a', 'points_10',   10, false),
+  ('kunde_b', 'yumaks_box', null,  true)
+) as v(schluessel, prize, pts, box) on v.schluessel = m.schluessel
 where not exists (
   select 1 from public.rewards_wheel_spins as ws
   where ws.rewards_account_id = ra.id and ws.spin_source = 'TESTDATA-010'
 );
 
--- ---------------------------------------------------------------------------
--- Kontrolle: Stimmen die Testdaten?
--- ---------------------------------------------------------------------------
+
+-- ===========================================================================
+-- 6) Pflichtkontrolle: harte Pruefung der Sollwerte
+--    Bricht ab, wenn die Testdaten nicht exakt stimmen. Ohne diese Zusicherung
+--    sind die Berechtigungstests nicht aussagekraeftig.
+-- ===========================================================================
+do $$
+declare
+  v_a integer;
+  v_b integer;
+  v_a_pos integer;
+  v_a_status text;
+  v_fehlend integer;
+begin
+  select coalesce(sum(st.amount), 0),
+         count(*) filter (where st.amount > 0)
+    into v_a, v_a_pos
+  from tg_test.customer_map as m
+  join public.rewards_accounts as ra on ra.customer_id = m.customer_id
+  left join public.rewards_spin_transactions as st on st.rewards_account_id = ra.id
+  where m.schluessel = 'kunde_a';
+
+  select coalesce(sum(st.amount), 0)
+    into v_b
+  from tg_test.customer_map as m
+  join public.rewards_accounts as ra on ra.customer_id = m.customer_id
+  left join public.rewards_spin_transactions as st on st.rewards_account_id = ra.id
+  where m.schluessel = 'kunde_b';
+
+  select ra.status into v_a_status
+  from tg_test.customer_map as m
+  join public.rewards_accounts as ra on ra.customer_id = m.customer_id
+  where m.schluessel = 'kunde_a';
+
+  select count(*) into v_fehlend
+  from tg_test.identities as i
+  where not exists (select 1 from auth.users as u where u.id = i.auth_user_id);
+
+  if v_fehlend > 0 then
+    raise exception 'ABBRUCH: % Testidentitaet(en) haben keinen passenden auth.users-Datensatz.', v_fehlend;
+  end if;
+  if v_a <> 2 then
+    raise exception 'ABBRUCH: Spin-Guthaben Kunde A ist %, erwartet 2.', v_a;
+  end if;
+  if v_b <> 5 then
+    raise exception 'ABBRUCH: Spin-Guthaben Kunde B ist %, erwartet 5.', v_b;
+  end if;
+  if v_a_pos < 1 then
+    raise exception 'ABBRUCH: Kunde A hat keinen positiven Spin-Posten. Test 22 wuerde zu frueh abbrechen.';
+  end if;
+  if v_a_status is distinct from 'active' then
+    raise exception 'ABBRUCH: Rewards-Konto Kunde A hat Status %, erwartet active.', v_a_status;
+  end if;
+
+  raise notice 'Seed in Ordnung: Guthaben A=% (positive Posten %), B=%, Kontostatus A=%.',
+    v_a, v_a_pos, v_b, v_a_status;
+end
+$$;
+
+-- Uebersicht zur Sichtkontrolle
 select
-  c.name                                                as akteur,
-  ra.id                                                 as rewards_konto_id,
-  ra.status                                             as kontostatus,
+  m.schluessel,
+  i.auth_user_id,
+  ra.id                                                   as rewards_konto_id,
+  ra.status                                               as kontostatus,
   (select coalesce(sum(st.amount), 0)
      from public.rewards_spin_transactions as st
-    where st.rewards_account_id = ra.id)                as spin_guthaben,
-  (select count(*)
-     from public.rewards_spin_transactions as st
-    where st.rewards_account_id = ra.id and st.amount > 0) as positive_posten
-from public.customers as c
-join public.rewards_accounts as ra on ra.customer_id = c.id
-where c.id in ('a0000000-0000-4000-8000-0000000000a1','b0000000-0000-4000-8000-0000000000b1')
-order by c.name;
--- ERWARTUNG: Kunde A -> Guthaben 2, positive_posten >= 1, kontostatus 'active'
---            Kunde B -> Guthaben 5, positive_posten >= 1, kontostatus 'active'
--- Kunde A MUSS mindestens einen positiven Posten und ein aktives Konto haben,
--- sonst bricht spin_my_rewards_wheel() in Test 22 zu frueh ab.
+    where st.rewards_account_id = ra.id)                  as spin_guthaben
+from tg_test.customer_map as m
+join tg_test.identities as i        on i.schluessel  = m.schluessel
+join public.customers   as c        on c.id          = m.customer_id
+join public.rewards_accounts as ra  on ra.customer_id = c.id
+order by m.schluessel;
 
-select auth_user_id, role, active, display_name
-from public.profiles
-where display_name like 'TESTDATA-010%'
-order by role, active;
+select p.display_name, p.role, p.active, p.auth_user_id
+from public.profiles as p
+join tg_test.identities as i on i.auth_user_id = p.auth_user_id
+order by p.role, p.active;
 
--- ---------------------------------------------------------------------------
--- 5) AUFRAEUMEN (bei Bedarf entkommentieren)
--- ---------------------------------------------------------------------------
--- delete from public.rewards_wheel_spins        where spin_source = 'TESTDATA-010';
--- delete from public.rewards_spin_transactions  where reason      = 'TESTDATA-010';
+
+-- ===========================================================================
+-- 7) AUFRAEUMEN (bei Bedarf entkommentieren)
+-- ===========================================================================
+-- delete from public.rewards_wheel_spins       where spin_source = 'TESTDATA-010';
+-- delete from public.rewards_spin_transactions where reason      = 'TESTDATA-010';
 -- delete from public.rewards_accounts
---   where customer_id in ('a0000000-0000-4000-8000-0000000000a1','b0000000-0000-4000-8000-0000000000b1');
+--   where customer_id in (select customer_id from tg_test.customer_map);
 -- delete from public.customers
---   where id in ('a0000000-0000-4000-8000-0000000000a1','b0000000-0000-4000-8000-0000000000b1');
--- delete from public.profiles where display_name like 'TESTDATA-010%';
+--   where id in (select customer_id from tg_test.customer_map);
+-- delete from public.profiles
+--   where auth_user_id in (select auth_user_id from tg_test.identities);
 -- delete from public.employees where id = 'e0000000-0000-4000-8000-0000000000e1';
--- delete from auth.users where email like 'tg-test-%@test.invalid';
+-- delete from auth.users
+--   where id in (select auth_user_id from tg_test.identities);
+-- drop schema tg_test cascade;
