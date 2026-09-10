@@ -337,7 +337,7 @@ begin
   exception when others then v_sqlstate := sqlstate; v_rows := -1; end;
   execute 'reset role'; perform set_config('request.jwt.claims', '', false);
   /* Auch die EIGENE Datei ist per direktem DELETE nicht mehr entfernbar -
-     Bereinigung laeuft ausschliesslich ueber cleanup_my_orphan_document
+     Bereinigung laeuft ausschliesslich ueber die Storage-API (remove),
      (Tests 31 bis 35). */
   insert into _tg_doc values (22, 'Eigene VERKNUEPFTE Datei wird ebenfalls gefiltert',
     coalesce(v_sqlstate || ' ' || v_message, v_rows::text || ' Zeile(n) geloescht'),

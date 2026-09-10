@@ -80,10 +80,11 @@ aktives Profil → aktiver, portalfreigeschalteter Mitarbeiter. Der separate
 Lesezugriff aktiver Admins bleibt unverändert.
 
 **2. `delete_own` erlaubte das Löschen sämtlicher eigener Dateien.** Die
-DELETE-Policy wurde ersatzlos entfernt und `DELETE`/`UPDATE` auf
-`storage.objects` für `authenticated` widerrufen. Bereinigt wird nur noch über
-`public.cleanup_my_orphan_document(text)` — genau eine Datei, nur im eigenen
-Ordner, nur wenn sie von keinem Datensatz referenziert wird.
+unbegrenzte DELETE-Policy wurde entfernt. Der aktuelle Stand steht im
+Abschnitt darüber: Bereinigt wird über die Storage-API, begrenzt durch
+`employee_documents_delete_unlinked` und den `BEFORE DELETE`-Trigger — genau
+eine Datei, nur im eigenen Ordner, nur wenn sie von keinem Datensatz
+referenziert wird.
 
 **Zum Wettlauf zwischen Verknüpfen und Löschen:** Eine reine Policy genügt
 dafür nicht — sie prüft die Verknüpfung nur zum Auswertungszeitpunkt, ein
@@ -244,8 +245,8 @@ Portalseite selbst zeigte, wodurch dort die App lief und weiterleitete.
   eingebetteten Joins sind nicht abgedeckt.
 - **Kein GoTrue**: JWT-Ansprüche werden simuliert.
 - **Verwaiste Dateien**: Bereinigt wird nur der unmittelbare Fall „Upload
-  erfolgreich, Datensatz gescheitert", und zwar über
-  `cleanup_my_orphan_document`. Bricht der Browser zwischen beiden Schritten
+  erfolgreich, Datensatz gescheitert", und zwar über die Storage-API
+  (`remove`). Bricht der Browser zwischen beiden Schritten
   ab, bleibt eine Datei im eigenen Ordner liegen. Ein regelmäßiger Aufräumlauf
   bräuchte weiter reichende Rechte und ist bewusst **nicht** Teil dieses
   Schritts.
