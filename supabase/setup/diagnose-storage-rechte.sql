@@ -2,7 +2,7 @@
 -- Diagnose: Welche Eingriffe auf storage sind in diesem Projekt moeglich?
 -- ===========================================================================
 --
--- EINE Abfrage, RElN LESEND. Aendert nichts, legt nichts an, loescht nichts.
+-- EINE Abfrage, REIN LESEND. Aendert nichts, legt nichts an, loescht nichts.
 -- Im Supabase SQL Editor des TESTPROJEKTS ausfuehren und die Ausgabe
 -- zurueckmelden.
 --
