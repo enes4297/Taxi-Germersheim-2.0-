@@ -224,12 +224,14 @@ begin
     return old;
   end if;
 
-  -- Break-glass: der Dienstschluessel bleibt handlungsfaehig. Er ist im
-  -- Browser nicht verfuegbar und wird nur fuer Wartung verwendet.
-  if (select current_user) = 'service_role' then
-    return old;
-  end if;
-
+  -- Bewusst KEINE Wartungsausnahme. Ein frueherer Versuch pruefte
+  -- current_user auf 'service_role' - das war falsch: In einer
+  -- SECURITY-DEFINER-Funktion bezeichnet current_user den Eigentuemer der
+  -- Funktion, nicht den urspruenglichen Aufrufer. Die Bedingung haette also
+  -- nie zuverlaessig gegriffen und nur Sicherheit vorgetaeuscht.
+  -- Soll eine verknuepfte Datei entfernt werden, wird zuerst die
+  -- Verknuepfung geloest. Das ist ein bewusster Schritt und hinterlaesst
+  -- keine haengende Referenz.
   if not private.is_unlinked_document(old.name) then
     raise exception 'DOCUMENT_ALREADY_LINKED' using errcode = '42501';
   end if;
