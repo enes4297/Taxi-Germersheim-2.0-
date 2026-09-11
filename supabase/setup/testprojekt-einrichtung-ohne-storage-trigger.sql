@@ -1,24 +1,57 @@
 -- ===========================================================================
 -- Einrichtung des Supabase-TESTPROJEKTS "taxi-germersheim-test"
+-- ALTERNATIVFASSUNG OHNE EIGENE TRIGGER AUF storage.objects
 -- ===========================================================================
 --
--- Zusammenstellung der Migrationen 001 bis 011 in der richtigen Reihenfolge.
--- Die Migrationsdateien selbst sind UNVERAENDERT uebernommen; ergaenzt sind
--- nur dieser Kopf, die Trennzeilen, eine Vorpruefung und eine Kontrolle am
--- Ende.
+-- Anlass
+--   Supabase schraenkt das Schema "storage" seit dem 21.04.2025 ein. Die
+--   Tabelle storage.objects gehoert supabase_storage_admin; die Projektrolle
+--   ist dort nicht Eigentuemerin. PostgreSQL verlangt aber:
+--     CREATE POLICY  -> Eigentuemerschaft an der Tabelle
+--     CREATE TRIGGER -> das TRIGGER-Recht auf der Tabelle
+--   Beides kann in einem Supabase-Projekt fehlen.
+--
+--   Diese Fassung erzwingt nichts. Sie prueft beide Faehigkeiten getrennt,
+--   indem sie sie einmal tatsaechlich versucht und sofort zuruecknimmt, und
+--   richtet dann genau das ein, was zulaessig ist. Was nicht geht, wird
+--   uebersprungen und am Ende als offener Punkt ausgewiesen.
+--
+--   KEIN Eigentuemerwechsel. KEINE Rolleneskalation. KEIN SET ROLE.
+--
+-- Unterschied zur Vollfassung (testprojekt-einrichtung-001-bis-011.sql)
+--   Es wird KEIN Trigger auf storage.objects angelegt. Der Schutz gegen das
+--   Loeschen bereits verknuepfter Nachweise ruht damit allein auf der
+--   DELETE-Policy. Die Sperren auf der Verknuepfungsseite (Trigger auf
+--   public.document_submissions und public.employee_documents) bleiben
+--   vollstaendig erhalten - sie liegen in unserem eigenen Schema und sind
+--   uneingeschraenkt zulaessig.
+--   Was dadurch entfaellt und was an seine Stelle tritt, steht ausfuehrlich
+--   in Abschnitt 5 weiter unten.
+--
+-- Sicherheitslage beim Ueberspringen
+--   Auf storage.objects ist RLS bei Supabase standardmaessig aktiv. Ohne
+--   Policies ist deshalb NICHTS erreichbar. Ein uebersprungener Abschnitt
+--   laesst den Bucket also verschlossen, niemals offen. Der Fehlerfall ist
+--   damit die sichere Richtung.
 --
 -- NUR IM TESTPROJEKT AUSFUEHREN. Nicht gegen die Produktivinstanz.
+--   Die Faehigkeitsproben in Teil 0 nehmen kurz eine ACCESS-EXCLUSIVE-Sperre
+--   auf storage.objects. Im leeren Testprojekt folgenlos, im laufenden
+--   Betrieb nicht.
 --
 -- NICHT enthalten (bewusst):
---   - keine lokalen Testnachbildungen (00_supabase_shim, 01_storage_shim).
---     Die echte Plattform bringt auth und storage selbst mit.
---   - keine Testdaten und keine Testkonten.
+--   - keine lokalen Testnachbildungen (00_supabase_shim, 01_storage_shim)
+--   - keine Testdaten und keine Testkonten
+--
+-- Die Migrationen 001 bis 010 sind WORTGLEICH uebernommen. Aus 011 sind alle
+-- Teile wortgleich uebernommen, die nicht auf storage.objects schreiben; die
+-- Storage-Teile sind bedingt ausgefuehrt und entsprechend gekennzeichnet.
+-- Die Migrationsdateien selbst bleiben unveraendert.
 --
 -- Ausfuehrung
 --   Supabase Dashboard -> SQL Editor -> Inhalt einfuegen -> Run.
---   Das gesamte Skript laeuft in EINER Transaktion: Entweder alles wird
---   uebernommen oder nichts. Ein Abbruch hinterlaesst also keinen halben
---   Stand.
+--   Alles laeuft in EINER Transaktion: Entweder alles wird uebernommen oder
+--   nichts. Ein Abbruch hinterlaesst also keinen halben Stand.
 --
 --   ABER: Das Skript ist fuer ein LEERES Projekt gedacht. Ein zweiter
 --   Durchlauf auf einem bereits eingerichteten Projekt bricht ab, weil die
@@ -26,28 +59,29 @@
 --   vorheriges "drop policy if exists" anlegen. Der Abbruch ist folgenlos
 --   (alles wird zurueckgerollt), aber er laeuft nicht durch. Oertlich
 --   nachgewiesen am 11.09.2026.
---
--- Diese Fassung verlangt volle Rechte auf storage.objects. Fehlen sie - der
--- Normalfall bei Supabase seit dem 21.04.2025 -, bricht Teil 0 ab und
--- verweist auf testprojekt-einrichtung-ohne-storage-trigger.sql.
---
--- Erwartete Laufzeit: wenige Sekunden.
 -- ===========================================================================
 
 begin;
 
 -- ---------------------------------------------------------------------------
--- TEIL 0 - Vorpruefung
+-- TEIL 0 - Vorpruefung und Faehigkeitsproben
 -- ---------------------------------------------------------------------------
--- Bricht ab, BEVOR etwas angelegt wird, falls eine Voraussetzung fehlt.
--- Es werden keine Eigentuemer gewechselt und keine fehlenden Rechte umgangen.
+-- Harte Voraussetzungen fuehren zum Abbruch. Die Storage-Faehigkeiten fuehren
+-- NICHT zum Abbruch, sondern werden gemerkt und spaeter ausgewertet.
+create temporary table tg_faehigkeit (
+  schluessel text primary key,
+  moeglich   boolean not null,
+  detail     text
+) on commit drop;
+
 do $tg_precheck$
 declare
   v_storage_owner   name;
-  v_eigentuemer     boolean;   -- USAGE-Mitgliedschaft = PostgreSQL-Eigentuemerpruefung
-  v_nur_set_role    boolean;   -- Mitglied, aber nur ueber SET ROLE erreichbar
-  v_trigger_recht   boolean;   -- TRIGGER-Recht laut Katalog
+  v_eigentuemer     boolean;
+  v_nur_set_role    boolean;
+  v_trigger_recht   boolean;
   v_buckets_insert  boolean;
+  v_buckets_update  boolean;
   v_probe_policy    boolean := false;
   v_probe_trigger   boolean := false;
   v_rollen_fehlen   text;
@@ -67,19 +101,7 @@ begin
     raise exception 'ABBRUCH: storage.objects oder storage.buckets fehlt. Storage im Projekt aktivieren und erneut versuchen.';
   end if;
 
-  -- 3) Rechte auf storage.objects ermitteln.
-  --
-  --    KORREKTUR gegenueber der ersten Fassung: Dort wurde EIN einziger Wert,
-  --    pg_has_role(current_user, <Eigentuemer>, 'USAGE'), sowohl fuer Policies
-  --    als auch fuer Trigger verwendet. Das ist fuer Trigger sachlich falsch.
-  --    PostgreSQL verlangt naemlich Unterschiedliches:
-  --      CREATE POLICY  -> Eigentuemerschaft an der Tabelle
-  --                        ("You must be the owner of a table to create or
-  --                         change policies for it.")
-  --      CREATE TRIGGER -> nur das TRIGGER-Recht auf der Tabelle
-  --                        ("the user must have the TRIGGER privilege on the
-  --                         table"), also ein ganz normal vergebbares Recht.
-  --    Die alte Fassung konnte deshalb beim Trigger falsch abbrechen.
+  -- 3) Katalogwerte einsammeln.
   select pg_get_userbyid(c.relowner)
   into v_storage_owner
   from pg_class as c
@@ -90,18 +112,15 @@ begin
   v_nur_set_role   := pg_has_role(current_user, v_storage_owner, 'MEMBER');
   v_trigger_recht  := has_table_privilege(current_user, 'storage.objects', 'TRIGGER');
   v_buckets_insert := has_table_privilege(current_user, 'storage.buckets', 'INSERT');
+  -- UPDATE wird getrennt gebraucht: "insert ... on conflict do update" verlangt
+  -- das UPDATE-Recht bereits beim Planen, auch wenn gar kein Konflikt auftritt.
+  v_buckets_update := has_table_privilege(current_user, 'storage.buckets', 'UPDATE');
 
-  -- 4) Statt aus Katalogwerten zu schliessen, wird beides einmal TATSAECHLICH
-  --    versucht und sofort wieder zurueckgenommen. Nur so ist die Aussage
-  --    unabhaengig davon richtig, wie Supabase die Rechte intern umsetzt.
-  --    Beide Proben sind wirkungslos: Die Probe-Policy erlaubt nichts
-  --    (using false), der Probe-Trigger wird nie ausgeloest. Schlaegt eine
-  --    Probe fehl, nimmt PL/pgSQL sie ueber den internen Sicherungspunkt des
-  --    exception-Blocks vollstaendig zurueck.
-  --
-  --    HINWEIS: Beide Proben nehmen kurz eine ACCESS-EXCLUSIVE-Sperre auf
-  --    storage.objects. Im leeren Testprojekt ist das folgenlos. Dieses Skript
-  --    gehoert deshalb nicht gegen eine Instanz mit laufendem Betrieb.
+  -- 4) Faehigkeiten tatsaechlich erproben statt aus Katalogwerten zu schliessen.
+  --    Die Probe-Policy erlaubt nichts (using false), der Probe-Trigger wird
+  --    nie ausgeloest. Beide werden sofort wieder entfernt; schlaegt eine Probe
+  --    fehl, nimmt der exception-Block sie ueber den internen Sicherungspunkt
+  --    vollstaendig zurueck.
   begin
     execute 'create policy tg_probe_policy on storage.objects '
          || 'for select to authenticated using (false)';
@@ -122,6 +141,13 @@ begin
       v_probe_trigger := false;
   end;
 
+  insert into tg_faehigkeit (schluessel, moeglich, detail) values
+    ('bucket_anlegen',   v_buckets_insert, 'INSERT auf storage.buckets'),
+    ('bucket_aendern',   v_buckets_update, 'UPDATE auf storage.buckets'),
+    ('storage_policy',   v_probe_policy,   format('Eigentuemer=%s, USAGE=%s, MEMBER=%s', v_storage_owner, v_eigentuemer, v_nur_set_role)),
+    ('storage_trigger',  v_probe_trigger,  format('TRIGGER-Recht laut Katalog=%s', v_trigger_recht)),
+    ('storage_grant',    v_eigentuemer,    'GRANT/REVOKE auf storage.objects setzt Eigentuemerschaft voraus');
+
   raise notice '--- Vorpruefung ---------------------------------------------';
   raise notice 'Benutzer:                          %', current_user;
   raise notice 'Eigentuemer storage.objects:       %', v_storage_owner;
@@ -129,43 +155,14 @@ begin
   raise notice 'Mitglied nur per SET ROLE:         %', v_nur_set_role;
   raise notice 'TRIGGER-Recht (Katalog):           %', v_trigger_recht;
   raise notice 'INSERT auf storage.buckets:        %', v_buckets_insert;
+  raise notice 'UPDATE auf storage.buckets:        %', v_buckets_update;
   raise notice 'Probe CREATE POLICY erfolgreich:   %', v_probe_policy;
   raise notice 'Probe CREATE TRIGGER erfolgreich:  %', v_probe_trigger;
   raise notice '-------------------------------------------------------------';
 
-  if not v_buckets_insert then
-    raise exception 'ABBRUCH: Kein INSERT-Recht auf storage.buckets. Bucket bitte im Dashboard unter Storage anlegen (privat, 10485760 Byte, application/pdf + image/jpeg + image/png) und danach die Alternativfassung verwenden.';
-  end if;
-
-  if not v_probe_policy then
-    raise exception 'ABBRUCH: Auf storage.objects koennen per SQL keine Policies angelegt werden (Eigentuemer %, USAGE=%, MEMBER=%). Das ist die von Supabase seit 21.04.2025 eingeschraenkte Lage. Kein Eigentuemerwechsel und keine Umgehung vorgesehen. Verwende stattdessen supabase/setup/testprojekt-einrichtung-ohne-storage-trigger.sql und lege die Storage-Policies im Dashboard an.',
-      v_storage_owner, v_eigentuemer, v_nur_set_role;
-  end if;
-
-  if not v_probe_trigger then
-    raise exception 'ABBRUCH: Auf storage.objects fehlt das TRIGGER-Recht (Katalogwert %). Eigene Storage-Trigger sind in diesem Projekt nicht moeglich. Verwende supabase/setup/testprojekt-einrichtung-ohne-storage-trigger.sql.',
-      v_trigger_recht;
-  end if;
-
-  -- Zuletzt der Bucket: Abschnitt 1 der Migration 011 verwendet
-  -- "insert ... on conflict (id) do update". Das braucht zusaetzlich das
-  -- UPDATE-Recht auf storage.buckets, und zwar bereits beim Planen, auch wenn
-  -- gar kein Konflikt auftritt.
-  --
-  -- ACHTUNG, diese Pruefung ist nicht vollstaendig: Auf storage.buckets ist
-  -- RLS aktiv. Ein vorhandenes Recht sagt also noch nicht, dass die Zeile auch
-  -- geschrieben werden darf. Ohne Nebenwirkung laesst sich das hier nicht
-  -- vorab klaeren. Scheitert Abschnitt 1 spaeter mit "new row violates row-
-  -- level security policy for table buckets", dann den Bucket im Dashboard
-  -- anlegen und die Alternativfassung verwenden.
-  if not has_table_privilege(current_user, 'storage.buckets', 'UPDATE') then
-    raise exception 'ABBRUCH: Kein UPDATE-Recht auf storage.buckets. Abschnitt 1 der Migration 011 wuerde mit "permission denied for table buckets" scheitern, weil "on conflict do update" dieses Recht bereits beim Planen verlangt. Bucket im Dashboard anlegen und testprojekt-einrichtung-ohne-storage-trigger.sql verwenden.';
-  end if;
-
-  raise notice 'Vorpruefung bestanden.';
+  raise notice 'Vorpruefung bestanden. Storage-Teile werden je nach Faehigkeit ausgefuehrt oder uebersprungen.';
 end
 $tg_precheck$;
-
 
 
 -- ###########################################################################
@@ -3155,62 +3152,88 @@ grant execute on function public.rewards_wheel_active_member_count(date) to auth
 
 
 -- ###########################################################################
--- ## MIGRATION 011_employee_documents_storage
--- ## (unveraendert aus supabase/migrations/011_employee_documents_storage.sql)
+-- ## MIGRATION 011_employee_documents_storage - ANGEPASSTE FASSUNG
+-- ##
+-- ## Abschnitte 2, 3, 6, 7, 8 und 10 sind wortgleich aus
+-- ## supabase/migrations/011_employee_documents_storage.sql uebernommen.
+-- ## Abschnitte 1 und 4 sind inhaltsgleich, aber bedingt ausgefuehrt.
+-- ## Abschnitt 5 (Trigger auf storage.objects) ENTFAELLT - siehe dort.
 -- ###########################################################################
 
--- 011_employee_documents_storage.sql
---
--- Privater Dokumentenupload fuer Mitarbeiternachweise.
---
--- Ausgangslage laut produktiver Bestandsaufnahme vom 10.09.2026:
---   storage.buckets leer, keine Policies auf storage.buckets/storage.objects,
---   RLS auf beiden Tabellen aktiv, FORCE RLS false,
---   public.document_types leer.
---
--- Diese Migration legt an:
---   1. den privaten Bucket 'employee-documents' (10 MB, nur PDF/JPEG/PNG)
---   2. die vier Dokumenttypen, wiederholbar ohne Duplikate
---   3. private.is_active_employee() als serverseitige Berechtigungspruefung
---   4. Storage-Policies fuer Upload, Lesen und begrenztes Loeschen
---   5. einen BEFORE-DELETE-Trigger auf storage.objects als verbindliche
---      Pruefung gegen das Loeschen verknuepfter Nachweise
---   6. Sperren auf allen Schreibwegen, ueber die ein Dateipfad verknuepft
---      werden kann
---   7. verschaerfte Insert-Policies fuer document_submissions und
---      sickness_reports
---   8. einen technischen Vorgangsschluessel gegen doppelte Krankmeldungen
---      bei verlorener Antwort
---
--- Ausdruecklich NICHT enthalten:
---   - keine oeffentlichen Buckets, keine oeffentlichen URLs
---   - keine UPDATE-Policy auf storage.objects (kein Ueberschreiben)
---   - KEIN SQL-DELETE auf storage.objects. Dateien werden ausschliesslich
---     ueber die Storage-API entfernt, weil nur sie auch das Objekt im
---     Speicher loescht und nicht bloss den Katalogeintrag:
---     https://supabase.com/docs/guides/storage/schema/design
---   - kein Freigabe- oder Pruefprozess
---   - keine Aenderung an bestehenden Migrationsdateien
---
--- Pfadkonvention
---   <auth.uid()>/<jahr>/<zufalls-uuid>.<endung>
-
 
 -- ===========================================================================
--- 1) Privater Bucket
+-- 1) Privater Bucket - bedingt
 -- ===========================================================================
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values (
-  'employee-documents',
-  'employee-documents',
-  false,                                                  -- niemals oeffentlich
-  10485760,                                               -- 10 MB
-  array['application/pdf', 'image/jpeg', 'image/png']
-)
-on conflict (id) do update
-  set public             = false,
-      file_size_limit    = excluded.file_size_limit,
-      allowed_mime_types = excluded.allowed_mime_types;
+-- Die Migration 011 verwendet hier "insert ... on conflict (id) do update".
+-- Das verlangt das UPDATE-Recht auf storage.buckets bereits beim Planen, auch
+-- wenn gar kein Konflikt auftritt - und genau daran scheitert es in einem
+-- eingeschraenkten Projekt mit der Meldung "permission denied for table
+-- buckets". Deshalb hier getrennte Wege: anlegen, wenn es den Bucket noch
+-- nicht gibt; nachziehen nur, wenn etwas abweicht UND das Recht da ist.
+-- Inhaltlich ist das Ergebnis dasselbe.
+do $tg_bucket$
+declare
+  v_b        record;
+  v_darf_neu boolean := (select moeglich from tg_faehigkeit where schluessel = 'bucket_anlegen');
+  v_darf_upd boolean := (select moeglich from tg_faehigkeit where schluessel = 'bucket_aendern');
+  v_soll_typ text[]  := array['application/pdf', 'image/jpeg', 'image/png'];
+begin
+  select * into v_b from storage.buckets where id = 'employee-documents';
+
+  if v_b.id is null then
+    -- Das blosse INSERT-Recht genuegt als Aussage NICHT: auf storage.buckets
+    -- ist RLS aktiv, und eine fehlende Policy laesst das INSERT trotz Recht
+    -- scheitern ("new row violates row-level security policy"). Deshalb wird
+    -- es hier versucht statt vorhergesagt. Beide Faelle melden 42501.
+    if not v_darf_neu then
+      raise notice 'UEBERSPRUNGEN: Bucket employee-documents. Kein INSERT-Recht auf storage.buckets. Bitte im Dashboard unter Storage anlegen: Name employee-documents, privat, Groessenlimit 10485760 Byte, erlaubte Typen application/pdf, image/jpeg, image/png.';
+      return;
+    end if;
+
+    begin
+      insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+      values (
+        'employee-documents',
+        'employee-documents',
+        false,                                            -- niemals oeffentlich
+        10485760,                                         -- 10 MB
+        v_soll_typ
+      );
+      raise notice 'OK: Bucket employee-documents angelegt (privat, 10 MB, PDF/JPEG/PNG).';
+    exception
+      when insufficient_privilege then
+        raise notice 'UEBERSPRUNGEN: Bucket employee-documents liess sich per SQL nicht anlegen (Rechte oder RLS auf storage.buckets). Das ist der Normalfall bei Supabase. Bitte im Dashboard unter Storage anlegen: Name employee-documents, privat, Groessenlimit 10485760 Byte, erlaubte Typen application/pdf, image/jpeg, image/png.';
+    end;
+    return;
+  end if;
+
+  if v_b.public = false
+     and v_b.file_size_limit = 10485760
+     and v_b.allowed_mime_types @> v_soll_typ
+     and v_soll_typ @> v_b.allowed_mime_types then
+    raise notice 'OK: Bucket employee-documents vorhanden und korrekt eingestellt.';
+    return;
+  end if;
+
+  if not v_darf_upd then
+    raise notice 'ACHTUNG: Bucket employee-documents weicht ab (public=%, limit=%, typen=%) und kann ohne UPDATE-Recht auf storage.buckets nicht korrigiert werden. Bitte im Dashboard einstellen: privat, 10485760 Byte, application/pdf + image/jpeg + image/png.',
+      v_b.public, v_b.file_size_limit, array_to_string(v_b.allowed_mime_types, ', ');
+    return;
+  end if;
+
+  begin
+    update storage.buckets
+    set public             = false,
+        file_size_limit    = 10485760,
+        allowed_mime_types = v_soll_typ
+    where id = 'employee-documents';
+    raise notice 'OK: Bucket employee-documents auf die Sollwerte nachgezogen.';
+  exception
+    when insufficient_privilege then
+      raise notice 'ACHTUNG: Bucket employee-documents weicht ab und liess sich per SQL nicht korrigieren (Rechte oder RLS auf storage.buckets). Bitte im Dashboard einstellen: privat, 10485760 Byte, application/pdf + image/jpeg + image/png.';
+  end;
+end
+$tg_bucket$;
 
 
 -- ===========================================================================
@@ -3276,146 +3299,176 @@ grant execute on function private.is_unlinked_document(text) to authenticated;
 
 
 -- ===========================================================================
--- 4) Rechte und Policies auf storage.objects
+-- 4) Rechte und Policies auf storage.objects - bedingt
 -- ===========================================================================
--- DELETE ist noetig, weil das Entfernen einer Datei ueber die Storage-API
--- laufen MUSS (nur sie loescht auch das Objekt im Speicher, nicht bloss den
--- Katalogeintrag). Die Storage-API prueft dabei die RLS auf storage.objects.
--- Begrenzt wird das Recht durch die DELETE-Policy in Abschnitt 4 und
--- zusaetzlich durch den Trigger in Abschnitt 5.
-grant select, insert, delete on storage.objects to authenticated;
-revoke update on storage.objects from authenticated;
-revoke all on storage.objects from anon;
-
-do $$
+-- Inhaltlich identisch zu Abschnitt 4 der Migration 011. Ausgefuehrt wird
+-- jeweils nur, was die Vorpruefung tatsaechlich erlaubt hat.
+--
+-- Wird der Policy-Teil uebersprungen, bleibt der Bucht vollstaendig
+-- verschlossen: RLS ist auf storage.objects standardmaessig aktiv, und ohne
+-- passende Policy trifft niemand zu. Der Fehlerfall ist also die sichere
+-- Richtung. Die Policies sind dann im Dashboard nachzutragen; die genauen
+-- Ausdruecke stehen in supabase/setup/storage-policies-dashboard.md.
+do $tg_storage_grants$
 begin
-  drop policy if exists employee_documents_insert_own   on storage.objects;
-  drop policy if exists employee_documents_select_own   on storage.objects;
-  drop policy if exists employee_documents_select_admin on storage.objects;
-  drop policy if exists employee_documents_delete_own       on storage.objects;
-  drop policy if exists employee_documents_delete_unlinked  on storage.objects;
+  if not (select moeglich from tg_faehigkeit where schluessel = 'storage_grant') then
+    raise notice 'UEBERSPRUNGEN: GRANT/REVOKE auf storage.objects (setzt Eigentuemerschaft voraus). Es gelten die Standardrechte von Supabase; der Zugriff wird dann ausschliesslich ueber RLS geregelt.';
+    return;
+  end if;
+
+  -- DELETE ist noetig, weil das Entfernen einer Datei ueber die Storage-API
+  -- laufen MUSS (nur sie loescht auch das Objekt im Speicher, nicht bloss den
+  -- Katalogeintrag). Die Storage-API prueft dabei die RLS auf storage.objects.
+  execute 'grant select, insert, delete on storage.objects to authenticated';
+  execute 'revoke update on storage.objects from authenticated';
+  execute 'revoke all on storage.objects from anon';
+  raise notice 'OK: Rechte auf storage.objects gesetzt.';
 end
-$$;
+$tg_storage_grants$;
 
--- Hochladen: eigener Ordner UND aktive Mitarbeiterberechtigung.
-create policy employee_documents_insert_own
-  on storage.objects
-  as permissive
-  for insert
-  to authenticated
-  with check (
-    bucket_id = 'employee-documents'
-    and (storage.foldername(name))[1] = (select auth.uid())::text
-    and private.is_active_employee()
-  );
-
--- Lesen: eigene Dateien, ebenfalls nur mit aktiver Mitarbeiterberechtigung.
-create policy employee_documents_select_own
-  on storage.objects
-  as permissive
-  for select
-  to authenticated
-  using (
-    bucket_id = 'employee-documents'
-    and (storage.foldername(name))[1] = (select auth.uid())::text
-    and private.is_active_employee()
-  );
-
--- Lesen: aktive Admins duerfen alle Nachweise im Bucket ansehen.
--- Bleibt unveraendert und unabhaengig von is_active_employee().
-create policy employee_documents_select_admin
-  on storage.objects
-  as permissive
-  for select
-  to authenticated
-  using (
-    bucket_id = 'employee-documents'
-    and private.is_admin()
-  );
-
--- Loeschen: eigener Ordner, aktive Mitarbeiterberechtigung UND die Datei darf
--- von keinem Datensatz referenziert sein. Der Aufruf erfolgt ueber die
--- Storage-API (remove), damit auch das Objekt im Speicher entfernt wird -
--- ein direktes SQL-DELETE wuerde nur den Katalogeintrag loeschen.
--- Diese Policy ist die erste Huerde; die verbindliche Pruefung inklusive
--- Sperre gegen gleichzeitiges Verknuepfen sitzt im Trigger in Abschnitt 5.
-create policy employee_documents_delete_unlinked
-  on storage.objects
-  as permissive
-  for delete
-  to authenticated
-  using (
-    bucket_id = 'employee-documents'
-    and (storage.foldername(name))[1] = (select auth.uid())::text
-    and private.is_active_employee()
-    and private.is_unlinked_document(name)
-  );
-
--- Bewusst KEINE UPDATE-Policy: Dateien werden nicht ueberschrieben.
-
-
--- ===========================================================================
--- 5) Verbindliche Absicherung beim Loeschen
--- ===========================================================================
--- WICHTIG: Es gibt hier bewusst KEINE SQL-Funktion, die aus storage.objects
--- loescht. Ein direktes DELETE wuerde nur den Katalogeintrag entfernen, die
--- Datei bliebe im Objektspeicher als Leiche zurueck. Dateioperationen laufen
--- ausschliesslich ueber die Storage-API (remove), siehe
--- https://supabase.com/docs/guides/storage/schema/design
---
--- Die Storage-API setzt ein DELETE auf storage.objects ab und wertet dabei
--- die RLS aus. Dieser BEFORE-DELETE-Trigger ist die verbindliche Pruefung:
--- er laeuft innerhalb desselben Statements, nachdem PostgreSQL die Zeilensperre
--- auf der zu loeschenden Zeile haelt.
---
--- Zusammenspiel gegen den Wettlauf:
---   Loeschen:    PostgreSQL sperrt die Zeile in storage.objects, danach
---                prueft dieser Trigger die Verknuepfung erneut.
---   Verknuepfen: Der Trigger aus Abschnitt 6 nimmt auf derselben Zeile
---                ein FOR UPDATE und blockiert damit, solange geloescht wird.
---   Damit kann keine der beiden Seiten die andere uebersehen.
-create or replace function private.guard_document_object_delete()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
+do $tg_storage_policies$
 begin
-  if old.bucket_id is distinct from 'employee-documents' then
-    return old;
+  if not (select moeglich from tg_faehigkeit where schluessel = 'storage_policy') then
+    raise notice 'UEBERSPRUNGEN: Storage-Policies. Bucket bleibt damit vollstaendig gesperrt (RLS aktiv, keine Policy trifft zu). Bitte die vier Policies im Dashboard anlegen - Wortlaut in supabase/setup/storage-policies-dashboard.md.';
+    return;
   end if;
 
-  -- Bewusst KEINE Wartungsausnahme. Ein frueherer Versuch pruefte
-  -- current_user auf 'service_role' - das war falsch: In einer
-  -- SECURITY-DEFINER-Funktion bezeichnet current_user den Eigentuemer der
-  -- Funktion, nicht den urspruenglichen Aufrufer. Die Bedingung haette also
-  -- nie zuverlaessig gegriffen und nur Sicherheit vorgetaeuscht.
-  -- Soll eine verknuepfte Datei entfernt werden, wird zuerst die
-  -- Verknuepfung geloest. Das ist ein bewusster Schritt und hinterlaesst
-  -- keine haengende Referenz.
-  if not private.is_unlinked_document(old.name) then
-    raise exception 'DOCUMENT_ALREADY_LINKED' using errcode = '42501';
-  end if;
+  execute 'drop policy if exists employee_documents_insert_own       on storage.objects';
+  execute 'drop policy if exists employee_documents_select_own       on storage.objects';
+  execute 'drop policy if exists employee_documents_select_admin     on storage.objects';
+  execute 'drop policy if exists employee_documents_delete_own       on storage.objects';
+  execute 'drop policy if exists employee_documents_delete_unlinked  on storage.objects';
 
-  return old;
-end;
-$$;
+  -- Hochladen: eigener Ordner UND aktive Mitarbeiterberechtigung.
+  execute $pol$
+    create policy employee_documents_insert_own
+      on storage.objects
+      as permissive
+      for insert
+      to authenticated
+      with check (
+        bucket_id = 'employee-documents'
+        and (storage.foldername(name))[1] = (select auth.uid())::text
+        and private.is_active_employee()
+      )
+  $pol$;
 
-revoke all on function private.guard_document_object_delete() from public;
-revoke all on function private.guard_document_object_delete() from anon;
-revoke all on function private.guard_document_object_delete() from authenticated;
+  -- Lesen: eigene Dateien, ebenfalls nur mit aktiver Mitarbeiterberechtigung.
+  execute $pol$
+    create policy employee_documents_select_own
+      on storage.objects
+      as permissive
+      for select
+      to authenticated
+      using (
+        bucket_id = 'employee-documents'
+        and (storage.foldername(name))[1] = (select auth.uid())::text
+        and private.is_active_employee()
+      )
+  $pol$;
 
-drop trigger if exists storage_objects_guard_delete on storage.objects;
-create trigger storage_objects_guard_delete
-  before delete on storage.objects
-  for each row
-  execute function private.guard_document_object_delete();
+  -- Lesen: aktive Admins duerfen alle Nachweise im Bucket ansehen.
+  execute $pol$
+    create policy employee_documents_select_admin
+      on storage.objects
+      as permissive
+      for select
+      to authenticated
+      using (
+        bucket_id = 'employee-documents'
+        and private.is_admin()
+      )
+  $pol$;
+
+  -- Loeschen: eigener Ordner, aktive Mitarbeiterberechtigung UND die Datei
+  -- darf von keinem Datensatz referenziert sein. In dieser Fassung ist das
+  -- die EINZIGE Pruefung auf der Loeschseite - siehe Abschnitt 5.
+  execute $pol$
+    create policy employee_documents_delete_unlinked
+      on storage.objects
+      as permissive
+      for delete
+      to authenticated
+      using (
+        bucket_id = 'employee-documents'
+        and (storage.foldername(name))[1] = (select auth.uid())::text
+        and private.is_active_employee()
+        and private.is_unlinked_document(name)
+      )
+  $pol$;
+
+  -- Bewusst KEINE UPDATE-Policy: Dateien werden nicht ueberschrieben.
+
+  raise notice 'OK: Vier Storage-Policies angelegt.';
+end
+$tg_storage_policies$;
 
 
 -- ===========================================================================
--- 6) Gegenstueck: bei JEDEM Verknuepfen dieselbe Zeile sperren
+-- 5) ENTFAELLT: Trigger auf storage.objects
 -- ===========================================================================
--- Deckt alle Schreibwege ab, ueber die ein Dateipfad verknuepft werden kann:
+-- Die Vollfassung legt hier private.guard_document_object_delete() als
+-- BEFORE-DELETE-Trigger auf storage.objects an. In dieser Fassung nicht.
+--
+-- WARUM NICHT
+--   Supabase empfiehlt ausdruecklich, das Schema storage als schreibgeschuetzt
+--   zu behandeln, und hat die zulaessigen SQL-Eingriffe zum 21.04.2025
+--   eingeschraenkt. Ob das TRIGGER-Recht auf storage.objects im jeweiligen
+--   Projekt vorhanden ist, ist nicht zugesichert. Ein Trigger, der bei einem
+--   Plattform-Update verschwindet oder das Anlegen des gesamten Skripts
+--   verhindert, ist als Sicherheitsanker ungeeignet.
+--
+-- WAS DADURCH WEGFAELLT
+--   Der Trigger war die zweite, verbindliche Pruefung beim Loeschen. Er
+--   schloss genau EINEN Fall: Verknuepfen und Bereinigen laufen im selben
+--   Augenblick auf denselben Pfad, und zwar in der Reihenfolge
+--   "Verknuepfen zuerst, Loeschen faellt hinein". Ohne Trigger entscheidet
+--   dort allein die DELETE-Policy, die ihre Pruefung auf dem Schnappschuss
+--   des Loeschbefehls ausfuehrt und eine gerade erst festgeschriebene
+--   Verknuepfung deshalb uebersehen kann.
+--
+-- WAS BLEIBT
+--   1. Die DELETE-Policy verhindert das Loeschen verknuepfter Nachweise in
+--      allen nicht gleichzeitigen Faellen - das ist der Normalbetrieb.
+--   2. Die Sperren auf der Verknuepfungsseite (Abschnitt 6) bleiben
+--      vollstaendig. Sie liegen auf unseren eigenen Tabellen und sind
+--      uneingeschraenkt zulaessig. Sie decken die GEFAEHRLICHE Richtung ab:
+--      Gewinnt das Loeschen das Rennen, scheitert das Verknuepfen mit
+--      DOCUMENT_FILE_NOT_FOUND. Es entsteht also keine Verknuepfung, die auf
+--      eine verschwundene Datei zeigt.
+--   3. Der verbleibende Restfall ist die umgekehrte Richtung: Die
+--      Verknuepfung besteht, die Datei wurde im selben Augenblick entfernt.
+--      Folge ist ein ins Leere zeigender Verweis - ein kaputter Download im
+--      Adminbereich, KEIN Datenabfluss und kein Fremdzugriff.
+--   4. Gegen genau diesen Restfall gibt es unten eine Pruefabfrage, mit der
+--      solche Verweise gefunden werden koennen.
+--
+-- WIE WAHRSCHEINLICH IST DER RESTFALL
+--   Er verlangt, dass derselbe Mitarbeiter denselben, gerade erst
+--   hochgeladenen Pfad in zwei Sitzungen im selben Sekundenbruchteil
+--   gleichzeitig verknuepft und bereinigt. Die Bereinigung im Portal laeuft
+--   ausschliesslich auf dem Fehlerpfad unmittelbar nach einem
+--   fehlgeschlagenen Speichern, auf einem Pfad, den sonst niemand kennt.
+--
+-- UNGEPRUEFT
+--   Der lokale Nebenlaeufigkeitstest (supabase/tests/local/13_concurrency_*)
+--   wurde MIT Trigger bestanden. Fuer diese Fassung ohne Trigger ist er noch
+--   nicht wiederholt worden. Das Verhalten von Fall B ist damit hier nicht
+--   nachgewiesen, sondern nur hergeleitet.
+--
+-- SAUBERE LANGFRISTIGE LOESUNG
+--   Eine bewachte Loeschung gehoert serverseitig in eine Edge Function mit
+--   Service-Rolle: dort erst die Verknuepfung pruefen, dann ueber die
+--   Storage-API loeschen. Das ist der von Supabase vorgesehene Weg und haelt
+--   den privilegierten Schluessel aus dem Browser heraus. Nicht Gegenstand
+--   dieses Skripts.
+
+
+-- ===========================================================================
+-- 6) Bei JEDEM Verknuepfen dieselbe Zeile sperren
+-- ===========================================================================
+-- Wortgleich aus Migration 011. Deckt alle Schreibwege ab, ueber die ein
+-- Dateipfad verknuepft werden kann:
 --   - INSERT auf document_submissions
 --   - UPDATE von document_submissions.file_path
 --   - INSERT auf employee_documents
@@ -3480,8 +3533,63 @@ create trigger employee_documents_lock_object
 
 
 -- ===========================================================================
+-- 6a) Ersatz fuer den entfallenen Storage-Trigger: Pruefung auf tote Verweise
+-- ===========================================================================
+-- Findet Verknuepfungen, deren Datei nicht mehr existiert - also genau den
+-- Restfall aus Abschnitt 5. Rein lesend, aendert nichts.
+--
+-- SECURITY INVOKER mit Absicht: Die Funktion laeuft mit den Rechten der
+-- aufrufenden Person. Ein Admin sieht ueber employee_documents_select_admin
+-- alle Objekte im Bucket. Solange diese Policy fehlt (siehe Abschnitt 4),
+-- sieht die Funktion KEINE Objekte und meldet dann faelschlich jeden Verweis
+-- als tot. In dem Fall ist zuerst die Policy nachzutragen.
+create or replace function public.check_document_link_integrity()
+returns table (
+  quelle       text,
+  datensatz_id uuid,
+  employee_id  uuid,
+  file_path    text
+)
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if not private.is_admin() then
+    raise exception 'Not authorized' using errcode = '42501';
+  end if;
+
+  return query
+  select 'document_submissions'::text, ds.id, ds.employee_id, ds.file_path
+  from public.document_submissions as ds
+  where ds.file_path is not null
+    and not exists (
+      select 1 from storage.objects as o
+      where o.bucket_id = 'employee-documents' and o.name = ds.file_path
+    )
+  union all
+  select 'employee_documents'::text, ed.id, ed.employee_id, ed.file_path
+  from public.employee_documents as ed
+  where ed.file_path is not null
+    and not exists (
+      select 1 from storage.objects as o
+      where o.bucket_id = 'employee-documents' and o.name = ed.file_path
+    );
+end;
+$$;
+
+comment on function public.check_document_link_integrity() is
+  'Listet Nachweisverweise ohne zugehoerige Datei. Ersetzt die Kontrollfunktion des entfallenen Storage-Triggers. Nur fuer aktive Admins, rein lesend.';
+
+revoke all on function public.check_document_link_integrity() from public;
+revoke all on function public.check_document_link_integrity() from anon;
+grant execute on function public.check_document_link_integrity() to authenticated;
+
+
+-- ===========================================================================
 -- 7) Dateipfad serverseitig an den angemeldeten Nutzer binden
 -- ===========================================================================
+-- Wortgleich aus Migration 011.
 drop policy if exists document_submissions_employee_insert on public.document_submissions;
 create policy document_submissions_employee_insert
   on public.document_submissions
@@ -3503,31 +3611,18 @@ create policy document_submissions_employee_insert
 
 -- ===========================================================================
 -- 8) Vorgangsschluessel und Schutz vor doppelten Krankmeldungen
---    (enthaelt zugleich den Ausschluss fremder Anhaenge)
 -- ===========================================================================
--- Geht die Serverantwort verloren, obwohl gespeichert wurde, wiederholt der
--- Client den Aufruf. Ohne Eindeutigkeit entstuende ein zweiter Datensatz.
---
--- Bewusst KEINE fachliche Eindeutigkeit auf (employee_id, start_date): Das
--- waere eine erfundene Geschaeftsregel und wuerde zwei getrennte Vorgaenge mit
--- demselben Beginndatum faelschlich verschmelzen. Stattdessen ein technischer
--- Vorgangsschluessel, den der Client je Sendevorgang einmal erzeugt und bei
--- jeder Wiederholung unveraendert mitschickt.
+-- Wortgleich aus Migration 011.
 alter table public.sickness_reports
   add column if not exists client_request_id uuid;
 
 comment on column public.sickness_reports.client_request_id is
   'Technischer Vorgangsschluessel des Sendevorgangs. Bleibt ueber Wiederholungen gleich und verhindert Doppel nach verlorener Antwort (011).';
 
--- Partiell, damit vorhandene Zeilen ohne Schluessel nicht kollidieren.
--- Auf den Mitarbeiter bezogen, damit ein fremder Schluessel nicht belegt
--- werden kann.
 create unique index if not exists uq_sickness_reports_client_request
   on public.sickness_reports(employee_id, client_request_id)
   where client_request_id is not null;
 
--- Fuer Portal-Eintraege ist der Schluessel Pflicht. Nur so ist eine
--- Wiederholung ueberhaupt erkennbar.
 drop policy if exists sickness_reports_employee_insert on public.sickness_reports;
 create policy sickness_reports_employee_insert
   on public.sickness_reports
@@ -3557,16 +3652,13 @@ create policy sickness_reports_employee_insert
 create index if not exists idx_document_submissions_submitted_at
   on public.document_submissions(submitted_at desc);
 
-comment on policy employee_documents_insert_own on storage.objects is
-  'Upload nur in den eigenen Ordner und nur mit aktiver Mitarbeiterberechtigung (011).';
-comment on policy employee_documents_select_admin on storage.objects is
-  'Aktive Admins duerfen alle Nachweise im Bucket lesen (011).';
-
 
 -- ###########################################################################
 -- ## TEIL Z - Kontrolle
 -- ###########################################################################
--- Rein lesend. Zeigt, ob alles Erwartete angelegt wurde.
+-- Der Datenbankteil MUSS vollstaendig sein, sonst Abbruch.
+-- Die Storage-Teile werden ausgewiesen, fuehren aber nicht zum Abbruch:
+-- Fehlen sie, ist der Bucket gesperrt, nicht offen.
 
 do $tg_check$
 declare
@@ -3579,6 +3671,7 @@ declare
   v_trigger    integer;
   v_typen      integer;
   v_bucket     record;
+  v_offen      text := '';
 begin
   select count(*) into v_tabellen
   from pg_class c join pg_namespace n on n.oid = c.relnamespace
@@ -3604,15 +3697,21 @@ begin
   where n.nspname = 'public' and c.relkind = 'r'
     and has_table_privilege('anon', c.oid, 'SELECT');
 
-  select count(*) into v_policies  from pg_policies where schemaname = 'public';
-  select count(*) into v_storage_p from pg_policies where schemaname = 'storage';
-  select count(*) into v_typen     from public.document_types;
+  select count(*) into v_policies from pg_policies where schemaname = 'public';
+  select count(*) into v_typen    from public.document_types;
+
+  select count(*) into v_storage_p
+  from pg_policies
+  where schemaname = 'storage' and tablename = 'objects'
+    and policyname like 'employee_documents%';
+
   select count(*) into v_trigger
   from pg_trigger t join pg_class c on c.oid = t.tgrelid
   join pg_namespace n on n.oid = c.relnamespace
   where not t.tgisinternal
-    and ((n.nspname = 'storage' and c.relname = 'objects')
-      or (n.nspname = 'public' and c.relname in ('document_submissions','employee_documents')));
+    and n.nspname = 'public'
+    and c.relname in ('document_submissions','employee_documents')
+    and t.tgname like '%lock_object';
 
   select * into v_bucket from storage.buckets where id = 'employee-documents';
 
@@ -3621,13 +3720,17 @@ begin
   raise notice 'Ohne RLS:                      %', coalesce(v_ohne_rls, 'keine - gut');
   raise notice 'Ohne Grant fuer authenticated: %', coalesce(v_ohne_grant, 'keine - gut');
   raise notice 'Mit Rechten fuer anon:         %', coalesce(v_anon, 'keine - gut');
-  raise notice 'Policies public / storage:     % / %', v_policies, v_storage_p;
-  raise notice 'Eigene Trigger (Dokumente):    %', v_trigger;
+  raise notice 'Policies in public:            %', v_policies;
   raise notice 'Dokumenttypen:                 %', v_typen;
-  raise notice 'Bucket employee-documents:     public=% limit=% typen=%',
-    v_bucket.public, v_bucket.file_size_limit, array_to_string(v_bucket.allowed_mime_types, ', ');
+  raise notice 'Sperr-Trigger (eigene Tab.):   % (erwartet 2)', v_trigger;
+  raise notice 'Storage-Policies (eigene):     % (erwartet 4)', v_storage_p;
+  raise notice 'Bucket employee-documents:     %',
+    case when v_bucket.id is null then 'FEHLT'
+         else format('public=%s limit=%s typen=%s', v_bucket.public, v_bucket.file_size_limit,
+                     array_to_string(v_bucket.allowed_mime_types, ', ')) end;
   raise notice '--------------------------------------------------------';
 
+  -- Harte Bedingungen: der Datenbankteil muss stimmen.
   if v_ohne_rls is not null then
     raise exception 'ABBRUCH: Tabellen ohne RLS: %', v_ohne_rls;
   end if;
@@ -3640,27 +3743,38 @@ begin
   if v_typen <> 4 then
     raise exception 'ABBRUCH: % Dokumenttypen statt 4.', v_typen;
   end if;
-  if v_bucket.id is null or v_bucket.public then
-    raise exception 'ABBRUCH: Bucket fehlt oder ist oeffentlich.';
-  end if;
-  if v_storage_p < 4 then
-    raise exception 'ABBRUCH: Nur % Storage-Policies angelegt, erwartet mindestens 4.', v_storage_p;
-  end if;
-  if v_trigger < 3 then
-    raise exception 'ABBRUCH: Nur % eigene Trigger angelegt, erwartet 3.', v_trigger;
+  if v_trigger <> 2 then
+    raise exception 'ABBRUCH: % Sperr-Trigger statt 2. Diese liegen im eigenen Schema und muessen anlegbar sein.', v_trigger;
   end if;
 
-  raise notice 'EINRICHTUNG VOLLSTAENDIG.';
+  -- Weiche Bedingungen: Storage. Fehlt etwas, bleibt der Bucket gesperrt.
+  if v_bucket.id is null then
+    v_offen := v_offen || E'\n  - Bucket employee-documents im Dashboard anlegen (privat, 10485760 Byte, application/pdf + image/jpeg + image/png).';
+  elsif v_bucket.public then
+    raise exception 'ABBRUCH: Bucket employee-documents ist OEFFENTLICH. Das ist unzulaessig.';
+  end if;
+
+  if v_storage_p < 4 then
+    v_offen := v_offen || format(E'\n  - Nur %s von 4 Storage-Policies vorhanden. Wortlaut in supabase/setup/storage-policies-dashboard.md, anzulegen unter Storage -> Policies.', v_storage_p);
+  end if;
+
+  if v_offen = '' then
+    raise notice 'EINRICHTUNG VOLLSTAENDIG (ohne eigenen Storage-Trigger, wie vorgesehen).';
+  else
+    raise notice 'DATENBANKTEIL VOLLSTAENDIG. NOCH OFFEN: %', v_offen;
+    raise notice 'Bis dahin ist der Bucket gesperrt, nicht offen - Uploads schlagen fehl.';
+  end if;
 end
 $tg_check$;
 
 commit;
 
 -- Abschliessende Uebersicht als Ergebnistabelle.
-select 'Tabellen public'        as posten, count(*)::text as wert from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'
-union all select 'Policies public',        count(*)::text from pg_policies where schemaname='public'
-union all select 'Policies storage',       count(*)::text from pg_policies where schemaname='storage'
-union all select 'Dokumenttypen',          count(*)::text from public.document_types
-union all select 'Bucket oeffentlich?',    coalesce((select public::text from storage.buckets where id='employee-documents'), 'Bucket fehlt')
-union all select 'Bucket Groessenlimit',   coalesce((select file_size_limit::text from storage.buckets where id='employee-documents'), '-')
-union all select 'Bucket Dateitypen',      coalesce((select array_to_string(allowed_mime_types, ', ') from storage.buckets where id='employee-documents'), '-');
+select 'Tabellen public'          as posten, count(*)::text as wert from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'
+union all select 'Policies public',          count(*)::text from pg_policies where schemaname='public'
+union all select 'Storage-Policies (eigene)', count(*)::text from pg_policies where schemaname='storage' and tablename='objects' and policyname like 'employee_documents%'
+union all select 'Eigene Trigger auf storage.objects', coalesce((select count(*)::text from pg_trigger t where t.tgrelid = to_regclass('storage.objects') and not t.tgisinternal), '0')
+union all select 'Dokumenttypen',            count(*)::text from public.document_types
+union all select 'Bucket oeffentlich?',      coalesce((select public::text from storage.buckets where id='employee-documents'), 'Bucket fehlt')
+union all select 'Bucket Groessenlimit',     coalesce((select file_size_limit::text from storage.buckets where id='employee-documents'), '-')
+union all select 'Bucket Dateitypen',        coalesce((select array_to_string(allowed_mime_types, ', ') from storage.buckets where id='employee-documents'), '-');
