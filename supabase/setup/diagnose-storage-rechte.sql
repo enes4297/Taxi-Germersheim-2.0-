@@ -94,3 +94,64 @@ from (values
 
 ) as t(nr, posten, wert)
 order by nr;
+
+
+-- ===========================================================================
+-- ABFRAGE B - Wortlaut der Policies und Trigger auf storage.objects
+-- ===========================================================================
+--
+-- Anlass
+--   Nach dem Lauf von testprojekt-einrichtung-ohne-storage-trigger.sql meldet
+--   die Schlusskontrolle vier eigene Storage-Policies, obwohl mit dem
+--   Ueberspringen des Policy-Teils gerechnet wurde. Abfrage A zaehlt nur die
+--   Namen; hier steht der volle Wortlaut, damit sich klaeren laesst, ob diese
+--   Policies aus dem Skript stammen oder von woanders.
+--
+-- EINE Abfrage, REIN LESEND. Aendert nichts, legt nichts an, loescht nichts.
+-- Getrennt von Abfrage A ausfuehren.
+--
+-- Lesehilfe
+--   art = Policy   aktion  = Befehl und Art (permissive/restrictive)
+--                  rollen  = Zielrollen der Policy
+--                  Spalte 5 = USING, Spalte 6 = WITH CHECK
+--   art = Trigger  aktion  = Schaltzustand
+--                  rollen  = eigener Trigger oder interner Systemtrigger
+--                  Spalte 5 = vollstaendige Triggerdefinition
+--                  Spalte 6 = Eigentuemer und Name der Triggerfunktion
+--
+--   Interne Trigger werden mit ausgewiesen. Auf storage.objects sind das die
+--   Fremdschluesseltrigger nach storage.buckets; sie gehoeren zum Bestand.
+-- ===========================================================================
+
+select
+  'Policy'                                     as art,
+  p.policyname                                 as name,
+  p.cmd || ' (' || p.permissive || ')'         as aktion,
+  array_to_string(p.roles, ', ')               as rollen,
+  coalesce(p.qual,       '(kein USING)')       as using_oder_definition,
+  coalesce(p.with_check, '(kein WITH CHECK)')  as with_check_oder_funktion
+from pg_policies as p
+where p.schemaname = 'storage'
+  and p.tablename  = 'objects'
+
+union all
+
+select
+  'Trigger',
+  t.tgname,
+  case t.tgenabled
+    when 'O' then 'aktiv'
+    when 'D' then 'DEAKTIVIERT'
+    when 'R' then 'nur Replika'
+    when 'A' then 'immer aktiv'
+    else t.tgenabled::text
+  end,
+  case when t.tgisinternal then 'intern (Systemtrigger)' else 'eigener Trigger' end,
+  pg_get_triggerdef(t.oid, true),
+  pg_get_userbyid(f.proowner)::text || ' -> ' || n.nspname || '.' || f.proname || '()'
+from pg_trigger as t
+join pg_proc      as f on f.oid = t.tgfoid
+join pg_namespace as n on n.oid = f.pronamespace
+where t.tgrelid = to_regclass('storage.objects')
+
+order by 1, 2;

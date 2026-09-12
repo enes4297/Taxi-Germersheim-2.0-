@@ -15,10 +15,12 @@
 #
 # Aufruf:  powershell -File 13_concurrency_run.ps1
 
+param([string]$Db = 'tgtest')
+
 $ErrorActionPreference = 'Stop'
 $PgBin = "$env:USERPROFILE\pgtest-tg\pgsql\bin"
 $env:PGPASSWORD = 'tgtestlocal'
-$Conn = @('-h', '127.0.0.1', '-p', '55432', '-U', 'postgres', '-d', 'tgtest')
+$Conn = @('-h', '127.0.0.1', '-p', '55432', '-U', 'postgres', '-d', $Db)
 $Here = $PSScriptRoot
 
 function Invoke-Sql([string]$Sql) {
@@ -43,7 +45,7 @@ function New-SqlFile([string]$Name, [string]$Body) {
 function Start-Psql([string]$File) {
     $out = Join-Path $env:TEMP ([IO.Path]::GetFileNameWithoutExtension($File) + '.out')
     $p = Start-Process -FilePath "$PgBin\psql.exe" `
-        -ArgumentList (@('-h','127.0.0.1','-p','55432','-U','postgres','-d','tgtest','-v','ON_ERROR_STOP=0','-f',$File)) `
+        -ArgumentList (@('-h','127.0.0.1','-p','55432','-U','postgres','-d',$Db,'-v','ON_ERROR_STOP=0','-f',$File)) `
         -NoNewWindow -PassThru -RedirectStandardOutput $out -RedirectStandardError "$out.err"
     return @{ Proc = $p; Out = $out }
 }

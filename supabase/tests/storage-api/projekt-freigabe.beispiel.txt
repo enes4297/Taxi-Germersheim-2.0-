@@ -1,0 +1,16 @@
+# Freigabe: das EINZIGE Projekt, gegen das 20_storage_api_test.ps1 laufen darf.
+#
+# Als projekt-freigabe.txt kopieren und die Projektkennung des TESTPROJEKTS
+# eintragen - entweder die vollstaendige URL oder nur die Kennung (die
+# Zeichenfolge zwischen https:// und .supabase.co).
+#
+# Zeilen mit # sind Kommentar. Es zaehlt die erste Zeile, die keiner ist.
+#
+# Warum eine zweite Datei? Damit die Projektkennung nicht aus derselben Quelle
+# stammt wie die Verbindung selbst. Wer in konfiguration.json versehentlich ein
+# anderes Projekt eintraegt, wird hier gestoppt. Eine Datei, die sich selbst
+# bestaetigt, waere keine Schranke.
+#
+# projekt-freigabe.txt ist per .gitignore ausgeschlossen.
+
+HIER_TESTPROJEKT_KENNUNG_EINTRAGEN

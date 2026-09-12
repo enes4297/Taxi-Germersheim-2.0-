@@ -12,9 +12,25 @@ Hintergrund: Supabase hat die zulässigen SQL-Eingriffe im Schema `storage` zum
 PostgreSQL verlangt für `CREATE POLICY` Eigentümerschaft an der Tabelle — die
 Projektrolle hat sie nicht. Der vorgesehene Weg ist deshalb das Dashboard.
 
-**Reihenfolge beachten:** Das SQL-Skript muss vorher gelaufen sein, sonst gibt es
-die Funktionen `private.is_active_employee()`, `private.is_unlinked_document()`
-und `private.is_admin()` noch nicht, auf die alle vier Policies sich stützen.
+**Reihenfolge beachten — verbindlich:**
+
+1. `testprojekt-einrichtung-ohne-storage-trigger.sql` im SQL Editor.
+   Vorher gibt es die Funktionen `private.is_active_employee()`,
+   `private.is_unlinked_document()` und `private.is_admin()` noch nicht, auf die
+   alle vier Policies sich stützen.
+2. `storage-trigger-nachtragen.sql` im SQL Editor.
+3. Bucket und die drei lesenden/schreibenden Policies hier im Dashboard.
+4. Die DELETE-Policy `employee_documents_delete_unlinked` **zuletzt**.
+
+Der Grund für Schritt 4: Ohne den Trigger aus Schritt 2 ist die DELETE-Policy die
+einzige Schranke. Ihre Prüfung läuft auf dem Snapshot des Statements und sieht
+eine gleichzeitig entstehende Verknüpfung nicht. Zwischen Policy und Trigger darf
+deshalb kein Zeitfenster liegen.
+
+**Das TRIGGER-Recht ist eine andere Prüfung als die Eigentümerschaft.** Die
+Diagnose im Testprojekt hat beides getrennt ausgewiesen: Mitgliedschaft im
+Eigentümer `USAGE=false`/`MEMBER=false`, TRIGGER-Recht dagegen `true`. Policies
+gehen deshalb nur über das Dashboard — der Trigger aber sehr wohl über SQL.
 
 ---
 
@@ -111,25 +127,69 @@ fertig.
 
 ---
 
-## Was an dieser Fassung fehlt
+## Was diese Fassung leistet — und was offen bleibt
 
 Der `BEFORE DELETE`-Trigger auf `storage.objects` aus Abschnitt 5 der Migration
-011 entfällt. Die Folgen stehen ausführlich im Skript selbst bei
-`5) ENTFAELLT`. Kurz:
+011 **entfällt nicht**. Er wird per `storage-trigger-nachtragen.sql` angelegt;
+das TRIGGER-Recht liegt laut Diagnose vor. Damit greift das vollständige
+Zusammenspiel:
 
-- Die DELETE-Policy verhindert das Löschen verknüpfter Nachweise im
-  Normalbetrieb.
-- Die Sperren auf unseren eigenen Tabellen (`document_submissions`,
-  `employee_documents`) bleiben vollständig und verhindern weiterhin, dass eine
-  Verknüpfung auf eine verschwundene Datei zeigt.
-- Offen bleibt allein die umgekehrte Gleichzeitigkeit: Verknüpfung besteht,
-  Datei wurde im selben Augenblick entfernt. Ergebnis wäre ein ins Leere
-  zeigender Verweis — ein kaputter Download, kein Fremdzugriff.
-- Solche Verweise findet `public.check_document_link_integrity()` (nur Admins,
-  rein lesend).
-- Dieses Verhalten ist **hergeleitet, nicht nachgemessen**: Der lokale
-  Nebenläufigkeitstest `supabase/tests/local/13_concurrency_*` wurde mit
-  Trigger bestanden und für die Fassung ohne Trigger noch nicht wiederholt.
+- Beim Löschen hält PostgreSQL die Zeilensperre auf `storage.objects`, danach
+  prüft der Trigger die Verknüpfung mit frischem Snapshot erneut.
+- Beim Verknüpfen nimmt der Trigger aus Abschnitt 6
+  (`private.lock_document_object`) auf derselben Zeile ein `FOR UPDATE`.
+- Keine der beiden Seiten kann die andere übersehen.
+
+Der Trigger ist auch der einzige Teil dieses Aufbaus, der **unabhängig von RLS**
+greift. Die Rolle `postgres` hat `BYPASSRLS` — für sie sind alle vier Policies
+wirkungslos, der Trigger dagegen feuert.
+
+**Kontrolle der Policies nicht im SQL Editor vornehmen.** Aus demselben Grund:
+Wer dort als `postgres` ein `select` oder `delete` absetzt, umgeht RLS und misst
+nichts. Die Policies sind nur in einer echten angemeldeten Sitzung prüfbar.
+
+### Wenn das Dashboard `schema "private" does not exist` meldet
+
+Die vier Ausdrücke rufen Funktionen aus dem Schema `private` auf. Migration 002
+vergibt `usage on schema private` nur an `authenticated`. Hat die Rolle, mit der
+das Dashboard die Policy anlegt, dieses Recht nicht, scheitert das Anlegen mit
+genau dieser Meldung. Lokal am 11.09.2026 reproduziert. Abhilfe im SQL Editor:
+
+```sql
+grant usage on schema private to supabase_storage_admin;
+```
+
+Das vergibt die Projektrolle an ihrem **eigenen** Schema — keine
+Rechteausweitung für uns. Erst danach die Policy erneut anlegen.
+
+### Der Trigger lässt sich nicht mehr zurücknehmen
+
+`create trigger` verlangt nur das TRIGGER-Recht, `drop trigger` dagegen
+Eigentümerschaft an `storage.objects`. Die Projektrolle kann
+`storage_objects_guard_delete` also anlegen, aber nicht wieder entfernen; dafür
+braucht es `supabase_storage_admin`. Das ist vor Schritt 2 zu wissen.
+
+### Offen
+
+- Der gesamte Ablauf wurde am 11.09.2026 **lokal** durchgespielt, mit
+  nachgebildeter Rechtelage: 17 von 17 Prüfungen bestanden, 46 Verhaltenstests,
+  beide Nebenläufigkeitsfälle. Protokoll:
+  `supabase/tests/local/ERGEBNIS-2026-09-11-setupweg.md`.
+- Gegen das Testprojekt ist **nichts davon gelaufen**.
+- Gelöscht wurde lokal per SQL. Die **echte Storage-API ist nicht geprüft** —
+  ob sie denselben Weg nimmt und den Trigger auslöst, steht aus.
+- Der Trigger schützt die Reihenfolge; er ersetzt keinen Testlauf.
+- Verwaiste Verweise findet weiterhin `public.check_document_link_integrity()`
+  (nur Admins, rein lesend).
+
+### Falls das TRIGGER-Recht doch fehlt
+
+Dann ist der Wettlauf mit Löschrecht nicht zu schließen. In dem Fall:
+DELETE-Policy **gar nicht anlegen** und die automatische Bereinigung in
+`fahrer/employee-supabase.js` abschalten. Verwaiste Uploads räumt dann ein
+Admin-Vorgang auf. Ein „erst prüfen, dann löschen" in einer Edge Function ist
+**kein** Ersatz — Prüfung und Löschen wären zwei getrennte Vorgänge ohne
+gehaltene Sperre dazwischen.
 
 ## Quellen
 
