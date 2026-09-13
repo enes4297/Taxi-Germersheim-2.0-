@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neues Passwort | Taxi Germersheim</title>
+  <meta name="description" content="Neues Passwort für das Taxi-Germersheim-Kundenkonto festlegen." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="public-visual-repair.css" />
+  <link rel="stylesheet" href="auth-demo.css" />
+  <link rel="stylesheet" href="public-system.css" />
+  <script src="public-system.js" defer></script>
+</head>
+<body class="auth-page auth-page--premium tg-public" data-tg-page="none">
+  <header class="public-auth-header" aria-label="Öffentliche Navigation">
+    <a class="public-auth-brand" href="index.html" aria-label="Taxi Germersheim Startseite">
+      <img src="logo.png" alt="Taxi Germersheim" />
+      <span>Taxi Germersheim</span>
+    </a>
+
+    <nav class="public-auth-nav" aria-label="Hauptnavigation">
+      <a href="index.html">Startseite</a>
+      <a href="index.html?page=services">Leistungen</a>
+      <a href="flotte.html">Fahrzeugflotte</a>
+      <a href="rewards.html">Rewards</a>
+      <a href="hilfe-kontakt.html">Kontakt</a>
+    </nav>
+
+    <a class="public-auth-cta" href="index.html?page=booking">Ohne Konto buchen</a>
+  </header>
+
+  <main class="auth-shell auth-shell--split" aria-labelledby="resetTitle">
+    <section class="auth-spotlight" aria-label="Neues Passwort festlegen">
+      <h1 id="resetTitle">Neues Passwort festlegen</h1>
+      <p class="auth-spotlight-copy">Vergeben Sie ein neues sicheres Passwort für Ihr Taxi-Germersheim-Kundenkonto.</p>
+    </section>
+
+    <section class="auth-card" aria-label="Passwort ändern">
+      <div class="auth-card-header">
+        <h2 class="auth-card-kicker">Passwort ändern</h2>
+        <p class="auth-card-subtitle">Der Recovery-Link wird sicher geprüft, bevor Sie Ihr Passwort ändern können.</p>
+      </div>
+
+      <p id="recoveryChecking" class="auth-success" role="status" aria-live="polite">Recovery-Link wird geprüft …</p>
+
+      <div id="recoveryInvalid" class="auth-form" hidden>
+        <p class="auth-error" role="alert">Dieser Link ist nicht mehr gültig.</p>
+        <a class="auth-btn" href="passwort-vergessen.html">Neuen Reset-Link anfordern</a>
+      </div>
+
+      <form id="resetPasswordForm" class="auth-form" novalidate hidden>
+        <div class="auth-field">
+          <label for="newPassword">Neues Passwort</label>
+          <div class="auth-pass-wrap">
+            <input id="newPassword" name="newPassword" type="password" minlength="8" autocomplete="new-password" aria-describedby="passwordRules" required />
+            <span class="password-toggle-slot">
+              <button class="auth-pass-toggle" type="button" data-target="newPassword" data-label="Neues Passwort" aria-label="Neues Passwort anzeigen" aria-pressed="false">Anzeigen</button>
+            </span>
+          </div>
+        </div>
+
+        <div id="passwordStrength" class="auth-password-strength" aria-live="polite" hidden>
+          <div class="auth-strength" aria-hidden="true"><i id="passwordStrengthBar"></i></div>
+          <span id="passwordStrengthText" class="auth-strength-text"></span>
+        </div>
+
+        <ul id="passwordRules" class="auth-rule-list" aria-label="Passwortregeln">
+          <li data-rule="len">8 Zeichen</li>
+          <li data-rule="upper">Großbuchstabe</li>
+          <li data-rule="number">Zahl</li>
+        </ul>
+
+        <div class="auth-field">
+          <label for="confirmPassword">Passwort wiederholen</label>
+          <div class="auth-pass-wrap">
+            <input id="confirmPassword" name="confirmPassword" type="password" minlength="8" autocomplete="new-password" required />
+            <span class="password-toggle-slot">
+              <button class="auth-pass-toggle" type="button" data-target="confirmPassword" data-label="Passwortwiederholung" aria-label="Passwortwiederholung anzeigen" aria-pressed="false">Anzeigen</button>
+            </span>
+          </div>
+        </div>
+
+        <p id="resetError" class="auth-error" aria-live="assertive"></p>
+        <button class="auth-submit" type="submit">Passwort speichern</button>
+      </form>
+
+      <div id="recoverySuccess" class="auth-form" hidden>
+        <p class="auth-success" role="status" aria-live="polite">Ihr Passwort wurde erfolgreich geändert.</p>
+        <a class="auth-btn" href="anmelden.html">Jetzt anmelden</a>
+      </div>
+
+      <div class="auth-trust" aria-label="Sicherer Passwort-Reset">
+        <span class="auth-trust-icon" aria-hidden="true"></span>
+        <span>Ihre Zugangsdaten werden sicher über Supabase Auth verarbeitet.</span>
+      </div>
+    </section>
+  </main>
+
+  <footer class="auth-footer" aria-label="Footer der Auth-Seite">
+    <a href="datenschutz.html">Datenschutz</a>
+    <a href="impressum.html">Impressum</a>
+    <a href="hilfe-kontakt.html">Kontakt</a>
+  </footer>
+
+  <script src="customer-auth.js"></script>
+  <script>
+    (function () {
+      var form = document.getElementById("resetPasswordForm");
+      var newPasswordInput = document.getElementById("newPassword");
+      var confirmPasswordInput = document.getElementById("confirmPassword");
+      var passwordRules = document.getElementById("passwordRules");
+      var passwordStrength = document.getElementById("passwordStrength");
+      var passwordStrengthBar = document.getElementById("passwordStrengthBar");
+      var passwordStrengthText = document.getElementById("passwordStrengthText");
+      var checkingState = document.getElementById("recoveryChecking");
+      var invalidState = document.getElementById("recoveryInvalid");
+      var successState = document.getElementById("recoverySuccess");
+      var error = document.getElementById("resetError");
+      var submitButton = form.querySelector('[type="submit"]');
+      var defaultButtonText = submitButton.textContent;
+      var client = null;
+      var recoveryReady = false;
+      var authSubscription = null;
+
+      function hasRecoveryCredentials() {
+        var searchParams = new URLSearchParams(window.location.search);
+        var hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        var hashRecovery = hashParams.get("type") === "recovery" && Boolean(hashParams.get("access_token"));
+        var queryRecovery = searchParams.get("type") === "recovery" && Boolean(searchParams.get("code"));
+        return hashRecovery || queryRecovery;
+      }
+
+      var recoveryCredentialsPresent = hasRecoveryCredentials();
+
+      function hasValidSession(session) {
+        return Boolean(session && session.access_token && session.user && session.user.id);
+      }
+
+      function clearRecoveryUrl() {
+        if (window.history && typeof window.history.replaceState === "function") {
+          window.history.replaceState(null, document.title, window.location.pathname);
+        }
+      }
+
+      function showInvalidState() {
+        recoveryReady = false;
+        clearRecoveryUrl();
+        checkingState.hidden = true;
+        form.hidden = true;
+        successState.hidden = true;
+        invalidState.hidden = false;
+        form.reset();
+        renderPasswordState();
+      }
+
+      function activateRecovery(session) {
+        if (!hasValidSession(session)) return false;
+        recoveryReady = true;
+        checkingState.hidden = true;
+        invalidState.hidden = true;
+        successState.hidden = true;
+        form.hidden = false;
+        clearRecoveryUrl();
+        return true;
+      }
+
+      function evaluatePassword(password) {
+        var rules = {
+          len: password.length >= 8,
+          upper: /[A-Z]/.test(password),
+          number: /\d/.test(password)
+        };
+        var score = Object.keys(rules).filter(function (ruleKey) {
+          return rules[ruleKey];
+        }).length;
+        return { rules: rules, score: score };
+      }
+
+      function renderPasswordState() {
+        var password = newPasswordInput.value || "";
+        var result = evaluatePassword(password);
+        var scorePercent = Math.round((result.score / 3) * 100);
+
+        passwordStrength.hidden = !password;
+        passwordStrengthBar.style.setProperty("--auth-strength", String(scorePercent) + "%");
+        passwordStrengthText.textContent = !password ? "" : (result.score < 2 ? "Schwach" : (result.score < 3 ? "Mittel" : "Stark"));
+
+        Object.keys(result.rules).forEach(function (ruleKey) {
+          var item = passwordRules.querySelector('[data-rule="' + ruleKey + '"]');
+          if (item) item.classList.toggle("is-ok", Boolean(result.rules[ruleKey]));
+        });
+
+        return result;
+      }
+
+      newPasswordInput.addEventListener("input", renderPasswordState);
+
+      document.querySelectorAll(".auth-pass-toggle").forEach(function (toggle) {
+        toggle.addEventListener("click", function () {
+          var input = document.getElementById(toggle.getAttribute("data-target"));
+          if (!input) return;
+
+          var visible = input.type === "text";
+          var label = toggle.getAttribute("data-label") || "Passwort";
+          input.type = visible ? "password" : "text";
+          toggle.textContent = visible ? "Anzeigen" : "Verbergen";
+          toggle.setAttribute("aria-label", label + (visible ? " anzeigen" : " verbergen"));
+          toggle.setAttribute("aria-pressed", visible ? "false" : "true");
+        });
+      });
+
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        if (form.getAttribute("aria-busy") === "true") return;
+        if (!recoveryReady || !client) {
+          showInvalidState();
+          return;
+        }
+
+        error.textContent = "";
+        var password = newPasswordInput.value || "";
+        var confirmation = confirmPasswordInput.value || "";
+        var passwordState = renderPasswordState();
+
+        if (!Object.keys(passwordState.rules).every(function (ruleKey) { return passwordState.rules[ruleKey]; })) {
+          error.textContent = "Das Passwort erfüllt noch nicht alle Regeln.";
+          newPasswordInput.focus();
+          return;
+        }
+
+        if (password !== confirmation) {
+          error.textContent = "Passwort und Bestätigung stimmen nicht überein.";
+          confirmPasswordInput.focus();
+          return;
+        }
+
+        form.setAttribute("aria-busy", "true");
+        submitButton.disabled = true;
+        submitButton.textContent = "Wird gespeichert …";
+
+        try {
+          var sessionResult = await client.auth.getSession();
+          if (sessionResult.error || !hasValidSession(sessionResult.data && sessionResult.data.session)) {
+            showInvalidState();
+            return;
+          }
+
+          var updateResult = await client.auth.updateUser({ password: password });
+          if (updateResult.error) throw updateResult.error;
+
+          form.reset();
+          renderPasswordState();
+          recoveryReady = false;
+          form.hidden = true;
+          invalidState.hidden = true;
+          checkingState.hidden = true;
+          successState.hidden = false;
+
+          var auth = window.CustomerAuth;
+          if (auth && typeof auth.signOut === "function") {
+            await auth.signOut();
+          }
+        } catch (updateError) {
+          console.error("Password update failed.", updateError);
+          error.textContent = "Das Passwort konnte gerade nicht geändert werden. Bitte versuchen Sie es später erneut.";
+        } finally {
+          form.setAttribute("aria-busy", "false");
+          submitButton.disabled = false;
+          submitButton.textContent = defaultButtonText;
+        }
+      });
+
+      async function initializeRecovery() {
+        try {
+          var auth = window.CustomerAuth;
+          client = auth && typeof auth.getClient === "function" ? await auth.getClient() : null;
+          if (!client || !client.auth || typeof client.auth.getSession !== "function" || typeof client.auth.onAuthStateChange !== "function" || typeof client.auth.updateUser !== "function") {
+            throw new Error("PASSWORD_RECOVERY_UNAVAILABLE");
+          }
+
+          var listenerResult = client.auth.onAuthStateChange(function (event, session) {
+            if (event === "PASSWORD_RECOVERY") {
+              activateRecovery(session);
+            }
+          });
+          authSubscription = listenerResult && listenerResult.data ? listenerResult.data.subscription : null;
+
+          var sessionResult = await client.auth.getSession();
+          if (sessionResult.error) throw sessionResult.error;
+          if (!recoveryReady && recoveryCredentialsPresent && hasValidSession(sessionResult.data && sessionResult.data.session)) {
+            activateRecovery(sessionResult.data.session);
+          }
+          if (!recoveryReady) showInvalidState();
+        } catch (recoveryError) {
+          console.error("Password recovery initialization failed.", recoveryError);
+          showInvalidState();
+        }
+      }
+
+      window.addEventListener("beforeunload", function () {
+        if (authSubscription && typeof authSubscription.unsubscribe === "function") {
+          authSubscription.unsubscribe();
+        }
+      });
+
+      renderPasswordState();
+      initializeRecovery();
+    })();
+  </script>
+</body>
+</html>

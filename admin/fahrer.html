@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Fahrerverwaltung</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
-  <link rel="stylesheet" href="admin.css">
+  <script src="sidebar.js"></script>
+<link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="fahrer-live.css">
-</head>
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -20,17 +23,7 @@
         </div>
       </div>
 
-      <nav class="admin-nav">
-        <a class="admin-nav-item" href="index.html">Dashboard</a>
-        <a class="admin-nav-item" href="#" aria-disabled="true">Fahrten</a>
-        <a class="admin-nav-item is-active" href="fahrer.html" aria-current="page">Fahrer</a>
-        <a class="admin-nav-item" href="#" aria-disabled="true">Kunden</a>
-        <a class="admin-nav-item" href="#" aria-disabled="true">Rewards</a>
-        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
-        <a class="admin-nav-item" href="#" aria-disabled="true">Statistiken</a>
-        <a class="admin-nav-item" href="einstellungen.html">Einstellungen</a>
-        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
-      </nav>
+      <nav class="admin-nav" data-admin-sidebar></nav>
     </aside>
 
     <main class="admin-main">
@@ -63,15 +56,15 @@
             <strong data-driver-stat="total">0</strong>
           </article>
           <article class="driver-overview-card is-active">
-            <small>🟢 Aktiv</small>
+            <small>✅ Aktiv</small>
             <strong data-driver-stat="active">0</strong>
           </article>
           <article class="driver-overview-card is-onroute">
-            <small>🔵 Unterwegs</small>
+            <small>🚕 Unterwegs</small>
             <strong data-driver-stat="onRoute">0</strong>
           </article>
           <article class="driver-overview-card is-pause">
-            <small>🟡 Pause</small>
+            <small>☕ Pause</small>
             <strong data-driver-stat="pause">0</strong>
           </article>
           <article class="driver-overview-card is-alert">
@@ -137,3 +130,7 @@
   <script src="fahrer.js"></script>
 </body>
 </html>
+
+
+
+

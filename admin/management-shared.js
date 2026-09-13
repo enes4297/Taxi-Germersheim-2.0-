@@ -10,7 +10,7 @@
   };
 
   const PERIODS = ["3h", "today", "tomorrow", "7d", "30d"];
-  const MANAGEMENT_STATUSES = ["Betrieb stabil", "erhoehte Auslastung", "Engpass moeglich", "kritischer Engpass", "Betriebsstoerung"];
+  const MANAGEMENT_STATUSES = ["Betrieb stabil", "erhöhte Auslastung", "Engpass möglich", "kritischer Engpass", "Betriebsstörung"];
   const RECOMMENDATION_STATUSES = ["neu", "geprueft", "angenommen", "teilweise umgesetzt", "abgelehnt", "erledigt"];
 
   const TIME_BLOCKS = [
@@ -333,22 +333,22 @@
     }
 
     return [
-      mk("Fahrten heute", m.rideTotal, "Gestern: 94", m.rideTotal >= 90 ? "steigend" : "stabil", m.rideTotal >= 110 ? "wichtig" : "normal", "Basis aus Dispo-Auftraegen und Finanzfahrten."),
+      mk("Fahrten heute", m.rideTotal, "Gestern: 94", m.rideTotal >= 90 ? "steigend" : "stabil", m.rideTotal >= 110 ? "wichtig" : "normal", "Basis aus Dispo-Aufträgen und Finanzfahrten."),
       mk("aktive Fahrten", m.activeRides, "Soll jetzt: 18", m.activeRides >= 18 ? "hoch" : "normal", m.activeRides > 24 ? "kritisch" : "normal", "Aktive Status aus Live-Dispo."),
-      mk("geplante Fahrten heute", m.plannedRides, "Vormerkungen: 26", m.plannedRides > 20 ? "steigend" : "stabil", "normal", "Neu/Bestaetigt/Zugewiesen/Wartet."),
+      mk("geplante Fahrten heute", m.plannedRides, "Vormerkungen: 26", m.plannedRides > 20 ? "steigend" : "stabil", "normal", "Neu/Bestätigt/Zugewiesen/Wartet."),
       mk("erwartete Fahrten heute", m.expectedToday, `Prognose +${m.expectedExtra}`, m.expectedExtra > 12 ? "steigend" : "stabil", m.expectedExtra > 18 ? "wichtig" : "normal", "Regelbasiert aus Zeit, Wochentag, Serien und Wetter-Demo."),
-      mk("freie Fahrzeuge", m.freeVehicles, "Mindestziel: 20%", m.freeVehicles < 3 ? "fallend" : "stabil", m.freeVehicles < 2 ? "kritisch" : m.freeVehicles < 4 ? "wichtig" : "normal", "Verfuegbare Fahrzeugkapazitaet."),
-      mk("Fahrzeuge unterwegs", m.onRoadVehicles, "Kapazitaet laufend", "stabil", "normal", "Aktuell gebundene Fahrzeuge."),
-      mk("Fahrzeuge in Werkstatt", m.workshopVehicles, "Ziel <= 2", m.workshopVehicles > 2 ? "steigend" : "stabil", m.workshopVehicles >= 3 ? "wichtig" : "normal", "Werkstattstatus reduziert operative Kapazitaet."),
+      mk("freie Fahrzeuge", m.freeVehicles, "Mindestziel: 20%", m.freeVehicles < 3 ? "fallend" : "stabil", m.freeVehicles < 2 ? "kritisch" : m.freeVehicles < 4 ? "wichtig" : "normal", "Verfügbare Fahrzeugkapazität."),
+      mk("Fahrzeuge unterwegs", m.onRoadVehicles, "Kapazität laufend", "stabil", "normal", "Aktuell gebundene Fahrzeuge."),
+      mk("Fahrzeuge in Werkstatt", m.workshopVehicles, "Ziel <= 2", m.workshopVehicles > 2 ? "steigend" : "stabil", m.workshopVehicles >= 3 ? "wichtig" : "normal", "Werkstattstatus reduziert operative Kapazität."),
       mk("Fahrer im Dienst", m.driversOnDuty, "Soll: 12", m.driversOnDuty < 10 ? "fallend" : "stabil", m.driversOnDuty < 9 ? "kritisch" : m.driversOnDuty < 11 ? "wichtig" : "normal", "Aus Personalstatus im Dienst/aktiv."),
       mk("offene Schichten", m.openShifts, "Soll: 0", m.openShifts > 0 ? "steigend" : "stabil", m.openShifts > 2 ? "kritisch" : m.openShifts > 0 ? "wichtig" : "normal", "Abgleich Dienstbedarf gegen aktuelle Besetzung."),
       mk("heutige Auslastung", `${m.utilization}%`, "Zielbereich: 70-88%", m.utilization > 88 ? "hoch" : "stabil", m.utilization > 92 ? "kritisch" : m.utilization > 86 ? "wichtig" : "normal", "Aus Fahrzeuge unterwegs + Werkstatt / Gesamtfahrzeuge."),
-      mk("durchschnittliche Wartezeit", `${m.waitAvg} Min`, `Ziel <= ${waitTarget} Min`, m.waitAvg > waitTarget ? "steigend" : "fallend", m.waitAvg > 16 ? "kritisch" : m.waitAvg > 13 ? "wichtig" : "normal", "Aus Dispo-Wartefeldern, sonst plausible Demo-Schaetzung."),
+      mk("durchschnittliche Wartezeit", `${m.waitAvg} Min`, `Ziel <= ${waitTarget} Min`, m.waitAvg > waitTarget ? "steigend" : "fallend", m.waitAvg > 16 ? "kritisch" : m.waitAvg > 13 ? "wichtig" : "normal", "Aus Dispo-Wartefeldern, sonst plausible Demo-Schätzung."),
       mk("heutiger Demo-Umsatz", `${m.dayRevenue} EUR`, "Tagesschnitt: 4.900 EUR", m.dayRevenue > 4900 ? "steigend" : "stabil", "normal", "Nicht steuerrelevant, reine Demo-Kalkulation."),
       mk("Monatsumsatz Demo", `${m.monthRevenue} EUR`, `Monatsziel: ${monthTarget} EUR`, m.monthRevenue >= monthTarget ? "im Plan" : "unter Plan", m.monthRevenue < monthTarget * 0.85 ? "wichtig" : "normal", "Aus Finanzrechnungen (brutto) aggregiert."),
-      mk("offene Forderungen", `${m.openClaims} EUR`, "Soll: sinkend", m.openClaims > 20000 ? "steigend" : "stabil", m.openClaims > 28000 ? "kritisch" : m.openClaims > 18000 ? "wichtig" : "normal", "Offene Betraege aus Rechnungen."),
-      mk("kritische Betriebsfaelle", m.criticalOps, "Sicherheitsziel: 0", m.criticalOps > 0 ? "steigend" : "stabil", m.criticalOps >= 4 ? "kritisch" : m.criticalOps > 0 ? "wichtig" : "normal", "Beschwerden/Vorfaelle/Unfaelle mit hoher Prioritaet."),
-      mk("Kundenzufriedenheit Demo", `${m.customerSatisfaction}%`, "Trendziel: >85%", m.customerSatisfaction < 82 ? "fallend" : "stabil", m.customerSatisfaction < 78 ? "kritisch" : m.customerSatisfaction < 85 ? "wichtig" : "normal", "Indikator aus Wartezeit, Beschwerden und Vorfaellen.")
+      mk("offene Forderungen", `${m.openClaims} EUR`, "Soll: sinkend", m.openClaims > 20000 ? "steigend" : "stabil", m.openClaims > 28000 ? "kritisch" : m.openClaims > 18000 ? "wichtig" : "normal", "Offene Beträge aus Rechnungen."),
+      mk("kritische Betriebsfälle", m.criticalOps, "Sicherheitsziel: 0", m.criticalOps > 0 ? "steigend" : "stabil", m.criticalOps >= 4 ? "kritisch" : m.criticalOps > 0 ? "wichtig" : "normal", "Beschwerden/Vorfälle/Unfälle mit hoher Priorität."),
+      mk("Kundenzufriedenheit Demo", `${m.customerSatisfaction}%`, "Trendziel: >85%", m.customerSatisfaction < 82 ? "fallend" : "stabil", m.customerSatisfaction < 78 ? "kritisch" : m.customerSatisfaction < 85 ? "wichtig" : "normal", "Indikator aus Wartezeit, Beschwerden und Vorfällen.")
     ];
   }
 
@@ -365,27 +365,27 @@
     }
     if (m.waitAvg > 15) {
       score += 2;
-      reasons.push("ungewoehnlich hohe Wartezeit");
+      reasons.push("ungewöhnlich hohe Wartezeit");
       areas.add("Disposition");
     }
     if (m.staffShortage >= 2) {
       score += 2;
-      reasons.push("mehrere Ausfaelle in Personalverfuegbarkeit");
+      reasons.push("mehrere Ausfälle in Personalverfügbarkeit");
       areas.add("Personal");
     }
     if (m.vehicleFailures >= 1) {
       score += 2;
-      reasons.push("Fahrzeugausfall/Unfallpruefung offen");
+      reasons.push("Fahrzeugausfall/Unfallprüfung offen");
       areas.add("Werkstatt");
     }
     if (m.qualityOpen >= 6) {
       score += 1;
-      reasons.push("hohe Zahl offener Qualitaetsfaelle");
-      areas.add("Qualitaet");
+      reasons.push("hohe Zahl offener Qualitätsfälle");
+      areas.add("Qualität");
     }
     if (m.financeOpenCases >= 12) {
       score += 1;
-      reasons.push("Rueckstand in Abrechnung");
+      reasons.push("Rückstand in Abrechnung");
       areas.add("Abrechnung");
     }
 
@@ -396,10 +396,10 @@
     else if (score >= 2) status = MANAGEMENT_STATUSES[1];
 
     const actions = [];
-    if (m.freeVehicles <= 2 || m.waitAvg > 15) actions.push("Reservefahrzeug und Reservefahrer pruefen");
+    if (m.freeVehicles <= 2 || m.waitAvg > 15) actions.push("Reservefahrzeug und Reservefahrer prüfen");
     if (m.staffShortage >= 2) actions.push("Vertretung und Schichtanpassung vorbereiten");
     if (m.vehicleFailures >= 1) actions.push("Werkstattfreigabe priorisieren");
-    if (m.financeOpenCases >= 12) actions.push("Abrechnungsrueckstand in Pruefcenter priorisieren");
+    if (m.financeOpenCases >= 12) actions.push("Abrechnungsrückstand im Prüfcenter priorisieren");
     if (!actions.length) actions.push("Betrieb fortlaufend beobachten");
 
     return {
@@ -495,36 +495,36 @@
     }
 
     if (t.some((x) => x.block === "06:00-09:00" && (x.status === "Engpass" || x.status === "kritisch"))) {
-      add("kritisch", "zu wenige Fahrer in Hauptzeit", "Laengere Wartezeiten und offene Auftraege", "Fruehstart oder Reserve aktivieren", "Disposition", links().schichtplanung);
+      add("kritisch", "zu wenige Fahrer in Hauptzeit", "Längere Wartezeiten und offene Aufträge", "Frühstart oder Reserve aktivieren", "Disposition", links().schichtplanung);
     }
-    if (m.freeVehicles <= 2) add("kritisch", "zu wenige freie Fahrzeuge", "Auftraege koennen nicht zeitnah disponiert werden", "Ersatzfahrzeug und Werkstattfreigabe pruefen", "Fahrzeuge", links().fahrzeuge);
-    if (m.workshopVehicles >= 2) add("wichtig", "mehrere Fahrzeuge in Werkstatt", "Kapazitaet sinkt in Peak-Zeiten", "Werkstattpriorisierung und Umplanung", "Werkstatt", links().werkstatt);
+    if (m.freeVehicles <= 2) add("kritisch", "zu wenige freie Fahrzeuge", "Aufträge können nicht zeitnah disponiert werden", "Ersatzfahrzeug und Werkstattfreigabe prüfen", "Fahrzeuge", links().fahrzeuge);
+    if (m.workshopVehicles >= 2) add("wichtig", "mehrere Fahrzeuge in Werkstatt", "Kapazität sinkt in Peak-Zeiten", "Werkstattpriorisierung und Umplanung", "Werkstatt", links().werkstatt);
 
     const hasWheelchairOrder = source.orders.some((o) => normalize(o.rideType).includes("rollstuhl") && !["Abgeschlossen", "Ziel erreicht"].includes(o.status));
     const wheelchairFree = source.vehicles.some((v) => classifyVehicle(v).wheelchair && vehicleStatus(v) === "frei");
-    if (hasWheelchairOrder && !wheelchairFree) add("kritisch", "Rollstuhlfahrzeug nicht verfuegbar", "Medizinische Fahrt gefaehrdet", "Rollstuhlfahrzeug reservieren oder Zeitfenster neu planen", "Disposition", links().liveDispo);
+    if (hasWheelchairOrder && !wheelchairFree) add("kritisch", "Rollstuhlfahrzeug nicht verfügbar", "Medizinische Fahrt gefährdet", "Rollstuhlfahrzeug reservieren oder Zeitfenster neu planen", "Disposition", links().liveDispo);
 
     const hasVanOrder = source.orders.some((o) => normalize(o.rideType).includes("grossraum") || Number(o.persons || 1) > 4);
     const vanFree = source.vehicles.some((v) => classifyVehicle(v).van && vehicleStatus(v) === "frei");
-    if (hasVanOrder && !vanFree) add("wichtig", "Grossraumfahrzeug nicht verfuegbar", "Gruppenauftrag riskant", "Grossraumfahrzeug reservieren", "Disposition", links().liveDispo);
+    if (hasVanOrder && !vanFree) add("wichtig", "Großraumfahrzeug nicht verfügbar", "Gruppenauftrag riskant", "Großraumfahrzeug reservieren", "Disposition", links().liveDispo);
 
     const seriesUnassigned = source.orders.filter((o) => normalize(o.rideType).includes("serie") && !o.driverId).length + Math.max(0, source.seriesList.length > 0 ? 1 : 0);
-    if (seriesUnassigned > 0) add("wichtig", "Serienfahrten ohne Zuweisung", "Regelmaessige Kundenfahrten koennen ausfallen", "Serienfahrt neu zuweisen", "Serienfahrten", links().serie);
+    if (seriesUnassigned > 0) add("wichtig", "Serienfahrten ohne Zuweisung", "Regelmäßige Kundenfahrten können ausfallen", "Serienfahrt neu zuweisen", "Serienfahrten", links().serie);
 
     const openMedical = source.orders.filter((o) => normalize(o.rideType).includes("krank") && !["Abgeschlossen", "Ziel erreicht"].includes(o.status)).length;
     if (openMedical >= 4) add("wichtig", "viele offene Krankenfahrten", "Versorgungs- und Terminrisiko", "Krankenfahrten priorisieren", "Disposition", links().liveDispo);
 
-    if (m.waitAvg > 15) add("kritisch", "ungewoehnlich hohe Wartezeit", "Kundenzufriedenheit sinkt", "Rueckrufteam aktivieren und Buedelung pruefen", "Telefonzentrale", "telefonzentrale.html");
-    if (source.complaints.some((c) => normalize(c.priority).includes("krit") && !["abgeschlossen", "geklaert"].includes(normalize(c.status)))) add("kritisch", "kritische Beschwerde", "Reputations- und Sicherheitsrisiko", "Sofortige Fallpruefung", "Qualitaet", links().kritik);
-    if (source.accidents.some((a) => !["abgeschlossen", "archiviert"].includes(normalize(a.status)))) add("kritisch", "Unfall mit Fahrzeugausfall", "Kapazitaetsreduktion und Kostenrisiko", "Fahrzeugstatus und Ersatzplanung pruefen", "Unfaelle", links().unfaelle);
-    if (source.docs.filter((d) => ["abgelaufen", "fehlt"].includes(normalize(d.status))).length >= 2) add("wichtig", "Dokumente mehrerer Fahrer ungueltig", "Einsatzfaehigkeit eingeschraenkt", "Dokumentpruefung priorisieren", "Personal", links().dokumente);
-    if (m.staffShortage >= 3) add("kritisch", "hoher Krankenstand", "Schichtabdeckung gefaehrdet", "Vertretungsvorschlaege aktivieren", "Personal", links().schichtplanung);
-    if (m.openShifts > 0) add("wichtig", "offene Schichten", "Kapazitaetsluecken in Spitzenzeiten", "Schichten neu besetzen", "Personal", links().schichtplanung);
-    if (m.financeOpenCases >= 12) add("wichtig", "hoher Rueckstand in Abrechnung", "Liquiditaets- und Abschlussrisiko", "Pruefcenter priorisieren", "Abrechnung", links().abrechnung);
-    if (!source.financeUi || source.financeUi.monthClosed !== true) add("wichtig", "Monatsabschluss blockiert", "Managementbericht unvollstaendig", "Monatsabschluss-Checkliste durchgehen", "Buchhaltung", links().monat);
+    if (m.waitAvg > 15) add("kritisch", "ungewöhnlich hohe Wartezeit", "Kundenzufriedenheit sinkt", "Rückrufteam aktivieren und Bündelung prüfen", "Telefonzentrale", "telefonzentrale.html");
+    if (source.complaints.some((c) => normalize(c.priority).includes("krit") && !["abgeschlossen", "geklaert"].includes(normalize(c.status)))) add("kritisch", "kritische Beschwerde", "Reputations- und Sicherheitsrisiko", "Sofortige Fallprüfung", "Qualität", links().kritik);
+    if (source.accidents.some((a) => !["abgeschlossen", "archiviert"].includes(normalize(a.status)))) add("kritisch", "Unfall mit Fahrzeugausfall", "Kapazitätsreduktion und Kostenrisiko", "Fahrzeugstatus und Ersatzplanung prüfen", "Unfälle", links().unfaelle);
+    if (source.docs.filter((d) => ["abgelaufen", "fehlt"].includes(normalize(d.status))).length >= 2) add("wichtig", "Dokumente mehrerer Fahrer ungültig", "Einsatzfähigkeit eingeschränkt", "Dokumentenprüfung priorisieren", "Personal", links().dokumente);
+    if (m.staffShortage >= 3) add("kritisch", "hoher Krankenstand", "Schichtabdeckung gefährdet", "Vertretungsvorschläge aktivieren", "Personal", links().schichtplanung);
+    if (m.openShifts > 0) add("wichtig", "offene Schichten", "Kapazitätslücken in Spitzenzeiten", "Schichten neu besetzen", "Personal", links().schichtplanung);
+    if (m.financeOpenCases >= 12) add("wichtig", "hoher Rückstand in Abrechnung", "Liquiditäts- und Abschlussrisiko", "Prüfcenter priorisieren", "Abrechnung", links().abrechnung);
+    if (!source.financeUi || source.financeUi.monthClosed !== true) add("wichtig", "Monatsabschluss blockiert", "Managementbericht unvollständig", "Monatsabschluss-Checkliste durchgehen", "Buchhaltung", links().monat);
 
     const companyOpen = source.invoices.filter((i) => normalize(i.kind).includes("firma") && Number(i.open || 0) > 1000);
-    if (companyOpen.length > 0) add("wichtig", "Firmenkunde mit hohem offenen Betrag", "Debitorenrisiko steigt", "Kundenkontakt und Zahlungsklaerung", "Controlling", links().controlling);
+    if (companyOpen.length > 0) add("wichtig", "Firmenkunde mit hohem offenen Betrag", "Debitorenrisiko steigt", "Kundenkontakt und Zahlungsklärung", "Controlling", links().controlling);
 
     return out;
   }

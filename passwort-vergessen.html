@@ -4,69 +4,153 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Passwort vergessen | Taxi Germersheim</title>
-  <meta name="description" content="Demo-Seite zum Zuruecksetzen des Passworts fuer den Taxi-Germersheim-Kundenbereich ohne echte E-Mail-Zustellung." />
+  <meta name="description" content="Passwort für das Taxi-Germersheim-Kundenkonto sicher zurücksetzen." />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="public-visual-repair.css" />
   <link rel="stylesheet" href="auth-demo.css" />
+  <link rel="stylesheet" href="public-system.css" />
+  <script src="public-system.js" defer></script>
 </head>
-<body class="auth-page">
-  <nav class="public-compact-nav" aria-label="Öffentliche Schnellnavigation">
-    <a class="public-back-home" data-public-back href="index.html">Zurück</a>
-    <div class="public-compact-nav-links">
-      <a href="index.html?page=services">Leistungen</a>
-      <a href="flotte.html">Fahrzeugflotte</a>
-      <a href="index.html?page=booking">Zur Buchung ohne Konto</a>
-    </div>
-  </nav>
-  <main class="auth-shell" aria-labelledby="forgotTitle">
-    <a class="auth-brand" href="index.html">
+<body class="auth-page auth-page--premium tg-public" data-tg-page="none">
+  <header class="public-auth-header" aria-label="Öffentliche Navigation">
+    <a class="public-auth-brand" href="index.html" aria-label="Taxi Germersheim Startseite">
       <img src="logo.png" alt="Taxi Germersheim" />
       <span>Taxi Germersheim</span>
     </a>
 
-    <header class="auth-head">
-      <h1 id="forgotTitle">Passwort vergessen</h1>
-      <p>Diese Seite simuliert nur den Reset-Prozess. Es wird keine echte E-Mail versendet.</p>
-    </header>
+    <nav class="public-auth-nav" aria-label="Hauptnavigation">
+      <a href="index.html">Startseite</a>
+      <a href="index.html?page=services">Leistungen</a>
+      <a href="flotte.html">Fahrzeugflotte</a>
+      <a href="rewards.html">Rewards</a>
+      <a href="hilfe-kontakt.html">Kontakt</a>
+    </nav>
 
-    <form id="forgotForm" class="auth-form" novalidate>
-      <div class="auth-field">
-        <label for="forgotEmail">E-Mail</label>
-        <input id="forgotEmail" name="email" type="email" autocomplete="email" required />
+    <a class="public-auth-cta" href="index.html?page=booking">Ohne Konto buchen</a>
+  </header>
+
+  <main class="auth-shell auth-shell--split" aria-labelledby="forgotTitle">
+    <section class="auth-spotlight" aria-label="Passwort zurücksetzen">
+      <h1 id="forgotTitle">Passwort vergessen</h1>
+      <p class="auth-spotlight-copy">Geben Sie die E-Mail-Adresse Ihres Kundenkontos ein.<br />Wir senden Ihnen einen Link, mit dem Sie ein neues Passwort vergeben können.</p>
+    </section>
+
+    <section class="auth-card" aria-label="Reset-Link anfordern">
+      <div class="auth-card-header">
+        <h2 class="auth-card-kicker">Reset-Link anfordern</h2>
+        <p class="auth-card-subtitle">Nutzen Sie die E-Mail-Adresse Ihres Kundenkontos.</p>
       </div>
 
-      <p id="forgotError" class="auth-error" aria-live="assertive"></p>
-      <p id="forgotSuccess" class="auth-success" aria-live="polite"></p>
-      <button class="auth-submit" type="submit">Reset-Link simulieren</button>
-    </form>
+      <form id="forgotForm" class="auth-form" novalidate>
+        <div class="auth-field">
+          <label for="forgotEmail">E-Mail-Adresse</label>
+          <input id="forgotEmail" name="email" type="email" inputmode="email" autocomplete="email" required />
+        </div>
 
-    <nav class="auth-links" aria-label="Passwort Hilfe Links">
-      <a href="anmelden.html">Zur Anmeldung</a>
-      <a href="registrieren.html">Neues Konto erstellen</a>
-      <a href="index.html?page=booking">Ohne Anmeldung fortfahren</a>
-    </nav>
+        <p id="forgotError" class="auth-error" aria-live="assertive"></p>
+        <div id="forgotSuccess" class="auth-success auth-reset-success" role="status" aria-live="polite" hidden>
+          <strong>Reset-Link angefordert</strong>
+          <span>Wenn die eingegebene E-Mail-Adresse mit einem Taxi-Germersheim-Kundenkonto verknüpft ist, erhalten Sie in Kürze eine E-Mail mit einem Link zum Zurücksetzen Ihres Passworts. Bitte prüfen Sie auch Ihren Spam-Ordner.</span>
+          <small>Keine E-Mail erhalten? Prüfen Sie bitte die eingegebene E-Mail-Adresse und versuchen Sie es erneut.</small>
+        </div>
+        <button class="auth-submit" type="submit">Reset-Link senden</button>
+      </form>
+
+      <div class="auth-split-links">
+        <a href="anmelden.html">Zur Anmeldung</a>
+      </div>
+
+      <div class="auth-trust" aria-label="Sicherer Passwort-Reset">
+        <span class="auth-trust-icon" aria-hidden="true"></span>
+        <span>Sicherer Passwort-Reset für Ihr Taxi-Germersheim-Konto</span>
+      </div>
+    </section>
   </main>
 
+  <footer class="auth-footer" aria-label="Footer der Auth-Seite">
+    <a href="datenschutz.html">Datenschutz</a>
+    <a href="impressum.html">Impressum</a>
+    <a href="hilfe-kontakt.html">Kontakt</a>
+  </footer>
+
+  <script src="customer-auth.js"></script>
   <script>
     (function () {
       var form = document.getElementById("forgotForm");
       var error = document.getElementById("forgotError");
       var success = document.getElementById("forgotSuccess");
+      var submitButton = form.querySelector('[type="submit"]');
+      var defaultButtonText = submitButton.textContent;
 
-      form.addEventListener("submit", function (event) {
+      function getRecoveryRedirectUrl() {
+        if (window.location.protocol !== "http:" && window.location.protocol !== "https:") {
+          throw new Error("PASSWORD_RESET_REQUIRES_HTTP_ORIGIN");
+        }
+        return new URL("/passwort-zuruecksetzen.html", window.location.origin).href;
+      }
+
+      function isAccountLookupError(resetError) {
+        var details = [resetError && resetError.code, resetError && resetError.message]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return details.includes("user_not_found") ||
+          details.includes("email_not_found") ||
+          /user.*not.*found|email.*not.*found|no user found/.test(details);
+      }
+
+      function showNeutralSuccess() {
+        success.hidden = false;
+        form.reset();
+      }
+
+      form.addEventListener("submit", async function (event) {
         event.preventDefault();
-        error.textContent = "";
-        success.textContent = "";
+        if (form.getAttribute("aria-busy") === "true") return;
 
-        var email = (form.elements.email.value || "").trim();
+        error.textContent = "";
+        success.hidden = true;
+
+        var emailInput = form.elements.email;
+        var email = (emailInput.value || "").trim();
         var emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        emailInput.value = email;
 
         if (!emailValid) {
           error.textContent = "Bitte eine gültige E-Mail-Adresse eingeben.";
+          emailInput.focus();
           return;
         }
 
-        success.textContent = "Demo-Hinweis: Ein Reset-Link waere jetzt an " + email + " versendet worden.";
+        form.setAttribute("aria-busy", "true");
+        submitButton.disabled = true;
+        submitButton.textContent = "Wird gesendet …";
+
+        try {
+          var auth = window.CustomerAuth;
+          var client = auth && typeof auth.getClient === "function" ? await auth.getClient() : null;
+          if (!client || !client.auth || typeof client.auth.resetPasswordForEmail !== "function") {
+            throw new Error("PASSWORD_RESET_UNAVAILABLE");
+          }
+
+          var result = await client.auth.resetPasswordForEmail(email, {
+            redirectTo: getRecoveryRedirectUrl()
+          });
+          if (result.error) throw result.error;
+
+          showNeutralSuccess();
+        } catch (resetError) {
+          if (isAccountLookupError(resetError)) {
+            showNeutralSuccess();
+          } else {
+            console.error("Password reset request failed.", resetError);
+            error.textContent = "Der Reset-Link konnte gerade nicht gesendet werden. Bitte versuchen Sie es später erneut.";
+          }
+        } finally {
+          form.setAttribute("aria-busy", "false");
+          submitButton.disabled = false;
+          submitButton.textContent = defaultButtonText;
+        }
       });
     })();
   </script>

@@ -191,6 +191,13 @@
     return `${Number(value || 0).toFixed(2).replace(".", ",")} EUR`;
   }
 
+  function formatDate(value) {
+    const text = String(value || "").trim();
+    if (!text) return "-";
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return match ? `${match[3]}.${match[2]}.${match[1]}` : text;
+  }
+
   function resolveDueClass(invoice) {
     if (invoice.status === "Bezahlt") return "billing-due-paid";
     if (invoice.status === "Überfällig") return "billing-due-overdue";
@@ -271,8 +278,8 @@
       <dl class="billing-modal-list">
         <div><dt>Rechnungsnummer</dt><dd>${invoice.id}</dd></div>
         <div><dt>Kunde/Firma</dt><dd>${invoice.customer}</dd></div>
-        <div><dt>Datum</dt><dd>${invoice.date}</dd></div>
-        <div><dt>Fällig bis</dt><dd>${invoice.dueDate}</dd></div>
+        <div><dt>Datum</dt><dd>${formatDate(invoice.date)}</dd></div>
+        <div><dt>Fällig bis</dt><dd>${formatDate(invoice.dueDate)}</dd></div>
         <div><dt>Betrag</dt><dd>${formatEuro(invoice.amount)}</dd></div>
         <div><dt>Status</dt><dd>${invoice.status}</dd></div>
         <div><dt>Zahlungsart</dt><dd>${invoice.paymentMethod}</dd></div>
@@ -343,11 +350,11 @@
         <dl class="billing-meta-list">
           <div>
             <dt>Datum</dt>
-            <dd>${invoice.date}</dd>
+            <dd>${formatDate(invoice.date)}</dd>
           </div>
           <div>
             <dt>Fällig bis</dt>
-            <dd><span class="billing-due-pill ${resolveDueClass(invoice)}">${invoice.dueDate}</span></dd>
+            <dd><span class="billing-due-pill ${resolveDueClass(invoice)}">${formatDate(invoice.dueDate)}</span></dd>
           </div>
           <div>
             <dt>Zahlungsart</dt>
@@ -431,7 +438,7 @@
 
     body.innerHTML = Object.values(grouped)
       .map(
-        (g) => `<tr><td>${g.company}</td><td>${g.count}</td><td>${formatEuro(g.total)}</td><td>${formatEuro(g.open)}</td><td>${g.overdue}</td><td>${g.lastDate}</td></tr>`
+        (g) => `<tr><td>${g.company}</td><td>${g.count}</td><td>${formatEuro(g.total)}</td><td>${formatEuro(g.open)}</td><td>${g.overdue}</td><td>${formatDate(g.lastDate)}</td></tr>`
       )
       .join("");
   }

@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Live-Karte</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
-  <link rel="stylesheet" href="admin.css">
-</head>
+<link rel="stylesheet" href="admin.css">
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -40,13 +42,13 @@
       <header class="admin-topbar">
         <div class="admin-topbar-title">
           <h1>Live Fleet Map Demo</h1>
-          <p>Live-Übersicht der Flotte in Germersheim, rein mit Demo-Daten</p>
+          <p>Live-ÃƒÅ“bersicht der Flotte in Germersheim, rein mit Demo-Daten</p>
         </div>
 
         <div class="admin-topbar-actions">
           <img class="admin-topbar-logo" src="../logo.png" alt="Taxi Germersheim Logo">
           <button class="admin-icon-btn" type="button" aria-label="Benachrichtigungen">
-            <span>🔔</span>
+            <span>Ã°Å¸â€â€</span>
             <b>0</b>
           </button>
           <button class="admin-user" type="button" aria-label="Benutzer">
@@ -62,11 +64,11 @@
         </div>
         <div class="live-overview-grid">
           <article class="live-overview-card">
-            <small>🟢 Fahrzeuge online</small>
+            <small>Ã°Å¸Å¸Â¢ Fahrzeuge online</small>
             <strong data-live-stat="online">0</strong>
           </article>
           <article class="live-overview-card is-onroute">
-            <small>🔵 Unterwegs</small>
+            <small>Ã°Å¸â€Âµ Unterwegs</small>
             <strong data-live-stat="onRoute">0</strong>
           </article>
           <article class="live-overview-card is-free">
@@ -74,15 +76,15 @@
             <strong data-live-stat="free">0</strong>
           </article>
           <article class="live-overview-card is-pause">
-            <small>🟡 Pause</small>
+            <small>Ã°Å¸Å¸Â¡ Pause</small>
             <strong data-live-stat="pause">0</strong>
           </article>
           <article class="live-overview-card is-workshop">
-            <small>🟠 Werkstatt</small>
+            <small>Ã°Å¸Å¸Â  Werkstatt</small>
             <strong data-live-stat="workshop">0</strong>
           </article>
           <article class="live-overview-card">
-            <small>🕒 Letzte Aktualisierung Demo</small>
+            <small>Ã°Å¸â€¢â€™ Letzte Aktualisierung Demo</small>
             <strong data-live-stat="lastUpdate">-</strong>
           </article>
         </div>
@@ -100,9 +102,9 @@
       </section>
 
       <section class="live-layout">
-        <article class="admin-panel live-map-panel" aria-label="Kartenfläche">
+        <article class="admin-panel live-map-panel" aria-label="KartenflÃƒÂ¤che">
           <div class="admin-panel-head">
-            <h2>Kartenfläche Demo</h2>
+            <h2>KartenflÃƒÂ¤che Demo</h2>
           </div>
           <div class="live-map-surface" data-live-map-surface></div>
         </article>
@@ -120,11 +122,11 @@
         <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="live-modal-title">
           <header class="admin-modal-head">
             <h3 id="live-modal-title" data-live-modal-title>Fahrzeugdetails</h3>
-            <button class="admin-icon-btn" type="button" aria-label="Modal schließen" data-live-modal-close>✕</button>
+            <button class="admin-icon-btn" type="button" aria-label="Modal schlieÃƒÅ¸en" data-live-modal-close>Ã¢Å“â€¢</button>
           </header>
           <div class="admin-modal-body" data-live-modal-body></div>
           <footer class="admin-modal-foot">
-            <button class="admin-btn admin-btn-secondary" type="button" data-live-modal-close>Schließen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-live-modal-close>SchlieÃƒÅ¸en</button>
           </footer>
         </section>
       </div>
@@ -134,3 +136,7 @@
   <script src="live-karte.js"></script>
 </body>
 </html>
+
+
+
+

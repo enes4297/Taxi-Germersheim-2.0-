@@ -275,10 +275,10 @@
       const plate = normalizePlate(vehicle.plate);
       if (blockedPlates.has(plate)) {
         vehicle.status = "Gesperrt";
-        vehicle.hint = vehicle.hint ? `${vehicle.hint} · V18 Unfallpruefung offen` : "V18 Unfallpruefung offen";
+        vehicle.hint = vehicle.hint ? `${vehicle.hint} · V18 Unfallprüfung offen` : "V18 Unfallprüfung offen";
       }
       if (criticalIssuePlates.has(plate)) {
-        vehicle.tireStatus = "Pruefung offen";
+        vehicle.tireStatus = "Prüfung offen";
         vehicle.hint = vehicle.hint ? `${vehicle.hint} · V18 Sicherheitsmangel` : "V18 Sicherheitsmangel";
       }
     });
@@ -346,7 +346,11 @@
     const date = new Date(`${value}T00:00:00`);
     if (Number.isNaN(date.getTime())) return value;
 
-    return new Intl.DateTimeFormat("de-DE").format(date);
+    return new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    }).format(date);
   }
 
   function formatKm(value) {

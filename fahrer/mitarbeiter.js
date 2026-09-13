@@ -9,8 +9,31 @@
     supabaseEmployee: null, /* { id, first_name, last_name, ... } */
     supabaseShifts: [],     /* veröffentlichte Schichten aus Supabase */
     supabaseVehicles: {},   /* { vehicleId: vehicleObjekt } */
-    supabaseVacationRequests: []
+    supabaseVacationRequests: [],
+    supabaseSicknessReports: [],   /* eigene Krankmeldungen aus Supabase */
+    supabaseDocumentTypes: [],     /* aus public.document_types */
+    supabaseDocumentSubmissions: [],
+    /* Bereits hochgeladener Krankenschein, dessen Krankmeldung noch nicht
+       gespeichert werden konnte. Wird bei einem erneuten Versuch
+       wiederverwendet, damit weder die Datei noch die Einreichung doppelt
+       entsteht. */
+    pendingSicknessAttachment: null,
+    /* Technischer Vorgangsschluessel des laufenden Sendevorgangs. Bleibt
+       ueber Wiederholungen gleich und wird erst nach bestaetigtem Erfolg
+       verworfen - auch nach einer verlorenen Antwort. */
+    pendingSicknessRequestId: null
   };
+
+  function neueVorgangsId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    /* Rueckfall fuer aeltere Browser: RFC-4122-Variante aus Zufallswerten. */
+    const b = new Uint8Array(16);
+    (window.crypto || {}).getRandomValues?.(b);
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    const h = [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+    return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+  }
 
   function requireDemoSession() {
     try {
@@ -105,6 +128,19 @@
       .replace(/Fuehrerschein/g, "Führerschein");
   }
 
+  /* Echtes HTML-Escaping fuer Werte aus der Datenbank.
+     ACHTUNG: visibleLabel() darunter ist eine Umlaut-Transliteration fuer
+     Demo-Texte, KEIN Escaper - und es veraendert Zeichenfolgen wie "ue".
+     Fuer IDs und Datenbankinhalte deshalb immer escHtml() verwenden. */
+  function escHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function visibleLabel(value) {
     return String(value || "")
       .replace(/ae/g, "ä")
@@ -126,6 +162,73 @@
     t.textContent = title;
     b.innerHTML = body;
     m.hidden = false;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Rueckmeldungen an den Mitarbeiter                                   */
+  /* ------------------------------------------------------------------ */
+  /* Grundregel: Eine Speicherung im Browser ist KEINE Uebermittlung.    */
+  /* Solange der Eingang bei der Zentrale nicht bestaetigt ist, darf     */
+  /* niemals "gesendet" oder "eingereicht" gemeldet werden.              */
+
+  const NOT_TRANSMITTED_TITLE = "Noch nicht übermittelt";
+  const NOT_TRANSMITTED_TEXT = "Noch nicht übermittelt. Bitte melde dich direkt bei der Zentrale.";
+
+  function setFeedback(selector, text, kind) {
+    const node = document.querySelector(selector);
+    if (!node) return;
+    node.hidden = false;
+    node.classList.remove("is-error", "is-warning");
+    if (kind === "error") node.classList.add("is-error");
+    if (kind === "warning") node.classList.add("is-warning");
+    node.textContent = text;
+  }
+
+  /* Nur lokal gespeichert: eindeutig als nicht uebermittelt kennzeichnen. */
+  function reportNotTransmitted(feedbackSelector, subjekt) {
+    setFeedback(feedbackSelector, NOT_TRANSMITTED_TEXT, "warning");
+    openModal(
+      NOT_TRANSMITTED_TITLE,
+      "<p><strong>" + subjekt + " wurde nur auf diesem Gerät gespeichert.</strong></p>" +
+      "<p>" + NOT_TRANSMITTED_TEXT + "</p>" +
+      "<p>Die Zentrale sieht diesen Eintrag noch nicht.</p>"
+    );
+  }
+
+  /* Erfolg ausschliesslich nach bestaetigter Speicherung im Backend. */
+  function reportTransmitted(feedbackSelector, titel, text) {
+    setFeedback(feedbackSelector, "✓ " + text, null);
+    openModal(titel, "<p>✓ " + text + "</p>");
+  }
+
+  function reportError(feedbackSelector, text) {
+    setFeedback(feedbackSelector, text, "error");
+  }
+
+  /* Verstaendliche Meldung zu einem fehlgeschlagenen Upload. */
+  function uploadErrorText(result) {
+    switch (result?.error) {
+      case "FILE_TOO_LARGE":
+        return "Die Datei ist größer als 10 MB.";
+      case "FILE_TYPE_NOT_ALLOWED":
+        return "Nur PDF, JPEG und PNG sind erlaubt.";
+      case "NO_FILE":
+        return "Bitte wähle zuerst eine Datei aus.";
+      case "NO_EMPLOYEE_PROFILE":
+        return "Für dein Konto ist kein aktiver Mitarbeiterzugang hinterlegt.";
+      default:
+        return result?.stage === "record"
+          ? "Die Datei wurde übertragen, konnte aber nicht zugeordnet werden."
+          : "Die Datei konnte nicht übertragen werden.";
+    }
+  }
+
+  /* Dateiauswahl und Vorschau eines Formulars zuruecksetzen. */
+  function resetUploadFields(form) {
+    if (!form) return;
+    form.querySelectorAll('input[type="file"]').forEach((input) => { input.value = ""; });
+    form.querySelectorAll("[data-portal-upload-filename]").forEach((n) => { n.textContent = "Keine Datei ausgewählt"; });
+    form.querySelectorAll("[data-portal-upload-preview]").forEach((n) => { n.hidden = true; n.innerHTML = ""; });
   }
 
   function closeModal() {
@@ -278,7 +381,9 @@
       const quota = vacationQuota(e.id);
       summary.innerHTML = `<div class="summary-row"><article class="summary-chip"><strong>Resturlaub</strong><p>${quota.remaining} Tage verfügbar</p></article><article class="summary-chip"><strong>Beantragt</strong><p>${quota.requested} Tage in Prüfung</p></article></div>`;
     }
-    list.innerHTML = vacs.length ? `<div class="driver-list">${vacs.map((v) => `<article class="driver-item compact-item"><strong>${formatPeriod(v.start, v.end)}</strong><p>${visibleLabel(v.status)}</p><div class="driver-item-actions"><button class="driver-btn" type="button" data-portal-vac-open="${v.id}">Ansehen</button>${["beantragt", "in Pruefung"].includes(v.status) ? `<button class="driver-btn warning" type="button" data-portal-vac-withdraw="${v.id}">Zurückziehen</button>` : ""}</div></article>`).join("")}</div>` : '<p class="demo-note">Noch kein Urlaubsantrag vorhanden.</p>';
+    /* Dieser Zweig laeuft nur ohne Supabase-Anbindung: Die Antraege liegen
+       dann ausschliesslich auf diesem Geraet. */
+    list.innerHTML = vacs.length ? `<div class="driver-list">${vacs.map((v) => `<article class="driver-item compact-item"><strong>${formatPeriod(v.start, v.end)}</strong><p>${visibleLabel(v.status)}</p><span class="status-pill warn">Nicht übermittelt</span><div class="driver-item-actions"><button class="driver-btn" type="button" data-portal-vac-open="${v.id}">Ansehen</button>${["beantragt", "in Pruefung"].includes(v.status) ? `<button class="driver-btn warning" type="button" data-portal-vac-withdraw="${v.id}">Zurückziehen</button>` : ""}</div></article>`).join("")}</div>` : '<p class="demo-note">Noch kein Urlaubsantrag vorhanden.</p>';
   }
 
   function renderShiftArea() {
@@ -320,26 +425,144 @@
     }).join("")}</div>`;
   }
 
+  /* Dokumenttypen aus der Datenbank in die Auswahl uebernehmen.
+     Markup und Klassen bleiben unveraendert - nur die Quelle wechselt. */
+  function renderDocumentTypes() {
+    const grid = document.querySelector(".doc-type-grid");
+    if (!grid) return;
+    const types = Array.isArray(state.supabaseDocumentTypes) ? state.supabaseDocumentTypes : [];
+    if (!types.length) return;
+
+    const ICONS = {
+      fuehrerschein: "🪪",
+      personenbefoerderungsschein: "🚕",
+      krankenschein_au: "🩺",
+      sonstiges: "📄"
+    };
+
+    grid.innerHTML = types.map((t, index) => `
+      <button class="doc-type-card${index === 0 ? " is-selected" : ""}" type="button"
+              data-doc-type="${escHtml(t.id)}" data-doc-type-label="${escHtml(t.label)}">
+        <span>${ICONS[t.key] || "📄"}</span>
+        <strong>${escHtml(t.label)}</strong>
+      </button>`).join("");
+
+    const hidden = document.querySelector("[data-portal-doc-type-hidden]");
+    if (hidden) hidden.value = types[0]?.id || "";
+  }
+
+  function documentTypeLabel(row) {
+    if (row?.document_types?.label) return row.document_types.label;
+    const match = state.supabaseDocumentTypes.find((t) => t.id === row?.document_type_id);
+    return match ? match.label : "Dokument";
+  }
+
   function renderDocs() {
-    const e = emp();
-    if (!e) return;
     const node = document.querySelector("[data-portal-doc-list]");
     if (!node) return;
+
+    const supabaseMode = Boolean(ES && ES.isConfigured());
+    if (supabaseMode) {
+      const subs = Array.isArray(state.supabaseDocumentSubmissions) ? state.supabaseDocumentSubmissions : [];
+      const strandedCount = state.data.documents.filter((d) => d.transmitted === false || Boolean(d.demoFileName)).length;
+      const hint = strandedCount > 0
+        ? `<p class="demo-note">Auf diesem Gerät liegen noch ${strandedCount} ältere, nicht übermittelte Dokumenteinträge aus einer früheren Version. Sie werden nicht nachträglich übertragen.</p>`
+        : "";
+
+      if (!subs.length) {
+        node.innerHTML = '<p class="demo-note">Noch kein Dokument übermittelt.</p>' + hint;
+        return;
+      }
+
+      node.innerHTML = `<div class="driver-list">${subs.map((s) => `
+        <article class="doc-card">
+          <div class="doc-card-head">
+            <div>
+              <strong>${escHtml(documentTypeLabel(s))}</strong>
+              <p>${escHtml(s.file_name || "Datei")} · ${escHtml(formatDate((s.submitted_at || "").slice(0, 10)))}</p>
+            </div>
+            <span class="status-pill active">Übermittelt</span>
+          </div>
+          <div class="driver-item-actions">
+            <button class="driver-btn" type="button" data-portal-doc-open="${escHtml(s.id)}">Ansehen</button>
+          </div>
+        </article>`).join("")}</div>${hint}`;
+      return;
+    }
+
+    const e = emp();
+    if (!e) return;
     const docs = state.data.documents.filter((d) => d.employeeId === e.id);
     node.innerHTML = docs.length ? `<div class="driver-list">${docs.map((d) => {
       const statusText = d.status === "abgelaufen" ? "Abgelaufen" : d.status === "fehlt" ? "Fehlt" : d.status === "laeuft bald ab" ? "Läuft bald ab" : "Gültig";
       const chipClass = d.status === "abgelaufen" || d.status === "fehlt" ? "danger" : d.status === "laeuft bald ab" ? "warn" : "info";
-      return `<article class="doc-card"><div class="doc-card-head"><div><strong>${displayTypeLabel(d.type)}</strong><p>${d.validUntil ? `Gültig bis ${formatDate(d.validUntil)}` : "Bitte bei Bedarf neu senden"}</p></div><span class="status-pill ${chipClass}">${statusText}</span></div></article>`;
-    }).join("")}</div>` : '<p class="demo-note">Noch kein Dokument gesendet.</p>';
+      /* Im Portal erfasste Dokumente liegen nur lokal vor. Bestandsdokumente
+         aus der Verwaltung tragen keine Portal-Kennzeichnung. */
+      const nurLokal = d.transmitted === false || Boolean(d.demoFileName);
+      const hinweis = nurLokal ? '<span class="status-pill warn">Nicht übermittelt</span>' : "";
+      return `<article class="doc-card"><div class="doc-card-head"><div><strong>${displayTypeLabel(d.type)}</strong><p>${d.validUntil ? `Gültig bis ${formatDate(d.validUntil)}` : "Bitte bei Bedarf direkt bei der Zentrale einreichen"}</p></div><span class="status-pill ${chipClass}">${statusText}</span></div>${hinweis}</article>`;
+    }).join("")}</div>` : '<p class="demo-note">Noch kein Dokument erfasst.</p>';
+  }
+
+  function sicknessStatusText(status) {
+    const map = {
+      submitted: "Eingegangen",
+      in_review: "In Prüfung",
+      accepted: "Anerkannt",
+      closed: "Abgeschlossen"
+    };
+    return map[String(status || "").toLowerCase()] || visibleLabel(status || "Eingegangen");
   }
 
   function renderAbsences() {
-    const e = emp();
-    if (!e) return;
     const node = document.querySelector("[data-portal-absence-list]");
     if (!node) return;
-    const absences = state.data.absences.filter((a) => a.employeeId === e.id);
-    node.innerHTML = absences.length ? `<div class="driver-list">${absences.map((a) => `<article class="driver-item compact-item"><strong>${formatPeriod(a.start, a.expectedEnd)}</strong><p>${visibleLabel(a.kind)} · ${visibleLabel(a.status)}</p>${a.note ? `<p>${visibleLabel(a.note)}</p>` : ""}</article>`).join("")}</div>` : '<p class="demo-note">Noch keine Krankmeldung gesendet.</p>';
+
+    /* Uebermittelte Krankmeldungen aus Supabase. */
+    const remote = Array.isArray(state.supabaseSicknessReports) ? state.supabaseSicknessReports : [];
+    const remoteHtml = remote.map((r) => `<article class="driver-item compact-item">
+      <strong>${formatPeriod(r.start_date, r.expected_end_date)}</strong>
+      <p>Krank · ${sicknessStatusText(r.status)}</p>
+      ${r.note ? `<p>${visibleLabel(r.note)}</p>` : ""}
+      <span class="status-pill active">Übermittelt</span>
+      <span class="status-pill neutral">Ohne Anhang</span>
+    </article>`).join("");
+
+    /* Aeltere Eintraege, die nur auf diesem Geraet liegen. Sie werden NICHT
+       automatisch nachtraeglich uebertragen und auch nicht geloescht. */
+    const supabaseMode = Boolean(ES && ES.isConfigured());
+    const e = emp();
+    const own = e ? state.data.absences.filter((a) => a.employeeId === e.id) : [];
+
+    /* Im Supabase-Modus laesst sich ein lokaler Altbestand keinem
+       angemeldeten Konto sicher zuordnen - die lokale Ablage nutzt eigene
+       IDs. Inhalte werden dort deshalb bewusst NICHT angezeigt (ein Geraet
+       kann geteilt sein). Stattdessen ein neutraler Hinweis, damit der
+       Bestand nicht stillschweigend verschwindet. */
+    const strandedCount = supabaseMode
+      ? state.data.absences.filter((a) => a.transmitted === false || a.via === "Mitarbeiterportal").length
+      : 0;
+
+    const localHtml = supabaseMode ? "" : own.map((a) => `<article class="driver-item compact-item">
+      <strong>${formatPeriod(a.start, a.expectedEnd)}</strong>
+      <p>${visibleLabel(a.kind)} · ${visibleLabel(a.status)}</p>
+      ${a.note ? `<p>${visibleLabel(a.note)}</p>` : ""}
+      <span class="status-pill warn">Nicht übermittelt</span>
+    </article>`).join("");
+
+    let hint = "";
+    if (supabaseMode && strandedCount > 0) {
+      hint = `<p class="demo-note" data-portal-absence-legacy-hint>Auf diesem Gerät liegen noch ${strandedCount} ältere, nicht übermittelte Einträge aus einer früheren Version. Sie werden nicht nachträglich übertragen – bitte bei Bedarf direkt bei der Zentrale melden.</p>`;
+    } else if (!supabaseMode && own.length) {
+      hint = '<p class="demo-note">Diese Einträge liegen nur auf diesem Gerät und wurden nicht übermittelt.</p>';
+    }
+
+    if (!remote.length && !localHtml && !hint) {
+      node.innerHTML = '<p class="demo-note">Noch keine Krankmeldung erfasst.</p>';
+      return;
+    }
+
+    node.innerHTML = `<div class="driver-list">${remoteHtml}${localHtml}</div>${hint}`;
   }
 
   function renderMessages() {
@@ -461,6 +684,23 @@
 
       const vacationRequests = await ES.getMyVacationRequests();
       state.supabaseVacationRequests = Array.isArray(vacationRequests) ? vacationRequests : [];
+
+      /* Eigene Krankmeldungen. Damit stehen sie auch nach einem Neuladen
+         wieder zur Verfuegung. */
+      if (typeof ES.getMySicknessReports === "function") {
+        const sickness = await ES.getMySicknessReports();
+        state.supabaseSicknessReports = Array.isArray(sickness) ? sickness : [];
+      }
+
+      /* Dokumenttypen und eigene Einreichungen. */
+      if (typeof ES.getDocumentTypes === "function") {
+        const types = await ES.getDocumentTypes();
+        state.supabaseDocumentTypes = Array.isArray(types) ? types : [];
+      }
+      if (typeof ES.getMyDocumentSubmissions === "function") {
+        const subs = await ES.getMyDocumentSubmissions();
+        state.supabaseDocumentSubmissions = Array.isArray(subs) ? subs : [];
+      }
     } catch (err) {
       console.error("Dienstplandaten konnten nicht geladen werden.", err?.message);
     }
@@ -629,6 +869,13 @@
     if (hidden) hidden.value = type;
   }
 
+  /* Erste verfuegbare Dokumentart auswaehlen - unabhaengig davon, ob die
+     Auswahl aus der Datenbank oder aus dem statischen Markup stammt. */
+  function selectFirstDocumentType() {
+    const first = document.querySelector("[data-doc-type]");
+    if (first) selectDocumentType(first.getAttribute("data-doc-type"));
+  }
+
   function setActiveSection(section, options = {}) {
     const allowed = ["dienstplan", "urlaub", "krank", "dokumente", "mitteilungen", "profil"];
     const safeSection = allowed.includes(section) ? section : "dienstplan";
@@ -729,7 +976,42 @@
       if (quick) {
         const target = quick.getAttribute("data-portal-quick-action") || "dienstplan";
         setActiveSection(target);
-        if (target === "dokumente") selectDocumentType("Führerschein");
+        if (target === "dokumente") selectFirstDocumentType();
+        return;
+      }
+
+      /* Eigenen Nachweis oeffnen. Der Bucket ist privat - es gibt keine
+         oeffentliche URL. Stattdessen eine nur kurz gueltige signierte URL,
+         die bei jedem Klick neu erzeugt wird. */
+      const docOpen = event.target.closest("[data-portal-doc-open]");
+      if (docOpen) {
+        const id = docOpen.getAttribute("data-portal-doc-open") || "";
+        const row = state.supabaseDocumentSubmissions.find((s) => s.id === id);
+        if (!row || !ES || typeof ES.getSignedDocumentUrl !== "function") return;
+
+        /* Das Fenster MUSS synchron im Klick geoeffnet werden. Ein
+           window.open() erst nach dem await wuerde vom Popup-Blocker
+           verworfen. Die signierte Adresse wird danach nachgereicht. */
+        const fenster = window.open("", "_blank");
+        if (fenster) {
+          try { fenster.opener = null; } catch (_e) { /* egal */ }
+        }
+
+        docOpen.disabled = true;
+        ES.getSignedDocumentUrl(row.file_path, 60)
+          .then((url) => {
+            if (url && fenster) {
+              fenster.location.href = url;
+            } else {
+              if (fenster) fenster.close();
+              reportError("[data-portal-doc-feedback]", "Das Dokument konnte nicht geöffnet werden. Bitte versuche es noch einmal.");
+            }
+          })
+          .catch(() => {
+            if (fenster) fenster.close();
+            reportError("[data-portal-doc-feedback]", "Das Dokument konnte nicht geöffnet werden. Bitte versuche es noch einmal.");
+          })
+          .finally(() => { docOpen.disabled = false; });
         return;
       }
 
@@ -837,46 +1119,32 @@
         const startDate = String(fd.get("start") || "").trim();
         const endDate = String(fd.get("end") || "").trim();
         const note = String(fd.get("comment") || "").trim();
-        const feedback = document.querySelector("[data-portal-vac-feedback]");
 
         if (!startDate || !endDate || endDate < startDate) {
-          if (feedback) {
-            feedback.hidden = false;
-            feedback.classList.add("is-error");
-            feedback.textContent = "Bitte wähle einen gültigen Zeitraum.";
-          }
+          reportError("[data-portal-vac-feedback]", "Bitte wähle einen gültigen Zeitraum.");
           return;
         }
 
         if (ES && ES.isConfigured()) {
           try {
             const result = await ES.createVacationRequest({ startDate, endDate, note });
-            if (!result?.ok) {
-              if (feedback) {
-                feedback.hidden = false;
-                feedback.classList.add("is-error");
-                feedback.textContent = "Urlaubsantrag konnte nicht gesendet werden. Bitte versuche es noch einmal.";
-              }
+
+            /* Erfolg nur melden, wenn das Backend einen gespeicherten
+               Datensatz mit ID zurueckgibt. Alles andere gilt als Fehler. */
+            if (!result?.ok || !result?.data?.id) {
+              reportError("[data-portal-vac-feedback]", "Urlaubsantrag konnte nicht übermittelt werden. Bitte versuche es noch einmal oder melde dich direkt bei der Zentrale.");
               return;
             }
 
             vacForm.reset();
-            state.supabaseVacationRequests = Array.isArray(await ES.getMyVacationRequests()) ? await ES.getMyVacationRequests() : [];
+            const requests = await ES.getMyVacationRequests();
+            state.supabaseVacationRequests = Array.isArray(requests) ? requests : [];
             renderVacations();
-            if (feedback) {
-              feedback.hidden = false;
-              feedback.classList.remove("is-error");
-              feedback.textContent = "✓ Urlaubsantrag wurde gesendet.";
-            }
-            openModal("Urlaub gesendet", "<p>✓ Urlaubsantrag wurde gesendet.</p>");
+            reportTransmitted("[data-portal-vac-feedback]", "Urlaubsantrag übermittelt", "Urlaubsantrag wurde übermittelt und liegt der Zentrale vor.");
             return;
           } catch (err) {
-            console.error("Urlaubsantrag konnte nicht gesendet werden.", err?.message || err);
-            if (feedback) {
-              feedback.hidden = false;
-              feedback.classList.add("is-error");
-              feedback.textContent = "Urlaubsantrag konnte nicht gesendet werden. Bitte versuche es noch einmal.";
-            }
+            console.error("Urlaubsantrag konnte nicht uebermittelt werden.", err?.message || err);
+            reportError("[data-portal-vac-feedback]", "Urlaubsantrag konnte nicht übermittelt werden. Bitte versuche es noch einmal oder melde dich direkt bei der Zentrale.");
             return;
           }
         }
@@ -895,35 +1163,156 @@
           createdAt: P.todayIso(),
           status: "beantragt"
         });
+        /* Kein Backend verfuegbar: Der Antrag bleibt auf diesem Geraet.
+           Er wird gespeichert, damit nichts verloren geht - aber er darf
+           nicht als gesendet ausgegeben werden. */
         state.data = P.loadState();
         renderVacations();
         renderHome();
         renderMessageSummary();
         vacForm.reset();
-        if (feedback) {
-          feedback.hidden = false;
-          feedback.classList.remove("is-error");
-          feedback.textContent = "✓ Urlaubsantrag wurde gesendet.";
-        }
-        openModal("Urlaub gesendet", "<p>✓ Urlaubsantrag wurde gesendet.</p>");
+        reportNotTransmitted("[data-portal-vac-feedback]", "Dein Urlaubsantrag");
       });
     }
 
     const absenceForm = document.querySelector("[data-portal-absence-form]");
     if (absenceForm) {
-      absenceForm.addEventListener("submit", (event) => {
+      absenceForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const fd = new FormData(absenceForm);
+        const startDate = String(fd.get("start") || "").trim();
+        const expectedEnd = String(fd.get("expectedEnd") || "").trim();
+        const note = String(fd.get("note") || "").trim();
+
+        if (!startDate) {
+          reportError("[data-portal-absence-feedback]", "Bitte gib an, ab wann du krank bist.");
+          return;
+        }
+        if (expectedEnd && expectedEnd < startDate) {
+          reportError("[data-portal-absence-feedback]", "Das voraussichtliche Ende darf nicht vor dem Beginn liegen.");
+          return;
+        }
+
+        /* Echte Uebertragung nach public.sickness_reports, optional mit
+           angehaengtem Krankenschein. */
+        if (ES && ES.isConfigured() && typeof ES.createSicknessReport === "function") {
+          const submitBtn = absenceForm.querySelector('button[type="submit"]');
+          const fileInput = absenceForm.querySelector('input[type="file"]');
+          const file = fileInput?.files?.[0] || null;
+          if (submitBtn) submitBtn.disabled = true;
+          try {
+            /* Schritt 1: Anhang. Ein bereits erfolgreich hochgeladener
+               Nachweis aus einem vorherigen Versuch wird wiederverwendet -
+               so entstehen bei Wiederholungen keine Doppel. */
+            let attachmentId = state.pendingSicknessAttachment?.id || null;
+
+            if (file && !attachmentId) {
+              if (typeof ES.uploadDocumentSubmission !== "function") {
+                reportError("[data-portal-absence-feedback]", "Anhänge werden derzeit nicht unterstützt. Bitte reiche den Krankenschein direkt bei der Zentrale ein.");
+                return;
+              }
+              const typeId = state.supabaseDocumentTypes.find((t) => t.key === "krankenschein_au")?.id || null;
+              const up = await ES.uploadDocumentSubmission({
+                file,
+                documentTypeId: typeId,
+                note: "Krankenschein zur Krankmeldung"
+              });
+
+              if (!up?.ok || !up?.data?.id) {
+                /* Teilfehler: Der Nachweis fehlt. Es wird KEINE Krankmeldung
+                   angelegt, damit nichts als vollstaendig uebermittelt gilt. */
+                reportError("[data-portal-absence-feedback]", uploadErrorText(up) + " Die Krankmeldung wurde deshalb noch nicht gesendet. Deine Eingaben bleiben erhalten.");
+                return;
+              }
+              attachmentId = up.data.id;
+              state.pendingSicknessAttachment = { id: attachmentId, name: file.name };
+            }
+
+            /* Schritt 2: Krankmeldung. Erst hier entsteht ein Datensatz -
+               ein Fehlschlag hinterlaesst also keine halbe Krankmeldung.
+               Der Vorgangsschluessel wird einmal erzeugt und bei jeder
+               Wiederholung unveraendert erneut gesendet. */
+            if (!state.pendingSicknessRequestId) {
+              state.pendingSicknessRequestId = neueVorgangsId();
+            }
+
+            const result = await ES.createSicknessReport({
+              startDate,
+              expectedEndDate: expectedEnd || null,
+              note,
+              documentSubmissionId: attachmentId,
+              clientRequestId: state.pendingSicknessRequestId
+            });
+
+            if (result?.error === "REQUEST_ID_CONTENT_MISMATCH") {
+              reportError(
+                "[data-portal-absence-feedback]",
+                "Diese Krankmeldung wurde bereits mit anderen Angaben gespeichert. Bitte lade die Seite neu und prüfe deine Einträge, bevor du es erneut versuchst."
+              );
+              return;
+            }
+
+            /* Erfolg nur bei bestaetigtem Datensatz mit ID. */
+            if (!result?.ok || !result?.data?.id) {
+              reportError(
+                "[data-portal-absence-feedback]",
+                "Krankmeldung konnte nicht übermittelt werden. Deine Eingaben bleiben erhalten. Bitte versuche es noch einmal oder melde dich direkt bei der Zentrale."
+              );
+              return;
+            }
+
+            const mitAnhang = Boolean(attachmentId);
+            /* Erst jetzt, nach bestaetigtem Erfolg, wird der Vorgang
+               abgeschlossen. Ein neuer Sendevorgang bekommt einen neuen
+               Schluessel. */
+            state.pendingSicknessAttachment = null;
+            state.pendingSicknessRequestId = null;
+
+            const reports = await ES.getMySicknessReports();
+            state.supabaseSicknessReports = Array.isArray(reports) ? reports : [result.data];
+            if (typeof ES.getMyDocumentSubmissions === "function") {
+              const subs = await ES.getMyDocumentSubmissions();
+              state.supabaseDocumentSubmissions = Array.isArray(subs) ? subs : state.supabaseDocumentSubmissions;
+            }
+            absenceForm.reset();
+            resetUploadFields(absenceForm);
+            renderAbsences();
+            renderDocs();
+            renderHome();
+            renderMessageSummary();
+            reportTransmitted(
+              "[data-portal-absence-feedback]",
+              "Krankmeldung übermittelt",
+              mitAnhang
+                ? "Krankmeldung wurde mit Krankenschein übermittelt und liegt der Zentrale vor."
+                : "Krankmeldung wurde übermittelt und liegt der Zentrale vor. Es wurde kein Nachweis angehängt."
+            );
+            return;
+          } catch (err) {
+            console.error("Krankmeldung konnte nicht uebermittelt werden.", err?.message || err);
+            reportError(
+              "[data-portal-absence-feedback]",
+              "Krankmeldung konnte nicht übermittelt werden. Deine Eingaben bleiben erhalten. Bitte versuche es noch einmal oder melde dich direkt bei der Zentrale."
+            );
+            return;
+          } finally {
+            if (submitBtn) submitBtn.disabled = false;
+          }
+        }
+
+        /* Ohne Backend: Der Eintrag bleibt auf diesem Geraet und wird
+           ausdruecklich als nicht uebermittelt gekennzeichnet. */
         P.addAbsence(state.data, {
           employeeId: state.employeeId,
           kind: "Krank",
-          start: String(fd.get("start") || P.todayIso()),
-          expectedEnd: String(fd.get("expectedEnd") || P.todayIso()),
+          start: startDate || P.todayIso(),
+          expectedEnd: expectedEnd || startDate || P.todayIso(),
           receivedAt: P.todayIso(),
           via: "Mitarbeiterportal",
           proofStatus: "angefordert",
-          note: String(fd.get("note") || ""),
+          note: note,
           status: "gemeldet",
+          transmitted: false,
           affectedShifts: []
         });
         state.data = P.loadState();
@@ -931,42 +1320,89 @@
         renderHome();
         renderMessageSummary();
         absenceForm.reset();
-        const feedback = document.querySelector("[data-portal-absence-feedback]");
-        if (feedback) {
-          feedback.hidden = false;
-          feedback.textContent = "✓ Krankmeldung wurde gesendet.";
-        }
-        openModal("Krankmeldung gesendet", "<p>✓ Krankmeldung wurde gesendet.</p>");
+        reportNotTransmitted("[data-portal-absence-feedback]", "Deine Krankmeldung");
       });
     }
 
     const docForm = document.querySelector("[data-portal-doc-form]");
     if (docForm) {
-      docForm.addEventListener("submit", (event) => {
+      docForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const fd = new FormData(docForm);
         const fileInput = docForm.querySelector('input[type="file"]');
         const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+
+        /* Echter Upload: Datei in den privaten Bucket, danach der Datensatz.
+           Erfolg wird erst gemeldet, wenn BEIDES gespeichert ist. */
+        if (ES && ES.isConfigured() && typeof ES.uploadDocumentSubmission === "function") {
+          if (!file) {
+            reportError("[data-portal-doc-feedback]", "Bitte wähle zuerst eine Datei aus.");
+            return;
+          }
+          const submitBtn = docForm.querySelector('button[type="submit"]');
+          if (submitBtn) submitBtn.disabled = true;
+          try {
+            const result = await ES.uploadDocumentSubmission({
+              file,
+              documentTypeId: String(fd.get("type") || "") || null,
+              note: String(fd.get("note") || "")
+            });
+
+            if (!result?.ok || !result?.data?.id) {
+              let text = uploadErrorText(result);
+              if (result?.stage === "record") {
+                text += result.cleaned
+                  ? " Die hochgeladene Datei wurde wieder entfernt."
+                  : " Bitte melde dich bei der Zentrale.";
+              }
+              reportError("[data-portal-doc-feedback]", text + " Deine Eingaben bleiben erhalten.");
+              return;
+            }
+
+            const subs = await ES.getMyDocumentSubmissions();
+            state.supabaseDocumentSubmissions = Array.isArray(subs) ? subs : [result.data];
+            docForm.reset();
+            resetUploadFields(docForm);
+            renderDocs();
+            renderHome();
+            renderMessageSummary();
+            reportTransmitted(
+              "[data-portal-doc-feedback]",
+              "Dokument übermittelt",
+              "Dokument wurde übermittelt und liegt der Zentrale vor."
+            );
+            return;
+          } catch (err) {
+            console.error("Dokument konnte nicht uebermittelt werden.", err?.message || err);
+            reportError("[data-portal-doc-feedback]", "Das Dokument konnte nicht übermittelt werden. Deine Eingaben bleiben erhalten. Bitte versuche es noch einmal oder melde dich direkt bei der Zentrale.");
+            return;
+          } finally {
+            if (submitBtn) submitBtn.disabled = false;
+          }
+        }
+
+        /* Dokumente werden von diesem Portal an KEIN Backend gesendet: Es
+           gibt hier keinen Upload-Aufruf und keinen Schreibzugriff auf
+           public.document_submissions. Gespeichert wird nur der Dateiname,
+           nicht die Datei. Ob serverseitig ein Storage-Ziel existiert, laesst
+           sich aus dem Client-Code nicht ableiten - genutzt wird es hier
+           nicht. Der Eintrag bleibt lokal und wird entsprechend markiert. */
         P.submitEmployeeDocument(state.data, {
           employeeId: state.employeeId,
           type: String(fd.get("type") || "Sonstiges"),
           note: String(fd.get("note") || ""),
           demoFile: file ? file.name : "",
           demoFileName: file ? file.name : "",
-          demoFileType: file ? file.type : ""
+          demoFileType: file ? file.type : "",
+          transmitted: false
         });
         state.data = P.loadState();
         docForm.reset();
         renderDocs();
         renderHome();
         renderMessageSummary();
-        selectDocumentType("Führerschein");
-        const feedback = document.querySelector("[data-portal-doc-feedback]");
-        if (feedback) {
-          feedback.hidden = false;
-          feedback.textContent = "✓ Dokument wurde gesendet.";
-        }
-        openModal("Dokument gesendet", "<p>✓ Dokument wurde gesendet.</p>");
+        selectFirstDocumentType();
+        reportNotTransmitted("[data-portal-doc-feedback]", "Dein Dokument");
       });
     }
   }
@@ -1002,11 +1438,12 @@
       window.AdminUiText.observeDocument(document);
     }
 
+    renderDocumentTypes();
     render();
     bind();
     bindDateHints();
     bindUploadUI();
-    selectDocumentType("Führerschein");
+    selectFirstDocumentType();
     setActiveSection("dienstplan", { scroll: false });
 
     /* Auto-Logout nur für Supabase-Nutzer starten */

@@ -1,27 +1,31 @@
 (() => {
-  const AUTH_STORAGE_KEY = "demoAdminLoggedIn";
-  const USER_STORAGE_KEY = "demoAdminUser";
-  const ROLE_STORAGE_KEY = "demoAdminRole";
-  const LEGACY_STORAGE_KEY = "taxiAdminDemoSession";
+  const DEMO_AUTH_KEYS = [
+    "demoAdminLoggedIn",
+    "demoAdminUser",
+    "demoAdminRole",
+    "demo-auth-v2",
+    "taxiAdminDemoSession",
+    "demoAdminRememberLogin",
+    "demoAdminPermissionNotice"
+  ];
   const ALLOWED_PROFILE_ROLES = ["admin", "dispatcher"];
 
   let clientPromise = null;
 
+  function cleanupLegacyDemoAuthKeys() {
+    DEMO_AUTH_KEYS.forEach((key) => {
+      if (key) {
+        localStorage.removeItem(key);
+      }
+    });
+  }
+
   function readStoredSession() {
-    const loggedIn = localStorage.getItem(AUTH_STORAGE_KEY);
-    const user = localStorage.getItem(USER_STORAGE_KEY);
-    const role = localStorage.getItem(ROLE_STORAGE_KEY);
-    if (loggedIn === "true" && user && role) {
-      return { loggedIn, user, role };
-    }
-    return null;
+    return window.TaxiSupabaseSession || null;
   }
 
   function saveStoredSession(user, role, meta = {}) {
-    localStorage.setItem(AUTH_STORAGE_KEY, "true");
-    localStorage.setItem(USER_STORAGE_KEY, user);
-    localStorage.setItem(ROLE_STORAGE_KEY, role);
-
+    cleanupLegacyDemoAuthKeys();
     const payload = {
       username: user,
       role,
@@ -30,15 +34,13 @@
       ...meta
     };
 
-    localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(payload));
+    window.TaxiSupabaseSession = payload;
     return payload;
   }
 
   function clearStoredSession() {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.removeItem(ROLE_STORAGE_KEY);
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    cleanupLegacyDemoAuthKeys();
+    window.TaxiSupabaseSession = null;
   }
 
   function mapProfileRoleToAdminRole(role) {
@@ -100,6 +102,10 @@
   }
 
   async function getClient() {
+    if (window.TaxiSupabaseClient) {
+      return window.TaxiSupabaseClient;
+    }
+
     if (clientPromise) {
       return clientPromise;
     }
@@ -115,7 +121,14 @@
         return null;
       }
 
-      const client = supabaseLib.createClient(config.url, config.publishableKey);
+      const client = supabaseLib.createClient(config.url, config.publishableKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
+        }
+      });
+
       window.TaxiSupabaseClient = client;
       return client;
     })();
@@ -141,13 +154,22 @@
     return data;
   }
 
-  async function signInWithPassword(email, password) {
+  async function signInWithPassword(emailOrData, password) {
+    const payload = typeof emailOrData === "object" && emailOrData !== null
+      ? emailOrData
+      : { email: emailOrData, password };
+
+    const { email, password: passwordValue } = payload;
+    if (!email || !passwordValue) {
+      throw new Error("E-Mail und Passwort sind erforderlich.");
+    }
+
     const client = await getClient();
     if (!client) {
       throw new Error("Supabase ist noch nicht konfiguriert. Bitte URL und Publishable Key in admin/supabase-config.js eintragen.");
     }
 
-    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    const { data, error } = await client.auth.signInWithPassword({ email, password: passwordValue });
     if (error) {
       throw new Error(error.message || "Anmeldung über Supabase ist fehlgeschlagen.");
     }

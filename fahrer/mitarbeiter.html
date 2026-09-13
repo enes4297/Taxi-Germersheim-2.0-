@@ -153,6 +153,9 @@
           <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
         </div>
         <div class="section-body">
+          <div class="section-feedback is-warning" data-portal-absence-notice>
+            Die Krankmeldung wird an die Zentrale übermittelt. Ein Krankenschein kann optional als PDF, JPEG oder PNG angehängt werden – höchstens 10 MB.
+          </div>
           <div class="section-feedback" data-portal-absence-feedback hidden></div>
           <form class="portal-form" data-portal-absence-form>
             <label>
@@ -167,8 +170,8 @@
             </label>
             <label>
               <span>Krankenschein / AU</span>
-              <div class="upload-shell">
-                <input class="upload-input" type="file" name="demoFile" accept="image/jpeg,image/png,application/pdf" capture="environment" data-portal-doc-input>
+              <div class="upload-shell" data-portal-absence-upload>
+                <input class="upload-input" type="file" name="proofFile" accept="image/jpeg,image/png,application/pdf" capture="environment" data-portal-doc-input>
                 <button class="upload-trigger" type="button" data-portal-upload-trigger>📷 Foto oder Datei auswählen</button>
                 <div class="upload-preview" data-portal-upload-preview hidden></div>
                 <div class="upload-meta">
@@ -176,10 +179,12 @@
                   <button class="upload-remove" type="button" data-portal-upload-remove>Entfernen</button>
                 </div>
               </div>
+              <small class="field-hint" data-portal-absence-upload-hint>Optional. PDF, JPEG oder PNG, höchstens 10 MB.</small>
             </label>
             <label>
               <span>Notiz</span>
-              <input type="text" name="note" placeholder="Optional">
+              <input type="text" name="note" placeholder="Optional, z. B. Erreichbarkeit">
+              <small class="field-hint">Bitte keine Diagnosen oder medizinischen Angaben eintragen.</small>
             </label>
             <button class="btn btn-warning" type="submit">Krankmeldung senden</button>
           </form>
@@ -196,6 +201,9 @@
           <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
         </div>
         <div class="section-body">
+          <div class="section-feedback" data-portal-doc-notice>
+            Dokumente werden verschlüsselt an die Zentrale übermittelt und sind nur für dich und die Verwaltung sichtbar. PDF, JPEG oder PNG, höchstens 10 MB.
+          </div>
           <div class="section-feedback" data-portal-doc-feedback hidden></div>
           <form class="portal-form" data-portal-doc-form>
             <div class="doc-type-grid" role="radiogroup" aria-label="Dokumentart">

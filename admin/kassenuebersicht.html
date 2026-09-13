@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Taxi Germersheim - Kassenübersicht</title>
+  <title>Taxi Germersheim - KassenÃƒÂ¼bersicht</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
-  <link rel="stylesheet" href="admin.css">
-</head>
+<link rel="stylesheet" href="admin.css">
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -18,7 +20,7 @@
       <nav class="admin-nav">
         <a class="admin-nav-item" href="index.html">Dashboard</a>
         <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
-        <a class="admin-nav-item is-active" href="kassenuebersicht.html" aria-current="page">Kassenübersicht</a>
+        <a class="admin-nav-item is-active" href="kassenuebersicht.html" aria-current="page">KassenÃƒÂ¼bersicht</a>
         <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
       </nav>
     </aside>
@@ -26,7 +28,7 @@
     <main class="admin-main">
       <header class="admin-topbar">
         <div class="admin-topbar-title">
-          <h1>Kassenübersicht (Demo)</h1>
+          <h1>KassenÃƒÂ¼bersicht (Demo)</h1>
           <p>Fahrer-Schichten, Barbestand und Differenzen</p>
         </div>
         <div class="admin-topbar-actions">
@@ -57,7 +59,7 @@
                 <th>Bareinnahmen</th>
                 <th>Ausgaben</th>
                 <th>Erwartet</th>
-                <th>Gezählt</th>
+                <th>GezÃƒÂ¤hlt</th>
                 <th>Differenz</th>
                 <th>Status</th>
               </tr>
@@ -72,3 +74,7 @@
   <script src="kassenuebersicht.js"></script>
 </body>
 </html>
+
+
+
+

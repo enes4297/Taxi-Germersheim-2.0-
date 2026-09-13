@@ -6,285 +6,45 @@
   <meta http-equiv="refresh" content="0; url=meinkonto.html">
   <meta name="theme-color" content="#050505">
   <title>Kundenkonto | Taxi Germersheim GmbH</title>
-  <meta name="description" content="Premium-Kundenkonto von Taxi Germersheim mit Dashboard-Bereichen für Rewards, Punkte, Adressen, Buchungshistorie und Gutscheine.">
+  <meta name="description" content="Kundenkonto von Taxi Germersheim.">
   <meta name="robots" content="index,follow">
-  <link rel="canonical" href="kundenkonto.html">
-  <meta property="og:type" content="website">
-  <meta property="og:locale" content="de_DE">
-  <meta property="og:site_name" content="Taxi Germersheim GmbH">
-  <meta property="og:title" content="Kundenkonto | Taxi Germersheim GmbH">
-  <meta property="og:description" content="Erste Premium-Dashboard-Version für zukünftige Account-Funktionen.">
-  <meta property="og:url" content="kundenkonto.html">
-  <meta property="og:image" content="logo.png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="canonical" href="meinkonto.html">
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Segoe UI Variable Text", Aptos, "Helvetica Neue", sans-serif;
+      background: #050505;
+      color: #f3f1eb;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 24px;
+      display: grid;
+      place-items: center;
+      box-sizing: border-box;
+    }
+
+    p {
+      margin: 0;
+      color: rgba(243, 241, 235, 0.64);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    a {
+      color: #f4d786;
+      text-underline-offset: 3px;
+    }
+  </style>
 </head>
 <body>
+  <p>Weiterleitung zu <a href="meinkonto.html">Mein Konto</a> ...</p>
   <script>
     window.location.replace('meinkonto.html');
   </script>
-  <noscript>
-    <p style="padding:16px;color:#fff;background:#050505;">Diese Seite wurde ersetzt. Bitte <a href="meinkonto.html">hier zu Mein Konto wechseln</a>.</p>
-  </noscript>
-  <main class="app">
-    <header class="topbar">
-      <div class="brand"><a href="index.html"><img src="logo.png" alt="Taxi Germersheim GmbH"></a></div>
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Menü öffnen">
-        <span class="menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
-      </button>
-      <nav class="site-nav">
-        <a href="index.html">Startseite</a>
-        <a href="index.html?page=services">Leistungen</a>
-        <a href="flotte.html">Fahrzeugflotte</a>
-        <a href="kundenkonto.html" class="active">Kundenkonto</a>
-        <a href="index.html?page=why">Über uns</a>
-        <a href="index.html#kontakt">Kontakt</a>
-      </nav>
-      <div class="site-nav-backdrop" aria-hidden="true"></div>
-      <div class="top-actions">
-        <a id="headerBookBtn" class="button nav-book-btn" href="index.html?page=booking">Jetzt buchen</a>
-      </div>
-    </header>
-
-    <section id="account" class="screen active simple account-page">
-      <header class="page-head"><a href="index.html" class="page-head-link" data-public-back aria-label="Zurück">‹</a><h2>Kundenkonto</h2><i></i></header>
-
-      <article class="account-hero">
-        <small>PREMIUM DASHBOARD</small>
-        <h1>Ihr persönliches Kundenkonto</h1>
-        <p>Diese erste Version ist als hochwertiges Design- und Struktur-Fundament vorbereitet. Registrierung, Login und Datenanbindung folgen in einem späteren Schritt.</p>
-      </article>
-
-      <p class="account-maintenance-note">Demo-Modus aktiv: Keine echte Anmeldung und keine Datenbank. Alle Einträge werden lokal gespeichert und sind für spätere Backend-Anbindung vorbereitet.</p>
-
-      <section class="account-grid" aria-label="Kundenkonto Dashboard">
-        <article class="account-card account-card-profile" data-account-card="profile-dashboard">
-          <div class="account-card-head">
-            <h3>Profil-Dashboard</h3>
-            <small data-account-field="statusBadge">Status: Premium Kunde</small>
-          </div>
-          <div class="account-profile-wrap">
-            <img class="account-avatar" src="assets/icons/Profile.svg" alt="Profilbild Platzhalter" loading="lazy" data-account-field="profileImage">
-            <div class="account-profile-meta">
-              <strong data-account-field="name">Max Mustermann</strong>
-              <span data-account-field="memberSince">Mitglied seit: Januar 2026</span>
-            </div>
-          </div>
-          <ul class="account-list account-profile-kpis" aria-label="Profil Kennzahlen">
-            <li><span>Kundenstatus</span><b data-account-field="customerStatus">Premium Kunde</b></li>
-            <li><span>Punkte</span><b data-account-field="points">230</b></li>
-            <li><span>Gutschein-Guthaben</span><b data-account-field="voucherBalance">15,00 EUR</b></li>
-          </ul>
-            <p class="account-card-note">Struktur vorbereitet für spätere Profil-API und Authentifizierung.</p>
-        </article>
-
-        <article class="account-card" data-account-card="current-ride">
-          <div class="account-card-head">
-            <h3>Meine aktuelle Fahrt</h3>
-            <small data-account-field="currentRideBadge">Status: Anfrage eingegangen</small>
-          </div>
-          <div class="account-current-ride-head">
-            <strong data-account-field="currentRideRoute">Germersheim Zentrum → Speyer</strong>
-            <span data-account-field="currentRideEta">Voraussichtliche Ankunft: 12 Min.</span>
-          </div>
-          <ul class="account-list account-current-ride-list" aria-label="Aktuelle Fahrt Übersicht">
-            <li><span>Fahrer</span><b data-account-field="currentRideDriver">Michael Becker</b></li>
-            <li><span>Fahrzeug</span><b data-account-field="currentRideVehicle">Mercedes E-Klasse</b></li>
-            <li><span>Kennzeichen</span><b data-account-field="currentRidePlate">GER-TG 247</b></li>
-            <li><span>Nächster Schritt</span><b data-account-field="currentRideStep">Fahrer zugewiesen</b></li>
-          </ul>
-          <div class="account-current-ride-actions">
-            <a class="button" href="index.html?page=ride-status">Tracking öffnen</a>
-            <a class="button secondary" href="tel:072743567" data-account-field="currentRidePhoneButton">Fahrer anrufen</a>
-          </div>
-          <p class="account-card-note" data-account-field="currentRideNote">Status wird als Demo automatisch über lokalen Speicher simuliert.</p>
-        </article>
-
-        <article class="account-card account-card-wide" data-account-card="ride-history">
-          <div class="account-card-head">
-            <h3>Fahrtenhistorie</h3>
-            <small>Letzte Fahrten im Demo-Konto</small>
-          </div>
-          <div class="account-history-head" aria-hidden="true">
-            <span>Datum</span>
-            <span>Abholort</span>
-            <span>Ziel</span>
-            <span>Fahrtart</span>
-            <span>Preis</span>
-            <span>Punkte</span>
-            <span>Aktion</span>
-          </div>
-          <ul class="account-history-list" data-account-field="rideHistory" aria-label="Fahrtenhistorie"></ul>
-        </article>
-
-        <article class="account-card" data-account-card="favorite-addresses">
-          <div class="account-card-head">
-            <h3>Lieblingsadressen</h3>
-            <small>Schnellauswahl für Buchungen</small>
-          </div>
-          <ul class="account-list account-favorites-list" data-account-field="favoriteAddresses" aria-label="Lieblingsadressen"></ul>
-          <form class="account-inline-form" data-account-action="add-address">
-            <label for="accountCustomAddress">Eigene Adresse hinzufügen</label>
-            <div class="account-inline-input">
-              <input id="accountCustomAddress" name="accountCustomAddress" type="text" placeholder="z. B. Karl-Friedrich-Straße 12, Germersheim" maxlength="120">
-              <button class="button secondary" type="submit" data-account-field="addressSubmitButton">Adresse speichern</button>
-            </div>
-            <p class="account-settings-status" data-account-field="favoritesStatus">Bearbeiten, Löschen oder direkt für Abholort/Ziel übernehmen.</p>
-          </form>
-        </article>
-
-        <article class="account-card" data-account-card="invoices">
-          <div class="account-card-head">
-            <h3>Rechnungen & Belege</h3>
-            <small>Demo-Liste für spätere Konto-Belege</small>
-          </div>
-          <ul class="account-invoice-list" data-account-field="invoices" aria-label="Rechnungen und Belege"></ul>
-          <p class="account-settings-status" data-account-field="invoiceStatus">Anzeigen, PDF vorbereiten und per E-Mail anfragen sind als Demo vorbereitet.</p>
-        </article>
-
-        <article class="account-card" data-account-card="notifications">
-          <div class="account-card-head">
-            <h3>Benachrichtigungen</h3>
-            <small>Aktuelle Hinweise im Konto</small>
-          </div>
-          <ul class="account-notification-list" data-account-field="notifications" aria-label="Benachrichtigungen"></ul>
-        </article>
-
-        <article class="account-card" data-account-card="settings">
-          <div class="account-card-head">
-            <h3>Einstellungen</h3>
-            <small>Profil, Benachrichtigungen und Datenschutz</small>
-          </div>
-          <form class="account-settings-form" data-account-action="save-settings" aria-label="Konto Einstellungen">
-            <section class="account-settings-group" aria-label="Profil Einstellungen">
-              <h4>Profil</h4>
-              <div class="account-settings-grid">
-                <label for="accountDisplayName">Name</label>
-                <input id="accountDisplayName" name="displayName" type="text" data-account-setting="displayName" placeholder="Max Mustermann" maxlength="80" autocomplete="name">
-
-                <label for="accountPhone">Telefonnummer</label>
-                <input id="accountPhone" name="phone" type="tel" data-account-setting="phone" placeholder="07274 3567" maxlength="40" autocomplete="tel">
-
-                <label for="accountEmail">E-Mail</label>
-                <input id="accountEmail" name="email" type="email" data-account-setting="email" placeholder="demo@taxi-germersheim.de" maxlength="120" autocomplete="email">
-
-                <label for="accountLanguage">Bevorzugte Sprache</label>
-                <select id="accountLanguage" name="language" data-account-setting="language">
-                  <option value="de">Deutsch</option>
-                  <option value="en">Englisch</option>
-                  <option value="tr">Türkisch</option>
-                </select>
-              </div>
-            </section>
-
-            <section class="account-settings-group" aria-label="Benachrichtigungseinstellungen">
-              <h4>Benachrichtigungen</h4>
-              <div class="account-settings-toggle-grid">
-                <label class="account-checkbox-row" for="accountNotifyRideUpdates">
-                  <input id="accountNotifyRideUpdates" name="notifyRideUpdates" type="checkbox" data-account-setting="notifyRideUpdates">
-                  <span>Fahrt-Updates</span>
-                </label>
-
-                <label class="account-checkbox-row" for="accountNotifyRewardsUpdates">
-                  <input id="accountNotifyRewardsUpdates" name="notifyRewardsUpdates" type="checkbox" data-account-setting="notifyRewardsUpdates">
-                  <span>Rewards-Updates</span>
-                </label>
-
-                <label class="account-checkbox-row" for="accountNotifyVouchers">
-                  <input id="accountNotifyVouchers" name="notifyVouchers" type="checkbox" data-account-setting="notifyVouchers">
-                  <span>Gutscheine</span>
-                </label>
-
-                <label class="account-checkbox-row" for="accountNotifyEmail">
-                  <input id="accountNotifyEmail" name="notifyEmail" type="checkbox" data-account-setting="notifyEmail">
-                  <span>E-Mail-Benachrichtigungen</span>
-                </label>
-              </div>
-            </section>
-
-            <section class="account-settings-group" aria-label="Datenschutzbereich">
-              <h4>Datenschutz</h4>
-              <p class="account-settings-note">Demo-Modus: Aktionen sind vorbereitet und werden nur lokal simuliert.</p>
-              <div class="account-settings-privacy-actions">
-                <button class="button secondary" type="button" data-account-action="export-data">Daten exportieren</button>
-                <button class="button secondary" type="button" data-account-action="delete-account">Konto löschen (Demo)</button>
-                <a class="button secondary" href="datenschutz.html" target="_blank" rel="noreferrer">Datenschutzerklärung öffnen</a>
-              </div>
-            </section>
-
-            <div class="account-settings-submit-actions">
-              <button class="button" type="submit">Änderungen speichern</button>
-              <button class="button secondary" type="button" data-account-action="reset-settings">Zurücksetzen</button>
-            </div>
-            <p class="account-settings-status" data-account-field="settingsStatus">Nur Demo-Werte werden lokal im Browser gespeichert.</p>
-          </form>
-        </article>
-      </section>
-    </section>
-  </main>
-
-  <footer id="kontakt" class="site-footer">
-    <div class="footer-content">
-      <div class="footer-brand">
-        <img class="footer-logo" src="logo.png" alt="Taxi Germersheim GmbH">
-        <strong>Taxi Germersheim</strong>
-        <p>Sicher. Zuverlässig. Pünktlich.</p>
-        <small>24 Stunden täglich für Sie erreichbar.</small>
-        <small class="footer-availability">24/7 erreichbar per Telefon und WhatsApp</small>
-      </div>
-
-      <div class="footer-column footer-services">
-        <strong>Leistungen</strong>
-        <a href="index.html?page=booking">Taxi</a>
-        <a href="index.html?page=medical">Krankenfahrten</a>
-        <a href="index.html?page=booking">Rollstuhlfahrten</a>
-        <a href="index.html?page=booking">Flughafentransfer</a>
-        <a href="index.html?page=booking">Kurierfahrten</a>
-      </div>
-
-      <div class="footer-column footer-contact">
-        <strong>Kontakt</strong>
-        <a class="footer-cta-primary" href="tel:072743567"><i data-icon="phone"></i><span>Jetzt anrufen: 07274 3567</span></a>
-        <a class="footer-cta-secondary" href="https://wa.me/4972743567?text=Ich%20m%C3%B6chte%20eine%20Taxi-Fahrt%20buchen" target="_blank" rel="noreferrer"><i data-icon="yumak"></i><span>WhatsApp-Nachricht senden</span></a>
-        <a class="footer-contact-link" href="mailto:info@taxigermersheim.de"><i data-icon="profile"></i><span>E-Mail: info@taxigermersheim.de</span></a>
-        <a class="footer-contact-link" href="https://maps.google.com/?q=Friedrich-Ebert-Stra%C3%9Fe+8,+76726+Germersheim" target="_blank" rel="noreferrer"><i data-icon="pin"></i><span>Adresse: Friedrich-Ebert-Straße 8<br>76726 Germersheim</span></a>
-      </div>
-
-      <div class="footer-column footer-quicklinks">
-        <strong>Schnellzugriff</strong>
-        <a href="index.html">Startseite</a>
-        <a href="index.html?page=why">Über uns</a>
-        <a href="flotte.html">Fahrzeugflotte</a>
-        <a href="kundenkonto.html">Kundenkonto</a>
-        <a href="rewards.html">Rewards</a>
-        <a href="index.html#kontakt">Kontakt</a>
-        <a href="index.html?page=booking">Jetzt buchen</a>
-        <a href="index.html?page=faq">FAQ</a>
-      </div>
-    </div>
-
-    <div class="footer-bottom-line">
-      <p>© 2026 Taxi Germersheim.<br>Alle Rechte vorbehalten.</p>
-      <div class="footer-bottom-links">
-        <a href="datenschutz.html">Datenschutz</a>
-        <a href="impressum.html">Impressum</a>
-      </div>
-    </div>
-
-    <div class="footer-bottom" aria-hidden="true"></div>
-  </footer>
-
-  <section id="cookieBanner" class="consent-banner" hidden role="region" aria-label="Cookie und Dienste Zustimmung">
-    <div class="consent-copy">
-      <strong>Cookie- und Diensteinstellungen</strong>
-      <p>Wir nutzen notwendige Cookies. Externe Dienste wie Google Maps werden erst nach Ihrer Zustimmung geladen.</p>
-      <a href="datenschutz.html">Datenschutz lesen</a>
-    </div>
-    <div class="consent-actions">
-      <button id="cookieAcceptAll" type="button" class="button">Alle akzeptieren</button>
-      <button id="cookieNecessary" type="button" class="button">Nur notwendige Cookies</button>
-      <button id="cookieSettings" type="button" class="button">Einstellungen</button>
-    </div>
-  </section>
-  <script src="script.js"></script>
 </body>
 </html>

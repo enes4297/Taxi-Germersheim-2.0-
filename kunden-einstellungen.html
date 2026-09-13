@@ -1,387 +1,357 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Einstellungen | Taxi Germersheim</title>
-  <meta name="description" content="Taxi Germersheim - Kontoeinstellungen und Benachrichtigungseinstellungen als Demo." />
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="kunden-einstellungen.css" />
-  <link rel="stylesheet" href="auth-demo.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07080a">
+  <title>Konto &amp; Einstellungen | Taxi Germersheim</title>
+  <meta name="description" content="Konto, Sicherheit und wichtige Informationen für Kunden von Taxi Germersheim.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="public-visual-repair.css">
+  <link rel="stylesheet" href="auth-demo.css">
+  <link rel="stylesheet" href="kunden-einstellungen.css">
+  <link rel="stylesheet" href="public-system.css">
+  <script src="public-system.js" defer></script>
 </head>
-<body>
-  <div class="background" aria-hidden="true"></div>
-  <div class="ambient" aria-hidden="true"></div>
-
-  <header>
-    <div class="container nav">
-      <a href="index.html" class="brand" aria-label="Taxi Germersheim Startseite">
-        <span class="brand-logo"><img src="logo.png" alt="Taxi Germersheim Logo" /></span>
-        <span class="brand-text">Taxi Germersheim</span>
-      </a>
-      <nav class="nav-links" aria-label="Hauptnavigation">
-        <a href="index.html">Start</a>
-        <a href="flotte.html">Flotte</a>
-        <a href="meinkonto.html">Mein Konto</a>
-        <a href="meine-fahrten.html">Meine Fahrten</a>
-        <a href="wallet-gutscheine.html">Wallet</a>
-        <a href="hilfe-kontakt.html">Hilfe</a>
-        <a href="kunden-einstellungen.html" class="active" aria-current="page">Einstellungen</a>
-      </nav>
-      <div class="nav-cta">
-        <a class="btn btn-ghost" href="tel:+497272123456">Anrufen</a>
-        <a class="btn btn-primary" href="index.html?page=booking">Jetzt buchen</a>
+<body class="settings-v2-body auth-pending tg-public" data-tg-page="none">
+  <main class="app settings-v2-app">
+    <header class="topbar">
+      <div class="brand">
+        <a href="index.html" aria-label="Taxi Germersheim Startseite">
+          <img src="logo.png" alt="Taxi Germersheim GmbH">
+          <span>Taxi Germersheim</span>
+        </a>
       </div>
-    </div>
-  </header>
+      <nav class="site-nav" aria-label="Hauptnavigation">
+        <a href="index.html">Startseite</a>
+        <a href="index.html?page=services">Leistungen</a>
+        <a href="flotte.html">Fahrzeugflotte</a>
+        <a href="rewards.html">Rewards</a>
+        <a href="hilfe-kontakt.html">Kontakt</a>
+      </nav>
+      <div class="top-actions">
+        <a class="button nav-book-btn" href="meinkonto.html" aria-current="page">Mein Konto</a>
+      </div>
+    </header>
 
-  <main id="customer-settings-page" class="customer-settings-page">
-    <div class="container settings-shell">
-      <section class="settings-card" aria-label="Einstellungen Intro">
-        <h1>Einstellungen</h1>
-        <p class="settings-note">Sprache, Benachrichtigungen, Datenschutz und Kontoaktionen als Frontend-Demo ohne Backend.</p>
-      </section>
+    <section id="customer-settings-page" class="customer-settings-page" aria-labelledby="settingsTitle">
+      <div class="settings-shell">
+        <header class="settings-page-head">
+          <p class="settings-eyebrow">Dein Taxi-Germersheim-Konto</p>
+          <h1 id="settingsTitle">Konto &amp; Einstellungen</h1>
+          <p>Verwalte dein Konto, deine Sicherheit und wichtige Kontoinformationen.</p>
+        </header>
 
-      <section class="settings-card" aria-label="Allgemeine Einstellungen">
-        <h2>Allgemein</h2>
-        <div class="settings-row cols-2">
-          <div class="settings-field">
-            <label for="languageSelect">Sprache</label>
-            <select id="languageSelect">
-              <option value="de">Deutsch</option>
-              <option value="en">English</option>
-              <option value="tr">Tuerkce</option>
-            </select>
+        <div class="settings-layout">
+          <div class="settings-column">
+            <section class="settings-card" aria-labelledby="accountTitle">
+              <header class="settings-card-head">
+                <p>Konto</p>
+                <h2 id="accountTitle">Kontoinformationen</h2>
+              </header>
+              <div class="settings-list">
+                <div class="settings-row">
+                  <div>
+                    <strong>E-Mail-Adresse</strong>
+                    <span data-settings-email>—</span>
+                  </div>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <strong>Telefon</strong>
+                    <span data-settings-phone>—</span>
+                  </div>
+                </div>
+                <a class="settings-row settings-row-link" href="meinkonto.html">
+                  <div>
+                    <strong>Persönliche Daten</strong>
+                    <span>Deine Kontodaten ansehen</span>
+                  </div>
+                  <b aria-hidden="true">›</b>
+                </a>
+              </div>
+            </section>
+
+            <section class="settings-card" aria-labelledby="securityTitle">
+              <header class="settings-card-head">
+                <p>Sicherheit</p>
+                <h2 id="securityTitle">Kontosicherheit</h2>
+              </header>
+              <div class="settings-list">
+                <button class="settings-row settings-row-link" type="button" data-password-open>
+                  <div>
+                    <strong>Passwort</strong>
+                    <span>Passwort für dein Konto ändern</span>
+                  </div>
+                  <b aria-hidden="true">›</b>
+                </button>
+                <div class="settings-session-note">Du bist aktuell angemeldet.</div>
+              </div>
+            </section>
           </div>
-          <div class="settings-field">
-            <label>Dark Mode Demo</label>
-            <button type="button" class="settings-btn" id="darkModeToggle">Dark Mode umschalten</button>
+
+          <div class="settings-column">
+            <section class="settings-card" aria-labelledby="legalTitle">
+              <header class="settings-card-head">
+                <p>Informationen</p>
+                <h2 id="legalTitle">Datenschutz &amp; Recht</h2>
+              </header>
+              <div class="settings-list">
+                <a class="settings-row settings-row-link" href="datenschutz.html"><strong>Datenschutz</strong><b aria-hidden="true">›</b></a>
+                <a class="settings-row settings-row-link" href="impressum.html"><strong>Impressum</strong><b aria-hidden="true">›</b></a>
+              </div>
+            </section>
+
+            <section class="settings-card" aria-labelledby="helpTitle">
+              <header class="settings-card-head">
+                <p>Unterstützung</p>
+                <h2 id="helpTitle">Hilfe</h2>
+              </header>
+              <div class="settings-list">
+                <a class="settings-row settings-row-link" href="hilfe-kontakt.html">
+                  <div>
+                    <strong>Hilfe &amp; Kontakt</strong>
+                    <span>Fragen zu deinem Konto oder einer Buchung?</span>
+                  </div>
+                  <b aria-hidden="true">›</b>
+                </a>
+              </div>
+            </section>
+
+            <section class="settings-session" aria-labelledby="sessionTitle">
+              <div>
+                <h2 id="sessionTitle">Sitzung</h2>
+                <p>Beende deine aktuelle Anmeldung auf diesem Gerät.</p>
+              </div>
+              <button class="settings-logout" type="button" data-customer-logout>Abmelden</button>
+            </section>
           </div>
         </div>
-        <p class="settings-note">Demo-Abbildung fuer spaetere Konto-API. Keine serverseitige Speicherung.</p>
-      </section>
-
-      <section class="settings-card" id="notification-settings" aria-label="Benachrichtigungseinstellungen">
-        <h2>Benachrichtigungseinstellungen</h2>
-        <ul class="settings-toggle-list" id="notificationToggleList"></ul>
-      </section>
-
-      <section class="settings-card" aria-label="Datenschutz und Recht">
-        <h2>Datenschutz und Recht</h2>
-        <div class="settings-links">
-          <a class="settings-btn" href="datenschutz.html"><img src="assets/icons/Profile.svg" width="14" height="14" alt="" /> Datenschutz</a>
-          <a class="settings-btn" href="impressum.html"><img src="assets/icons/Home.svg" width="14" height="14" alt="" /> Impressum</a>
-          <button type="button" class="settings-btn" id="cookieSettingsBtn"><img src="assets/icons/Clock.svg" width="14" height="14" alt="" /> Cookie-Einstellungen Demo</button>
-          <span class="settings-note">Nutzungsbedingungen: aktuell nicht als eigene Seite vorhanden.</span>
-        </div>
-      </section>
-
-      <section class="settings-card" aria-label="Kontoaktionen">
-        <h2>Kontoaktionen</h2>
-        <div class="settings-row cols-2">
-          <button type="button" class="settings-btn" id="deleteAccountBtn"><img src="assets/icons/Check%20Mark.svg" width="14" height="14" alt="" /> Konto loeschen Demo</button>
-          <button type="button" class="settings-btn" id="logoutBtn"><img src="assets/icons/Phone.svg" width="14" height="14" alt="" /> Abmelden Demo</button>
-        </div>
-        <p class="settings-note">Demo-Abmeldung ohne Backend. Keine echte Authentifizierung und keine echte Kontoloeschung.</p>
-      </section>
-    </div>
+      </div>
+    </section>
   </main>
 
-  <section class="settings-modal" id="settingsModal" hidden>
-    <article class="settings-modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
-      <header class="settings-modal-head">
-        <h3 id="settingsModalTitle">Demo-Hinweis</h3>
-        <button type="button" class="settings-modal-close" id="settingsModalClose" aria-label="Schliessen">&times;</button>
-      </header>
-      <div id="settingsModalBody"></div>
-      <button type="button" class="settings-btn" id="settingsModalOk">Verstanden</button>
-    </article>
-  </section>
-
-  <section class="settings-modal" id="deleteModal" hidden>
-    <article class="settings-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
-      <header class="settings-modal-head">
-        <h3 id="deleteModalTitle">Konto loeschen Demo</h3>
-        <button type="button" class="settings-modal-close" data-close-delete aria-label="Schliessen">&times;</button>
-      </header>
-      <p class="settings-note">Diese Demo-Funktion loescht keine echten Daten.</p>
-      <div class="settings-field">
-        <label for="deleteConfirmInput">Bestaetigungsfeld (LÖSCHEN eingeben)</label>
-        <input id="deleteConfirmInput" type="text" autocomplete="off" />
+  <footer id="kontakt" class="site-footer settings-footer">
+    <div class="settings-footer-row">
+      <p>&copy; 2026 Taxi Germersheim GmbH</p>
+      <div class="settings-footer-links">
+        <a href="datenschutz.html">Datenschutz</a>
+        <a href="impressum.html">Impressum</a>
+        <a href="hilfe-kontakt.html">Kontakt</a>
       </div>
-      <button type="button" class="settings-btn" id="deleteConfirmBtn" disabled>Konto loeschen (Demo)</button>
-    </article>
-  </section>
+    </div>
+  </footer>
 
-  <section class="settings-modal" id="logoutModal" hidden>
-    <article class="settings-modal-card" role="dialog" aria-modal="true" aria-labelledby="logoutModalTitle">
-      <header class="settings-modal-head">
-        <h3 id="logoutModalTitle">Abmelden Demo</h3>
-        <button type="button" class="settings-modal-close" data-close-logout aria-label="Schliessen">&times;</button>
+  <dialog class="settings-dialog" data-password-dialog aria-labelledby="passwordDialogTitle">
+    <form class="settings-password-form" data-password-form novalidate>
+      <header>
+        <div>
+          <p>Sicherheit</p>
+          <h2 id="passwordDialogTitle">Passwort ändern</h2>
+        </div>
+        <button class="settings-dialog-close" type="button" data-password-close aria-label="Dialog schließen">×</button>
       </header>
-      <p class="settings-note">Demo-Abmeldung ohne Backend.</p>
-      <button type="button" class="settings-btn" id="logoutConfirmBtn">Abmeldung bestaetigen</button>
-    </article>
-  </section>
 
-  <div class="settings-toast" id="settingsToast" role="status" aria-live="polite"></div>
+      <p class="settings-dialog-intro">Lege ein neues Passwort für dein Taxi-Germersheim-Konto fest.</p>
+      <div class="settings-form-message" data-password-message role="status" aria-live="polite" hidden></div>
 
-  <nav class="mobile-nav" aria-label="Mobile Navigation">
-    <a href="index.html" class="mobile-nav-item">
-      <img src="assets/icons/Home.svg" alt="" width="20" height="20" />
-      <span>Start</span>
-    </a>
-    <a href="meinkonto.html" class="mobile-nav-item">
-      <img src="assets/icons/Profile.svg" alt="" width="20" height="20" />
-      <span>Konto</span>
-    </a>
-    <a href="hilfe-kontakt.html" class="mobile-nav-item">
-      <img src="assets/icons/Phone.svg" alt="" width="20" height="20" />
-      <span>Hilfe</span>
-    </a>
-    <a href="kunden-einstellungen.html" class="mobile-nav-item active" aria-current="page">
-      <img src="assets/icons/Clock.svg" alt="" width="20" height="20" />
-      <span>Einstellungen</span>
-    </a>
-  </nav>
+      <label class="settings-field" for="newPassword">
+        <span>Neues Passwort</span>
+        <span class="settings-password-input">
+          <input id="newPassword" name="newPassword" type="password" minlength="8" autocomplete="new-password" required>
+          <button type="button" data-password-toggle="newPassword" aria-label="Neues Passwort anzeigen">Anzeigen</button>
+        </span>
+      </label>
 
-  <script src="customer-auth-demo.js"></script>
+      <div class="settings-password-strength" data-password-strength hidden>
+        <div><i data-password-strength-bar></i></div>
+        <span data-password-strength-text></span>
+      </div>
+
+      <ul class="settings-password-rules" aria-label="Passwortregeln">
+        <li data-password-rule="length">Mindestens 8 Zeichen</li>
+        <li data-password-rule="uppercase">Mindestens ein Großbuchstabe</li>
+        <li data-password-rule="number">Mindestens eine Zahl</li>
+      </ul>
+
+      <label class="settings-field" for="confirmPassword">
+        <span>Passwort bestätigen</span>
+        <span class="settings-password-input">
+          <input id="confirmPassword" name="confirmPassword" type="password" minlength="8" autocomplete="new-password" required>
+          <button type="button" data-password-toggle="confirmPassword" aria-label="Passwortbestätigung anzeigen">Anzeigen</button>
+        </span>
+      </label>
+
+      <div class="settings-dialog-actions">
+        <button class="settings-secondary-button" type="button" data-password-cancel>Abbrechen</button>
+        <button class="settings-primary-button" type="submit">Passwort speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="customer-auth.js"></script>
   <script src="script.js"></script>
   <script>
-    (function () {
-      if (window.CustomerAuthDemo && window.CustomerAuthDemo.requireLogin({
+    (async function () {
+      const auth = window.CustomerAuth || null;
+      if (auth && typeof auth.hydrateSession === 'function') {
+        await auth.hydrateSession();
+      }
+
+      const gated = !auth || typeof auth.requireLogin !== 'function' || auth.requireLogin({
         targetSelector: '#customer-settings-page',
-        pageTitle: 'Einstellungen'
-      })) {
+        pageTitle: 'Konto und Einstellungen',
+        gateDescription: 'Melde dich an, um diesen Bereich zu sehen.'
+      });
+      document.body.classList.remove('auth-pending');
+
+      if (gated) {
         return;
       }
 
-      const SETTINGS_KEY = 'tgCustomerSettingsDemo';
-      const NOTIFICATIONS_KEY = 'tgCustomerNotificationSettingsDemo';
-      const defaultNotifications = {
-        bookingConfirmation: true,
-        driverOnTheWay: true,
-        vehicleArrived: true,
-        rewards: true,
-        vouchers: true,
-        offers: false,
-        whatsappHints: true,
-        emailHints: true
-      };
+      const profile = auth && typeof auth.getProfile === 'function' ? auth.getProfile() : {};
+      const snapshot = auth && typeof auth.getSessionSnapshot === 'function' ? auth.getSessionSnapshot() : null;
+      const sessionUser = snapshot && snapshot.user ? snapshot.user : null;
+      const emailNode = document.querySelector('[data-settings-email]');
+      const phoneNode = document.querySelector('[data-settings-phone]');
 
-      const notificationConfig = [
-        { key: 'bookingConfirmation', label: 'Buchungsbestaetigung', icon: 'assets/icons/Check%20Mark.svg' },
-        { key: 'driverOnTheWay', label: 'Fahrer unterwegs', icon: 'assets/icons/Route.svg' },
-        { key: 'vehicleArrived', label: 'Fahrzeug angekommen', icon: 'assets/icons/Location.svg' },
-        { key: 'rewards', label: 'Rewards', icon: 'assets/icons/Rewards.svg' },
-        { key: 'vouchers', label: 'Gutscheine', icon: 'assets/icons/Gift%20Voucher.svg' },
-        { key: 'offers', label: 'Angebote', icon: 'assets/icons/Calendar.svg' },
-        { key: 'whatsappHints', label: 'WhatsApp-Hinweise', icon: 'assets/icons/WhatsApp.svg' },
-        { key: 'emailHints', label: 'E-Mail-Hinweise', icon: 'assets/icons/Profile.svg' }
-      ];
+      if (emailNode) emailNode.textContent = profile.email || sessionUser?.email || '—';
+      if (phoneNode) phoneNode.textContent = profile.phone || sessionUser?.user_metadata?.phone || '—';
 
-      const languageSelect = document.getElementById('languageSelect');
-      const darkModeToggle = document.getElementById('darkModeToggle');
-      const notificationList = document.getElementById('notificationToggleList');
-      const cookieSettingsBtn = document.getElementById('cookieSettingsBtn');
-      const deleteAccountBtn = document.getElementById('deleteAccountBtn');
-      const logoutBtn = document.getElementById('logoutBtn');
+      const dialog = document.querySelector('[data-password-dialog]');
+      const passwordForm = document.querySelector('[data-password-form]');
+      const newPasswordInput = document.getElementById('newPassword');
+      const confirmPasswordInput = document.getElementById('confirmPassword');
+      const passwordMessage = document.querySelector('[data-password-message]');
+      const strength = document.querySelector('[data-password-strength]');
+      const strengthBar = document.querySelector('[data-password-strength-bar]');
+      const strengthText = document.querySelector('[data-password-strength-text]');
 
-      const settingsModal = document.getElementById('settingsModal');
-      const settingsModalTitle = document.getElementById('settingsModalTitle');
-      const settingsModalBody = document.getElementById('settingsModalBody');
-      const settingsModalClose = document.getElementById('settingsModalClose');
-      const settingsModalOk = document.getElementById('settingsModalOk');
-
-      const deleteModal = document.getElementById('deleteModal');
-      const deleteConfirmInput = document.getElementById('deleteConfirmInput');
-      const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
-
-      const logoutModal = document.getElementById('logoutModal');
-      const logoutConfirmBtn = document.getElementById('logoutConfirmBtn');
-
-      const toast = document.getElementById('settingsToast');
-      let toastTimer = null;
-
-      function syncBodyModalLock() {
-        const hasOpen =
-          (settingsModal && !settingsModal.hidden) ||
-          (deleteModal && !deleteModal.hidden) ||
-          (logoutModal && !logoutModal.hidden);
-        document.body.classList.toggle('has-open-settings-modal', Boolean(hasOpen));
+      function evaluatePassword(password) {
+        const rules = {
+          length: password.length >= 8,
+          uppercase: /[A-Z]/.test(password),
+          number: /\d/.test(password)
+        };
+        return { rules: rules, score: Object.values(rules).filter(Boolean).length };
       }
 
-      function showToast(message) {
-        if (!toast) return;
-        toast.textContent = message;
-        toast.classList.add('is-visible');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () {
-          toast.classList.remove('is-visible');
-        }, 1900);
+      function renderPasswordState() {
+        const password = newPasswordInput ? newPasswordInput.value : '';
+        const result = evaluatePassword(password);
+        document.querySelectorAll('[data-password-rule]').forEach(function (item) {
+          item.classList.toggle('is-valid', Boolean(result.rules[item.dataset.passwordRule]));
+        });
+        if (strength) strength.hidden = !password;
+        if (strengthBar) strengthBar.style.width = String((result.score / 3) * 100) + '%';
+        if (strengthText) strengthText.textContent = result.score < 2 ? 'Schwach' : (result.score < 3 ? 'Mittel' : 'Stark');
+        return result;
       }
 
-      function loadJson(key, fallback) {
-        try {
-          return Object.assign({}, fallback, JSON.parse(localStorage.getItem(key) || '{}'));
-        } catch (error) {
-          return Object.assign({}, fallback);
+      function resetPasswordDialog() {
+        if (passwordForm) passwordForm.reset();
+        document.querySelectorAll('[data-password-toggle]').forEach(function (toggle) {
+          const input = document.getElementById(toggle.dataset.passwordToggle);
+          if (input) input.type = 'password';
+          toggle.textContent = 'Anzeigen';
+          toggle.setAttribute('aria-label', 'Passwort anzeigen');
+        });
+        if (passwordMessage) {
+          passwordMessage.hidden = true;
+          passwordMessage.className = 'settings-form-message';
+          passwordMessage.textContent = '';
         }
+        renderPasswordState();
       }
 
-      function saveJson(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
-      }
-
-      function openSimpleModal(title, bodyHtml) {
-        if (!settingsModal || !settingsModalBody || !settingsModalTitle) return;
-        settingsModalTitle.textContent = title;
-        settingsModalBody.innerHTML = bodyHtml;
-        settingsModal.hidden = false;
-        syncBodyModalLock();
-      }
-
-      function closeSimpleModal() {
-        if (settingsModal) settingsModal.hidden = true;
-        syncBodyModalLock();
-      }
-
-      function renderNotifications() {
-        if (!notificationList) return;
-        const state = loadJson(NOTIFICATIONS_KEY, defaultNotifications);
-        notificationList.innerHTML = '';
-
-        notificationConfig.forEach(function (item) {
-          const row = document.createElement('li');
-          row.className = 'settings-toggle-item';
-          const enabled = Boolean(state[item.key]);
-          row.innerHTML =
-            '<div class="settings-toggle-copy"><b><img src="' + item.icon + '" width="14" height="14" alt="" /> ' + item.label + '</b><span>Nur lokale Demo-Speicherung</span></div>' +
-            '<button type="button" class="settings-switch ' + (enabled ? 'is-on' : '') + '" data-toggle="' + item.key + '"><i></i></button>';
-
-          const toggle = row.querySelector('[data-toggle]');
-          toggle.addEventListener('click', function () {
-            const next = loadJson(NOTIFICATIONS_KEY, defaultNotifications);
-            next[item.key] = !next[item.key];
-            saveJson(NOTIFICATIONS_KEY, next);
-            renderNotifications();
-            showToast('Benachrichtigungseinstellungen als Demo aktualisiert.');
-          });
-
-          notificationList.appendChild(row);
-        });
-      }
-
-      const customerSettings = loadJson(SETTINGS_KEY, {
-        language: 'de',
-        darkMode: false
+      document.querySelector('[data-password-open]')?.addEventListener('click', function () {
+        resetPasswordDialog();
+        if (dialog && typeof dialog.showModal === 'function') dialog.showModal();
       });
 
-      if (languageSelect) {
-        languageSelect.value = customerSettings.language || 'de';
-        languageSelect.addEventListener('change', function () {
-          const next = loadJson(SETTINGS_KEY, { language: 'de', darkMode: false });
-          next.language = languageSelect.value;
-          saveJson(SETTINGS_KEY, next);
-          showToast('Sprache als Demo gespeichert.');
+      document.querySelectorAll('[data-password-close], [data-password-cancel]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          if (dialog) dialog.close();
         });
-      }
+      });
 
-      if (customerSettings.darkMode) {
-        document.body.classList.add('customer-dark-preview');
-      }
+      if (newPasswordInput) newPasswordInput.addEventListener('input', renderPasswordState);
 
-      if (darkModeToggle) {
-        darkModeToggle.addEventListener('click', function () {
-          document.body.classList.toggle('customer-dark-preview');
-          const next = loadJson(SETTINGS_KEY, { language: 'de', darkMode: false });
-          next.darkMode = document.body.classList.contains('customer-dark-preview');
-          saveJson(SETTINGS_KEY, next);
-          showToast('Dark Mode Demo umgeschaltet.');
+      document.querySelectorAll('[data-password-toggle]').forEach(function (toggle) {
+        toggle.addEventListener('click', function () {
+          const input = document.getElementById(toggle.dataset.passwordToggle);
+          if (!input) return;
+          const visible = input.type === 'text';
+          input.type = visible ? 'password' : 'text';
+          toggle.textContent = visible ? 'Anzeigen' : 'Verbergen';
+          toggle.setAttribute('aria-label', visible ? 'Passwort anzeigen' : 'Passwort verbergen');
         });
-      }
+      });
 
-      if (cookieSettingsBtn) {
-        cookieSettingsBtn.addEventListener('click', function () {
-          openSimpleModal('Cookie-Einstellungen Demo', '<p class="settings-note">Cookie-Consent ist fuer spaetere Integration vorbereitet. Aktuell wird nichts serverseitig gespeichert.</p>');
-        });
-      }
+      if (passwordForm) {
+        passwordForm.addEventListener('submit', async function (event) {
+          event.preventDefault();
+          const password = newPasswordInput.value;
+          const confirmation = confirmPasswordInput.value;
+          const passwordState = renderPasswordState();
+          const submitButton = passwordForm.querySelector('[type="submit"]');
 
-      if (deleteAccountBtn) {
-        deleteAccountBtn.addEventListener('click', function () {
-          if (deleteConfirmInput) deleteConfirmInput.value = '';
-          if (deleteConfirmBtn) deleteConfirmBtn.disabled = true;
-          if (deleteModal) deleteModal.hidden = false;
-          syncBodyModalLock();
-        });
-      }
+          passwordMessage.hidden = false;
+          passwordMessage.className = 'settings-form-message is-error';
 
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', function () {
-          if (logoutModal) logoutModal.hidden = false;
-          syncBodyModalLock();
-        });
-      }
-
-      if (deleteConfirmInput && deleteConfirmBtn) {
-        deleteConfirmInput.addEventListener('input', function () {
-          deleteConfirmBtn.disabled = deleteConfirmInput.value.trim() !== 'LÖSCHEN';
-        });
-
-        deleteConfirmBtn.addEventListener('click', function () {
-          if (deleteModal) deleteModal.hidden = true;
-          syncBodyModalLock();
-          showToast('Diese Demo-Funktion loescht keine echten Daten.');
-        });
-      }
-
-      if (logoutConfirmBtn) {
-        logoutConfirmBtn.addEventListener('click', function () {
-          if (logoutModal) logoutModal.hidden = true;
-          syncBodyModalLock();
-          if (window.CustomerAuthDemo) {
-            window.CustomerAuthDemo.logout();
+          if (!Object.values(passwordState.rules).every(Boolean)) {
+            passwordMessage.textContent = 'Das Passwort erfüllt noch nicht alle Regeln.';
+            return;
           }
-          window.location.href = 'anmelden.html?loggedOut=1';
-        });
-      }
+          if (password !== confirmation) {
+            passwordMessage.textContent = 'Passwort und Bestätigung stimmen nicht überein.';
+            return;
+          }
 
-      document.querySelectorAll('[data-close-delete]').forEach(function (button) {
-        button.addEventListener('click', function () {
-          if (deleteModal) deleteModal.hidden = true;
-          syncBodyModalLock();
-        });
-      });
-
-      document.querySelectorAll('[data-close-logout]').forEach(function (button) {
-        button.addEventListener('click', function () {
-          if (logoutModal) logoutModal.hidden = true;
-          syncBodyModalLock();
-        });
-      });
-
-      if (settingsModalClose) settingsModalClose.addEventListener('click', closeSimpleModal);
-      if (settingsModalOk) settingsModalOk.addEventListener('click', closeSimpleModal);
-
-      [settingsModal, deleteModal, logoutModal].forEach(function (modal) {
-        if (!modal) return;
-        modal.addEventListener('click', function (event) {
-          if (event.target === modal) {
-            modal.hidden = true;
-            syncBodyModalLock();
+          submitButton.disabled = true;
+          submitButton.textContent = 'Wird gespeichert ...';
+          try {
+            const client = auth && typeof auth.getClient === 'function' ? await auth.getClient() : null;
+            if (!client || !client.auth || typeof client.auth.updateUser !== 'function') {
+              throw new Error('PASSWORD_UPDATE_UNAVAILABLE');
+            }
+            const result = await client.auth.updateUser({ password: password });
+            if (result.error) throw result.error;
+            passwordMessage.className = 'settings-form-message is-success';
+            passwordMessage.textContent = 'Passwort wurde geändert.';
+            newPasswordInput.value = '';
+            confirmPasswordInput.value = '';
+            renderPasswordState();
+          } catch (_error) {
+            passwordMessage.textContent = 'Das Passwort konnte gerade nicht geändert werden. Bitte versuche es erneut.';
+          } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Passwort speichern';
           }
         });
-      });
+      }
 
-      document.addEventListener('keydown', function (event) {
-        if (event.key !== 'Escape') return;
-        if (settingsModal && !settingsModal.hidden) settingsModal.hidden = true;
-        if (deleteModal && !deleteModal.hidden) deleteModal.hidden = true;
-        if (logoutModal && !logoutModal.hidden) logoutModal.hidden = true;
-        syncBodyModalLock();
-      });
+      const logoutButton = document.querySelector('[data-customer-logout]');
+      if (logoutButton) {
+        logoutButton.addEventListener('click', async function () {
+          if (logoutButton.disabled) return;
+          logoutButton.disabled = true;
+          const originalText = logoutButton.textContent.trim();
+          logoutButton.textContent = 'Wird abgemeldet ...';
 
-      renderNotifications();
+          try {
+            if (!auth || typeof auth.signOut !== 'function') {
+              throw new Error('Logout nicht verfügbar.');
+            }
+            await auth.signOut();
+            window.location.href = 'anmelden.html';
+          } catch (_error) {
+            logoutButton.disabled = false;
+            logoutButton.textContent = originalText;
+            window.alert('Abmelden konnte nicht abgeschlossen werden. Bitte versuche es erneut.');
+          }
+        });
+      }
     })();
   </script>
 </body>

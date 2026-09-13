@@ -26,6 +26,13 @@
     return String(value || "");
   }
 
+  function formatDate(value) {
+    if (S.formatDate) return S.formatDate(value);
+    const text = String(value || "").trim();
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return match ? `${match[3]}.${match[2]}.${match[1]}` : text;
+  }
+
   function renderStats() {
     const node = document.querySelector("[data-quick-inbox-stats]");
     if (!node) return;
@@ -50,7 +57,7 @@
         <button type="button" class="tc-inbox-open" data-inbox-open="${entry.id}">
           <strong>${formatDateTime(entry.createdAt)}</strong>
           <p>${entry.rawNote || entry.recognized.customer || "Notiz"}</p>
-          <p>${entry.recognized.customer || "Kunde offen"} · ${entry.recognized.dateLabel || entry.recognized.date || "Datum offen"} · ${entry.recognized.timeLabel || entry.recognized.time || (entry.recognized.timeOpen ? "offen" : "Uhrzeit offen")}</p>
+          <p>${entry.recognized.customer || "Kunde offen"} · ${entry.recognized.dateLabel || formatDate(entry.recognized.date) || "Datum offen"} · ${entry.recognized.timeLabel || entry.recognized.time || (entry.recognized.timeOpen ? "offen" : "Uhrzeit offen")}</p>
           <p>${entry.recognized.pickup || "Abholung offen"} → ${entry.recognized.destination || "Ziel offen"}</p>
         </button>
         <div class="tc-actions">
@@ -75,7 +82,7 @@
         <h3>Schnelle Prüfung</h3>
         <p class="m-note">${entry.rawNote || entry.transcriptDemo || "Keine Ursprungsnotiz"}</p>
         <p>Erkannter Kunde: ${entry.recognized.customer || "-"}</p>
-        <p>Erkanntes Datum: ${entry.recognized.dateLabel || entry.recognized.date || "-"}</p>
+        <p>Erkanntes Datum: ${entry.recognized.dateLabel || formatDate(entry.recognized.date) || "-"}</p>
         <p>Erkannte Uhrzeit: ${entry.recognized.timeLabel || entry.recognized.time || (entry.recognized.timeOpen ? "offen" : "-")}</p>
         <p>Abholung: ${entry.recognized.pickup || "-"}</p>
         <p>Ziel: ${entry.recognized.destination || "-"}</p>

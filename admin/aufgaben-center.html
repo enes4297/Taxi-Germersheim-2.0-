@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Aufgaben-Center</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
   <script src="systemcenter-shared.js"></script>
-  <link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="management.css">
-</head>
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -36,9 +38,9 @@
       <section class="admin-panel">
         <div class="admin-panel-head">
           <h2>Leitstellenfokus</h2>
-          <small>Heute, Überfällig, Meine Aufgaben, Offen</small>
+          <small>Heute, ÃƒÅ“berfÃƒÂ¤llig, Meine Aufgaben, Offen</small>
         </div>
-        <div class="m-actions"><button class="admin-btn" type="button" data-task-open-create>Neue Aufgabe</button><button class="admin-btn admin-btn-secondary" type="button" data-task-reset-filter>Filter zurücksetzen</button></div>
+        <div class="m-actions"><button class="admin-btn" type="button" data-task-open-create>Neue Aufgabe</button><button class="admin-btn admin-btn-secondary" type="button" data-task-reset-filter>Filter zurÃƒÂ¼cksetzen</button></div>
         <div class="m-grid" data-task-kpis></div>
       </section>
 
@@ -72,9 +74,9 @@
                 <th>ID</th>
                 <th>Titel</th>
                 <th>Status</th>
-                <th>Priorität</th>
+                <th>PrioritÃƒÂ¤t</th>
                 <th>Verantwortlich</th>
-                <th>Fällig</th>
+                <th>FÃƒÂ¤llig</th>
                 <th>Aktion</th>
               </tr>
             </thead>
@@ -84,7 +86,7 @@
       </details>
 
       <details class="admin-panel">
-        <summary>Aktivitätsprotokoll</summary>
+        <summary>AktivitÃƒÂ¤tsprotokoll</summary>
         <div class="m-list" data-task-activity></div>
       </details>
     </main>
@@ -95,7 +97,7 @@
     <section class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
       <header class="admin-modal-head">
         <h3 id="task-modal-title">Neue Aufgabe erstellen</h3>
-        <button class="admin-icon-btn" type="button" aria-label="Schließen" data-task-close-modal>✕</button>
+        <button class="admin-icon-btn" type="button" aria-label="SchlieÃƒÅ¸en" data-task-close-modal>Ã¢Å“â€¢</button>
       </header>
       <form class="admin-modal-body m-form" data-task-create-form>
         <label class="m-field"><span>Titel</span><input name="title" required></label>
@@ -118,3 +120,7 @@
   <script src="aufgaben-center.js"></script>
 </body>
 </html>
+
+
+
+

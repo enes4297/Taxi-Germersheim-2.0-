@@ -3,13 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Taxi Germersheim - Kapazitätsplanung</title>
+  <title>Taxi Germersheim - KapazitÃƒÂ¤tsplanung</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
   <script src="management-shared.js"></script>
-  <link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="management.css">
-</head>
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -18,31 +20,31 @@
         <div><strong>Dispatcher</strong><small>Interner Bereich</small></div>
       </div>
       <nav class="admin-nav">
-        <a class="admin-nav-item is-active" href="kapazitaetsplanung.html">Kapazitätsplanung</a>
+        <a class="admin-nav-item is-active" href="kapazitaetsplanung.html">KapazitÃƒÂ¤tsplanung</a>
       </nav>
     </aside>
 
     <main class="admin-main">
       <header class="admin-topbar">
         <div class="admin-topbar-title">
-          <h1>Kapazitätsplanung</h1>
-          <p>Kapazitätsmatrix, Kapazitätslücken, Spezialkapazitäten und Demo-Planung</p>
+          <h1>KapazitÃƒÂ¤tsplanung</h1>
+          <p>KapazitÃƒÂ¤tsmatrix, KapazitÃƒÂ¤tslÃƒÂ¼cken, SpezialkapazitÃƒÂ¤ten und Demo-Planung</p>
         </div>
       </header>
 
       <section class="admin-panel">
-        <div class="admin-panel-head"><h2>Kapazitätsmatrix</h2></div>
+        <div class="admin-panel-head"><h2>KapazitÃƒÂ¤tsmatrix</h2></div>
         <div class="m-table-wrap">
           <table class="admin-table m-table m-table-capacity">
             <thead>
               <tr>
                 <th>Zeitraum</th>
-                <th>Benötigte Fahrer</th>
-                <th>Verfügbare Fahrer</th>
-                <th>Benötigte Fahrzeuge</th>
-                <th>Verfügbare Fahrzeuge</th>
+                <th>BenÃƒÂ¶tigte Fahrer</th>
+                <th>VerfÃƒÂ¼gbare Fahrer</th>
+                <th>BenÃƒÂ¶tigte Fahrzeuge</th>
+                <th>VerfÃƒÂ¼gbare Fahrzeuge</th>
                 <th>Rollstuhl</th>
-                <th>Großraum</th>
+                <th>GroÃƒÅ¸raum</th>
                 <th>Elektro</th>
                 <th>Reserve</th>
                 <th>Engpass</th>
@@ -55,11 +57,11 @@
 
       <section class="m-split">
         <section class="admin-panel">
-          <div class="admin-panel-head"><h2>Spezialkapazitäten und Warnungen</h2></div>
+          <div class="admin-panel-head"><h2>SpezialkapazitÃƒÂ¤ten und Warnungen</h2></div>
           <div class="m-list" data-kp-special></div>
         </section>
         <aside class="admin-panel">
-          <div class="admin-panel-head"><h2>Kapazitätslücken</h2></div>
+          <div class="admin-panel-head"><h2>KapazitÃƒÂ¤tslÃƒÂ¼cken</h2></div>
           <div class="m-list" data-kp-gaps></div>
         </aside>
       </section>
@@ -89,3 +91,7 @@
   <script src="kapazitaetsplanung.js"></script>
 </body>
 </html>
+
+
+
+

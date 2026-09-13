@@ -1,5 +1,10 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Taxi Germersheim - Qualitaetsberichte</title><meta name="robots" content="noindex,nofollow"><script src="auth.js"></script><script src="qualitaet-shared.js"></script><link rel="stylesheet" href="admin.css"><link rel="stylesheet" href="qualitaet.css"></head>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Taxi Germersheim - Qualitaetsberichte</title><meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
+  <script src="auth.js"></script>
+  <script src="qualitaet-shared.js"></script>
+<link rel="stylesheet" href="admin.css"><link rel="stylesheet" href="qualitaet.css">      </head>
 <body><div class="admin-shell"><aside class="admin-sidebar" aria-label="Interne Navigation"><div class="admin-sidebar-brand"><img src="../logo.png" alt="Taxi Germersheim Logo"><div><strong>Dispatcher</strong><small>Interner Bereich</small></div></div><nav class="admin-nav"><a class="admin-nav-item is-active" href="qualitaetsberichte.html">Qualitaetsberichte</a></nav></aside><main class="admin-main">
 <header class="admin-topbar"><div class="admin-topbar-title"><h1>Qualitaetsberichte</h1><p>Kennzahlen, Filter, Diagrammblocs und Monatsbericht (Demo)</p></div></header>
 <section class="admin-panel q-toolbar"><label>von<input type="date" data-rep-from></label><label>bis<input type="date" data-rep-to></label><label>Fahrer<input data-rep-driver placeholder="optional"></label><label>Fahrzeug<input data-rep-vehicle placeholder="optional"></label><label>Kategorie<input data-rep-category placeholder="optional"></label><label>Status<input data-rep-status placeholder="optional"></label></section>
@@ -7,3 +12,6 @@
 <section class="admin-panel"><div class="admin-panel-head"><h2>Diagrammblocs</h2></div><div class="q-grid" data-rep-charts></div></section>
 <section class="admin-panel"><div class="admin-panel-head"><h2>Monatsbericht Qualitaet</h2></div><div class="q-print" data-rep-monthly></div></section>
 </main></div><script src="qualitaetsberichte.js"></script></body></html>
+
+
+
