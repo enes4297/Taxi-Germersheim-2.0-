@@ -19,6 +19,12 @@
 --   Testprojekt gemuenzt; in der bestehenden Datenbank sind sie umgekehrt zu
 --   lesen (Tabellen vorhanden, Schema private vorhanden).
 --
+-- TYPEN
+--   pg_trigger.tgenabled hat den Typ "char", nicht text. Ohne Umwandlung nach
+--   text scheitert die Verkettung in Posten 51 mit
+--   42725 'operator is not unique: text || "char"'. Oertlich gemessen am
+--   13.09.2026 mit PostgreSQL 17.6; text || name ist dagegen eindeutig.
+--
 -- VORAUSSETZUNG
 --   Die Migrationen 001 bis 010 sind eingespielt. Fehlt eine der dort
 --   angelegten Tabellen, bricht diese Abfrage mit einer eindeutigen Meldung
@@ -107,7 +113,7 @@ from (values
   (50, '011/5', 'private.guard_document_object_delete() vorhanden',
        (to_regprocedure('private.guard_document_object_delete()') is not null)::text),
   (51, '011/5', 'Eigene Trigger auf storage.objects',
-       (select coalesce(string_agg(tgname || ' [' || tgenabled || ']', ', ' order by tgname), 'keine')
+       (select coalesce(string_agg(tgname::text || ' [' || tgenabled::text || ']', ', ' order by tgname), 'keine')
           from pg_trigger
          where tgrelid = to_regclass('storage.objects') and not tgisinternal)),
   (52, '011/5', 'TRIGGER-Recht auf storage.objects -> entscheidet ueber CREATE TRIGGER',

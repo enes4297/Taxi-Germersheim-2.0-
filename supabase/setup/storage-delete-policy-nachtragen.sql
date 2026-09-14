@@ -8,9 +8,17 @@
 -- eigener Ordner, SELECT Admin) hat das Basisskript bereits angelegt.
 --
 -- REIHENFOLGE - DIESE DATEI KOMMT ZULETZT
---   1. testprojekt-einrichtung-ohne-storage-trigger.sql   (SQL Editor)
---   2. storage-trigger-nachtragen.sql                     (SQL Editor)
---   3. DIESE DATEI                                        (SQL Editor)
+--   Im Testprojekt:
+--     1. testprojekt-einrichtung-ohne-storage-trigger.sql (SQL Editor)
+--     2. storage-trigger-nachtragen.sql                   (SQL Editor)
+--     3. DIESE DATEI                                      (SQL Editor)
+--   In der gezielten Einspielung nach 011-einspielung/README.md ist dies
+--   SCHRITT 07, der letzte schreibende Schritt:
+--     02 public-Teil -> 03 Bucket -> 05 (= storage-trigger-nachtragen.sql)
+--     -> 06 Policies Lesen/Schreiben -> 07 DIESE DATEI
+--   Wo unten von testprojekt-einrichtung-ohne-storage-trigger.sql die Rede
+--   ist, ist dort SCHRITT 02 gemeint. Diese Datei liegt bewusst nur einmal
+--   im Bestand und wird nicht verdoppelt.
 -- Grund: Ohne den Trigger storage_objects_guard_delete waere diese Policy die
 -- einzige Schranke beim Loeschen. Ihre Pruefung laeuft auf dem Snapshot des
 -- Statements und sieht eine gleichzeitig entstehende Verknuepfung nicht.
@@ -28,7 +36,11 @@
 --
 -- WAS DIESE DATEI NICHT TUT
 --   - keine weitere Policy. Sie fasst die drei bestehenden nicht an.
---   - kein GRANT und kein REVOKE auf storage.objects
+--   - kein GRANT und kein REVOKE auf storage.objects. Die Plattform-Grants
+--     dort bleiben unveraendert; Supabase fuehrt das Entziehen von Rechten
+--     an API-Rollen in diesen Schemata seit dem 21.04.2025 ausdruecklich
+--     unter dem, was nicht mehr moeglich ist. Die Schranke ist RLS. Siehe
+--     CLAUDE.md, "Plattform-Grants auf storage.objects und storage.buckets".
 --   - keinen Trigger; die Trigger werden nur gelesen
 --   - kein DELETE auf storage.objects. Dateien werden ausschliesslich ueber
 --     die Storage-API entfernt.
@@ -66,7 +78,7 @@ begin
     v_fehlend := concat_ws(', ', v_fehlend, 'private.is_unlinked_document(text)');
   end if;
   if v_fehlend is not null then
-    raise exception 'ABBRUCH: Fehlende Funktion(en): %. Zuerst testprojekt-einrichtung-ohne-storage-trigger.sql ausfuehren.', v_fehlend;
+    raise exception 'ABBRUCH: Fehlende Funktion(en): %. Zuerst testprojekt-einrichtung-ohne-storage-trigger.sql ausfuehren - in der gezielten Einspielung ist das Schritt 02.', v_fehlend;
   end if;
 
   -- Der Trigger MUSS vor dieser Policy stehen, sonst entsteht genau das
@@ -174,6 +186,50 @@ begin
     raise exception 'ABBRUCH: Der USING-Ausdruck ist unvollstaendig: %', v_qual;
   end if;
 
+  -- KEINE UPDATE-Policy. Das Ueberschreiben einer vorhandenen Datei wird
+  -- allein dadurch verhindert, dass es keine UPDATE-Policy gibt - das
+  -- Tabellenrecht UPDATE besitzt authenticated als Plattform-Grant weiter.
+  select count(*) into v_anzahl
+  from pg_policies
+  where schemaname = 'storage' and tablename = 'objects' and cmd = 'UPDATE';
+
+  if v_anzahl > 0 then
+    raise exception 'ABBRUCH: Es gibt % UPDATE-Policy(s) auf storage.objects. Dateien duerfen nicht ueberschrieben werden.', v_anzahl;
+  end if;
+
+  -- KEINE ALL-Policy. "for all" deckt SELECT, INSERT, UPDATE und DELETE
+  -- gemeinsam ab. In pg_policies.cmd steht dann 'ALL' - die Zaehlung der
+  -- DELETE- und der UPDATE-Policies oben wuerde sie also NICHT erfassen,
+  -- obwohl sie beides oeffnet.
+  select count(*) into v_anzahl
+  from pg_policies
+  where schemaname = 'storage' and tablename = 'objects' and cmd = 'ALL';
+
+  if v_anzahl > 0 then
+    raise exception 'ABBRUCH: Es gibt % ALL-Policy(s) auf storage.objects. Sie decken UPDATE und DELETE mit ab.', v_anzahl;
+  end if;
+
+  -- KEINE Policy fuer anon oder PUBLIC, ueber ALLE Policies der Tabelle.
+  -- Die Rollenpruefung oben sieht nur die DELETE-Policy. anon besitzt die
+  -- Plattform-Grants auf storage.objects, und die bleiben unveraendert;
+  -- die fehlende Policy ist deshalb die einzige Schranke. "to public" gilt
+  -- fuer jede Rolle, anon eingeschlossen.
+  select string_agg(p.policyname || ' (' || array_to_string(p.roles, ', ') || ')',
+                    ', ' order by p.policyname)
+    into v_rollen
+  from pg_policies as p
+  where p.schemaname = 'storage' and p.tablename = 'objects'
+    and p.roles && array['anon', 'public']::name[];
+
+  if v_rollen is not null then
+    raise exception 'ABBRUCH: Auf storage.objects stehen Policies fuer anon oder PUBLIC: %. Damit waere der Bucket ueber den Anon-Key erreichbar.', v_rollen;
+  end if;
+
+  -- v_rollen traegt ab hier wieder die Rollen der DELETE-Policy.
+  select array_to_string(p.roles, ', ') into v_rollen
+  from pg_policies as p
+  where p.schemaname = 'storage' and p.tablename = 'objects' and p.cmd = 'DELETE';
+
   -- Der Trigger muss unveraendert dastehen.
   select t.tgenabled into v_zustand
   from pg_trigger as t
@@ -187,6 +243,7 @@ begin
 
   raise notice 'KONTROLLE OK: Genau eine DELETE-Policy, Name %, Art %, Rolle %.', v_name, v_perm, v_rollen;
   raise notice 'KONTROLLE OK: USING enthaelt Bucket, Ordnerbindung, is_active_employee und is_unlinked_document.';
+  raise notice 'KONTROLLE OK: Keine UPDATE-Policy, keine ALL-Policy, keine Policy fuer anon oder PUBLIC auf storage.objects.';
   raise notice 'KONTROLLE OK: Trigger storage_objects_guard_delete weiterhin aktiv (tgenabled=%).', v_zustand;
 end
 $$;

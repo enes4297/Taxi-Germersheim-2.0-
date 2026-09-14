@@ -330,6 +330,45 @@ function Get-DateiBytes {
     return [System.Text.Encoding]::ASCII.GetByteCount([string]$abruf.Text)
 }
 
+function New-AbweichendesPdf {
+    # Zweites synthetisches PDF. Es muss sich vom ersten in LAENGE UND INHALT
+    # unterscheiden - sonst koennte ein gelungenes Ueberschreiben unbemerkt
+    # bleiben. Kein Inhalt aus echten Unterlagen.
+    $text = "%PDF-1.4`n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj`n" +
+            "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj`n" +
+            "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 400 400]>>endobj`n" +
+            "% ERSATZINHALT - darf nach dem Lauf in keiner Datei stehen`n" +
+            "trailer<</Root 1 0 R>>`n%%EOF`n"
+    return [System.Text.Encoding]::ASCII.GetBytes($text)
+}
+
+function Get-DateiPruefsumme {
+    # SHA-256 ueber die tatsaechlich gelieferten Bytes.
+    # Warum nicht die Laenge allein: ein Ueberschreiben mit gleich langem
+    # Inhalt waere daran nicht zu erkennen. Geprueft wird deshalb der Inhalt.
+    # Die signierte URL selbst wird nirgends ausgegeben - sie ist ein Schluessel.
+    param($Konto, [string]$Pfad)
+    $s = New-SignierteUrl -Konto $Konto -Pfad $Pfad
+    if (-not $s.Ok) { return $null }
+    $signiert = ($s.Text | ConvertFrom-Json).signedURL
+    if (-not $signiert) { return $null }
+    $abruf = Invoke-Api -Methode 'GET' -Adresse "$Url/storage/v1$signiert" -Kopf @{ apikey = $Key }
+    if (-not $abruf.Ok) { return $null }
+    # Windows PowerShell liefert .Content je nach Inhaltstyp als byte[] ODER
+    # als Zeichenkette. Beide Faelle werden hier abgedeckt.
+    $roh = $abruf.Text
+    if ($roh -is [byte[]]) { $bytes = $roh }
+    elseif ($null -eq $roh) { return $null }
+    else { $bytes = [System.Text.Encoding]::ASCII.GetBytes([string]$roh) }
+    if ($bytes.Length -eq 0) { return $null }
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return (($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') }) -join '')
+    } finally {
+        $sha.Dispose()
+    }
+}
+
 # --------------------------------------------------------------------------
 # 1. Anmeldung
 # --------------------------------------------------------------------------
@@ -496,6 +535,62 @@ if ($kurz.Ok) {
 }
 Add-Befund 'Signierte URL ist nach Ablauf der Gueltigkeit wertlos' $kurzOk `
     $(if ($null -ne $nachAblauf) { "Gueltigkeit 1 s, Abruf nach 5 s -> HTTP $($nachAblauf.Status)" } else { 'die kurze URL wurde gar nicht erst erstellt' })
+
+# --------------------------------------------------------------------------
+# 3c. Ueberschreiben einer vorhandenen Datei
+# --------------------------------------------------------------------------
+# WARUM DIESER ABSCHNITT NOETIG IST
+#   Der Aufbau hat bewusst KEINE UPDATE-Policy: Dateien werden nicht
+#   ueberschrieben, jeder Upload bekommt einen neuen Pfad. Das Tabellenrecht
+#   UPDATE auf storage.objects behaelt authenticated trotzdem - es stammt von
+#   supabase_storage_admin, und Supabase untersagt seit dem 21.04.2025
+#   ausdruecklich, Rechte von API-Rollen in diesem Schema zu entziehen.
+#   Gesperrt wird das Ueberschreiben also allein durch RLS: ohne UPDATE-Policy
+#   gibt es keine Zeile, auf die ein UPDATE zutraefe.
+#   Genau diese Stelle war bisher ungeprueft. Alle bisherigen Uploads liefen
+#   mit "x-upsert: false" und haben den Fall nie beruehrt.
+#
+# WAS GEMESSEN WIRD
+#   Nicht nur die Abweisung. Eine Fehlermeldung allein waere kein Nachweis -
+#   sie koennte auch erscheinen, nachdem die Datei bereits ersetzt wurde.
+#   Deshalb wird der Inhalt vorher und nachher ueber SHA-256 verglichen.
+Write-Host '=== 3c. Ueberschreiben einer vorhandenen Datei ===' -ForegroundColor Cyan
+
+$ersatz = New-AbweichendesPdf
+$summeVorher = Get-DateiPruefsumme -Konto $Admin -Pfad $pfadA
+Add-Befund 'Inhalt der Datei ist vor den Versuchen messbar' ($null -ne $summeVorher) `
+    $(if ($summeVorher) { "SHA-256 $($summeVorher.Substring(0,16))..., $($pdf.Length) Bytes" } else { 'Datei nicht abrufbar - die folgenden Pruefungen waeren wertlos' })
+
+# 1) Genau das, was supabase-js upload(pfad, datei, { upsert: true }) absetzt.
+$ue1 = Invoke-Api -Methode 'POST' -Adresse "$Url/storage/v1/object/$Bucket/$pfadA" `
+                  -Kopf ((Get-Kopf $A) + @{ 'x-upsert' = 'true' }) `
+                  -Koerper $ersatz -InhaltsTyp 'application/pdf'
+Add-Befund 'A kann die EIGENE Datei nicht per Upsert ueberschreiben' (-not $ue1.Ok) "HTTP $($ue1.Status) $(Get-Kurz $ue1.Text 80)"
+
+# 2) Genau das, was supabase-js update(pfad, datei) absetzt: PUT statt POST.
+#    Ein eigener Endpunkt - deshalb eine eigene Pruefung.
+$ue2 = Invoke-Api -Methode 'PUT' -Adresse "$Url/storage/v1/object/$Bucket/$pfadA" `
+                  -Kopf (Get-Kopf $A) `
+                  -Koerper $ersatz -InhaltsTyp 'application/pdf'
+Add-Befund 'A kann die EIGENE Datei nicht per PUT ersetzen' (-not $ue2.Ok) "HTTP $($ue2.Status) $(Get-Kurz $ue2.Text 80)"
+
+# 3) Fremder Ordner mit Upsert. Ohne diese Pruefung bliebe offen, ob
+#    "x-upsert: true" die Ordnerpruefung der INSERT-Policy umgeht.
+$ue3 = Invoke-Api -Methode 'POST' -Adresse "$Url/storage/v1/object/$Bucket/$pfadA" `
+                  -Kopf ((Get-Kopf $B) + @{ 'x-upsert' = 'true' }) `
+                  -Koerper $ersatz -InhaltsTyp 'application/pdf'
+Add-Befund 'B kann die Datei von A nicht per Upsert ueberschreiben' (-not $ue3.Ok) "HTTP $($ue3.Status) $(Get-Kurz $ue3.Text 80)"
+
+# 4) Der eigentliche Nachweis: der Inhalt ist derselbe geblieben.
+$summeNachher = Get-DateiPruefsumme -Konto $Admin -Pfad $pfadA
+$laengeNachher = Get-DateiBytes -Konto $Admin -Pfad $pfadA
+Add-Befund 'Inhalt der Datei ist nach allen Versuchen unveraendert' `
+    (($null -ne $summeVorher) -and ($summeNachher -eq $summeVorher)) `
+    $(if ($summeNachher) { "SHA-256 vorher gleich nachher: $($summeNachher -eq $summeVorher)" } else { 'Datei nach den Versuchen nicht mehr abrufbar' })
+Add-Befund 'Laenge der Datei entspricht weiterhin dem Original' ($laengeNachher -eq $pdf.Length) `
+    "$laengeNachher von $($pdf.Length) Bytes; die Ersatzdatei haette $($ersatz.Length) Bytes"
+
+$ersatz = $null
 
 # --------------------------------------------------------------------------
 # 4. Loeschen - der eigentliche Punkt

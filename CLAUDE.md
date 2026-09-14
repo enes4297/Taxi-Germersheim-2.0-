@@ -48,7 +48,9 @@ suchen. Vor solchen Änderungen erst das ganze Feld durchsuchen, nicht raten.
 
 ### Regeln für Policies und Funktionen
 
-- `anon` bekommt **nirgends** Rechte.
+- `anon` bekommt **nirgends** Rechte. Einzige Ausnahme: die bestehenden,
+  von Supabase verwalteten Plattform-Grants auf `storage.objects` und
+  `storage.buckets` — siehe unten.
 - In `SECURITY DEFINER`-Funktionen immer `set search_path = ''` und alle Namen
   voll qualifizieren.
 - **Grants greifen vor RLS.** Fehlt der Grant, hilft die beste Policy nichts.
@@ -64,6 +66,31 @@ suchen. Vor solchen Änderungen erst das ganze Feld durchsuchen, nicht raten.
   Katalogeintrag und lässt die Datei als Leiche im Speicher zurück.
 - Kein Service-Role-Key im Browser. Ein Publishable-/Anon-Key ist allein kein
   Geheimnis.
+
+### Plattform-Grants auf `storage.objects` und `storage.buckets`
+
+Diese Ausnahme gilt **ausschließlich für diese beiden Tabellen**. Sie ist keine
+allgemeine Lockerung und wird auf kein anderes Schema und keine andere Tabelle
+übertragen.
+
+- **Bestehende, von Supabase verwaltete Plattform-Grants auf diesen beiden
+  Tabellen bleiben unverändert.** Kein `GRANT`, kein `REVOKE`. Supabase führt
+  „Revoking privileges on tables in these schemas from API roles (e.g. `anon`)"
+  seit dem 21.04.2025 ausdrücklich unter dem, was nicht mehr möglich ist
+  ([Discussion 34270](https://github.com/orgs/supabase/discussions/34270)).
+  Ein `REVOKE` dort läuft ohne Fehler und ohne Warnung durch und bewirkt nichts.
+- **Wir vergeben dort keine zusätzlichen Rechte an `anon`.** Was `anon` an
+  Plattform-Grants schon hat, bleibt; dazu kommt von uns nichts.
+- **Der Dateizugriff wird durch einen privaten Bucket und ausdrücklich
+  begrenzte RLS-Policies geregelt.** Policies nur `to authenticated`, nie für
+  `anon` oder `PUBLIC`, keine `UPDATE`- und keine `ALL`-Policy, jede Policy auf
+  den Bucket eingeschränkt.
+- **Nicht von RLS erfasste Rechte dürfen nicht als RLS-geschützt bezeichnet
+  werden.** RLS greift bei `SELECT`, `INSERT`, `UPDATE`, `DELETE` und `MERGE`.
+  `TRUNCATE`, `REFERENCES`, `TRIGGER` und `MAINTAIN` erfasst sie **nicht**, und
+  der `BEFORE DELETE`-Trigger feuert bei `TRUNCATE` ebenfalls nicht. Diese vier
+  Rechte sind über keine exponierte Schnittstelle erreichbar — das ist eine
+  Ableitung aus der Architektur, **kein Messwert**, und wird auch so benannt.
 
 ---
 

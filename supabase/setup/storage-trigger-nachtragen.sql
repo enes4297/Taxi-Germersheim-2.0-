@@ -25,10 +25,18 @@
 --   wieder entfernt, damit sie nicht vor dem Trigger steht.
 --
 -- REIHENFOLGE - VERBINDLICH
---   1. testprojekt-einrichtung-ohne-storage-trigger.sql       (SQL Editor)
---   2. DIESE DATEI                                            (SQL Editor)
---   3. DELETE-Policy employee_documents_delete_unlinked ZULETZT nachziehen,
---      Wortlaut in storage-policies-dashboard.md.
+--   Im Testprojekt:
+--     1. testprojekt-einrichtung-ohne-storage-trigger.sql     (SQL Editor)
+--     2. DIESE DATEI                                          (SQL Editor)
+--     3. storage-delete-policy-nachtragen.sql ZULETZT         (SQL Editor)
+--   In der gezielten Einspielung nach 011-einspielung/README.md ist dies
+--   SCHRITT 05:
+--     02 public-Teil -> 03 Bucket -> 05 DIESE DATEI
+--     -> 06 Policies Lesen/Schreiben
+--     -> 07 (= storage-delete-policy-nachtragen.sql)
+--   Wo unten von testprojekt-einrichtung-ohne-storage-trigger.sql die Rede
+--   ist, ist dort SCHRITT 02 gemeint. Diese Datei liegt bewusst nur einmal
+--   im Bestand und wird nicht verdoppelt.
 -- Grund: Ohne diesen Trigger ist die DELETE-Policy die einzige Schranke. Ihre
 -- Pruefung laeuft auf dem Snapshot des Statements und sieht eine gleichzeitig
 -- entstehende Verknuepfung nicht. Zwischen Policy und Trigger darf deshalb
@@ -36,9 +44,11 @@
 --
 -- WAS DIESE DATEI NICHT TUT
 --   - kein Eigentuemerwechsel, kein SET ROLE, keine Rolleneskalation
---   - kein GRANT und kein REVOKE auf storage.objects
---   - KEINE Policy, insbesondere keine DELETE-Policy. Die gehoert ins
---     Dashboard und kommt erst NACH diesem Nachtrag.
+--   - kein GRANT und kein REVOKE auf storage.objects. Die Plattform-Grants
+--     dort bleiben unveraendert; die Schranke ist RLS. Siehe CLAUDE.md,
+--     "Plattform-Grants auf storage.objects und storage.buckets".
+--   - KEINE Policy, insbesondere keine DELETE-Policy. Die kommt erst NACH
+--     diesem Nachtrag, mit storage-delete-policy-nachtragen.sql.
 --   - kein Eingriff in die Plattform-Trigger protect_objects_delete und
 --     update_objects_updated_at. Beide bleiben unberuehrt; dieser Nachtrag
 --     legt ausschliesslich storage_objects_guard_delete an. Die Kontrolle
@@ -79,7 +89,7 @@ begin
 
   -- Die Funktion aus Abschnitt 3 der Migration 011 muss es geben.
   if to_regprocedure('private.is_unlinked_document(text)') is null then
-    raise exception 'ABBRUCH: private.is_unlinked_document(text) fehlt. Zuerst testprojekt-einrichtung-ohne-storage-trigger.sql ausfuehren.';
+    raise exception 'ABBRUCH: private.is_unlinked_document(text) fehlt. Zuerst testprojekt-einrichtung-ohne-storage-trigger.sql ausfuehren - in der gezielten Einspielung ist das Schritt 02.';
   end if;
 
   -- Warnung, falls die Reihenfolge bereits verletzt wurde.
