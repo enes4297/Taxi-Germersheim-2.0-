@@ -439,8 +439,8 @@ Gelaufen ist:
 
 ### Dieses Protokoll gilt für die alte Fassung von `R1`, `R2` und `R3`
 
-**`R1`, `R2` und `R3` sind am 14.09.2026 überarbeitet und seither nicht erneut
-gefahren worden.** Geändert hat sich:
+**`R1`, `R2` und `R3` sind am 14.09.2026 überarbeitet worden.** Geändert hat
+sich:
 
 - `R1` sperrt das Löschen nicht mehr über `revoke delete on storage.objects`,
   sondern über Riegel b) — den ausgetauschten Funktionsrumpf.
@@ -452,14 +452,17 @@ gefahren worden.** Geändert hat sich:
 Damit ist der Teil des Protokolls, der die zurückbleibenden `anon`-Rechte und
 die zwei Vergeber bei `authenticated` nennt, **überholt**. Diese beiden
 Unterschiede können nicht mehr entstehen, weil keine Stufe mehr Rechte anfasst.
-Zu erwarten sind noch zwei: die neutralisierte Funktion und der stehende
-Trigger.
 
-**Erwartet ist nicht gemessen.** Der Lauf gegen den lokalen Nachbau steht aus.
-Bis er vorliegt, gilt der überarbeitete Rückweg als **ungeprüft** — und
-ebenso die neuen Kontrollblöcke in `06`, in
-`../storage-delete-policy-nachtragen.sql` und die Abfrage
-`07b_kontrolle_policies.sql`.
+**Die überarbeitete Fassung ist am 14.09.2026 gezielt gegen einen eigenen
+lokalen Nachbau (Datenbank `tgruw`) geprüft worden** — Löschriegel, die
+Voraussetzung "keine DELETE-/ALL-Policy mehr" vor der Neutralisierung, sowie
+die neuen Kontrollblöcke in `06`, in `../storage-delete-policy-nachtragen.sql`
+und die Abfrage `07b_kontrolle_policies.sql`. Ergebnis, gefundener und
+behobener Fehler (Typkonflikt `tgenabled || text` in R1s Vorprüfung) und alle
+Einzelbefunde stehen in
+[`ERGEBNIS-2026-09-14-rueckweg-r1-r3.md`](ERGEBNIS-2026-09-14-rueckweg-r1-r3.md).
+Kein Wiederholungslauf der gesamten Testsuite und nichts davon gegen das
+Originalprojekt.
 
 ### Was dieser Prüfstand nicht beweist
 

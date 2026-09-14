@@ -199,7 +199,7 @@ begin
       where schemaname = 'storage' and tablename = 'objects'
         and cmd in ('DELETE', 'ALL')),
     coalesce((select case when t.tgenabled in ('O', 'A') then 'aktiv'
-                          else 'vorhanden, aber nicht aktiv (tgenabled=' || t.tgenabled || ')' end
+                          else 'vorhanden, aber nicht aktiv (tgenabled=' || t.tgenabled::text || ')' end
                 from pg_trigger as t
                where t.tgrelid = to_regclass('storage.objects')
                  and t.tgname = 'storage_objects_guard_delete'
