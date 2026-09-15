@@ -8,6 +8,7 @@
     { key: "Rechnungen", href: "rechnungen.html" },
     { key: "Schichtplanung", href: "schichtplanung.html" },
     { key: "Fahrzeuge", href: "fahrzeuge.html" },
+    { key: "Dokumentfristen", href: "dokumentfristen.html" },
     { key: "Statistiken", href: "statistiken.html" },
     { key: "Einstellungen", href: "einstellungen.html" },
     { key: "Termin-Cockpit", href: "termin-cockpit.html" }
@@ -22,6 +23,7 @@
     "rechnungen.html": "Rechnungen",
     "schichtplanung.html": "Schichtplanung",
     "fahrzeuge.html": "Fahrzeuge",
+    "dokumentfristen.html": "Dokumentfristen",
     "statistiken.html": "Statistiken",
     "einstellungen.html": "Einstellungen",
     "termin-cockpit.html": "Termin-Cockpit"
