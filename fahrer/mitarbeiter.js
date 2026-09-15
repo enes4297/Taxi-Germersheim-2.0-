@@ -525,7 +525,9 @@
       <p>Krank · ${sicknessStatusText(r.status)}</p>
       ${r.note ? `<p>${visibleLabel(r.note)}</p>` : ""}
       <span class="status-pill active">Übermittelt</span>
-      <span class="status-pill neutral">Ohne Anhang</span>
+      ${r.document_submission_id
+        ? '<span class="status-pill info">Mit Anhang</span>'
+        : '<span class="status-pill neutral">Ohne Anhang</span>'}
     </article>`).join("");
 
     /* Aeltere Eintraege, die nur auf diesem Geraet liegen. Sie werden NICHT
