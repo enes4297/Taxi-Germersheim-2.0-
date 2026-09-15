@@ -1,8 +1,16 @@
 # Gezielte Einspielung der fehlenden Teile aus Migration 011
 
-**Stand 14.09.2026. Nichts davon ist gegen das Projekt Taxi Germersheim
-gelaufen.** Das Einspielen braucht eine ausdrückliche Freigabe im laufenden
-Gespräch; eine frühere Freigabe gilt dafür nicht.
+**Stand 14.09.2026: alle Schritte dieser Reihenfolge (01 bis 07b sowie die
+Abschlusskontrolle der übrigen Bestandteile) sind im Originalprojekt gelaufen
+und bestanden.** Ergebnis, geprüfte Einrichtungspunkte und die ausdrückliche
+Grenze — kein produktiver Verhaltenstest — stehen in
+[`ERGEBNIS-2026-09-14-einspielung-abgeschlossen.md`](ERGEBNIS-2026-09-14-einspielung-abgeschlossen.md).
+
+**Stand 15.09.2026: der dort angekündigte Funktionstest hat stattgefunden,
+einen Anzeigefehler aufgedeckt und ist behoben.** Bestätigte Funktionstests,
+gefundener Fehler und die anschließende, vollständig bestätigte Bereinigung
+der dabei entstandenen Testdaten stehen in
+[`ERGEBNIS-2026-09-15-funktionstest-und-bereinigung-abgeschlossen.md`](ERGEBNIS-2026-09-15-funktionstest-und-bereinigung-abgeschlossen.md).
 
 Der zugehörige Plan mit allen Begründungen steht in
 [`../EINSPIELPLAN-011.md`](../EINSPIELPLAN-011.md).
