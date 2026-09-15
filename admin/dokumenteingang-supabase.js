@@ -73,6 +73,37 @@
       return;
     }
 
+    /* Die Menuebeschriftung ("Dispatcher" o.ae.) belegt keine tatsaechliche
+       Datenbankrolle. Deshalb wird die Rolle hier direkt aus profiles
+       gelesen, mit derselben Sitzung, die auch fuer die eigentliche Abfrage
+       verwendet wird - so zeigt der Hinweistext den echten Stand und nicht
+       eine veraltete oder abweichende Anmeldung aus einem anderen Tab. */
+    const { data: sessionData, error: sessionError } = await client.auth.getSession();
+    if (sessionError || !sessionData?.session?.user) {
+      setBody('<p class="person-meta">Keine gueltige Anmeldung gefunden. Bitte neu anmelden.</p>');
+      return;
+    }
+
+    const { data: profileRow, error: profileError } = await client
+      .from("profiles")
+      .select("role, active")
+      .eq("auth_user_id", sessionData.session.user.id)
+      .maybeSingle();
+
+    if (profileError || !profileRow) {
+      console.error("Rolle konnte nicht ermittelt werden.", profileError?.code || profileError?.message);
+      setBody('<p class="person-meta">Rolle konnte nicht ermittelt werden. Dokumenteingang wird nicht angezeigt.</p>');
+      return;
+    }
+
+    if (profileRow.active !== true || profileRow.role !== "admin") {
+      setBody(
+        '<p class="person-meta">Fehlende Berechtigung: Eingereichte Nachweise sind nur fuer Administratoren ' +
+        `sichtbar. Angemeldet als Rolle „${esc(profileRow.role || "unbekannt")}".</p>`
+      );
+      return;
+    }
+
     const { data, error } = await client
       .from("document_submissions")
       .select("id, employee_id, document_type_id, file_path, file_name, mime_type, status, note, submitted_at, employees(first_name, last_name), document_types(label)")
@@ -164,7 +195,10 @@
   }
 
   function init() {
-    if (!document.querySelector(MOUNT)) return;
+    if (!document.querySelector(MOUNT)) {
+      console.warn("Dokumenteingang: Einhaengepunkt " + MOUNT + " nicht gefunden, keine Anzeige moeglich.");
+      return;
+    }
     bindOpen();
     load().catch((err) => {
       console.error("Dokumenteingang konnte nicht geladen werden.", err?.message || err);
