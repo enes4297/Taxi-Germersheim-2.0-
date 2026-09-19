@@ -1,0 +1,17 @@
+{
+  "name": "taxi-germersheim-oeffentlich",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Build der oeffentlichen Webseite. Zentrale, Mitarbeiterportal und Dashboard werden nicht gebaut, sondern unveraendert uebernommen.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "ausgabe-pruefen": "node tools/ausgabe-pruefen.mjs",
+    "browser-pruefen": "node tools/pruefe-ausgabe-browser.mjs"
+  },
+  "devDependencies": {
+    "astro": "^5.14.1"
+  }
+}

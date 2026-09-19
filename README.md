@@ -1,5 +1,23 @@
 # Taxi-Germersheim-2.0-
 
+## Öffentliche Webseite bauen
+
+Seit Schritt 012 wird der öffentliche Bereich mit Astro gebaut. Zentrale,
+Mitarbeiterportal und Dashboard bleiben unverändert und werden nach dem Build
+Datei für Datei übernommen.
+
+```
+npm install              # einmalig
+npm run build            # erzeugt dist-oeffentlich/
+npm run ausgabe-pruefen  # prüft den Ausgabeordner
+npm run dev              # örtlicher Entwicklungsserver
+```
+
+Veröffentlicht wird künftig `dist-oeffentlich/`, nicht die Repository-Wurzel.
+Einzelheiten, die Liste der übernommenen Bereiche und der offene Punkt zur
+Veröffentlichung: `UEBERNAHME-OEFFENTLICH.md`.
+
+
 ## Fahrzeugflotte pflegen
 
 - Seite: flotte.html

@@ -1,0 +1,82 @@
+---
+// Oertliche Probeseite fuer Schritt 012.
+//
+// Zweck: nachweisen, dass der Build laeuft und dass die Bestandsbereiche im
+// Ausgabeordner unveraendert danebenliegen. Diese Seite ist kein Entwurf der
+// kuenftigen Startseite und wird mit dem ersten echten Seitenschritt wieder
+// entfernt.
+//
+// Sie traegt noindex und ist nur oertlich gedacht.
+import { UEBERNAHME } from '../../tools/bestand-uebernehmen.mjs';
+
+const gebautAm = new Date().toLocaleString('de-DE');
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Probeseite – Astro-Gerüst</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        margin: 0;
+        padding: 2.5rem 1.25rem 4rem;
+        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+        max-width: 46rem;
+        margin-inline: auto;
+      }
+      h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+      p.unter { margin-top: 0; opacity: 0.75; }
+      h2 { font-size: 1.05rem; margin-top: 2.25rem; }
+      table { border-collapse: collapse; width: 100%; font-size: 0.925rem; }
+      th, td { text-align: left; padding: 0.5rem 0.65rem; border-bottom: 1px solid rgba(128,128,128,0.35); vertical-align: top; }
+      th { font-weight: 600; }
+      ul { padding-left: 1.2rem; }
+      li { margin-bottom: 0.35rem; }
+      code { font-size: 0.9em; background: rgba(128,128,128,0.16); padding: 0.1em 0.35em; }
+      .hinweis { border-left: 3px solid currentColor; padding: 0.15rem 0 0.15rem 0.9rem; opacity: 0.85; }
+    </style>
+  </head>
+  <body>
+    <h1>Probeseite des Astro-Gerüsts</h1>
+    <p class="unter">Schritt 012 · gebaut am {gebautAm} · nur örtlich, nicht zur Veröffentlichung</p>
+
+    <p class="hinweis">
+      Diese Seite belegt nur, dass der Build läuft. Es wurde keine Bestandsseite
+      ersetzt und keine Backend-Anbindung geändert.
+    </p>
+
+    <h2>Unverändert übernommene Bereiche</h2>
+    <table>
+      <thead>
+        <tr><th>Ordner</th><th>Zweck</th></tr>
+      </thead>
+      <tbody>
+        {UEBERNAHME.map((e) => (
+          <tr>
+            <td><code>{e.von}</code></td>
+            <td>{e.zweck}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <h2>Im Ausgabeordner zu prüfen</h2>
+    <ul>
+      <li><a href="admin/index.html">admin/index.html</a> – Anmeldung der Zentrale</li>
+      <li><a href="fahrer/index.html">fahrer/index.html</a> – Anmeldung des Mitarbeiterportals</li>
+      <li><a href="dashboard/index.html">dashboard/index.html</a> – Weiterleitung auf die Zentrale</li>
+    </ul>
+
+    <h2>Was hier bewusst nicht landet</h2>
+    <ul>
+      <li>Interne Dokumentation (<code>*.md</code>, Testprotokolle, Einspielpläne)</li>
+      <li>Datenbankdateien (<code>supabase/</code> mit Migrationen und Setup-Skripten)</li>
+      <li>Testbelege und Bildschirmaufnahmen (<code>fahrer/tests/</code>, <code>screenshots/</code>)</li>
+      <li>Werkzeuge und Quelldateien (<code>tools/</code>, <code>src/</code>, <code>.claude/</code>)</li>
+    </ul>
+  </body>
+</html>

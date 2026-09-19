@@ -7,11 +7,31 @@ Arbeitsstand — der veraltet und steht in Git.
 
 ## Was dieses Projekt ist
 
-Eine statische Website aus reinem HTML, CSS und JavaScript. **Es gibt keinen
-Build-Schritt** und keine `package.json` im Wurzelverzeichnis. Die Dateien
-werden so ausgeliefert, wie sie hier liegen.
+Eine statische Website aus HTML, CSS und JavaScript. Ausgeliefert wird immer
+fertiges, vorab erzeugtes Material — es gibt keinen Server zur Laufzeit.
 
 Ungefährer Umfang: 85 HTML-, 95 JS-, 34 CSS- und 23 SQL-Dateien.
+
+### Build-Schritt — eng begrenzt erlaubt
+
+Am 19.09.2026 vom Geschäftsführer ausdrücklich genehmigt, für die Übernahme
+des freigegebenen Designs:
+
+- Für die **öffentliche Webseite** sind ein Build-Schritt (Astro) und eine
+  `package.json` im Wurzelverzeichnis erlaubt. Quellen liegen in `src/`,
+  Werkzeuge in `tools/`, das Ergebnis in `dist-oeffentlich/`.
+- **Zentrale (`admin/`), Mitarbeiterportal (`fahrer/`) und `dashboard/`
+  bleiben davon unberührt.** Sie werden nicht gebaut, sondern unverändert in
+  den Ausgabeordner übernommen. Ihre Dateien werden so ausgeliefert, wie sie
+  hier liegen.
+- **Kein pauschales Kopieren des Repositorys in den Ausgabeordner.** Was
+  übernommen wird, steht als ausdrückliche Liste in
+  `tools/bestand-uebernehmen.mjs`. Interne Dokumentation, SQL-Dateien,
+  Sicherungen, Testbelege und Bildschirmaufnahmen gehören dort nicht hinein.
+- **Bestehende URLs bleiben gültig.** Deshalb `build.format: 'file'`
+  (`impressum.html`, nicht `impressum/index.html`).
+
+Alle übrigen Regeln dieser Datei bleiben unverändert in Kraft.
 
 | Ordner | Inhalt |
 |---|---|

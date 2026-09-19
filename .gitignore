@@ -1,0 +1,7 @@
+# Abhaengigkeiten und Build-Ergebnis der oeffentlichen Astro-Webseite.
+# Der Bestand (admin/, fahrer/, dashboard/, assets/, die HTML-Seiten der
+# Wurzel) bleibt weiterhin vollstaendig versioniert.
+node_modules/
+dist-oeffentlich/
+.astro/
+.belege-astro/
