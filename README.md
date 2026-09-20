@@ -7,15 +7,23 @@ Mitarbeiterportal und Dashboard bleiben unverändert und werden nach dem Build
 Datei für Datei übernommen.
 
 ```
-npm install              # einmalig
+npm ci                   # Abhaengigkeiten, exakt nach package-lock.json
 npm run build            # erzeugt dist-oeffentlich/
 npm run ausgabe-pruefen  # prüft den Ausgabeordner
+npm run probe-pruefen    # Probeseite im Browser, Desktop und Mobil
+npm run browser-pruefen  # Zentrale, Portal und Dashboard im Ausgabeordner
 npm run dev              # örtlicher Entwicklungsserver
+npm run preview          # den fertigen Ausgabeordner ansehen
 ```
 
+`npm ci` statt `npm install`: Es installiert exakt die Versionen aus
+`package-lock.json` und bricht ab, wenn Lockdatei und `package.json`
+auseinanderlaufen. So bauen zwei Rechner dasselbe. `npm install` bleibt dem
+Fall vorbehalten, dass absichtlich eine Abhängigkeit hinzukommt.
+
 Veröffentlicht wird künftig `dist-oeffentlich/`, nicht die Repository-Wurzel.
-Einzelheiten, die Liste der übernommenen Bereiche und der offene Punkt zur
-Veröffentlichung: `UEBERNAHME-OEFFENTLICH.md`.
+Einzelheiten, die Liste der übernommenen Bereiche, die Branch-Abhängigkeit und
+der offene Punkt zur Veröffentlichung: `UEBERNAHME-OEFFENTLICH.md`.
 
 
 ## Fahrzeugflotte pflegen

@@ -1,82 +1,273 @@
 ---
-// Oertliche Probeseite fuer Schritt 012.
-//
-// Zweck: nachweisen, dass der Build laeuft und dass die Bestandsbereiche im
-// Ausgabeordner unveraendert danebenliegen. Diese Seite ist kein Entwurf der
-// kuenftigen Startseite und wird mit dem ersten echten Seitenschritt wieder
-// entfernt.
-//
-// Sie traegt noindex und ist nur oertlich gedacht.
+/**
+ * Probeseite der Design-Grundlage (Schritt 013).
+ *
+ * Zweck: Die uebernommenen Bausteine an einer Stelle zeigen, damit sich
+ * Farben, Schriften, Abstaende, Komponenten und das Videoverhalten auf
+ * Desktop UND Mobil pruefen lassen - bevor die erste Bestandsseite ersetzt
+ * wird.
+ *
+ * Das ist ausdruecklich KEIN Entwurf der kuenftigen Startseite. Die kommt in
+ * Schritt 014 aus der Vorschau. Diese Seite wird dann entfernt.
+ *
+ * Sie traegt noindex und ist nur oertlich gedacht.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Abschnitt from '../components/Abschnitt.astro';
+import AbschnittKopf from '../components/AbschnittKopf.astro';
+import Knopf from '../components/Knopf.astro';
+import Enthuellen from '../components/Enthuellen.astro';
+import HeroBuehne from '../components/HeroBuehne.astro';
 import { UEBERNAHME } from '../../tools/bestand-uebernehmen.mjs';
+
+const FARBEN = [
+  ['Grund', '--color-background', '#18181b'],
+  ['Schrift', '--color-foreground', '#f0ebe0'],
+  ['Karte', '--color-card', '#1f1f23'],
+  ['Akzent', '--color-primary', '#c8a96e'],
+  ['Zweitrangig', '--color-secondary', '#252528'],
+  ['Gedaempft', '--color-muted-foreground', '#8d8a82'],
+  ['Rahmen', '--color-border', '#2e2e32'],
+  ['Hell', '--color-hell', '#f2ede2'],
+];
+
+const FAHRZEUGE = [
+  ['Mercedes E-Klasse', '/assets/fleet/mercedes-e-klasse-schwarz-1600.jpg', '50% 58%'],
+  ['Mercedes V-Klasse', '/assets/fleet/mercedes-v-klasse-1600.jpg', '50% 54%'],
+  ['Rollstuhlfahrzeug', '/assets/fleet/vw-rollstuhlfahrzeug-1600.jpg', '32% 52%'],
+];
 
 const gebautAm = new Date().toLocaleString('de-DE');
 ---
 
-<!doctype html>
-<html lang="de">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex,nofollow" />
-    <title>Probeseite – Astro-Gerüst</title>
-    <style>
-      :root { color-scheme: light dark; }
-      body {
-        margin: 0;
-        padding: 2.5rem 1.25rem 4rem;
-        font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
-        max-width: 46rem;
-        margin-inline: auto;
-      }
-      h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
-      p.unter { margin-top: 0; opacity: 0.75; }
-      h2 { font-size: 1.05rem; margin-top: 2.25rem; }
-      table { border-collapse: collapse; width: 100%; font-size: 0.925rem; }
-      th, td { text-align: left; padding: 0.5rem 0.65rem; border-bottom: 1px solid rgba(128,128,128,0.35); vertical-align: top; }
-      th { font-weight: 600; }
-      ul { padding-left: 1.2rem; }
-      li { margin-bottom: 0.35rem; }
-      code { font-size: 0.9em; background: rgba(128,128,128,0.16); padding: 0.1em 0.35em; }
-      .hinweis { border-left: 3px solid currentColor; padding: 0.15rem 0 0.15rem 0.9rem; opacity: 0.85; }
-    </style>
-  </head>
-  <body>
-    <h1>Probeseite des Astro-Gerüsts</h1>
-    <p class="unter">Schritt 012 · gebaut am {gebautAm} · nur örtlich, nicht zur Veröffentlichung</p>
+<Grundlage
+  titel="Probeseite – Design-Grundlage"
+  beschreibung="Oertliche Probeseite der uebernommenen Design-Grundlage."
+  nichtIndexieren
+>
+  {/* ══ Hero ══════════════════════════════════════════════════════════════
+      Aufbau wie in der Vorschau: Desktop bildfuellend, Mobil als eigenes
+      Bildband ueber der Ueberschrift. Beide Buehnen stehen im Markup,
+      sichtbar ist immer nur eine - das Skript startet nur die passende. */}
+  <section class="relative min-h-[100svh] flex flex-col overflow-hidden">
+    <div class="absolute inset-0 hidden md:block">
+      <HeroBuehne
+        fuer="desktop"
+        alt="Fahrzeug von Taxi Germersheim"
+        videoPosition="50% 42%"
+        endAusrichtung="rechts"
+        bedienungKlasse="absolute right-5 lg:right-10 top-[13%] z-30"
+        class="absolute inset-0"
+      />
+      {/* Abdunklung. Zwei Verlaeufe mit getrennten Aufgaben: senkrecht nur so
+          viel, dass sich Kopf und Fuss absetzen; waagerecht von links, weil
+          DORT die Ueberschrift steht. Die Mitte bleibt bewusst hell. */}
+      <div
+        aria-hidden="true"
+        class="absolute inset-0"
+        style="background: linear-gradient(to bottom, rgba(12,12,14,0.76) 0%, rgba(12,12,14,0.40) 13%, rgba(12,12,14,0.13) 34%, rgba(12,12,14,0.13) 54%, rgba(12,12,14,0.36) 74%, rgba(12,12,14,0.70) 90%, rgba(12,12,14,0.94) 100%)"
+      >
+      </div>
+      <div
+        aria-hidden="true"
+        class="absolute inset-0"
+        style="background: linear-gradient(100deg, rgba(12,12,14,0.92) 0%, rgba(12,12,14,0.78) 16%, rgba(12,12,14,0.54) 31%, rgba(12,12,14,0.26) 46%, rgba(12,12,14,0.04) 62%, rgba(12,12,14,0) 72%)"
+      >
+      </div>
+    </div>
 
-    <p class="hinweis">
-      Diese Seite belegt nur, dass der Build läuft. Es wurde keine Bestandsseite
-      ersetzt und keine Backend-Anbindung geändert.
-    </p>
+    <div class="md:hidden relative h-[33svh] min-h-[230px] shrink-0">
+      <HeroBuehne
+        fuer="mobil"
+        alt="Fahrzeug von Taxi Germersheim"
+        videoPosition="50% 50%"
+        endAusrichtung="mitte"
+        bedienungKlasse="absolute bottom-3 right-3 z-30"
+        class="absolute inset-0"
+      />
+      <div
+        aria-hidden="true"
+        class="absolute inset-0"
+        style="background: linear-gradient(to bottom, rgba(12,12,14,0.55) 0%, rgba(12,12,14,0.10) 40%, rgba(12,12,14,0.55) 100%)"
+      >
+      </div>
+    </div>
 
-    <h2>Unverändert übernommene Bereiche</h2>
-    <table>
-      <thead>
-        <tr><th>Ordner</th><th>Zweck</th></tr>
-      </thead>
-      <tbody>
-        {UEBERNAHME.map((e) => (
-          <tr>
-            <td><code>{e.von}</code></td>
-            <td>{e.zweck}</td>
-          </tr>
+    <div class="relative z-20 flex-1 flex items-center">
+      <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 py-14 lg:py-0">
+        <p class="text-[11px] font-semibold tracking-[0.3em] uppercase text-primary tg-in">
+          Schritt 013 · Probeseite
+        </p>
+        <h1
+          class="mt-4 max-w-2xl font-semibold tracking-[-0.03em] leading-[1.04] tg-in tg-d1"
+          style="font-size: clamp(2.2rem, 5vw, 4.2rem)"
+        >
+          Die freigegebene Grundlage steht.
+        </h1>
+        <p class="mt-6 max-w-xl text-[17px] leading-relaxed text-muted-foreground tg-in tg-d2">
+          Farben, Schriften, Abstände, Komponenten und das bestätigte
+          Videoverhalten – übernommen aus der Vorschau, gebaut mit Astro.
+          Es wurde noch keine Bestandsseite ersetzt.
+        </p>
+        <div class="mt-9 flex flex-wrap gap-3 tg-in tg-d3">
+          <Knopf href="#bausteine">Bausteine ansehen</Knopf>
+          <Knopf art="zweit" href="#bestand">Bestand im Ausgabeordner</Knopf>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ══ Farben und Schriften ═══════════════════════════════════════════ */}
+  <Abschnitt id="bausteine">
+    <AbschnittKopf
+      label="Grundlage"
+      titel="Farben und Schriften"
+      text="Dieselben Werte wie in der Vorschau. Der gedämpfte Ton wurde dort am 18.09.2026 von #74726b auf #8d8a82 angehoben – 3,7:1 waren zu wenig für Fließtext, jetzt sind es 5,1:1."
+    />
+
+    <Enthuellen class="mt-12">
+      <ul class="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border">
+        {FARBEN.map(([name, marke, wert]) => (
+          <li class="bg-background p-4">
+            <div
+              class="h-16 w-full border border-border"
+              style={`background-color: var(${marke})`}
+            >
+            </div>
+            <p class="mt-3 text-sm font-medium">{name}</p>
+            <p class="text-[11px] text-muted-foreground font-mono">{wert}</p>
+          </li>
         ))}
-      </tbody>
-    </table>
+      </ul>
+    </Enthuellen>
 
-    <h2>Im Ausgabeordner zu prüfen</h2>
-    <ul>
-      <li><a href="admin/index.html">admin/index.html</a> – Anmeldung der Zentrale</li>
-      <li><a href="fahrer/index.html">fahrer/index.html</a> – Anmeldung des Mitarbeiterportals</li>
-      <li><a href="dashboard/index.html">dashboard/index.html</a> – Weiterleitung auf die Zentrale</li>
+    <Enthuellen class="mt-14" verzoegerung={80}>
+      <div class="grid md:grid-cols-2 gap-10">
+        <div>
+          <p class="text-[11px] font-semibold tracking-[0.3em] uppercase text-primary">
+            Outfit – Fließtext und Überschriften
+          </p>
+          <p class="mt-4 text-[2rem] leading-tight font-semibold">Fahrten in Germersheim</p>
+          <p class="mt-2 text-[17px] leading-relaxed text-muted-foreground">
+            Ärztliche Termine, Dialyse, Flughafentransfer – größer, schöner,
+            fünfzig Grüße. Die Umlaute und das ß kommen aus dem Zeichensatz
+            latin-ext.
+          </p>
+          <p class="mt-3 text-sm text-muted-foreground">300 · 400 · 500 · 600 · 700</p>
+        </div>
+        <div>
+          <p class="text-[11px] font-semibold tracking-[0.3em] uppercase text-primary">
+            Lora – Zitate und Auszeichnung
+          </p>
+          <p class="mt-4 text-[1.6rem] leading-snug" style="font-family: var(--font-serif)">
+            „Wir klären mit Ihnen vorab, welche Unterlagen benötigt werden.“
+          </p>
+          <p class="mt-2 text-[15px]" style="font-family: var(--font-serif); font-style: italic">
+            Kursiv, 400 und 600.
+          </p>
+          <p class="mt-3 text-sm text-muted-foreground">
+            Örtlich ausgeliefert, kein Aufruf an ein fremdes CDN.
+          </p>
+        </div>
+      </div>
+    </Enthuellen>
+  </Abschnitt>
+
+  {/* ══ Komponenten ════════════════════════════════════════════════════ */}
+  <Abschnitt hell>
+    <AbschnittKopf
+      hell
+      label="Komponenten"
+      titel="Abschnitt, Kopf und Schaltflächen"
+      text="Derselbe Abschnittsrahmen in seiner hellen Ausführung. Die Schaltflächen tragen dieselbe Gedrückt-Rückmeldung wie in der Vorschau: 120 Millisekunden, Skalierung auf 0,98."
+    />
+    <div class="mt-10 flex flex-wrap items-center gap-3">
+      <Knopf>Fahrt anfragen</Knopf>
+      <Knopf art="zweit" class="!text-[var(--color-hell-foreground)] !border-[#c9c0ad] hover:!border-[#8a7a52] hover:!text-[#8a7a52]">
+        Mehr erfahren
+      </Knopf>
+      <Knopf art="still" class="!text-[var(--color-hell-muted)] hover:!text-[var(--color-hell-foreground)]">
+        Nur Text
+      </Knopf>
+      <Knopf href="tel:+4972743567">07274 3567 anrufen</Knopf>
+    </div>
+    <p class="mt-6 text-sm text-[var(--color-hell-muted)]">
+      Die letzte Schaltfläche ist ein echter Telefonlink und rendert deshalb
+      als <code>&lt;a&gt;</code>, nicht als <code>&lt;button&gt;</code>.
+    </p>
+  </Abschnitt>
+
+  {/* ══ Fahrzeugbilder ═════════════════════════════════════════════════ */}
+  <Abschnitt>
+    <AbschnittKopf
+      label="Bilder"
+      titel="Fahrzeuge aus der Vorschau"
+      text="Die Flotte ist durchgehend dunkel lackiert und vor dunklem Hintergrund fotografiert. Ohne die leichte Anhebung aus der Vorschau verschwindet das Fahrzeug im dunklen Layout."
+    />
+    <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {FAHRZEUGE.map(([name, pfad, lage], i) => (
+        <Enthuellen verzoegerung={i * 70}>
+          <figure class="bg-card border border-border">
+            <div class="relative aspect-[5/4] overflow-hidden">
+              <img
+                src={pfad}
+                alt={name}
+                loading="lazy"
+                decoding="async"
+                class="absolute inset-0 w-full h-full object-cover tg-vehicle"
+                style={`object-position: ${lage}`}
+              />
+            </div>
+            <figcaption class="p-4">
+              <p class="font-medium">{name}</p>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Zwei Größen im Ordner: 1600 und 900 Punkte Breite.
+              </p>
+            </figcaption>
+          </figure>
+        </Enthuellen>
+      ))}
+    </div>
+  </Abschnitt>
+
+  {/* ══ Bestand ════════════════════════════════════════════════════════ */}
+  <Abschnitt id="bestand" class="border-t border-border">
+    <AbschnittKopf
+      label="Ausgabeordner"
+      titel="Unverändert übernommene Bereiche"
+      text="Diese Ordner werden nicht gebaut, sondern Datei für Datei kopiert und anschließend byteweise gegen den Bestand geprüft."
+    />
+    <div class="mt-10 overflow-x-auto">
+      <table class="w-full text-[15px] border-collapse min-w-[30rem]">
+        <thead>
+          <tr class="text-left">
+            <th class="border-b border-border py-2.5 pr-4 font-semibold">Ordner</th>
+            <th class="border-b border-border py-2.5 font-semibold">Zweck</th>
+          </tr>
+        </thead>
+        <tbody>
+          {UEBERNAHME.map((e) => (
+            <tr>
+              <td class="border-b border-border py-2.5 pr-4 font-mono text-sm text-primary align-top">
+                {e.von}
+              </td>
+              <td class="border-b border-border py-2.5 text-muted-foreground align-top">{e.zweck}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="mt-10 flex flex-wrap gap-3">
+      <li><Knopf art="zweit" href="admin/index.html">Zentrale öffnen</Knopf></li>
+      <li><Knopf art="zweit" href="fahrer/index.html">Mitarbeiterportal öffnen</Knopf></li>
+      <li><Knopf art="zweit" href="dashboard/index.html">Dashboard öffnen</Knopf></li>
     </ul>
 
-    <h2>Was hier bewusst nicht landet</h2>
-    <ul>
-      <li>Interne Dokumentation (<code>*.md</code>, Testprotokolle, Einspielpläne)</li>
-      <li>Datenbankdateien (<code>supabase/</code> mit Migrationen und Setup-Skripten)</li>
-      <li>Testbelege und Bildschirmaufnahmen (<code>fahrer/tests/</code>, <code>screenshots/</code>)</li>
-      <li>Werkzeuge und Quelldateien (<code>tools/</code>, <code>src/</code>, <code>.claude/</code>)</li>
-    </ul>
-  </body>
-</html>
+    <p class="mt-12 text-sm text-muted-foreground">
+      Nicht in der Ausgabe: interne Dokumentation, SQL-Dateien, Testbelege,
+      Bildschirmaufnahmen, Vergleichsseiten, Werkzeuge und Quelldateien.
+    </p>
+    <p class="mt-2 text-sm text-muted-foreground">Gebaut am {gebautAm}. Nur örtlich, nicht zur Veröffentlichung.</p>
+  </Abschnitt>
+</Grundlage>

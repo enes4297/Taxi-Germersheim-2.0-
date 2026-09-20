@@ -1,0 +1,43 @@
+---
+/**
+ * Seitenrahmen der oeffentlichen Webseite.
+ *
+ * Traegt die freigegebene Design-Grundlage und sonst nichts: keine
+ * Navigation, keine Fusszeile. Die kommen mit der Startseite (Schritt 014),
+ * damit dieser Schritt die Grundlage nicht schon mit Inhalt vermischt.
+ */
+import '../styles/design.css';
+
+interface Props {
+  titel: string;
+  beschreibung?: string;
+  /** Auf der Probeseite gesetzt: haelt sie aus den Suchmaschinen. */
+  nichtIndexieren?: boolean;
+}
+
+const { titel, beschreibung, nichtIndexieren = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titel}</title>
+    {beschreibung && <meta name="description" content={beschreibung} />}
+    {nichtIndexieren && <meta name="robots" content="noindex,nofollow" />}
+
+    {/*
+      Die beiden Schriftschnitte, die auf jeder Seite ueber der Falz stehen,
+      werden vorgeladen. Die uebrigen 16 holt der Browser nach Bedarf.
+      Oertlich ausgeliefert - kein Aufruf an ein fremdes CDN.
+    */}
+    <link rel="preload" href="/schriften/outfit-400-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/schriften/outfit-600-latin.woff2" as="font" type="font/woff2" crossorigin />
+
+    <meta name="theme-color" content="#18181b" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

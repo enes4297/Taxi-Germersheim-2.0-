@@ -47,7 +47,7 @@ const browser = await chromium.launch({ channel: 'chrome' });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 
 for (const [name, pfad, erwartet] of [
-  ['Probeseite', '/probe.html', 'Probeseite des Astro-Gerüsts'],
+  ['Probeseite', '/probe.html', 'Die freigegebene Grundlage steht.'],
   ['Zentrale', '/admin/index.html', null],
   ['Mitarbeiterportal', '/fahrer/index.html', null],
 ]) {

@@ -9,9 +9,12 @@
     "build": "astro build",
     "preview": "astro preview",
     "ausgabe-pruefen": "node tools/ausgabe-pruefen.mjs",
-    "browser-pruefen": "node tools/pruefe-ausgabe-browser.mjs"
+    "browser-pruefen": "node tools/pruefe-ausgabe-browser.mjs",
+    "probe-pruefen": "node tools/pruefe-probeseite.mjs"
   },
   "devDependencies": {
-    "astro": "^5.14.1"
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^5.14.1",
+    "tailwindcss": "^4.3.3"
   }
 }

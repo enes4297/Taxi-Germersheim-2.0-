@@ -19,7 +19,7 @@ import { readFile, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { UEBERNAHME } from './bestand-uebernehmen.mjs';
+import { NIE_MITNEHMEN, UEBERNAHME } from './bestand-uebernehmen.mjs';
 
 const WURZEL = fileURLToPath(new URL('..', import.meta.url));
 const AUSGABE = join(WURZEL, 'dist-oeffentlich');
@@ -54,7 +54,7 @@ pruefe(existsSync(probe), 'Probeseite liegt als probe.html im Ausgabeordner');
 if (existsSync(probe)) {
   const inhalt = await readFile(probe, 'utf8');
   pruefe(inhalt.includes('noindex'), 'Probeseite traegt noindex');
-  pruefe(inhalt.includes('Astro-Gerüsts'), 'Probeseite hat ihren Inhalt');
+  pruefe(inhalt.includes('Die freigegebene Grundlage steht.'), 'Probeseite hat ihren Inhalt');
 }
 pruefe(
   !existsSync(join(AUSGABE, 'probe', 'index.html')),
@@ -77,14 +77,23 @@ for (const regel of UEBERNAHME) {
     continue;
   }
 
+  // Ausgegangen wird vom BESTAND, nicht vom Zielordner: In assets/ liegen
+  // dort inzwischen auch die neuen Medien aus public/. Die gehoeren nicht in
+  // diesen Vergleich - sie haben im Bestand gar keine Entsprechung.
+  const ausBestand = (await dateienUnter(quelle)).filter(
+    (d) => !regel.ausser.includes(d.split('/')[0]) && !NIE_MITNEHMEN.some((r) => r.test(d)),
+  );
   const drin = await dateienUnter(ziel);
+
+  let fehlend = 0;
   let abweichend = 0;
-  for (const d of drin) {
-    if ((await pruefsumme(join(quelle, ...d.split('/')))) !== (await pruefsumme(join(ziel, ...d.split('/'))))) {
-      abweichend += 1;
-    }
+  for (const d of ausBestand) {
+    const imZiel = join(ziel, ...d.split('/'));
+    if (!existsSync(imZiel)) { fehlend += 1; continue; }
+    if ((await pruefsumme(join(quelle, ...d.split('/')))) !== (await pruefsumme(imZiel))) abweichend += 1;
   }
-  pruefe(abweichend === 0, `${regel.von}: alle ${drin.length} Dateien bytegleich mit dem Bestand`);
+  pruefe(fehlend === 0, `${regel.von}: keine Bestandsdatei fehlt in der Ausgabe (${fehlend})`);
+  pruefe(abweichend === 0, `${regel.von}: alle ${ausBestand.length} Bestandsdateien bytegleich`);
 
   // Ausgeschlossenes darf nicht doch mitgekommen sein.
   for (const aus of regel.ausser) {
@@ -102,13 +111,53 @@ const verboten = [
   ['Claude-Konfiguration', (d) => d.startsWith('.claude/')],
   ['Werkzeuge und Quellen', (d) => d.startsWith('tools/') || d.startsWith('src/')],
   ['Abhaengigkeiten', (d) => d.includes('node_modules/')],
-  ['Testbelege', (d) => d.includes('test-results/') || d.includes('/tests/')],
+  ['Testbelege', (d) => d.includes('test-results/') || d.includes('/tests/') || d.includes('belege')],
   ['Python-Skripte', (d) => d.endsWith('.py')],
+  // Die Vergleichsseiten und Videobelege der Vorschau bleiben dort. Sie
+  // dienten der Qualitaetsfreigabe und haben in der Auslieferung nichts
+  // verloren.
+  ['Vergleichsseiten der Vorschau', (d) => d.startsWith('vergleich')],
+  ['Platzhalterdateien', (d) => d.endsWith('.gitkeep')],
 ];
 for (const [name, trifft] of verboten) {
   const treffer = alle.filter(trifft);
   pruefe(treffer.length === 0, `keine ${name} im Ausgabeordner${treffer.length ? ': ' + treffer.slice(0, 3).join(', ') : ''}`);
 }
+
+// ── 4. Die uebernommene Design-Grundlage ist vollstaendig ──────────────────
+// Ein fehlendes Medium faellt im Browser sonst erst auf, wenn jemand genau
+// hinsieht - ein fehlender Schriftschnitt gar nicht, der faellt still auf die
+// Systemschrift zurueck.
+// Der Pfad zur Vorschau steht bewusst NICHT im Quelltext: Er zeigt auf ein
+// Verzeichnis auf genau einem Rechner. Wer den Abgleich will, setzt
+// VORSCHAU_ORDNER; sonst wird dieser eine Punkt uebersprungen und das auch
+// gesagt. Die uebrigen Pruefungen laufen unabhaengig davon.
+const VORSCHAU = process.env.VORSCHAU_ORDNER;
+
+const medien = alle.filter((d) => d.startsWith('assets/hero/') || d.startsWith('assets/fleet/'));
+pruefe(medien.length === 22, `alle 22 Hero- und Fahrzeugmedien liegen im Ausgabeordner (${medien.length})`);
+
+if (VORSCHAU && existsSync(join(VORSCHAU, 'public/assets/hero'))) {
+  let abw = 0;
+  for (const d of medien) {
+    const inVorschau = join(VORSCHAU, 'public', ...d.split('/'));
+    if (!existsSync(inVorschau)) { abw += 1; continue; }
+    if ((await pruefsumme(join(AUSGABE, ...d.split('/')))) !== (await pruefsumme(inVorschau))) abw += 1;
+  }
+  pruefe(abw === 0, `Medien byteweise gleich mit der freigegebenen Vorschau (${medien.length} geprueft)`);
+} else {
+  console.log('HINW  VORSCHAU_ORDNER nicht gesetzt oder nicht erreichbar - Medienabgleich uebersprungen');
+}
+
+const schriften = alle.filter((d) => d.startsWith('schriften/') && d.endsWith('.woff2'));
+pruefe(schriften.length === 18, `alle 18 Schriftdateien liegen oertlich vor (${schriften.length})`);
+
+const seite = await readFile(probe, 'utf8');
+pruefe(
+  !/fonts\.(googleapis|gstatic)\.com/.test(seite),
+  'kein Aufruf an Google Fonts in der ausgelieferten Seite',
+);
+pruefe(/_astro\/[^"]+\.css/.test(seite), 'die Seite bindet das gebaute CSS-Bundle ein');
 
 console.log(`\nDateien im Ausgabeordner: ${alle.length}`);
 console.log(`bestanden: ${ok.length}   fehlgeschlagen: ${fehl.length}`);

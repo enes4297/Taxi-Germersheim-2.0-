@@ -1,0 +1,34 @@
+---
+/**
+ * Schaltflaeche in drei Auspraegungen. Uebernommen aus der Vorschau
+ * (PrimaryButton / SecondaryButton in shared.tsx).
+ *
+ * Rendert als <a>, sobald `href` gesetzt ist - sonst als <button>. Ein
+ * Telefon- oder Sprungziel gehoert in einen Link, nicht in eine
+ * Schaltflaeche mit Skript.
+ */
+interface Props {
+  art?: 'haupt' | 'zweit' | 'still';
+  href?: string;
+  typ?: 'button' | 'submit';
+  class?: string;
+}
+const { art = 'haupt', href, typ = 'button', class: klasse = '', ...rest } = Astro.props;
+
+const GRUND =
+  'inline-flex items-center justify-center gap-2 px-5 py-3.5 text-[15px] font-semibold tg-press';
+
+const ART = {
+  haupt: 'bg-primary text-primary-foreground hover:bg-[#d4b87d]',
+  zweit: 'border border-border text-foreground hover:border-primary hover:text-primary',
+  still: 'text-muted-foreground hover:text-foreground',
+};
+
+const klassen = `${GRUND} ${ART[art]} ${klasse}`;
+---
+
+{href ? (
+  <a href={href} class={klassen} {...rest}><slot /></a>
+) : (
+  <button type={typ} class={klassen} {...rest}><slot /></button>
+)}

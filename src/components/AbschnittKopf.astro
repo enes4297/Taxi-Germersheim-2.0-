@@ -1,0 +1,46 @@
+---
+/**
+ * Kopf eines Abschnitts: Label, Ueberschrift, Fliesstext.
+ * Uebernommen aus SectionHead() der Vorschau (site-ui.tsx).
+ *
+ * Die Schriftgroesse der Ueberschrift ist bewusst stufenlos
+ * (clamp): Sie soll auf 390 wie auf 1920 Punkten Breite stimmen, ohne
+ * an einer Schwelle zu springen.
+ */
+interface Props {
+  label: string;
+  titel: string;
+  text?: string;
+  hell?: boolean;
+  zentriert?: boolean;
+}
+const { label, titel, text, hell = false, zentriert = false } = Astro.props;
+---
+
+<div class={`${zentriert ? 'text-center mx-auto' : ''} max-w-3xl`}>
+  <p
+    class={`text-[11px] font-semibold tracking-[0.3em] uppercase ${
+      hell ? 'text-[var(--color-hell-label)]' : 'text-primary'
+    }`}
+  >
+    {label}
+  </p>
+  <h2
+    class={`mt-4 font-semibold tracking-[-0.025em] leading-[1.06] ${
+      hell ? 'text-[var(--color-hell-foreground)]' : 'text-foreground'
+    }`}
+    style="font-size: clamp(1.9rem, 3.3vw, 3.25rem)"
+  >
+    {titel}
+  </h2>
+  {text && (
+    <p
+      class={`mt-5 text-[17px] leading-relaxed ${
+        hell ? 'text-[var(--color-hell-muted)]' : 'text-muted-foreground'
+      } ${zentriert ? 'mx-auto' : ''}`}
+    >
+      {text}
+    </p>
+  )}
+  <slot />
+</div>

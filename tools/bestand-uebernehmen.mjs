@@ -15,7 +15,8 @@
 // und "../logo.png", admin/ laedt ueber "../assets/". Deshalb muessen assets/
 // und logo.png mitkommen, obwohl sie selbst keine Portalseiten sind.
 
-import { cp, mkdir, readdir, stat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { cp, mkdir, readFile, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,10 +53,15 @@ export const UEBERNAHME = [
     zweck: 'Logo - von admin/ und fahrer/ ueber ../logo.png geladen',
     ausser: [],
   },
+  {
+    von: 'yumak-avatar.png',
+    zweck: 'Yumak-Abbildung - vom Bestand und von der neuen Gestaltung genutzt',
+    ausser: [],
+  },
 ];
 
 /** Gilt ueberall, zusaetzlich zu den Listen oben. */
-const NIE_MITNEHMEN = [
+export const NIE_MITNEHMEN = [
   /(^|[\\/])node_modules([\\/]|$)/,
   /(^|[\\/])test-results([\\/]|$)/,
   /(^|[\\/])\.gitkeep$/,
@@ -70,20 +76,81 @@ function istAusgeschlossen(pfadRelativZurWurzel, regelAusser, basis) {
   return NIE_MITNEHMEN.some((r) => r.test(innen));
 }
 
-async function zaehleDateien(ordner) {
-  let n = 0;
-  for (const eintrag of await readdir(ordner, { withFileTypes: true })) {
-    if (eintrag.isDirectory()) n += await zaehleDateien(join(ordner, eintrag.name));
-    else n += 1;
+/**
+ * Namenskonflikte suchen, BEVOR kopiert wird.
+ *
+ * Zu diesem Zeitpunkt liegt im Ausgabeordner schon alles, was Astro erzeugt
+ * hat - gebaute Seiten und der komplette Inhalt von public/. Traegt eine
+ * dieser Dateien denselben Pfad wie eine Bestandsdatei, wuerde das Kopieren
+ * sie ueberschreiben. Still darf das nicht passieren:
+ *
+ *   - Gleicher Inhalt: nur eine ueberfluessige Dublette. Sie wird gemeldet,
+ *     der Build laeuft weiter. Die Datei gehoert dann aus public/ entfernt -
+ *     der Bestand ist die massgebliche Fassung.
+ *   - Abweichender Inhalt: Der Build bricht ab. Welche der beiden Fassungen
+ *     gelten soll, ist eine Entscheidung und keine Frage der Reihenfolge,
+ *     in der zufaellig kopiert wird.
+ */
+async function konflikteSuchen(wurzel, ziel) {
+  const gleich = [];
+  const abweichend = [];
+
+  for (const regel of UEBERNAHME) {
+    const quelle = join(wurzel, regel.von);
+    if (!existsSync(quelle)) continue;
+
+    const istOrdner = (await stat(quelle)).isDirectory();
+    const kandidaten = istOrdner
+      ? (await dateienUnter(quelle)).filter((d) => !istAusgeschlossen(join(quelle, d), regel.ausser, quelle))
+      : [''];
+
+    for (const d of kandidaten) {
+      const rel = d ? `${regel.von}/${d}` : regel.von;
+      const imZiel = join(ziel, rel);
+      if (!existsSync(imZiel)) continue;
+      const a = await pruefsumme(join(wurzel, rel));
+      const b = await pruefsumme(imZiel);
+      (a === b ? gleich : abweichend).push(rel);
+    }
   }
-  return n;
+
+  return { gleich, abweichend };
 }
+
+async function dateienUnter(ordner, basis = ordner) {
+  const raus = [];
+  for (const e of await readdir(ordner, { withFileTypes: true })) {
+    const p = join(ordner, e.name);
+    if (e.isDirectory()) raus.push(...(await dateienUnter(p, basis)));
+    else raus.push(relative(basis, p).split(sep).join('/'));
+  }
+  return raus;
+}
+
+const pruefsumme = async (p) => createHash('sha256').update(await readFile(p)).digest('hex');
 
 /**
  * Kopiert die Bestandsbereiche nach `ziel`.
  * Gibt je Eintrag die Anzahl uebernommener Dateien zurueck.
  */
-export async function bestandKopieren(wurzel, ziel) {
+export async function bestandKopieren(wurzel, ziel, melden = () => {}) {
+  const { gleich, abweichend } = await konflikteSuchen(wurzel, ziel);
+
+  if (abweichend.length) {
+    throw new Error(
+      'Namenskonflikt: Diese Dateien liegen sowohl in public/ als auch im Bestand, ' +
+        'mit UNTERSCHIEDLICHEM Inhalt. Es wurde nichts ueberschrieben. Bitte entscheiden, ' +
+        'welche Fassung gilt, und die andere entfernen:\n  ' +
+        abweichend.join('\n  '),
+    );
+  }
+  for (const d of gleich) {
+    melden(
+      `Dublette: ${d} liegt in public/ UND im Bestand, inhaltlich gleich. ` +
+        'Der Bestand gilt; die Datei gehoert aus public/ entfernt.',
+    );
+  }
+
   const bericht = [];
 
   for (const regel of UEBERNAHME) {
@@ -101,7 +168,10 @@ export async function bestandKopieren(wurzel, ziel) {
         recursive: true,
         filter: (q) => !istAusgeschlossen(q, regel.ausser, quelle),
       });
-      bericht.push({ ...regel, dateien: await zaehleDateien(zielPfad) });
+      const ausBestand = (await dateienUnter(quelle)).filter(
+        (d) => !istAusgeschlossen(join(quelle, d), regel.ausser, quelle),
+      );
+      bericht.push({ ...regel, dateien: ausBestand.length });
     } else {
       await mkdir(dirname(zielPfad), { recursive: true });
       await cp(quelle, zielPfad);
@@ -120,7 +190,7 @@ export default function bestandUebernehmen() {
       'astro:build:done': async ({ dir, logger }) => {
         const wurzel = fileURLToPath(new URL('..', import.meta.url));
         const ziel = fileURLToPath(dir);
-        const bericht = await bestandKopieren(wurzel, ziel);
+        const bericht = await bestandKopieren(wurzel, ziel, (t) => logger.warn(t));
 
         for (const eintrag of bericht) {
           if (eintrag.fehlt) logger.warn(`${eintrag.von} nicht gefunden - nichts uebernommen`);
