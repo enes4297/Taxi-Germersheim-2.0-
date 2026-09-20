@@ -1,0 +1,225 @@
+---
+/**
+ * Rewards — eine Szene statt einer Tabelle.
+ * Uebernommen aus sections.tsx der Vorschau.
+ *
+ * WAS DIE BEWEGUNG DARF UND WAS NICHT
+ *   - Auf Zeigen oder Antippen hebt sich der Deckel der Box ein Stueck. Kurz,
+ *     einmalig, und sie faellt wieder zu.
+ *   - Kein Dauerwackeln, kein Konfetti, nichts, was von selbst loslaeuft.
+ *   - Bei reduzierter Bewegung passiert gar nichts; die Ziele bleiben gleich.
+ *
+ * WAS HIER NICHT BEHAUPTET WIRD
+ *   Keine Punktwerte, keine Schwellen, keine Gewinnversprechen.
+ *
+ * ABWEICHUNG ZUR VORSCHAU: Dort fuehren die drei Kacheln auf eigene
+ * Demoseiten. Diese Seiten sind noch nicht uebernommen. Verlinkt wird deshalb
+ * die bestehende spiele.html, und die Beschriftung sagt, was dort tatsaechlich
+ * zu finden ist — siehe REWARDS_STATIONEN in src/inhalte.ts.
+ */
+import { BEWERTUNG, RAD_FELDER, REWARDS, REWARDS_STATIONEN } from '../inhalte';
+import Abschnitt from './Abschnitt.astro';
+import Enthuellen from './Enthuellen.astro';
+import Symbol from './Symbol.astro';
+
+// Feldaufteilung des Rades aus den hinterlegten Gewinnregeln.
+const farben = ['#332f27', '#443d31', '#574c3b', '#6d5d46', '#8b7452', '#ab9063', '#c8a96e'];
+let winkel = 0;
+const segmente = RAD_FELDER.map((g, i) => {
+  const von = winkel;
+  winkel += (g.anteil / 100) * 360;
+  return `${farben[i % farben.length]} ${von}deg ${winkel}deg`;
+});
+---
+
+<Abschnitt id="rewards">
+  <div
+    class="relative overflow-hidden border border-primary/25"
+    style="background: radial-gradient(120% 90% at 82% 8%, rgba(200,169,110,0.16) 0%, rgba(200,169,110,0.05) 38%, rgba(31,31,35,0) 70%), linear-gradient(160deg, #221f1a 0%, #1b1b1f 52%, #18181b 100%)"
+  >
+    <div class="relative p-7 sm:p-10 lg:p-14">
+      <div class="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] gap-10 lg:gap-14 items-start">
+        <Enthuellen>
+          <div>
+            <p class="text-[11px] font-semibold tracking-[0.3em] uppercase text-primary">{REWARDS.label}</p>
+            <h2 class="mt-5 font-semibold tracking-[-0.03em] leading-[1.04] text-foreground" style="font-size: clamp(2rem, 4.4vw, 3.5rem)">{REWARDS.titel}</h2>
+            <p class="mt-5 text-[17px] lg:text-lg text-muted-foreground leading-relaxed max-w-2xl">{REWARDS.text}</p>
+
+            <div class="mt-8 flex flex-wrap gap-3">
+              <a href={REWARDS.hauptziel} class="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-7 py-4 text-[15px] font-semibold hover:bg-[#d4b87d] tg-press">
+                {REWARDS.hauptaktion}
+                <Symbol name="pfeil" class="w-[18px] h-[18px]" />
+              </a>
+              <a href={REWARDS.zweitesZiel} class="inline-flex items-center gap-2 border border-border px-7 py-4 text-[15px] font-medium text-foreground hover:border-primary/50 tg-press">
+                {REWARDS.zweiteAktion}
+                <Symbol name="pfeil" class="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        </Enthuellen>
+
+        {/* Yumak gehoert zur Szene, keine Profilkarte. */}
+        <Enthuellen verzoegerung={90}>
+          <div class="flex lg:flex-col items-center lg:items-start gap-5">
+            <img
+              src="/yumak-avatar.png"
+              alt={`${REWARDS.yumakName}, ${REWARDS.yumakRolle}`}
+              width="160"
+              height="160"
+              loading="lazy"
+              decoding="async"
+              class="w-24 h-24 lg:w-40 lg:h-40 object-contain shrink-0 drop-shadow-[0_14px_30px_rgba(0,0,0,0.55)]"
+            />
+            <div class="relative flex-1 lg:w-full">
+              <span aria-hidden="true" class="absolute -left-2 top-6 lg:left-8 lg:-top-2 w-4 h-4 rotate-45 bg-card border-l border-b lg:border-l-0 lg:border-b-0 lg:border-t lg:border-r border-primary/25"></span>
+              <div class="bg-card border border-primary/25 p-5">
+                <p class="text-[15px] text-foreground leading-relaxed">{REWARDS.yumakText}</p>
+                <p class="mt-3 text-[11px] uppercase tracking-[0.18em] text-primary/85">{REWARDS.yumakName} · {REWARDS.yumakRolle}</p>
+              </div>
+            </div>
+          </div>
+        </Enthuellen>
+      </div>
+
+      {/* ── Die drei Stationen ──────────────────────────────────────── */}
+      <ul class="mt-12 lg:mt-16 grid gap-5 md:grid-cols-3">
+        {REWARDS_STATIONEN.map((s, i) => (
+          <Enthuellen verzoegerung={i * 70}>
+            <li class="h-full list-none">
+              <a
+                href={s.ziel}
+                data-station={s.id}
+                class={`group block h-full border bg-[#141418]/70 backdrop-blur-[2px] transition-colors duration-200 tg-press ${
+                  s.zustand === 'spielbar' ? 'border-primary/45 hover:border-primary/75' : 'border-border hover:border-amber-300/45'
+                }`}
+              >
+                <div class="relative aspect-[4/3] overflow-hidden bg-[#0b0b0d]">
+                  {s.id === 'gluecksrad' && (
+                    <div class="absolute inset-0 grid place-items-center">
+                      <div aria-hidden="true" class="absolute inset-0" style="background: radial-gradient(60% 55% at 50% 48%, rgba(200,169,110,0.16) 0%, rgba(200,169,110,0) 70%)"></div>
+                      <div aria-hidden="true" class="relative w-[70%] aspect-square">
+                        <span class="absolute -inset-[4%] rounded-full" style="background: conic-gradient(from 210deg, #8b7452, #c8a96e, #6d5d46, #c8a96e, #8b7452)"></span>
+                        <span class="absolute inset-0 rounded-full" style={`background: conic-gradient(${segmente.join(', ')}); box-shadow: inset 0 0 40px rgba(0,0,0,0.55)`}></span>
+                        <span class="absolute inset-0 rounded-full opacity-40" style="background: repeating-conic-gradient(from 0deg, rgba(11,11,13,0.9) 0deg 0.6deg, transparent 0.6deg 36deg)"></span>
+                        <span class="absolute inset-[30%] rounded-full bg-[#0f0f12] ring-1 ring-primary/40 grid place-items-center">
+                          <span class="text-primary font-semibold text-xl lg:text-2xl">Y</span>
+                        </span>
+                        <span class="absolute left-1/2 -top-[7%] -translate-x-1/2 w-0 h-0 border-x-[10px] border-x-transparent border-t-[18px] border-t-primary drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]"></span>
+                      </div>
+                    </div>
+                  )}
+
+                  {s.id === 'box' && (
+                    <div class="absolute inset-0 grid place-items-center p-6">
+                      <div class="w-[64%]">
+                        <div aria-hidden="true" class="relative w-full" style="aspect-ratio: 1 / 1.02" data-box>
+                          <span class="absolute inset-0 motion-safe:transition-opacity motion-safe:duration-[420ms]" style="background: radial-gradient(52% 46% at 50% 56%, rgba(200,169,110,0.30) 0%, rgba(200,169,110,0) 72%); opacity: 0.62" data-box-schein></span>
+                          <span class="absolute inset-x-[7%] bottom-[6%] h-[58%] rounded-[5px]" style="background: linear-gradient(150deg, #3a3326 0%, #251f18 55%, #16130f 100%); box-shadow: 0 0 0 1px rgba(200,169,110,0.45), 0 20px 42px -14px rgba(0,0,0,0.95)"></span>
+                          <span class="absolute left-1/2 -translate-x-1/2 bottom-[6%] w-[15%] h-[58%] bg-primary/50"></span>
+                          <span
+                            class="absolute inset-x-[4%] rounded-[5px] motion-safe:transition-[top,transform] motion-safe:duration-[420ms] motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]"
+                            style="top: 30%; height: 17%; background: linear-gradient(150deg, #4e4632 0%, #2f2a20 100%); box-shadow: 0 0 0 1px rgba(200,169,110,0.55), 0 14px 28px -10px rgba(0,0,0,0.9); transform-origin: 12% 100%"
+                            data-box-deckel
+                          ></span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {s.id === 'rush' && (
+                    <div class="absolute inset-0 overflow-hidden">
+                      <div aria-hidden="true" class="absolute inset-0" style="background: linear-gradient(to bottom, #101014 0%, #17171c 34%, #1f1f25 100%)"></div>
+                      <div aria-hidden="true" class="absolute inset-x-0 top-[26%] h-[18%]" style="background: radial-gradient(70% 100% at 50% 100%, rgba(200,169,110,0.20) 0%, rgba(200,169,110,0) 72%)"></div>
+                      <div aria-hidden="true" class="absolute left-1/2 -translate-x-1/2 bottom-0 w-[86%] h-[66%]" style="background: linear-gradient(to bottom, #24242b 0%, #303039 100%); clip-path: polygon(42% 0%, 58% 0%, 104% 100%, -4% 100%)"></div>
+                      {[0, 1, 2, 3].map((i2) => (
+                        <span
+                          aria-hidden="true"
+                          class="absolute left-1/2 -translate-x-1/2 bg-primary/70 motion-safe:[animation:tg-rush-strich_1.5s_linear_infinite]"
+                          style={`bottom: ${4 + i2 * 17}%; width: ${3 + i2 * 2.2}px; height: ${5 + i2 * 3.4}%; animation-delay: ${i2 * 0.375}s`}
+                        ></span>
+                      ))}
+                      <span aria-hidden="true" class="absolute left-1/2 -translate-x-1/2 bottom-[16%] w-[62%] h-[48%]" style="background: linear-gradient(to top, rgba(200,169,110,0.20) 0%, rgba(200,169,110,0) 78%); clip-path: polygon(38% 100%, 62% 100%, 100% 0%, 0% 0%)"></span>
+                      <span aria-hidden="true" class="absolute left-1/2 -translate-x-1/2 bottom-[8%] w-[21%]" style="aspect-ratio: 3 / 4.6">
+                        <span class="absolute inset-0 rounded-[26%_26%_18%_18%/16%_16%_11%_11%]" style="background: linear-gradient(to bottom, #33333a 0%, #16161a 62%, #0e0e11 100%); box-shadow: 0 0 0 1px rgba(200,169,110,0.45), 0 14px 32px -8px rgba(0,0,0,0.95)"></span>
+                        <span class="absolute left-1/2 -translate-x-1/2 -top-[7%] w-[42%] h-[9%] rounded-[2px] bg-primary"></span>
+                        <span class="absolute inset-x-[17%] top-[14%] h-[22%] rounded-[20%] bg-primary/20"></span>
+                        <span class="absolute inset-x-[26%] top-[45%] h-[10%] rounded-sm bg-primary/55"></span>
+                        <span class="absolute left-[11%] bottom-[8%] w-[18%] h-[6%] rounded-full bg-primary"></span>
+                        <span class="absolute right-[11%] bottom-[8%] w-[18%] h-[6%] rounded-full bg-primary"></span>
+                      </span>
+                    </div>
+                  )}
+
+                  <span aria-hidden="true" class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to bottom, rgba(11,11,13,0.5) 0%, rgba(11,11,13,0) 30%, rgba(11,11,13,0) 70%, rgba(11,11,13,0.6) 100%)"></span>
+                  <span
+                    class={`absolute top-3.5 right-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] px-3 py-1.5 rounded-full ${
+                      s.zustand === 'spielbar' ? 'text-primary-foreground bg-primary' : 'text-amber-200 bg-black/65 backdrop-blur-sm ring-1 ring-amber-300/40'
+                    }`}
+                  >
+                    {s.zustandText}
+                  </span>
+                </div>
+
+                <div class="p-6">
+                  <h3 class="text-lg font-semibold text-foreground">{s.titel}</h3>
+                  <p class="mt-2.5 text-[15px] text-muted-foreground leading-relaxed">{s.text}</p>
+                  {/* Das Ziel steht als Text da — auf Touch ist sonst nicht
+                      erkennbar, wohin die Kachel fuehrt. */}
+                  <span class="mt-5 flex flex-col gap-1">
+                    <span class="inline-flex items-center gap-2 text-[15px] font-medium text-primary">
+                      {s.zielText}
+                      <Symbol name="pfeil" class="w-4 h-4 motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:translate-x-1" />
+                    </span>
+                    {s.zusatz && <span class="text-[13px] text-muted-foreground">{s.zusatz}</span>}
+                  </span>
+                </div>
+              </a>
+            </li>
+          </Enthuellen>
+        ))}
+      </ul>
+
+      <Enthuellen verzoegerung={150}>
+        <p class="mt-8 text-[15px] text-muted-foreground leading-relaxed max-w-3xl">{REWARDS.hinweis}</p>
+      </Enthuellen>
+    </div>
+  </div>
+
+  {/* Google-Bewertung: uebernommener Bestand, isoliert abschaltbar. */}
+  {BEWERTUNG.anzeigen && (
+    <Enthuellen verzoegerung={160}>
+      <div class="mt-14 border-t border-border pt-10 flex flex-wrap items-center gap-x-12 gap-y-6">
+        <div class="flex items-center gap-3">
+          <span class="flex gap-0.5 text-primary" aria-hidden="true">
+            {[0, 1, 2, 3, 4].map(() => <Symbol name="stern" class="w-4 h-4" />)}
+          </span>
+          <span class="text-2xl font-semibold tabular-nums text-foreground">{BEWERTUNG.wert}</span>
+        </div>
+        <p class="text-muted-foreground text-[15px]">
+          <span class="text-foreground font-medium tabular-nums">{BEWERTUNG.anzahl}</span> {BEWERTUNG.quelle}
+        </p>
+        <p class="text-muted-foreground text-[15px]"><span class="text-foreground font-medium">24/7</span> erreichbar</p>
+      </div>
+    </Enthuellen>
+  )}
+</Abschnitt>
+
+<script>
+  // Der Deckel hebt sich, solange Zeiger oder Finger auf der Kachel liegen.
+  // Nichts laeuft von selbst los. Bei reduzierter Bewegung greifen die
+  // motion-safe-Klassen nicht - dann bleibt die Box einfach stehen.
+  const kachel = document.querySelector<HTMLElement>('[data-station="box"]');
+  const deckel = document.querySelector<HTMLElement>('[data-box-deckel]');
+  const schein = document.querySelector<HTMLElement>('[data-box-schein]');
+  if (kachel && deckel && schein) {
+    const ruhig = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const setzen = (offen: boolean) => {
+      if (ruhig.matches) return;
+      deckel.style.top = offen ? '17%' : '30%';
+      deckel.style.transform = offen ? 'rotate(-5deg)' : 'none';
+      schein.style.opacity = offen ? '1' : '0.62';
+    };
+    for (const e of ['mouseenter', 'focus', 'pointerdown'] as const) kachel.addEventListener(e, () => setzen(true));
+    for (const e of ['mouseleave', 'blur', 'pointerup', 'pointercancel'] as const) kachel.addEventListener(e, () => setzen(false));
+  }
+</script>

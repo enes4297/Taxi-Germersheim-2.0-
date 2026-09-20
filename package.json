@@ -10,7 +10,7 @@
     "preview": "astro preview",
     "ausgabe-pruefen": "node tools/ausgabe-pruefen.mjs",
     "browser-pruefen": "node tools/pruefe-ausgabe-browser.mjs",
-    "probe-pruefen": "node tools/pruefe-probeseite.mjs"
+    "startseite-pruefen": "node tools/pruefe-startseite.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

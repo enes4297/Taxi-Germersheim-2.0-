@@ -1,4 +1,4 @@
-// Der Ausgabeordner im Browser: Probeseite, Zentrale, Mitarbeiterportal,
+// Der Ausgabeordner im Browser: Startseite, Zentrale, Mitarbeiterportal,
 // Dashboard. Nur Aufrufen und Anzeigen - es wird sich nirgends angemeldet und
 // nichts abgeschickt.
 import { createServer } from 'node:http';
@@ -47,7 +47,7 @@ const browser = await chromium.launch({ channel: 'chrome' });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 
 for (const [name, pfad, erwartet] of [
-  ['Probeseite', '/probe.html', 'Die freigegebene Grundlage steht.'],
+  ['Startseite', '/index.html', 'Germersheim'],
   ['Zentrale', '/admin/index.html', null],
   ['Mitarbeiterportal', '/fahrer/index.html', null],
 ]) {

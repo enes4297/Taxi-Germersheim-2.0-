@@ -48,18 +48,21 @@ if (!existsSync(AUSGABE)) {
   process.exit(1);
 }
 
-// ── 1. Probeseite ──────────────────────────────────────────────────────────
-const probe = join(AUSGABE, 'probe.html');
-pruefe(existsSync(probe), 'Probeseite liegt als probe.html im Ausgabeordner');
+// ── 1. Startseite ──────────────────────────────────────────────────────────
+const probe = join(AUSGABE, 'index.html');
+pruefe(existsSync(probe), 'Startseite liegt als index.html im Ausgabeordner');
 if (existsSync(probe)) {
   const inhalt = await readFile(probe, 'utf8');
-  pruefe(inhalt.includes('noindex'), 'Probeseite traegt noindex');
-  pruefe(inhalt.includes('Die freigegebene Grundlage steht.'), 'Probeseite hat ihren Inhalt');
+  pruefe(inhalt.includes('Germersheim'), 'Startseite hat ihren Inhalt');
+  // Der Bestand darf die gebaute Startseite nicht ueberschrieben haben.
+  pruefe(!inhalt.includes('home-luxury.js'), 'die gebaute Startseite steht da, nicht die alte Bestandsseite');
+  pruefe(!inhalt.includes('noindex'), 'die Startseite ist nicht von Suchmaschinen ausgeschlossen');
 }
-pruefe(
-  !existsSync(join(AUSGABE, 'probe', 'index.html')),
-  'kein Ordner probe/ - build.format "file" wirkt, bestehende URLs bleiben moeglich',
-);
+
+// Verlinkte Unterseiten muessen erreichbar sein - samt der Dateien, die sie
+// brauchen. Sonst fuehrt ein Verweis von der Startseite ins Leere.
+const VERLINKT = ['rewards.html', 'spiele.html', 'anmelden.html', 'impressum.html', 'datenschutz.html', 'hilfe-kontakt.html'];
+for (const v of VERLINKT) pruefe(existsSync(join(AUSGABE, v)), `verlinkte Seite ${v} liegt im Ausgabeordner`);
 
 // ── 2. Bestandsbereiche vollstaendig und bytegleich ────────────────────────
 for (const regel of UEBERNAHME) {

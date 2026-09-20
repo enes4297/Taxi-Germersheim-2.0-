@@ -1,0 +1,392 @@
+---
+/**
+ * Startseite der Taxi Germersheim GmbH.
+ *
+ * Uebernommen aus Site.tsx der freigegebenen Vorschau (Commit 113a73e),
+ * ohne neue Gestaltung. Die Vorschau bleibt die verbindliche Referenz.
+ *
+ * ERHALTENE EINSTIEGE aus dem Bestand (index.html?page=…):
+ *   ?page=booking      oeffnet die Fahrtanfrage
+ *   ?page=rewards      springt zum Rewards-Abschnitt
+ *   ?page=help-public  springt zu Kontakt und haeufigen Fragen
+ *   ?page=services     springt zu den Leistungen (aus rewards.html verlinkt)
+ *   ?page=home         Startseite, nichts weiter
+ *   ?buchung=1#buchung oeffnet die Fahrtanfrage (Weg der Vorschau)
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import HeroBuehne from '../components/HeroBuehne.astro';
+import Anfragedialog from '../components/Anfragedialog.astro';
+import LeistungenAbschnitt from '../components/LeistungenAbschnitt.astro';
+import FlotteAbschnitt from '../components/FlotteAbschnitt.astro';
+import RegionAbschnitt from '../components/RegionAbschnitt.astro';
+import RewardsAbschnitt from '../components/RewardsAbschnitt.astro';
+import KontaktAbschnitt from '../components/KontaktAbschnitt.astro';
+import Enthuellen from '../components/Enthuellen.astro';
+import Symbol from '../components/Symbol.astro';
+import { ANFRAGE_BAND, FIRMA, HERO, HERO_LEISTUNGEN } from '../inhalte';
+
+const SCHNELLFELDER = [
+  { feld: 'pickup', label: 'Abholadresse', platzhalter: 'Straße, Hausnummer, Ort', symbol: 'abholung', autocomplete: 'street-address' },
+  { feld: 'destination', label: 'Zieladresse', platzhalter: 'Wohin dürfen wir Sie bringen?', symbol: 'ziel', autocomplete: 'off' },
+];
+---
+
+<Grundlage
+  titel="Taxi Germersheim GmbH – Taxi, Krankenfahrten, Rollstuhlfahrten, Flughafentransfer"
+  beschreibung="Taxi Germersheim GmbH: Taxi- und Alltagsfahrten, Krankenfahrten, Rollstuhlfahrten, Schülerfahrten, Flughafentransfers, Fern- und Gruppenfahrten sowie Kurierfahrten. Rund um die Uhr erreichbar unter 07274 3567."
+>
+  <a
+    href="#buchung"
+    class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:font-semibold"
+  >
+    Direkt zur Fahrtanfrage
+  </a>
+
+  <Kopfbereich />
+
+  {/* ══ Hero ═══════════════════════════════════════════════════════════ */}
+  <section id="hero" class="relative min-h-[100svh] flex flex-col overflow-hidden" style="scroll-margin-top: 0">
+    {/* Desktop: bildfuellend. Hier laeuft der Werbefilm. */}
+    <div class="absolute inset-0 hidden md:block">
+      <HeroBuehne
+        fuer="desktop"
+        alt="Fahrzeug der Taxi Germersheim GmbH auf der Straße"
+        videoPosition="50% 42%"
+        endAusrichtung="rechts"
+        bedienungKlasse="absolute right-5 lg:right-10 top-[13%] z-30"
+        class="absolute inset-0"
+      />
+      {/* Abdunklung. Zwei Verlaeufe mit getrennten Aufgaben: senkrecht nur so
+          viel, dass Kopfbereich und Buchungsleiste sich absetzen; waagerecht
+          von links, weil DORT die Ueberschrift steht. Die Mitte bleibt
+          bewusst hell. */}
+      <div aria-hidden="true" class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(12,12,14,0.76) 0%, rgba(12,12,14,0.40) 13%, rgba(12,12,14,0.13) 34%, rgba(12,12,14,0.13) 54%, rgba(12,12,14,0.36) 74%, rgba(12,12,14,0.70) 90%, rgba(12,12,14,0.94) 100%)"></div>
+      <div aria-hidden="true" class="absolute inset-0" style="background: linear-gradient(100deg, rgba(12,12,14,0.92) 0%, rgba(12,12,14,0.78) 16%, rgba(12,12,14,0.54) 31%, rgba(12,12,14,0.26) 46%, rgba(12,12,14,0.04) 62%, rgba(12,12,14,0) 72%)"></div>
+    </div>
+
+    {/* Mobil: eigenes Bildband, damit Fahrzeug und Ueberschrift sich nicht
+        gegenseitig verdecken. Das Logo bleibt dort mittig. */}
+    <div class="md:hidden relative h-[33svh] min-h-[230px] shrink-0">
+      <HeroBuehne
+        fuer="mobil"
+        alt="Fahrzeug der Taxi Germersheim GmbH auf der Straße"
+        videoPosition="50% 50%"
+        endAusrichtung="mitte"
+        bedienungKlasse="absolute bottom-3 right-3 z-30"
+        class="absolute inset-0"
+      />
+      <div aria-hidden="true" class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(12,12,14,0.55) 0%, rgba(12,12,14,0.10) 20%, rgba(12,12,14,0) 55%, rgba(12,12,14,0.45) 88%, rgba(24,24,27,1) 100%)"></div>
+    </div>
+
+    <div class="relative z-10 flex-1 flex flex-col mx-auto w-full max-w-[1400px] px-5 lg:px-10 pt-7 md:pt-28 lg:pt-32 pb-6 lg:pb-10">
+      <div class="max-w-[56rem]">
+        <p class="text-primary text-[11px] lg:text-xs font-semibold tracking-[0.3em] uppercase mb-5 lg:mb-7 tg-in">{HERO.eyebrow}</p>
+        <h1 class="font-semibold leading-[0.92] tracking-[-0.03em] text-white tg-in tg-d1" style="font-size: clamp(2.75rem, 7.4vw, 7.25rem)">
+          {HERO.zeile1}<br /><span class="text-primary">{HERO.zeile2}</span>
+        </h1>
+        {/* Zwei eigenstaendige Saetze – sie duerfen auf keiner Breite
+            ineinanderlaufen. */}
+        <div class="mt-4 lg:mt-8 max-w-xl tg-in tg-d2">
+          <p class="text-base lg:text-xl text-white/80 leading-relaxed">{HERO.unterzeile}</p>
+          <p class="mt-1.5 text-base lg:text-xl text-white/60 leading-relaxed">{HERO.satz}</p>
+        </div>
+      </div>
+
+      <div class="flex-1 min-h-0 md:min-h-[3rem]" aria-hidden="true"></div>
+
+      {/* ── Schnellwahl der Leistung ───────────────────────────────── */}
+      <div class="mt-7 md:mt-0 flex flex-wrap items-end justify-between gap-5 tg-in tg-d2">
+        <div class="relative inline-flex rounded-[1.7rem] p-1 bg-black/45 backdrop-blur-md ring-1 ring-white/10 max-w-full" data-leistungsleiste>
+          <div role="tablist" aria-label="Leistung wählen" class="flex flex-wrap gap-y-1">
+            {HERO_LEISTUNGEN.map((l, i) => (
+              <button
+                type="button"
+                role="tab"
+                id={`hero-tab-${l.id}`}
+                aria-selected={i === 0 ? 'true' : 'false'}
+                aria-controls="hero-panel"
+                tabindex={i === 0 ? 0 : -1}
+                data-leistungsknopf={l.id}
+                class="relative flex items-center gap-2 whitespace-nowrap px-3.5 sm:px-4 py-2.5 text-[13px] sm:text-sm font-medium rounded-full transition-colors duration-[180ms] text-white/75 hover:text-white"
+              >
+                <Symbol name={l.symbol} class="w-4 h-4 shrink-0" />
+                <span>{l.kurz}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Rein visuelle Kopie auf goldenem Grund, per clip-path freigelegt.
+              Alle vier Kanten werden gemessen, nicht nur links und rechts: Auf
+              schmalen Bildschirmen bricht die Auswahl in zwei Zeilen um. */}
+          <div aria-hidden="true" class="pointer-events-none absolute inset-0 p-1 bg-primary" style="clip-path: inset(0 100% 0 0 round 9999px); border-radius: 1.7rem; opacity: 0" data-leistungsspur>
+            <div class="flex flex-wrap gap-y-1">
+              {HERO_LEISTUNGEN.map((l) => (
+                <span class="relative flex items-center gap-2 whitespace-nowrap px-3.5 sm:px-4 py-2.5 text-[13px] sm:text-sm font-medium rounded-full text-primary-foreground">
+                  <Symbol name={l.symbol} class="w-4 h-4 shrink-0" />
+                  <span>{l.kurz}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Das Tabpanel bleibt, aber nur fuer Screenreader: Die Auswahl
+            darueber sind echte Tabs, und ein role="tab" ohne zugehoeriges
+            Panel waere kaputte Auszeichnung. Der frühere Fahrzeughinweis ist
+            entfallen — die Flotte hat einen eigenen Abschnitt. */}
+        <div id="hero-panel" role="tabpanel" aria-labelledby="hero-tab-Taxi" class="sr-only" data-hero-panel>
+          Gewählte Leistung: Taxi
+        </div>
+      </div>
+
+      {/* ══ Einstieg in die Fahrtanfrage ══════════════════════════════ */}
+      <div id="buchung" class="relative mt-5 lg:mt-6 tg-in tg-d3" style="scroll-margin-top: 6rem">
+        <div class="bg-[#f2ede2] text-[#17171a] shadow-[0_18px_60px_-18px_rgba(0,0,0,0.9)]">
+          {/* Desktop: eine Zeile. Die Beschriftungen stehen ueber den Feldern
+              und bleiben sichtbar — nicht nur als Platzhalter, der beim
+              Tippen verschwindet. */}
+          <div class="hidden md:grid grid-cols-[1fr_1fr_auto] items-stretch divide-x divide-black/10">
+            {SCHNELLFELDER.map((f) => (
+              <div class="px-6 py-4">
+                <div class="flex items-baseline justify-between gap-3">
+                  <label for={`schnell-${f.feld}`} class="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6f675c]">{f.label}</label>
+                  <span class="text-[11px] shrink-0 text-[#8a8175]" aria-hidden="true" data-feldmarke={f.feld}>wird benötigt</span>
+                </div>
+                <div class="mt-1.5 flex items-center gap-3">
+                  <Symbol name={f.symbol} class="w-[18px] h-[18px] text-[#8a8175] shrink-0" />
+                  <input
+                    id={`schnell-${f.feld}`}
+                    type="text"
+                    autocomplete={f.autocomplete}
+                    placeholder={f.platzhalter}
+                    data-anfrage-feld={f.feld}
+                    class="w-full bg-transparent outline-none text-base md:text-[15px] placeholder-[#9a9184] focus:placeholder-[#b5aca0]"
+                  />
+                </div>
+              </div>
+            ))}
+            <button type="button" data-anfrage-oeffnen class="px-8 flex items-center gap-2.5 text-[15px] font-semibold bg-primary text-primary-foreground hover:bg-[#d4b87d] tg-press">
+              Fahrt anfragen
+              <Symbol name="pfeil" class="w-[18px] h-[18px]" />
+            </button>
+          </div>
+
+          {/* Mobil: beide Felder untereinander, darunter die Schaltflaeche.
+              Vorher stand hier nur das Ziel — die Abholadresse musste im
+              Dialog nachgetragen werden. */}
+          <div class="md:hidden p-4 space-y-3">
+            {SCHNELLFELDER.map((f) => (
+              <div class="border border-black/12 px-4 py-3">
+                <div class="flex items-baseline justify-between gap-3">
+                  <label for={`schnell-${f.feld}-mobil`} class="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6f675c]">{f.label}</label>
+                  <span class="text-[11px] shrink-0 text-[#8a8175]" aria-hidden="true" data-feldmarke={f.feld}>wird benötigt</span>
+                </div>
+                <div class="mt-1.5 flex items-center gap-3">
+                  <Symbol name={f.symbol} class="w-[18px] h-[18px] text-[#8a8175] shrink-0" />
+                  <input
+                    id={`schnell-${f.feld}-mobil`}
+                    type="text"
+                    autocomplete={f.autocomplete}
+                    placeholder={f.platzhalter}
+                    data-anfrage-feld={f.feld}
+                    class="w-full bg-transparent outline-none text-base placeholder-[#9a9184]"
+                  />
+                </div>
+              </div>
+            ))}
+            <button type="button" data-anfrage-oeffnen class="w-full py-4 flex items-center justify-center gap-2.5 text-[15px] font-semibold bg-primary text-primary-foreground tg-press">
+              Fahrt anfragen
+              <Symbol name="pfeil" class="w-[18px] h-[18px]" />
+            </button>
+            <div class="grid grid-cols-2 gap-3 pt-0.5">
+              <a href={FIRMA.telefonLink} class="flex items-center justify-center gap-2 border border-black/12 py-3 text-sm font-medium tg-press">
+                <Symbol name="telefon" class="w-4 h-4" /> Anrufen
+              </a>
+              <a href={FIRMA.whatsapp} target="_blank" rel="noreferrer" class="flex items-center justify-center gap-2 border border-black/12 py-3 text-sm font-medium tg-press">
+                <Symbol name="whatsapp" class="w-4 h-4" /> WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <p class="mt-3 text-xs text-white/45">
+          Ihre Anfrage geht über WhatsApp oder Telefon an uns. Eine Fahrt ist erst
+          bestätigt, wenn wir uns bei Ihnen gemeldet haben.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {/* ══ Abschnitte ═════════════════════════════════════════════════════ */}
+  <LeistungenAbschnitt />
+
+  {/* ── Anfrageband ──────────────────────────────────────────────────── */}
+  <section class="bg-card border-y border-border" style="scroll-margin-top: 5rem">
+    <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 py-14 lg:py-16">
+      <Enthuellen>
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-7">
+          <div class="max-w-2xl">
+            <h2 class="font-semibold tracking-[-0.02em] leading-[1.14] text-foreground" style="font-size: clamp(1.35rem, 2.4vw, 2rem)">{ANFRAGE_BAND.titel}</h2>
+            <p class="mt-3 text-[17px] text-muted-foreground leading-relaxed">{ANFRAGE_BAND.text}</p>
+          </div>
+          <div class="flex flex-wrap gap-3 shrink-0">
+            <a href={FIRMA.telefonLink} class="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold tg-press">
+              <Symbol name="telefon" class="w-[18px] h-[18px]" />
+              {FIRMA.telefon}
+            </a>
+            <button type="button" data-anfrage-oeffnen class="inline-flex items-center gap-2 border border-border px-6 py-3.5 text-[15px] font-medium text-foreground hover:border-foreground/40 tg-press">
+              Formular ausfüllen
+              <Symbol name="pfeil" class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </Enthuellen>
+    </div>
+  </section>
+
+  <FlotteAbschnitt />
+  <RegionAbschnitt />
+  <RewardsAbschnitt />
+  <KontaktAbschnitt />
+
+  {/* ══ Abschluss-Aufruf ═══════════════════════════════════════════════ */}
+  <section class="bg-background border-t border-border">
+    <div class="mx-auto max-w-[1400px] px-5 lg:px-10 py-20 lg:py-28">
+      <Enthuellen>
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
+          <h2 class="font-semibold tracking-[-0.025em] leading-[1.04] text-foreground" style="font-size: clamp(2rem, 4.2vw, 4rem)">
+            Ihr nächstes Ziel?<br /><span class="text-primary">Wir bringen Sie hin.</span>
+          </h2>
+          <div class="flex flex-wrap gap-3 shrink-0">
+            <button type="button" data-anfrage-oeffnen class="px-7 py-4 text-[15px] font-semibold bg-primary text-primary-foreground hover:bg-[#d4b87d] flex items-center gap-2.5 tg-press">
+              Fahrt anfragen
+              <Symbol name="pfeil" class="w-[18px] h-[18px]" />
+            </button>
+            <a href={FIRMA.telefonLink} class="flex items-center gap-2 border border-border px-7 py-4 text-[15px] font-medium text-foreground hover:border-foreground/40 tg-press">
+              <Symbol name="telefon" class="w-4 h-4" /> {FIRMA.telefon}
+            </a>
+            <a href={FIRMA.whatsapp} target="_blank" rel="noreferrer" class="flex items-center gap-2 border border-border px-7 py-4 text-[15px] font-medium text-foreground hover:border-foreground/40 tg-press">
+              <Symbol name="whatsapp" class="w-4 h-4 text-primary" /> WhatsApp
+            </a>
+          </div>
+        </div>
+      </Enthuellen>
+    </div>
+  </section>
+
+  <Fusszeile />
+  <Anfragedialog />
+</Grundlage>
+
+<script>
+  import { HERO_LEISTUNGEN, LEISTUNGEN } from '../inhalte';
+
+  // ── Leistungsleiste im Einstieg ────────────────────────────────────────
+  const leiste = document.querySelector<HTMLElement>('[data-leistungsleiste]');
+  if (leiste) {
+    const spur = leiste.querySelector<HTMLElement>('[data-leistungsspur]')!;
+    const panel = document.querySelector<HTMLElement>('[data-hero-panel]')!;
+    const knoepfe = [...leiste.querySelectorAll<HTMLButtonElement>('[data-leistungsknopf]')];
+    const ruhig = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let gewaehlt = 'Taxi';
+
+    /** Alle vier Kanten messen, nicht nur links und rechts: Auf schmalen
+     *  Bildschirmen bricht die Auswahl in zwei Zeilen um. Eine reine
+     *  Waagerechte zoege die Auswahlflaeche dann ueber beide Zeilen. */
+    function messen() {
+      const b = knoepfe.find((k) => k.dataset.leistungsknopf === gewaehlt);
+      if (!b) return;
+      const w = leiste!.getBoundingClientRect();
+      const r = b.getBoundingClientRect();
+      if (w.width === 0 || w.height === 0) return;
+      const oben = ((r.top - w.top) / w.height) * 100;
+      const rechts = ((w.right - r.right) / w.width) * 100;
+      const unten = ((w.bottom - r.bottom) / w.height) * 100;
+      const links = ((r.left - w.left) / w.width) * 100;
+      spur.style.clipPath = `inset(${oben}% ${rechts}% ${unten}% ${links}% round 9999px)`;
+      spur.style.transition = ruhig.matches ? 'none' : 'clip-path 210ms cubic-bezier(0.32, 0.72, 0, 1)';
+      spur.style.opacity = '1';
+    }
+
+    function waehlen(id: string, melden = true) {
+      if (!HERO_LEISTUNGEN.some((l) => l.id === id)) {
+        // Leistungen ausserhalb der Leiste (Schueler-, Fern- und
+        // Gruppenfahrten) haben hier keinen Knopf. Die Leiste bleibt dann
+        // stehen, wie sie ist — der Dialog zeigt die Wahl ohnehin an.
+        return;
+      }
+      gewaehlt = id;
+      for (const k of knoepfe) {
+        const aktiv = k.dataset.leistungsknopf === id;
+        k.setAttribute('aria-selected', String(aktiv));
+        k.tabIndex = aktiv ? 0 : -1;
+        k.classList.toggle('text-transparent', aktiv);
+        k.classList.toggle('text-white/75', !aktiv);
+        k.classList.toggle('hover:text-white', !aktiv);
+      }
+      panel.setAttribute('aria-labelledby', `hero-tab-${id}`);
+      panel.textContent = `Gewählte Leistung: ${LEISTUNGEN.find((l) => l.id === id)?.label ?? id}`;
+      messen();
+      if (melden) document.dispatchEvent(new CustomEvent('tg:leistung-setzen', { detail: { id } }));
+    }
+
+    for (const k of knoepfe) {
+      k.addEventListener('click', () => waehlen(k.dataset.leistungsknopf!));
+    }
+
+    leiste.addEventListener('keydown', (e) => {
+      const i = knoepfe.findIndex((k) => k.dataset.leistungsknopf === gewaehlt);
+      let n = i;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % knoepfe.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i - 1 + knoepfe.length) % knoepfe.length;
+      else if (e.key === 'Home') n = 0;
+      else if (e.key === 'End') n = knoepfe.length - 1;
+      else return;
+      e.preventDefault();
+      waehlen(knoepfe[n].dataset.leistungsknopf!);
+      knoepfe[n].focus();
+    });
+
+    new ResizeObserver(messen).observe(leiste);
+    window.addEventListener('resize', messen);
+    // Schriften koennen nach dem ersten Messen noch eintreffen.
+    document.fonts?.ready.then(messen).catch(() => {});
+    // Der Dialog meldet seine Wahl zurueck, damit die Leiste mitgeht.
+    document.addEventListener('tg:leistung-gewaehlt', (e) => waehlen((e as CustomEvent).detail.id, false));
+    waehlen('Taxi', false);
+  }
+
+  // ── Bestehende Einstiege aus dem Bestand ───────────────────────────────
+  //
+  // index.html?page=… war bisher die Navigation der alten Einzelseite. Diese
+  // Adressen stehen in spiele.html, rewards.html und in Lesezeichen — sie
+  // muessen weiter am richtigen Abschnitt landen.
+  const p = new URLSearchParams(window.location.search);
+  const seite = p.get('page');
+  const buchung = p.get('buchung') === '1';
+
+  const MARKEN: Record<string, string> = {
+    rewards: '#rewards',
+    'help-public': '#kontakt',
+    services: '#leistungen',
+    home: '#hero',
+  };
+
+  if (seite || buchung) {
+    // Den Parameter danach aus der Adresse nehmen, damit ein Neuladen oder
+    // Browser-Zurueck die Anfrage nicht erneut aufspringen laesst.
+    p.delete('page');
+    p.delete('buchung');
+    const rest = p.toString();
+    window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : '') + window.location.hash);
+  }
+
+  if (seite === 'booking' || buchung) {
+    window.setTimeout(() => document.dispatchEvent(new CustomEvent('tg:anfrage-oeffnen')), 260);
+  } else if (seite && MARKEN[seite]) {
+    const ziel = document.querySelector(MARKEN[seite]);
+    if (ziel) window.setTimeout(() => ziel.scrollIntoView({ block: 'start' }), 120);
+  }
+</script>

@@ -48,17 +48,52 @@ export const UEBERNAHME = [
     zweck: 'Symbole, Marke und Ortsdaten - von admin/ ueber ../assets/ geladen',
     ausser: ['yumak-notes.txt'],
   },
-  {
-    von: 'logo.png',
-    zweck: 'Logo - von admin/ und fahrer/ ueber ../logo.png geladen',
-    ausser: [],
-  },
-  {
-    von: 'yumak-avatar.png',
-    zweck: 'Yumak-Abbildung - vom Bestand und von der neuen Gestaltung genutzt',
-    ausser: [],
-  },
 ];
+
+/**
+ * Wurzeldateien des Bestands, die mit ausgeliefert werden.
+ *
+ * Ausdrueckliche Liste, kein Glob: Die neue Startseite verlinkt auf
+ * rewards.html, spiele.html, anmelden.html, impressum.html und
+ * datenschutz.html. Diese Seiten verweisen ihrerseits weiter. Verlinkte Ziele
+ * muessen im Ausgabeordner samt der Dateien erreichbar sein, die sie brauchen
+ * - sonst fuehren Verweise ins Leere.
+ *
+ * NICHT enthalten und auch nicht enthalten sein duerfen:
+ *   index.html               - erzeugt der Build selbst (siehe unten)
+ *   fix_admin_auth.py        - Werkzeug, von keiner Seite referenziert
+ *   logo-original-full.png   - Bildvorlage, von keiner Seite referenziert
+ *   tg-icon-original.png     - dito
+ *   *.md, package*.json      - interne Dateien
+ *
+ * WICHTIG zu index.html: Die Wurzelseite kommt ab Schritt 014 aus Astro. Stuende
+ * sie hier, wuerde der Bestand die neue Startseite ueberschreiben. Genau davor
+ * schuetzt konflikteSuchen() - sie wuerde den Build abbrechen statt still zu
+ * ueberschreiben.
+ */
+const WURZELDATEIEN = [
+  // Oeffentliche Seiten
+  '404.html', 'anmelden.html', 'datenschutz.html', 'flotte.html', 'hilfe-kontakt.html',
+  'impressum.html', 'konto-einrichtung.html', 'kunden-einstellungen.html', 'kundenkonto.html',
+  'live-fahrt.html', 'meine-fahrten.html', 'meinkonto.html', 'passwort-vergessen.html',
+  'passwort-zuruecksetzen.html', 'registrieren.html', 'rewards.html', 'spezial-anfrage.html',
+  'spezialfahrten.html', 'spiele.html', 'wallet-gutscheine.html',
+  // Stilvorlagen
+  'auth-demo.css', 'hilfe-kontakt.css', 'home-luxury.css', 'kunden-einstellungen.css',
+  'legal-pages.css', 'live-ride.css', 'meinefahrten.css', 'public-premium-v2.css',
+  'public-states.css', 'public-system.css', 'public-visual-repair.css', 'rewards-customer.css',
+  'special-services.css', 'spiele.css', 'style.css', 'wallet-gutscheine.css',
+  // Skripte
+  'customer-auth-demo.js', 'customer-auth.js', 'customer-journey-demo.js', 'home-luxury.js',
+  'public-premium-v2.js', 'public-system.js', 'rewards-customer.js', 'script.js',
+  'special-services.js', 'spiele.js', 'taxi-rush.js',
+  // Bilder
+  'logo.png', 'yumak-avatar.png',
+];
+
+for (const datei of WURZELDATEIEN) {
+  UEBERNAHME.push({ von: datei, zweck: 'Bestandsseite oder von ihr benoetigte Datei', ausser: [] });
+}
 
 /** Gilt ueberall, zusaetzlich zu den Listen oben. */
 export const NIE_MITNEHMEN = [
@@ -192,10 +227,19 @@ export default function bestandUebernehmen() {
         const ziel = fileURLToPath(dir);
         const bericht = await bestandKopieren(wurzel, ziel, (t) => logger.warn(t));
 
+        // Die Wurzeldateien einzeln zu melden waere eine Wand aus 49 Zeilen.
+        // Ordner einzeln, Wurzeldateien als eine Summe.
+        let wurzelZahl = 0;
         for (const eintrag of bericht) {
-          if (eintrag.fehlt) logger.warn(`${eintrag.von} nicht gefunden - nichts uebernommen`);
-          else logger.info(`${eintrag.von}: ${eintrag.dateien} Dateien (${eintrag.zweck})`);
+          if (eintrag.fehlt) {
+            logger.warn(`${eintrag.von} nicht gefunden - nichts uebernommen`);
+          } else if (eintrag.zweck.startsWith('Bestandsseite')) {
+            wurzelZahl += eintrag.dateien;
+          } else {
+            logger.info(`${eintrag.von}: ${eintrag.dateien} Dateien (${eintrag.zweck})`);
+          }
         }
+        if (wurzelZahl) logger.info(`Wurzeldateien des Bestands: ${wurzelZahl} (verlinkte Seiten und ihre Dateien)`);
       },
     },
   };

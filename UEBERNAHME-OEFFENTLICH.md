@@ -4,7 +4,7 @@ Interne Arbeitsunterlage. Sie wird **nicht** mit ausgeliefert — der Prüflauf
 `npm run ausgabe-pruefen` stellt sicher, dass keine `.md`-Datei im
 Ausgabeordner landet.
 
-Stand: 19.09.2026, nach Schritt 013 (Design-Grundlage).
+Stand: 20.09.2026, nach Schritt 014 (Startseite).
 
 ---
 
@@ -12,19 +12,18 @@ Stand: 19.09.2026, nach Schritt 013 (Design-Grundlage).
 
 ```
 dev
- └── feature/012-astro-geruest      (37da686)  Gerüst
-      └── feature/013-design-grundlage         Design-Grundlage
+ └── feature/012-astro-geruest        (37da686)  Gerüst
+      └── feature/013-design-grundlage (c740135)  Design-Grundlage
+           └── feature/014-startseite             Startseite
 ```
 
-**`feature/013-design-grundlage` zweigt nicht von `dev` ab, sondern von
-`feature/012-astro-geruest`.** Das ist Absicht: 013 setzt auf dem Build-Gerüst,
-der Übernahme-Liste und den Prüfwerkzeugen aus 012 auf. Ein Abzweig von `dev`
-hätte nichts davon.
+**Jeder Schritt zweigt vom vorigen ab, nicht von `dev`.** Das ist Absicht: 013
+setzt auf Gerüst, Übernahme-Liste und Prüfwerkzeugen aus 012 auf, 014 auf der
+Design-Grundlage aus 013. Ein Abzweig von `dev` hätte jeweils nichts davon.
 
-**Folge für die Reihenfolge:** 012 muss vor 013 nach `dev` gelangen. Geht 013
-zuerst, kommt das Gerüst zweimal mit. Jeder weitere Schritt (014 Startseite und
-folgende) zweigt vom jeweils letzten gesicherten Schritt ab, solange die Kette
-nicht in `dev` aufgelöst ist.
+**Folge für die Reihenfolge:** Die Kette muss in dieser Reihenfolge nach `dev` —
+012, dann 013, dann 014. Wird eine übersprungen, kommt ihr Inhalt später doppelt
+oder gar nicht mit.
 
 Merge nach `dev` macht der Mensch — nicht der Assistent.
 
@@ -38,7 +37,7 @@ nur `supabase/` und Dokumentation und sind für die Auslieferung ohne Belang.
 **Zwei betreffen Dateien, die im Ausgabeordner landen** — sie enthalten bereits
 behobene Portalfehler.
 
-| Commit | Datei | Was behoben wurde | Heutiger Stand auf 012/013 |
+| Commit | Datei | Was behoben wurde | Heutiger Stand auf 012/013/014 |
 |---|---|---|---|
 | `316de73` | `fahrer/mitarbeiter.js` | Das Anhang-Abzeichen einer Krankmeldung zeigte **immer** „Ohne Anhang", unabhängig vom Datenbankwert. Jetzt wird `document_submission_id` ausgewertet. | Zeile 528 trägt noch das feste „Ohne Anhang" — **Fehler vorhanden** |
 | `8ff510a` | `admin/dokumenteingang-supabase.js` | Die Rolle wurde aus der Menübeschriftung abgeleitet statt aus `profiles` der laufenden Sitzung gelesen; dazu eine ehrliche Meldung bei fehlender Anmeldung oder fehlender Admin-Rolle. | `auth_user_id` kommt in der Datei **nicht vor** — Fehler vorhanden |
@@ -48,7 +47,7 @@ behobene Portalfehler.
 Gemessen, nicht vermutet: Die drei Suchen nach `Ohne Anhang`, `auth_user_id`
 und `dokumentfristen` wurden auf dem aktuellen Branch ausgeführt.
 
-**Daraus folgt:** Würde heute aus `feature/013` heraus veröffentlicht, käme der
+**Daraus folgt:** Würde heute aus `feature/014` heraus veröffentlicht, käme der
 alte, fehlerhafte Stand dieser vier Dateien mit — das Übernahme-Werkzeug
 kopiert `admin/` und `fahrer/` byteweise so, wie sie im Branch liegen. Die
 Korrekturen wären wieder weg.
@@ -59,13 +58,13 @@ Die Korrekturen aus `feature/011` müssen im **tatsächlichen
 Veröffentlichungsstand** enthalten sein, also in genau dem Commit, aus dem
 gebaut und hochgeladen wird.
 
-> **Ein Merge nach `dev` allein aktualisiert `feature/013` nicht.**
+> **Ein Merge nach `dev` allein aktualisiert `feature/014` nicht.**
 
-`feature/013` zweigt von `feature/012` ab, und das von `dev` in seinem Stand
-vom 19.09.2026. Landet `feature/011` danach in `dev`, ändert das an
-`feature/013` nichts — die vier Dateien bleiben dort im alten Stand, bis
-`feature/013` den neuen `dev`-Stand selbst übernimmt. Wer aus `feature/013`
-baut, baut die Fehler mit ein, auch wenn `dev` längst korrigiert ist.
+Die Kette 012 → 013 → 014 hängt an `dev` in seinem Stand vom 19.09.2026.
+Landet `feature/011` danach in `dev`, ändert das an `feature/014` nichts —
+die vier Dateien bleiben dort im alten Stand, bis `feature/014` den neuen
+`dev`-Stand selbst übernimmt. Wer aus `feature/014` baut, baut die Fehler mit
+ein, auch wenn `dev` längst korrigiert ist.
 
 Vor der Veröffentlichung ist also zu prüfen, ob der Veröffentlichungsstand die
 Korrekturen wirklich enthält. Die drei Suchen aus der Tabelle oben genügen
@@ -73,7 +72,7 @@ dafür: `Ohne Anhang` in `fahrer/mitarbeiter.js`, `auth_user_id` in
 `admin/dokumenteingang-supabase.js`, `dokumentfristen` in `admin/sidebar.js`.
 
 Ein rechnerischer Probe-Merge (`git merge-tree`, ohne etwas zu verändern) zeigt
-**keine Konflikte** mit 012/013 — die Änderungen liegen in anderen Dateien
+**keine Konflikte** mit 012/013/014 — die Änderungen liegen in anderen Dateien
 beziehungsweise in einem anderen Abschnitt von `CLAUDE.md`.
 
 Hier wurde nichts gemergt und nichts cherry-gepickt.
@@ -90,9 +89,9 @@ Build-Schritt steht an anderer Stelle und kollidiert damit nicht.
 ```
 npm ci                   # Abhaengigkeiten, exakt nach package-lock.json
 npm run build            # erzeugt dist-oeffentlich/
-npm run ausgabe-pruefen  # prüft den Ausgabeordner (Dateien, Prüfsummen)
-npm run probe-pruefen    # Probeseite im Browser, Desktop und Mobil
-npm run browser-pruefen  # Zentrale, Portal und Dashboard im Ausgabeordner
+npm run ausgabe-pruefen     # prüft den Ausgabeordner (Dateien, Prüfsummen)
+npm run startseite-pruefen  # Startseite im Browser, Desktop und Mobil
+npm run browser-pruefen     # Zentrale, Portal und Dashboard im Ausgabeordner
 npm run dev              # örtlicher Entwicklungsserver
 npm run preview          # den fertigen Ausgabeordner ansehen
 ```
@@ -106,8 +105,9 @@ Fall vorbehalten, dass absichtlich eine Abhängigkeit hinzukommt.
 Der Build tut zwei Dinge nacheinander:
 
 1. **Bauen.** Alles unter `src/pages/` wird zu HTML. Wegen
-   `build.format: 'file'` entsteht `probe.html`, nicht `probe/index.html` —
-   so bleiben die gewachsenen Adressen wie `impressum.html` erhalten.
+   `build.format: 'file'` entsteht `index.html` direkt im Ausgabeordner und
+   keine Unterordner-Struktur — so bleiben die gewachsenen Adressen wie
+   `impressum.html` erhalten.
 2. **Übernehmen.** `tools/bestand-uebernehmen.mjs` kopiert danach die
    Bestandsbereiche unverändert in denselben Ordner.
 
@@ -126,8 +126,18 @@ Was dort nicht steht, wird nicht ausgeliefert.
 | `fahrer/` | Mitarbeiterportal | 8 | `tests/`, die drei `TESTPROTOKOLL-*.md` |
 | `dashboard/` | Weiterleitung auf die Zentrale | 1 | — |
 | `assets/` | Symbole, Marke, Ortsdaten | 18 | `yumak-notes.txt` |
-| `logo.png` | Logo | 1 | — |
-| `yumak-avatar.png` | Yumak-Abbildung | 1 | — |
+| Wurzeldateien | 20 Bestandsseiten und die 29 Dateien, die sie brauchen | 49 | siehe unten |
+
+**Seit Schritt 014 kommen die Wurzeldateien dazu.** Die neue Startseite
+verlinkt auf `rewards.html`, `spiele.html`, `anmelden.html`,
+`impressum.html`, `datenschutz.html` und `hilfe-kontakt.html`; diese Seiten
+verweisen weiter. Verlinkte Ziele müssen erreichbar sein, samt ihrer CSS- und
+JS-Dateien. Die Liste `WURZELDATEIEN` zählt sie einzeln auf — kein Glob.
+
+**`index.html` steht ausdrücklich NICHT darin.** Die Wurzelseite kommt seit
+Schritt 014 aus Astro. Stünde sie in der Liste, überschriebe der Bestand die
+neue Startseite. Genau davor schützt `konflikteSuchen()`: Der Build bräche ab,
+statt still zu überschreiben.
 
 **Warum `assets/` und `logo.png` mitmüssen, obwohl sie keine Portalseiten
 sind:** Die relativen Pfade des Bestands greifen über die Ordnergrenze hinaus.
@@ -253,137 +263,223 @@ Bühne tut das — auf Mobil lädt kein Desktop-Film mit.
 
 ---
 
-## 7. Was die bisherige Veröffentlichung anpassen muss
 
-Heute wird das Repository so ausgeliefert, wie es liegt: die Wurzel **ist** der
-veröffentlichte Ordner. Nach dem Umbau gilt das nicht mehr.
+## 7. Übernommene Startseite (Schritt 014)
 
-**Die eine notwendige Änderung:** Veröffentlicht wird künftig
-`dist-oeffentlich/`, nicht die Repository-Wurzel. Er ist in `.gitignore` und
-muss vorher mit `npm ci && npm run build` erzeugt werden.
+Quelle ist `src/Site.tsx`, `src/sections.tsx`, `src/layout.tsx` und
+`src/shared.tsx` der Vorschau, Commit `113a73e`. **Ohne neue Gestaltung.**
 
-**Erwünschter Nebeneffekt:** Interne Dateien, die heute mit im veröffentlichten
-Ordner liegen — `supabase/` mit 11 Migrationen, alle Testprotokolle und
-Einspielpläne, `screenshots/`, `fix_admin_auth.py` — sind danach nicht mehr
-Teil der Auslieferung.
-
-### Offene Voraussetzung — Ermittlungsstand vom 20.09.2026
-
-> **Wie wird die bestehende Webseite veröffentlicht, und läuft sie an der
-> Domainwurzel oder unter einem Unterpfad?**
-
-Rein lesend gesucht, nichts verändert, keine Hosting-Einstellung angefasst.
-
-**Was gefunden wurde — und was nicht:**
-
-| Gesucht | Ergebnis |
+| Datei | Inhalt |
 |---|---|
-| Deploy-Konfiguration im Arbeitsbaum (`.github/`, `CNAME`, `.nojekyll`, `netlify.toml`, `vercel.json`, `_redirects`, `firebase.json`, FTP-Konfiguration) | **nichts** |
-| Dieselbe Suche über die **gesamte Historie aller Branches** | **nie vorhanden gewesen** |
-| Branch, der nach Veröffentlichung aussieht (`gh-pages`, `deploy`, `prod`, `live`, `release`) | **keiner** |
-| Domain im Quelltext, `sitemap`, `robots.txt` | **nichts** |
-| GitHub-CLI auf diesem Rechner, um die Einstellung abzufragen | **nicht installiert** |
+| `src/inhalte.ts` | alle Texte, Leistungen, Flotte, Region, Rewards, FAQ — aus `content.ts` |
+| `src/pages/index.astro` | Hero mit Video, Schnellwahl, beide Adressfelder, Anfrageband, Abschlussaufruf |
+| `src/components/Kopfbereich.astro` | Navigation, Mobilmenü, Grund beim Scrollen |
+| `src/components/Anfragedialog.astro` | die Fahrtanfrage in drei Schritten |
+| `src/components/LeistungenAbschnitt.astro` | alle sieben Leistungen, Transportschein-Kasten |
+| `src/components/FlotteAbschnitt.astro` | neun Fahrzeuge mit Filter |
+| `src/components/RegionAbschnitt.astro` | Bildband mit Orten |
+| `src/components/RewardsAbschnitt.astro` | Yumak-Szene, Glücksrad, Box, Taxi Rush |
+| `src/components/KontaktAbschnitt.astro` | vier Kontaktwege, häufige Fragen |
+| `src/components/Fusszeile.astro` | Adresse, Leistungen, Rechtliches |
+| `src/components/Symbol.astro` | alle 18 Symbole an einer Stelle |
 
-**Was sich doch ableiten lässt:**
+Kein React: Die Seite kommt ohne Framework-Laufzeit aus. Die Vorlagen sind
+Zeile für Zeile übernommen, samt Begründungen.
 
-- Firmendomain laut Impressum: `taxigermersheim.de`, Kontakt
-  `info@taxigermersheim.de`. Dass die Seite dort liegt, ist damit
-  **nicht** belegt — nur, dass eine Domain existiert.
-- Alle `rel="canonical"`- und `og:url`-Angaben der Bestandsseiten sind
-  **relativ** (`href="index.html"`). Ebenso jeder Bild-, Skript- und
-  Stilverweis. Kein `<base href>`. Die Bestandsseiten laufen dadurch an
-  jedem Pfad.
-- **Eine einzige Ausnahme, und sie ist aussagekräftig:**
-  `passwort-vergessen.html:89` baut das Rücksprungziel als
-  `new URL("/passwort-zuruecksetzen.html", window.location.origin)` — also
-  **wurzelabsolut**. Läge die Seite unter einem Unterpfad, zeigte dieser Link
-  aus dem Auftritt heraus, und das Zurücksetzen des Passworts wäre schon
-  heute kaputt. Entweder läuft die Seite an der Domainwurzel, oder dort
-  besteht ein bislang unbemerkter Fehler.
-- Dieselbe Stelle heißt: In der Supabase-Auth-Konfiguration ist ein konkreter
-  Produktiv-Ursprung als erlaubte Rücksprungadresse hinterlegt. Dort steht die
-  Antwort — abgefragt wurde sie nicht.
+### Die Fahrtanfrage endet bei WhatsApp — und sagt das auch
 
-**Bewertung:** Der Weg der Veröffentlichung bleibt **nicht eindeutig
-feststellbar**. Für „Domainwurzel" spricht ein konkreter Befund, für einen
-Unterpfad keiner. Das ist ein Hinweis, kein Nachweis.
+Im Backend gibt es **keine Annahmestelle für Fahrtanfragen** (siehe
+`BACKEND-READY.md` und die Prüfung vom 19.09.2026: im ganzen Projekt zwei
+`fetch`-Aufrufe, beide auf lokale JSON-Dateien). Der Weg endet deshalb mit
+einer vorbereiteten WhatsApp-Nachricht; das Telefon steht gleichwertig daneben.
 
-**Was gebraucht wird** (eines davon genügt für die erste Frage, die dritte
-Angabe beantwortet beide sicher):
+Die Nachricht trägt **alle erfassten Angaben, unverändert**: Leistung,
+Abholadresse, Zieladresse, Zeitpunkt. Sie trägt **keine** Entfernung, keinen
+Preis, keine Fahrzeit und keine Bestätigung — nichts davon ist bekannt.
 
-1. **Die öffentliche Adresse der Seite** — die Adresse, die man eintippt, um
-   den Auftritt zu erreichen. Sie allein entscheidet Wurzel oder Unterpfad.
-2. **Wie die Dateien auf den Server kommen:** Upload von Hand per FTP/SFTP,
-   ein Hoster mit Git-Anbindung, GitHub Pages, oder ein Dienstleister.
-3. **Screenshot** — je nachdem:
-   - GitHub Pages: Repository → *Settings* → *Pages* (Source, Branch, Ordner,
-     Custom domain).
-   - Hoster mit eigener Oberfläche: die Seite, auf der Verzeichnis oder
-     Veröffentlichungsordner eingestellt ist.
-   - Ergänzend hilfreich: Supabase → *Authentication* → *URL Configuration*
-     (*Site URL* und *Redirect URLs*). Dort steht der Produktiv-Ursprung.
-     Zugangsdaten sind dabei nicht nötig und sollen geschwärzt bleiben.
+Beschriftet ist es an drei Stellen, damit kein falscher Eindruck entsteht:
 
-**Diese Frage muss vor Schritt 014 beantwortet sein**, denn dort wird
-`index.html` ersetzt — die Einstiegsseite. Konkret hängt daran:
+- Im Einstieg: „Ihre Anfrage geht über WhatsApp oder Telefon an uns. Eine Fahrt
+  ist erst bestätigt, wenn wir uns bei Ihnen gemeldet haben."
+- In der Zusammenfassung, vor dem Absenden: „Gesendet ist sie erst, wenn Sie
+  dort auf Senden tippen. Eine Fahrt ist damit noch nicht bestätigt."
+- Nach dem Öffnen: „WhatsApp wurde geöffnet … Bitte tippen Sie in WhatsApp auf
+  Senden – erst dann erreicht uns die Anfrage."
 
-- **Unterpfad** → in `astro.config.mjs` muss `base` gesetzt werden. Die neuen
-  Seiten arbeiten mit wurzelabsoluten Pfaden (`/assets/hero/…`,
-  `/schriften/…`) und zeigten sonst ins Leere. Die Bestandsseiten wären nicht
-  betroffen — die neuen schon.
-- **Wer den Build ausführt** — von Hand vor dem Hochladen oder automatisch.
+Die Prüfung liest die erzeugte Adresse aus, **ohne etwas zu versenden**:
+`window.open` wird abgefangen. Zusätzlich wird geprüft, dass die Nachricht
+keines der Wörter `€`, `km`, `Preis`, `Kosten`, `Minuten`, `bestätigt` oder
+`gebucht` enthält.
 
----
+### Erhaltene Einstiege
 
-## 8. Prüfstand nach Schritt 013
+| Adresse | Wirkung |
+|---|---|
+| `index.html?page=booking` | öffnet die Fahrtanfrage |
+| `index.html?page=rewards` | springt zum Rewards-Abschnitt |
+| `index.html?page=help-public` | springt zu Kontakt und häufigen Fragen |
+| `index.html?page=services` | springt zu den Leistungen (aus `rewards.html` verlinkt) |
+| `index.html?page=home` | Startseite |
+| `/?buchung=1#buchung` | öffnet die Fahrtanfrage (Weg der Vorschau) |
+| `#spezialfahrten` | alte Sprungmarke, führt zum Leistungsabschnitt |
 
-Alle Läufe am 19.09.2026, gegen den frisch erzeugten Ausgabeordner.
+Der Parameter wird nach der Auswertung aus der Adresse genommen, damit ein
+Neuladen oder Browser-Zurück die Anfrage nicht erneut aufspringen lässt.
 
-**`npm run ausgabe-pruefen`** — 35 Prüfungen bestanden, 235 Dateien.
-Darunter: alle 193 Bestandsdateien byteweise gleich; alle 22 Medien byteweise
-gleich mit der Vorschau; 18 Schriftdateien vorhanden; kein Aufruf an Google
-Fonts in der ausgelieferten Seite; keine SQL-, Dokumentations-, Test-,
-Vergleichs- oder Quelldatei im Ausgabeordner.
+### Unterschiede zur freigegebenen Vorschau — offen benannt
 
-**`npm run probe-pruefen`** — 37 Prüfungen bestanden, Desktop (1440 × 900),
-Mobil (390 × 844) und reduzierte Bewegung:
+Drei Stellen weichen bewusst ab. Alle drei betreffen Ziele, die es im Projekt
+anders gibt als in der Vorschau.
 
-- Outfit und Lora sind tatsächlich geladen (`document.fonts.check`), nicht
-  still auf die Systemschrift zurückgefallen.
-- Beide Bühnen stehen im Markup, aber **nur eine hängt einen Film ein**.
-- Der Film läuft von selbst an; Pause hält ihn an; am Ende steht das
-  Schlussbild mit Deckung 1, der Film mit Deckung 0 — kein zweites Logo.
-- Desktop: das Logo rückt (`matrix(0.5568, 0, 0, 0.5568, 451, -93)`).
-  Mobil: es bleibt mittig (`none`).
-- „Erneut ansehen" startet den Film wieder.
-- Reduzierte Bewegung: `preload="none"`, nichts läuft von selbst, „Abspielen"
-  wird angeboten, alle Blöcke sind sofort sichtbar.
-- Nach dem Durchscrollen ist kein Block unsichtbar geblieben.
-- Keine fehlenden Dateien, keine Skriptfehler.
+| Stelle | Vorschau | Hier | Grund |
+|---|---|---|---|
+| Navigation „Rewards" und „Spiele" | `/rewards`, `/spiele` (Nachbildungen) | `rewards.html`, `spiele.html` | Diese Seiten existieren im Projekt bereits **mit echter Backend-Anbindung**. Eine Nachbildung daneben wäre eine zweite Wahrheit. |
+| Rewards-Kacheln Glücksrad und Box | „Als Demo ausprobieren" → `/spiele/gluecksrad-demo`, `/spiele/yumaks-box-demo` | „In der Spielewelt ansehen" → `spiele.html` | **Die Demoseiten sind noch nicht übernommen.** „Als Demo ausprobieren" wäre unwahr, solange sie fehlen. |
+| Rewards-Kachel Taxi Rush | `/spiele/taxi-rush` | `spiele.html#taxiRushTitle` | Taxi Rush läuft im Bestand auf `spiele.html`. |
+| Hinweistext unter den Kacheln | nennt die Demos | nennt nur, was erreichbar ist | siehe oben |
+| Hinweis unter dem Einstieg | „Designvorschau – es wird keine Fahrt gebucht." | „Ihre Anfrage geht über WhatsApp oder Telefon an uns …" | Es ist keine Vorschau mehr; der Satz muss den echten Weg beschreiben. |
 
-**`npm run browser-pruefen`** — 15 Prüfungen bestanden: Zentrale und
-Mitarbeiterportal zeigen ihr Anmeldefeld und laden `../logo.png`, das Dashboard
-leitet auf `/admin/login.html?auth_reason=no_user` weiter.
+Die Zustandsanzeige der beiden gesperrten Kacheln heißt jetzt „Noch gesperrt"
+statt „Demo" und nennt den Grund: „für Kundenkonten derzeit gesperrt"
+beziehungsweise „erscheint nur nach einem bestätigten Gewinn". Das entspricht
+dem tatsächlichen Stand — auf `spiele.html` steht die Schaltfläche des
+Glücksrads auf `disabled`.
 
-Aufnahmen liegen in `.belege-astro/` (in `.gitignore`, nicht in der Ausgabe).
+**Offen für einen späteren Schritt:** Die drei Demoseiten aus der Vorschau
+(Glücksrad-Demo, Yumaks-Box-Demo, Taxi Rush als eigene Seite) sind noch nicht
+übernommen. Solange das so ist, führt die Startseite ehrlich auf den Bestand.
 
-**Was damit NICHT geprüft ist:** Es wurde sich nirgends angemeldet. Ob
-Anmeldung, Dokumenteingang und Krankmeldungen gegen die produktive Instanz
-funktionieren, sagen diese Läufe nicht.
+### Was die Startseite NICHT tut
+
+Sie ändert nichts am Backend, an `customer-auth.js`, an den Migrationen oder an
+einer der Bestandsseiten. Sie ersetzt ausschließlich `index.html`.
 
 ---
 
-## 9. Nächster Schritt
+## 8. Was die bisherige Veröffentlichung anpassen muss
 
-**Schritt 014 — Startseite.** Branch `feature/014-startseite` von
-`feature/013-design-grundlage`.
+### Geklärt am 20.09.2026 (Auskunft der Geschäftsführung)
 
-`index.html` als Astro-Seite: Kopfbereich, Hero mit beiden Adressfeldern und
-Schnellwahl, die sieben Leistungen mit dem Transportschein-Kasten, Flotte,
-Region, Rewards-Teaser, Kontakt, Fußzeile. Die Abfragen `?page=booking`,
-`?page=rewards` und `?page=help-public` müssen weiter am richtigen Abschnitt
-landen.
+> Die öffentliche Webseite **https://taxigermersheim.de/** läuft auf
+> **WordPress** und ist vom lokalen Entwicklungsprojekt **getrennt**.
+> `www` leitet auf die Domain ohne `www` weiter. Hosting und späterer
+> Austausch werden mit dem IT-Dienstleister geklärt.
 
-Vorher zu klären: die Veröffentlichungsfrage aus Abschnitt 7 und die
-Behandlung der Fahrtanfrage — eine Annahmestelle im Backend gibt es nicht, der
-Weg endet wie heute bei WhatsApp und Telefon.
+Damit ist die Frage aus Schritt 013 beantwortet, und sie fällt anders aus als
+der lokale Befund vermuten ließ: Was heute unter der Domain steht, ist **nicht**
+dieses Repository. Das Repository ist der Entwicklungsstand.
+
+**Was daraus folgt:**
+
+- **Die Domainwurzel gilt.** `https://taxigermersheim.de/` ist eine Wurzel, kein
+  Unterpfad. `base` in `astro.config.mjs` bleibt deshalb ungesetzt, und die
+  wurzelabsoluten Pfade der neuen Seiten (`/assets/hero/…`, `/schriften/…`)
+  stimmen. Sollte der Auftritt später doch unter einem Unterpfad liegen, ist
+  `base` die einzige nötige Änderung.
+- **Der Austausch von WordPress gegen den Ausgabeordner ist ein eigener
+  Vorgang** und läuft über den IT-Dienstleister. Er blockiert die lokale
+  Umsetzung nicht.
+- **Was der Dienstleister braucht:** den Inhalt von `dist-oeffentlich/`, erzeugt
+  mit `npm ci && npm run build`. Der Ordner ist ein vollständiger statischer
+  Auslieferstand — gebaute öffentliche Seiten und unveränderter Bestand
+  nebeneinander, in genau der Ordnerstruktur, die gelten soll.
+- **Vor dem Austausch zu klären:** Welche Adressen die heutige WordPress-Seite
+  bedient, die es hier nicht gibt. Sonst laufen bestehende Verweise und
+  Suchmaschinentreffer ins Leere. Das ist noch **nicht geprüft** — die
+  WordPress-Seite wurde nicht abgerufen.
+- **Erwünschter Nebeneffekt:** Interne Dateien, die heute im Repository liegen —
+  `supabase/` mit 11 Migrationen, alle Testprotokolle und Einspielpläne,
+  `screenshots/`, `fix_admin_auth.py` — sind kein Teil der Auslieferung.
+
+Keine Hosting- oder Domaineinstellung wurde angefasst. Die GitHub-CLI wurde
+nicht installiert.
+
+---
+
+## 9. Prüfstand nach Schritt 014
+
+Alle Läufe am 20.09.2026, gegen den frisch erzeugten Ausgabeordner.
+**290 Prüfungen, alle bestanden.**
+
+**`npm run ausgabe-pruefen`** — 88 Prüfungen, 285 Dateien. Darunter: die
+Startseite ist die gebaute, nicht die alte Bestandsseite; alle sechs verlinkten
+Unterseiten liegen im Ausgabeordner; alle Bestandsdateien byteweise gleich;
+alle 22 Medien byteweise gleich mit der Vorschau; 18 Schriftdateien vorhanden;
+kein Aufruf an Google Fonts; keine SQL-, Dokumentations-, Test-, Vergleichs-
+oder Quelldatei in der Ausgabe.
+
+**`npm run startseite-pruefen`** — 187 Prüfungen auf Desktop (1440 × 900) und
+Mobil (390 × 844):
+
+- Alle verlinkten Unterseiten antworten mit 200.
+- Videoverhalten unverändert: läuft einmal von selbst an, Pause hält an, am Ende
+  steht das Schlussbild (Deckung 1) und der Film ist ausgeblendet (Deckung 0) —
+  kein zweites Logo. Desktop: das Logo rückt. Mobil: es bleibt mittig.
+  „Erneut ansehen" startet wieder. Nur die sichtbare Bühne hängt einen Film ein.
+- Beide Adressfelder im Einstieg, auf Desktop und Mobil; die Marken melden
+  „ausgefüllt".
+- **Alle sieben Anfrageknöpfe**, je auf Desktop und Mobil: Dialog sichtbar im
+  Bild, die angeklickte Leistung steht sofort im Formular, beide Adressen
+  bleiben erhalten, die Seite bleibt hinter dem Dialog stehen, nach dem
+  Schließen steht sie wieder an ihrem Platz, die Zusammenfassung nennt die
+  richtige Leistung und beide Adressen, die WhatsApp-Nachricht trägt alles und
+  nichts Erfundenes, und der Abschluss sagt, dass erst Senden die Anfrage
+  abschickt.
+- Die Einstiege `?page=booking`, `?page=rewards`, `?page=help-public` und
+  `?page=services` landen am richtigen Ort; der Parameter verschwindet danach.
+- Kein Block bleibt unsichtbar, keine fehlenden Dateien, keine Skriptfehler.
+
+**`npm run browser-pruefen`** — 15 Prüfungen: Zentrale und Mitarbeiterportal
+zeigen ihr Anmeldefeld und laden `../logo.png`, das Dashboard leitet weiter.
+
+**Sichtvergleich mit der Vorschau** —
+`VORSCHAU_ORDNER=… node tools/vergleiche-mit-vorschau.mjs` nimmt beide Seiten
+unter denselben Bedingungen auf, Film jeweils bis zum Schlussbild vorgespult.
+Seitenhöhe Desktop 10663 px gegen 10708 px, Mobil 17680 px gegen 17733 px —
+0,4 beziehungsweise 0,3 Prozent Unterschied, erklärt durch die geänderte
+Hinweiszeile. Dieselben Abschnitte in derselben Reihenfolge. Die Aufnahmen
+liegen in `.belege-astro/vergleich/`; entschieden hat der Mensch am Bild.
+
+### Zwei Fehler, die dabei gefunden und behoben wurden
+
+1. **Die Seite sprang beim Öffnen des Dialogs.** `document.body.style.overflow
+   = 'hidden'` verschob die Bildlaufposition — bei drei der sieben Knöpfe um
+   rund 480 Punkte, der angeklickte Knopf rutschte von 487 auf 0. Hinter dem
+   halbdurchsichtigen Hintergrund ist das zu sehen. Behoben mit
+   `position: fixed` und negativem `top`.
+2. **Nach dem Schließen fuhr die Seite sichtbar zurück.** Die Wiederherstellung
+   lief durch `scroll-behavior: smooth` als Animation über bis zu 1298 Punkte.
+   Behoben mit `behavior: 'instant'` — eine Wiederherstellung ist ein Zustand,
+   keine Bewegung.
+
+Drei weitere gemeldete „Seitensprünge" waren **Fehler der Prüfung**, nicht der
+Seite: Die Scroll-Schleife maß die Seitenhöhe nur einmal, während Bilder noch
+nachluden. Das ist korrigiert; die Messung wartet jetzt, bis die Seite
+stillsteht.
+
+**Was NICHT geprüft ist:** Es wurde sich nirgends angemeldet, keine Nachricht
+versendet und niemand angerufen. Ob Anmeldung, Dokumenteingang und
+Krankmeldungen gegen die produktive Instanz funktionieren, sagen diese Läufe
+nicht.
+
+---
+
+## 10. Nächster Schritt
+
+**Schritt 015 — Unterseiten.** Branch `feature/015-unterseiten` von
+`feature/014-startseite`.
+
+Zur Auswahl, in dieser Reihenfolge sinnvoll:
+
+1. **Rechtliches und Hilfe** — `impressum.html`, `datenschutz.html`,
+   `hilfe-kontakt.html`, `404.html` im neuen Design. Kleinster Umfang, kein
+   Backend berührt.
+2. **Flotte und Spezialfahrten** — `flotte.html` und `spezialfahrten.html`.
+   Beide Inhalte stehen bereits auf der neuen Startseite; zu klären ist, ob die
+   Seiten bleiben oder auf die Abschnitte weiterleiten.
+3. **Demoseiten der Spielewelt** — Glücksrad-Demo und Yumaks-Box-Demo aus der
+   Vorschau. Erst danach dürfen die Rewards-Kacheln wieder „Als Demo
+   ausprobieren" heißen.
+4. **Anmeldung und Konto** — `anmelden.html`, `registrieren.html`, die
+   Kontoseiten. Höchstes Risiko: Hier hängt die echte Anmeldung dran.
+   `customer-auth.js` wird dabei nicht umgeschrieben, nur eingebunden.

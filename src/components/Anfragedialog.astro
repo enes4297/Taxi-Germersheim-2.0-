@@ -1,0 +1,537 @@
+---
+/**
+ * Die Fahrtanfrage.
+ *
+ * Uebernommen aus useBooking(), BookingContent() und MobileBookingDialog()
+ * der Vorschau (shared.tsx), hier ohne React.
+ *
+ * DREI DINGE, DIE AUS FEHLERN GELERNT SIND UND SO BLEIBEN MUESSEN:
+ *
+ *   1. EINE QUELLE FUER DIE ADRESSEN. Die Felder oben auf der Seite und die
+ *      Felder im Dialog sind DASSELBE. Vorher fuehrte die Seite einen eigenen
+ *      Zwischenstand, der beim Oeffnen kopiert wurde - wer im Dialog etwas
+ *      aenderte, zurueckging und erneut anfragte, bekam den alten Stand
+ *      uebergestuelpt.
+ *   2. DER DIALOG OEFFNET AN ORT UND STELLE. Die Anfrageknoepfe im
+ *      Leistungsabschnitt scrollten frueher bis zu 5236 Bildpunkte nach oben
+ *      zur Buchungsleiste - und dort stand dann kein Formular. Jetzt oeffnet
+ *      sich der Dialog dort, wo man steht.
+ *   3. DIE GEWAEHLTE LEISTUNG STEHT AB SCHRITT 1 DA. Wer auf
+ *      „Schuelerfahrt anfragen" drueckt, soll nicht bis Schritt 2 blaettern,
+ *      um zu sehen, dass sie uebernommen wurde.
+ *
+ * ABSCHLUSS: Es gibt im Backend keine Annahmestelle fuer Fahrtanfragen. Der
+ * Weg endet deshalb mit einer vorbereiteten WhatsApp-Nachricht; das Telefon
+ * bleibt gleichwertig daneben. Dass WhatsApp sich oeffnet, heisst weder, dass
+ * die Nachricht gesendet ist, noch dass eine Fahrt bestaetigt waere - genau
+ * so steht es auch auf der Seite. Entfernungen, Preise oder Fahrzeiten werden
+ * nirgends genannt.
+ */
+import { FIRMA, LEISTUNGEN } from '../inhalte';
+import Symbol from './Symbol.astro';
+---
+
+<div
+  class="fixed inset-0 z-50 flex flex-col transition-opacity duration-[240ms] opacity-0 pointer-events-none"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Fahrt anfragen"
+  data-anfrage-dialog
+  hidden
+>
+  <div class="absolute inset-0 bg-background/80 backdrop-blur-sm" data-anfrage-hintergrund aria-hidden="true"></div>
+
+  <div
+    class="relative mt-auto bg-card border-t border-border max-h-[92dvh] overflow-y-auto transition-transform duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)] translate-y-full md:mt-auto md:mb-auto md:mx-auto md:w-[min(42rem,92vw)] md:border md:max-h-[86vh] md:shadow-[0_40px_120px_-30px_rgba(0,0,0,0.9)]"
+    data-anfrage-blatt
+  >
+    <div class="sticky top-0 bg-card border-b border-border flex items-center justify-between px-5 py-4 z-10">
+      <span class="text-sm font-semibold text-foreground">Fahrt anfragen</span>
+      <button type="button" class="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors duration-150" aria-label="Schließen" data-anfrage-schliessen>
+        <Symbol name="schliessen" class="w-5 h-5" />
+      </button>
+    </div>
+
+    <div class="p-5 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
+      {/* ══ Schritte 1 bis 3 ═══════════════════════════════════════════ */}
+      <div data-anfrage-formular>
+        <div class="flex items-center gap-0 mb-8">
+          {[1, 2, 3].map((i) => (
+            <div class="flex items-center">
+              <div class="flex items-center justify-center w-7 h-7 text-xs font-semibold border border-border text-muted-foreground transition-all duration-200" data-schrittmarke={i}>
+                <span data-schrittzahl>{i}</span>
+                <span hidden data-schritthaken><Symbol name="haken" class="w-3.5 h-3.5" /></span>
+              </div>
+              {i < 3 && <div class="w-8 h-px bg-border transition-colors duration-300" data-schrittlinie={i}></div>}
+            </div>
+          ))}
+          <span class="ml-4 text-sm text-muted-foreground" data-schrittname>Adressen</span>
+        </div>
+
+        <div class="mb-7 flex flex-wrap items-center gap-x-3 gap-y-1.5 border border-primary/30 bg-primary/[0.06] px-4 py-3" data-gewaehlte-leistung>
+          {LEISTUNGEN.map((l) => (
+            <span class="contents" data-leistungsanzeige={l.id} hidden>
+              <Symbol name={l.symbol} class="w-[18px] h-[18px] text-primary shrink-0" />
+              <span class="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Gewählte Leistung</span>
+              <strong class="text-[15px] font-semibold text-foreground">{l.label}</strong>
+            </span>
+          ))}
+        </div>
+
+        {/* ── Schritt 1: Adressen ─────────────────────────────────── */}
+        <div class="space-y-5" data-schritt="1">
+          <h3 class="text-lg font-semibold text-foreground">Abholung und Ziel</h3>
+          <div>
+            <label for="dlg-pickup" class="block text-sm font-medium text-muted-foreground mb-1.5">Abholadresse *</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"><Symbol name="abholung" class="w-4 h-4" /></span>
+              <input id="dlg-pickup" type="text" autocomplete="street-address" placeholder="Straße, Hausnummer, Ort"
+                class="w-full bg-secondary border border-border pl-11 pr-4 py-3 text-foreground placeholder-muted-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+                data-anfrage-feld="pickup" />
+            </div>
+            <p class="text-red-400 text-sm mt-1.5" hidden data-fehler="pickup">Bitte Abholadresse eingeben</p>
+          </div>
+          <div>
+            <label for="dlg-dest" class="block text-sm font-medium text-muted-foreground mb-1.5">Zieladresse *</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"><Symbol name="ziel" class="w-4 h-4" /></span>
+              <input id="dlg-dest" type="text" placeholder="Straße, Hausnummer, Ort"
+                class="w-full bg-secondary border border-border pl-11 pr-4 py-3 text-foreground placeholder-muted-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+                data-anfrage-feld="destination" />
+            </div>
+            <p class="text-red-400 text-sm mt-1.5" hidden data-fehler="destination">Bitte Zieladresse eingeben</p>
+          </div>
+        </div>
+
+        {/* ── Schritt 2: Leistung und Zeitpunkt ───────────────────── */}
+        <div class="space-y-7" data-schritt="2" hidden>
+          <div>
+            <h3 class="text-lg font-semibold text-foreground mb-4">Leistung und Zeitpunkt</h3>
+            <div class="grid grid-cols-2 gap-2">
+              {LEISTUNGEN.map((l) => (
+                <button type="button" aria-pressed="false" data-leistung-waehlen={l.id}
+                  class="flex items-center gap-3 px-4 py-3 border border-border text-left text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-all duration-150">
+                  <Symbol name={l.symbol} class="w-4 h-4 shrink-0" />
+                  <span class="text-sm font-medium">{l.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p class="text-sm font-medium text-muted-foreground mb-3">Wann möchten Sie fahren?</p>
+            <div class="flex gap-2">
+              <button type="button" aria-pressed="true" data-zeitpunkt="now"
+                class="flex-1 py-3 border text-sm font-medium transition-all duration-150 border-primary bg-primary/8 text-foreground">Jetzt</button>
+              <button type="button" aria-pressed="false" data-zeitpunkt="later"
+                class="flex-1 py-3 border text-sm font-medium transition-all duration-150 border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground">Zu einem Termin</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4" data-termin hidden>
+            <div>
+              <label for="dlg-date" class="block text-sm font-medium text-muted-foreground mb-1.5">Datum *</label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"><Symbol name="kalender" class="w-4 h-4" /></span>
+                <input id="dlg-date" type="date" data-anfrage-feld="date"
+                  class="w-full bg-secondary border border-border pl-11 pr-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary" />
+              </div>
+              <p class="text-red-400 text-sm mt-1.5" hidden data-fehler="date">Bitte Datum wählen</p>
+            </div>
+            <div>
+              <label for="dlg-time" class="block text-sm font-medium text-muted-foreground mb-1.5">Uhrzeit *</label>
+              <input id="dlg-time" type="time" data-anfrage-feld="time"
+                class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary" />
+              <p class="text-red-400 text-sm mt-1.5" hidden data-fehler="time">Bitte Uhrzeit angeben</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Schritt 3: Zusammenfassung ──────────────────────────── */}
+        <div class="space-y-6" data-schritt="3" hidden>
+          <h3 class="text-lg font-semibold text-foreground">Zusammenfassung</h3>
+          <div class="border border-border divide-y divide-border">
+            <div class="grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5"><span class="text-muted-foreground text-sm">Abholung</span><span class="text-foreground text-sm font-medium" data-zus="pickup">—</span></div>
+            <div class="grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5"><span class="text-muted-foreground text-sm">Ziel</span><span class="text-foreground text-sm font-medium" data-zus="destination">—</span></div>
+            <div class="grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5"><span class="text-muted-foreground text-sm">Leistung</span><span class="text-foreground text-sm font-medium" data-zus="service">—</span></div>
+            <div class="grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5"><span class="text-muted-foreground text-sm">Zeitpunkt</span><span class="text-foreground text-sm font-medium" data-zus="timing">—</span></div>
+          </div>
+          <div class="border border-border bg-secondary/60 px-5 py-4">
+            <p class="text-sm text-muted-foreground leading-relaxed">
+              Im nächsten Schritt öffnet sich WhatsApp mit dieser Anfrage als
+              vorbereiteter Nachricht. <strong class="text-foreground font-medium">Gesendet ist sie erst,
+              wenn Sie dort auf Senden tippen.</strong> Eine Fahrt ist damit noch nicht
+              bestätigt – wir melden uns bei Ihnen zurück.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between mt-8 pt-6 border-t border-border">
+          <button type="button" class="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm transition-colors duration-150" data-anfrage-zurueck>
+            <Symbol name="zurueck" class="w-4 h-4" />
+            <span data-zurueck-text>Schließen</span>
+          </button>
+          <button type="button" class="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-[#d4b87d] tg-press" data-anfrage-weiter>
+            <span data-weiter-text>Weiter</span>
+            <Symbol name="pfeil" class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* ══ Abschluss ══════════════════════════════════════════════════ */}
+      <div class="text-center py-6" data-anfrage-abschluss hidden>
+        <div class="w-14 h-14 rounded-full border border-primary/50 bg-primary/10 flex items-center justify-center mx-auto mb-6">
+          <Symbol name="whatsapp" class="w-6 h-6 text-primary" />
+        </div>
+        <h3 class="text-xl font-semibold mb-3">WhatsApp wurde geöffnet</h3>
+        <p class="text-muted-foreground text-sm mb-2 max-w-sm mx-auto leading-relaxed">
+          Ihre Angaben stehen dort als vorbereitete Nachricht. Bitte tippen Sie in
+          WhatsApp auf Senden – erst dann erreicht uns die Anfrage.
+        </p>
+        <p class="text-muted-foreground text-sm mb-7 max-w-sm mx-auto leading-relaxed">
+          Hat sich WhatsApp nicht geöffnet? Rufen Sie uns einfach an.
+        </p>
+        <div class="flex gap-3 justify-center flex-wrap">
+          <a href={FIRMA.telefonLink} class="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold tg-press">
+            <Symbol name="telefon" class="w-4 h-4" />
+            {FIRMA.telefon}
+          </a>
+          <button type="button" class="px-5 py-2.5 border border-border text-foreground text-sm hover:border-foreground/40 transition-colors duration-150" data-anfrage-nochmal>
+            Nachricht erneut öffnen
+          </button>
+          <button type="button" class="px-5 py-2.5 border border-border text-muted-foreground text-sm hover:text-foreground hover:border-foreground/40 transition-colors duration-150" data-anfrage-neu>
+            Neue Anfrage
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { LEISTUNGEN, FIRMA } from '../inhalte';
+
+  type Feld = 'pickup' | 'destination' | 'date' | 'time';
+
+  const dialog = document.querySelector<HTMLElement>('[data-anfrage-dialog]')!;
+  const blatt = dialog.querySelector<HTMLElement>('[data-anfrage-blatt]')!;
+  const formular = dialog.querySelector<HTMLElement>('[data-anfrage-formular]')!;
+  const abschluss = dialog.querySelector<HTMLElement>('[data-anfrage-abschluss]')!;
+
+  const daten = { pickup: '', destination: '', service: 'Taxi', timing: 'now', date: '', time: '' };
+  let schritt = 1;
+  let offen = false;
+
+  // ── Adressen: eine Quelle fuer Seite und Dialog ────────────────────────
+  // Jedes Feld auf der Seite traegt data-anfrage-feld. Aendert sich eines,
+  // aendern sich alle - es wird nichts kopiert und nichts uebergestuelpt.
+  const felder = () => document.querySelectorAll<HTMLInputElement>('[data-anfrage-feld]');
+
+  function feldSetzen(name: Feld, wert: string) {
+    daten[name] = wert;
+    for (const el of felder()) {
+      if (el.dataset.anfrageFeld === name && el.value !== wert) el.value = wert;
+    }
+    fehlerZeigen(name, false);
+    markenAktualisieren();
+  }
+
+  for (const el of felder()) {
+    el.addEventListener('input', () => feldSetzen(el.dataset.anfrageFeld as Feld, el.value));
+  }
+
+  /** „wird benötigt" / „✓ ausgefüllt" an den Feldern im Einstieg. */
+  function markenAktualisieren() {
+    for (const marke of document.querySelectorAll<HTMLElement>('[data-feldmarke]')) {
+      const gefuellt = daten[marke.dataset.feldmarke as Feld].trim().length > 0;
+      marke.textContent = gefuellt ? '✓ ausgefüllt' : 'wird benötigt';
+      marke.classList.toggle('text-[#5d7a52]', gefuellt);
+      marke.classList.toggle('text-[#8a8175]', !gefuellt);
+    }
+  }
+
+  function fehlerZeigen(name: string, an: boolean) {
+    const p = dialog.querySelector<HTMLElement>(`[data-fehler="${name}"]`);
+    if (p) p.hidden = !an;
+    const feld = dialog.querySelector<HTMLInputElement>(`[data-anfrage-feld="${name}"]`);
+    if (feld) {
+      feld.classList.toggle('border-red-500/80', an);
+      feld.classList.toggle('border-border', !an);
+      if (an) feld.setAttribute('aria-invalid', 'true');
+      else feld.removeAttribute('aria-invalid');
+    }
+  }
+
+  // ── Leistung ───────────────────────────────────────────────────────────
+  function leistungSetzen(id: string) {
+    if (!LEISTUNGEN.some((l) => l.id === id)) return;
+    daten.service = id;
+
+    // Banner: sichtbar ab Schritt 1.
+    for (const s of dialog.querySelectorAll<HTMLElement>('[data-leistungsanzeige]')) {
+      s.hidden = s.dataset.leistungsanzeige !== id;
+    }
+    // Auswahl in Schritt 2.
+    for (const b of dialog.querySelectorAll<HTMLElement>('[data-leistung-waehlen]')) {
+      const aktiv = b.dataset.leistungWaehlen === id;
+      b.setAttribute('aria-pressed', String(aktiv));
+      b.classList.toggle('border-primary', aktiv);
+      b.classList.toggle('bg-primary/8', aktiv);
+      b.classList.toggle('text-foreground', aktiv);
+      b.classList.toggle('border-border', !aktiv);
+      b.classList.toggle('text-muted-foreground', !aktiv);
+    }
+    // Leiste im Einstieg mitfuehren, falls die Leistung dort vorkommt.
+    document.dispatchEvent(new CustomEvent('tg:leistung-gewaehlt', { detail: { id } }));
+  }
+
+  for (const b of dialog.querySelectorAll<HTMLElement>('[data-leistung-waehlen]')) {
+    b.addEventListener('click', () => leistungSetzen(b.dataset.leistungWaehlen!));
+  }
+
+  // ── Zeitpunkt ──────────────────────────────────────────────────────────
+  const termin = dialog.querySelector<HTMLElement>('[data-termin]')!;
+  for (const b of dialog.querySelectorAll<HTMLElement>('[data-zeitpunkt]')) {
+    b.addEventListener('click', () => {
+      daten.timing = b.dataset.zeitpunkt!;
+      for (const x of dialog.querySelectorAll<HTMLElement>('[data-zeitpunkt]')) {
+        const aktiv = x.dataset.zeitpunkt === daten.timing;
+        x.setAttribute('aria-pressed', String(aktiv));
+        x.classList.toggle('border-primary', aktiv);
+        x.classList.toggle('bg-primary/8', aktiv);
+        x.classList.toggle('text-foreground', aktiv);
+        x.classList.toggle('border-border', !aktiv);
+        x.classList.toggle('text-muted-foreground', !aktiv);
+      }
+      termin.hidden = daten.timing !== 'later';
+    });
+  }
+
+  // Termine nur ab heute.
+  const datumFeld = dialog.querySelector<HTMLInputElement>('#dlg-date')!;
+  datumFeld.min = new Date().toISOString().split('T')[0];
+
+  // ── Schrittanzeige ─────────────────────────────────────────────────────
+  const NAMEN = ['Adressen', 'Leistung & Zeit', 'Bestätigung'];
+
+  function schrittZeichnen() {
+    for (const el of dialog.querySelectorAll<HTMLElement>('[data-schritt]')) {
+      el.hidden = Number(el.dataset.schritt) !== schritt;
+    }
+    for (const m of dialog.querySelectorAll<HTMLElement>('[data-schrittmarke]')) {
+      const i = Number(m.dataset.schrittmarke);
+      const erledigt = i < schritt;
+      const jetzt = i === schritt;
+      m.classList.toggle('bg-primary', erledigt);
+      m.classList.toggle('border-primary', erledigt || jetzt);
+      m.classList.toggle('text-primary-foreground', erledigt);
+      m.classList.toggle('text-primary', jetzt);
+      m.classList.toggle('border-border', !erledigt && !jetzt);
+      m.classList.toggle('text-muted-foreground', !erledigt && !jetzt);
+      m.querySelector<HTMLElement>('[data-schrittzahl]')!.hidden = erledigt;
+      m.querySelector<HTMLElement>('[data-schritthaken]')!.hidden = !erledigt;
+    }
+    for (const l of dialog.querySelectorAll<HTMLElement>('[data-schrittlinie]')) {
+      const fertig = Number(l.dataset.schrittlinie) < schritt;
+      l.classList.toggle('bg-primary', fertig);
+      l.classList.toggle('bg-border', !fertig);
+    }
+    dialog.querySelector<HTMLElement>('[data-schrittname]')!.textContent = NAMEN[schritt - 1];
+    dialog.querySelector<HTMLElement>('[data-zurueck-text]')!.textContent = schritt === 1 ? 'Schließen' : 'Zurück';
+    dialog.querySelector<HTMLElement>('[data-weiter-text]')!.textContent =
+      schritt === 3 ? 'Anfrage über WhatsApp senden' : 'Weiter';
+    if (schritt === 3) zusammenfassungZeichnen();
+  }
+
+  const datumDeutsch = (v: string) => (v ? v.split('-').reverse().join('.') : '');
+
+  function zeitpunktText() {
+    if (daten.timing === 'now') return 'So bald wie möglich';
+    return `${datumDeutsch(daten.date)} um ${daten.time} Uhr`;
+  }
+
+  function zusammenfassungZeichnen() {
+    const L = LEISTUNGEN.find((l) => l.id === daten.service);
+    const werte: Record<string, string> = {
+      pickup: daten.pickup,
+      destination: daten.destination,
+      service: L ? L.label : daten.service,
+      timing: zeitpunktText(),
+    };
+    for (const el of dialog.querySelectorAll<HTMLElement>('[data-zus]')) {
+      el.textContent = werte[el.dataset.zus!] || '—';
+    }
+  }
+
+  function pruefen(): boolean {
+    let gut = true;
+    if (schritt === 1) {
+      const a = daten.pickup.trim().length > 0;
+      const z = daten.destination.trim().length > 0;
+      fehlerZeigen('pickup', !a);
+      fehlerZeigen('destination', !z);
+      gut = a && z;
+    }
+    if (schritt === 2 && daten.timing === 'later') {
+      fehlerZeigen('date', !daten.date);
+      fehlerZeigen('time', !daten.time);
+      gut = Boolean(daten.date && daten.time);
+    }
+    return gut;
+  }
+
+  // ── WhatsApp-Uebergabe ─────────────────────────────────────────────────
+  //
+  // Alle erfassten Angaben, unveraendert und vollstaendig. KEINE Entfernung,
+  // KEIN Preis, KEINE Bestaetigung - nichts davon ist bekannt, also steht
+  // nichts davon in der Nachricht.
+  function nachricht(): string {
+    const L = LEISTUNGEN.find((l) => l.id === daten.service);
+    return [
+      'Fahrtanfrage über die Website',
+      '',
+      `Leistung: ${L ? L.label : daten.service}`,
+      `Abholadresse: ${daten.pickup}`,
+      `Zieladresse: ${daten.destination}`,
+      `Zeitpunkt: ${zeitpunktText()}`,
+      '',
+      'Bitte bestätigen Sie mir die Fahrt.',
+    ].join('\n');
+  }
+
+  function whatsappOeffnen() {
+    const url = `https://wa.me/${FIRMA.whatsappNummer}?text=${encodeURIComponent(nachricht())}`;
+    window.open(url, '_blank', 'noopener');
+  }
+
+  function abschlussZeigen(an: boolean) {
+    formular.hidden = an;
+    abschluss.hidden = !an;
+  }
+
+  // ── Bedienung ──────────────────────────────────────────────────────────
+  dialog.querySelector('[data-anfrage-weiter]')!.addEventListener('click', () => {
+    if (!pruefen()) return;
+    if (schritt < 3) {
+      schritt += 1;
+      schrittZeichnen();
+      return;
+    }
+    whatsappOeffnen();
+    abschlussZeigen(true);
+  });
+
+  dialog.querySelector('[data-anfrage-zurueck]')!.addEventListener('click', () => {
+    if (schritt === 1) { schliessen(); return; }
+    schritt -= 1;
+    for (const n of ['pickup', 'destination', 'date', 'time']) fehlerZeigen(n, false);
+    schrittZeichnen();
+  });
+
+  dialog.querySelector('[data-anfrage-nochmal]')!.addEventListener('click', whatsappOeffnen);
+
+  dialog.querySelector('[data-anfrage-neu]')!.addEventListener('click', () => {
+    feldSetzen('pickup', '');
+    feldSetzen('destination', '');
+    feldSetzen('date', '');
+    feldSetzen('time', '');
+    daten.timing = 'now';
+    termin.hidden = true;
+    leistungSetzen('Taxi');
+    schritt = 1;
+    abschlussZeigen(false);
+    schrittZeichnen();
+  });
+
+  // ── Die Seite hinter dem Dialog festhalten ─────────────────────────────
+  //
+  // `document.body.style.overflow = 'hidden'` allein genuegt NICHT: Gemessen
+  // am 20.09.2026 verschob der Browser dabei die Bildlaufposition — bei drei
+  // der sieben Anfrageknoepfe sprang die Seite um rund 480 Punkte, der
+  // angeklickte Knopf rutschte von 487 auf 0. Hinter dem halbdurchsichtigen
+  // Hintergrund ist das zu sehen, und nach dem Schliessen stuende man
+  // woanders.
+  //
+  // Deshalb wird die Seite mit `position: fixed` und einem negativen `top`
+  // genau dort festgehalten, wo sie steht, und beim Schliessen wieder
+  // freigegeben.
+  let gemerkteHoehe = 0;
+
+  function seiteFesthalten() {
+    gemerkteHoehe = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${gemerkteHoehe}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+  }
+
+  function seiteFreigeben() {
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    // Ausdruecklich OHNE Bildlauf-Animation: Die Seite traegt
+    // `scroll-behavior: smooth`, und damit faehrt ein einfaches scrollTo die
+    // ganze Strecke sichtbar ab - gemessen bis zu 1298 Punkte, die nach dem
+    // Schliessen noch unter dem Finger wegliefen. Eine Wiederherstellung ist
+    // keine Bewegung, sie ist ein Zustand.
+    window.scrollTo({ top: gemerkteHoehe, left: 0, behavior: 'instant' as ScrollBehavior });
+  }
+
+  // ── Oeffnen und Schliessen ─────────────────────────────────────────────
+  function oeffnen(leistung?: string) {
+    if (leistung) leistungSetzen(leistung);
+    // Eingaben bleiben erhalten: `daten` wird beim Oeffnen NICHT zurueckgesetzt.
+    schritt = 1;
+    abschlussZeigen(false);
+    for (const n of ['pickup', 'destination', 'date', 'time']) fehlerZeigen(n, false);
+    schrittZeichnen();
+
+    dialog.hidden = false;
+    offen = true;
+    seiteFesthalten();
+    // Erst im naechsten Bild einblenden, sonst laeuft der Uebergang nicht.
+    requestAnimationFrame(() => {
+      dialog.classList.remove('opacity-0', 'pointer-events-none');
+      dialog.classList.add('opacity-100', 'pointer-events-auto');
+      blatt.classList.remove('translate-y-full');
+      blatt.classList.add('translate-y-0', 'md:translate-y-0');
+    });
+  }
+
+  function schliessen() {
+    offen = false;
+    dialog.classList.add('opacity-0', 'pointer-events-none');
+    dialog.classList.remove('opacity-100', 'pointer-events-auto');
+    blatt.classList.add('translate-y-full');
+    blatt.classList.remove('translate-y-0');
+    seiteFreigeben();
+    window.setTimeout(() => { if (!offen) dialog.hidden = true; }, 300);
+  }
+
+  dialog.querySelector('[data-anfrage-schliessen]')!.addEventListener('click', schliessen);
+  dialog.querySelector('[data-anfrage-hintergrund]')!.addEventListener('click', schliessen);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && offen) schliessen(); });
+
+  // Jede Schaltflaeche auf der Seite oeffnet denselben Dialog - im Kopf, im
+  // Einstieg, an jedem der sieben Leistungsbloecke. Ohne Scrollen.
+  for (const b of document.querySelectorAll<HTMLElement>('[data-anfrage-oeffnen]')) {
+    b.addEventListener('click', () => oeffnen(b.dataset.leistung || undefined));
+  }
+
+  document.addEventListener('tg:anfrage-oeffnen', (e) => {
+    oeffnen((e as CustomEvent).detail?.leistung);
+  });
+
+  // Die Leiste im Einstieg meldet ihre Wahl hierher - eine Quelle, auch fuer
+  // die Leistung.
+  document.addEventListener('tg:leistung-setzen', (e) => {
+    leistungSetzen((e as CustomEvent).detail.id);
+  });
+
+  leistungSetzen('Taxi');
+  schrittZeichnen();
+  markenAktualisieren();
+</script>
