@@ -267,27 +267,71 @@ Ordner liegen — `supabase/` mit 11 Migrationen, alle Testprotokolle und
 Einspielpläne, `screenshots/`, `fix_admin_auth.py` — sind danach nicht mehr
 Teil der Auslieferung.
 
-### Offene Voraussetzung — weiterhin ungeklärt
+### Offene Voraussetzung — Ermittlungsstand vom 20.09.2026
 
 > **Wie wird die bestehende Webseite veröffentlicht, und läuft sie an der
 > Domainwurzel oder unter einem Unterpfad?**
 
-Im Repository liegt **keine** Deploy-Konfiguration: keine Workflow-Datei unter
-`.github/`, keine `CNAME`, keine `.nojekyll`, kein Hoster-Manifest. Aus dem
-Projekt geht nicht hervor, wie und wohin veröffentlicht wird.
+Rein lesend gesucht, nichts verändert, keine Hosting-Einstellung angefasst.
 
-Das entscheidet zwei Dinge:
+**Was gefunden wurde — und was nicht:**
 
-- **Läuft die Seite unter einem Unterpfad** (etwa
-  `…/Taxi-Germersheim-2.0-/`), muss in `astro.config.mjs` `base` gesetzt
-  werden. Alle absoluten Pfade der neuen Seiten (`/assets/hero/…`,
-  `/schriften/…`) beziehen sich sonst auf die falsche Wurzel. Die
-  Bestandsseiten arbeiten mit relativen Pfaden und wären nicht betroffen — die
-  neuen schon.
-- **Wer den Build ausführt.** Von Hand vor dem Hochladen, oder automatisch.
+| Gesucht | Ergebnis |
+|---|---|
+| Deploy-Konfiguration im Arbeitsbaum (`.github/`, `CNAME`, `.nojekyll`, `netlify.toml`, `vercel.json`, `_redirects`, `firebase.json`, FTP-Konfiguration) | **nichts** |
+| Dieselbe Suche über die **gesamte Historie aller Branches** | **nie vorhanden gewesen** |
+| Branch, der nach Veröffentlichung aussieht (`gh-pages`, `deploy`, `prod`, `live`, `release`) | **keiner** |
+| Domain im Quelltext, `sitemap`, `robots.txt` | **nichts** |
+| GitHub-CLI auf diesem Rechner, um die Einstellung abzufragen | **nicht installiert** |
+
+**Was sich doch ableiten lässt:**
+
+- Firmendomain laut Impressum: `taxigermersheim.de`, Kontakt
+  `info@taxigermersheim.de`. Dass die Seite dort liegt, ist damit
+  **nicht** belegt — nur, dass eine Domain existiert.
+- Alle `rel="canonical"`- und `og:url`-Angaben der Bestandsseiten sind
+  **relativ** (`href="index.html"`). Ebenso jeder Bild-, Skript- und
+  Stilverweis. Kein `<base href>`. Die Bestandsseiten laufen dadurch an
+  jedem Pfad.
+- **Eine einzige Ausnahme, und sie ist aussagekräftig:**
+  `passwort-vergessen.html:89` baut das Rücksprungziel als
+  `new URL("/passwort-zuruecksetzen.html", window.location.origin)` — also
+  **wurzelabsolut**. Läge die Seite unter einem Unterpfad, zeigte dieser Link
+  aus dem Auftritt heraus, und das Zurücksetzen des Passworts wäre schon
+  heute kaputt. Entweder läuft die Seite an der Domainwurzel, oder dort
+  besteht ein bislang unbemerkter Fehler.
+- Dieselbe Stelle heißt: In der Supabase-Auth-Konfiguration ist ein konkreter
+  Produktiv-Ursprung als erlaubte Rücksprungadresse hinterlegt. Dort steht die
+  Antwort — abgefragt wurde sie nicht.
+
+**Bewertung:** Der Weg der Veröffentlichung bleibt **nicht eindeutig
+feststellbar**. Für „Domainwurzel" spricht ein konkreter Befund, für einen
+Unterpfad keiner. Das ist ein Hinweis, kein Nachweis.
+
+**Was gebraucht wird** (eines davon genügt für die erste Frage, die dritte
+Angabe beantwortet beide sicher):
+
+1. **Die öffentliche Adresse der Seite** — die Adresse, die man eintippt, um
+   den Auftritt zu erreichen. Sie allein entscheidet Wurzel oder Unterpfad.
+2. **Wie die Dateien auf den Server kommen:** Upload von Hand per FTP/SFTP,
+   ein Hoster mit Git-Anbindung, GitHub Pages, oder ein Dienstleister.
+3. **Screenshot** — je nachdem:
+   - GitHub Pages: Repository → *Settings* → *Pages* (Source, Branch, Ordner,
+     Custom domain).
+   - Hoster mit eigener Oberfläche: die Seite, auf der Verzeichnis oder
+     Veröffentlichungsordner eingestellt ist.
+   - Ergänzend hilfreich: Supabase → *Authentication* → *URL Configuration*
+     (*Site URL* und *Redirect URLs*). Dort steht der Produktiv-Ursprung.
+     Zugangsdaten sind dabei nicht nötig und sollen geschwärzt bleiben.
 
 **Diese Frage muss vor Schritt 014 beantwortet sein**, denn dort wird
-`index.html` ersetzt — die Einstiegsseite.
+`index.html` ersetzt — die Einstiegsseite. Konkret hängt daran:
+
+- **Unterpfad** → in `astro.config.mjs` muss `base` gesetzt werden. Die neuen
+  Seiten arbeiten mit wurzelabsoluten Pfaden (`/assets/hero/…`,
+  `/schriften/…`) und zeigten sonst ins Leere. Die Bestandsseiten wären nicht
+  betroffen — die neuen schon.
+- **Wer den Build ausführt** — von Hand vor dem Hochladen oder automatisch.
 
 ---
 
