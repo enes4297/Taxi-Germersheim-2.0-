@@ -121,6 +121,9 @@ const verboten = [
   // verloren.
   ['Vergleichsseiten der Vorschau', (d) => d.startsWith('vergleich')],
   ['Platzhalterdateien', (d) => d.endsWith('.gitkeep')],
+  // Die oertlichen Sichtproben sind Arbeitsmittel zur Beurteilung und haben
+  // in der Auslieferung nichts verloren.
+  ['Sichtproben', (d) => d.startsWith('sichtproben') || d.includes('walk-anfang') || d.includes('walk-ende')],
 ];
 for (const [name, trifft] of verboten) {
   const treffer = alle.filter(trifft);

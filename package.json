@@ -10,7 +10,14 @@
     "preview": "astro preview",
     "ausgabe-pruefen": "node tools/ausgabe-pruefen.mjs",
     "browser-pruefen": "node tools/pruefe-ausgabe-browser.mjs",
-    "startseite-pruefen": "node tools/pruefe-startseite.mjs"
+    "startseite-pruefen": "node tools/pruefe-startseite.mjs",
+    "yumak-medien": "node tools/yumak-aufbereiten.mjs",
+    "yumak-lage": "node tools/yumak-lage.mjs",
+    "sichtprobe": "node tools/sichtprobe-server.mjs",
+    "sichtprobe-pruefen": "node tools/pruefe-sichtprobe.mjs",
+    "yumak-farbe": "node tools/yumak-fellfarbe.mjs",
+    "yumak-farbe-pruefen": "node tools/pruefe-yumak-farbe.mjs",
+    "yumak-uebergang-pruefen": "node tools/pruefe-yumak-uebergang.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

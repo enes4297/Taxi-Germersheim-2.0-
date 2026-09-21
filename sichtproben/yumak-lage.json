@@ -1,0 +1,170 @@
+{
+  "idle": {
+    "quelle": {
+      "breite": 872,
+      "hoehe": 1052,
+      "dauer": 5.04
+    },
+    "oben": 0.037,
+    "grund": 0.921,
+    "mitte": 0.473,
+    "figurhoehe": 0.883,
+    "figurbreite": 0.738,
+    "diagonale": 1130,
+    "darstellung": {
+      "breite": 235,
+      "hoehe": 283,
+      "links": 69,
+      "oben": 21,
+      "katzeRendert": 304
+    }
+  },
+  "wave": {
+    "quelle": {
+      "breite": 872,
+      "hoehe": 1052,
+      "dauer": 5.04
+    },
+    "oben": 0.013,
+    "grund": 0.979,
+    "mitte": 0.483,
+    "figurhoehe": 0.967,
+    "figurbreite": 0.725,
+    "diagonale": 1198,
+    "darstellung": {
+      "breite": 235,
+      "hoehe": 283,
+      "links": 67,
+      "oben": 4,
+      "katzeRendert": 322
+    }
+  },
+  "curious": {
+    "quelle": {
+      "breite": 872,
+      "hoehe": 1052,
+      "dauer": 5.04
+    },
+    "oben": 0.042,
+    "grund": 0.9,
+    "mitte": 0.467,
+    "figurhoehe": 0.858,
+    "figurbreite": 0.675,
+    "diagonale": 1078,
+    "darstellung": {
+      "breite": 235,
+      "hoehe": 283,
+      "links": 70,
+      "oben": 27,
+      "katzeRendert": 290
+    }
+  },
+  "happy": {
+    "quelle": {
+      "breite": 872,
+      "hoehe": 1052,
+      "dauer": 5.04
+    },
+    "oben": 0.017,
+    "grund": 0.887,
+    "mitte": 0.442,
+    "figurhoehe": 0.871,
+    "figurbreite": 0.742,
+    "diagonale": 1122,
+    "darstellung": {
+      "breite": 235,
+      "hoehe": 283,
+      "links": 76,
+      "oben": 30,
+      "katzeRendert": 302
+    }
+  },
+  "reach": {
+    "quelle": {
+      "breite": 872,
+      "hoehe": 1052,
+      "dauer": 5.04
+    },
+    "oben": 0.008,
+    "grund": 0.858,
+    "mitte": 0.412,
+    "figurhoehe": 0.85,
+    "figurbreite": 0.733,
+    "diagonale": 1099,
+    "darstellung": {
+      "breite": 235,
+      "hoehe": 283,
+      "links": 83,
+      "oben": 39,
+      "katzeRendert": 296
+    }
+  },
+  "box": {
+    "quelle": {
+      "breite": 1004,
+      "hoehe": 916,
+      "dauer": 5.04
+    },
+    "oben": 0.05,
+    "grund": 0.621,
+    "mitte": 0.508,
+    "figurhoehe": 0.571,
+    "figurbreite": 0.975,
+    "diagonale": 1110,
+    "darstellung": {
+      "breite": 270,
+      "hoehe": 247,
+      "links": 43,
+      "oben": 129,
+      "katzeRendert": 299
+    }
+  },
+  "sleep": {
+    "quelle": {
+      "breite": 1176,
+      "hoehe": 784,
+      "dauer": 5.04
+    },
+    "oben": 0.254,
+    "grund": 0.75,
+    "mitte": 0.504,
+    "figurhoehe": 0.496,
+    "figurbreite": 0.925,
+    "diagonale": 1155,
+    "darstellung": {
+      "breite": 316,
+      "hoehe": 211,
+      "links": 20,
+      "oben": 123,
+      "katzeRendert": 311
+    }
+  },
+  "walk-right": {
+    "quelle": {
+      "breite": 1176,
+      "hoehe": 784,
+      "dauer": 5.04
+    },
+    "oben": 0.175,
+    "grund": 0.65,
+    "mitte": 0.502,
+    "figurhoehe": 0.475,
+    "figurbreite": 0.929,
+    "diagonale": 1154,
+    "darstellung": {
+      "breite": 316,
+      "hoehe": 211,
+      "links": 21,
+      "oben": 144,
+      "katzeRendert": 311
+    }
+  },
+  "__buehne": {
+    "breite": 360,
+    "hoehe": 320,
+    "figurhoehe": 250,
+    "ankerX": 0.5,
+    "ankerY": 0.88,
+    "faktor": 0.2691
+  }
+}
