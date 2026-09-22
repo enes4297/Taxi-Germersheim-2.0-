@@ -8,6 +8,16 @@
  */
 import { FIRMA, NAV } from '../inhalte';
 import Symbol from './Symbol.astro';
+
+interface Props {
+  /** Auf der Startseite zeigen Sprungmarken auf Abschnitte dieser Seite.
+   *  Auf Unterseiten muessen sie zuerst zur Startseite fuehren. */
+  startseite?: boolean;
+}
+const { startseite = true } = Astro.props;
+
+const ziel = (href: string) => (startseite || !href.startsWith('#') ? href : `index.html${href}`);
+const heim = startseite ? '#hero' : 'index.html';
 ---
 
 <header
@@ -15,7 +25,7 @@ import Symbol from './Symbol.astro';
   data-kopf
 >
   <div class="mx-auto max-w-[1400px] px-5 lg:px-10 h-16 lg:h-20 flex items-center justify-between gap-6">
-    <a href="#hero" aria-label={`${FIRMA.name} – zum Seitenanfang`} class="shrink-0">
+    <a href={heim} aria-label={`${FIRMA.name} – ${startseite ? "zum Seitenanfang" : "zur Startseite"}`} class="shrink-0">
       <img
         src="/assets/brand/taxi-germersheim-logo.svg"
         alt={FIRMA.name}
@@ -26,7 +36,7 @@ import Symbol from './Symbol.astro';
 
     <nav class="hidden lg:flex items-center gap-7" aria-label="Hauptnavigation">
       {NAV.map((n) => (
-        <a href={n.href} class="text-sm text-white/72 hover:text-white transition-colors duration-150" data-kopf-link>
+        <a href={ziel(n.href)} class="text-sm text-white/72 hover:text-white transition-colors duration-150" data-kopf-link>
           {n.label}
         </a>
       ))}
@@ -47,13 +57,22 @@ import Symbol from './Symbol.astro';
       >
         <Symbol name="whatsapp" class="w-[18px] h-[18px]" />
       </a>
-      <button
-        type="button"
-        class="ml-1.5 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-[#d4b87d] tg-press"
-        data-anfrage-oeffnen
-      >
-        Fahrt anfragen
-      </button>
+      {startseite ? (
+        <button
+          type="button"
+          class="ml-1.5 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-[#d4b87d] tg-press"
+          data-anfrage-oeffnen
+        >
+          Fahrt anfragen
+        </button>
+      ) : (
+        <a
+          href="index.html?page=booking"
+          class="ml-1.5 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-[#d4b87d] tg-press"
+        >
+          Fahrt anfragen
+        </a>
+      )}
     </div>
 
     <button
@@ -71,19 +90,29 @@ import Symbol from './Symbol.astro';
 
   <div id="kopf-menue" class="lg:hidden border-t border-border bg-card max-h-[calc(100svh-4rem)] overflow-y-auto" hidden data-menue>
     {NAV.map((n) => (
-      <a href={n.href} class="block px-5 py-3.5 text-[15px] border-b border-border text-muted-foreground" data-menue-link>
+      <a href={ziel(n.href)} class="block px-5 py-3.5 text-[15px] border-b border-border text-muted-foreground" data-menue-link>
         {n.label}
       </a>
     ))}
     <div class="p-5 space-y-3">
-      <button
-        type="button"
-        class="w-full py-3.5 text-[15px] font-semibold bg-primary text-primary-foreground tg-press"
-        data-anfrage-oeffnen
-        data-menue-link
-      >
-        Fahrt anfragen
-      </button>
+      {startseite ? (
+        <button
+          type="button"
+          class="w-full py-3.5 text-[15px] font-semibold bg-primary text-primary-foreground tg-press"
+          data-anfrage-oeffnen
+          data-menue-link
+        >
+          Fahrt anfragen
+        </button>
+      ) : (
+        <a
+          href="index.html?page=booking"
+          class="block w-full py-3.5 text-center text-[15px] font-semibold bg-primary text-primary-foreground tg-press"
+          data-menue-link
+        >
+          Fahrt anfragen
+        </a>
+      )}
       <div class="grid grid-cols-2 gap-3">
         <a href={FIRMA.telefonLink} class="flex items-center justify-center gap-2 border border-border py-3 text-sm font-medium tg-press">
           <Symbol name="telefon" class="w-4 h-4" /> Anrufen

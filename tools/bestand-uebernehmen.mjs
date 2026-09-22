@@ -61,27 +61,31 @@ export const UEBERNAHME = [
  *
  * NICHT enthalten und auch nicht enthalten sein duerfen:
  *   index.html               - erzeugt der Build selbst (siehe unten)
+ *   rewards.html             - seit Schritt 016 ebenfalls aus Astro
+ *   rewards-customer.css     - wurde nur von der alten rewards.html gebraucht
  *   fix_admin_auth.py        - Werkzeug, von keiner Seite referenziert
  *   logo-original-full.png   - Bildvorlage, von keiner Seite referenziert
  *   tg-icon-original.png     - dito
  *   *.md, package*.json      - interne Dateien
  *
- * WICHTIG zu index.html: Die Wurzelseite kommt ab Schritt 014 aus Astro. Stuende
- * sie hier, wuerde der Bestand die neue Startseite ueberschreiben. Genau davor
- * schuetzt konflikteSuchen() - sie wuerde den Build abbrechen statt still zu
- * ueberschreiben.
+ * WICHTIG zu index.html und rewards.html: Beide Seiten kommen inzwischen aus
+ * Astro - index.html seit Schritt 014, rewards.html seit Schritt 016. Stuenden
+ * sie hier, wuerde der Bestand die neuen Seiten ueberschreiben. Genau davor
+ * schuetzt konflikteSuchen(): Der Build braeche ab, statt still zu
+ * ueberschreiben. Die alte rewards.html bleibt im Repository liegen; sie wird
+ * nur nicht mehr ausgeliefert.
  */
 const WURZELDATEIEN = [
   // Oeffentliche Seiten
   '404.html', 'anmelden.html', 'datenschutz.html', 'flotte.html', 'hilfe-kontakt.html',
   'impressum.html', 'konto-einrichtung.html', 'kunden-einstellungen.html', 'kundenkonto.html',
   'live-fahrt.html', 'meine-fahrten.html', 'meinkonto.html', 'passwort-vergessen.html',
-  'passwort-zuruecksetzen.html', 'registrieren.html', 'rewards.html', 'spezial-anfrage.html',
+  'passwort-zuruecksetzen.html', 'registrieren.html', 'spezial-anfrage.html',
   'spezialfahrten.html', 'spiele.html', 'wallet-gutscheine.html',
   // Stilvorlagen
   'auth-demo.css', 'hilfe-kontakt.css', 'home-luxury.css', 'kunden-einstellungen.css',
   'legal-pages.css', 'live-ride.css', 'meinefahrten.css', 'public-premium-v2.css',
-  'public-states.css', 'public-system.css', 'public-visual-repair.css', 'rewards-customer.css',
+  'public-states.css', 'public-system.css', 'public-visual-repair.css',
   'special-services.css', 'spiele.css', 'style.css', 'wallet-gutscheine.css',
   // Skripte
   'customer-auth-demo.js', 'customer-auth.js', 'customer-journey-demo.js', 'home-luxury.js',

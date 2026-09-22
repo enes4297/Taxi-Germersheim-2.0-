@@ -17,7 +17,8 @@
     "sichtprobe-pruefen": "node tools/pruefe-sichtprobe.mjs",
     "yumak-farbe": "node tools/yumak-fellfarbe.mjs",
     "yumak-farbe-pruefen": "node tools/pruefe-yumak-farbe.mjs",
-    "yumak-uebergang-pruefen": "node tools/pruefe-yumak-uebergang.mjs"
+    "yumak-uebergang-pruefen": "node tools/pruefe-yumak-uebergang.mjs",
+    "rewards-pruefen": "node tools/pruefe-rewards.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

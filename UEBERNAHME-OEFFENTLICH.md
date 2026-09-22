@@ -4,7 +4,7 @@ Interne Arbeitsunterlage. Sie wird **nicht** mit ausgeliefert — der Prüflauf
 `npm run ausgabe-pruefen` stellt sicher, dass keine `.md`-Datei im
 Ausgabeordner landet.
 
-Stand: 20.09.2026, nach Schritt 014 (Startseite).
+Stand: 21.09.2026, nach Schritt 016 (Rewards-Seite mit Yumak).
 
 ---
 
@@ -14,7 +14,9 @@ Stand: 20.09.2026, nach Schritt 014 (Startseite).
 dev
  └── feature/012-astro-geruest        (37da686)  Gerüst
       └── feature/013-design-grundlage (c740135)  Design-Grundlage
-           └── feature/014-startseite             Startseite
+           └── feature/014-startseite  (fbe9b67)  Startseite
+                └── feature/015-yumak-medien (85b6300)  Yumak-Medien
+                     └── feature/016-rewards-yumak       Rewards-Seite
 ```
 
 **Jeder Schritt zweigt vom vorigen ab, nicht von `dev`.** Das ist Absicht: 013
@@ -22,7 +24,7 @@ setzt auf Gerüst, Übernahme-Liste und Prüfwerkzeugen aus 012 auf, 014 auf der
 Design-Grundlage aus 013. Ein Abzweig von `dev` hätte jeweils nichts davon.
 
 **Folge für die Reihenfolge:** Die Kette muss in dieser Reihenfolge nach `dev` —
-012, dann 013, dann 014. Wird eine übersprungen, kommt ihr Inhalt später doppelt
+012, 013, 014, 015, 016. Wird eine übersprungen, kommt ihr Inhalt später doppelt
 oder gar nicht mit.
 
 Merge nach `dev` macht der Mensch — nicht der Assistent.
@@ -37,7 +39,7 @@ nur `supabase/` und Dokumentation und sind für die Auslieferung ohne Belang.
 **Zwei betreffen Dateien, die im Ausgabeordner landen** — sie enthalten bereits
 behobene Portalfehler.
 
-| Commit | Datei | Was behoben wurde | Heutiger Stand auf 012/013/014 |
+| Commit | Datei | Was behoben wurde | Heutiger Stand auf 012 bis 016 |
 |---|---|---|---|
 | `316de73` | `fahrer/mitarbeiter.js` | Das Anhang-Abzeichen einer Krankmeldung zeigte **immer** „Ohne Anhang", unabhängig vom Datenbankwert. Jetzt wird `document_submission_id` ausgewertet. | Zeile 528 trägt noch das feste „Ohne Anhang" — **Fehler vorhanden** |
 | `8ff510a` | `admin/dokumenteingang-supabase.js` | Die Rolle wurde aus der Menübeschriftung abgeleitet statt aus `profiles` der laufenden Sitzung gelesen; dazu eine ehrliche Meldung bei fehlender Anmeldung oder fehlender Admin-Rolle. | `auth_user_id` kommt in der Datei **nicht vor** — Fehler vorhanden |
@@ -47,7 +49,7 @@ behobene Portalfehler.
 Gemessen, nicht vermutet: Die drei Suchen nach `Ohne Anhang`, `auth_user_id`
 und `dokumentfristen` wurden auf dem aktuellen Branch ausgeführt.
 
-**Daraus folgt:** Würde heute aus `feature/014` heraus veröffentlicht, käme der
+**Daraus folgt:** Würde heute aus `feature/016` heraus veröffentlicht, käme der
 alte, fehlerhafte Stand dieser vier Dateien mit — das Übernahme-Werkzeug
 kopiert `admin/` und `fahrer/` byteweise so, wie sie im Branch liegen. Die
 Korrekturen wären wieder weg.
@@ -58,12 +60,12 @@ Die Korrekturen aus `feature/011` müssen im **tatsächlichen
 Veröffentlichungsstand** enthalten sein, also in genau dem Commit, aus dem
 gebaut und hochgeladen wird.
 
-> **Ein Merge nach `dev` allein aktualisiert `feature/014` nicht.**
+> **Ein Merge nach `dev` allein aktualisiert `feature/016` nicht.**
 
 Die Kette 012 → 013 → 014 hängt an `dev` in seinem Stand vom 19.09.2026.
-Landet `feature/011` danach in `dev`, ändert das an `feature/014` nichts —
+Landet `feature/011` danach in `dev`, ändert das an `feature/016` nichts —
 die vier Dateien bleiben dort im alten Stand, bis `feature/014` den neuen
-`dev`-Stand selbst übernimmt. Wer aus `feature/014` baut, baut die Fehler mit
+`dev`-Stand selbst übernimmt. Wer aus `feature/016` baut, baut die Fehler mit
 ein, auch wenn `dev` längst korrigiert ist.
 
 Vor der Veröffentlichung ist also zu prüfen, ob der Veröffentlichungsstand die
@@ -464,10 +466,90 @@ nicht.
 
 ---
 
-## 10. Nächster Schritt
+## 10. Rewards-Seite und Yumak (Schritt 016)
 
-**Schritt 015 — Unterseiten.** Branch `feature/015-unterseiten` von
-`feature/014-startseite`.
+`rewards.html` kommt seit Schritt 016 aus Astro, unter derselben Adresse.
+
+**Was unverändert blieb:** `customer-auth.js`, alle Migrationen, `admin/`,
+`fahrer/`, die alte `rewards.html` im Repository. An
+`rewards-customer.js` wurden **6 Zeilen ergänzt, keine geändert** — nach dem
+Laden werden dieselben Daten zusätzlich als Ereignis weitergereicht, damit die
+neue Seite Fortschritt und Stufe daraus ableiten kann. Kein zweiter Aufruf,
+kein veränderter Wert.
+
+**Keine erfundenen Kontodaten.** Das Beispielkonto der Vorschau
+(`VORSCHAU_KONTO`) ist bewusst nicht übernommen. Punkte, Stufe,
+qualifizierende Fahrten und Drehs erscheinen ausschließlich aus
+`get_my_rewards_overview`. Ohne Anmeldung steht dort ein Gedankenstrich —
+nachgemessen: im Kontobereich keine einzige Ziffer.
+
+**Vier Zustände:** lädt, ohne Anmeldung, geladen (mit eigenem Hinweis bei
+leerem Konto), Ladefehler mit Wiederholung und Telefonnummer.
+
+**Aus der Übernahmeliste genommen:** `rewards.html` (kommt aus Astro) und
+`rewards-customer.css` (wurde nur von der alten Seite gebraucht).
+
+**Yumak** als wiederverwendbare Komponente `src/components/Yumak.astro` mit
+zentralem Controller an `window.Yumak`: `spiele`, `sage`, `ruhe`,
+`anhalten`, `fortsetzen`. Nur idle, wave und curious; graue Fassungen,
+lighten, Bodenmaske. Standbild bei reduzierter Bewegung, Ladefehler und
+abgelehntem Autoplay. Pause außerhalb des Bildes und bei verborgenem Tab.
+
+### Offener Fehler — Yumak startet nicht von selbst
+
+> **Nicht behoben. Nicht als gelöst melden.**
+
+Beobachtung des Auftraggebers am 21.09.2026: Nach dem Neuladen der Seite
+bewegt sich Yumak nicht. Erst „Bewegung anhalten" und danach „Bewegung
+fortsetzen" startet die Animation.
+
+Die Ursache ist **nicht gesucht und nicht gefunden** — die weitere
+Fehlersuche wurde auf Anweisung ausgesetzt. Zweiter offener Punkt: Die
+automatisierte Prüfung hatte den Start gemeldet, sie hat den Fehler also
+nicht erfasst.
+
+**Zwischenlösung, nicht Behebung:** `STANDBILD_NUR = true` in
+`Yumak.astro`. Die Kundenansicht zeigt nur das freigegebene graue Standbild;
+die Bedienschaltfläche wird nicht mehr ausgegeben. Controller, Videos und die
+vollständige Ablauflogik bleiben erhalten und sind hinter dem Schalter
+erreichbar. Ein Umlegen auf `false` bringt den Fehler zurück.
+
+### Funktionaler Abschluss von Schritt 016
+
+- **Anmeldung und Rückkehr:** `anmelden.html` nimmt `?weiter=` entgegen und
+  springt danach zurück. Das Ziel wird gegen eine feste Liste geprüft
+  (`ERLAUBTE_ZIELE`), ein fremdes Ziel fällt auf `meinkonto.html` zurück —
+  damit ist keine Weiterleitung nach außen möglich. Der Rewards-Knopf zeigt
+  auf `anmelden.html?weiter=rewards.html`.
+- **Gewinnverlauf** aus `rewards_wheel_spins`, dieselbe Abfrage wie in
+  `spiele.js`, die letzten zehn Einträge. Eigene Zustände für lädt, leer,
+  Fehler und Liste.
+- **Abmelden** ruft `signOut` und leert anschließend Name, Punkte, Status,
+  Kennzahlen und Gewinnverlauf aus dem Dokument (`persoenlichesLeeren()`).
+- **Interne Entwicklungshinweise** aus der Kundenansicht entfernt.
+
+Nicht verändert: Authentifizierung, Punkteberechnung, Berechtigungen,
+Datenbankstruktur.
+
+---
+
+## 11. Nächster Schritt
+
+**Schritt 017 — Unterseiten.** Branch `feature/017-unterseiten` von
+`feature/016-rewards-yumak`.
+
+Vorher offen, unabhängig von der Reihenfolge:
+
+- **Der Yumak-Startfehler** (siehe Abschnitt 10). Solange er offen ist,
+  bleibt `STANDBILD_NUR = true`. Dazu gehört die Frage, warum die
+  automatisierte Prüfung ihn nicht erfasst hat.
+- **Die echte Anmeldung ist ungeprüft.** Alle Kontodarstellungen wurden mit
+  isolierten Testdaten geprüft, nicht gegen die produktive Instanz.
+- **Die Korrekturen aus `feature/011`** (Abschnitt 2) — Voraussetzung jeder
+  Veröffentlichung.
+- **`spiele.html`** stammt weiter aus dem Bestand.
+- Fünf Yumak-Clips (happy, reach, box, sleep, walk-right) sind aufbereitet,
+  aber weder farbkorrigiert noch verwendet.
 
 Zur Auswahl, in dieser Reihenfolge sinnvoll:
 

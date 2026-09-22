@@ -1,0 +1,670 @@
+---
+/**
+ * Rewards — unter derselben Adresse wie bisher: rewards.html
+ *
+ * Gestaltung nach der freigegebenen Vorschau (RewardsSeite.tsx, Commit
+ * 113a73e). Die Anbindung ist die bestehende und unveraendert:
+ *
+ *   customer-auth.js      Anmeldung und Sitzung. NICHT angefasst.
+ *   rewards-customer.js   liest rpc('get_my_rewards_overview') und schreibt
+ *                         in die Einhaengepunkte [data-rewards-*]. Bis auf
+ *                         ein zusaetzliches Ereignis unveraendert.
+ *
+ * ══ GRENZE, DIE HIER GILT ══════════════════════════════════════════════
+ *
+ * Auf dieser Seite steht KEINE einzige erfundene Kontozahl. Die Vorschau
+ * hatte ein Beispielkonto (VORSCHAU_KONTO) - das ist hier bewusst NICHT
+ * uebernommen. Punkte, Stufe, qualifizierende Fahrten und verfuegbare Drehs
+ * erscheinen ausschliesslich, wenn sie aus get_my_rewards_overview kommen.
+ * Vorher und ohne Anmeldung steht dort ein Gedankenstrich.
+ *
+ * Was auf der Seite an Zahlen fest steht, sind REGELN des Programms aus den
+ * Migrationen 005 und 007 - keine Kontodaten.
+ *
+ * Vier Zustaende, alle gestaltet:
+ *   laedt        waehrend Sitzung und Daten geholt werden
+ *   abgemeldet   ohne Sitzung: erklaert das Programm, zeigt keine Kontodaten
+ *   geladen      echte Werte; bei leerem Konto ein eigener Hinweis
+ *   fehler       verstaendlich, mit Wiederholung und Telefonnummer
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import Yumak from '../components/Yumak.astro';
+import Abschnitt from '../components/Abschnitt.astro';
+import AbschnittKopf from '../components/AbschnittKopf.astro';
+import Enthuellen from '../components/Enthuellen.astro';
+import Symbol from '../components/Symbol.astro';
+import { FIRMA, REWARDS_REGELN, REWARDS_SEITE, REWARDS_STUFEN } from '../inhalte';
+
+const groesstenAnteil = Math.max(...REWARDS_REGELN.gewinne.map((g) => g.anteil));
+
+const AKTIONEN = [
+  {
+    titel: 'Spielewelt öffnen',
+    text: 'Taxi Rush ist sofort spielbar – ohne Anmeldung und ohne Einfluss auf Rewards.',
+    ziel: 'spiele.html',
+    aktion: 'Zu den Spielen',
+    verfuegbar: true,
+    yumak: 'In der Spielewelt wartet Taxi Rush.',
+  },
+  {
+    titel: 'Fahrt anfragen',
+    text: 'Qualifizierende Fahrten sind die Grundlage für Drehs.',
+    ziel: 'index.html?page=booking',
+    aktion: 'Fahrt anfragen',
+    verfuegbar: true,
+    yumak: 'Eine Fahrt anfragen geht auch telefonisch.',
+  },
+  {
+    titel: 'Glücksrad drehen',
+    text: 'Noch nicht freigeschaltet. Gesammelte Drehs bleiben erhalten.',
+    ziel: null,
+    aktion: 'Noch nicht verfügbar',
+    verfuegbar: false,
+    yumak: null,
+  },
+  {
+    titel: 'Gutscheine ansehen',
+    text: 'Verfügbare und bereits verwendete Gutscheine liegen im persönlichen Konto.',
+    ziel: 'wallet-gutscheine.html',
+    aktion: 'Zum Konto',
+    verfuegbar: true,
+    yumak: null,
+  },
+];
+---
+
+<Grundlage
+  titel="Rewards | Taxi Germersheim GmbH"
+  beschreibung="Das Rewards-Programm der Taxi Germersheim GmbH: Punkte sammeln, Stufen erreichen und Drehs am Glücksrad verdienen."
+>
+  <Kopfbereich startseite={false} />
+
+  <main class="pt-16 lg:pt-20">
+    {/* ══ Kopf und Mitgliedskarte ═══════════════════════════════════════ */}
+    <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pt-10 lg:pt-14 pb-14 lg:pb-20">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">
+        <span aria-hidden="true">←</span> Startseite
+      </a>
+
+      <div class="mt-8 grid lg:grid-cols-[minmax(0,1fr)_minmax(0,32rem)] gap-10 lg:gap-16 items-center">
+        <div>
+          <p class="text-[11px] font-semibold tracking-[0.3em] uppercase text-primary">{REWARDS_SEITE.label}</p>
+          <h1 class="mt-4 font-semibold tracking-[-0.03em] leading-[1.02] text-foreground" style="font-size: clamp(2.25rem, 4.8vw, 4rem)">
+            {REWARDS_SEITE.titelOben}<br /><span class="text-primary">{REWARDS_SEITE.titelUnten}</span>
+          </h1>
+          <p class="mt-5 text-[17px] lg:text-lg text-muted-foreground leading-relaxed max-w-lg">{REWARDS_SEITE.text}</p>
+
+          {/* ── Zustand: laedt ──────────────────────────────────────── */}
+          <div class="mt-8 flex items-center gap-3 text-muted-foreground" data-rewards-loading role="status">
+            <span class="w-4 h-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" aria-hidden="true"></span>
+            {REWARDS_SEITE.laedt}
+          </div>
+
+          {/* ── Zustand: ohne Anmeldung ─────────────────────────────── */}
+          {/* `weiter=rewards.html` bringt den Fahrgast nach der Anmeldung
+              hierher zurueck statt ins Konto. */}
+          <div class="mt-8" data-rewards-abgemeldet hidden>
+            <div class="flex flex-wrap gap-3">
+              <a href="anmelden.html?weiter=rewards.html" class="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold hover:bg-[#d4b87d] tg-press">
+                Anmelden
+                <Symbol name="pfeil" class="w-[18px] h-[18px]" />
+              </a>
+              <a href="registrieren.html" class="inline-flex items-center gap-2 border border-border px-6 py-3.5 text-[15px] font-medium text-foreground hover:border-foreground/40 tg-press">
+                Konto anlegen
+              </a>
+            </div>
+          </div>
+
+          {/* ── Angemeldet: Abmelden ────────────────────────────────── */}
+          <div class="mt-8 flex flex-wrap items-center gap-4" data-rewards-angemeldet hidden>
+            <a href="meinkonto.html" class="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold hover:bg-[#d4b87d] tg-press">
+              Mein Konto
+              <Symbol name="pfeil" class="w-[18px] h-[18px]" />
+            </a>
+            <button type="button" class="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4" data-rewards-abmelden>
+              Abmelden
+            </button>
+          </div>
+
+          {/* ── Zustand: Fehler ─────────────────────────────────────── */}
+          <div class="mt-8 border border-amber-700/35 bg-amber-950/25 p-5 lg:p-6 max-w-xl" data-rewards-error role="alert" hidden>
+            <h2 class="text-[17px] font-semibold text-foreground">{REWARDS_SEITE.fehler.titel}</h2>
+            <p class="mt-2 text-[15px] text-muted-foreground leading-relaxed">{REWARDS_SEITE.fehler.text}</p>
+            <div class="mt-5 flex flex-wrap gap-3">
+              <button type="button" class="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold tg-press" data-rewards-erneut>
+                {REWARDS_SEITE.fehler.aktion}
+              </button>
+              <a href={FIRMA.telefonLink} class="inline-flex items-center gap-2 border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:border-foreground/40 tg-press">
+                <Symbol name="telefon" class="w-4 h-4" /> {FIRMA.telefon}
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Digitale Mitgliedskarte ───────────────────────────────── */}
+        <div class="relative">
+          <div
+            class="relative overflow-hidden border border-primary/25 p-8 lg:p-10"
+            style="background: linear-gradient(145deg, #262530 0%, #1c1b21 40%, #26221c 76%, #332b22 100%); box-shadow: 0 40px 90px -30px rgba(0,0,0,0.92); aspect-ratio: 1.586 / 1"
+          >
+            <div aria-hidden="true" class="absolute inset-0 pointer-events-none" style="background: radial-gradient(120% 85% at 86% 6%, rgba(200,169,110,0.28) 0%, rgba(200,169,110,0) 56%)"></div>
+            <div aria-hidden="true" class="absolute inset-0 pointer-events-none opacity-[0.07]" style="background-image: repeating-linear-gradient(115deg, #c8a96e 0 1px, transparent 1px 13px)"></div>
+
+            <div class="relative h-full flex flex-col justify-between">
+              <div class="flex items-start justify-between gap-4">
+                <img src="/assets/brand/taxi-germersheim-logo.svg" alt="Taxi Germersheim GmbH" class="h-11 lg:h-12 w-auto" />
+                <div class="text-right">
+                  <p class="text-[10px] uppercase tracking-[0.22em] text-white/45">Rewards</p>
+                  <p class="text-lg lg:text-xl font-semibold text-primary mt-1 leading-none" data-rewards-level>—</p>
+                </div>
+              </div>
+
+              <div>
+                <p class="text-[10px] uppercase tracking-[0.22em] text-white/45">Mitglied</p>
+                <p class="mt-1.5 text-xl lg:text-2xl font-medium text-white truncate" data-rewards-customer-name>Nicht angemeldet</p>
+              </div>
+
+              <div class="flex items-end justify-between gap-6">
+                <div>
+                  <p class="text-[10px] uppercase tracking-[0.22em] text-white/45">Punkte</p>
+                  <p class="mt-1.5 text-4xl lg:text-5xl font-semibold tabular-nums text-white leading-none" data-rewards-points>—</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-[10px] uppercase tracking-[0.22em] text-white/45">Status</p>
+                  <p class="mt-1.5 text-[15px] font-medium text-white/85" data-rewards-status>—</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* ══ Kennzahlen und Fortschritt — nur mit echten Daten ═══════════ */}
+    <Abschnitt class="border-t border-border">
+      <div data-rewards-content hidden>
+        <Enthuellen>
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-border border border-border">
+            <div class="bg-background p-6 lg:p-7">
+              <p class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Punkte</p>
+              <p class="mt-2 text-3xl lg:text-4xl font-semibold tabular-nums text-foreground leading-none" data-rewards-punkte-gross>—</p>
+            </div>
+            <div class="bg-background p-6 lg:p-7">
+              <p class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Stufe</p>
+              <p class="mt-2 text-3xl lg:text-4xl font-semibold text-primary leading-none" data-rewards-stufe-gross>—</p>
+            </div>
+            <div class="bg-background p-6 lg:p-7">
+              <p class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Qualifizierende Fahrten</p>
+              <p class="mt-2 text-3xl lg:text-4xl font-semibold tabular-nums text-foreground leading-none" data-rewards-rides>—</p>
+            </div>
+            <div class="bg-background p-6 lg:p-7">
+              <p class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Verfügbare Drehs</p>
+              <p class="mt-2 text-3xl lg:text-4xl font-semibold tabular-nums text-primary leading-none" data-rewards-spins>—</p>
+            </div>
+          </div>
+        </Enthuellen>
+
+        {/* Leeres Konto: eigener Hinweis, damit lauter Nullen nicht wie ein
+            Fehler aussehen. */}
+        <div class="mt-8 border border-border p-7 lg:p-9" data-rewards-leer hidden>
+          <h2 class="text-xl lg:text-2xl font-semibold text-foreground">{REWARDS_SEITE.leer.titel}</h2>
+          <p class="mt-3 text-[16px] text-muted-foreground leading-relaxed max-w-2xl">{REWARDS_SEITE.leer.text}</p>
+        </div>
+
+        {/* Fortschritt zum nächsten Dreh */}
+        <div class="mt-8 border border-border p-7 lg:p-9" data-rewards-fortschritt hidden>
+          <div class="flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <h2 class="text-xl lg:text-2xl font-semibold text-foreground">Nächster Dreh</h2>
+              <p class="mt-2 text-muted-foreground">
+                Noch <strong class="text-primary tabular-nums text-lg" data-rewards-bis-dreh>—</strong>
+                <span data-rewards-bis-dreh-wort>qualifizierende Fahrten</span>.
+              </p>
+            </div>
+            <p class="text-4xl lg:text-5xl font-semibold tabular-nums text-foreground leading-none">
+              <span data-rewards-rest>—</span>
+              <span class="text-muted-foreground/50 text-2xl lg:text-3xl"> / {REWARDS_REGELN.fahrtenProDreh}</span>
+            </p>
+          </div>
+
+          <div
+            class="mt-7 grid gap-2"
+            style={`grid-template-columns: repeat(${REWARDS_REGELN.fahrtenProDreh}, minmax(0,1fr))`}
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax={REWARDS_REGELN.fahrtenProDreh}
+            data-rewards-balken
+          >
+            {Array.from({ length: REWARDS_REGELN.fahrtenProDreh }, (_, i) => (
+              <span class="h-3 bg-secondary" data-feld={i}></span>
+            ))}
+          </div>
+
+          <p class="mt-5 text-[15px] text-muted-foreground leading-relaxed max-w-2xl">
+            Je <strong class="text-foreground tabular-nums">{REWARDS_REGELN.fahrtenProDreh}</strong> qualifizierende
+            Fahrten ergeben einen Dreh. Drehs sammeln sich an und kosten keine Punkte.
+          </p>
+        </div>
+
+        {/* ── Gewinnverlauf ───────────────────────────────────────────
+            Dieselbe Abfrage, die spiele.js schon benutzt:
+            rewards_wheel_spins, gefiltert auf das eigene Rewards-Konto,
+            neueste zuerst. Nur gelesen - es wird nichts geschrieben und
+            nichts ausgeloest. */}
+        <div class="mt-8 border border-border p-7 lg:p-9" data-rewards-verlauf hidden>
+          <h2 class="text-xl lg:text-2xl font-semibold text-foreground">Ihre Gewinne</h2>
+
+          <p class="mt-3 text-muted-foreground" data-verlauf-laedt>Wird geladen …</p>
+
+          <p class="mt-3 text-[16px] text-muted-foreground leading-relaxed max-w-2xl" data-verlauf-leer hidden>
+            Hier erscheinen Ihre Gewinne, sobald Sie am Glücksrad gedreht haben.
+          </p>
+
+          <p class="mt-3 text-[16px] text-muted-foreground leading-relaxed max-w-2xl" data-verlauf-fehler hidden>
+            Der Gewinnverlauf konnte gerade nicht geladen werden. Ihre Punkte oben
+            sind davon nicht betroffen.
+          </p>
+
+          <ul class="mt-6 divide-y divide-border border-t border-border" data-verlauf-liste hidden></ul>
+        </div>
+      </div>
+
+      {/* Ohne Anmeldung: erklärt, statt Platzhalterzahlen zu zeigen. */}
+      <div data-rewards-abgemeldet-block hidden>
+        <Enthuellen>
+          <div class="border border-border p-7 lg:p-10">
+            <h2 class="text-2xl lg:text-3xl font-semibold text-foreground max-w-2xl leading-snug">{REWARDS_SEITE.ohneAnmeldung.titel}</h2>
+            <p class="mt-4 text-[17px] text-muted-foreground leading-relaxed max-w-2xl">{REWARDS_SEITE.ohneAnmeldung.text}</p>
+          </div>
+        </Enthuellen>
+      </div>
+
+      {/* ── Stufen ─────────────────────────────────────────────────── */}
+      <Enthuellen verzoegerung={90}>
+        <div class="mt-14 lg:mt-20">
+          <h2 class="text-xl lg:text-2xl font-semibold text-foreground">Stufen</h2>
+          <ol class="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {REWARDS_STUFEN.map((stufe, i) => (
+              <li>
+                <div class="border border-border p-5 text-center transition-colors duration-200" data-stufe={stufe}>
+                  <p class="text-[11px] tabular-nums text-muted-foreground/70">{String(i + 1).padStart(2, '0')}</p>
+                  <p class="mt-2 text-[15px] font-semibold text-muted-foreground" data-stufe-name>{stufe}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <p class="mt-6 text-[15px] text-muted-foreground leading-relaxed max-w-3xl">
+            Welche Vorteile die einzelnen Stufen bringen, stimmen wir gerade ab.
+            Sobald das feststeht, finden Sie es hier.
+          </p>
+        </div>
+      </Enthuellen>
+    </Abschnitt>
+
+    {/* ══ Die Regeln ══════════════════════════════════════════════════ */}
+    <Abschnitt hell>
+      <Enthuellen>
+        <AbschnittKopf
+          hell
+          label="Regeln"
+          titel="So entstehen Drehs und Gewinne."
+          text="Alle Werte stammen aus den hinterlegten Regeln des Projekts."
+        />
+      </Enthuellen>
+
+      <div class="mt-12 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
+        <Enthuellen verzoegerung={60}>
+          <ul class="grid sm:grid-cols-2 gap-px bg-black/10 border border-black/10">
+            {[
+              { wert: String(REWARDS_REGELN.fahrtenProDreh), einheit: 'Fahrten', text: 'ergeben einen Dreh am Glücksrad.' },
+              { wert: String(REWARDS_REGELN.punktkostenProDreh), einheit: 'Punkte', text: 'kostet ein Dreh.' },
+              { wert: String(REWARDS_REGELN.gutscheinGueltigTage), einheit: 'Tage', text: 'ist ein gewonnener Gutschein gültig.' },
+              { wert: String(REWARDS_REGELN.geburtstagsbonusPunkte), einheit: 'Punkte', text: 'Geburtstagsbonus, einmal im Jahr.' },
+            ].map((r) => (
+              <li class="bg-[var(--color-hell)] p-7 lg:p-9">
+                <p class="flex items-baseline gap-2.5">
+                  <span class="text-5xl lg:text-6xl font-semibold tabular-nums text-[var(--color-hell-foreground)] leading-none">{r.wert}</span>
+                  <span class="text-[15px] font-medium text-[var(--color-hell-label)]">{r.einheit}</span>
+                </p>
+                <p class="mt-4 text-[16px] text-[var(--color-hell-muted)] leading-relaxed">{r.text}</p>
+              </li>
+            ))}
+          </ul>
+          <p class="mt-4 text-xs text-[#8a8175]">Drehs sammeln sich an und verfallen nicht.</p>
+        </Enthuellen>
+
+        <Enthuellen verzoegerung={120}>
+          <div class="bg-white/70 border border-black/10 p-7 lg:p-8 h-full">
+            <h3 class="text-lg font-semibold text-[var(--color-hell-foreground)]">Gewinne am Glücksrad</h3>
+            <ul class="mt-6 space-y-3.5">
+              {REWARDS_REGELN.gewinne.map((g) => (
+                <li>
+                  <div class="flex items-center justify-between gap-4 text-[15px]">
+                    <span class="text-[#3f3a32]">{g.name}</span>
+                    <span class="font-semibold tabular-nums text-[var(--color-hell-foreground)]">{g.anteil} %</span>
+                  </div>
+                  <span aria-hidden="true" class="mt-1.5 block h-1.5 bg-black/[0.07]">
+                    <span class="block h-full bg-[#c8a96e]" style={`width: ${(g.anteil / groesstenAnteil) * 100}%`}></span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p class="mt-7 pt-5 border-t border-black/10 text-[13px] text-[#6b6458] leading-relaxed">
+              Das Glücksrad ist derzeit noch nicht freigeschaltet. Ihre Drehs bleiben
+              so lange erhalten.
+            </p>
+          </div>
+        </Enthuellen>
+      </div>
+    </Abschnitt>
+
+    {/* ══ Aktionen und Yumak ══════════════════════════════════════════ */}
+    <Abschnitt>
+      <div class="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] gap-10 lg:gap-16 items-start">
+        <div>
+          <Enthuellen>
+            <AbschnittKopf label="Weiter" titel="Was Sie jetzt tun können." />
+          </Enthuellen>
+
+          <div class="mt-10 grid sm:grid-cols-2 gap-px bg-border border border-border">
+            {AKTIONEN.map((a) => (
+              <div class="bg-background p-7 lg:p-8 flex flex-col">
+                <h3 class="text-[17px] font-semibold text-foreground">{a.titel}</h3>
+                <p class="mt-2.5 text-[15px] text-muted-foreground leading-relaxed flex-1">{a.text}</p>
+                {a.ziel ? (
+                  <a
+                    href={a.ziel}
+                    class="mt-5 inline-flex items-center gap-2 text-[15px] font-medium text-primary hover:text-[#dcc189] tg-press self-start"
+                    data-yumak-aufmerksam={a.yumak ?? undefined}
+                  >
+                    {a.aktion}
+                    <Symbol name="pfeil" class="w-4 h-4" />
+                  </a>
+                ) : (
+                  <span class="mt-5 inline-flex items-center gap-2 text-[15px] text-muted-foreground/70 self-start">{a.aktion}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Enthuellen verzoegerung={100}>
+          <div class="bg-card border border-border p-6 lg:p-7">
+            <Yumak class="mx-auto" />
+            <p class="mt-5 text-center font-semibold text-foreground">Yumak</p>
+            <p class="text-center text-xs uppercase tracking-[0.18em] text-primary/80 mt-1">Gastgeber der Spielewelt</p>
+            <p class="mt-4 text-center text-sm text-muted-foreground leading-relaxed">
+              Yumak zeigt, was es in der Spielewelt zu entdecken gibt.
+            </p>
+            <a href="spiele.html" class="mt-6 flex items-center justify-center gap-2 text-sm font-medium text-primary hover:text-[#d4b87d] tg-press">
+              Yumaks Spielewelt
+              <Symbol name="pfeil" class="w-4 h-4" />
+            </a>
+          </div>
+        </Enthuellen>
+      </div>
+    </Abschnitt>
+  </main>
+
+  <Fusszeile startseite={false} />
+
+  {/* Die bestehende Anbindung, unveraendert eingebunden. Reihenfolge zaehlt:
+      customer-auth.js legt window.CustomerAuth an, rewards-customer.js
+      window.CustomerRewards. */}
+  <script is:inline src="/customer-auth.js"></script>
+  <script is:inline src="/rewards-customer.js"></script>
+</Grundlage>
+
+<script>
+  import { REWARDS_REGELN, REWARDS_STUFEN } from '../inhalte';
+
+  type Uebersicht = {
+    customer_name?: string;
+    status?: string;
+    points_balance?: number;
+    level?: string;
+    qualifying_rides?: number;
+    available_spins?: number;
+    rewards_account_id?: string;
+  };
+
+  const el = <T extends HTMLElement>(s: string) => document.querySelector<T>(s);
+
+  const laedt = el('[data-rewards-loading]')!;
+  const inhalt = el('[data-rewards-content]')!;
+  const fehler = el('[data-rewards-error]')!;
+  const abgemeldet = el('[data-rewards-abgemeldet]')!;
+  const abgemeldetBlock = el('[data-rewards-abgemeldet-block]')!;
+  const leer = el('[data-rewards-leer]')!;
+  const fortschritt = el('[data-rewards-fortschritt]')!;
+  const angemeldet = el('[data-rewards-angemeldet]')!;
+  const verlauf = el('[data-rewards-verlauf]')!;
+
+  function zeige(zustand: 'laedt' | 'abgemeldet' | 'geladen' | 'fehler') {
+    laedt.hidden = zustand !== 'laedt';
+    abgemeldet.hidden = zustand !== 'abgemeldet';
+    abgemeldetBlock.hidden = zustand !== 'abgemeldet';
+    angemeldet.hidden = zustand !== 'geladen';
+    fehler.hidden = zustand !== 'fehler';
+    // `inhalt` schaltet rewards-customer.js selbst; hier nur wegnehmen.
+    if (zustand !== 'geladen') inhalt.hidden = true;
+  }
+
+  /** Alles, was ueber die Einhaengepunkte des Bestandsskripts hinausgeht -
+   *  abgeleitet aus DENSELBEN Werten, nicht aus einer zweiten Quelle. */
+  function ableiten(d: Uebersicht) {
+    const punkte = Number(d.points_balance ?? 0);
+    const fahrten = Number(d.qualifying_rides ?? 0);
+    const drehs = Number(d.available_spins ?? 0);
+
+    el('[data-rewards-punkte-gross]')!.textContent = new Intl.NumberFormat('de-DE').format(punkte);
+    el('[data-rewards-stufe-gross]')!.textContent = el('[data-rewards-level]')!.textContent || '—';
+
+    // Leeres Konto: lauter Nullen sehen sonst wie ein Fehler aus.
+    const istLeer = fahrten === 0 && punkte === 0 && drehs === 0;
+    leer.hidden = !istLeer;
+    fortschritt.hidden = istLeer;
+    if (istLeer) return;
+
+    const proDreh = REWARDS_REGELN.fahrtenProDreh;
+    const rest = fahrten % proDreh;
+    const bis = proDreh - rest;
+    el('[data-rewards-rest]')!.textContent = String(rest);
+    el('[data-rewards-bis-dreh]')!.textContent = String(bis);
+    el('[data-rewards-bis-dreh-wort]')!.textContent = bis === 1 ? 'qualifizierende Fahrt' : 'qualifizierende Fahrten';
+
+    const balken = el('[data-rewards-balken]')!;
+    balken.setAttribute('aria-valuenow', String(rest));
+    balken.setAttribute('aria-label', `Fortschritt zum nächsten Dreh: ${rest} von ${proDreh} Fahrten`);
+    for (const f of balken.querySelectorAll<HTMLElement>('[data-feld]')) {
+      const voll = Number(f.dataset.feld) < rest;
+      f.classList.toggle('bg-primary', voll);
+      f.classList.toggle('bg-secondary', !voll);
+    }
+
+    // Stufen hervorheben - allein anhand des gelieferten Namens.
+    const i = REWARDS_STUFEN.indexOf((d.level ?? '') as (typeof REWARDS_STUFEN)[number]);
+    for (const [j, name] of REWARDS_STUFEN.entries()) {
+      const k = document.querySelector<HTMLElement>(`[data-stufe="${name}"]`);
+      if (!k) continue;
+      const erreicht = i >= 0 && j <= i;
+      const aktuell = i >= 0 && j === i;
+      k.classList.toggle('border-primary', aktuell);
+      k.classList.toggle('bg-primary/[0.07]', aktuell);
+      k.querySelector('[data-stufe-name]')!.classList.toggle('text-foreground', erreicht);
+      k.querySelector('[data-stufe-name]')!.classList.toggle('text-muted-foreground', !erreicht);
+    }
+  }
+
+  // ── Gewinnverlauf ────────────────────────────────────────────────────
+  //
+  // Dieselbe Abfrage wie in spiele.js: rewards_wheel_spins, auf das eigene
+  // Rewards-Konto gefiltert, neueste zuerst. Ausschliesslich LESEND - es wird
+  // nichts geschrieben, nichts gutgeschrieben und nichts ausgeloest.
+  //
+  // Die Beschriftung der Gewinne ist woertlich aus spiele.js uebernommen,
+  // damit dieselbe Zeile auf beiden Seiten gleich heisst.
+  function gewinnName(eintrag: { points_awarded?: number; prize_type?: string }) {
+    const punkte = Number(eintrag?.points_awarded);
+    if (Number.isFinite(punkte) && punkte > 0) return new Intl.NumberFormat('de-DE').format(punkte) + ' Punkte';
+    if (eintrag?.prize_type === 'voucher_20') return '20,00 € Gutschein';
+    if (eintrag?.prize_type === 'yumaks_box') return 'Yumaks Box';
+    return 'Reward';
+  }
+
+  function datum(wert?: string) {
+    const d = wert ? new Date(wert) : null;
+    if (!d || Number.isNaN(d.getTime())) return 'Datum nicht verfügbar';
+    return new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
+  }
+
+  function verlaufZustand(was: 'laedt' | 'leer' | 'fehler' | 'liste') {
+    el('[data-verlauf-laedt]')!.hidden = was !== 'laedt';
+    el('[data-verlauf-leer]')!.hidden = was !== 'leer';
+    el('[data-verlauf-fehler]')!.hidden = was !== 'fehler';
+    el('[data-verlauf-liste]')!.hidden = was !== 'liste';
+  }
+
+  async function verlaufLaden(kontoId?: string) {
+    verlauf.hidden = false;
+    verlaufZustand('laedt');
+    const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
+    try {
+      const client = auth && typeof auth.getClient === 'function' ? await auth.getClient() : null;
+      if (!client || typeof client.from !== 'function' || !kontoId) throw new Error('VERLAUF_NICHT_VERFUEGBAR');
+
+      const ergebnis = await client
+        .from('rewards_wheel_spins')
+        .select('id, prize_type, points_awarded, created_at, fulfillment_status')
+        .eq('rewards_account_id', kontoId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (ergebnis.error) throw ergebnis.error;
+
+      const zeilen = ergebnis.data || [];
+      if (!zeilen.length) { verlaufZustand('leer'); return; }
+
+      const liste = el('[data-verlauf-liste]')!;
+      liste.textContent = '';
+      for (const z of zeilen) {
+        const li = document.createElement('li');
+        li.className = 'flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3.5';
+        const name = document.createElement('span');
+        name.className = 'text-[16px] font-medium text-foreground';
+        name.textContent = gewinnName(z);
+        const wann = document.createElement('time');
+        wann.className = 'text-sm text-muted-foreground tabular-nums';
+        wann.dateTime = z.created_at || '';
+        wann.textContent = datum(z.created_at);
+        const stand = document.createElement('span');
+        stand.className = 'text-sm text-muted-foreground';
+        // Nur bei der Box ist der Bearbeitungsstand fuer den Fahrgast von
+        // Belang; sonst waere es Verwaltungssprache.
+        stand.textContent =
+          z.prize_type === 'yumaks_box' && String(z.fulfillment_status || '').toLowerCase() === 'pending'
+            ? 'in Bearbeitung'
+            : '';
+        li.append(name, wann, stand);
+        liste.appendChild(li);
+      }
+      verlaufZustand('liste');
+    } catch {
+      verlaufZustand('fehler');
+    }
+  }
+
+  document.addEventListener('tg:rewards-geladen', (e) => {
+    const d = (e as CustomEvent<Uebersicht>).detail || {};
+    zeige('geladen');
+    inhalt.hidden = false;
+    ableiten(d);
+    verlaufLaden(d.rewards_account_id);
+  });
+  document.addEventListener('tg:rewards-fehler', () => zeige('fehler'));
+
+  // ── Abmelden: persoenliche Angaben verschwinden ──────────────────────
+  //
+  // Zuerst die Anzeige leeren, dann abmelden. Andersherum bliebe der Name
+  // sichtbar, bis die Abmeldung durch ist.
+  function persoenlichesLeeren() {
+    const striche: Record<string, string> = {
+      '[data-rewards-customer-name]': 'Nicht angemeldet',
+      '[data-rewards-points]': '—',
+      '[data-rewards-level]': '—',
+      '[data-rewards-status]': '—',
+      '[data-rewards-punkte-gross]': '—',
+      '[data-rewards-stufe-gross]': '—',
+      '[data-rewards-rides]': '—',
+      '[data-rewards-spins]': '—',
+      '[data-rewards-rest]': '—',
+      '[data-rewards-bis-dreh]': '—',
+    };
+    for (const [auswahl, wert] of Object.entries(striche)) {
+      const n = el(auswahl);
+      if (n) n.textContent = wert;
+    }
+    const liste = el('[data-verlauf-liste]');
+    if (liste) liste.textContent = '';
+    verlauf.hidden = true;
+    leer.hidden = true;
+    fortschritt.hidden = true;
+    for (const f of document.querySelectorAll<HTMLElement>('[data-rewards-balken] [data-feld]')) {
+      f.classList.remove('bg-primary');
+      f.classList.add('bg-secondary');
+    }
+    for (const k of document.querySelectorAll<HTMLElement>('[data-stufe]')) {
+      k.classList.remove('border-primary', 'bg-primary/[0.07]');
+      k.querySelector('[data-stufe-name]')!.classList.remove('text-foreground');
+      k.querySelector('[data-stufe-name]')!.classList.add('text-muted-foreground');
+    }
+  }
+
+  el('[data-rewards-abmelden]')!.addEventListener('click', async () => {
+    persoenlichesLeeren();
+    zeige('laedt');
+    const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
+    try {
+      if (auth && typeof auth.signOut === 'function') await auth.signOut();
+    } catch {
+      // Auch wenn die Abmeldung beim Server scheitert: hier steht nichts
+      // Persoenliches mehr.
+    }
+    zeige('abgemeldet');
+  });
+
+  async function starten() {
+    zeige('laedt');
+    const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
+    const rewards = (window as unknown as { CustomerRewards?: any }).CustomerRewards;
+
+    if (!auth || typeof auth.hydrateSession !== 'function') { zeige('fehler'); return; }
+    try {
+      await auth.hydrateSession();
+    } catch {
+      zeige('fehler');
+      return;
+    }
+
+    // Ohne Sitzung wird NICHTS geladen und NICHTS angezeigt, was nach
+    // Kontodaten aussieht. Der Gedankenstrich auf der Karte bleibt stehen.
+    if (typeof auth.isLoggedIn === 'function' && !auth.isLoggedIn()) { zeige('abgemeldet'); return; }
+    if (!rewards || typeof rewards.load !== 'function') { zeige('fehler'); return; }
+
+    await rewards.load(auth);
+  }
+
+  el('[data-rewards-erneut]')!.addEventListener('click', () => starten());
+
+  // Die beiden Bestandsskripte sind is:inline und stehen am Seitenende.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', starten, { once: true });
+  } else {
+    starten();
+  }
+
+  // Die Ansteuerung von Yumak ist ausgebaut, solange die Figur nur als
+  // Standbild steht - siehe den offenen Fehler in Yumak.astro. Der Controller
+  // bleibt unter window.Yumak erreichbar; hier ruft ihn niemand auf.
+</script>

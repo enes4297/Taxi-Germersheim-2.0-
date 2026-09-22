@@ -65,10 +65,16 @@
 
       if (loading) loading.hidden = true;
       if (content) content.hidden = false;
+
+      /* Dieselben Daten zusaetzlich als Ereignis weiterreichen. Kein zweiter
+         Aufruf, kein veraenderter Wert - nur eine zweite Abnahmestelle fuer
+         Ansichten, die mehr brauchen als die Einhaengepunkte oben. */
+      document.dispatchEvent(new CustomEvent("tg:rewards-geladen", { detail: rewards }));
     } catch (_error) {
       if (loading) loading.hidden = true;
       if (content) content.hidden = true;
       if (errorBox) errorBox.hidden = false;
+      document.dispatchEvent(new CustomEvent("tg:rewards-fehler"));
     }
   }
 

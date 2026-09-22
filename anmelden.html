@@ -100,6 +100,17 @@
       var form = document.getElementById("loginForm");
       var params = new URLSearchParams(window.location.search);
 
+      /* Wohin nach erfolgreicher Anmeldung?
+         Standard bleibt meinkonto.html. Wer aus einem anderen Bereich kommt,
+         haengt ?weiter=... an - etwa von der Rewards-Seite aus.
+
+         SICHERHEIT: Nur Ziele aus dieser festen Liste. Ein beliebiger Wert
+         aus der Adresszeile duerfte hier niemals uebernommen werden, sonst
+         liesse sich nach der Anmeldung auf eine fremde Seite umleiten. */
+      var ERLAUBTE_ZIELE = ["rewards.html", "spiele.html", "meinkonto.html", "wallet-gutscheine.html", "meine-fahrten.html", "index.html"];
+      var weiter = params.get("weiter");
+      var zielNachAnmeldung = ERLAUBTE_ZIELE.indexOf(weiter) >= 0 ? weiter : "meinkonto.html";
+
       if (params.get("registered") === "1") {
         notice.textContent = "Registrierung erfolgreich. Bitte bestätige zuerst deine E-Mail-Adresse.";
       } else if (params.get("loggedOut") === "1") {
@@ -152,7 +163,7 @@
             throw new Error("Die Anmeldung konnte nicht abgeschlossen werden.");
           }
 
-          window.location.href = "meinkonto.html";
+          window.location.href = zielNachAnmeldung;
         } catch (loginError) {
           const message = loginError && loginError.message ? loginError.message : "E-Mail oder Passwort ist falsch.";
           error.textContent = message === "CUSTOMER_NOT_FOUND" ? "Dein Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte kontaktiere uns." : message;

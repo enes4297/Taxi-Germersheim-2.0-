@@ -1,13 +1,21 @@
 ---
 /** Fusszeile. Uebernommen aus layout.tsx der Vorschau. */
 import { COPYRIGHT, FIRMA, FOOTER_LINKS, LEISTUNGEN, NAV } from '../inhalte';
+
+interface Props {
+  startseite?: boolean;
+}
+const { startseite = true } = Astro.props;
+
+const ziel = (href: string) => (startseite || !href.startsWith('#') ? href : `index.html${href}`);
+const heim = startseite ? '#hero' : 'index.html';
 ---
 
 <footer class="bg-card border-t border-border">
   <div class="mx-auto max-w-[1400px] px-5 lg:px-10 py-16 lg:py-20">
     <div class="grid gap-12 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
       <div>
-        <a href="#hero" aria-label={`${FIRMA.name} – zum Seitenanfang`}>
+        <a href={heim} aria-label={`${FIRMA.name} – ${startseite ? "zum Seitenanfang" : "zur Startseite"}`}>
           <img src="/assets/brand/taxi-germersheim-logo.svg" alt={FIRMA.name} class="h-11 w-auto" />
         </a>
         <address class="mt-6 not-italic text-sm text-muted-foreground leading-relaxed">
@@ -28,7 +36,7 @@ import { COPYRIGHT, FIRMA, FOOTER_LINKS, LEISTUNGEN, NAV } from '../inhalte';
           <ul class="mt-4 space-y-2.5">
             {LEISTUNGEN.map((l) => (
               <li>
-                <a href={`#leistung-${l.id.toLowerCase()}`} class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">
+                <a href={ziel(`#leistung-${l.id.toLowerCase()}`)} class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">
                   {l.label}
                 </a>
               </li>
@@ -41,7 +49,7 @@ import { COPYRIGHT, FIRMA, FOOTER_LINKS, LEISTUNGEN, NAV } from '../inhalte';
           <ul class="mt-4 space-y-2.5">
             {NAV.filter((n) => n.href !== '#leistungen').map((n) => (
               <li>
-                <a href={n.href} class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">{n.label}</a>
+                <a href={ziel(n.href)} class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">{n.label}</a>
               </li>
             ))}
             <li>
@@ -58,7 +66,7 @@ import { COPYRIGHT, FIRMA, FOOTER_LINKS, LEISTUNGEN, NAV } from '../inhalte';
           <ul class="mt-4 space-y-2.5">
             {FOOTER_LINKS.map((f) => (
               <li>
-                <a href={f.href} class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">{f.label}</a>
+                <a href={ziel(f.href)} class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">{f.label}</a>
               </li>
             ))}
           </ul>

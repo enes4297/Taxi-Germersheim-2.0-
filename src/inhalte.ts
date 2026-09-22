@@ -396,3 +396,65 @@ export const FOOTER_LINKS = [
 ];
 
 export const COPYRIGHT = '© 2026 Taxi Germersheim GmbH';
+
+// ── Rewards-Seite ────────────────────────────────────────────────────────────
+//
+// ACHTUNG, GRENZE: Hier stehen ausschliesslich REGELN des Programms, keine
+// Kontodaten. Punkte, Stufe, qualifizierende Fahrten, verfuegbare Drehs und
+// der Gewinnverlauf kommen einzig aus get_my_rewards_overview beziehungsweise
+// rewards_wheel_spins. Es gibt auf dieser Seite keine Beispielwerte und keine
+// Platzhalterzahlen, die wie ein Kontostand aussehen koennten.
+//
+// Die Werte unten sind am 21.09.2026 gegen die Migrationen geprueft:
+//   5 Fahrten je Dreh, Drehs sammeln sich an, 0 Punkte Kosten,
+//   90 Tage Gutscheingueltigkeit, Wahrscheinlichkeiten wie aufgefuehrt
+//     -> public.rewards_wheel_rules(), Migration 007
+//   200 Punkte Geburtstagsbonus
+//     -> bonus_points constant integer := 200, Migration 005
+
+export const REWARDS_REGELN = {
+  /** NUR INTERN - steht nicht auf der Kundenseite. */
+  quelle: 'public.rewards_wheel_rules() · Migration 007',
+  fahrtenProDreh: 5,
+  punktkostenProDreh: 0,
+  gutscheinGueltigTage: 90,
+  geburtstagsbonusPunkte: 200,
+  gewinne: [
+    { name: '5 Punkte', anteil: 35 },
+    { name: '10 Punkte', anteil: 25 },
+    { name: '20 Punkte', anteil: 18 },
+    { name: '30 Punkte', anteil: 10 },
+    { name: '50 Punkte', anteil: 7 },
+    { name: 'Gutschein 20,00 €', anteil: 4 },
+    { name: 'Yumaks Box', anteil: 1 },
+  ],
+} as const;
+
+/**
+ * Die Stufen sind im Projekt nur als REIHENFOLGE hinterlegt
+ * (admin/rewards.js: Bronze 1, Silber 2, Gold 3, Platin 4, VIP 5).
+ * Punktschwellen und Vorteile je Stufe gibt es dort NICHT - sie werden
+ * deshalb auch nicht behauptet.
+ */
+export const REWARDS_STUFEN = ['Bronze', 'Silber', 'Gold', 'Platin', 'VIP'] as const;
+
+export const REWARDS_SEITE = {
+  label: 'Rewards',
+  titelOben: 'Treue soll',
+  titelUnten: 'sich lohnen.',
+  text: 'Für Fahrgäste, die regelmäßig mit uns fahren: Punkte sammeln, Stufen erreichen und Drehs am Glücksrad verdienen.',
+  ohneAnmeldung: {
+    titel: 'Ihr Punktestand erscheint nach der Anmeldung',
+    text: 'Punkte, Stufe und verfügbare Drehs gehören zu Ihrem persönlichen Konto. Sie werden erst nach der Anmeldung geladen und sind nur für Sie sichtbar.',
+  },
+  laedt: 'Ihre Rewards werden geladen …',
+  fehler: {
+    titel: 'Ihre Rewards konnten gerade nicht geladen werden',
+    text: 'Bitte versuchen Sie es in einem Moment noch einmal. Wenn es weiterhin nicht klappt, erreichen Sie uns telefonisch.',
+    aktion: 'Erneut versuchen',
+  },
+  leer: {
+    titel: 'Noch keine qualifizierenden Fahrten',
+    text: 'Ihr Konto ist angelegt. Sobald Fahrten dazukommen, erscheinen hier Punkte, Stufe und Drehs.',
+  },
+} as const;
