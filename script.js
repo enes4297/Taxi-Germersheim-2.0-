@@ -1111,7 +1111,7 @@
     if(fareVehicleNode) fareVehicleNode.textContent=bookingVehicleCatalog[bookingStepState.selectedVehicle]?.label || 'Kein Fahrzeugwunsch';
     if(farePriceNode) farePriceNode.textContent='Preis auf Anfrage';
     if(yumakHintNode){
-      if(bookingStepState.service==='medical') yumakHintNode.textContent='Für Krankenfahrten helfen wir dir gerne bei Fragen zur Kostenübernahme.';
+      if(bookingStepState.service==='medical') yumakHintNode.textContent='Für Krankenfahrten helfen wir Ihnen gerne bei Fragen zur Kostenübernahme.';
       else if(bookingStepState.service==='airport') yumakHintNode.textContent='Plane bitte genug Zeit für Check-in und Gepäck ein.';
       else yumakHintNode.textContent='Die Route wird ausschließlich über Google Maps dargestellt.';
     }
@@ -4847,7 +4847,7 @@
       resetOpenVisualState();
       root.dataset.mysteryState='available';
         statusNode.textContent='Mystery Box verfügbar';
-        noteNode.textContent='Öffne deine Mystery Box und entdecke eine zufällige Belohnung.';
+        noteNode.textContent='Öffnen Sie Ihre Mystery Box und entdecken Sie eine zufällige Belohnung.';
       openButton.disabled=false;
       countdownNode.hidden=true;
       resultCard.hidden=true;
@@ -5871,7 +5871,7 @@
     });
     document.addEventListener('reward.levelup',()=>{
       setReaction('voucher');
-      showTipText('Level-Up! Ich feiere mit dir.');
+      showTipText('Level-Up! Ich feiere mit Ihnen.');
       queueAutoTip();
     });
     document.addEventListener('reward.ride',()=>{
@@ -5999,11 +5999,11 @@
     const tipNode=$('[data-hero-yumak-tip]',root);
     if(!tipNode) return;
     const tips=[
-      'Heute warten Missionen und ein Glücksrad auf dich.',
-      'Dir fehlen nur noch 120 Punkte bis Platin.',
+      'Heute warten Missionen und ein Glücksrad auf Sie.',
+      'Ihnen fehlen nur noch 120 Punkte bis Platin.',
       'Noch eine Mission bis zur Mystery Box.',
-      'Heute wartet ein Extra-Dreh auf dich.',
-      'Schau dir deine neuen Abzeichen an.'
+      'Heute wartet ein Extra-Dreh auf Sie.',
+      'Sehen Sie sich Ihre neuen Abzeichen an.'
     ];
     let tipIndex=0;
     window.setInterval(()=>{
@@ -6122,7 +6122,7 @@
 
       if(type==='mystery:result'){
         const rewardType=String(payload.rewardType || '').trim().toLowerCase();
-        if(rewardType==='voucher') prependActivity({type:'voucher',icon:'🎁',title:'Mystery Box: Gutschein erhalten',text:'Dein Gutschein-Guthaben wurde erweitert.'});
+        if(rewardType==='voucher') prependActivity({type:'voucher',icon:'🎁',title:'Mystery Box: Gutschein erhalten',text:'Ihr Gutschein-Guthaben wurde erweitert.'});
         else if(rewardType==='badge') prependActivity({type:'badge',icon:'🏅',title:'Mystery Box: Abzeichen erhalten',text:'Ein neues Abzeichen wurde freigeschaltet.'});
         else prependActivity({type:'points',icon:'📦',title:'Mystery Box geöffnet',text:String(payload.title || 'Belohnung wurde verbucht.')});
         return;

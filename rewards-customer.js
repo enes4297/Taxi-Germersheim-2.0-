@@ -59,7 +59,7 @@
       setText(
         "[data-rewards-wheel-state]",
         Number(rewards.available_spins) > 0
-          ? "Du hast verfügbare Drehs. Das Glücksrad wird bald für dein Konto freigeschaltet."
+          ? "Du hast verfügbare Drehs. Das Glücksrad wird bald für Ihr Konto freigeschaltet."
           : "Aktuell ist kein Dreh verfügbar."
       );
 

@@ -48,6 +48,12 @@ export const UEBERNAHME = [
     zweck: 'Symbole, Marke und Ortsdaten - von admin/ ueber ../assets/ geladen',
     ausser: ['yumak-notes.txt'],
   },
+  {
+    von: 'vendor',
+    zweck: 'Mitgelieferte Supabase-Bibliothek, feste Version statt fremdem CDN',
+    // HERKUNFT.md ist eine interne Notiz und gehoert nicht in die Auslieferung.
+    ausser: ['HERKUNFT.md'],
+  },
 ];
 
 /**
@@ -68,6 +74,27 @@ export const UEBERNAHME = [
  *   tg-icon-original.png     - dito
  *   *.md, package*.json      - interne Dateien
  *
+ * SEIT SCHRITT 017 ausdruecklich NICHT MEHR enthalten - nachgesehen, nicht
+ * vermutet: Keine dieser drei Dateien gehoert zu einer erreichbaren
+ * Kundenfunktion. Sie bleiben im Repository liegen, sie werden nur nicht mehr
+ * ausgeliefert.
+ *   konto-einrichtung.html   - eine ausdrueckliche Demo ("Demo ohne echte
+ *                              Kontosicherheit"), die das Konto nur im Browser
+ *                              anlegt. Sie verlangt den Sitzungsschluessel
+ *                              taxiCustomerDemoRegistrationDraft - den setzt
+ *                              KEINE Datei im Projekt, auch registrieren.html
+ *                              nicht. Die Seite leitet also immer sofort auf
+ *                              registrieren.html zurueck. Kein Verweis fuehrt
+ *                              auf sie.
+ *   customer-auth-demo.js    - die Schein-Anmeldung dieser Demo, ueber
+ *                              localStorage. Sie wurde nur von
+ *                              konto-einrichtung.html geladen.
+ *   customer-journey-demo.js - 499 Zeilen, von keiner einzigen Seite geladen.
+ *
+ * WEITERHIN enthalten, trotz des Namens: auth-demo.css. Das ist eine reine
+ * Stilvorlage und wird von ELF echten Kontoseiten gebraucht. Der Name ist
+ * irrefuehrend, die Datei ist es nicht.
+ *
  * WICHTIG zu index.html und rewards.html: Beide Seiten kommen inzwischen aus
  * Astro - index.html seit Schritt 014, rewards.html seit Schritt 016. Stuenden
  * sie hier, wuerde der Bestand die neuen Seiten ueberschreiben. Genau davor
@@ -78,7 +105,7 @@ export const UEBERNAHME = [
 const WURZELDATEIEN = [
   // Oeffentliche Seiten
   '404.html', 'anmelden.html', 'datenschutz.html', 'flotte.html', 'hilfe-kontakt.html',
-  'impressum.html', 'konto-einrichtung.html', 'kunden-einstellungen.html', 'kundenkonto.html',
+  'impressum.html', 'kunden-einstellungen.html', 'kundenkonto.html',
   'live-fahrt.html', 'meine-fahrten.html', 'meinkonto.html', 'passwort-vergessen.html',
   'passwort-zuruecksetzen.html', 'registrieren.html', 'spezial-anfrage.html',
   'spezialfahrten.html', 'spiele.html', 'wallet-gutscheine.html',
@@ -88,7 +115,7 @@ const WURZELDATEIEN = [
   'public-states.css', 'public-system.css', 'public-visual-repair.css',
   'special-services.css', 'spiele.css', 'style.css', 'wallet-gutscheine.css',
   // Skripte
-  'customer-auth-demo.js', 'customer-auth.js', 'customer-journey-demo.js', 'home-luxury.js',
+  'customer-auth.js', 'home-luxury.js',
   'public-premium-v2.js', 'public-system.js', 'rewards-customer.js', 'script.js',
   'special-services.js', 'spiele.js', 'taxi-rush.js',
   // Bilder

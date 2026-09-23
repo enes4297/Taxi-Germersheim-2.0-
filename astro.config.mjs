@@ -2,6 +2,8 @@
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import bestandUebernehmen from './tools/bestand-uebernehmen.mjs';
+import suchmaschinenDateien from './tools/suchmaschinen-dateien.mjs';
+import kopfangabenBestand from './tools/kopfangaben-bestand.mjs';
 
 // Grundgeruest fuer die oeffentliche Webseite.
 //
@@ -9,6 +11,22 @@ import bestandUebernehmen from './tools/bestand-uebernehmen.mjs';
 // Mitarbeiterportal (fahrer/) und Dashboard bleiben unveraendert und werden
 // nach dem Build Datei fuer Datei uebernommen - siehe tools/bestand-uebernehmen.mjs.
 export default defineConfig({
+  // Die Adresse, unter der die Seite spaeter steht - Auskunft der
+  // Geschaeftsfuehrung vom 20.09.2026. Sie wird NUR fuer Angaben gebraucht,
+  // die zwingend vollstaendig sein muessen: canonical, Open Graph und die
+  // sitemap.xml. Suchmaschinen und Messengerdienste verlangen dort eine
+  // vollstaendige Adresse; ein relativer Pfad ist dort wertlos.
+  //
+  // WICHTIG - oertliche Vorschau und Veroeffentlichung sind zweierlei:
+  // In der oertlichen Vorschau (127.0.0.1:5200) stehen diese Angaben also
+  // bereits auf die spaetere Domain. Das ist richtig so und loest nichts aus:
+  // Es sind Textangaben im Seitenkopf, keine Weiterleitung. Wer oertlich
+  // klickt, bleibt oertlich. Veroeffentlicht wird nichts durch den Build -
+  // der Austausch gegen WordPress ist ein eigener Vorgang beim IT-Dienstleister.
+  //
+  // Sollte der Auftritt doch unter einem Unterpfad liegen, kommt `base` dazu.
+  site: 'https://taxigermersheim.de',
+
   // Eigener Ausgabeordner. "dist" bleibt frei, damit nichts mit der
   // Designvorschau verwechselt wird.
   outDir: './dist-oeffentlich',
@@ -36,5 +54,10 @@ export default defineConfig({
   // Abweichungen erzeugen. Das Ergebnis ist gewoehnliches CSS.
   vite: { plugins: [tailwindcss()] },
 
-  integrations: [bestandUebernehmen()],
+  // Reihenfolge ist bedeutungstragend:
+  //   1. bestandUebernehmen  kopiert die Bestandsseiten in den Ausgabeordner
+  //   2. kopfangabenBestand  ergaenzt dort Symbole, canonical und noindex -
+  //                          es muss also NACH dem Kopieren laufen
+  //   3. suchmaschinenDateien schreibt robots.txt und sitemap.xml
+  integrations: [bestandUebernehmen(), kopfangabenBestand(), suchmaschinenDateien()],
 });

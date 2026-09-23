@@ -32,7 +32,7 @@
   <main class="auth-shell auth-shell--split" aria-labelledby="authLoginTitle">
     <section class="auth-spotlight" aria-label="Warum ein Konto sinnvoll ist">
       <h1 id="authLoginTitle">Willkommen zurück</h1>
-      <p class="auth-spotlight-copy">Melde dich an, um deine Fahrten, Rewards und Gutscheine an einem Ort zu verwalten.</p>
+      <p class="auth-spotlight-copy">Melden Sie sich an, um Ihre Fahrten, Rewards und Gutscheine an einem Ort zu verwalten.</p>
 
       <ul class="auth-benefits" aria-label="Vorteile des Kontos">
         <li>Fahrten im Blick behalten</li>
@@ -44,7 +44,7 @@
     <section class="auth-card" aria-label="Anmeldeformular">
       <div class="auth-card-header">
         <h2 class="auth-card-kicker">Anmelden</h2>
-        <p class="auth-card-subtitle">Mit deinem Taxi-Germersheim-Konto fortfahren.</p>
+        <p class="auth-card-subtitle">Mit Ihrem Taxi-Germersheim-Konto fortfahren.</p>
       </div>
 
       <p id="authLoginNotice" class="auth-success" aria-live="polite"></p>
@@ -81,7 +81,7 @@
 
       <div class="auth-trust" aria-label="Sichere Anmeldung">
         <span class="auth-trust-icon" aria-hidden="true"></span>
-        <span>Sichere Anmeldung für dein Taxi-Germersheim-Konto</span>
+        <span>Sichere Anmeldung für Ihr Taxi-Germersheim-Konto</span>
       </div>
     </section>
   </main>
@@ -112,7 +112,7 @@
       var zielNachAnmeldung = ERLAUBTE_ZIELE.indexOf(weiter) >= 0 ? weiter : "meinkonto.html";
 
       if (params.get("registered") === "1") {
-        notice.textContent = "Registrierung erfolgreich. Bitte bestätige zuerst deine E-Mail-Adresse.";
+        notice.textContent = "Registrierung erfolgreich. Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.";
       } else if (params.get("loggedOut") === "1") {
         notice.textContent = "Sie wurden abgemeldet.";
       }
@@ -166,7 +166,7 @@
           window.location.href = zielNachAnmeldung;
         } catch (loginError) {
           const message = loginError && loginError.message ? loginError.message : "E-Mail oder Passwort ist falsch.";
-          error.textContent = message === "CUSTOMER_NOT_FOUND" ? "Dein Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte kontaktiere uns." : message;
+          error.textContent = message === "CUSTOMER_NOT_FOUND" ? "Ihr Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte wenden Sie sich an uns." : message;
         }
       });
     })();

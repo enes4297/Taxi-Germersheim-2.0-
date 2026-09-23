@@ -43,6 +43,20 @@ const heim = startseite ? '#hero' : 'index.html';
     </nav>
 
     <div class="hidden lg:flex items-center gap-1.5 shrink-0">
+      {/*
+        Konto-Einstieg. Steht bis zur Pruefung auf „Anmelden" und wird erst
+        auf „Mein Konto" umgestellt, wenn eine echte Sitzung festgestellt
+        wurde - siehe kontoEinstieg() weiter unten. Nie umgekehrt.
+      */}
+      <a
+        href="anmelden.html"
+        class="flex items-center gap-2 text-sm px-3 py-2 text-white/80 hover:text-white transition-colors duration-150"
+        data-kopf-link
+        data-konto-verweis
+      >
+        <Symbol name="konto" class="w-4 h-4" />
+        <span data-konto-text>Anmelden</span>
+      </a>
       <a href={FIRMA.telefonLink} class="flex items-center gap-2 text-sm px-3 py-2 text-white/80 hover:text-white transition-colors duration-150" data-kopf-link>
         <Symbol name="telefon" class="w-4 h-4" />
         <span class="font-medium tabular-nums">{FIRMA.telefon}</span>
@@ -113,6 +127,15 @@ const heim = startseite ? '#hero' : 'index.html';
           Fahrt anfragen
         </a>
       )}
+      <a
+        href="anmelden.html"
+        class="flex items-center justify-center gap-2 border border-border py-3 text-sm font-medium tg-press"
+        data-menue-link
+        data-konto-verweis
+      >
+        <Symbol name="konto" class="w-4 h-4" />
+        <span data-konto-text>Anmelden</span>
+      </a>
       <div class="grid grid-cols-2 gap-3">
         <a href={FIRMA.telefonLink} class="flex items-center justify-center gap-2 border border-border py-3 text-sm font-medium tg-press">
           <Symbol name="telefon" class="w-4 h-4" /> Anrufen
@@ -182,4 +205,71 @@ const heim = startseite ? '#hero' : 'index.html';
   });
   window.addEventListener('scroll', zeichnen, { passive: true });
   zeichnen();
+
+  // ── Konto-Einstieg ────────────────────────────────────────────────────
+  //
+  // „Mein Konto" erscheint NUR, wenn eine Sitzung tatsaechlich festgestellt
+  // wurde. Der Ausgangszustand ist „Anmelden"; es wird nie in die andere
+  // Richtung geraten. Faellt die Pruefung aus, bleibt „Anmelden" stehen -
+  // der Weg funktioniert dann immer noch, er ist nur einen Klick laenger.
+  //
+  // SPARSAM, und warum das trotzdem eine echte Feststellung ist:
+  // Eine Browser-Sitzung von Supabase liegt ausschliesslich im localStorage,
+  // unter einem Schluessel der Form `sb-<projekt>-auth-token`. Liegt dort
+  // nichts, gibt es sicher keine Sitzung - dann muss auch die 213-kB-
+  // Bibliothek nicht geladen werden. Erst wenn ein solcher Schluessel da ist,
+  // wird customer-auth.js geholt und hydrateSession() befragt. Das ist die
+  // gleiche Pruefung, die auch die Kontoseiten benutzen.
+  async function kontoEinstieg() {
+    let sitzungMoeglich = false;
+    try {
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const schluessel = localStorage.key(i);
+        if (schluessel && /^sb-.+-auth-token$/.test(schluessel)) {
+          sitzungMoeglich = true;
+          break;
+        }
+      }
+    } catch {
+      return; // kein Zugriff auf den Speicher: bei „Anmelden" bleiben
+    }
+    if (!sitzungMoeglich) return;
+
+    const auth = await bibliothekLaden();
+    if (!auth || typeof auth.hydrateSession !== 'function') return;
+
+    try {
+      await auth.hydrateSession();
+    } catch {
+      return;
+    }
+    if (typeof auth.isLoggedIn !== 'function' || !auth.isLoggedIn()) return;
+
+    for (const verweis of document.querySelectorAll<HTMLAnchorElement>('[data-konto-verweis]')) {
+      verweis.href = 'meinkonto.html';
+      const text = verweis.querySelector('[data-konto-text]');
+      if (text) text.textContent = 'Mein Konto';
+    }
+  }
+
+  /** customer-auth.js nachladen, falls die Seite es nicht ohnehin einbindet. */
+  function bibliothekLaden(): Promise<any> {
+    const vorhanden = (window as any).CustomerAuth;
+    if (vorhanden) return Promise.resolve(vorhanden);
+    return new Promise((fertig) => {
+      const schon = document.querySelector('script[src$="customer-auth.js"]');
+      if (schon) {
+        schon.addEventListener('load', () => fertig((window as any).CustomerAuth), { once: true });
+        window.setTimeout(() => fertig((window as any).CustomerAuth), 4000);
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = 'customer-auth.js';
+      s.onload = () => fertig((window as any).CustomerAuth);
+      s.onerror = () => fertig(null);
+      document.head.appendChild(s);
+    });
+  }
+
+  kontoEinstieg();
 </script>

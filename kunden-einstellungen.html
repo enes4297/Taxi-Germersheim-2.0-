@@ -37,9 +37,9 @@
     <section id="customer-settings-page" class="customer-settings-page" aria-labelledby="settingsTitle">
       <div class="settings-shell">
         <header class="settings-page-head">
-          <p class="settings-eyebrow">Dein Taxi-Germersheim-Konto</p>
+          <p class="settings-eyebrow">Ihr Taxi-Germersheim-Konto</p>
           <h1 id="settingsTitle">Konto &amp; Einstellungen</h1>
-          <p>Verwalte dein Konto, deine Sicherheit und wichtige Kontoinformationen.</p>
+          <p>Verwalten Sie Ihr Konto, Ihre Sicherheit und wichtige Kontoinformationen.</p>
         </header>
 
         <div class="settings-layout">
@@ -65,7 +65,7 @@
                 <a class="settings-row settings-row-link" href="meinkonto.html">
                   <div>
                     <strong>Persönliche Daten</strong>
-                    <span>Deine Kontodaten ansehen</span>
+                    <span>Ihre Kontodaten ansehen</span>
                   </div>
                   <b aria-hidden="true">›</b>
                 </a>
@@ -81,11 +81,11 @@
                 <button class="settings-row settings-row-link" type="button" data-password-open>
                   <div>
                     <strong>Passwort</strong>
-                    <span>Passwort für dein Konto ändern</span>
+                    <span>Passwort für Ihr Konto ändern</span>
                   </div>
                   <b aria-hidden="true">›</b>
                 </button>
-                <div class="settings-session-note">Du bist aktuell angemeldet.</div>
+                <div class="settings-session-note">Sie sind aktuell angemeldet.</div>
               </div>
             </section>
           </div>
@@ -111,7 +111,7 @@
                 <a class="settings-row settings-row-link" href="hilfe-kontakt.html">
                   <div>
                     <strong>Hilfe &amp; Kontakt</strong>
-                    <span>Fragen zu deinem Konto oder einer Buchung?</span>
+                    <span>Fragen zu Ihrem Konto oder einer Buchung?</span>
                   </div>
                   <b aria-hidden="true">›</b>
                 </a>
@@ -121,7 +121,7 @@
             <section class="settings-session" aria-labelledby="sessionTitle">
               <div>
                 <h2 id="sessionTitle">Sitzung</h2>
-                <p>Beende deine aktuelle Anmeldung auf diesem Gerät.</p>
+                <p>Beenden Sie Ihre aktuelle Anmeldung auf diesem Gerät.</p>
               </div>
               <button class="settings-logout" type="button" data-customer-logout>Abmelden</button>
             </section>
@@ -152,7 +152,7 @@
         <button class="settings-dialog-close" type="button" data-password-close aria-label="Dialog schließen">×</button>
       </header>
 
-      <p class="settings-dialog-intro">Lege ein neues Passwort für dein Taxi-Germersheim-Konto fest.</p>
+      <p class="settings-dialog-intro">Legen Sie ein neues Passwort für Ihr Taxi-Germersheim-Konto fest.</p>
       <div class="settings-form-message" data-password-message role="status" aria-live="polite" hidden></div>
 
       <label class="settings-field" for="newPassword">
@@ -201,7 +201,7 @@
       const gated = !auth || typeof auth.requireLogin !== 'function' || auth.requireLogin({
         targetSelector: '#customer-settings-page',
         pageTitle: 'Konto und Einstellungen',
-        gateDescription: 'Melde dich an, um diesen Bereich zu sehen.'
+        gateDescription: 'Melden Sie sich an, um diesen Bereich zu sehen.'
       });
       document.body.classList.remove('auth-pending');
 

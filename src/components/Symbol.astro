@@ -26,6 +26,9 @@ const SYMBOLE: Record<string, { attr: Record<string, string>; d: string[]; roh?:
   pfeil: { attr: STRICH, d: [], roh: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>' },
   haken: { attr: { ...STRICH, 'stroke-width': '2' }, d: [], roh: '<polyline points="20 6 9 17 4 12"/>' },
   zurueck: { attr: STRICH, d: [], roh: '<polyline points="15 18 9 12 15 6"/>' },
+  // Schritt 017: Einstieg ins Kundenkonto im Kopfbereich. Gleiche Strichstaerke
+  // und Rundungen wie die uebrigen Strichsymbole - kein neuer Stil.
+  konto: { attr: STRICH, d: ['M4.8 20a7.2 7.2 0 0 1 14.4 0'], roh: '<circle cx="12" cy="8" r="3.6"/>' },
   schulranzen: { attr: STRICH, d: ['M4 10.5a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7.5z', 'M9 6.5V5.4A1.4 1.4 0 0 1 10.4 4h3.2A1.4 1.4 0 0 1 15 5.4v1.1', 'M9 13.5h6'] },
   gruppe: { attr: STRICH, d: ['M3.5 19.5a5.5 5.5 0 0 1 11 0', 'M16 6.2a2.8 2.8 0 0 1 0 5.6', 'M17.2 14.4a5.5 5.5 0 0 1 3.3 5.1'], roh: '<circle cx="9" cy="8.5" r="2.8"/>' },
   brief: { attr: STRICH, d: ['M3 7l9 6 9-6'], roh: '<rect x="3" y="5" width="18" height="14" rx="1"/>' },

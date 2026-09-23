@@ -4,7 +4,7 @@ Interne Arbeitsunterlage. Sie wird **nicht** mit ausgeliefert — der Prüflauf
 `npm run ausgabe-pruefen` stellt sicher, dass keine `.md`-Datei im
 Ausgabeordner landet.
 
-Stand: 21.09.2026, nach Schritt 016 (Rewards-Seite mit Yumak).
+Stand: 23.09.2026, nach Schritt 017 (Grundlagen und Einzelfehler).
 
 ---
 
@@ -16,7 +16,8 @@ dev
       └── feature/013-design-grundlage (c740135)  Design-Grundlage
            └── feature/014-startseite  (fbe9b67)  Startseite
                 └── feature/015-yumak-medien (85b6300)  Yumak-Medien
-                     └── feature/016-rewards-yumak       Rewards-Seite
+                     └── feature/016-rewards-yumak (c93b315)  Rewards-Seite
+                          └── feature/017-grundlagen        Grundlagen
 ```
 
 **Jeder Schritt zweigt vom vorigen ab, nicht von `dev`.** Das ist Absicht: 013
@@ -24,7 +25,7 @@ setzt auf Gerüst, Übernahme-Liste und Prüfwerkzeugen aus 012 auf, 014 auf der
 Design-Grundlage aus 013. Ein Abzweig von `dev` hätte jeweils nichts davon.
 
 **Folge für die Reihenfolge:** Die Kette muss in dieser Reihenfolge nach `dev` —
-012, 013, 014, 015, 016. Wird eine übersprungen, kommt ihr Inhalt später doppelt
+012, 013, 014, 015, 016, 017. Wird eine übersprungen, kommt ihr Inhalt später doppelt
 oder gar nicht mit.
 
 Merge nach `dev` macht der Mensch — nicht der Assistent.
@@ -39,7 +40,7 @@ nur `supabase/` und Dokumentation und sind für die Auslieferung ohne Belang.
 **Zwei betreffen Dateien, die im Ausgabeordner landen** — sie enthalten bereits
 behobene Portalfehler.
 
-| Commit | Datei | Was behoben wurde | Heutiger Stand auf 012 bis 016 |
+| Commit | Datei | Was behoben wurde | Heutiger Stand auf 012 bis 017 |
 |---|---|---|---|
 | `316de73` | `fahrer/mitarbeiter.js` | Das Anhang-Abzeichen einer Krankmeldung zeigte **immer** „Ohne Anhang", unabhängig vom Datenbankwert. Jetzt wird `document_submission_id` ausgewertet. | Zeile 528 trägt noch das feste „Ohne Anhang" — **Fehler vorhanden** |
 | `8ff510a` | `admin/dokumenteingang-supabase.js` | Die Rolle wurde aus der Menübeschriftung abgeleitet statt aus `profiles` der laufenden Sitzung gelesen; dazu eine ehrliche Meldung bei fehlender Anmeldung oder fehlender Admin-Rolle. | `auth_user_id` kommt in der Datei **nicht vor** — Fehler vorhanden |
@@ -49,7 +50,7 @@ behobene Portalfehler.
 Gemessen, nicht vermutet: Die drei Suchen nach `Ohne Anhang`, `auth_user_id`
 und `dokumentfristen` wurden auf dem aktuellen Branch ausgeführt.
 
-**Daraus folgt:** Würde heute aus `feature/016` heraus veröffentlicht, käme der
+**Daraus folgt:** Würde heute aus `feature/017` heraus veröffentlicht, käme der
 alte, fehlerhafte Stand dieser vier Dateien mit — das Übernahme-Werkzeug
 kopiert `admin/` und `fahrer/` byteweise so, wie sie im Branch liegen. Die
 Korrekturen wären wieder weg.
@@ -60,12 +61,12 @@ Die Korrekturen aus `feature/011` müssen im **tatsächlichen
 Veröffentlichungsstand** enthalten sein, also in genau dem Commit, aus dem
 gebaut und hochgeladen wird.
 
-> **Ein Merge nach `dev` allein aktualisiert `feature/016` nicht.**
+> **Ein Merge nach `dev` allein aktualisiert `feature/017` nicht.**
 
-Die Kette 012 → 013 → 014 hängt an `dev` in seinem Stand vom 19.09.2026.
-Landet `feature/011` danach in `dev`, ändert das an `feature/016` nichts —
-die vier Dateien bleiben dort im alten Stand, bis `feature/014` den neuen
-`dev`-Stand selbst übernimmt. Wer aus `feature/016` baut, baut die Fehler mit
+Die Kette 012 → … → 017 hängt an `dev` in seinem Stand vom 19.09.2026.
+Landet `feature/011` danach in `dev`, ändert das an `feature/017` nichts —
+die vier Dateien bleiben dort im alten Stand, bis die Kette den neuen
+`dev`-Stand selbst übernimmt. Wer aus `feature/017` baut, baut die Fehler mit
 ein, auch wenn `dev` längst korrigiert ist.
 
 Vor der Veröffentlichung ist also zu prüfen, ob der Veröffentlichungsstand die
@@ -93,7 +94,10 @@ npm ci                   # Abhaengigkeiten, exakt nach package-lock.json
 npm run build            # erzeugt dist-oeffentlich/
 npm run ausgabe-pruefen     # prüft den Ausgabeordner (Dateien, Prüfsummen)
 npm run startseite-pruefen  # Startseite im Browser, Desktop und Mobil
+npm run rewards-pruefen     # Rewards-Seite im Browser, mit Testdaten
 npm run browser-pruefen     # Zentrale, Portal und Dashboard im Ausgabeordner
+npm run grundlagen-pruefen  # Suchmaschinen, Bibliothek, Anrede, Tastatur
+npm run grundlagen-browser-pruefen  # dasselbe im Browser, ohne Aussenverbindung
 npm run dev              # örtlicher Entwicklungsserver
 npm run preview          # den fertigen Ausgabeordner ansehen
 ```
@@ -533,10 +537,86 @@ Datenbankstruktur.
 
 ---
 
-## 11. Nächster Schritt
+## 11. Grundlagen und Einzelfehler (Schritt 017)
 
-**Schritt 017 — Unterseiten.** Branch `feature/017-unterseiten` von
-`feature/016-rewards-yumak`.
+**Die ausführliche Fassung steht in `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`,
+Abschnitt 8.** Hier nur, was den Bau und die Übernahme betrifft.
+
+### Neu im Ausgabeordner
+
+| Datei | Woher |
+|---|---|
+| `robots.txt`, `sitemap.xml` | erzeugt von `tools/suchmaschinen-dateien.mjs` beim Bauen |
+| `favicon.ico`, `favicon-32/192/512.png`, `apple-touch-icon.png` | aus `tg-icon-original.png`, erzeugt von `tools/marke-symbole.mjs` |
+| `teilen-vorschau.jpg` | Ausschnitt der echten Aufnahme `mercedes-e-klasse-schwarz-1600.jpg` |
+| `vendor/supabase-js-2.117.0.js` | selbst mitgelieferte Bibliothek, feste Version |
+
+Die Symbole und das Vorschaubild liegen in `public/` und werden wie die
+übrigen Medien übernommen. Sie werden **nicht bei jedem Bau neu erzeugt** —
+`npm run marke-symbole` läuft nur, wenn sich das Markenzeichen ändert.
+
+### Neu in der Übernahme
+
+- **`vendor/`** kommt als eigener Eintrag dazu. `HERKUNFT.md` darin ist eine
+  interne Notiz und ausgenommen.
+- **Drei Dateien sind aus der Liste genommen:** `konto-einrichtung.html`
+  (ausdrückliche Demo, von keiner Seite verlinkt, verlangt einen
+  Sitzungsschlüssel, den niemand setzt), `customer-auth-demo.js` (nur von
+  jener Seite geladen) und `customer-journey-demo.js` (von niemandem
+  geladen). Die Begründung steht ausführlich in `bestand-uebernehmen.mjs`.
+- **`auth-demo.css` bleibt.** Trotz des Namens eine echte Stilvorlage von
+  elf Kontoseiten.
+
+### Die eine benannte Ausnahme vom Byte-Vergleich
+
+`tools/kopfangaben-bestand.mjs` setzt nach dem Kopieren in jede der 18
+Bestandsseiten **einen** Block vor `</head>`: Seitensymbol, canonical und,
+wo die Seite noch nichts dazu sagte, eine robots-Angabe.
+
+Damit die Zusicherung „der Bestand wird unverändert ausgeliefert" prüfbar
+bleibt, steht der Block zwischen zwei Markierungen (`tg:kopfangaben Anfang`
+und `… Ende`) und wird von `ausgabe-pruefen` vor dem Vergleich wieder
+herausgeschnitten. Bleibt danach auch nur ein Byte Unterschied, fällt die
+Prüfung durch.
+
+**Der Zusatz darf ausschließlich anfügen, niemals umschreiben.** Trifft er
+auf eine Seite, die nicht ins Verzeichnis gehört, aber `index` im Kopf
+trägt, **bricht er den Bau ab** und verlangt die Korrektur in der Quelldatei.
+Genau so ist es am 23.09.2026 bei `meinkonto.html` und `kundenkonto.html`
+gelaufen: Ein erster Versuch, das im Ausgabeordner umzuschreiben, wurde vom
+Byte-Vergleich sofort als Abweichung gemeldet. Korrigiert wurden die beiden
+Quelldateien.
+
+### Was unverändert blieb
+
+Datenbank, Berechtigungen, Punkteberechnung, der Ablauf der Anmeldung,
+`admin/`, `fahrer/`, `dashboard/`, die freigegebene Startseite, das
+Hero-Video und sein Verhalten. Yumak bleibt Standbild.
+
+`admin/supabase-auth.js`, `admin/taxi-data-service.js` und
+`fahrer/employee-supabase.js` laden die Bibliothek **weiterhin vom CDN** —
+das gehört zu Punkt 2 und 3 der Reihenfolge, nicht hierher.
+
+---
+
+## 12. Nächster Schritt
+
+> **Die vollständige Bestandsaufnahme der öffentlichen Webseite steht seit
+> dem 23.09.2026 in `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`** — was fertig ist,
+> was fehlt, was ohne Rückfrage machbar ist, und was eine Entscheidung
+> braucht. Die dortige Empfehlung ersetzt den Vorschlag unten.
+
+**Schritt 017 ist erledigt** — siehe Abschnitt 11 hier und Abschnitt 8 der
+Bestandsaufnahme.
+
+**Empfohlen: Schritt 018 — Rechtsseiten nach Astro.** Branch
+`feature/018-rechtsseiten` von `feature/017-grundlagen`. Inhalt:
+`impressum.html`, `datenschutz.html`, `hilfe-kontakt.html` und `404.html`
+im freigegebenen Design, **bestehender Text unverändert**, dazu das
+Zustimmungsbanner und die Rechtsverweise auf diesen Seiten vereinheitlichen.
+Kein Backend berührt, keine Entscheidung nötig.
+
+Der frühere Vorschlag, alle Unterseiten auf einmal anzugehen:
 
 Vorher offen, unabhängig von der Reihenfolge:
 

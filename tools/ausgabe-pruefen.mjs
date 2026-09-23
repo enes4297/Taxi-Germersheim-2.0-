@@ -20,6 +20,8 @@ import { existsSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NIE_MITNEHMEN, UEBERNAHME } from './bestand-uebernehmen.mjs';
+import { ANFANG, ENDE, BETROFFENE_SEITEN } from './kopfangaben-bestand.mjs';
+import { OEFFENTLICHE_SEITEN, NICHT_INS_VERZEICHNIS } from './suchmaschinen-dateien.mjs';
 
 const WURZEL = fileURLToPath(new URL('..', import.meta.url));
 const AUSGABE = join(WURZEL, 'dist-oeffentlich');
@@ -41,7 +43,38 @@ async function dateienUnter(ordner, basis = ordner) {
   return raus;
 }
 
+/**
+ * Den in Schritt 017 eingesetzten Kopfblock wieder herausschneiden.
+ *
+ * Nur so bleibt die Zusicherung "der Bestand wird unveraendert
+ * ausgeliefert" pruefbar: Es gibt genau EINE benannte Ausnahme, und die
+ * wird hier rueckgaengig gemacht, bevor verglichen wird. Bleibt danach auch
+ * nur ein Byte Unterschied, faellt die Pruefung durch.
+ */
+function kopfblockEntfernen(text) {
+  const a = text.indexOf(ANFANG);
+  if (a < 0) return { text, hatte: false };
+  const e = text.indexOf(ENDE, a);
+  if (e < 0) return { text, hatte: false };
+  // Genau das Gegenstueck zum Einsetzen, kein Herumraten an Leerzeichen:
+  // kopfangaben-bestand.mjs setzt vor `</head>` den Text
+  //     ANFANG + "\n  " + … + ENDE + "\n  "
+  // ein. Entfernt wird deshalb von ANFANG bis einschliesslich ENDE und der
+  // eine Abschluss "\n  " dahinter - Byte fuer Byte dasselbe rueckwaerts.
+  const ABSCHLUSS = '\n  ';
+  let ende = e + ENDE.length;
+  if (text.startsWith(ABSCHLUSS, ende)) ende += ABSCHLUSS.length;
+  return { text: text.slice(0, a) + text.slice(ende), hatte: true };
+}
+
 const pruefsumme = async (p) => createHash('sha256').update(await readFile(p)).digest('hex');
+
+/** Wie pruefsumme, aber ohne den eingesetzten Kopfblock. */
+async function pruefsummeOhneKopfblock(p) {
+  const roh = await readFile(p, 'utf8');
+  const { text } = kopfblockEntfernen(roh);
+  return createHash('sha256').update(Buffer.from(text, 'utf8')).digest('hex');
+}
 
 if (!existsSync(AUSGABE)) {
   console.error('Ausgabeordner fehlt. Zuerst "npm run build" ausfuehren.');
@@ -76,7 +109,12 @@ for (const regel of UEBERNAHME) {
 
   const istOrdner = (await stat(quelle)).isDirectory();
   if (!istOrdner) {
-    pruefe((await pruefsumme(quelle)) === (await pruefsumme(ziel)), `${regel.von} ist bytegleich`);
+    // HTML-Seiten, in die Schritt 017 den Kopfblock einsetzt, werden ohne
+    // diesen Block verglichen. Alles andere byteweise wie bisher.
+    const mitBlock = BETROFFENE_SEITEN.includes(regel.von);
+    const links = await pruefsumme(quelle);
+    const rechts = mitBlock ? await pruefsummeOhneKopfblock(ziel) : await pruefsumme(ziel);
+    pruefe(links === rechts, `${regel.von} ist bytegleich${mitBlock ? ' (ohne den eingesetzten Kopfblock)' : ''}`);
     continue;
   }
 

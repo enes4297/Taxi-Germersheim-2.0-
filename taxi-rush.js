@@ -1728,7 +1728,7 @@
       resultPanel.hidden = false;
       restartButton.focus({ preventScroll: true });
       window.scrollTo({ left: scrollLeft, top: scrollTop, behavior: 'instant' });
-      announce('Kollision. Runde beendet. Dein Spielscore ist ' + finalScore + '.');
+      announce('Kollision. Runde beendet. Ihr Spielscore ist ' + finalScore + '.');
     }, crashFeedbackDuration);
   }
 

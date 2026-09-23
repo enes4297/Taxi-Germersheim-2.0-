@@ -146,14 +146,14 @@
     setHidden(voucherLink, true);
     setHidden(wheelLogin, false);
     setHidden(wheelAction, true);
-    wheelStatus.textContent = 'Dein persönlicher Drehstatus wartet nach der Anmeldung.';
+    wheelStatus.textContent = 'Ihr persönlicher Drehstatus wartet nach der Anmeldung.';
     wheelDetail.textContent = 'Es werden keine Beispielwerte angezeigt.';
     historyGuest.hidden = false;
     setHidden(historyLoading, true);
     setHidden(historyList, true);
     setHidden(historyEmpty, true);
     setHidden(historyError, true);
-    setBoxState('guest', 'Status nach Anmeldung verfügbar', 'Melde dich an, um deinen echten Box-Status zu sehen.', false);
+    setBoxState('guest', 'Status nach Anmeldung verfügbar', 'Melden Sie sich an, um Ihren echten Box-Status zu sehen.', false);
   }
 
   function renderMemberStatus(rewards) {
@@ -175,7 +175,7 @@
 
     if (status === 'paused' || status === 'blocked') {
       wheelFeature.dataset.gwWheelState = 'unavailable';
-      wheelStatus.textContent = status === 'paused' ? 'Dein Rewards-Konto ist pausiert.' : 'Dein Rewards-Konto ist gesperrt.';
+      wheelStatus.textContent = status === 'paused' ? 'Ihr Rewards-Konto ist pausiert.' : 'Ihr Rewards-Konto ist gesperrt.';
       wheelDetail.textContent = 'Das Glücksrad ist für dieses Konto nicht verfügbar.';
       wheelAction.textContent = 'Nicht verfügbar';
       return;
@@ -184,14 +184,14 @@
     if (spins > 0) {
       wheelFeature.dataset.gwWheelState = 'available';
       wheelStatus.textContent = spins === 1 ? '1 Dreh verfügbar' : formatNumber(spins) + ' Drehs verfügbar';
-      wheelDetail.textContent = 'Dein Dreh bleibt erhalten. Die sichere Kundenspielfreigabe folgt.';
+      wheelDetail.textContent = 'Ihr Dreh bleibt erhalten. Die sichere Kundenspielfreigabe folgt.';
       wheelAction.textContent = 'Bald verfügbar';
       return;
     }
 
     wheelFeature.dataset.gwWheelState = 'empty';
     wheelStatus.textContent = 'Derzeit kein Dreh verfügbar';
-    wheelDetail.textContent = 'Dein Rewards-Konto weist aktuell keinen verfügbaren Dreh aus.';
+    wheelDetail.textContent = 'Ihr Rewards-Konto weist aktuell keinen verfügbaren Dreh aus.';
     wheelAction.textContent = 'Kein Dreh verfügbar';
   }
 
@@ -207,7 +207,7 @@
     wheelAction.disabled = true;
     wheelAction.textContent = 'Nicht verfügbar';
     wheelStatus.textContent = 'Das Glücksrad ist gerade nicht verfügbar.';
-    wheelDetail.textContent = 'Deine echten Rewards-Daten konnten nicht geladen werden.';
+    wheelDetail.textContent = 'Ihre echten Rewards-Daten konnten nicht geladen werden.';
   }
 
   function resetHistoryStates() {
@@ -262,9 +262,9 @@
     if (!boxWin) {
       setBoxState('locked', 'Derzeit keine Box verfügbar', 'Eine Box erscheint hier nur nach einem bestätigten Gewinn.', false);
     } else if (['fulfilled', 'completed', 'delivered'].includes(String(boxWin.fulfillment_status || '').toLowerCase())) {
-      setBoxState('complete', 'Deine Box wurde bearbeitet', 'Der bestätigte Box-Gewinn ist bereits abgeschlossen.', false);
+      setBoxState('complete', 'Ihre Box wurde bearbeitet', 'Der bestätigte Box-Gewinn ist bereits abgeschlossen.', false);
     } else {
-      setBoxState('available', 'Deine Box ist bereit', 'Der Gewinn ist bestätigt. Die sichere Kundenöffnung ist noch nicht freigeschaltet.', true);
+      setBoxState('available', 'Ihre Box ist bereit', 'Der Gewinn ist bestätigt. Die sichere Kundenöffnung ist noch nicht freigeschaltet.', true);
     }
 
     historyList.hidden = false;

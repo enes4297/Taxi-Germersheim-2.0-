@@ -28,6 +28,7 @@
  *   fehler       verstaendlich, mit Wiederholung und Telefonnummer
  */
 import Grundlage from '../layouts/Grundlage.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
 import Kopfbereich from '../components/Kopfbereich.astro';
 import Fusszeile from '../components/Fusszeile.astro';
 import Yumak from '../components/Yumak.astro';
@@ -78,10 +79,13 @@ const AKTIONEN = [
 <Grundlage
   titel="Rewards | Taxi Germersheim GmbH"
   beschreibung="Das Rewards-Programm der Taxi Germersheim GmbH: Punkte sammeln, Stufen erreichen und Drehs am Glücksrad verdienen."
+  pfad="rewards.html"
 >
+  <Sprungmarken />
+
   <Kopfbereich startseite={false} />
 
-  <main class="pt-16 lg:pt-20">
+  <main id="inhalt" class="pt-16 lg:pt-20">
     {/* ══ Kopf und Mitgliedskarte ═══════════════════════════════════════ */}
     <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pt-10 lg:pt-14 pb-14 lg:pb-20">
       <a href="index.html" class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">

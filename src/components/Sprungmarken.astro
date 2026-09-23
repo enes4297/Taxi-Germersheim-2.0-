@@ -1,0 +1,23 @@
+---
+/**
+ * Sprungmarken am Seitenanfang.
+ *
+ * Wer mit der Tastatur bedient, landet beim ersten Tabulatorsprung hier und
+ * kann die Navigation ueberspringen, statt sich durch jeden Kopfverweis zu
+ * tabben. Unsichtbar, bis sie den Fokus haben - dann sichtbar oben links.
+ *
+ * Das Ziel `#inhalt` traegt auf jeder Seite das <main>-Element.
+ */
+interface Props {
+  /** Zweite Marke direkt zur Fahrtanfrage. Nur auf der Startseite sinnvoll. */
+  zurAnfrage?: boolean;
+}
+const { zurAnfrage = false } = Astro.props;
+
+const stil =
+  'sr-only focus:not-sr-only focus:fixed focus:top-3 focus:z-[60] ' +
+  'focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:font-semibold';
+---
+
+<a href="#inhalt" class={`${stil} focus:left-3`}>Zum Inhalt springen</a>
+{zurAnfrage && <a href="#buchung" class={`${stil} focus:left-[15rem]`}>Direkt zur Fahrtanfrage</a>}

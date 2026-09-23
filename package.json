@@ -18,9 +18,13 @@
     "yumak-farbe": "node tools/yumak-fellfarbe.mjs",
     "yumak-farbe-pruefen": "node tools/pruefe-yumak-farbe.mjs",
     "yumak-uebergang-pruefen": "node tools/pruefe-yumak-uebergang.mjs",
-    "rewards-pruefen": "node tools/pruefe-rewards.mjs"
+    "rewards-pruefen": "node tools/pruefe-rewards.mjs",
+    "marke-symbole": "node tools/marke-symbole.mjs",
+    "grundlagen-pruefen": "node tools/pruefe-grundlagen.mjs",
+    "grundlagen-browser-pruefen": "node tools/pruefe-grundlagen-browser.mjs"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "2.117.0",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^5.14.1",
     "tailwindcss": "^4.3.3"

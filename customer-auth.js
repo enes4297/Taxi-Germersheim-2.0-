@@ -53,14 +53,26 @@
         return;
       }
 
-      const existingScript = document.querySelector('script[src*="@supabase/supabase-js"]');
+      // Die Bibliothek wird SELBST MITGELIEFERT, fest auf eine Version
+      // genagelt - kein Aufruf an ein fremdes CDN. Herkunft, Version und
+      // Pruefsumme stehen in vendor/HERKUNFT.md.
+      //
+      // Warum: Bis Schritt 017 kam sie von jsdelivr unter "@2", also jeweils
+      // der neuesten 2.x. Bei gesperrtem CDN meldeten 19 von 20 oeffentlichen
+      // Seiten Skriptfehler und die Anmeldung war nicht bedienbar. Dazu ging
+      // die IP-Adresse jedes Besuchers an einen Dritten.
+      const BIBLIOTHEK = "vendor/supabase-js-2.117.0.js";
+
+      const existingScript = document.querySelector(
+        'script[src*="@supabase/supabase-js"], script[src*="supabase-js-"]'
+      );
       if (existingScript) {
         existingScript.addEventListener("load", () => resolve(window.supabase), { once: true });
         return;
       }
 
       const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+      script.src = BIBLIOTHEK;
       script.async = false;
       script.onload = () => resolve(window.supabase);
       script.onerror = () => resolve(null);
@@ -247,16 +259,16 @@
     const { data, error } = await client.rpc("claim_customer_account");
     if (error) {
       if (error.message === "CUSTOMER_EMAIL_NOT_VERIFIED") {
-        throw new Error("Bitte bestätige zuerst deine E-Mail-Adresse.");
+        throw new Error("Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.");
       }
       if (error.message === "CUSTOMER_NOT_FOUND") {
-        throw new Error("Dein Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte kontaktiere uns.");
+        throw new Error("Ihr Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte wenden Sie sich an uns.");
       }
       if (error.message === "CUSTOMER_EMAIL_AMBIGUOUS") {
-        throw new Error("Dein Kundenkonto konnte nicht automatisch zugeordnet werden. Bitte kontaktiere uns.");
+        throw new Error("Ihr Kundenkonto konnte nicht automatisch zugeordnet werden. Bitte wenden Sie sich an uns.");
       }
       if (error.message === "CUSTOMER_ALREADY_LINKED" || error.message === "AUTH_USER_ALREADY_LINKED") {
-        throw new Error("Dein Kundenkonto konnte nicht automatisch zugeordnet werden. Bitte kontaktiere uns.");
+        throw new Error("Ihr Kundenkonto konnte nicht automatisch zugeordnet werden. Bitte wenden Sie sich an uns.");
       }
       throw new Error("E-Mail oder Passwort ist falsch.");
     }
@@ -335,7 +347,7 @@
       if (claimError && claimError.message) {
         throw claimError;
       }
-      throw new Error("Dein Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte kontaktiere uns.");
+      throw new Error("Ihr Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte wenden Sie sich an uns.");
     }
   }
 
@@ -362,10 +374,17 @@
       throw new Error(error.message || "Registrierung fehlgeschlagen.");
     }
 
-    if (data?.user && !data.session) {
-      throw new Error("Bitte bestätige zuerst deine E-Mail-Adresse.");
-    }
-
+    // KEIN Fehler, wenn noch keine Sitzung entstanden ist.
+    //
+    // Verlangt das Supabase-Projekt eine Bestaetigung per E-Mail, liefert
+    // signUp einen Benutzer OHNE Sitzung zurueck. Die Registrierung ist
+    // damit GEGLUECKT - sie wartet nur noch auf den Klick in der Mail.
+    // Bis Schritt 017 wurde hier geworfen, und registrieren.html schrieb
+    // den Text in den roten Fehlerkasten: Der Kunde hielt eine geglueckte
+    // Registrierung fuer gescheitert.
+    //
+    // Die Entscheidung, was angezeigt wird, gehoert an die Seite. Sie
+    // erkennt den Fall an data.session === null.
     return data;
   }
 

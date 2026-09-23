@@ -31,9 +31,9 @@
 
   <main class="auth-shell auth-shell--register" aria-labelledby="authRegisterTitle">
     <section class="auth-register-hero" aria-label="Warum ein Konto sinnvoll ist">
-      <p class="auth-register-eyebrow">DEIN TAXI-GERMERSHEIM-KONTO</p>
+      <p class="auth-register-eyebrow">IHR TAXI-GERMERSHEIM-KONTO</p>
       <h1 id="authRegisterTitle">Konto erstellen</h1>
-      <p class="auth-register-subline">Erstelle dein Taxi-Germersheim-Konto in wenigen Schritten.</p>
+      <p class="auth-register-subline">Erstellen Sie Ihr Taxi-Germersheim-Konto in wenigen Schritten.</p>
     </section>
 
     <div class="auth-register-surface" aria-label="Registrierungsbereich">
@@ -106,17 +106,18 @@
           </label>
 
           <p id="registerError" class="auth-error" aria-live="assertive"></p>
+          <p id="registerHinweis" class="auth-success" aria-live="polite"></p>
           <button class="auth-submit" type="submit">Konto erstellen</button>
         </form>
 
         <div class="auth-split-links">
-          <span>Du hast bereits ein Konto?</span>
+          <span>Sie haben bereits ein Konto?</span>
           <a href="anmelden.html">Anmelden</a>
         </div>
 
         <div class="auth-trust" aria-label="Sichere Anmeldung">
           <span class="auth-trust-icon" aria-hidden="true"></span>
-          <span>Dein Konto. Deine Daten. Sicher verwaltet.</span>
+          <span>Ihr Konto. Ihre Daten. Sicher verwaltet.</span>
         </div>
       </section>
     </div>
@@ -133,6 +134,7 @@
     (function () {
       var form = document.getElementById("registerForm");
       var error = document.getElementById("registerError");
+      var hinweis = document.getElementById("registerHinweis");
       var passwordInput = document.getElementById("regPassword");
       var rulesContainer = document.getElementById("passwordRules");
       var strengthBar = document.getElementById("passwordStrengthBar");
@@ -253,7 +255,7 @@
 
         var passwordState = renderPasswordState(password);
         if (!(passwordState.rules.len && passwordState.rules.upper && passwordState.rules.number)) {
-          error.textContent = "Das Passwort erfuellt noch nicht alle Regeln.";
+          error.textContent = "Das Passwort erfüllt noch nicht alle Regeln.";
           return;
         }
 
@@ -274,14 +276,30 @@
         }
 
         try {
-          await auth.signUp(email, password, {
+          var ergebnis = await auth.signUp(email, password, {
             firstName: firstName,
             lastName: lastName,
             fullName: firstName + " " + lastName,
             phone: phone
           });
+
+          // Verlangt das Projekt eine Bestaetigung per E-Mail, gibt es noch
+          // keine Sitzung. Das ist KEIN Fehler - das Konto ist angelegt und
+          // wartet auf den Klick in der Mail. Deshalb ein Hinweis in Gruen,
+          // kein roter Fehlerkasten, und die Seite bleibt stehen.
+          if (!ergebnis || !ergebnis.session) {
+            error.textContent = "";
+            hinweis.textContent =
+              "Fast geschafft: Ihr Konto wurde angelegt. Wir haben Ihnen eine E-Mail an " +
+              email +
+              " geschickt. Bitte bestätigen Sie darin Ihre Adresse – danach können Sie sich anmelden.";
+            form.querySelector('[type="submit"]').disabled = true;
+            return;
+          }
+
           window.location.href = "anmelden.html?registered=1";
         } catch (registerError) {
+          hinweis.textContent = "";
           error.textContent = registerError && registerError.message ? registerError.message : "Registrierung fehlgeschlagen.";
         }
       });

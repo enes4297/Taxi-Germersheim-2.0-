@@ -25,6 +25,8 @@ import RewardsAbschnitt from '../components/RewardsAbschnitt.astro';
 import KontaktAbschnitt from '../components/KontaktAbschnitt.astro';
 import Enthuellen from '../components/Enthuellen.astro';
 import Symbol from '../components/Symbol.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
+import Unternehmensdaten from '../components/Unternehmensdaten.astro';
 import { ANFRAGE_BAND, FIRMA, HERO, HERO_LEISTUNGEN } from '../inhalte';
 
 const SCHNELLFELDER = [
@@ -37,15 +39,13 @@ const SCHNELLFELDER = [
   titel="Taxi Germersheim GmbH – Taxi, Krankenfahrten, Rollstuhlfahrten, Flughafentransfer"
   beschreibung="Taxi Germersheim GmbH: Taxi- und Alltagsfahrten, Krankenfahrten, Rollstuhlfahrten, Schülerfahrten, Flughafentransfers, Fern- und Gruppenfahrten sowie Kurierfahrten. Rund um die Uhr erreichbar unter 07274 3567."
 >
-  <a
-    href="#buchung"
-    class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:font-semibold"
-  >
-    Direkt zur Fahrtanfrage
-  </a>
+  <Unternehmensdaten slot="kopf" />
+
+  <Sprungmarken zurAnfrage />
 
   <Kopfbereich />
 
+  <main id="inhalt">
   {/* ══ Hero ═══════════════════════════════════════════════════════════ */}
   <section id="hero" class="relative min-h-[100svh] flex flex-col overflow-hidden" style="scroll-margin-top: 0">
     {/* Desktop: bildfuellend. Hier laeuft der Werbefilm. */}
@@ -275,6 +275,7 @@ const SCHNELLFELDER = [
       </Enthuellen>
     </div>
   </section>
+  </main>
 
   <Fusszeile />
   <Anfragedialog />
@@ -367,11 +368,23 @@ const SCHNELLFELDER = [
   const seite = p.get('page');
   const buchung = p.get('buchung') === '1';
 
+  // Jeder Wert, der im Bestand tatsaechlich verlinkt ist, braucht hier ein
+  // Ziel. Nachgezaehlt im Ausgabeordner am 23.09.2026:
+  //   booking 29x · services 12x · why 5x · medical 4x · faq 1x
+  // Die drei letzten fehlten bis Schritt 017 - diese zehn Verweise landeten
+  // oben auf der Startseite, statt am gemeinten Abschnitt.
   const MARKEN: Record<string, string> = {
     rewards: '#rewards',
     'help-public': '#kontakt',
     services: '#leistungen',
     home: '#hero',
+    // „Über uns" in der Fusszeile jeder Bestandsseite. Der Regionsabschnitt
+    // ist der Ort, an dem die Seite ueber uns selbst spricht.
+    why: '#region',
+    // Aus der Leistungsnavigation der Bestandsseiten.
+    medical: '#leistung-krankenfahrten',
+    // Die haeufigen Fragen stehen im Kontaktabschnitt.
+    faq: '#kontakt',
   };
 
   if (seite || buchung) {

@@ -37,9 +37,9 @@
       <div class="wallet-shell">
         <header class="wallet-page-head">
           <div>
-            <p class="wallet-eyebrow">Dein Taxi-Germersheim-Konto</p>
+            <p class="wallet-eyebrow">Ihr Taxi-Germersheim-Konto</p>
             <h1>Gutscheine</h1>
-            <p class="wallet-intro">Hier findest du deine verfügbaren und bereits verwendeten Gutscheine.</p>
+            <p class="wallet-intro">Hier finden Sie Ihre verfügbaren und bereits verwendeten Gutscheine.</p>
           </div>
           <a class="wallet-secondary-link" href="rewards.html">Rewards ansehen</a>
         </header>
@@ -77,7 +77,7 @@
       const gated = !auth || typeof auth.requireLogin !== 'function' || auth.requireLogin({
         targetSelector: '#wallet-page',
         pageTitle: 'Wallet und Gutscheine',
-        gateDescription: 'Melde dich an, um diesen Bereich zu sehen.'
+        gateDescription: 'Melden Sie sich an, um diesen Bereich zu sehen.'
       });
       document.body.classList.remove('auth-pending');
 
@@ -139,7 +139,7 @@
         const title = document.createElement('h2');
         title.textContent = 'Noch keine Gutscheine';
         const text = document.createElement('p');
-        text.textContent = 'Sobald ein Gutschein für dein Konto verfügbar ist, findest du ihn hier.';
+        text.textContent = 'Sobald ein Gutschein für Ihr Konto verfügbar ist, finden Sie ihn hier.';
         const link = document.createElement('a');
         link.className = 'wallet-secondary-link';
         link.href = 'rewards.html';
@@ -236,7 +236,7 @@
         const title = document.createElement('h2');
         title.textContent = 'Gutscheine nicht verfügbar';
         const text = document.createElement('p');
-        text.textContent = 'Deine Gutscheine konnten gerade nicht geladen werden. Bitte versuche es erneut.';
+        text.textContent = 'Ihre Gutscheine konnten gerade nicht geladen werden. Bitte versuchen Sie es erneut.';
         errorState.append(title, text);
         voucherList.appendChild(errorState);
       }
