@@ -1,15 +1,6 @@
 (function () {
   'use strict';
 
-  const wheelSegments = [
-    { label: '5', unit: 'Punkte' },
-    { label: '10', unit: 'Punkte' },
-    { label: '20', unit: 'Punkte' },
-    { label: '30', unit: 'Punkte' },
-    { label: '50', unit: 'Punkte', featured: true },
-    { label: '20 €', unit: 'Gutschein', featured: true },
-    { label: 'Box', unit: 'Yumaks', box: true }
-  ];
 
   const statusLoading = document.querySelector('[data-gw-status-loading]');
   const statusGuest = document.querySelector('[data-gw-status-guest]');
@@ -43,70 +34,20 @@
     boxAction.disabled = true;
   }
 
-  function polarPoint(center, radius, angleDegrees) {
-    const angle = (angleDegrees - 90) * Math.PI / 180;
-    return {
-      x: center + radius * Math.cos(angle),
-      y: center + radius * Math.sin(angle)
-    };
-  }
+  /* ── Das Gluecksrad ───────────────────────────────────────────────
+     Zeichnung und Drehung stehen in gluecksrad.js und werden dort unter
+     window.TaxiGluecksrad bereitgestellt. Dieselbe Datei benutzt die
+     Designprobe unter sichtproben/gluecksrad.html.
 
-  function createSvgNode(name, attributes) {
-    const node = document.createElementNS('http://www.w3.org/2000/svg', name);
-    Object.keys(attributes || {}).forEach(function (key) {
-      node.setAttribute(key, attributes[key]);
-    });
-    return node;
-  }
+     DER BROWSER BESTIMMT NIEMALS DEN GEWINN: stoppeAuf() nimmt einen
+     bestaetigten Gewinntyp entgegen. Hier wird sie NICHT aufgerufen -
+     das Rad ist fuer Kunden gesperrt, siehe den Stand unten. */
+  const gluecksrad = window.TaxiGluecksrad || null;
 
   function renderWheel() {
-    const svg = document.querySelector('[data-gw-wheel-svg]');
-    if (!svg) return;
-    const center = 200;
-    const radius = 174;
-    const labelRadius = 122;
-    const slice = 360 / wheelSegments.length;
-
-    wheelSegments.forEach(function (segment, index) {
-      const startAngle = index * slice;
-      const endAngle = (index + 1) * slice;
-      const start = polarPoint(center, radius, startAngle);
-      const end = polarPoint(center, radius, endAngle);
-      const path = createSvgNode('path', {
-        d: 'M ' + center + ' ' + center + ' L ' + start.x.toFixed(3) + ' ' + start.y.toFixed(3) +
-          ' A ' + radius + ' ' + radius + ' 0 0 1 ' + end.x.toFixed(3) + ' ' + end.y.toFixed(3) + ' Z',
-        class: 'gw-wheel-segment' + (segment.featured ? ' is-featured' : '') + (segment.box ? ' is-box' : '')
-      });
-      svg.appendChild(path);
-
-      const middleAngle = startAngle + slice / 2;
-      const labelPoint = polarPoint(center, labelRadius, middleAngle);
-      const label = createSvgNode('text', {
-        x: labelPoint.x.toFixed(3),
-        y: (labelPoint.y - 5).toFixed(3),
-        class: 'gw-wheel-label'
-      });
-      label.textContent = segment.label;
-      svg.appendChild(label);
-
-      const unit = createSvgNode('text', {
-        x: labelPoint.x.toFixed(3),
-        y: (labelPoint.y + 10).toFixed(3),
-        class: 'gw-wheel-label gw-wheel-label-unit'
-      });
-      unit.textContent = segment.unit;
-      svg.appendChild(unit);
-    });
-
-    svg.appendChild(createSvgNode('circle', {
-      cx: center,
-      cy: center,
-      r: radius,
-      fill: 'none',
-      stroke: 'rgba(240, 217, 149, 0.5)',
-      'stroke-width': '2'
-    }));
+    if (gluecksrad) gluecksrad.zeichne();
   }
+
 
   function formatNumber(value) {
     const numeric = Number(value);

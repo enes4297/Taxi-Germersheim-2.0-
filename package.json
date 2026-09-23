@@ -24,7 +24,8 @@
     "grundlagen-browser-pruefen": "node tools/pruefe-grundlagen-browser.mjs",
     "rechtsseiten-pruefen": "node tools/pruefe-rechtsseiten.mjs",
     "flotte-pruefen": "node tools/pruefe-flotte-spezial.mjs",
-    "anmeldung-pruefen": "node tools/pruefe-anmeldung.mjs"
+    "anmeldung-pruefen": "node tools/pruefe-anmeldung.mjs",
+    "gluecksrad-pruefen": "node tools/pruefe-gluecksrad.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.0",

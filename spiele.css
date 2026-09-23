@@ -394,127 +394,244 @@ body.gameworld-body.taxi-rush-focus-active .tg-public-header {
   min-width: 0;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Glücksrad — Gestaltung nach der freigegebenen Vorlage
+   design-vorlagen/Taxi-Germersheim-Gluecksrad.html
+   ═══════════════════════════════════════════════════════════════════════
+
+   Die Klassennamen bleiben, wie sie waren (gw-wheel-*), damit spiele.js
+   unverändert weiterarbeitet. Getauscht ist allein das Aussehen.
+
+   Aufbau, von außen nach innen:
+
+     .gw-wheel-shell     Bühne, quadratisch
+       .gw-wheel-pointer Zeiger, oben, fest
+       .gw-wheel-rim     Goldring, FEST - dreht sich nicht mit
+         .gw-wheel-svg   die Scheibe, DAS EINZIGE, was sich dreht
+       .gw-wheel-hub     Nabe mit dem Bildzeichen, fest
+
+   Warum nur die Scheibe rotiert: Ein mitdrehender Ring sähe aus wie ein
+   Fehler, und der Zeiger muss stehen bleiben, sonst zeigt er nirgendwohin.
+   In der Vorlage ist es genauso gelöst ("one animated rotor").
+*/
+
+/* Der klebende Seitenkopf ist 88 px hoch. Ohne diesen Abstand liegt der
+   Zeiger dahinter, sobald jemand den Radbereich anspringt - gemessen:
+   Der Zeiger sitzt 31 px unter dem Anfang des Bereichs. */
+.gw-wheel-feature {
+  scroll-margin-top: 104px;
+}
+
 .gw-wheel-visual {
-  padding: 58px 0;
+  padding: 48px 0;
   display: grid;
   place-items: center;
 }
 
 .gw-wheel-shell {
   position: relative;
-  width: min(100%, 570px);
+  width: min(100%, 540px);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
+  isolation: isolate;
 }
 
-.gw-wheel-shell::before,
+/* Warmer Schein hinter dem Rad. */
+.gw-wheel-shell::before {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(211, 168, 74, 0.12) 0, rgba(186, 138, 49, 0.06) 45%, transparent 68%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Feiner Außenkreis. */
 .gw-wheel-shell::after {
   content: "";
   position: absolute;
+  inset: -17px;
+  border: 1px solid rgba(192, 161, 91, 0.15);
   border-radius: 50%;
+  box-shadow: 0 0 0 8px rgba(209, 173, 89, 0.015);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── Der Goldring ────────────────────────────────────────────────────
+   Ein Kegelverlauf mit hellen und dunklen Stellen erzeugt den Eindruck
+   von poliertem Metall - ohne Bild, ohne Filter. */
+.gw-wheel-rim {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 25px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 10deg,
+    #624820 0deg, #e2c27b 24deg, #fff4ce 45deg, #a9803b 75deg,
+    #4c3619 112deg, #b59558 142deg, #f7e2a5 180deg, #a57d36 216deg,
+    #44321b 255deg, #e1bc6e 305deg, #fce9b4 332deg, #624820 360deg
+  );
+  box-shadow:
+    0 32px 50px rgba(0, 0, 0, 0.67),
+    0 4px 0 #695329,
+    0 8px 0 #292218,
+    inset 0 0 0 1px #ffe6a9,
+    inset 0 0 0 5px #171813,
+    inset 0 0 0 6px #af9560,
+    inset 0 0 0 11px rgba(16, 15, 9, 0.4),
+    inset 0 0 0 12px rgba(245, 219, 154, 0.4);
+}
+
+/* Feine Riffelung auf dem Ring. */
+.gw-wheel-rim::before {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 238, 174, 0.53) 0deg 0.18deg, transparent 0.18deg 2deg);
+  -webkit-mask: radial-gradient(transparent 68.9%, #000 69.3%);
+  mask: radial-gradient(transparent 68.9%, #000 69.3%);
   pointer-events: none;
 }
 
-.gw-wheel-shell::before {
-  inset: 4%;
-  border: 1px solid rgba(240, 217, 149, 0.42);
-  box-shadow: 0 0 55px rgba(213, 180, 95, 0.12), inset 0 0 45px rgba(0, 0, 0, 0.62);
+/* Innere Fassung. */
+.gw-wheel-rim::after {
+  content: "";
+  position: absolute;
+  inset: 24px;
+  border: 2px solid #e4c582;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 4px #0a0d0b, inset 0 0 20px rgba(0, 0, 0, 0.67);
+  pointer-events: none;
 }
 
-.gw-wheel-shell::after {
-  inset: 0;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
+/* ── Die Scheibe: das Einzige, was sich dreht ──────────────────────── */
 .gw-wheel-svg {
-  width: 92%;
-  height: 92%;
-  overflow: visible;
-  filter: drop-shadow(0 28px 38px rgba(0, 0, 0, 0.34));
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 4px solid #171b14;
+  border-radius: 50%;
+  background: #151a15;
+  overflow: hidden;
 }
 
 .gw-wheel-segment {
-  stroke: rgba(243, 240, 232, 0.15);
+  stroke: #b8a06b;
+  stroke-opacity: 0.35;
   stroke-width: 1;
+  fill: url(#gwSegmentDark);
 }
 
-.gw-wheel-segment:nth-of-type(3n + 1) { fill: #16191a; }
-.gw-wheel-segment:nth-of-type(3n + 2) { fill: #26231c; }
-.gw-wheel-segment:nth-of-type(3n) { fill: #202426; }
-.gw-wheel-segment.is-featured { fill: #6f5b2f; }
-.gw-wheel-segment.is-box { fill: #4d3927; }
+.gw-wheel-segment.is-bright { fill: url(#gwSegmentBright); }
+.gw-wheel-segment.is-featured { fill: url(#gwSegmentSpecial); }
+.gw-wheel-segment.is-box { fill: url(#gwSegmentSpecial); }
 
 .gw-wheel-label {
-  fill: var(--gw-paper);
-  font-family: var(--tg-sans, "Avenir Next", "Segoe UI", sans-serif);
-  font-size: 15px;
-  font-weight: 760;
+  fill: #f4e7c7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 39px;
   text-anchor: middle;
-  dominant-baseline: middle;
-  letter-spacing: 0;
 }
+
+/* Yumaks Box steht als Wort da und braucht deshalb weniger Größe. */
+.gw-wheel-label.is-word { font-size: 29px; }
+.gw-wheel-label.on-special { fill: #ffedba; }
 
 .gw-wheel-label-unit {
-  fill: rgba(243, 240, 232, 0.58);
-  font-size: 8px;
-  font-weight: 650;
-  text-transform: uppercase;
+  fill: #d7c9a8;
+  font-family: var(--tg-sans, Arial, sans-serif);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-anchor: middle;
 }
 
+.gw-wheel-dot {
+  fill: #f2dca5;
+  fill-opacity: 0.85;
+}
+
+/* ── Die Nabe mit dem Bildzeichen ──────────────────────────────────── */
 .gw-wheel-hub {
   position: absolute;
-  width: 27%;
-  aspect-ratio: 1;
+  inset: 37.5%;
+  z-index: 3;
   display: grid;
-  place-content: center;
-  text-align: center;
-  border: 1px solid rgba(240, 217, 149, 0.5);
+  place-items: center;
+  padding: 11px;
+  border: 0;
   border-radius: 50%;
-  background: #0b0c0d;
-  box-shadow: 0 0 0 8px rgba(5, 5, 5, 0.78), 0 12px 28px rgba(0, 0, 0, 0.45);
+  background: conic-gradient(from 35deg, #fff0b7, #84632f 22%, #e5cc8e 40%, #fff4c8 49%, #6a4d25 71%, #d1b576 90%, #fff0b7);
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.67), inset 0 0 0 1px #fff0c4;
+  isolation: isolate;
 }
 
-.gw-wheel-hub span,
-.gw-wheel-hub strong {
-  display: block;
-  letter-spacing: 0;
-  text-transform: uppercase;
+.gw-wheel-hub::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 32% 13%, #373c2e, #131a14 65%, #090e0b);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), inset 0 0 0 2px #272d21;
+  z-index: -1;
 }
 
-.gw-wheel-hub span {
-  color: var(--gw-gold-soft);
-  font-size: clamp(0.58rem, 1vw, 0.74rem);
-  font-weight: 780;
+.gw-wheel-hub img {
+  width: 69%;
+  height: 86%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.53));
 }
 
-.gw-wheel-hub strong {
-  margin-top: 3px;
-  color: var(--gw-paper);
-  font-size: clamp(0.5rem, 0.8vw, 0.64rem);
-  font-weight: 650;
-}
-
+/* ── Der Zeiger ────────────────────────────────────────────────────── */
 .gw-wheel-pointer {
   position: absolute;
-  top: -1%;
+  top: -15px;
   left: 50%;
   z-index: 4;
-  width: 22px;
-  height: 42px;
+  width: 35px;
+  height: 57px;
   transform: translateX(-50%);
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  background: var(--gw-gold-soft);
-  filter: drop-shadow(0 8px 9px rgba(0, 0, 0, 0.5));
+  background: linear-gradient(100deg, #7a5727 0%, #ecd397 33%, #fff3c2 49%, #b79651 51%, #e9ce8e 100%);
+  clip-path: polygon(10% 0, 90% 0, 100% 28%, 88% 50%, 50% 100%, 12% 50%, 0 28%);
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.5));
 }
 
-.gw-wheel-orbit {
-  position: absolute;
-  inset: 1%;
-  border: 1px dashed rgba(240, 217, 149, 0.18);
-  border-radius: 50%;
-  animation: gw-orbit 24s linear infinite;
+/* ── Auf dem Handy ─────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .gw-wheel-visual { padding: 32px 0; }
+  .gw-wheel-rim { padding: 17px; }
+  .gw-wheel-rim::after { inset: 16px; }
+  .gw-wheel-rim::before { inset: 10px; }
+  .gw-wheel-shell::after { inset: -10px; }
+  .gw-wheel-rim {
+    box-shadow:
+      0 20px 35px rgba(0, 0, 0, 0.67),
+      0 3px 0 #695329,
+      0 5px 0 #292218,
+      inset 0 0 0 1px #ffe6a9,
+      inset 0 0 0 4px #171813,
+      inset 0 0 0 5px #af9560;
+  }
+  .gw-wheel-svg { border-width: 2px; }
+  .gw-wheel-hub { padding: 8px; }
+  .gw-wheel-hub::before { inset: 5px; }
+  .gw-wheel-pointer { width: 25px; height: 41px; top: -11px; }
 }
+
+/* ── Reduzierte Bewegung ───────────────────────────────────────────────
+   Die Drehung selbst wird in spiele.js auf die Dauer 0 gesetzt: Das
+   Ergebnis erscheint dann sofort am richtigen Feld, statt dass jemand
+   eine Bewegung sieht, die er abgestellt hat. Hier bleibt nur, was
+   sonst noch liefe. */
+@media (prefers-reduced-motion: reduce) {
+  .gw-wheel-svg { transition: none !important; }
+}
+
 
 .gw-wheel-copy {
   padding: 64px clamp(18px, 4vw, 58px) 64px 0;
@@ -1736,10 +1853,6 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
   to { background-position: -240% 0; }
 }
 
-@keyframes gw-orbit {
-  to { transform: rotate(360deg); }
-}
-
 @keyframes gw-box-float {
   0%, 100% { transform: rotateX(3deg) rotateY(-7deg) translateY(0) scale(var(--gw-box-scale)); }
   50% { transform: rotateX(2deg) rotateY(-4deg) translateY(-8px) scale(var(--gw-box-scale)); }
@@ -2130,9 +2243,6 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
     gap: 10px;
   }
 
-  .gw-wheel-label {
-    font-size: 13px;
-  }
 
   .gw-rush-hud {
     min-height: 76px;
@@ -2190,4 +2300,18 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Hinweis zu den Feldgroessen - siehe die Begruendung in spiele.html. */
+.gw-wheel-oddsnote {
+  margin: 10px 0 0;
+  max-width: 46em;
+  color: rgba(243, 240, 232, 0.55);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.gw-wheel-oddsnote a {
+  color: var(--gw-gold-soft, #e8bd61);
+  text-underline-offset: 3px;
 }

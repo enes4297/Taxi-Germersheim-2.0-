@@ -3,9 +3,9 @@
 Interne Arbeitsunterlage. Sie wird **nicht** mit ausgeliefert.
 
 Stand: 23.09.2026. Aufgenommen auf `feature/016-rewards-yumak` (`c93b315`),
-**fortgeschrieben nach Schritt 017 bis 020** auf `feature/020-konto`.
+**fortgeschrieben nach Schritt 017 bis 020 und 022** auf `feature/022-gluecksrad-design`.
 
-> **Was die Schritte 017 bis 020 erledigt haben, steht in Abschnitt 8 bis 11 am Ende.** Die
+> **Was die Schritte 017 bis 020 und 022 erledigt haben, steht in Abschnitt 8 bis 12 am Ende.** Die
 > Abschnitte 1 bis 7 sind der Befund vom 23.09.2026 und bleiben als
 > Ausgangslage stehen; erledigte Punkte sind dort mit ✔ gekennzeichnet.
 
@@ -1233,3 +1233,200 @@ Aus Bestandsmaterial stammen noch: `meinkonto.html`, `kundenkonto.html`
 
 Die ersten sechs sind **Schritt 021 — Kontoübersichten**. `spiele.html`
 gehört zu Punkt 4 der Reihenfolge und bleibt liegen.
+
+---
+
+## 12. Schritt 022 — Das Glücksrad (Gestaltung, einmalig vorgezogen)
+
+Branch `feature/022-gluecksrad-design`, abgezweigt von `feature/020-konto`
+(`307dc82`). **Einmalig vorgezogen** auf Wunsch des Auftraggebers; danach
+geht es mit dem Abschluss der öffentlichen Webseite weiter.
+
+> **Es wurde keine Teilnahme aktiviert.** Das Glücksrad bleibt für Kunden
+> gesperrt, genau wie zuvor. Dieser Schritt hat das Aussehen übernommen,
+> sonst nichts.
+
+### 12.1 Der Stand der Anbindung — nachgesehen, nicht vorausgesetzt
+
+Der Auftrag verlangte ausdrücklich, den Stand zu prüfen statt ihn
+anzunehmen. Ergebnis:
+
+| Frage | Befund |
+|---|---|
+| Wird `spin_rewards_wheel` im Kundenbereich aufgerufen? | **Nein.** Der einzige Aufruf im Projekt steht in `admin/rewards.js:807`, also in der Zentrale |
+| Ist die Schaltfläche am Rad bedienbar? | **Nein.** In *jedem* Zustand `disabled` — „Nicht verfügbar", „Bald verfügbar", „Kein Dreh verfügbar" |
+| Gibt es eine Gewinnlogik im Browser? | **Nein**, und es kam auch keine dazu |
+
+Daran ändert dieser Schritt nichts. Der Prüflauf stellt alle drei Punkte
+ausdrücklich fest, damit es auch so bleibt.
+
+### 12.2 Was übernommen wurde
+
+Aus `design-vorlagen/Taxi-Germersheim-Gluecksrad.html`: der Goldring mit
+Kegelverlauf und Riffelung, der Zeiger, die Nabe mit dem **Bildzeichen ohne
+Schriftzug**, die Segmentfarben und die Drehbewegung (fünf Umdrehungen,
+4800 ms, `cubic-bezier(.12,.65,.08,1)`).
+
+Das Bildzeichen lag in der Vorlage als eingebettete Datei; es liegt jetzt
+als `public/assets/brand/tg-bildzeichen.svg` im Projekt. **Geprüft: Es
+enthält kein `<text>` und keine Buchstabenfolge „TAXI" oder
+„GERMERSHEIM"** — es ist wirklich das Zeichen ohne Schrift.
+
+**Die Vorlage selbst wird nicht ausgeliefert.** `design-vorlagen/` steht
+nicht in der Übernahmeliste; der Prüflauf stellt fest, dass weder der Ordner
+noch die Datei im Ausgabeordner landen.
+
+### 12.3 Abweichung der Vorlage — benannt und behandelt
+
+> **Die Vorlage zeigt sieben GLEICH GROSSE Felder. Die hinterlegten
+> Wahrscheinlichkeiten sind nicht gleich.**
+
+| Feld | Wahrscheinlichkeit | Feldanteil auf dem Rad |
+|---|---|---|
+| 5 Punkte | 35 % | 14,3 % |
+| 10 Punkte | 25 % | 14,3 % |
+| 20 Punkte | 18 % | 14,3 % |
+| 30 Punkte | 10 % | 14,3 % |
+| 50 Punkte | 7 % | 14,3 % |
+| Gutschein 20,00 € | 4 % | 14,3 % |
+| Yumaks Box | 1 % | 14,3 % |
+
+(Quelle: `public.rewards_wheel_rules()` und der `roll`-Block in
+Migration 007.)
+
+Gleich große Felder legen Gleichverteilung nahe. **Angepasst wurde nicht die
+Größe** — ein Feld mit 1 % wäre 3,6 Grad breit und unlesbar, und die
+Gestaltung ist freigegeben —, **sondern die Umgebung:** Unter dem Rad steht
+jetzt, dass alle Felder gleich groß dargestellt sind, dass die Feldgröße
+nichts über die Gewinnchance sagt, und wo die Werte stehen. Die Vorlage sagt
+dasselbe in ihrem Vorschautext; hier steht es in der Kundenansicht.
+
+**Die Beschriftungen stimmen** — geprüft gegen die sieben `prize_type`-Werte
+der Migration, in derselben Reihenfolge. Einzige Abweichung in der
+Schreibweise: Auf dem Radfeld steht „20 €", in Regel und Ergebnistext
+„20,00 €". Auf einem Radfeld ist der kurze Wert lesbarer; der Betrag ist
+derselbe.
+
+### 12.4 Wie ein bestätigtes Serverergebnis später auf das Feld kommt
+
+Das war die eigentliche Vorbereitungsaufgabe.
+
+```js
+window.TaxiGluecksrad.stoppeAuf('voucher_20')   // → Promise<Feld|null>
+```
+
+`stoppeAuf()` **nimmt einen Gewinntyp entgegen**. Sie würfelt nicht, sie
+rät nicht, und sie enthält keine Zufallsfunktion — der Prüflauf sucht
+ausdrücklich nach `Math.random` und `crypto.getRandomValues` und findet
+keines. Ist der Schlüssel unbekannt, **dreht sich das Rad gar nicht** und
+die Funktion meldet `null`; ein Rad, das bei unbekanntem Ergebnis irgendwo
+stehen bliebe, würde einen Gewinn behaupten.
+
+Die sieben Schlüssel sind genau die der Migration: `points_5`, `points_10`,
+`points_20`, `points_30`, `points_50`, `voucher_20`, `yumaks_box`.
+
+**Die Zuordnung ist gemessen, nicht gerechnet:** Für jeden der sieben
+Schlüssel wird gedreht und anschließend aus der *tatsächlichen* Drehung und
+der Geometrie der Felder bestimmt, welches Feld unter dem Zeiger steht.
+Abweichung überall unter 0,001 Grad, auf einem Feld von 51,43 Grad.
+
+### 12.5 Ein Fehler, den der Prüflauf gefunden hat
+
+Der erste Entwurf zählte den Drehwinkel fort: `rotation + 360*5 + rest`.
+Nach sieben Drehungen lag der Zeiger 0,043 Grad daneben, und der Wert wuchs
+weiter.
+
+Die Ursache war **nicht** die Rechnung, sondern die Ablage: **Der Browser
+rundet, wenn er `style.transform` als Text speichert.** Aus
+`10902.857142857143` wird `rotate(10902.9deg)` — sechs geltende Ziffern. Je
+größer der Winkel, desto gröber die Rundung. Bei tausend Drehungen wären es
+Grad statt Bruchteile, und das Rad träfe das Feld nicht mehr.
+
+Behoben an der Ursache: Der abgelegte Winkel bleibt jetzt **immer zwischen
+0 und 360**; die vollen Umdrehungen leben nur in der Bildfolge, nicht im
+Zustand. Sichtbar ist das dasselbe. Die Abweichung ist damit von 0,043 auf
+unter 0,0005 Grad gefallen — und sie wächst nicht mehr mit der Zahl der
+Drehungen. Der Prüflauf sieht seither ausdrücklich nach, dass der abgelegte
+Winkel unter 360 bleibt.
+
+### 12.6 Die Designprobe
+
+`sichtproben/gluecksrad.html` — bedienbar, mit Auswahlliste für das
+Testergebnis, außerhalb der Produktionsausgabe.
+
+Sie trägt oben den Streifen **„Demo – keine echten Gewinne"** mit dem Satz,
+dass keine Drehs verbraucht, keine Punkte gebucht und keine Gutscheine
+erzeugt werden, und dass im echten Betrieb ausschließlich der Server
+entscheidet.
+
+**Die Auswahlliste gibt es nur dort.** Der Prüflauf stellt fest, dass
+`spiele.html` kein einziges `<select>` enthält.
+
+Die Probe lädt **nicht** `spiele.js` — das würde die gesamte
+Rewards-Initialisierung mitstarten, die dort weder Elemente noch eine
+Anmeldung vorfindet. Deshalb steht die Radlogik jetzt in einer eigenen
+Datei `gluecksrad.js`, die **beide** benutzen. Zwei getrennte
+Radimplementierungen wären die Art von Doppelung, bei der eine von beiden
+irgendwann anders rechnet.
+
+### 12.7 Was geprüft wurde
+
+| Lauf | Ergebnis |
+|---|---|
+| `gluecksrad-pruefen` (neu) | **77 / 77** — Desktop und Mobil |
+| `ausgabe-pruefen` | **72 / 72** |
+| `grundlagen-pruefen` | **60 / 60** |
+| `browser-pruefen` | **15 / 15** |
+| `startseite-pruefen` | **187 / 187** — unverändert |
+| `rewards-pruefen` | **66 / 66** — unverändert |
+| `anmeldung-pruefen` | **154 / 154** — unverändert |
+
+Im Einzelnen: der Stand der Anbindung · die Beschriftungen gegen Migration
+007 · für jeden der sieben Gewinntypen der gemessene Stopp auf dem richtigen
+Feld, auf Desktop und Handy · unbekanntes Ergebnis dreht nicht · der
+abgelegte Winkel bleibt unter 360 · fünf gleichzeitige Anfragen werden zu
+einer · mehrfaches Klicken · reduzierte Bewegung (Ergebnis in 0 ms statt
+4800 ms, auf dem richtigen Feld) · Zeigerposition mittig auf 0 px genau ·
+Radgröße 540 px Desktop, 311 px Handy · Beschriftungshöhe 42 bzw. 25 px ·
+kein waagerechter Überlauf · Vorlage und Probe nicht ausgeliefert.
+
+**Alles mit isolierten Testwerten** — den sieben Schlüsselwörtern der
+Migration. Kein echter Dreh, keine Anmeldung, keine Punkte, keine
+Gutscheine, keine Datenbankverbindung.
+
+Nebenbei behoben: Der Radbereich bekam `scroll-margin-top: 104px`. Der
+klebende Seitenkopf ist 88 px hoch, der Zeiger sitzt 31 px unter dem Anfang
+des Bereichs — beim Anspringen lag er dahinter.
+
+### 12.8 Was für eine echte Teilnahme noch fehlt
+
+Das ist **nicht** Gegenstand dieses Schritts und wurde ausdrücklich nicht
+angefasst:
+
+1. **Der Aufruf von `spin_rewards_wheel`** aus dem Kundenbereich. Die
+   Funktion existiert in Migration 007 und wird heute nur von der Zentrale
+   gerufen.
+2. **Die Freigabe der Schaltfläche.** Sie ist in jedem Zustand gesperrt;
+   das muss eine bewusste Entscheidung aufheben, nicht ein Nebeneffekt.
+3. **Die Rechte.** Ob ein angemeldeter Kunde `spin_rewards_wheel` überhaupt
+   ausführen darf, ist **ungeprüft** — das steht in den Grants und Policies
+   der produktiven Instanz, nicht in einer lokalen Datei.
+4. **Der Umgang mit einem Fehlschlag.** Was die Seite zeigt, wenn der
+   Aufruf scheitert, nachdem der Dreh bereits abgebucht wurde, ist nicht
+   festgelegt. Die Migration bucht den Dreh ab, *bevor* sie den Gewinn
+   ermittelt — ein abgebrochener Aufruf darf keinen verlorenen Dreh
+   hinterlassen, ohne dass es jemand merkt.
+5. **Yumaks Box.** Bei `yumaks_box` entsteht ein Vorgang mit Status
+   `pending`. Was der Kunde dann sieht und wie es weitergeht, ist offen.
+6. **Eine echte Anmeldung** — dieselbe offene Prüfung wie in Schritt 020.
+
+**Punkt 4 und 5 sind Geschäftsregeln, keine Gestaltung.** Sie gehören
+beantwortet, bevor eine Teilnahme freigeschaltet wird.
+
+### 12.9 Unverändert geblieben
+
+Rewards-Regeln, Gewinnwahrscheinlichkeiten, Anmeldung, Datenbanklogik,
+`customer-auth.js`, Startseite, Hero-Video, Yumak, Taxi Rush, Yumaks Box,
+`admin/`, `fahrer/`, `dashboard/`. An `spiele.js` wurde nur die Radlogik
+herausgelöst; Rewards-Status, Verlauf und Box sind Zeile für Zeile
+dieselben.

@@ -88,12 +88,13 @@
         <div class="gw-wheel-visual">
           <div class="gw-wheel-shell">
             <span class="gw-wheel-pointer" aria-hidden="true"></span>
-            <svg class="gw-wheel-svg" data-gw-wheel-svg viewBox="0 0 400 400" role="img" aria-label="Glücksrad mit den im Rewards-Backend hinterlegten Gewinnarten"></svg>
-            <div class="gw-wheel-hub" aria-hidden="true">
-              <span>Yumaks</span>
-              <strong>Spielwelt</strong>
+            <!-- Der Goldring liegt fest; nur das SVG darin dreht sich. -->
+            <div class="gw-wheel-rim" aria-hidden="true">
+              <svg class="gw-wheel-svg" data-gw-wheel-svg viewBox="0 0 500 500" role="img" aria-label="Glücksrad mit den im Rewards-Backend hinterlegten Gewinnarten"></svg>
             </div>
-            <span class="gw-wheel-orbit" aria-hidden="true"></span>
+            <div class="gw-wheel-hub" aria-hidden="true">
+              <img src="assets/brand/tg-bildzeichen.svg" alt="" width="335" height="422" draggable="false" />
+            </div>
           </div>
         </div>
 
@@ -113,6 +114,16 @@
           </div>
 
           <p class="gw-contract-note">Das Ergebnis echter Rewards wird ausschließlich im Backend festgelegt.</p>
+          <!--
+            ABWEICHUNG DER DESIGNVORLAGE, ausdruecklich benannt: Die sieben
+            Felder sind gleich gross, die hinterlegten Wahrscheinlichkeiten
+            sind es nicht (35 / 25 / 18 / 10 / 7 / 4 / 1 Prozent, siehe
+            public.rewards_wheel_rules(), Migration 007). Gleich grosse
+            Felder legen Gleichverteilung nahe - deshalb steht es hier
+            ausdruecklich anders da, mit Verweis auf die Seite, die die
+            Werte nennt.
+          -->
+          <p class="gw-wheel-oddsnote">Alle sieben Felder sind gleich groß dargestellt. Die Feldgröße sagt nichts über die Gewinnchance – die tatsächlichen Wahrscheinlichkeiten stehen unter <a href="rewards.html">Rewards</a>.</p>
         </div>
 
         <div class="gw-win-reveal" data-gw-win-reveal hidden role="status" aria-live="assertive">
@@ -280,6 +291,7 @@
   </footer>
 
   <script src="customer-auth.js"></script>
+  <script src="gluecksrad.js"></script>
   <script src="spiele.js"></script>
   <script src="taxi-rush.js"></script>
 </body>

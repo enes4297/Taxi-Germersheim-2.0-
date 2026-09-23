@@ -4,7 +4,7 @@ Interne Arbeitsunterlage. Sie wird **nicht** mit ausgeliefert — der Prüflauf
 `npm run ausgabe-pruefen` stellt sicher, dass keine `.md`-Datei im
 Ausgabeordner landet.
 
-Stand: 23.09.2026, nach Schritt 020 (Anmeldeseiten).
+Stand: 23.09.2026, nach Schritt 022 (Gluecksrad-Gestaltung).
 
 ---
 
@@ -20,7 +20,8 @@ dev
                           └── feature/017-grundlagen (6c5e27c)  Grundlagen
                                └── feature/018-rechtsseiten (7caeca5)  Rechtsseiten
                                     └── feature/019-flotte (7401212)  Flotte + Spezial
-                                         └── feature/020-konto   Anmeldeseiten
+                                         └── feature/020-konto (307dc82)  Anmeldeseiten
+                                              └── feature/022-gluecksrad-design
 ```
 
 **Jeder Schritt zweigt vom vorigen ab, nicht von `dev`.** Das ist Absicht: 013
@@ -28,7 +29,7 @@ setzt auf Gerüst, Übernahme-Liste und Prüfwerkzeugen aus 012 auf, 014 auf der
 Design-Grundlage aus 013. Ein Abzweig von `dev` hätte jeweils nichts davon.
 
 **Folge für die Reihenfolge:** Die Kette muss in dieser Reihenfolge nach `dev` —
-012, 013, 014, 015, 016, 017, 018, 019, 020. Wird eine übersprungen, kommt ihr Inhalt später doppelt
+012, 013, 014, 015, 016, 017, 018, 019, 020, 022. Wird eine übersprungen, kommt ihr Inhalt später doppelt
 oder gar nicht mit.
 
 Merge nach `dev` macht der Mensch — nicht der Assistent.
@@ -104,6 +105,7 @@ npm run grundlagen-browser-pruefen  # dasselbe im Browser, ohne Aussenverbindung
 npm run rechtsseiten-pruefen # Darstellung aller sieben Astro-Unterseiten
 npm run flotte-pruefen       # Flotte, Spezialfahrten und der Anfrageweg
 npm run anmeldung-pruefen    # die vier Anmeldeseiten (simuliert)
+npm run gluecksrad-pruefen   # Gluecksrad: Abbildung, Stopp, Darstellung
 npm run dev              # örtlicher Entwicklungsserver
 npm run preview          # den fertigen Ausgabeordner ansehen
 ```

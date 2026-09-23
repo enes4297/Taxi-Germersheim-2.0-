@@ -135,7 +135,7 @@ const WURZELDATEIEN = [
   // Skripte
   'customer-auth.js', 'home-luxury.js',
   'public-premium-v2.js', 'public-system.js', 'rewards-customer.js', 'script.js',
-  'spiele.js', 'taxi-rush.js',
+  'gluecksrad.js', 'spiele.js', 'taxi-rush.js',
   // Bilder
   'logo.png', 'yumak-avatar.png',
 ];
