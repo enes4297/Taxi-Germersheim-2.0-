@@ -1,0 +1,343 @@
+---
+/**
+ * Neues Passwort festlegen — unter derselben Adresse wie bisher
+ * (passwort-zuruecksetzen.html).
+ *
+ * Das ist zugleich die RUECKKEHRSEITE: Der Link aus der Reset-Mail landet
+ * hier, mit den Anmeldedaten im Adressteil (`#access_token=…&type=recovery`
+ * oder `?code=…&type=recovery`).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DREI ZUSTAENDE, KLAR GETRENNT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ *   recoveryChecking   „Recovery-Link wird geprüft …" - der Ausgangszustand
+ *   Formular           erst sichtbar, wenn Supabase die Sitzung bestaetigt hat
+ *   recoveryInvalid    „Dieser Link ist nicht mehr gültig."
+ *   recoverySuccess    nach erfolgreicher Aenderung
+ *
+ * Das Formular ist bis zur Bestaetigung VERBORGEN. Wer ein Passwort in ein
+ * Feld tippt, das gar nichts speichern kann, hat es zweimal getippt.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DIE ADRESSE WIRD SOFORT GELEERT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `adresseLeeren()` nimmt Zugangsmerkmal und Typ aus der Adresszeile,
+ * sobald sie gelesen sind. Sonst stuenden sie im Verlauf des Browsers, in
+ * jedem `Referer` und in jedem Bildschirmfoto dieser Seite. Uebernommen aus
+ * dem Bestand und hier ausdruecklich festgehalten, damit es niemand
+ * wegoptimiert.
+ *
+ * Aus demselben Grund steht in KEINEM Protokoll dieser Seite ein Merkmal,
+ * eine Adresse oder ein Passwort.
+ *
+ * UNVERAENDERT: die Kennungen resetPasswordForm, newPassword,
+ * confirmPassword, passwordRules, passwordStrength, passwordStrengthBar,
+ * passwordStrengthText, recoveryChecking, recoveryInvalid, recoverySuccess,
+ * resetError - dazu alle Pruefungen und Meldungstexte. Nach erfolgreicher
+ * Aenderung wird wie bisher abgemeldet, damit die Sitzung des Reset-Links
+ * nicht weiterlebt.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
+import Anmeldekarte from '../components/Anmeldekarte.astro';
+import Passwortfeld from '../components/Passwortfeld.astro';
+import Passwortregeln from '../components/Passwortregeln.astro';
+---
+
+<Grundlage
+  titel="Neues Passwort | Taxi Germersheim GmbH"
+  beschreibung="Vergeben Sie ein neues Passwort für Ihr Taxi-Germersheim-Kundenkonto."
+  pfad="passwort-zuruecksetzen.html"
+  nichtIndexieren
+>
+  <Sprungmarken />
+  <Kopfbereich startseite={false} />
+
+  <main id="inhalt" class="pt-16 lg:pt-20">
+    <Anmeldekarte
+      label="Neues Passwort festlegen"
+      titel="Passwort ändern"
+      text="Vergeben Sie ein neues sicheres Passwort für Ihr Taxi-Germersheim-Kundenkonto."
+      formularTitel="Passwort ändern"
+      formularText="Der Recovery-Link wird sicher geprüft, bevor Sie Ihr Passwort ändern können."
+      fusstext="Ihre Zugangsdaten werden sicher über Supabase Auth verarbeitet."
+    >
+      {/* ── Zustand 1: wird geprüft ───────────────────────────────────── */}
+      <p id="recoveryChecking" class="flex items-center gap-3 text-sm text-muted-foreground" role="status" aria-live="polite">
+        <span class="w-4 h-4 shrink-0 border-2 border-primary/30 border-t-primary rounded-full tg-dreht" aria-hidden="true"></span>
+        Recovery-Link wird geprüft …
+      </p>
+
+      {/* ── Zustand 2: Link ungültig ──────────────────────────────────── */}
+      <div id="recoveryInvalid" hidden role="status" aria-live="polite">
+        <p class="text-sm leading-relaxed text-foreground">Dieser Link ist nicht mehr gültig.</p>
+        <a
+          href="passwort-vergessen.html"
+          class="mt-5 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold hover:bg-[#d4b87d] transition-colors duration-150 tg-press"
+        >
+          Neuen Reset-Link anfordern
+        </a>
+      </div>
+
+      {/* ── Zustand 3: geschafft ──────────────────────────────────────── */}
+      <div id="recoverySuccess" hidden role="status" aria-live="polite">
+        <p class="text-sm leading-relaxed text-foreground">Ihr Passwort wurde erfolgreich geändert.</p>
+        <a
+          href="anmelden.html"
+          class="mt-5 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold hover:bg-[#d4b87d] transition-colors duration-150 tg-press"
+        >
+          Jetzt anmelden
+        </a>
+      </div>
+
+      {/* ── Das Formular: erst sichtbar, wenn der Link trägt ──────────── */}
+      <form id="resetPasswordForm" novalidate hidden class="space-y-5">
+        <div>
+          <Passwortfeld id="newPassword" name="newPassword" label="Neues Passwort" autocomplete="new-password" schalterLabel="Neues Passwort" />
+          <Passwortregeln huelleId="passwordStrength" />
+        </div>
+
+        <Passwortfeld id="confirmPassword" name="confirmPassword" label="Passwort wiederholen" autocomplete="new-password" schalterLabel="Wiederholung" />
+
+        <p id="resetError" class="tg-fehler text-sm text-red-400" role="alert" aria-live="assertive"></p>
+
+        <button
+          type="submit"
+          class="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold hover:bg-[#d4b87d] transition-colors duration-150 tg-press disabled:opacity-60"
+        >
+          <span data-knopf-text>Passwort speichern</span>
+        </button>
+      </form>
+    </Anmeldekarte>
+  </main>
+
+  <Fusszeile startseite={false} />
+  <script is:inline src="/customer-auth.js"></script>
+</Grundlage>
+
+<style>
+  .tg-fehler:empty {
+    display: none;
+  }
+  .tg-dreht {
+    animation: tg-drehen 900ms linear infinite;
+  }
+  @keyframes tg-drehen {
+    to { transform: rotate(360deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tg-dreht { animation: none; }
+  }
+</style>
+
+<script>
+  const form = document.getElementById('resetPasswordForm') as HTMLFormElement;
+  const neuesFeld = document.getElementById('newPassword') as HTMLInputElement;
+  const wiederholung = document.getElementById('confirmPassword') as HTMLInputElement;
+  const regelnListe = document.getElementById('passwordRules')!;
+  const staerkeHuelle = document.getElementById('passwordStrength')!;
+  const staerkeBalken = document.getElementById('passwordStrengthBar')!;
+  const staerkeText = document.getElementById('passwordStrengthText')!;
+  const zustandPruefen = document.getElementById('recoveryChecking')!;
+  const zustandUngueltig = document.getElementById('recoveryInvalid')!;
+  const zustandErfolg = document.getElementById('recoverySuccess')!;
+  const error = document.getElementById('resetError')!;
+  const knopf = form.querySelector<HTMLButtonElement>('[type="submit"]')!;
+  const knopfText = knopf.querySelector<HTMLElement>('[data-knopf-text]')!;
+
+  let client: any = null;
+  let bereit = false;
+  let abo: any = null;
+
+  /** Traegt die Adresse ueberhaupt ein Zugangsmerkmal aus der Mail? */
+  function merkmalVorhanden() {
+    const suche = new URLSearchParams(window.location.search);
+    const raute = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    return (
+      (raute.get('type') === 'recovery' && Boolean(raute.get('access_token'))) ||
+      (suche.get('type') === 'recovery' && Boolean(suche.get('code')))
+    );
+  }
+  const merkmalWarDa = merkmalVorhanden();
+
+  const sitzungGilt = (s: any) => Boolean(s && s.access_token && s.user && s.user.id);
+
+  /**
+   * Zugangsmerkmal aus der Adresszeile nehmen, sobald es gelesen ist.
+   * Sonst steht es im Verlauf, im Referer und in jedem Bildschirmfoto.
+   */
+  function adresseLeeren() {
+    if (window.history?.replaceState) {
+      window.history.replaceState(null, document.title, window.location.pathname);
+    }
+  }
+
+  function ungueltigZeigen() {
+    bereit = false;
+    adresseLeeren();
+    zustandPruefen.hidden = true;
+    form.hidden = true;
+    zustandErfolg.hidden = true;
+    zustandUngueltig.hidden = false;
+    form.reset();
+    staerkeZeichnen();
+  }
+
+  function freigeben(sitzung: any) {
+    if (!sitzungGilt(sitzung)) return false;
+    bereit = true;
+    zustandPruefen.hidden = true;
+    zustandUngueltig.hidden = true;
+    zustandErfolg.hidden = true;
+    form.hidden = false;
+    adresseLeeren();
+    neuesFeld.focus();
+    return true;
+  }
+
+  function regelnPruefen(passwort: string) {
+    return {
+      len: passwort.length >= 8,
+      upper: /[A-Z]/.test(passwort),
+      number: /\d/.test(passwort),
+    };
+  }
+
+  function staerkeZeichnen() {
+    const passwort = neuesFeld.value || '';
+    const regeln = regelnPruefen(passwort);
+    const erfuellt = Object.values(regeln).filter(Boolean).length;
+
+    staerkeHuelle.hidden = passwort.length === 0;
+    staerkeBalken.style.width = `${Math.round((erfuellt / 3) * 100)}%`;
+    staerkeText.textContent = !passwort ? '' : erfuellt < 2 ? 'Schwach' : erfuellt < 3 ? 'Mittel' : 'Stark';
+    staerkeBalken.style.backgroundColor = erfuellt < 2 ? '#e97a69' : erfuellt < 3 ? '#f0b35c' : '#7bc47f';
+    staerkeText.style.color = erfuellt < 2 ? '#e97a69' : erfuellt < 3 ? '#f0b35c' : '#7bc47f';
+
+    for (const [schluessel, gut] of Object.entries(regeln)) {
+      regelnListe.querySelector(`[data-rule="${schluessel}"]`)?.classList.toggle('is-ok', gut);
+    }
+    return regeln;
+  }
+
+  neuesFeld.addEventListener('input', staerkeZeichnen);
+
+  for (const schalter of document.querySelectorAll<HTMLButtonElement>('.auth-pass-toggle')) {
+    schalter.addEventListener('click', () => {
+      const feld = document.getElementById(schalter.dataset.target || '') as HTMLInputElement | null;
+      if (!feld) return;
+      const sichtbar = feld.type === 'text';
+      const name = schalter.dataset.label || 'Passwort';
+      feld.type = sichtbar ? 'password' : 'text';
+      schalter.textContent = sichtbar ? 'Anzeigen' : 'Verbergen';
+      schalter.setAttribute('aria-label', `${name} ${sichtbar ? 'anzeigen' : 'verbergen'}`);
+      schalter.setAttribute('aria-pressed', sichtbar ? 'false' : 'true');
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (form.getAttribute('aria-busy') === 'true') return;
+    if (!bereit || !client) {
+      ungueltigZeigen();
+      return;
+    }
+
+    error.textContent = '';
+    const passwort = neuesFeld.value || '';
+    const zweites = wiederholung.value || '';
+    const regeln = staerkeZeichnen();
+
+    if (!Object.values(regeln).every(Boolean)) {
+      error.textContent = 'Das Passwort erfüllt noch nicht alle Regeln.';
+      neuesFeld.focus();
+      return;
+    }
+    if (passwort !== zweites) {
+      error.textContent = 'Passwort und Bestätigung stimmen nicht überein.';
+      wiederholung.focus();
+      return;
+    }
+
+    form.setAttribute('aria-busy', 'true');
+    knopf.disabled = true;
+    knopfText.textContent = 'Wird gespeichert …';
+
+    try {
+      const stand = await client.auth.getSession();
+      if (stand.error || !sitzungGilt(stand.data?.session)) {
+        ungueltigZeigen();
+        return;
+      }
+
+      const ergebnis = await client.auth.updateUser({ password: passwort });
+      if (ergebnis.error) throw ergebnis.error;
+
+      form.reset();
+      staerkeZeichnen();
+      bereit = false;
+      form.hidden = true;
+      zustandUngueltig.hidden = true;
+      zustandPruefen.hidden = true;
+      zustandErfolg.hidden = false;
+
+      // Abmelden: Die Sitzung des Reset-Links soll nicht weiterleben.
+      const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
+      if (auth && typeof auth.signOut === 'function') await auth.signOut();
+    } catch {
+      // Ohne den Fehlertext des Dienstes - er koennte die Adresse enthalten.
+      console.error('Passwort konnte nicht geändert werden.');
+      error.textContent =
+        'Das Passwort konnte gerade nicht geändert werden. Bitte versuchen Sie es später erneut.';
+    } finally {
+      form.setAttribute('aria-busy', 'false');
+      knopf.disabled = false;
+      knopfText.textContent = 'Passwort speichern';
+    }
+  });
+
+  async function pruefungStarten() {
+    try {
+      const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
+      client = auth && typeof auth.getClient === 'function' ? await auth.getClient() : null;
+      if (
+        !client?.auth ||
+        typeof client.auth.getSession !== 'function' ||
+        typeof client.auth.onAuthStateChange !== 'function' ||
+        typeof client.auth.updateUser !== 'function'
+      ) {
+        throw new Error('PASSWORD_RECOVERY_UNAVAILABLE');
+      }
+
+      const listener = client.auth.onAuthStateChange((ereignis: string, sitzung: any) => {
+        if (ereignis === 'PASSWORD_RECOVERY') freigeben(sitzung);
+      });
+      abo = listener?.data?.subscription ?? null;
+
+      const stand = await client.auth.getSession();
+      if (stand.error) throw stand.error;
+      if (!bereit && merkmalWarDa && sitzungGilt(stand.data?.session)) {
+        freigeben(stand.data.session);
+      }
+      if (!bereit) ungueltigZeigen();
+    } catch {
+      console.error('Prüfung des Recovery-Links fehlgeschlagen.');
+      ungueltigZeigen();
+    }
+  }
+
+  window.addEventListener('beforeunload', () => {
+    if (abo && typeof abo.unsubscribe === 'function') abo.unsubscribe();
+  });
+
+  staerkeHuelle.hidden = true;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', pruefungStarten, { once: true });
+  } else {
+    pruefungStarten();
+  }
+</script>

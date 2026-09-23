@@ -81,6 +81,10 @@ export const UEBERNAHME = [
  *   spezial-anfrage.html     - dito
  *   special-services.css     - wurde NUR von spezial-anfrage.html und
  *                              spezialfahrten.html geladen (nachgesehen)
+ *   anmelden.html            - seit Schritt 020 aus Astro
+ *   registrieren.html        - dito
+ *   passwort-vergessen.html  - dito
+ *   passwort-zuruecksetzen.html - dito
  *   special-services.js      - wurde NUR von spezial-anfrage.html geladen.
  *                              Die neun Fahrtarten und alle ihre Felder
  *                              stehen jetzt in FAHRTARTEN (inhalte.ts) und
@@ -120,10 +124,8 @@ export const UEBERNAHME = [
  */
 const WURZELDATEIEN = [
   // Oeffentliche Seiten
-  'anmelden.html',
   'kunden-einstellungen.html', 'kundenkonto.html',
-  'live-fahrt.html', 'meine-fahrten.html', 'meinkonto.html', 'passwort-vergessen.html',
-  'passwort-zuruecksetzen.html', 'registrieren.html',
+  'live-fahrt.html', 'meine-fahrten.html', 'meinkonto.html',
   'spiele.html', 'wallet-gutscheine.html',
   // Stilvorlagen
   'auth-demo.css', 'home-luxury.css', 'kunden-einstellungen.css',

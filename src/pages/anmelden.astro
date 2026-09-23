@@ -1,0 +1,231 @@
+---
+/**
+ * Anmeldung — unter derselben Adresse wie bisher (anmelden.html).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DIE ANMELDUNG SELBST IST UNVERAENDERT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `customer-auth.js` wird eingebunden, NICHT ersetzt und nicht nachgebaut.
+ * Es gibt weiterhin genau eine Anmeldelogik im Projekt. Diese Seite ruft
+ * `CustomerAuth.signInWithPassword(email, passwort)` auf - derselbe Aufruf
+ * wie bisher, dieselbe Supabase-Anbindung, dieselben Fehlermeldungen.
+ *
+ * UNVERAENDERT UEBERNOMMEN, Zeichen fuer Zeichen:
+ *   - die Kennungen loginForm, loginEmail, loginPassword, loginError,
+ *     authLoginNotice
+ *   - die Feldnamen `email` und `password` (das Skript liest sie ueber
+ *     form.elements)
+ *   - die Pruefung: gueltige E-Mail-Form, Passwort mindestens 8 Zeichen
+ *   - die Rueckmeldungen bei ?registered=1 und ?loggedOut=1
+ *   - die Sonderbehandlung von CUSTOMER_NOT_FOUND
+ *   - die feste Liste erlaubter Rueckkehrziele
+ *
+ * ZUR RUECKKEHR ueber ?weiter=: Nur Ziele aus ERLAUBTE_ZIELE. Ein beliebiger
+ * Wert aus der Adresszeile darf hier nie uebernommen werden - sonst liesse
+ * sich nach der Anmeldung auf eine fremde Seite umleiten. Die Liste steht
+ * unveraendert so im Bestand.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
+import Anmeldekarte from '../components/Anmeldekarte.astro';
+import Passwortfeld from '../components/Passwortfeld.astro';
+import Symbol from '../components/Symbol.astro';
+
+/** Die drei Stichpunkte der alten Seite, wortgleich. */
+const VORTEILE = [
+  'Fahrten im Blick behalten',
+  'Rewards & Gutscheine verwalten',
+  'Persönliche Daten sicher verwalten',
+];
+---
+
+<Grundlage
+  titel="Anmelden | Taxi Germersheim GmbH"
+  beschreibung="Melden Sie sich mit Ihrem Taxi-Germersheim-Konto an, um Fahrten, Rewards und Gutscheine zu verwalten."
+  pfad="anmelden.html"
+  nichtIndexieren
+>
+  <Sprungmarken />
+  <Kopfbereich startseite={false} />
+
+  <main id="inhalt" class="pt-16 lg:pt-20">
+    <Anmeldekarte
+      label="Willkommen zurück"
+      titel="Anmelden"
+      text="Melden Sie sich an, um Ihre Fahrten, Rewards und Gutscheine an einem Ort zu verwalten."
+      formularTitel="Mit Ihrem Taxi-Germersheim-Konto fortfahren."
+      hinweis="Noch kein Konto?"
+      hinweisZiel="registrieren.html"
+      hinweisText="Jetzt registrieren"
+      fusstext="Sichere Anmeldung für Ihr Taxi-Germersheim-Konto"
+    >
+      {/* Rueckmeldung nach Registrierung oder Abmeldung. Leer, solange
+          nichts anliegt - `:empty` blendet den Kasten dann aus. */}
+      <p
+        id="authLoginNotice"
+        class="tg-hinweis mb-6 border border-primary/30 bg-primary/[0.06] px-4 py-3 text-sm text-foreground"
+        role="status"
+        aria-live="polite"
+      ></p>
+
+      <form id="loginForm" novalidate class="space-y-5">
+        <div>
+          <label for="loginEmail" class="block text-sm font-medium text-muted-foreground mb-1.5">E-Mail-Adresse</label>
+          <input
+            id="loginEmail"
+            name="email"
+            type="email"
+            autocomplete="email"
+            inputmode="email"
+            autocapitalize="off"
+            spellcheck="false"
+            required
+            class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+          />
+        </div>
+
+        <Passwortfeld id="loginPassword" name="password" label="Passwort" autocomplete="current-password" />
+
+        <div class="flex justify-end">
+          <a href="passwort-vergessen.html" class="text-sm text-muted-foreground hover:text-primary transition-colors duration-150">
+            Passwort vergessen?
+          </a>
+        </div>
+
+        <p id="loginError" class="tg-fehler text-sm text-red-400" role="alert" aria-live="assertive"></p>
+
+        <button
+          type="submit"
+          class="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold hover:bg-[#d4b87d] transition-colors duration-150 tg-press disabled:opacity-60"
+        >
+          <span data-knopf-text>Anmelden</span>
+        </button>
+      </form>
+    </Anmeldekarte>
+
+    <div class="mx-auto w-full max-w-[34rem] px-5 lg:px-10 pb-16">
+      <ul class="grid gap-2.5">
+        {VORTEILE.map((v) => (
+          <li class="flex items-center gap-2.5 text-sm text-muted-foreground">
+            <Symbol name="haken" class="w-4 h-4 shrink-0 text-primary" />
+            {v}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </main>
+
+  <Fusszeile startseite={false} />
+
+  {/* Die Anmeldelogik des Bestands. Nicht angefasst. */}
+  <script is:inline src="/customer-auth.js"></script>
+</Grundlage>
+
+<style>
+  /* Hinweis- und Fehlerkasten verschwinden, solange sie leer sind. */
+  .tg-hinweis:empty,
+  .tg-fehler:empty {
+    display: none;
+  }
+</style>
+
+<script>
+  const notice = document.getElementById('authLoginNotice')!;
+  const error = document.getElementById('loginError')!;
+  const form = document.getElementById('loginForm') as HTMLFormElement;
+  const knopf = form.querySelector<HTMLButtonElement>('[type="submit"]')!;
+  const knopfText = knopf.querySelector<HTMLElement>('[data-knopf-text]')!;
+  const params = new URLSearchParams(window.location.search);
+
+  // ── Rueckkehrziel ──────────────────────────────────────────────────────
+  //
+  // Unveraendert aus dem Bestand. Standard bleibt meinkonto.html; wer aus
+  // einem anderen Bereich kommt, haengt ?weiter=… an - etwa von der
+  // Rewards-Seite.
+  //
+  // SICHERHEIT: Nur Ziele aus dieser festen Liste. Ein beliebiger Wert aus
+  // der Adresszeile duerfte hier niemals uebernommen werden, sonst liesse
+  // sich nach der Anmeldung auf eine fremde Seite umleiten.
+  const ERLAUBTE_ZIELE = [
+    'rewards.html', 'spiele.html', 'meinkonto.html',
+    'wallet-gutscheine.html', 'meine-fahrten.html', 'index.html',
+  ];
+  const weiter = params.get('weiter');
+  const zielNachAnmeldung = weiter && ERLAUBTE_ZIELE.includes(weiter) ? weiter : 'meinkonto.html';
+
+  if (params.get('registered') === '1') {
+    notice.textContent = 'Registrierung erfolgreich. Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.';
+  } else if (params.get('loggedOut') === '1') {
+    notice.textContent = 'Sie wurden abgemeldet.';
+  }
+
+  // ── Passwort anzeigen und verbergen ────────────────────────────────────
+  for (const schalter of document.querySelectorAll<HTMLButtonElement>('.auth-pass-toggle')) {
+    schalter.addEventListener('click', () => {
+      const feld = document.getElementById(schalter.dataset.target || '') as HTMLInputElement | null;
+      if (!feld) return;
+      const sichtbar = feld.type === 'text';
+      const name = schalter.dataset.label || 'Passwort';
+      feld.type = sichtbar ? 'password' : 'text';
+      schalter.textContent = sichtbar ? 'Anzeigen' : 'Verbergen';
+      schalter.setAttribute('aria-label', `${name} ${sichtbar ? 'anzeigen' : 'verbergen'}`);
+      schalter.setAttribute('aria-pressed', sichtbar ? 'false' : 'true');
+    });
+  }
+
+  // ── Absenden ───────────────────────────────────────────────────────────
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (form.getAttribute('aria-busy') === 'true') return;
+    error.textContent = '';
+
+    const emailFeld = form.elements.namedItem('email') as HTMLInputElement;
+    const passwortFeld = form.elements.namedItem('password') as HTMLInputElement;
+    const email = (emailFeld.value || '').trim();
+    const passwort = (passwortFeld.value || '').trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      error.textContent = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+      emailFeld.focus();
+      return;
+    }
+    if (passwort.length < 8) {
+      error.textContent = 'Das Passwort muss mindestens 8 Zeichen haben.';
+      passwortFeld.focus();
+      return;
+    }
+
+    // Ladezustand: Der Knopf sagt, dass etwas laeuft, und nimmt keinen
+    // zweiten Klick an. Im Bestand fehlte das hier - wer zweimal drueckte,
+    // schickte zwei Anmeldungen los.
+    form.setAttribute('aria-busy', 'true');
+    knopf.disabled = true;
+    knopfText.textContent = 'Wird angemeldet …';
+
+    try {
+      const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
+      if (!auth || typeof auth.signInWithPassword !== 'function') {
+        throw new Error('E-Mail oder Passwort ist falsch.');
+      }
+
+      const ergebnis = await auth.signInWithPassword(email, passwort);
+      if (!ergebnis || !ergebnis.customer_id) {
+        throw new Error('Die Anmeldung konnte nicht abgeschlossen werden.');
+      }
+
+      window.location.href = zielNachAnmeldung;
+    } catch (fehler: any) {
+      const meldung = fehler && fehler.message ? fehler.message : 'E-Mail oder Passwort ist falsch.';
+      error.textContent =
+        meldung === 'CUSTOMER_NOT_FOUND'
+          ? 'Ihr Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte wenden Sie sich an uns.'
+          : meldung;
+      form.setAttribute('aria-busy', 'false');
+      knopf.disabled = false;
+      knopfText.textContent = 'Anmelden';
+    }
+  });
+</script>

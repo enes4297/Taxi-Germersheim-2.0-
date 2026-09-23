@@ -39,7 +39,7 @@ export const ENDE = '<!-- tg:kopfangaben Ende -->';
  * `Grundlage.astro` mit und duerfen hier NICHT angefasst werden - sonst
  * stuende alles doppelt im Seitenkopf.
  *
- * Waechst mit jeder uebernommenen Seite. Stand Schritt 019: neun.
+ * Waechst mit jeder uebernommenen Seite. Stand Schritt 020: dreizehn.
  */
 export const AUS_ASTRO = [
   'index.html',
@@ -51,6 +51,10 @@ export const AUS_ASTRO = [
   'flotte.html',
   'spezialfahrten.html',
   'spezial-anfrage.html',
+  'anmelden.html',
+  'registrieren.html',
+  'passwort-vergessen.html',
+  'passwort-zuruecksetzen.html',
 ];
 
 /** Die Seiten, die dieser Zusatz anfasst. Ausdrueckliche Liste, kein Glob. */

@@ -3,9 +3,9 @@
 Interne Arbeitsunterlage. Sie wird **nicht** mit ausgeliefert.
 
 Stand: 23.09.2026. Aufgenommen auf `feature/016-rewards-yumak` (`c93b315`),
-**fortgeschrieben nach Schritt 017 bis 019** auf `feature/019-flotte`.
+**fortgeschrieben nach Schritt 017 bis 020** auf `feature/020-konto`.
 
-> **Was die Schritte 017 bis 019 erledigt haben, steht in Abschnitt 8 bis 10 am Ende.** Die
+> **Was die Schritte 017 bis 020 erledigt haben, steht in Abschnitt 8 bis 11 am Ende.** Die
 > Abschnitte 1 bis 7 sind der Befund vom 23.09.2026 und bleiben als
 > Ausgangslage stehen; erledigte Punkte sind dort mit ✔ gekennzeichnet.
 
@@ -1043,3 +1043,193 @@ Aus Bestandsmaterial stammen noch: `anmelden`, `registrieren`,
 `passwort-vergessen`, `passwort-zuruecksetzen`, `meinkonto`, `kundenkonto`,
 `kunden-einstellungen`, `meine-fahrten`, `wallet-gutscheine`, `live-fahrt`
 und `spiele`.
+
+---
+
+## 11. Schritt 020 — Die Anmeldeseiten (erledigt)
+
+Branch `feature/020-konto`, abgezweigt von `feature/019-flotte` (`7401212`).
+Vier weitere Seiten kommen aus Astro; aus Bestandsmaterial stammen damit
+noch **7 von 20**.
+
+### 11.1 Was übernommen wurde — und was dafür ermittelt wurde
+
+Ermittelt wurden zuerst die **tatsächlichen** Dateien und Abhängigkeiten,
+statt nach Namen zu raten:
+
+| Seite | Skripte | Stilvorlagen |
+|---|---|---|
+| `anmelden.html` | `public-system.js`, `customer-auth.js` | style, public-visual-repair, auth-demo, public-system |
+| `registrieren.html` | dieselben | dieselben |
+| `passwort-vergessen.html` | dieselben | dieselben |
+| `passwort-zuruecksetzen.html` | dieselben | dieselben |
+
+**Eine eigene Bestätigungsseite gibt es nicht.** Der Link aus der Reset-Mail
+landet auf `passwort-zuruecksetzen.html` — diese Seite **ist** die
+Rückkehrseite. Sie liest das Zugangsmerkmal aus `#access_token=…&type=recovery`
+beziehungsweise `?code=…&type=recovery`.
+
+`public-system.js` wird nicht mehr geladen: Es sorgte für Navigation und
+Sitzungsverweise im alten Seitengerüst. Beides bringt jetzt `Kopfbereich.astro`
+mit — seit Schritt 017 samt Konto-Einstieg.
+
+### 11.2 Eine Anmeldelogik, nicht zwei
+
+**`customer-auth.js` wurde eingebunden, nicht ersetzt und nicht nachgebaut.**
+Die Seiten rufen dieselben Funktionen wie bisher:
+
+| Seite | Aufruf |
+|---|---|
+| Anmelden | `CustomerAuth.signInWithPassword(email, passwort)` |
+| Registrieren | `CustomerAuth.signUp(email, passwort, { firstName, lastName, fullName, phone })` |
+| Passwort vergessen | `getClient()` → `auth.resetPasswordForEmail(email, { redirectTo })` |
+| Neues Passwort | `getClient()` → `onAuthStateChange`, `getSession`, `updateUser` |
+
+An der Datei selbst wurde **nichts geändert**. Es gibt weiterhin genau eine
+Stelle im Projekt, die weiß, wie eine Anmeldung geht.
+
+### 11.3 Unverändert übernommen
+
+Alle Kennungen, die die Abläufe brauchen: `loginForm`, `loginEmail`,
+`loginPassword`, `loginError`, `authLoginNotice` · `registerForm`,
+`regFirstName`, `regLastName`, `regEmail`, `regPhone`, `regPassword`,
+`regPasswordConfirm`, `regTerms`, `registerError`, `registerHinweis` ·
+`forgotForm`, `forgotEmail`, `forgotError`, `forgotSuccess` ·
+`resetPasswordForm`, `newPassword`, `confirmPassword`, `recoveryChecking`,
+`recoveryInvalid`, `recoverySuccess`, `resetError` · dazu `passwordRules`
+mit den `data-rule`-Schlüsseln `len`, `upper`, `number`.
+
+Ebenso alle Feldnamen (`email`, `password`, `firstName`, …), alle
+Prüfregeln, alle Meldungstexte und die drei Passwortregeln mit ihrer
+Gewichtung.
+
+**Die feste Liste erlaubter Rückkehrziele** bleibt unverändert:
+`rewards.html`, `spiele.html`, `meinkonto.html`, `wallet-gutscheine.html`,
+`meine-fahrten.html`, `index.html`. Alles andere fällt auf `meinkonto.html`
+zurück — geprüft auch mit einer fremden Domain und einem Pfadwechsel
+(`../admin/login.html`).
+
+### 11.4 Was besser geworden ist
+
+- **Ladezustände.** Beim Anmelden sagt der Knopf jetzt „Wird angemeldet …"
+  und nimmt keinen zweiten Klick an. Im Bestand fehlte das hier — wer
+  zweimal drückte, schickte zwei Anmeldungen los. Bei den drei anderen
+  Seiten gab es das schon.
+- **Die Bildspalte der alten Anmeldeseite ist weg.** Ihre drei Stichpunkte
+  standen auf dem Handy in einer rund 60 Punkte schmalen Spalte, ein Wort je
+  Zeile. Sie stehen jetzt unter dem Formular, wo sie lesbar sind.
+- **Passwortmanager und mobile Tastatur** sind ausdrücklich angekündigt:
+  `autocomplete` (`email`, `current-password`, `new-password`, `given-name`,
+  `family-name`, `tel`), `inputmode`, `autocapitalize="off"` und
+  `spellcheck="false"` bei Adressen. Geprüft, Feld für Feld.
+- **Eingabefelder mindestens 16 px.** Darunter zoomt iOS beim Antippen.
+  Gemessen auf allen vier Seiten.
+- **Die vier Seiten stehen auf `noindex`** — das galt schon seit Schritt 017
+  und bleibt.
+
+### 11.5 Was ausdrücklich so bleibt, weil es Absicht ist
+
+**Die neutrale Rückmeldung bei „Passwort vergessen".** Die Seite sagt nie,
+ob es zu einer Adresse ein Konto gibt — auch wenn Supabase „user not found"
+meldet, erscheint dieselbe Bestätigung. Sonst ließe sich hier durchprobieren,
+wer Kunde ist. Der Prüflauf stellt das in beide Richtungen fest: gleiche
+Meldung bei Treffer und Nicht-Treffer, und **kein** Wort wie „kein Konto"
+oder „nicht gefunden" im Text.
+
+**Das Zugangsmerkmal verschwindet sofort aus der Adresszeile.** Sonst stünde
+es im Verlauf des Browsers, in jedem `Referer` und in jedem Bildschirmfoto
+dieser Seite. Geprüft.
+
+**Das Formular bleibt verborgen, bis der Link trägt.** Wer ein Passwort in
+ein Feld tippt, das nichts speichern kann, hat es zweimal getippt.
+
+**Nach der Passwortänderung wird abgemeldet** — die Sitzung des Reset-Links
+soll nicht weiterleben.
+
+**In keinem Protokoll dieser Seiten steht eine Adresse, ein Merkmal oder ein
+Passwort.** Die Fehlerausgaben nennen nur, *dass* etwas schiefging.
+
+### 11.6 Offenes Veröffentlichungshindernis
+
+> **Das Häkchen bei der Registrierung verlangt die Zustimmung zu
+> „Nutzungsbedingungen". Ein solches Dokument gibt es im Projekt nicht.**
+
+Der Verweis zeigt seit jeher auf `datenschutz.html`, also auf etwas anderes.
+**Hier wurde kein Text erfunden** — eine selbst geschriebene
+Nutzungsbedingung sähe aus, als hätte sie jemand geprüft, und niemand hat
+sie geprüft. Der Verweis steht deshalb unverändert.
+
+Das ist **Entscheidung E4** und ein Hindernis **vor** der Veröffentlichung:
+Ein Häkchen, das auf ein nicht vorhandenes Dokument zeigt, sollte nicht
+öffentlich stehen. Der Prüflauf stellt ausdrücklich fest, dass der Verweis
+unverändert auf `datenschutz.html` zeigt und nichts dazugedichtet wurde.
+
+### 11.7 Was geprüft wurde — und was das NICHT belegt
+
+| Lauf | Ergebnis |
+|---|---|
+| `anmeldung-pruefen` (neu) | **154 / 154** — Desktop und Mobil |
+| `ausgabe-pruefen` | **71 / 71** |
+| `grundlagen-pruefen` | **60 / 60** |
+| `grundlagen-browser-pruefen` | **28 / 28** |
+| `rechtsseiten-pruefen` | **167 / 167** — unverändert |
+| `flotte-pruefen` | **199 / 199** — unverändert |
+| `startseite-pruefen` | **187 / 187** — unverändert |
+| `rewards-pruefen` | **66 / 66** — unverändert |
+| `browser-pruefen` | **15 / 15** — unverändert |
+
+**Echt geprüft:** Darstellung, Beschriftungen, Schriftgrößen, Sprungmarke,
+sichtbarer Fokus bei 20 Tabulatorsprüngen je Seite, `autocomplete` und
+`inputmode` Feld für Feld, der Anzeigen-Schalter, kein waagerechter
+Überlauf, keine fehlende Datei, kein Abruf nach draußen — und dass im
+ausgelieferten Quelltext kein Merkmal und kein Passwort steht.
+
+**Simuliert — und damit ausdrücklich NICHT belegt:** sämtliche Abläufe. Die
+echte `customer-auth.js` war durch eine Attrappe ersetzt, die vorgegebene
+Antworten liefert. Geprüft wurde, ob die Seite bei diesen Antworten richtig
+reagiert:
+
+- ungültige Eingaben (E-Mail-Form, Passwortlänge, Telefonnummer,
+  abweichende Wiederholung, fehlendes Häkchen) — jeweils mit der richtigen
+  Meldung, dem Fokus im richtigen Feld und **ohne dass überhaupt etwas
+  angefordert wird**
+- Fehlerantworten des Dienstes, auch `CUSTOMER_NOT_FOUND` (wird übersetzt,
+  der technische Schlüssel steht nicht auf der Seite)
+- sechs Rückkehrziele, davon drei abzuweisende
+- Registrierung mit und ohne sofortige Sitzung
+- alle vier Zustände der Reset-Seite
+- die drei Passwortregeln, der Reihe nach
+
+**Ein bestandener Lauf belegt NICHT**, dass eine Anmeldung gegen Supabase
+funktioniert, dass eine Registrierung ein Konto anlegt, dass eine Mail
+zugestellt wird oder dass ein Reset-Link trägt.
+
+**Es wurde kein Konto angelegt, sich nirgends angemeldet, keine Mail
+ausgelöst und nichts an produktiven Daten verändert.** Die Testwerte enden
+auf `.invalid` — eine Endung, die es per Norm nicht gibt.
+
+Die Anleitung für den echten Test steht in **`ANLEITUNG-ANMELDETEST.md`**.
+
+### 11.8 Ein gemessener Fehler während der Arbeit
+
+Die Beschriftung „SICHERHEIT" klebte auf der Registrierungsseite am
+Telefonfeld darüber. Ursache, nachgemessen statt geraten: `m-0` am
+`<fieldset>` nullt auch den Abstand nach oben, den der Abstandshelfer des
+Formulars setzt — `margin-top: 0px` statt 28 px. Mit `mx-0` stimmt es. Dazu
+lag die `<legend>` im `space-y` der Felder und wurde behandelt wie ein Feld;
+die Felder liegen jetzt in einer eigenen Hülle.
+
+### 11.9 Unverändert geblieben
+
+Startseite, Hero-Video, Rewards, Yumak, Spiele, Flotte, Spezialfahrten,
+`admin/`, `fahrer/`, `dashboard/`, Datenbank, Berechtigungen — und
+`customer-auth.js` selbst.
+
+### 11.10 Umfang des nächsten Pakets
+
+Aus Bestandsmaterial stammen noch: `meinkonto.html`, `kundenkonto.html`
+(nur eine Weiterleitung), `kunden-einstellungen.html`, `meine-fahrten.html`,
+`wallet-gutscheine.html`, `live-fahrt.html` und `spiele.html`.
+
+Die ersten sechs sind **Schritt 021 — Kontoübersichten**. `spiele.html`
+gehört zu Punkt 4 der Reihenfolge und bleibt liegen.
