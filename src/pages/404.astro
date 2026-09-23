@@ -1,0 +1,118 @@
+---
+/**
+ * Fehlerseite — unter derselben Adresse wie bisher (404.html).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * WICHTIG: DIESE DATEI IST NICHT DAS 404-VERHALTEN
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Hier entsteht nur eine GESTALTETE SEITE. Ob ein Besucher sie zu sehen
+ * bekommt, wenn er eine Adresse aufruft, die es nicht gibt, entscheidet
+ * allein der Webserver - und ob er dabei den Statuscode 404 sendet,
+ * ebenfalls.
+ *
+ * Solange das nicht eingestellt ist, passiert je nach Hosting:
+ *   - die seiteneigene Fehlerseite des Anbieters erscheint, oder
+ *   - eine leere Seite, oder
+ *   - diese Seite erscheint zwar, aber mit Statuscode 200 („alles in
+ *     Ordnung"). Dann nehmen Suchmaschinen jede falsche Adresse als
+ *     gueltige Seite ins Verzeichnis auf. Das ist die unangenehmste der
+ *     drei Varianten, weil sie nach aussen wie ein Erfolg aussieht.
+ *
+ * Was der IT-Dienstleister einstellen muss, steht in
+ * ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md, Abschnitt 9.4 (Angabe I4). Es ist auf
+ * jedem Hosting eine einzelne Zeile, aber sie muss jemand setzen.
+ *
+ * Die Seite selbst traegt „noindex" - eine Fehlerseite gehoert nicht ins
+ * Verzeichnis; siehe NICHT_INS_VERZEICHNIS in tools/suchmaschinen-dateien.mjs.
+ *
+ * WEGE VON HIER: Der Bestand bot „Zur Startseite", „Jetzt anrufen" und
+ * „WhatsApp schreiben". Das bleibt, dazu kommt eine kurze Liste
+ * nachweislich vorhandener Ziele. Alle Ziele sind Seiten, die es im
+ * Ausgabeordner wirklich gibt - der Prueflauf rechnet das nach.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
+import Enthuellen from '../components/Enthuellen.astro';
+import Symbol from '../components/Symbol.astro';
+import { FEHLERSEITE, FIRMA } from '../inhalte';
+---
+
+<Grundlage
+  titel="Seite nicht gefunden | Taxi Germersheim GmbH"
+  beschreibung="Die aufgerufene Seite gibt es nicht. Hier geht es zurück zur Startseite, zu den Leistungen und zu allen Kontaktwegen."
+  pfad="404.html"
+  nichtIndexieren
+>
+  <Sprungmarken />
+  <Kopfbereich startseite={false} />
+
+  <main id="inhalt" class="pt-16 lg:pt-20 min-h-[70svh] flex flex-col">
+    <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 py-16 lg:py-24 flex-1">
+      <Enthuellen>
+        <div class="max-w-2xl">
+          <p class="text-[11px] font-semibold tracking-[0.3em] uppercase text-primary">{FEHLERSEITE.label}</p>
+          <h1
+            class="mt-4 font-semibold tracking-[-0.03em] leading-[1.04] text-foreground"
+            style="font-size: clamp(2.25rem, 5vw, 3.75rem)"
+          >
+            {FEHLERSEITE.titel}
+          </h1>
+          <p class="mt-5 text-[17px] leading-relaxed text-muted-foreground">{FEHLERSEITE.text}</p>
+
+          <div class="mt-9 flex flex-wrap gap-3">
+            <a
+              href="index.html"
+              class="inline-flex items-center gap-2 px-6 py-3.5 text-[15px] font-semibold bg-primary text-primary-foreground hover:bg-[#d4b87d] transition-colors duration-150 tg-press"
+            >
+              Zur Startseite
+              <Symbol name="pfeil" class="w-4 h-4" />
+            </a>
+            <a
+              href={FIRMA.telefonLink}
+              class="inline-flex items-center gap-2 border border-border px-6 py-3.5 text-[15px] font-medium text-foreground hover:border-primary hover:text-primary transition-colors duration-150 tg-press"
+            >
+              <Symbol name="telefon" class="w-4 h-4" />
+              {FIRMA.telefon} anrufen
+            </a>
+            <a
+              href={FIRMA.whatsapp}
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex items-center gap-2 border border-border px-6 py-3.5 text-[15px] font-medium text-foreground hover:border-primary hover:text-primary transition-colors duration-150 tg-press"
+            >
+              <Symbol name="whatsapp" class="w-4 h-4 text-primary" />
+              WhatsApp schreiben
+            </a>
+          </div>
+        </div>
+      </Enthuellen>
+
+      <Enthuellen verzoegerung={100}>
+        <div class="mt-16 lg:mt-20 max-w-4xl">
+          <p class="text-sm text-muted-foreground">{FEHLERSEITE.hinweis}</p>
+          <ul class="mt-5 grid gap-4 sm:grid-cols-2">
+            {FEHLERSEITE.wege.map((w) => (
+              <li>
+                <a
+                  href={w.ziel}
+                  class="group block h-full bg-card border border-border p-5 hover:border-primary/50 transition-colors duration-150"
+                >
+                  <span class="flex items-center justify-between gap-4">
+                    <span class="font-medium text-foreground">{w.text}</span>
+                    <Symbol name="pfeil" class="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors duration-150" />
+                  </span>
+                  <span class="mt-1.5 block text-sm text-muted-foreground">{w.zusatz}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Enthuellen>
+    </div>
+  </main>
+
+  <Fusszeile startseite={false} />
+</Grundlage>

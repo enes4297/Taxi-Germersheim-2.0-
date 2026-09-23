@@ -69,6 +69,13 @@ export const UEBERNAHME = [
  *   index.html               - erzeugt der Build selbst (siehe unten)
  *   rewards.html             - seit Schritt 016 ebenfalls aus Astro
  *   rewards-customer.css     - wurde nur von der alten rewards.html gebraucht
+ *   impressum.html           - seit Schritt 018 aus Astro
+ *   datenschutz.html         - dito
+ *   hilfe-kontakt.html       - dito
+ *   404.html                 - dito
+ *   legal-pages.css          - wurde NUR von impressum.html und
+ *                              datenschutz.html geladen (nachgesehen)
+ *   hilfe-kontakt.css        - wurde NUR von hilfe-kontakt.html geladen
  *   fix_admin_auth.py        - Werkzeug, von keiner Seite referenziert
  *   logo-original-full.png   - Bildvorlage, von keiner Seite referenziert
  *   tg-icon-original.png     - dito
@@ -104,14 +111,14 @@ export const UEBERNAHME = [
  */
 const WURZELDATEIEN = [
   // Oeffentliche Seiten
-  '404.html', 'anmelden.html', 'datenschutz.html', 'flotte.html', 'hilfe-kontakt.html',
-  'impressum.html', 'kunden-einstellungen.html', 'kundenkonto.html',
+  'anmelden.html', 'flotte.html',
+  'kunden-einstellungen.html', 'kundenkonto.html',
   'live-fahrt.html', 'meine-fahrten.html', 'meinkonto.html', 'passwort-vergessen.html',
   'passwort-zuruecksetzen.html', 'registrieren.html', 'spezial-anfrage.html',
   'spezialfahrten.html', 'spiele.html', 'wallet-gutscheine.html',
   // Stilvorlagen
-  'auth-demo.css', 'hilfe-kontakt.css', 'home-luxury.css', 'kunden-einstellungen.css',
-  'legal-pages.css', 'live-ride.css', 'meinefahrten.css', 'public-premium-v2.css',
+  'auth-demo.css', 'home-luxury.css', 'kunden-einstellungen.css',
+  'live-ride.css', 'meinefahrten.css', 'public-premium-v2.css',
   'public-states.css', 'public-system.css', 'public-visual-repair.css',
   'special-services.css', 'spiele.css', 'style.css', 'wallet-gutscheine.css',
   // Skripte

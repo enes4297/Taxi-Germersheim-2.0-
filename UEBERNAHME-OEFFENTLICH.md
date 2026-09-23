@@ -4,7 +4,7 @@ Interne Arbeitsunterlage. Sie wird **nicht** mit ausgeliefert — der Prüflauf
 `npm run ausgabe-pruefen` stellt sicher, dass keine `.md`-Datei im
 Ausgabeordner landet.
 
-Stand: 23.09.2026, nach Schritt 017 (Grundlagen und Einzelfehler).
+Stand: 23.09.2026, nach Schritt 018 (Rechtsseiten und Hilfe).
 
 ---
 
@@ -17,7 +17,8 @@ dev
            └── feature/014-startseite  (fbe9b67)  Startseite
                 └── feature/015-yumak-medien (85b6300)  Yumak-Medien
                      └── feature/016-rewards-yumak (c93b315)  Rewards-Seite
-                          └── feature/017-grundlagen        Grundlagen
+                          └── feature/017-grundlagen (6c5e27c)  Grundlagen
+                               └── feature/018-rechtsseiten     Rechtsseiten
 ```
 
 **Jeder Schritt zweigt vom vorigen ab, nicht von `dev`.** Das ist Absicht: 013
@@ -25,7 +26,7 @@ setzt auf Gerüst, Übernahme-Liste und Prüfwerkzeugen aus 012 auf, 014 auf der
 Design-Grundlage aus 013. Ein Abzweig von `dev` hätte jeweils nichts davon.
 
 **Folge für die Reihenfolge:** Die Kette muss in dieser Reihenfolge nach `dev` —
-012, 013, 014, 015, 016, 017. Wird eine übersprungen, kommt ihr Inhalt später doppelt
+012, 013, 014, 015, 016, 017, 018. Wird eine übersprungen, kommt ihr Inhalt später doppelt
 oder gar nicht mit.
 
 Merge nach `dev` macht der Mensch — nicht der Assistent.
@@ -40,7 +41,7 @@ nur `supabase/` und Dokumentation und sind für die Auslieferung ohne Belang.
 **Zwei betreffen Dateien, die im Ausgabeordner landen** — sie enthalten bereits
 behobene Portalfehler.
 
-| Commit | Datei | Was behoben wurde | Heutiger Stand auf 012 bis 017 |
+| Commit | Datei | Was behoben wurde | Heutiger Stand auf 012 bis 018 |
 |---|---|---|---|
 | `316de73` | `fahrer/mitarbeiter.js` | Das Anhang-Abzeichen einer Krankmeldung zeigte **immer** „Ohne Anhang", unabhängig vom Datenbankwert. Jetzt wird `document_submission_id` ausgewertet. | Zeile 528 trägt noch das feste „Ohne Anhang" — **Fehler vorhanden** |
 | `8ff510a` | `admin/dokumenteingang-supabase.js` | Die Rolle wurde aus der Menübeschriftung abgeleitet statt aus `profiles` der laufenden Sitzung gelesen; dazu eine ehrliche Meldung bei fehlender Anmeldung oder fehlender Admin-Rolle. | `auth_user_id` kommt in der Datei **nicht vor** — Fehler vorhanden |
@@ -50,7 +51,7 @@ behobene Portalfehler.
 Gemessen, nicht vermutet: Die drei Suchen nach `Ohne Anhang`, `auth_user_id`
 und `dokumentfristen` wurden auf dem aktuellen Branch ausgeführt.
 
-**Daraus folgt:** Würde heute aus `feature/017` heraus veröffentlicht, käme der
+**Daraus folgt:** Würde heute aus `feature/018` heraus veröffentlicht, käme der
 alte, fehlerhafte Stand dieser vier Dateien mit — das Übernahme-Werkzeug
 kopiert `admin/` und `fahrer/` byteweise so, wie sie im Branch liegen. Die
 Korrekturen wären wieder weg.
@@ -61,12 +62,12 @@ Die Korrekturen aus `feature/011` müssen im **tatsächlichen
 Veröffentlichungsstand** enthalten sein, also in genau dem Commit, aus dem
 gebaut und hochgeladen wird.
 
-> **Ein Merge nach `dev` allein aktualisiert `feature/017` nicht.**
+> **Ein Merge nach `dev` allein aktualisiert `feature/018` nicht.**
 
-Die Kette 012 → … → 017 hängt an `dev` in seinem Stand vom 19.09.2026.
-Landet `feature/011` danach in `dev`, ändert das an `feature/017` nichts —
+Die Kette 012 → … → 018 hängt an `dev` in seinem Stand vom 19.09.2026.
+Landet `feature/011` danach in `dev`, ändert das an `feature/018` nichts —
 die vier Dateien bleiben dort im alten Stand, bis die Kette den neuen
-`dev`-Stand selbst übernimmt. Wer aus `feature/017` baut, baut die Fehler mit
+`dev`-Stand selbst übernimmt. Wer aus `feature/018` baut, baut die Fehler mit
 ein, auch wenn `dev` längst korrigiert ist.
 
 Vor der Veröffentlichung ist also zu prüfen, ob der Veröffentlichungsstand die
@@ -98,6 +99,7 @@ npm run rewards-pruefen     # Rewards-Seite im Browser, mit Testdaten
 npm run browser-pruefen     # Zentrale, Portal und Dashboard im Ausgabeordner
 npm run grundlagen-pruefen  # Suchmaschinen, Bibliothek, Anrede, Tastatur
 npm run grundlagen-browser-pruefen  # dasselbe im Browser, ohne Aussenverbindung
+npm run rechtsseiten-pruefen # Impressum, Datenschutz, Hilfe, 404
 npm run dev              # örtlicher Entwicklungsserver
 npm run preview          # den fertigen Ausgabeordner ansehen
 ```
@@ -599,22 +601,98 @@ das gehört zu Punkt 2 und 3 der Reihenfolge, nicht hierher.
 
 ---
 
-## 12. Nächster Schritt
+## 12. Rechtsseiten und Hilfe (Schritt 018)
+
+**Die ausführliche Fassung steht in `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`,
+Abschnitt 9.** Hier nur, was Bau und Übernahme betrifft.
+
+### Vier weitere Seiten kommen aus Astro
+
+`impressum.html`, `datenschutz.html`, `hilfe-kontakt.html` und `404.html` —
+unter denselben Adressen wie bisher. Aus Bestandsmaterial stammen damit noch
+**14 von 20** ausgelieferten Seiten.
+
+### Aus der Übernahmeliste genommen
+
+| Datei | Grund |
+|---|---|
+| `impressum.html` | kommt aus Astro |
+| `datenschutz.html` | dito |
+| `hilfe-kontakt.html` | dito |
+| `404.html` | dito |
+| `legal-pages.css` | wurde **nur** von `impressum.html` und `datenschutz.html` geladen |
+| `hilfe-kontakt.css` | wurde **nur** von `hilfe-kontakt.html` geladen |
+
+Nachgesehen, nicht vermutet. Stünden die vier HTML-Dateien weiter in der
+Liste, überschriebe der Bestand die neuen Seiten — genau davor schützt
+`konflikteSuchen()`: Der Build bräche ab, statt still zu überschreiben.
+
+### Neu in `kopfangaben-bestand.mjs`
+
+Die Liste `AUS_ASTRO` nennt jetzt ausdrücklich die sechs Seiten, die Astro
+selbst baut. Sie dürfen den nachträglich eingesetzten Kopfblock **nicht**
+bekommen — sie bringen Symbol, canonical und Open Graph über
+`Grundlage.astro` schon mit. Sonst stünde alles doppelt im Seitenkopf. Die
+Liste wächst mit jeder übernommenen Seite.
+
+Der Zusatz bearbeitet dadurch noch 14 statt 18 Bestandsseiten.
+
+### Neue Bauteile
+
+`Unterseitenkopf.astro` (Rückweg, Label, Überschrift) und
+`Rechtskarten.astro` (die Kartenreihe der Rechtsseiten). Beide aus dem
+vorhandenen Vorrat gebaut, keine neue Gestaltung.
+
+### Zustimmungsbanner: untersucht, bewusst nicht übernommen
+
+Es steuerte genau einen Dienst — Google-Maps-Einbettungen — und im
+ausgelieferten Stand gibt es **keinen einzigen `.map-container` und kein
+einziges `<iframe>`**. Dazu steht der Kartenschlüssel auf einem Platzhalter.
+Ein Schalter ohne Wirkung wäre eine Behauptung über eine Einwilligung, die
+nichts einwilligt. Die vollständige Untersuchung steht in Abschnitt 9.2 der
+Bestandsaufnahme.
+
+`flotte.html` trägt das wirkungslose Banner weiterhin — die Seite bleibt
+vorerst Bestand und wird im nächsten Paket übernommen.
+
+### Die 404-Seite braucht eine Hosting-Einstellung
+
+Die gestaltete Datei allein bewirkt nichts. Der Server muss seine
+Fehlerseite für den Statuscode 404 auf `/404.html` zeigen lassen **und**
+dabei den Code 404 senden, nicht 200. Das ist Angabe **I4** an den
+IT-Dienstleister und von hier aus nicht prüfbar.
+
+---
+
+## 13. Nächster Schritt
 
 > **Die vollständige Bestandsaufnahme der öffentlichen Webseite steht seit
 > dem 23.09.2026 in `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`** — was fertig ist,
 > was fehlt, was ohne Rückfrage machbar ist, und was eine Entscheidung
 > braucht. Die dortige Empfehlung ersetzt den Vorschlag unten.
 
-**Schritt 017 ist erledigt** — siehe Abschnitt 11 hier und Abschnitt 8 der
-Bestandsaufnahme.
+**Die Schritte 017 und 018 sind erledigt** — siehe Abschnitt 11 und 12
+hier sowie Abschnitt 8 und 9 der Bestandsaufnahme.
 
-**Empfohlen: Schritt 018 — Rechtsseiten nach Astro.** Branch
-`feature/018-rechtsseiten` von `feature/017-grundlagen`. Inhalt:
-`impressum.html`, `datenschutz.html`, `hilfe-kontakt.html` und `404.html`
-im freigegebenen Design, **bestehender Text unverändert**, dazu das
-Zustimmungsbanner und die Rechtsverweise auf diesen Seiten vereinheitlichen.
-Kein Backend berührt, keine Entscheidung nötig.
+**Empfohlen: Schritt 019 — Flotte und Spezialfahrten.** Branch
+`feature/019-flotte` von `feature/018-rechtsseiten`. Inhalt:
+`flotte.html` und `spezialfahrten.html` im freigegebenen Design.
+
+Warum diese beiden als Nächstes:
+
+- **Die Inhalte liegen bereits vor.** `FLOTTE` und `LEISTUNGSBLOECKE` in
+  `inhalte.ts` sind seit Schritt 014 vollständig, samt sauberer
+  Fahrzeugbilder in zwei Auflösungen. Die alte `flotte.html` zieht ihre
+  Bilder noch aus `admin/images/` mit verunglückten Dateinamen.
+- **Kein Backend berührt.** Beide Seiten hängen an keiner Anmeldung.
+- **Es räumt zwei Altlasten ab:** das wirkungslose Zustimmungsbanner auf
+  `flotte.html` und den zweiten, konkurrierenden Anfrageweg auf
+  `spezial-anfrage.html` (Entscheidung E7).
+
+Offen bleibt davor: Entscheidung **E2** (zwei fehlende Fahrzeugfotos) und
+**E7** (bleibt `spezial-anfrage.html`?). Beide blockieren den Beginn
+nicht — die Flotte kann wie auf der Startseite mit Textkarten für die
+zwei Fahrzeuge ohne Foto arbeiten.
 
 Der frühere Vorschlag, alle Unterseiten auf einmal anzugehen:
 

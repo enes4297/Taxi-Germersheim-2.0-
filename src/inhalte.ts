@@ -458,3 +458,192 @@ export const REWARDS_SEITE = {
     text: 'Ihr Konto ist angelegt. Sobald Fahrten dazukommen, erscheinen hier Punkte, Stufe und Drehs.',
   },
 } as const;
+
+// ── Rechtsseiten und Hilfe (Schritt 018) ─────────────────────────────────────
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// REGEL FUER DIESEN ABSCHNITT: TEXT UNVERAENDERT UEBERNOMMEN
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Jede Zeile hier steht wortgleich so in impressum.html, datenschutz.html,
+// hilfe-kontakt.html beziehungsweise 404.html des Bestands. Es wurde nichts
+// umformuliert, nichts gekuerzt und vor allem nichts ERGAENZT.
+//
+// Das ist keine Bequemlichkeit, sondern Absicht: Rechtstexte sind vom
+// Auftraggeber verantwortet, nicht vom Entwickler. Was dort fehlt, wird
+// intern in ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md (Abschnitt 2.7) festgehalten
+// und dem Auftraggeber genannt - es wird nicht selbst hinzugedichtet. Eine
+// erfundene Pflichtangabe waere schlimmer als eine fehlende, weil sie
+// aussieht, als haette sie jemand geprueft.
+//
+// Geaendert wurde ausschliesslich AUSZEICHNUNG, nie Inhalt:
+//   - Die Rufnummer steht im Impressum als tel:072743567. Ueberall sonst im
+//     Projekt gilt FIRMA.telefonLink (tel:+4972743567), das auch aus dem
+//     Ausland waehlbar ist. Die ANGEZEIGTE Nummer bleibt unveraendert.
+
+export interface Rechtskarte {
+  label: string;
+  titel: string;
+  /** Absaetze als Klartext. `zeilen` wird mit Zeilenumbruch gesetzt. */
+  zeilen?: string[];
+  /** Beschriftete Werte, etwa „Telefon: 07274 3567". */
+  werte?: { name: string; wert: string; href?: string }[];
+  /** Ueber die halbe Breite hinaus - wie legal-content-card--wide. */
+  breit?: boolean;
+}
+
+export const IMPRESSUM = {
+  label: 'Rechtliches',
+  titel: 'Impressum',
+  text: 'Rechtliche Angaben zu Taxi Germersheim GmbH.',
+  karten: [
+    {
+      label: 'Unternehmen',
+      titel: 'Unternehmensdaten',
+      zeilen: ['Taxi Germersheim GmbH', 'Friedrich-Ebert-Straße 8', '76726 Germersheim', 'Deutschland'],
+    },
+    {
+      label: 'Erreichbarkeit',
+      titel: 'Kontakt',
+      werte: [
+        { name: 'Telefon', wert: '07274 3567', href: 'tel:+4972743567' },
+        { name: 'E-Mail', wert: 'info@taxigermersheim.de', href: 'mailto:info@taxigermersheim.de' },
+      ],
+    },
+    {
+      label: 'Vertretung',
+      titel: 'Geschäftsführung',
+      zeilen: ['Ismet Enes Carman', 'Sermin Duman'],
+    },
+    {
+      label: 'Register',
+      titel: 'Registerdaten',
+      werte: [
+        { name: 'Registergericht', wert: 'Amtsgericht Landau in der Pfalz' },
+        { name: 'Registernummer', wert: 'HRB 33841' },
+        { name: 'Steuernummer', wert: '41/650/23698' },
+      ],
+    },
+    {
+      label: 'Behörde',
+      titel: 'Genehmigungsbehörde',
+      zeilen: ['Kreisverwaltung Germersheim', 'Luitpoldplatz 1', '76726 Germersheim'],
+      breit: true,
+    },
+  ] as Rechtskarte[],
+} as const;
+
+export const DATENSCHUTZ = {
+  label: 'Rechtliches',
+  titel: 'Datenschutz',
+  text: 'Informationen zum Umgang mit personenbezogenen Daten.',
+  karten: [
+    {
+      label: 'Datenschutz',
+      titel: 'Verantwortlicher',
+      zeilen: ['Taxi Germersheim GmbH', 'Friedrich-Ebert-Straße 8', '76726 Germersheim'],
+      werte: [{ name: '', wert: 'info@taxigermersheim.de', href: 'mailto:info@taxigermersheim.de' }],
+    },
+    {
+      label: 'Datenschutz',
+      titel: 'Erhebung personenbezogener Daten',
+      zeilen: ['Name, Telefonnummer, E-Mail, Abholadresse, Zieladresse und Fahrtdetails bei Buchungsanfragen.'],
+    },
+    {
+      label: 'Datenschutz',
+      titel: 'Zweck der Verarbeitung',
+      zeilen: ['Bearbeitung von Anfragen, Durchführung von Fahrten, Kontaktaufnahme und Kundenservice.'],
+    },
+    {
+      label: 'Datenschutz',
+      titel: 'Rechtsgrundlage',
+      zeilen: ['Art. 6 Abs. 1 lit. b DSGVO und Art. 6 Abs. 1 lit. f DSGVO.'],
+    },
+    {
+      label: 'Datenschutz',
+      titel: 'Speicherdauer',
+      zeilen: ['Daten werden nur so lange gespeichert, wie es für die Bearbeitung und gesetzliche Pflichten erforderlich ist.'],
+    },
+    {
+      label: 'Datenschutz',
+      titel: 'Weitergabe von Daten',
+      zeilen: ['Keine Weitergabe an Dritte, außer wenn es zur Durchführung der Fahrt oder gesetzlich erforderlich ist.'],
+    },
+    {
+      label: 'Datenschutz',
+      titel: 'Rechte der Nutzer',
+      zeilen: ['Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch und Datenübertragbarkeit.'],
+      breit: true,
+    },
+    {
+      label: 'Datenschutz',
+      titel: 'Kontakt bei Datenschutzfragen',
+      werte: [{ name: '', wert: 'info@taxigermersheim.de', href: 'mailto:info@taxigermersheim.de' }],
+      breit: true,
+    },
+  ] as Rechtskarte[],
+} as const;
+
+/**
+ * Die haeufigen Fragen der HILFESEITE.
+ *
+ * ACHTUNG, bewusst getrennt von FAQ: Die Startseite fuehrt SECHS Fragen, die
+ * Hilfeseite ACHT - sie hat zusaetzlich „Wie löse ich einen Gutschein ein?"
+ * und „Wie kann ich Taxi Germersheim kontaktieren?". Auch die erste Antwort
+ * weicht ab („Buchungsbereich auf unserer Startseite" statt
+ * „Anfragebereich auf dieser Startseite"), was auf einer Unterseite auch
+ * richtiger ist. Beides bleibt so, wie es im Bestand steht - ein
+ * Zusammenlegen waere eine inhaltliche Aenderung.
+ */
+export const FAQ_HILFE: { frage: string; antwort: string }[] = [
+  { frage: 'Wie buche ich eine Fahrt?', antwort: 'Nutzen Sie den Buchungsbereich auf unserer Startseite oder rufen Sie uns unter 07274 – 3567 an.' },
+  { frage: 'Wie kann ich eine geplante Fahrt ändern?', antwort: 'Kontaktieren Sie uns telefonisch oder über WhatsApp und halten Sie die Angaben zu Ihrer Fahrt bereit.' },
+  { frage: 'Wie storniere ich eine Fahrt?', antwort: 'Rufen Sie uns unter 07274 – 3567 an oder schreiben Sie uns über WhatsApp, damit wir Ihre Fahrt prüfen können.' },
+  { frage: 'Welche Unterlagen brauche ich für eine Krankenfahrt?', antwort: 'Je nach Fahrt können eine ärztliche Verordnung und eine Genehmigung der Krankenkasse erforderlich sein. Klären Sie die Unterlagen bitte vorab mit Ihrer Krankenkasse oder mit uns.' },
+  { frage: 'Wie buche ich eine Rollstuhlfahrt?', antwort: 'Kontaktieren Sie uns direkt und teilen Sie uns den benötigten Rollstuhltyp sowie mögliche Begleitpersonen mit.' },
+  { frage: 'Wie funktionieren Rewards-Punkte?', antwort: 'Ihren aktuellen Punktestand und die verfügbaren Vorteile finden Sie im Bereich Rewards.' },
+  { frage: 'Wie löse ich einen Gutschein ein?', antwort: 'Verfügbare Gutscheine und deren Status sehen Sie in Ihrem Kundenkonto unter Wallet & Gutscheine.' },
+  { frage: 'Wie kann ich Taxi Germersheim kontaktieren?', antwort: 'Sie erreichen uns per Telefon, WhatsApp und E-Mail oder persönlich in der Friedrich-Ebert-Str. 8 in Germersheim.' },
+];
+
+export const HILFE = {
+  label: 'Hilfe & Kontakt',
+  titel: 'Wie können wir helfen?',
+  text: 'Schnelle Antworten und direkte Kontaktmöglichkeiten für alle Fragen rund um Taxi Germersheim.',
+  kontaktLabel: 'Direkter Kontakt',
+  kontaktTitel: 'Wir sind für Sie erreichbar',
+  fragenLabel: 'Gut zu wissen',
+  fragenTitel: 'Häufige Fragen',
+  rechtLabel: 'Informationen',
+  rechtTitel: 'Rechtliches',
+  /** Die Rufnummer mit Gedankenstrich - so steht sie auf der Hilfeseite. */
+  telefonAnzeige: '07274 – 3567',
+  /**
+   * „Route anzeigen" fuehrt auf die Google-Kartensuche. Das ist ein
+   * gewoehnlicher Verweis nach draussen, KEINE Einbettung: Es wird nichts
+   * nachgeladen, solange niemand darauf klickt. Deshalb braucht er auch
+   * keine vorherige Zustimmung - siehe die Untersuchung des
+   * Zustimmungsbanners in ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md, Abschnitt 9.2.
+   */
+  routeZiel:
+    'https://www.google.com/maps/search/?api=1&query=Taxi%20Germersheim%20GmbH%2C%20Friedrich-Ebert-Str.%208%2C%2076726%20Germersheim',
+} as const;
+
+export const FEHLERSEITE = {
+  label: '404 Fehlerseite',
+  titel: 'Seite nicht gefunden',
+  text: 'Die gewünschte Seite konnte leider nicht gefunden werden.',
+  /**
+   * Zusatz gegenueber dem Bestand — bewusst KEINE inhaltliche Aussage ueber
+   * Rechte oder Leistungen, sondern reine Wegweisung. Der Bestand bot nur
+   * „Zur Startseite", „Jetzt anrufen" und „WhatsApp schreiben"; die Liste
+   * darunter fuehrt zu Zielen, die es nachweislich gibt.
+   */
+  hinweis: 'Vielleicht hilft einer dieser Wege weiter:',
+  wege: [
+    { ziel: 'index.html#leistungen', text: 'Unsere Leistungen', zusatz: 'Taxi, Krankenfahrten, Rollstuhl, Flughafen und mehr' },
+    { ziel: 'index.html#flotte', text: 'Fahrzeugflotte', zusatz: 'Welches Fahrzeug für welche Fahrt' },
+    { ziel: 'hilfe-kontakt.html', text: 'Hilfe und Kontakt', zusatz: 'Häufige Fragen und alle Kontaktwege' },
+    { ziel: 'rewards.html', text: 'Rewards', zusatz: 'Punkte, Stufen und Drehs' },
+  ],
+} as const;

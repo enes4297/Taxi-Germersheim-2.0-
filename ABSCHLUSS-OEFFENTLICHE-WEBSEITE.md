@@ -3,9 +3,9 @@
 Interne Arbeitsunterlage. Sie wird **nicht** mit ausgeliefert.
 
 Stand: 23.09.2026. Aufgenommen auf `feature/016-rewards-yumak` (`c93b315`),
-**fortgeschrieben nach Schritt 017** auf `feature/017-grundlagen`.
+**fortgeschrieben nach Schritt 017 und 018** auf `feature/018-rechtsseiten`.
 
-> **Was Schritt 017 erledigt hat, steht in Abschnitt 8 am Ende.** Die
+> **Was die Schritte 017 und 018 erledigt haben, steht in Abschnitt 8 und 9 am Ende.** Die
 > Abschnitte 1 bis 7 sind der Befund vom 23.09.2026 und bleiben als
 > Ausgangslage stehen; erledigte Punkte sind dort mit ✔ gekennzeichnet.
 
@@ -590,6 +590,40 @@ funktioniert.
 kein Passwort zurückgesetzt, keine Nachricht versendet, kein Schreibzugriff
 auf die Datenbank, keine Hosting- oder Domaineinstellung berührt.
 
+### 8.8 Richtigstellung zum Anmeldetest (nachgetragen 23.09.2026)
+
+> **Eine ausbleibende Bestätigungsmail beweist NICHT, dass die
+> Supabase-Weiterleitungsadressen falsch eingestellt sind.**
+
+Im Bericht zu Schritt 017 war das so dargestellt, als wäre der
+Registrierungstest zugleich der Nachweis für Angabe **I2**. Das ist
+falsch und wird hiermit richtiggestellt.
+
+Bleibt die Mail aus, kommen mindestens diese Ursachen in Frage, und keine
+davon lässt sich von außen unterscheiden:
+
+- Der Mailversand ist im Supabase-Projekt gar nicht eingerichtet oder das
+  Kontingent des eingebauten Versands ist erschöpft.
+- Die Bestätigung per E-Mail ist im Projekt abgeschaltet — dann entsteht
+  sofort eine Sitzung und es SOLL keine Mail kommen.
+- Die Mail wurde zugestellt, liegt aber im Spam-Ordner oder wurde vom
+  Mailanbieter abgewiesen.
+- Die Adresse existiert bereits als Konto; Supabase antwortet dann aus
+  gutem Grund neutral, ohne das zu verraten.
+- Und erst dann: eine unpassende Site-URL oder Weiterleitungsadresse.
+
+Die Weiterleitungsadresse wirkt ohnehin erst auf den **Link in der Mail**,
+nicht auf ihr Zustandekommen. Eine falsche Einstellung äußert sich also
+eher darin, dass die Mail ankommt und ihr Link ins Leere führt.
+
+**Festgehalten als ungeklärte Ursache.** I2 bleibt eine Angabe, die im
+Supabase-Projekt nachgesehen werden muss — sie lässt sich nicht aus dem
+Verhalten der Webseite erschließen. Was ein Test des Registrierungswegs
+tatsächlich zeigt, steht in 8.6: dass die Seite bei ausstehender
+Bestätigung den richtigen Hinweis anzeigt. Mehr nicht.
+
+---
+
 ### 8.7 Was nach Schritt 017 offen bleibt
 
 Unverändert offen: **A7** (Banner und Rechtsverweise vereinheitlichen),
@@ -605,3 +639,211 @@ freigegebenen Design, **bestehender Text unverändert**, dazu A7 für diese
 Seiten. Kein Backend berührt, keine Entscheidung nötig — und es fährt das
 Seitengerüst für alle weiteren Unterseiten ein, bevor in A11 die echte
 Anmeldung daran hängt.
+
+---
+
+## 9. Schritt 018 — Impressum, Datenschutz, Hilfe/Kontakt, 404 (erledigt)
+
+Branch `feature/018-rechtsseiten`, abgezweigt von `feature/017-grundlagen`
+(`6c5e27c`). Vier Seiten kommen jetzt aus Astro; aus Bestandsmaterial
+stammen damit noch 14 von 20.
+
+### 9.1 Was übernommen wurde
+
+| Seite | Inhalt | Gestaltung |
+|---|---|---|
+| `impressum.html` | 5 Angabenkarten, wortgleich | neu |
+| `datenschutz.html` | 8 Abschnitte, wortgleich | neu |
+| `hilfe-kontakt.html` | 4 Kontaktwege, **8** häufige Fragen, 2 Rechtsverweise, wortgleich | neu |
+| `404.html` | Überschrift, Text und die drei Wege des Bestands, dazu vier Wegweiser auf vorhandene Seiten | neu |
+
+Gemeinsam genutzt: `Grundlage.astro` (Seitenkopf, canonical, Open Graph,
+Symbole), `Kopfbereich`, `Fusszeile`, `Sprungmarken`, `Enthuellen`,
+`Symbol` — dieselben Schriften, Farben und Abstände wie Start- und
+Rewards-Seite. Neu dazu: `Unterseitenkopf.astro` und
+`Rechtskarten.astro`, beide aus dem vorhandenen Bestandteilvorrat gebaut.
+
+**Adressen unverändert.** Die vier Dateinamen bleiben; alle 17 Bestandsseiten,
+die auf sie verweisen, treffen weiterhin.
+
+**Aus der Bestandsübernahme genommen:** die vier alten HTML-Dateien und
+`legal-pages.css` sowie `hilfe-kontakt.css`. Nachgesehen, nicht vermutet:
+`legal-pages.css` wurde **nur** von `impressum.html` und `datenschutz.html`
+geladen, `hilfe-kontakt.css` **nur** von `hilfe-kontakt.html`. Es entsteht
+keine doppelte Ausgabe; der Byte-Vergleich in `ausgabe-pruefen` würde einen
+Namenskonflikt ohnehin melden, statt still zu überschreiben.
+
+**Die häufigen Fragen sind bewusst getrennt von denen der Startseite.** Die
+Startseite führt sechs, die Hilfeseite acht — zusätzlich „Wie löse ich einen
+Gutschein ein?" und „Wie kann ich Taxi Germersheim kontaktieren?". Auch die
+erste Antwort weicht ab („Buchungsbereich auf unserer Startseite" statt
+„Anfragebereich auf dieser Startseite"), was auf einer Unterseite richtiger
+ist. Zusammenlegen wäre eine inhaltliche Änderung gewesen; beides steht
+deshalb getrennt in `inhalte.ts` als `FAQ` und `FAQ_HILFE`.
+
+### 9.2 Das Zustimmungsbanner — untersucht, nicht kopiert
+
+> **Ergebnis: Das Banner wird NICHT auf die neuen Seiten übernommen. Es
+> steuert im ausgelieferten Stand nichts.**
+
+Der Auftrag lautete ausdrücklich, seine tatsächliche Funktion zu prüfen,
+bevor es weiterverteilt wird. Das ist geschehen — hier der Befund.
+
+**Was es steuert, gemessen im Quelltext:** genau einen Dienst.
+`script.js:1155` definiert `hasExternalConsent()`, und der einzige Ort, an
+dem diese Funktion etwas bewirkt, ist `refreshMapContainers()`: Bei
+Zustimmung wird ein Google-Maps-`<iframe>` in ein `.map-container`-Element
+gesetzt, ohne Zustimmung ein Platzhalter. Nichts anderes hängt daran — keine
+Zählpixel, keine Schriften, keine sonstigen Einbettungen.
+
+**Warum es dort nichts mehr zu steuern gibt, zwei voneinander unabhängige
+Gründe:**
+
+1. **Es gibt keine Karte mehr.** `.map-container` kommt ausschließlich in der
+   **alten** `index.html` vor — und die wird seit Schritt 014 nicht mehr
+   ausgeliefert. Im gesamten Ausgabeordner steht **kein einziger
+   `.map-container` und kein einziges `<iframe>`**. Nachgemessen, auf allen
+   20 Seiten.
+2. **Und selbst dort würde nichts laden.** Der Kartenschlüssel steht auf dem
+   Platzhalter `YOUR_GOOGLE_MAPS_API_KEY` (`script.js:183`). Ohne Schlüssel
+   liefert die Einbettungsadresse nichts.
+
+**Daraus folgt:** Auf `impressum.html`, `datenschutz.html` und `flotte.html`
+steht heute ein Schalter, der einen Dienst freigibt, den es nicht gibt. Ein
+solcher Schalter ist schlimmer als keiner: Er behauptet gegenüber dem
+Besucher eine Entscheidung, die gar nichts entscheidet, und er lässt die
+Seite sorgfältiger aussehen, als sie ist.
+
+Auf den vier neuen Seiten wird deshalb **keine Einwilligungslogik
+eingeführt**. Der Prüflauf `rechtsseiten-pruefen` stellt in beide Richtungen
+sicher: kein Zustimmungsschalter **und** keine Einbettung eines fremden
+Dienstes.
+
+**„Route anzeigen" auf der Hilfeseite ist kein Gegenbeispiel.** Das ist ein
+gewöhnlicher Verweis auf die Google-Kartensuche. Es wird nichts nachgeladen,
+solange niemand darauf klickt — und wer klickt, verlässt die Seite sichtbar.
+Ein Verweis braucht keine vorherige Einwilligung, eine Einbettung schon.
+
+**Wann das Banner wieder gebraucht wird — und dann richtig:** sobald ein
+echter Kartenschlüssel hinterlegt und eine Karte eingebettet wird
+(Entscheidung **I6**), oder sobald ein anderer Dienst von außen eingebunden
+wird. Dann gehört die Einwilligung an die Stelle, an der der Dienst
+tatsächlich geladen wird — nicht als Schalter auf Vorrat.
+
+**Offen und nicht angefasst:** `flotte.html` trägt das wirkungslose Banner
+weiterhin. Die Seite bleibt vorerst Bestand; sie wird im nächsten Paket
+übernommen, und damit verschwindet es dort von selbst. Es hier zu entfernen
+hätte eine Bestandsdatei geändert, ohne dass die Seite neu entsteht.
+
+### 9.3 Die häufigen Fragen ohne Skript
+
+Auf der Startseite sind die häufigen Fragen Schaltflächen mit
+JavaScript-Animation. Auf der Hilfeseite sind sie `<details>`/`<summary>` —
+so wie im Bestand auch.
+
+Das ist Absicht: Eine Hilfeseite muss auch dann funktionieren, wenn das
+Skript scheitert. Der Browser bringt Aufklappen, Tastaturbedienung und
+Vorlesen von sich aus mit. **Geprüft:** Klick öffnet, Klick schließt,
+Eingabetaste öffnet, zu Beginn ist alles zugeklappt.
+
+### 9.4 Die 404-Seite ist nicht das 404-Verhalten
+
+> **Diese Datei ist eine gestaltete Seite. Ob ein Besucher sie zu sehen
+> bekommt, entscheidet allein der Webserver.**
+
+Solange das nicht eingestellt ist, geschieht je nach Hosting eines von drei
+Dingen:
+
+1. Die Fehlerseite des Anbieters erscheint statt unserer.
+2. Eine leere Seite erscheint.
+3. Unsere Seite erscheint — **aber mit Statuscode 200 („alles in
+   Ordnung")**. Dann nimmt jede Suchmaschine jede falsche Adresse als
+   gültige Seite ins Verzeichnis auf. Das ist die unangenehmste Variante,
+   weil sie nach außen wie ein Erfolg aussieht.
+
+**Angabe I4 an den IT-Dienstleister, konkret:** Die Fehlerseite des Servers
+für den Statuscode 404 muss auf `/404.html` zeigen, und die Antwort muss
+den Code **404** tragen, nicht 200. Auf jedem gängigen Hosting ist das eine
+einzelne Einstellung oder Zeile — aber sie muss jemand setzen. **Von hier
+aus nicht prüfbar**: Der lokale Prüfserver liefert, was er findet; er sagt
+nichts über die spätere Serverkonfiguration.
+
+Die Seite selbst trägt `noindex` — eine Fehlerseite gehört nicht ins
+Verzeichnis.
+
+### 9.5 Rechtstexte: unverändert, Lücken weiterhin offen
+
+**Es wurde kein Satz umformuliert, gekürzt oder ergänzt.** Der Prüflauf
+vergleicht in beide Richtungen:
+
+- **Vollständigkeit:** 22 Textbausteine des Impressums, 16 der
+  Datenschutzerklärung und 21 der Hilfeseite werden im sichtbaren Text der
+  neuen Seiten gesucht. Fehlt einer, fällt die Prüfung durch.
+- **Gegenprobe:** Es wird ausdrücklich danach gesucht, ob etwas
+  **dazuerfunden** wurde — USt-IdNr., Streitbeilegung, Nutzungsbedingungen,
+  AGB, Aufsichtsbehörde, Datenschutzbeauftragte. Findet sich eines davon,
+  fällt die Prüfung ebenfalls durch.
+
+Diese Gegenprobe ist der eigentliche Punkt: Eine selbst hinzugeschriebene
+Pflichtangabe sähe aus, als hätte sie jemand geprüft — und niemand hat sie
+geprüft.
+
+**Die bekannten Lücken bleiben unverändert offen** (Abschnitt 2.7,
+Entscheidung E6): im Impressum fehlen USt-IdNr., EU-Streitbeilegung und
+inhaltlich Verantwortlicher; die Datenschutzerklärung nennt WhatsApp,
+Supabase, Kundenkonto, Rewards-Programm, Gewinnverlauf, die im Browser
+gespeicherten Daten und das Beschwerderecht bei der Aufsichtsbehörde nicht.
+**Hier wird keine rechtliche Freigabe behauptet.**
+
+Eine Änderung zur Auszeichnung, ohne Inhalt: Die Rufnummer im Impressum
+verweist jetzt auf `tel:+4972743567` statt `tel:072743567` — die
+**angezeigte** Nummer ist unverändert. Damit ist sie auch aus dem Ausland
+wählbar. Das erledigt F7 für diese Seiten.
+
+### 9.6 Was geprüft wurde
+
+| Lauf | Ergebnis |
+|---|---|
+| `rechtsseiten-pruefen` (neu) | **107 / 107** — Desktop und Mobil |
+| `ausgabe-pruefen` | **80 / 80** |
+| `grundlagen-pruefen` | **62 / 62** |
+| `grundlagen-browser-pruefen` | **28 / 28** |
+| `startseite-pruefen` | **187 / 187** — unverändert |
+| `rewards-pruefen` | **66 / 66** — unverändert |
+| `browser-pruefen` | **15 / 15** — unverändert |
+
+Im Einzelnen geprüft, je Seite und je Bildschirmgröße: Inhaltstreue gegen
+die alte Fassung, keine erfundene Rechtsangabe, keine Skriptfehler, keine
+fehlende Datei, kein waagerechter Überlauf, genau eine Hauptüberschrift,
+Hauptinhaltsbereich vorhanden, Fließtext mindestens 14 px, keine überlange
+Zeile, **jedes** verlinkte Ziel erreichbar (18 je Seite), Sprungmarke beim
+ersten Tabulatorsprung sichtbar, und bei 26 Tabulatorsprüngen je Seite
+zeigt **jedes** bedienbare Element seinen Fokus.
+
+**Drei Befunde des Prüflaufs sind während der Arbeit aufgetreten und
+behoben worden:**
+
+1. Die Beschriftungen „Registergericht", „Registernummer" und
+   „Steuernummer" standen in Versalschreibung da. Im Bestand waren sie
+   normal geschrieben. Bei einer Registerangabe ist die Schreibweise Teil
+   dessen, was dort steht — zurückgestellt auf normale Schreibweise.
+2. Der Schlusssatz auf Impressum und Datenschutz lief über die volle
+   Seitenbreite (gemessen 84 em, rund 160 Zeichen je Zeile). Begrenzt.
+3. Die Antworten der häufigen Fragen ebenso. Begrenzt.
+
+**Zwei gemeldete Befunde waren Messfehler meines eigenen Prüflaufs, keine
+Seitenfehler** — beide korrigiert, statt die Schwelle aufzuweichen: Die
+12-px-Zeilen lagen in der gemeinsamen Fußzeile, die seit Schritt 013
+freigegeben ist und genauso auf der Startseite steht; gemessen wird jetzt
+nur noch innerhalb von `<main>`. Und acht gemeldete „überlange Zeilen" auf
+der Hilfeseite waren die `<li>`-Behälter um Frage und Antwort, nicht der
+Text selbst; gemessen werden jetzt nur Blattelemente.
+
+**Nicht geprüft und weiterhin offen:** das tatsächliche HTTP-404-Verhalten
+(Angabe I4), die echte Anmeldung, und die rechtliche Bewertung der Texte.
+
+### 9.7 Unverändert geblieben
+
+Startseite, Hero-Video und sein Verhalten, Fahrtanfrage, Rewards-Seite,
+Yumak (weiterhin Standbild), `admin/`, `fahrer/`, `dashboard/`, Datenbank,
+Berechtigungen, Punkteberechnung und der Ablauf der Anmeldung.

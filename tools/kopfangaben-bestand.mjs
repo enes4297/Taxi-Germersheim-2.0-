@@ -34,11 +34,29 @@ import { OEFFENTLICHE_SEITEN, NICHT_INS_VERZEICHNIS } from './suchmaschinen-date
 export const ANFANG = '<!-- tg:kopfangaben Anfang - eingesetzt von tools/kopfangaben-bestand.mjs -->';
 export const ENDE = '<!-- tg:kopfangaben Ende -->';
 
+/**
+ * Seiten, die Astro selbst baut. Sie bringen ihre Kopfangaben im Bauteil
+ * `Grundlage.astro` mit und duerfen hier NICHT angefasst werden - sonst
+ * stuende alles doppelt im Seitenkopf.
+ *
+ * Waechst mit jeder uebernommenen Seite. Stand Schritt 018: sechs.
+ */
+export const AUS_ASTRO = [
+  'index.html',
+  'rewards.html',
+  'impressum.html',
+  'datenschutz.html',
+  'hilfe-kontakt.html',
+  '404.html',
+];
+
 /** Die Seiten, die dieser Zusatz anfasst. Ausdrueckliche Liste, kein Glob. */
 export const BETROFFENE_SEITEN = [
-  ...OEFFENTLICHE_SEITEN.map((s) => s.pfad).filter((p) => p && p !== 'rewards.html'),
+  ...OEFFENTLICHE_SEITEN.map((s) => s.pfad),
   ...NICHT_INS_VERZEICHNIS.map((s) => s.pfad),
-].sort();
+]
+  .filter((p) => p && !AUS_ASTRO.includes(p))
+  .sort();
 
 const WURZEL = 'https://taxigermersheim.de';
 

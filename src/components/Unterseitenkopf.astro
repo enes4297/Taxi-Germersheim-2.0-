@@ -1,0 +1,41 @@
+---
+/**
+ * Der Kopf einer Unterseite: Rueckweg, Label, Ueberschrift, Fliesstext.
+ *
+ * Dieselbe Anordnung wie auf der Rewards-Seite, damit die Unterseiten
+ * untereinander und zur Startseite passen. `pt-16 lg:pt-20` gleicht die
+ * Hoehe des festen Kopfbereichs aus.
+ */
+interface Props {
+  label: string;
+  titel: string;
+  text?: string;
+  /** Beschriftung des Rueckwegs. Leer lassen, um ihn wegzulassen. */
+  zurueck?: string;
+  zurueckZiel?: string;
+}
+const { label, titel, text, zurueck = 'Startseite', zurueckZiel = 'index.html' } = Astro.props;
+---
+
+<div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pt-10 lg:pt-14 pb-2">
+  {zurueck && (
+    <a
+      href={zurueckZiel}
+      class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
+    >
+      <span aria-hidden="true">←</span> {zurueck}
+    </a>
+  )}
+
+  <div class="mt-8 max-w-3xl">
+    <p class="text-[11px] font-semibold tracking-[0.3em] uppercase text-primary">{label}</p>
+    <h1
+      class="mt-4 font-semibold tracking-[-0.03em] leading-[1.04] text-foreground"
+      style="font-size: clamp(2.25rem, 4.6vw, 3.75rem)"
+    >
+      {titel}
+    </h1>
+    {text && <p class="mt-5 text-[17px] leading-relaxed text-muted-foreground">{text}</p>}
+    <slot />
+  </div>
+</div>

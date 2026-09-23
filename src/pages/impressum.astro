@@ -1,0 +1,61 @@
+---
+/**
+ * Impressum — unter derselben Adresse wie bisher (impressum.html).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DER TEXT IST UNVERAENDERT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Alle Angaben stehen wortgleich so in der bisherigen impressum.html und
+ * liegen in inhalte.ts unter IMPRESSUM. Neu ist ausschliesslich die
+ * Gestaltung. Es wurde keine Pflichtangabe ergaenzt und keine rechtliche
+ * Aussage getroffen.
+ *
+ * Bekannte Luecken - intern festgehalten in
+ * ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md, Abschnitt 2.7, und dem Auftraggeber
+ * als Entscheidung E6 genannt: keine Umsatzsteuer-Identifikationsnummer
+ * (angegeben ist eine Steuernummer, das ist etwas anderes), kein Hinweis
+ * zur EU-Streitbeilegungsplattform, kein inhaltlich Verantwortlicher.
+ * Diese Luecken werden hier NICHT gefuellt - das gehoert zu einem
+ * Rechtsbeistand, nicht in eine Vorlage.
+ *
+ * ZUSTIMMUNGSBANNER: bewusst nicht uebernommen. Auf dieser Seite wird nichts
+ * von Dritten geladen - Schriften liegen oertlich, die Supabase-Bibliothek
+ * wird mitgeliefert, eine Karte gibt es hier nicht. Die Untersuchung steht
+ * in ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md, Abschnitt 9.2.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
+import Unterseitenkopf from '../components/Unterseitenkopf.astro';
+import Rechtskarten from '../components/Rechtskarten.astro';
+import Enthuellen from '../components/Enthuellen.astro';
+import { DATENSCHUTZ, IMPRESSUM } from '../inhalte';
+---
+
+<Grundlage
+  titel="Impressum | Taxi Germersheim GmbH"
+  beschreibung="Rechtliche Angaben zur Taxi Germersheim GmbH: Anschrift, Geschäftsführung, Registerdaten und Genehmigungsbehörde."
+  pfad="impressum.html"
+>
+  <Sprungmarken />
+  <Kopfbereich startseite={false} />
+
+  <main id="inhalt" class="pt-16 lg:pt-20">
+    <Unterseitenkopf label={IMPRESSUM.label} titel={IMPRESSUM.titel} text={IMPRESSUM.text} />
+
+    <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pb-20 lg:pb-28">
+      <Rechtskarten karten={IMPRESSUM.karten} />
+
+      <Enthuellen verzoegerung={120}>
+        <p class="mt-10 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          Zum Umgang mit personenbezogenen Daten siehe
+          <a href="datenschutz.html" class="text-foreground hover:text-primary transition-colors duration-150 underline underline-offset-4 decoration-border">{DATENSCHUTZ.titel}</a>.
+        </p>
+      </Enthuellen>
+    </div>
+  </main>
+
+  <Fusszeile startseite={false} />
+</Grundlage>
