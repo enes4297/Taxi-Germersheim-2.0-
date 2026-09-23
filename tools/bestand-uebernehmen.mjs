@@ -76,6 +76,15 @@ export const UEBERNAHME = [
  *   legal-pages.css          - wurde NUR von impressum.html und
  *                              datenschutz.html geladen (nachgesehen)
  *   hilfe-kontakt.css        - wurde NUR von hilfe-kontakt.html geladen
+ *   flotte.html              - seit Schritt 019 aus Astro
+ *   spezialfahrten.html      - dito
+ *   spezial-anfrage.html     - dito
+ *   special-services.css     - wurde NUR von spezial-anfrage.html und
+ *                              spezialfahrten.html geladen (nachgesehen)
+ *   special-services.js      - wurde NUR von spezial-anfrage.html geladen.
+ *                              Die neun Fahrtarten und alle ihre Felder
+ *                              stehen jetzt in FAHRTARTEN (inhalte.ts) und
+ *                              werden vom gemeinsamen Anfragedialog erfasst.
  *   fix_admin_auth.py        - Werkzeug, von keiner Seite referenziert
  *   logo-original-full.png   - Bildvorlage, von keiner Seite referenziert
  *   tg-icon-original.png     - dito
@@ -111,20 +120,20 @@ export const UEBERNAHME = [
  */
 const WURZELDATEIEN = [
   // Oeffentliche Seiten
-  'anmelden.html', 'flotte.html',
+  'anmelden.html',
   'kunden-einstellungen.html', 'kundenkonto.html',
   'live-fahrt.html', 'meine-fahrten.html', 'meinkonto.html', 'passwort-vergessen.html',
-  'passwort-zuruecksetzen.html', 'registrieren.html', 'spezial-anfrage.html',
-  'spezialfahrten.html', 'spiele.html', 'wallet-gutscheine.html',
+  'passwort-zuruecksetzen.html', 'registrieren.html',
+  'spiele.html', 'wallet-gutscheine.html',
   // Stilvorlagen
   'auth-demo.css', 'home-luxury.css', 'kunden-einstellungen.css',
   'live-ride.css', 'meinefahrten.css', 'public-premium-v2.css',
   'public-states.css', 'public-system.css', 'public-visual-repair.css',
-  'special-services.css', 'spiele.css', 'style.css', 'wallet-gutscheine.css',
+  'spiele.css', 'style.css', 'wallet-gutscheine.css',
   // Skripte
   'customer-auth.js', 'home-luxury.js',
   'public-premium-v2.js', 'public-system.js', 'rewards-customer.js', 'script.js',
-  'special-services.js', 'spiele.js', 'taxi-rush.js',
+  'spiele.js', 'taxi-rush.js',
   // Bilder
   'logo.png', 'yumak-avatar.png',
 ];

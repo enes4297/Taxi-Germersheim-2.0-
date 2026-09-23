@@ -4,7 +4,7 @@ Interne Arbeitsunterlage. Sie wird **nicht** mit ausgeliefert — der Prüflauf
 `npm run ausgabe-pruefen` stellt sicher, dass keine `.md`-Datei im
 Ausgabeordner landet.
 
-Stand: 23.09.2026, nach Schritt 018 (Rechtsseiten und Hilfe).
+Stand: 23.09.2026, nach Schritt 019 (Flotte und Spezialfahrten).
 
 ---
 
@@ -18,7 +18,8 @@ dev
                 └── feature/015-yumak-medien (85b6300)  Yumak-Medien
                      └── feature/016-rewards-yumak (c93b315)  Rewards-Seite
                           └── feature/017-grundlagen (6c5e27c)  Grundlagen
-                               └── feature/018-rechtsseiten     Rechtsseiten
+                               └── feature/018-rechtsseiten (7caeca5)  Rechtsseiten
+                                    └── feature/019-flotte      Flotte + Spezial
 ```
 
 **Jeder Schritt zweigt vom vorigen ab, nicht von `dev`.** Das ist Absicht: 013
@@ -26,7 +27,7 @@ setzt auf Gerüst, Übernahme-Liste und Prüfwerkzeugen aus 012 auf, 014 auf der
 Design-Grundlage aus 013. Ein Abzweig von `dev` hätte jeweils nichts davon.
 
 **Folge für die Reihenfolge:** Die Kette muss in dieser Reihenfolge nach `dev` —
-012, 013, 014, 015, 016, 017, 018. Wird eine übersprungen, kommt ihr Inhalt später doppelt
+012, 013, 014, 015, 016, 017, 018, 019. Wird eine übersprungen, kommt ihr Inhalt später doppelt
 oder gar nicht mit.
 
 Merge nach `dev` macht der Mensch — nicht der Assistent.
@@ -41,7 +42,7 @@ nur `supabase/` und Dokumentation und sind für die Auslieferung ohne Belang.
 **Zwei betreffen Dateien, die im Ausgabeordner landen** — sie enthalten bereits
 behobene Portalfehler.
 
-| Commit | Datei | Was behoben wurde | Heutiger Stand auf 012 bis 018 |
+| Commit | Datei | Was behoben wurde | Heutiger Stand auf 012 bis 019 |
 |---|---|---|---|
 | `316de73` | `fahrer/mitarbeiter.js` | Das Anhang-Abzeichen einer Krankmeldung zeigte **immer** „Ohne Anhang", unabhängig vom Datenbankwert. Jetzt wird `document_submission_id` ausgewertet. | Zeile 528 trägt noch das feste „Ohne Anhang" — **Fehler vorhanden** |
 | `8ff510a` | `admin/dokumenteingang-supabase.js` | Die Rolle wurde aus der Menübeschriftung abgeleitet statt aus `profiles` der laufenden Sitzung gelesen; dazu eine ehrliche Meldung bei fehlender Anmeldung oder fehlender Admin-Rolle. | `auth_user_id` kommt in der Datei **nicht vor** — Fehler vorhanden |
@@ -51,7 +52,7 @@ behobene Portalfehler.
 Gemessen, nicht vermutet: Die drei Suchen nach `Ohne Anhang`, `auth_user_id`
 und `dokumentfristen` wurden auf dem aktuellen Branch ausgeführt.
 
-**Daraus folgt:** Würde heute aus `feature/018` heraus veröffentlicht, käme der
+**Daraus folgt:** Würde heute aus `feature/019` heraus veröffentlicht, käme der
 alte, fehlerhafte Stand dieser vier Dateien mit — das Übernahme-Werkzeug
 kopiert `admin/` und `fahrer/` byteweise so, wie sie im Branch liegen. Die
 Korrekturen wären wieder weg.
@@ -62,12 +63,12 @@ Die Korrekturen aus `feature/011` müssen im **tatsächlichen
 Veröffentlichungsstand** enthalten sein, also in genau dem Commit, aus dem
 gebaut und hochgeladen wird.
 
-> **Ein Merge nach `dev` allein aktualisiert `feature/018` nicht.**
+> **Ein Merge nach `dev` allein aktualisiert `feature/019` nicht.**
 
-Die Kette 012 → … → 018 hängt an `dev` in seinem Stand vom 19.09.2026.
-Landet `feature/011` danach in `dev`, ändert das an `feature/018` nichts —
+Die Kette 012 → … → 019 hängt an `dev` in seinem Stand vom 19.09.2026.
+Landet `feature/011` danach in `dev`, ändert das an `feature/019` nichts —
 die vier Dateien bleiben dort im alten Stand, bis die Kette den neuen
-`dev`-Stand selbst übernimmt. Wer aus `feature/018` baut, baut die Fehler mit
+`dev`-Stand selbst übernimmt. Wer aus `feature/019` baut, baut die Fehler mit
 ein, auch wenn `dev` längst korrigiert ist.
 
 Vor der Veröffentlichung ist also zu prüfen, ob der Veröffentlichungsstand die
@@ -99,7 +100,8 @@ npm run rewards-pruefen     # Rewards-Seite im Browser, mit Testdaten
 npm run browser-pruefen     # Zentrale, Portal und Dashboard im Ausgabeordner
 npm run grundlagen-pruefen  # Suchmaschinen, Bibliothek, Anrede, Tastatur
 npm run grundlagen-browser-pruefen  # dasselbe im Browser, ohne Aussenverbindung
-npm run rechtsseiten-pruefen # Impressum, Datenschutz, Hilfe, 404
+npm run rechtsseiten-pruefen # Darstellung aller sieben Astro-Unterseiten
+npm run flotte-pruefen       # Flotte, Spezialfahrten und der Anfrageweg
 npm run dev              # örtlicher Entwicklungsserver
 npm run preview          # den fertigen Ausgabeordner ansehen
 ```
@@ -664,35 +666,104 @@ IT-Dienstleister und von hier aus nicht prüfbar.
 
 ---
 
-## 13. Nächster Schritt
+## 13. Flotte und Spezialfahrten (Schritt 019)
+
+**Die ausführliche Fassung steht in `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`,
+Abschnitt 10** — dort auch der vollständige Vergleich des alten
+Anfragewegs, Feld für Feld. Hier nur, was Bau und Übernahme betrifft.
+
+### Drei weitere Seiten aus Astro
+
+`flotte.html`, `spezialfahrten.html` und `spezial-anfrage.html` — unter
+denselben Adressen. Aus Bestandsmaterial stammen damit noch **11 von 20**.
+
+### Aus der Übernahmeliste genommen
+
+| Datei | Grund |
+|---|---|
+| `flotte.html` | kommt aus Astro |
+| `spezialfahrten.html` | dito |
+| `spezial-anfrage.html` | dito |
+| `special-services.css` | wurde **nur** von diesen beiden Spezialseiten geladen |
+| `special-services.js` | wurde **nur** von `spezial-anfrage.html` geladen |
+
+Nachgesehen, nicht vermutet.
+
+### Ein Formular statt zwei
+
+`special-services.js` (762 Zeilen) führte ein **zweites** Anfrageformular
+mit eigener Prüfung: neun Fahrtarten, je neun bis fünfzehn Felder. Diese
+Felder sind nicht verlorengegangen — sie stehen jetzt in `FAHRTARTEN`
+(`inhalte.ts`) und werden vom **gemeinsamen** `Anfragedialog.astro`
+erfasst.
+
+Der Dialog nimmt dafür zwei neue Eigenschaften:
+
+```
+<Anfragedialog />                              Startseite: ohne Zusatzangaben
+<Anfragedialog arten={FAHRTARTEN} pflichtDetails />   Spezialseiten
+```
+
+**Die Startseite bleibt unberührt** — weder im Ablauf noch im Gewicht. Der
+Prüflauf stellt ausdrücklich fest, dass sie weder den Zusatzblock noch die
+Pflichtschaltung trägt.
+
+Entfallen sind aus den Feldsätzen ausschließlich `pickup`, `destination`,
+`date` und `time` (und ihre Varianten) — genau die Angaben, die der Dialog
+selbst erfasst. Sonst nichts. Der Prüflauf füllt für jede der neun
+Fahrtarten jedes Feld aus und sucht jeden Wert in der WhatsApp-Nachricht
+wieder.
+
+### Kein Zustimmungsbanner mehr im Auslieferstand
+
+Mit `flotte.html` verschwindet der letzte Schalter ohne Wirkung. Begründung
+unverändert Abschnitt 9.2 der Bestandsaufnahme.
+
+### Die Fahrzeugbilder
+
+Kommen jetzt aus `public/assets/fleet/`, in zwei Auflösungen. Die alte
+Seite zog sie über einen Katalog im Seitenskript aus `admin/images/` — mit
+Dateinamen wie `adminimagesvw-touran-ger-tx-300-premium.jpg.png`, und zwei
+Einträge fehlten dort ganz.
+
+### `AUS_ASTRO` wächst auf neun
+
+`kopfangaben-bestand.mjs` bearbeitet dadurch noch 11 statt 14
+Bestandsseiten.
+
+---
+
+## 14. Nächster Schritt
 
 > **Die vollständige Bestandsaufnahme der öffentlichen Webseite steht seit
 > dem 23.09.2026 in `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`** — was fertig ist,
 > was fehlt, was ohne Rückfrage machbar ist, und was eine Entscheidung
 > braucht. Die dortige Empfehlung ersetzt den Vorschlag unten.
 
-**Die Schritte 017 und 018 sind erledigt** — siehe Abschnitt 11 und 12
-hier sowie Abschnitt 8 und 9 der Bestandsaufnahme.
+**Die Schritte 017 bis 019 sind erledigt** — siehe Abschnitt 11 bis 13
+hier sowie Abschnitt 8 bis 10 der Bestandsaufnahme.
 
-**Empfohlen: Schritt 019 — Flotte und Spezialfahrten.** Branch
-`feature/019-flotte` von `feature/018-rechtsseiten`. Inhalt:
-`flotte.html` und `spezialfahrten.html` im freigegebenen Design.
+**Empfohlen: Schritt 020 — Kontoseiten.** Branch `feature/020-konto` von
+`feature/019-flotte`. Inhalt: `anmelden.html`, `registrieren.html`,
+`passwort-vergessen.html`, `passwort-zuruecksetzen.html`,
+`meinkonto.html`, `kunden-einstellungen.html`, `meine-fahrten.html`,
+`wallet-gutscheine.html`, `live-fahrt.html` und die Weiterleitung
+`kundenkonto.html`.
 
-Warum diese beiden als Nächstes:
+Das ist das **Paket mit dem höchsten Risiko** in dieser Reihe, weil die
+echte Anmeldung daran hängt. Deshalb gilt dort besonders:
 
-- **Die Inhalte liegen bereits vor.** `FLOTTE` und `LEISTUNGSBLOECKE` in
-  `inhalte.ts` sind seit Schritt 014 vollständig, samt sauberer
-  Fahrzeugbilder in zwei Auflösungen. Die alte `flotte.html` zieht ihre
-  Bilder noch aus `admin/images/` mit verunglückten Dateinamen.
-- **Kein Backend berührt.** Beide Seiten hängen an keiner Anmeldung.
-- **Es räumt zwei Altlasten ab:** das wirkungslose Zustimmungsbanner auf
-  `flotte.html` und den zweiten, konkurrierenden Anfrageweg auf
-  `spezial-anfrage.html` (Entscheidung E7).
+- **`customer-auth.js` wird nicht umgeschrieben, nur eingebunden.** Die
+  Datei ist seit Schritt 017 stabil und liefert die Bibliothek selbst mit.
+- Die Rückkehr nach der Anmeldung (`?weiter=`, gegen feste Liste geprüft)
+  bleibt unverändert.
+- Die ehrlichen Leerzustände bleiben: „Noch keine Fahrten verfügbar",
+  „keine verifizierten Live-Fahrtdaten … werden deshalb nicht simuliert".
+- `meine-fahrten.html` bleibt leer, solange Entscheidung **E1** offen ist —
+  Kunden haben auf `rides` weder Lese- noch Schreibrecht.
 
-Offen bleibt davor: Entscheidung **E2** (zwei fehlende Fahrzeugfotos) und
-**E7** (bleibt `spezial-anfrage.html`?). Beide blockieren den Beginn
-nicht — die Flotte kann wie auf der Startseite mit Textkarten für die
-zwei Fahrzeuge ohne Foto arbeiten.
+Danach bleibt nur noch `spiele.html` aus dem Bestand, und die gehört zu
+Punkt 4 der Reihenfolge.
 
 Der frühere Vorschlag, alle Unterseiten auf einmal anzugehen:
 

@@ -60,7 +60,13 @@ const server = createServer(async (req, res) => {
 });
 await new Promise((r) => server.listen(PORT, '127.0.0.1', r));
 
+// Seit Schritt 019 gehoeren die drei neuen Seiten dazu: Sie nutzen
+// dieselben Bauteile, und Tastatur, Fokus und Lesbarkeit sind dieselbe
+// Frage. Die Inhaltstreue-Pruefung unten laeuft nur fuer die vier Seiten
+// aus Schritt 018 - fuer die drei neuen macht das eigene
+// pruefe-flotte-spezial.mjs die Vollstaendigkeitspruefung.
 const SEITEN = ['impressum.html', 'datenschutz.html', 'hilfe-kontakt.html', '404.html'];
+const DARSTELLUNG = [...SEITEN, 'flotte.html', 'spezialfahrten.html', 'spezial-anfrage.html'];
 
 /** Sichtbaren Text aus einer Bestandsdatei ziehen - ohne Skript und Stil. */
 function textAusQuelle(html) {
@@ -198,7 +204,7 @@ for (const [name, breite, hoehe] of [['Desktop', 1440, 900], ['Mobil', 390, 844]
     return r.abort();
   });
 
-  for (const seite of SEITEN) {
+  for (const seite of DARSTELLUNG) {
     const p = await ctx.newPage();
     const fehler = [];
     const fehlend = [];

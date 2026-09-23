@@ -647,3 +647,322 @@ export const FEHLERSEITE = {
     { ziel: 'rewards.html', text: 'Rewards', zusatz: 'Punkte, Stufen und Drehs' },
   ],
 } as const;
+
+// ── Spezialfahrten: Fahrtarten und ihre Zusatzangaben (Schritt 019) ─────────
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// HERKUNFT UND ZWECK
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Wortgleich uebernommen aus SERVICE_CONFIG in special-services.js. Jede
+// Beschriftung, jede Auswahlmoeglichkeit und jede Pflichtangabe steht dort
+// genauso. Es wurde kein Feld hinzugefuegt, keines weggelassen und keine
+// Pflichtangabe zur freiwilligen gemacht.
+//
+// WARUM DAS HIER STEHT UND NICHT IN EINEM ZWEITEN FORMULAR:
+// Der gemeinsame Anfragedialog erfasst Abholadresse, Zieladresse, Leistung
+// und Zeitpunkt - das deckt den Alltagsfall. Fuer eine Dialysefahrt, einen
+// Rollstuhltransport oder eine Kurierfahrt reicht das nicht: Dort haengt an
+// Verordnung, Rollstuhltyp oder Zustellzeit, ob die Fahrt ueberhaupt
+// durchfuehrbar ist. Diese Angaben gehen deshalb NICHT verloren - sie
+// erweitern denselben Dialog um einen zusaetzlichen Block, statt ein zweites
+// Formular mit eigener Pruefung danebenzustellen.
+//
+// PFLICHTANGABEN, GENAU WIE BISHER:
+// `pflicht: true` wird nur dann durchgesetzt, wenn der Dialog aus dem
+// Spezialweg heraus geoeffnet wurde - also von spezialfahrten.html oder
+// spezial-anfrage.html. Auf der Startseite bleiben die Zusatzangaben
+// freiwillig; dort war es nie anders, und die freigegebene Startseite soll
+// sich nicht aendern.
+
+export type FeldArt = 'text' | 'tel' | 'email' | 'date' | 'time' | 'number' | 'auswahl' | 'mehrfach' | 'notiz';
+
+export interface Detailfeld {
+  id: string;
+  label: string;
+  art: FeldArt;
+  pflicht: boolean;
+  optionen?: string[];
+  platzhalter?: string;
+}
+
+export interface Fahrtart {
+  /** Schluessel des Bestands - steht in jedem Direktlink (?service=…). */
+  id: string;
+  titel: string;
+  /** Die freigegebene Leistung, unter der die Fahrt laeuft. */
+  leistung: LeistungId | null;
+  beschreibung: string;
+  vorteile: string[];
+  /** Der Hinweis des Bestands - wortgleich, besonders bei Kosten. */
+  hinweis: string;
+  /** Vorbelegung einzelner Felder, wie im Bestand ueber `preset`. */
+  vorbelegt?: Record<string, string>;
+  felder: Detailfeld[];
+}
+
+const FELD_NAME: Detailfeld = { id: 'name', label: 'Name', art: 'text', pflicht: true };
+const FELD_TELEFON: Detailfeld = { id: 'phone', label: 'Telefonnummer', art: 'tel', pflicht: true };
+const BEGLEITUNG: Detailfeld = {
+  id: 'companion', label: 'Begleitperson', art: 'auswahl', pflicht: true,
+  optionen: ['Keine', 'Eine Begleitperson', 'Mehrere Begleitpersonen'],
+};
+
+/** Die Felder der Krankenfahrt - Grundlage auch fuer Dialyse und Chemo. */
+const KRANKENFAHRT_FELDER: Detailfeld[] = [
+  FELD_NAME,
+  FELD_TELEFON,
+  { id: 'roundtrip', label: 'Hin- und Rückfahrt', art: 'auswahl', pflicht: true, optionen: ['Nur Hinfahrt', 'Hin- und Rückfahrt'] },
+  { id: 'rideType', label: 'Fahrttyp', art: 'auswahl', pflicht: true, optionen: ['Krankenfahrt', 'Dialyse', 'Chemo', 'Strahlentherapie', 'Ambulante Behandlung', 'Stationäre Aufnahme/Entlassung'] },
+  { id: 'insurance', label: 'Krankenkasse (optional)', art: 'text', pflicht: false },
+  { id: 'prescription', label: 'Verordnung vorhanden', art: 'auswahl', pflicht: true, optionen: ['Ja', 'Nein', 'Unklar'] },
+  { id: 'approval', label: 'Genehmigung vorhanden', art: 'auswahl', pflicht: true, optionen: ['Ja', 'Nein', 'Unklar'] },
+  BEGLEITUNG,
+  { id: 'notes', label: 'Besondere Hinweise', art: 'notiz', pflicht: false },
+];
+
+/**
+ * Die neun Fahrtarten des Bestands, in der Reihenfolge von LIST in
+ * special-services.js.
+ *
+ * ZWEI HABEN KEINE ENTSPRECHUNG unter den sieben freigegebenen Leistungen -
+ * `leistung: null` sagt das ausdruecklich, statt eine Zuordnung zu erfinden:
+ *
+ *   series    „Serienfahrten" ist keine eigene Leistung, sondern eine
+ *             Wiederholung. Die freigegebenen Leistungstexte nennen sie bei
+ *             Kranken- und Schuelerfahrten als „feste Serie".
+ *   business  „Firmen- und Geschaeftskunden" ist eine Kundenart, keine
+ *             Fahrtleistung. Die Leistung „Fern- und Gruppenfahrten" nennt
+ *             Firmenkunden, deckt sie aber nicht ab.
+ *
+ * In beiden Faellen traegt die Nachricht die Fahrtart ausdruecklich als
+ * eigene Zeile - so geht die Angabe nicht verloren.
+ */
+export const FAHRTARTEN: Fahrtart[] = [
+  {
+    id: 'medical',
+    titel: 'Krankenfahrten',
+    leistung: 'Krankenfahrten',
+    beschreibung: 'Fahrten zu Arzt, Klinik, Therapie sowie stationärer Aufnahme und Entlassung persönlich vorbereiten.',
+    vorteile: [
+      'Sitzende Beförderung und Rollstuhlbeförderung möglich',
+      'Hin- und Rückfahrt gemeinsam planbar',
+      'Transparenter Hinweis zu Verordnung und Genehmigung',
+    ],
+    hinweis: 'Je nach Fahrt können Verordnung und Genehmigung der Krankenkasse erforderlich sein. Eine verbindliche Kostenübernahme kann hier nicht zugesagt werden.',
+    felder: KRANKENFAHRT_FELDER,
+  },
+  {
+    id: 'dialysis',
+    titel: 'Dialysefahrten',
+    leistung: 'Krankenfahrten',
+    beschreibung: 'Fahrten zu Arzt, Klinik, Therapie sowie stationärer Aufnahme und Entlassung persönlich vorbereiten.',
+    vorteile: [
+      'Sitzende Beförderung und Rollstuhlbeförderung möglich',
+      'Hin- und Rückfahrt gemeinsam planbar',
+      'Transparenter Hinweis zu Verordnung und Genehmigung',
+    ],
+    hinweis: 'Je nach Fahrt können Verordnung und Genehmigung der Krankenkasse erforderlich sein. Eine verbindliche Kostenübernahme kann hier nicht zugesagt werden.',
+    vorbelegt: { rideType: 'Dialyse' },
+    felder: KRANKENFAHRT_FELDER,
+  },
+  {
+    id: 'chemo',
+    titel: 'Chemo- und Strahlentherapiefahrten',
+    leistung: 'Krankenfahrten',
+    beschreibung: 'Fahrten zu Arzt, Klinik, Therapie sowie stationärer Aufnahme und Entlassung persönlich vorbereiten.',
+    vorteile: [
+      'Sitzende Beförderung und Rollstuhlbeförderung möglich',
+      'Hin- und Rückfahrt gemeinsam planbar',
+      'Transparenter Hinweis zu Verordnung und Genehmigung',
+    ],
+    hinweis: 'Je nach Fahrt können Verordnung und Genehmigung der Krankenkasse erforderlich sein. Eine verbindliche Kostenübernahme kann hier nicht zugesagt werden.',
+    vorbelegt: { rideType: 'Chemo' },
+    felder: KRANKENFAHRT_FELDER,
+  },
+  {
+    id: 'wheelchair',
+    titel: 'Rollstuhlfahrten',
+    leistung: 'Rollstuhlfahrten',
+    beschreibung: 'Barrierearme Fahrten mit Rampe, Sicherung und optionaler Begleitperson persönlich planen.',
+    vorteile: [
+      'Manueller und elektrischer Rollstuhl auswählbar',
+      'Faltbar/nicht faltbar und Umsteigen abfragbar',
+      'Zugangssituation vorab abstimmbar',
+    ],
+    hinweis: 'Bitte teilen Sie uns Rollstuhltyp und Zugangssituation möglichst genau mit.',
+    felder: [
+      FELD_NAME,
+      FELD_TELEFON,
+      { id: 'wheelchairType', label: 'Rollstuhltyp', art: 'auswahl', pflicht: true, optionen: ['Manueller Rollstuhl', 'Elektrischer Rollstuhl'] },
+      { id: 'foldable', label: 'Rollstuhl faltbar', art: 'auswahl', pflicht: true, optionen: ['Ja', 'Nein'] },
+      { id: 'canTransfer', label: 'Person kann umsteigen', art: 'auswahl', pflicht: true, optionen: ['Ja', 'Nein'] },
+      BEGLEITUNG,
+      { id: 'stairSituation', label: 'Treppen / besondere Zugangssituation', art: 'notiz', pflicht: false },
+      { id: 'dimensions', label: 'Maße / Gewicht (optional)', art: 'text', pflicht: false },
+      { id: 'notes', label: 'Zusätzliche Hinweise', art: 'notiz', pflicht: false },
+    ],
+  },
+  {
+    id: 'series',
+    titel: 'Serienfahrten',
+    leistung: null,
+    beschreibung: 'Regelmäßige Fahrten mit Wochenstruktur sowie Hin- und Rückfahrt persönlich vorbereiten.',
+    vorteile: [
+      'Dialyse M/W/F als Beispiel hinterlegbar',
+      'Tägliche Schüler- oder Therapiefahrten planbar',
+      'Wochenzusammenfassung vor der Abstimmung',
+    ],
+    hinweis: 'Eine Serienfahrt wird erst nach persönlicher Bestätigung verbindlich.',
+    felder: [
+      FELD_NAME,
+      FELD_TELEFON,
+      { id: 'startDate', label: 'Startdatum', art: 'date', pflicht: true },
+      { id: 'endDate', label: 'Enddatum (optional)', art: 'date', pflicht: false },
+      { id: 'weekdays', label: 'Wochentage', art: 'mehrfach', pflicht: true, optionen: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] },
+      { id: 'direction', label: 'Fahrtart', art: 'auswahl', pflicht: true, optionen: ['Nur Hinfahrt', 'Hin- und Rückfahrt'] },
+      { id: 'outboundTime', label: 'Uhrzeit Hinfahrt', art: 'time', pflicht: true },
+      { id: 'returnTime', label: 'Uhrzeit Rückfahrt', art: 'time', pflicht: false },
+      { id: 'rideType', label: 'Fahrttyp', art: 'auswahl', pflicht: true, optionen: ['Dialyse', 'Schülerfahrt', 'Therapiefahrt', 'Firmenfahrt', 'Standardfahrt'] },
+      { id: 'companion', label: 'Begleitperson', art: 'auswahl', pflicht: true, optionen: ['Keine', 'Begleitperson eingeplant'] },
+      { id: 'remark', label: 'Bemerkung', art: 'notiz', pflicht: false },
+    ],
+  },
+  {
+    id: 'airport',
+    titel: 'Flughafentransfers',
+    leistung: 'Flughafentransfer',
+    beschreibung: 'Transfers für FRA, FKB, STR oder weitere Flughäfen auf Anfrage persönlich vorbereiten.',
+    vorteile: [
+      'Terminal und Flugnummer optional',
+      'Normales Taxi oder Großraumtaxi auswählbar',
+      'Festpreisanfrage persönlich abstimmbar',
+    ],
+    hinweis: 'Der Preis wird erst nach persönlicher Prüfung bestätigt.',
+    felder: [
+      FELD_NAME,
+      FELD_TELEFON,
+      { id: 'airport', label: 'Flughafen', art: 'auswahl', pflicht: true, optionen: ['Frankfurt Airport FRA', 'Karlsruhe/Baden-Baden FKB', 'Stuttgart Airport STR', 'Weiterer Flughafen auf Anfrage'] },
+      { id: 'terminal', label: 'Terminal (optional)', art: 'text', pflicht: false },
+      { id: 'flightNumber', label: 'Flugnummer (optional)', art: 'text', pflicht: false },
+      { id: 'persons', label: 'Anzahl Personen', art: 'number', pflicht: true },
+      { id: 'bags', label: 'Anzahl Koffer', art: 'number', pflicht: true },
+      { id: 'childSeat', label: 'Kindersitz benötigt', art: 'auswahl', pflicht: true, optionen: ['Nein', 'Ja, 1', 'Ja, 2+'] },
+      { id: 'vehicleType', label: 'Taxiart', art: 'auswahl', pflicht: true, optionen: ['Normales Taxi', 'Großraumtaxi'] },
+      { id: 'roundtrip', label: 'Hin- und Rückfahrt', art: 'auswahl', pflicht: true, optionen: ['Nur Hinfahrt', 'Hin- und Rückfahrt'] },
+      { id: 'returnFlightDate', label: 'Rückflugdatum (optional)', art: 'date', pflicht: false },
+      { id: 'fixedPrice', label: 'Festpreisanfrage', art: 'auswahl', pflicht: true, optionen: ['Ja', 'Nein'] },
+    ],
+  },
+  {
+    id: 'business',
+    titel: 'Firmen- und Geschäftskunden',
+    leistung: null,
+    beschreibung: 'Planung für Firmen- und Geschäftskunden mit Ansprechpartnern und wiederkehrenden Leistungen.',
+    vorteile: [
+      'Mitarbeiterfahrten, Flughafentransfers und Kurierfahrten kombinierbar',
+      'Bahn- und Schichtpersonal kann als Leistung markiert werden',
+      'Individuelle Vereinbarungen persönlich abstimmbar',
+    ],
+    hinweis: 'Vereinbarungen und Abrechnung werden persönlich geprüft und bestätigt.',
+    felder: [
+      { id: 'company', label: 'Firmenname', art: 'text', pflicht: true },
+      { id: 'contact', label: 'Ansprechpartner', art: 'text', pflicht: true },
+      FELD_TELEFON,
+      { id: 'email', label: 'E-Mail', art: 'email', pflicht: true },
+      { id: 'billingAddress', label: 'Rechnungsadresse', art: 'notiz', pflicht: true },
+      { id: 'ridesPerMonth', label: 'Erwartete Fahrten pro Monat', art: 'number', pflicht: true },
+      { id: 'services', label: 'Gewünschte Leistungen', art: 'mehrfach', pflicht: true, optionen: ['Zentrale Buchung', 'Wiederkehrende Fahrten', 'Monatsrechnung', 'Flughafentransfers', 'Mitarbeiterfahrten', 'Kurierfahrten', 'Bahn- und Schichtpersonal'] },
+      { id: 'invoiceMode', label: 'Rechnungswunsch', art: 'auswahl', pflicht: true, optionen: ['Monatsrechnung', 'Wochenrechnung', 'Einzelfahrten'] },
+      { id: 'remark', label: 'Bemerkung', art: 'notiz', pflicht: false },
+    ],
+  },
+  {
+    id: 'student',
+    titel: 'Schülerfahrten',
+    leistung: 'Schuelerfahrten',
+    beschreibung: 'Regelmäßige Schülerbeförderung mit festen Abholzeiten, Hin- und Rückfahrt und individueller Abstimmung.',
+    vorteile: [
+      'Wochentage und Zeitfenster klar definierbar',
+      'Abstimmung mit Eltern, Schule oder Träger',
+      'Begleitbedarf direkt abfragbar',
+    ],
+    hinweis: 'Eine persönliche Abstimmung und Bestätigung ist erforderlich.',
+    felder: [
+      { id: 'name', label: 'Ansprechpartner', art: 'text', pflicht: true },
+      FELD_TELEFON,
+      { id: 'passengers', label: 'Anzahl Fahrgäste', art: 'number', pflicht: true },
+      { id: 'weekdays', label: 'Wochentage', art: 'mehrfach', pflicht: true, optionen: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'] },
+      { id: 'times', label: 'Uhrzeiten', art: 'text', pflicht: true, platzhalter: 'z. B. Hinfahrt 07:15, Rückfahrt 13:20' },
+      { id: 'support', label: 'Begleitbedarf', art: 'auswahl', pflicht: true, optionen: ['Kein Begleitbedarf', 'Begleitperson nötig', 'Individuell zu klären'] },
+      { id: 'period', label: 'Zeitraum', art: 'text', pflicht: true, platzhalter: 'z. B. Schuljahr 2026/27' },
+    ],
+  },
+  {
+    id: 'courier',
+    titel: 'Kurierfahrten',
+    leistung: 'Kurierfahrten',
+    beschreibung: 'Direktfahrten für Dokumente, Ersatzteile und kleine Sendungen inklusive Zeitfenster vorbereiten.',
+    vorteile: [
+      'Zeitkritische Zustellung kennzeichnen',
+      'Kontakte für Abholung und Empfang erfassen',
+      'Sendungsart und Größe angeben',
+    ],
+    hinweis: 'Gefährliche oder gesetzlich verbotene Güter sind ausgeschlossen. Eine Beauftragung erfolgt erst nach persönlicher Bestätigung.',
+    felder: [
+      FELD_NAME,
+      FELD_TELEFON,
+      { id: 'shipmentType', label: 'Art der Sendung', art: 'text', pflicht: true },
+      { id: 'shipmentSize', label: 'Ungefähre Größe', art: 'auswahl', pflicht: true, optionen: ['Dokumente', 'Kleine Sendung', 'Mittelgroße Sendung'] },
+      { id: 'pickupTime', label: 'Abholzeit', art: 'time', pflicht: true },
+      { id: 'latestDelivery', label: 'Späteste Zustellung', art: 'time', pflicht: true },
+      { id: 'pickupContact', label: 'Ansprechpartner Abholung', art: 'text', pflicht: true },
+      { id: 'dropContact', label: 'Ansprechpartner Empfang', art: 'text', pflicht: true },
+    ],
+  },
+];
+
+/**
+ * Felder, die der gemeinsame Dialog bereits selbst erfasst.
+ *
+ * Sie stehen in den Bestandslisten oben mit drin (pickup, destination, date,
+ * time und ihre Varianten). Im Dialog werden sie NICHT ein zweites Mal
+ * gezeigt - sonst stuende dieselbe Frage zweimal auf einer Seite.
+ *
+ * `ersetztDurch` sagt, welches Feld des Dialogs die Angabe traegt. Der
+ * Prueflauf rechnet damit nach, dass wirklich nichts verlorengeht.
+ */
+export const VOM_DIALOG_ERFASST: Record<string, string> = {
+  pickup: 'Abholadresse',
+  destination: 'Zieladresse',
+  date: 'Zeitpunkt',
+  time: 'Zeitpunkt',
+  pickupDate: 'Zeitpunkt',
+  pickupTime: 'Zeitpunkt',
+};
+
+export const SPEZIAL_SEITE = {
+  label: 'Spezialfahrten',
+  titel: 'Mobilität, wenn es darauf ankommt.',
+  text: 'Persönlich geplant. Zuverlässig durchgeführt.',
+  bereichLabel: 'Leistungsspektrum',
+  bereichTitel: 'Vier Bereiche, persönlich abgestimmt auf Anlass, Bedarf und Ablauf.',
+  /** Die vier Gruppen der Bestandsseite, wortgleich. */
+  gruppen: [
+    { titel: 'Mobilität', text: 'Für individuelle Wege, barrierearme Beförderung und planbare Transfers.', arten: ['wheelchair', 'series', 'airport'] },
+    { titel: 'Gesundheit & Betreuung', text: 'Für Arzt, Klinik und wiederkehrende Behandlungen mit verlässlicher Terminabstimmung.', arten: ['medical', 'dialysis', 'chemo'] },
+    { titel: 'Schule & Organisation', text: 'Für regelmäßige Schülerbeförderung und abgestimmte Mobilität im Unternehmensalltag.', arten: ['student', 'business'] },
+    { titel: 'Kurier & Logistik', text: 'Für Dokumente, Ersatzteile und kleine Sendungen mit klar vereinbarten Zeitfenstern.', arten: ['courier'] },
+  ],
+} as const;
+
+export const ANFRAGE_SEITE = {
+  label: 'Spezialfahrten',
+  titel: 'Anfrage vorbereiten',
+  text: 'Bereiten Sie die wichtigsten Angaben für die persönliche Abstimmung vor.',
+  /**
+   * Wortgleich aus dem Bestand. Der Satz ist wichtig: Er sagt, dass NICHTS
+   * automatisch uebermittelt wird - und das gilt unveraendert weiter.
+   */
+  keineUebermittlung: 'Die Angaben werden nicht online versendet. Nutzen Sie anschließend den Buchungsassistenten oder stimmen Sie die Fahrt direkt mit uns ab.',
+} as const;

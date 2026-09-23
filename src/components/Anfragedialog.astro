@@ -26,9 +26,39 @@
  * die Nachricht gesendet ist, noch dass eine Fahrt bestaetigt waere - genau
  * so steht es auch auf der Seite. Entfernungen, Preise oder Fahrzeiten werden
  * nirgends genannt.
+ *
+ * ── SCHRITT 019: ZUSATZANGABEN DER SPEZIALFAHRTEN ─────────────────────────
+ *
+ * Der Bestand hatte fuer Spezialfahrten ein ZWEITES Formular
+ * (spezial-anfrage.html mit special-services.js): neun Fahrtarten, je neun
+ * bis siebzehn Felder, eigene Pruefung. Diese Angaben sind nicht Beiwerk -
+ * ob eine Verordnung vorliegt oder ob der Rollstuhl faltbar ist, entscheidet,
+ * ob die Fahrt ueberhaupt durchfuehrbar ist.
+ *
+ * Statt daneben ein zweites Formular stehen zu lassen, erweitert dieser
+ * Dialog sich um einen zusaetzlichen Block. Eine Formularlogik, eine
+ * Pruefung, eine Nachricht.
+ *
+ * `arten` steuert, welche Fahrtarten eine Seite mitbringt:
+ *   - Startseite: LEER. Dort gab es nie Zusatzangaben, und die freigegebene
+ *     Startseite soll sich nicht aendern - weder im Ablauf noch im Gewicht.
+ *   - Spezialfahrten und Spezialanfrage: alle neun, mit `pflichtDetails`.
+ *
+ * Die Felder werden beim Bauen erzeugt, nicht im Browser. Das haelt sie
+ * pruefbar und sie ueberstehen ein Schliessen und erneutes Oeffnen von
+ * selbst, weil sie im Dokument stehen bleiben.
  */
 import { FIRMA, LEISTUNGEN } from '../inhalte';
+import type { Fahrtart } from '../inhalte';
 import Symbol from './Symbol.astro';
+
+interface Props {
+  /** Fahrtarten, deren Zusatzangaben dieser Dialog mitbringt. */
+  arten?: readonly Fahrtart[];
+  /** Pflichtangaben durchsetzen - wie im Bestandsformular. */
+  pflichtDetails?: boolean;
+}
+const { arten = [], pflichtDetails = false } = Astro.props;
 ---
 
 <div
@@ -37,6 +67,7 @@ import Symbol from './Symbol.astro';
   aria-modal="true"
   aria-label="Fahrt anfragen"
   data-anfrage-dialog
+  data-pflicht-details={pflichtDetails ? 'ja' : null}
   hidden
 >
   <div class="absolute inset-0 bg-background/80 backdrop-blur-sm" data-anfrage-hintergrund aria-hidden="true"></div>
@@ -145,6 +176,79 @@ import Symbol from './Symbol.astro';
               <p class="text-red-400 text-sm mt-1.5" hidden data-fehler="time">Bitte Uhrzeit angeben</p>
             </div>
           </div>
+
+          {/* ── Zusatzangaben der Spezialfahrten ──────────────────────
+              Nur vorhanden, wenn die Seite `arten` mitgibt. Auf der
+              Startseite steht hier nichts. */}
+          {arten.length > 0 && (
+            <div data-detail-block hidden>
+              <div class="border-t border-border pt-7">
+                <h3 class="text-lg font-semibold text-foreground">Angaben zur Fahrt</h3>
+                <p class="mt-1.5 text-sm text-muted-foreground" data-detail-hinweis></p>
+              </div>
+
+              {arten.map((art) => (
+                <div class="mt-5 space-y-4" data-detail-satz={art.id} hidden>
+                  {art.felder.map((f) => (
+                    <div>
+                      <label for={`dlg-${art.id}-${f.id}`} class="block text-sm font-medium text-muted-foreground mb-1.5">
+                        {f.label}{f.pflicht && pflichtDetails ? ' *' : ''}
+                      </label>
+
+                      {f.art === 'auswahl' ? (
+                        <select
+                          id={`dlg-${art.id}-${f.id}`}
+                          data-detail-feld={f.id}
+                          data-pflicht={f.pflicht ? 'ja' : null}
+                          class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+                        >
+                          <option value="">Bitte wählen</option>
+                          {(f.optionen ?? []).map((o) => <option value={o}>{o}</option>)}
+                        </select>
+                      ) : f.art === 'mehrfach' ? (
+                        <div
+                          class="grid grid-cols-2 gap-2"
+                          role="group"
+                          aria-labelledby={`dlg-${art.id}-${f.id}`}
+                          data-detail-feld={f.id}
+                          data-mehrfach
+                          data-pflicht={f.pflicht ? 'ja' : null}
+                        >
+                          {(f.optionen ?? []).map((o, n) => (
+                            <label for={`dlg-${art.id}-${f.id}-${n}`} class="flex items-center gap-2.5 border border-border px-3 py-2.5 text-sm text-muted-foreground cursor-pointer has-[:checked]:border-primary has-[:checked]:text-foreground transition-colors duration-150">
+                              <input id={`dlg-${art.id}-${f.id}-${n}`} type="checkbox" value={o} class="accent-[#c8a96e]" />
+                              {o}
+                            </label>
+                          ))}
+                        </div>
+                      ) : f.art === 'notiz' ? (
+                        <textarea
+                          id={`dlg-${art.id}-${f.id}`}
+                          data-detail-feld={f.id}
+                          data-pflicht={f.pflicht ? 'ja' : null}
+                          rows="3"
+                          placeholder={f.platzhalter}
+                          class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary resize-y"
+                        ></textarea>
+                      ) : (
+                        <input
+                          id={`dlg-${art.id}-${f.id}`}
+                          type={f.art === 'number' ? 'number' : f.art}
+                          min={f.art === 'number' ? '0' : null}
+                          data-detail-feld={f.id}
+                          data-pflicht={f.pflicht ? 'ja' : null}
+                          placeholder={f.platzhalter}
+                          class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+                        />
+                      )}
+
+                      <p class="text-red-400 text-sm mt-1.5" hidden data-detail-fehler={f.id}></p>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Schritt 3: Zusammenfassung ──────────────────────────── */}
@@ -155,6 +259,8 @@ import Symbol from './Symbol.astro';
             <div class="grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5"><span class="text-muted-foreground text-sm">Ziel</span><span class="text-foreground text-sm font-medium" data-zus="destination">—</span></div>
             <div class="grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5"><span class="text-muted-foreground text-sm">Leistung</span><span class="text-foreground text-sm font-medium" data-zus="service">—</span></div>
             <div class="grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5"><span class="text-muted-foreground text-sm">Zeitpunkt</span><span class="text-foreground text-sm font-medium" data-zus="timing">—</span></div>
+            {/* Zusatzangaben der Spezialfahrten - nur die ausgefuellten. */}
+            <div data-zus-details></div>
           </div>
           <div class="border border-border bg-secondary/60 px-5 py-4">
             <p class="text-sm text-muted-foreground leading-relaxed">
@@ -209,7 +315,7 @@ import Symbol from './Symbol.astro';
 </div>
 
 <script>
-  import { LEISTUNGEN, FIRMA } from '../inhalte';
+  import { LEISTUNGEN, FIRMA, FAHRTARTEN } from '../inhalte';
 
   type Feld = 'pickup' | 'destination' | 'date' | 'time';
 
@@ -221,6 +327,94 @@ import Symbol from './Symbol.astro';
   const daten = { pickup: '', destination: '', service: 'Taxi', timing: 'now', date: '', time: '' };
   let schritt = 1;
   let offen = false;
+
+  // ── Zusatzangaben der Spezialfahrten ──────────────────────────────────
+  //
+  // `detailBlock` ist auf der Startseite gar nicht vorhanden; alles hier
+  // prueft deshalb auf null und tut sonst nichts.
+  //
+  // Die Werte werden NICHT in einem eigenen Zwischenspeicher gehalten,
+  // sondern bleiben in den Feldern selbst stehen. Genau daran hing im
+  // Bestand ein Fehler, der hier nicht wiederholt wird: Wer schliesst und
+  // erneut oeffnet, findet seine Eingaben wieder, weil sie nie irgendwo
+  // hinkopiert und zurueckgeschrieben werden.
+  /** Von der Seite gesetzt: sollen die Pflichtangaben durchgesetzt werden? */
+  const PFLICHT_DETAILS = dialog.dataset.pflichtDetails === 'ja';
+
+  const detailBlock = dialog.querySelector<HTMLElement>('[data-detail-block]');
+  const detailHinweis = dialog.querySelector<HTMLElement>('[data-detail-hinweis]');
+  const detailZusammenfassung = dialog.querySelector<HTMLElement>('[data-zus-details]');
+  /** Schluessel der aktiven Fahrtart, oder leer. */
+  let fahrtart = '';
+
+  const artVon = (id: string) => FAHRTARTEN.find((a) => a.id === id) || null;
+  const aktiverSatz = () =>
+    fahrtart ? dialog.querySelector<HTMLElement>(`[data-detail-satz="${fahrtart}"]`) : null;
+
+  /** Alle Eingabeelemente eines Satzes, in der Reihenfolge der Felder. */
+  function detailFelder(satz: HTMLElement) {
+    return [...satz.querySelectorAll<HTMLElement>('[data-detail-feld]')];
+  }
+
+  /** Alle Zusatzangaben leeren - nur fuer „Neue Anfrage". */
+  function detailsLeeren() {
+    if (!detailBlock) return;
+    for (const el of detailBlock.querySelectorAll<HTMLElement>('[data-detail-feld]')) {
+      if (el.hasAttribute('data-mehrfach')) {
+        for (const box of el.querySelectorAll<HTMLInputElement>('input')) box.checked = false;
+      } else {
+        (el as HTMLInputElement).value = '';
+      }
+      el.removeAttribute('aria-invalid');
+    }
+    for (const m of detailBlock.querySelectorAll<HTMLElement>('[data-detail-fehler]')) {
+      m.textContent = '';
+      m.hidden = true;
+    }
+    // Die Fahrtart selbst bleibt stehen: Wer auf der Kurierseite eine neue
+    // Anfrage beginnt, will wieder eine Kurierfahrt - nur mit leeren Feldern.
+    if (fahrtart) fahrtartSetzen(fahrtart);
+  }
+
+  function detailWert(el: HTMLElement): string {
+    if (el.hasAttribute('data-mehrfach')) {
+      return [...el.querySelectorAll<HTMLInputElement>('input:checked')].map((i) => i.value).join(', ');
+    }
+    return ((el as HTMLInputElement).value || '').trim();
+  }
+
+  /**
+   * Fahrtart setzen: den passenden Feldsatz zeigen, die uebrigen verbergen.
+   *
+   * Hat die Fahrtart eine freigegebene Leistung, wird sie mitgesetzt. Ist
+   * sie `null` - das gilt fuer Serienfahrten und Firmenkunden -, bleibt die
+   * Leistungswahl beim Nutzer; die Fahrtart selbst steht spaeter als eigene
+   * Zeile in der Nachricht, damit die Angabe nicht verlorengeht.
+   */
+  function fahrtartSetzen(id: string) {
+    if (!detailBlock) return;
+    const art = artVon(id);
+    fahrtart = art ? art.id : '';
+
+    for (const s of dialog.querySelectorAll<HTMLElement>('[data-detail-satz]')) {
+      s.hidden = s.dataset.detailSatz !== fahrtart;
+    }
+    detailBlock.hidden = !fahrtart;
+    if (detailHinweis) detailHinweis.textContent = art ? art.hinweis : '';
+
+    if (art) {
+      if (art.leistung) leistungSetzen(art.leistung);
+      // Vorbelegung wie im Bestand - aber nur, solange das Feld leer ist.
+      // Sonst ueberschriebe ein Wechsel der Fahrtart eine eigene Eingabe.
+      const satz = aktiverSatz();
+      if (satz && art.vorbelegt) {
+        for (const [feld, wert] of Object.entries(art.vorbelegt)) {
+          const el = satz.querySelector<HTMLInputElement>(`[data-detail-feld="${feld}"]`);
+          if (el && !el.value) el.value = wert;
+        }
+      }
+    }
+  }
 
   // ── Adressen: eine Quelle fuer Seite und Dialog ────────────────────────
   // Jedes Feld auf der Seite traegt data-anfrage-feld. Aendert sich eines,
@@ -361,6 +555,37 @@ import Symbol from './Symbol.astro';
     for (const el of dialog.querySelectorAll<HTMLElement>('[data-zus]')) {
       el.textContent = werte[el.dataset.zus!] || '—';
     }
+
+    // Zusatzangaben: nur die AUSGEFUELLTEN. Leere Zeilen in einer
+    // Zusammenfassung sind Rauschen.
+    if (detailZusammenfassung) {
+      detailZusammenfassung.innerHTML = '';
+      const art = fahrtart ? artVon(fahrtart) : null;
+      const satz = aktiverSatz();
+      if (art && satz) {
+        const zeile = (name: string, wert: string) => {
+          const d = document.createElement('div');
+          d.className = 'grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5 border-t border-border';
+          const a = document.createElement('span');
+          a.className = 'text-muted-foreground text-sm';
+          a.textContent = name;
+          const b = document.createElement('span');
+          b.className = 'text-foreground text-sm font-medium';
+          b.textContent = wert;
+          d.append(a, b);
+          detailZusammenfassung.appendChild(d);
+        };
+
+        zeile('Fahrtart', art.titel);
+        for (const el of detailFelder(satz)) {
+          const wert = detailWert(el);
+          if (!wert) continue;
+          const id = el.dataset.detailFeld!;
+          const feld = art.felder.find((f) => f.id === id);
+          zeile(feld ? feld.label : id, wert);
+        }
+      }
+    }
   }
 
   function pruefen(): boolean {
@@ -377,6 +602,55 @@ import Symbol from './Symbol.astro';
       fehlerZeigen('time', !daten.time);
       gut = Boolean(daten.date && daten.time);
     }
+    if (schritt === 2 && !detailsPruefen()) gut = false;
+    return gut;
+  }
+
+  /**
+   * Die Zusatzangaben pruefen - mit denselben Regeln wie das Bestandsformular:
+   * Pflichtfeld nicht leer, E-Mail enthaelt ein @, Telefonnummer mindestens
+   * sechs Zeichen, bei Mehrfachauswahl mindestens eine Option.
+   *
+   * Greift nur, wenn die Seite `pflichtDetails` gesetzt hat. Auf der
+   * Startseite gibt es diesen Block nicht.
+   */
+  function detailsPruefen(): boolean {
+    const satz = aktiverSatz();
+    if (!satz || !PFLICHT_DETAILS) return true;
+
+    let gut = true;
+    for (const el of detailFelder(satz)) {
+      const id = el.dataset.detailFeld!;
+      const meldung = satz.querySelector<HTMLElement>(`[data-detail-fehler="${id}"]`);
+      const wert = detailWert(el);
+      let text = '';
+
+      if (el.dataset.pflicht === 'ja' && !wert) {
+        text = el.hasAttribute('data-mehrfach')
+          ? 'Bitte mindestens eine Option wählen.'
+          : 'Bitte dieses Pflichtfeld ausfüllen.';
+      } else if (wert && (el as HTMLInputElement).type === 'email' && !wert.includes('@')) {
+        text = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+      } else if (wert && (el as HTMLInputElement).type === 'tel' && wert.length < 6) {
+        text = 'Bitte eine gültige Telefonnummer eingeben.';
+      }
+
+      if (meldung) {
+        meldung.textContent = text;
+        meldung.hidden = !text;
+      }
+      if (text) {
+        gut = false;
+        el.setAttribute('aria-invalid', 'true');
+      } else {
+        el.removeAttribute('aria-invalid');
+      }
+    }
+
+    if (!gut) {
+      const erstes = satz.querySelector<HTMLElement>('[aria-invalid="true"]');
+      erstes?.focus();
+    }
     return gut;
   }
 
@@ -387,16 +661,33 @@ import Symbol from './Symbol.astro';
   // nichts davon in der Nachricht.
   function nachricht(): string {
     const L = LEISTUNGEN.find((l) => l.id === daten.service);
-    return [
+    const zeilen = [
       'Fahrtanfrage über die Website',
       '',
       `Leistung: ${L ? L.label : daten.service}`,
       `Abholadresse: ${daten.pickup}`,
       `Zieladresse: ${daten.destination}`,
       `Zeitpunkt: ${zeitpunktText()}`,
-      '',
-      'Bitte bestätigen Sie mir die Fahrt.',
-    ].join('\n');
+    ];
+
+    // Zusatzangaben der Spezialfahrten, in der Reihenfolge der Felder. Die
+    // Fahrtart steht immer dabei - auch und gerade dann, wenn sie keiner der
+    // sieben Leistungen entspricht (Serienfahrt, Firmenkonto). Sonst ginge
+    // genau die Angabe verloren, wegen der die Anfrage gestellt wird.
+    const art = fahrtart ? artVon(fahrtart) : null;
+    const satz = aktiverSatz();
+    if (art && satz) {
+      zeilen.push('', `Fahrtart: ${art.titel}`);
+      for (const el of detailFelder(satz)) {
+        const wert = detailWert(el);
+        if (!wert) continue;
+        const feld = art.felder.find((f) => f.id === el.dataset.detailFeld);
+        zeilen.push(`${feld ? feld.label : el.dataset.detailFeld}: ${wert}`);
+      }
+    }
+
+    zeilen.push('', 'Bitte bestätigen Sie mir die Fahrt.');
+    return zeilen.join('\n');
   }
 
   function whatsappOeffnen() {
@@ -438,6 +729,7 @@ import Symbol from './Symbol.astro';
     daten.timing = 'now';
     termin.hidden = true;
     leistungSetzen('Taxi');
+    detailsLeeren();
     schritt = 1;
     abschlussZeigen(false);
     schrittZeichnen();
@@ -481,7 +773,10 @@ import Symbol from './Symbol.astro';
   }
 
   // ── Oeffnen und Schliessen ─────────────────────────────────────────────
-  function oeffnen(leistung?: string) {
+  function oeffnen(leistung?: string, art?: string) {
+    // Reihenfolge beachten: Erst die Fahrtart, denn sie setzt die Leistung
+    // mit. Eine ausdruecklich uebergebene Leistung gilt danach.
+    if (art) fahrtartSetzen(art);
     if (leistung) leistungSetzen(leistung);
     // Eingaben bleiben erhalten: `daten` wird beim Oeffnen NICHT zurueckgesetzt.
     schritt = 1;
@@ -518,11 +813,12 @@ import Symbol from './Symbol.astro';
   // Jede Schaltflaeche auf der Seite oeffnet denselben Dialog - im Kopf, im
   // Einstieg, an jedem der sieben Leistungsbloecke. Ohne Scrollen.
   for (const b of document.querySelectorAll<HTMLElement>('[data-anfrage-oeffnen]')) {
-    b.addEventListener('click', () => oeffnen(b.dataset.leistung || undefined));
+    b.addEventListener('click', () => oeffnen(b.dataset.leistung || undefined, b.dataset.fahrtart || undefined));
   }
 
   document.addEventListener('tg:anfrage-oeffnen', (e) => {
-    oeffnen((e as CustomEvent).detail?.leistung);
+    const d = (e as CustomEvent).detail || {};
+    oeffnen(d.leistung, d.fahrtart);
   });
 
   // Die Leiste im Einstieg meldet ihre Wahl hierher - eine Quelle, auch fuer

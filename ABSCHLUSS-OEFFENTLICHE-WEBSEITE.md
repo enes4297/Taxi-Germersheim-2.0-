@@ -3,9 +3,9 @@
 Interne Arbeitsunterlage. Sie wird **nicht** mit ausgeliefert.
 
 Stand: 23.09.2026. Aufgenommen auf `feature/016-rewards-yumak` (`c93b315`),
-**fortgeschrieben nach Schritt 017 und 018** auf `feature/018-rechtsseiten`.
+**fortgeschrieben nach Schritt 017 bis 019** auf `feature/019-flotte`.
 
-> **Was die Schritte 017 und 018 erledigt haben, steht in Abschnitt 8 und 9 am Ende.** Die
+> **Was die Schritte 017 bis 019 erledigt haben, steht in Abschnitt 8 bis 10 am Ende.** Die
 > Abschnitte 1 bis 7 sind der Befund vom 23.09.2026 und bleiben als
 > Ausgangslage stehen; erledigte Punkte sind dort mit ✔ gekennzeichnet.
 
@@ -847,3 +847,199 @@ Text selbst; gemessen werden jetzt nur Blattelemente.
 Startseite, Hero-Video und sein Verhalten, Fahrtanfrage, Rewards-Seite,
 Yumak (weiterhin Standbild), `admin/`, `fahrer/`, `dashboard/`, Datenbank,
 Berechtigungen, Punkteberechnung und der Ablauf der Anmeldung.
+
+---
+
+## 10. Schritt 019 — Flotte und Spezialfahrten (erledigt)
+
+Branch `feature/019-flotte`, abgezweigt von `feature/018-rechtsseiten`
+(`7caeca5`). Drei weitere Seiten kommen aus Astro; aus Bestandsmaterial
+stammen damit noch **11 von 20**.
+
+### 10.1 Flotte
+
+Alle **neun** Fahrzeuge mit denselben Angaben wie im Bestand: Name,
+Kennzeichen, Kategorie, Sitzplätze, Einsatzbereich, Besonderheit. **Es wurde
+kein Merkmal hinzugefügt.** Die fünf Filter (Alle, Taxi, Großraum, Elektro,
+Rollstuhl) arbeiten wie bisher; dazu zeigt die Seite jetzt an, wie viele
+Fahrzeuge gerade sichtbar sind, und jede Karte hat einen Anfrageknopf.
+
+**Die Bilder kommen aus `public/assets/fleet/`**, in zwei Auflösungen, wie
+auf der Startseite. Die alte Seite zog sie aus `admin/images/` über einen
+Katalog im Seitenskript — mit Dateinamen wie
+`adminimagesvw-touran-ger-tx-300-premium.jpg.png`, und zwei Einträge fehlten
+dort ganz.
+
+**B-Klasse (GER TX 500) und Tesla Model Y (GER TX 700)** erscheinen als
+Textkarte: kein Bildbereich, kein Platzhalterbild, kein Foto eines anderen
+Fahrzeugs. Der Prüflauf stellt beides ausdrücklich fest — dass kein leerer
+Bildbereich entsteht **und** dass kein Ersatzbild untergeschoben wurde.
+Entscheidung **E2** (zwei fehlende Fotos) bleibt davon unberührt offen.
+
+**Das Zustimmungsbanner ist entfernt.** Begründung unverändert Abschnitt 9.2:
+Es steuerte allein Google-Maps-Einbettungen, und auf der Flottenseite gab es
+nie eine Karte. Damit trägt keine ausgelieferte Seite mehr einen Schalter
+ohne Wirkung.
+
+Neu und klein: `flotte.html?kategorie=Rollstuhl` wählt den Filter direkt vor.
+
+### 10.2 Der alte Anfrageweg — Vergleich Feld für Feld
+
+> Das war der eigentliche Kern dieses Pakets. Der Bestand führte für
+> Spezialfahrten ein **zweites Formular** mit eigener Prüfung:
+> `spezial-anfrage.html` und `special-services.js`, neun Fahrtarten, je neun
+> bis fünfzehn Felder.
+
+**Was verglichen wurde:** Felder, Fahrttypen, Prüfregeln und Ziele des alten
+Wegs gegen den gemeinsamen Anfragedialog.
+
+#### Ergebnis des Vergleichs
+
+| Fahrtart | Felder Bestand | Felder neu | Entfallen — und warum |
+|---|---|---|---|
+| `medical` Krankenfahrten | 13 | 9 | `pickup`, `destination`, `date`, `time` |
+| `dialysis` Dialysefahrten | 13 | 9 | dieselben vier |
+| `chemo` Chemo/Strahlentherapie | 13 | 9 | dieselben vier |
+| `wheelchair` Rollstuhlfahrten | 13 | 9 | dieselben vier |
+| `series` Serienfahrten | 13 | 11 | `pickup`, `destination` |
+| `airport` Flughafentransfers | 15 | 12 | `pickup`, `pickupDate`, `pickupTime` |
+| `business` Firmenkunden | 9 | 9 | — |
+| `student` Schülerfahrten | 9 | 7 | `pickup`, `destination` |
+| `courier` Kurierfahrten | 10 | 8 | `pickup`, `destination` |
+
+**Jedes einzelne entfallene Feld ist eines, das der gemeinsame Dialog selbst
+erfasst** — Abholadresse, Zieladresse, Datum und Uhrzeit. Sie standen im
+Bestand zusätzlich in jedem Feldsatz und hätten sonst zweimal auf derselben
+Seite gestanden. **Sonst ist nichts entfallen.** Kein Feld, keine
+Auswahlmöglichkeit, keine Pflichtangabe, keine Beschriftung.
+
+Das ist nicht behauptet, sondern nachgerechnet: Der Prüflauf füllt für jede
+der neun Fahrtarten **jedes** Feld aus und sucht **jeden** eingegebenen Wert
+in der vorbereiteten WhatsApp-Nachricht wieder. Fehlt einer, fällt die
+Prüfung durch.
+
+#### Zwei Fahrtarten ohne Entsprechung — ausdrücklich benannt
+
+Sieben der neun lassen sich einer der freigegebenen Leistungen zuordnen. Zwei
+nicht:
+
+- **`series` Serienfahrten** ist keine eigene Leistung, sondern eine
+  Wiederholung. Die freigegebenen Leistungstexte nennen sie bei Kranken- und
+  Schülerfahrten als „feste Serie".
+- **`business` Firmen- und Geschäftskunden** ist eine Kundenart, keine
+  Fahrtleistung. „Fern- und Gruppenfahrten" nennt Firmenkunden, deckt sie
+  aber nicht ab.
+
+Beide tragen in `FAHRTARTEN` ausdrücklich `leistung: null`, statt eine
+Zuordnung zu erfinden. Die Leistungswahl bleibt beim Nutzer — und die
+**Fahrtart steht in jedem Fall als eigene Zeile in der Nachricht**, damit
+genau die Angabe nicht verlorengeht, wegen der die Anfrage gestellt wird.
+
+#### Prüfregeln: unverändert übernommen
+
+Pflichtfeld nicht leer · E-Mail enthält ein `@` · Telefonnummer mindestens
+sechs Zeichen · Mehrfachauswahl mindestens eine Option. Dieselben Regeln,
+dieselben Meldungstexte.
+
+Sie greifen **nur auf den Spezialseiten** (`pflichtDetails`). Auf der
+Startseite gab es nie Zusatzangaben; dort ändert sich nichts — der Prüflauf
+stellt ausdrücklich fest, dass die Startseite weder den Zusatzblock noch die
+Pflichtschaltung trägt.
+
+#### Ziele und Direktlinks: erhalten
+
+| Was | Stand |
+|---|---|
+| `spezial-anfrage.html?service=<schlüssel>` | alle neun geprüft |
+| unbekannter `?service`-Wert | fällt wie bisher auf `medical` zurück |
+| `#specialRequest` | führt weiter zum Anfragebereich |
+| Vorbelegung `rideType` bei Dialyse und Chemo | geprüft |
+| Abschluss über WhatsApp oder Telefon | unverändert |
+| „Die Angaben werden nicht online versendet." | steht wortgleich da |
+
+**Eine Doppelung, offen benannt:** Bei `airport` fragt der Dialog die
+„Zieladresse" und zusätzlich das Bestandsfeld „Flughafen". Im alten Formular
+gab es keine Zieladresse, sondern nur den Flughafen. Beide bleiben — das
+Feld zu streichen wäre ein Verlust, die Zieladresse zu unterdrücken ein
+Sonderfall in der gemeinsamen Logik. Wer nur den Flughafen nennen will, kann
+ihn in beide Felder schreiben.
+
+#### Was sich geändert hat
+
+Das zweite Formular entfällt. **Eine Formularlogik, eine Prüfung, eine
+Nachricht.** `special-services.js` (762 Zeilen) und `special-services.css`
+werden nicht mehr ausgeliefert; die neun Fahrtarten und alle ihre Felder
+stehen in `FAHRTARTEN` in `inhalte.ts` und werden vom gemeinsamen
+Anfragedialog erfasst.
+
+Mit `special-services.js` entfällt nebenbei auch der Befund aus Schritt 017:
+die zwei unsichtbaren Stellvertreterfelder, auf denen der Tastaturfokus
+verschwand. Sie sind nicht behoben, sondern es gibt sie nicht mehr.
+
+### 10.3 Eingaben bleiben erhalten
+
+Die Zusatzangaben liegen in den Feldern selbst, nicht in einem
+Zwischenspeicher. Wer etwas einträgt, den Dialog schließt und erneut öffnet,
+findet seine Eingabe wieder — geprüft. Dasselbe gilt beim Zurückgehen
+zwischen den Schritten. Genau daran hing im Bestand ein Fehler, der hier
+nicht wiederholt wird.
+
+### 10.4 Was geprüft wurde
+
+| Lauf | Ergebnis |
+|---|---|
+| `flotte-pruefen` (neu) | **199 / 199** — Desktop und Mobil |
+| `rechtsseiten-pruefen` (erweitert) | **167 / 167** — jetzt sieben Seiten |
+| `ausgabe-pruefen` | **75 / 75** |
+| `grundlagen-pruefen` | **60 / 60** |
+| `grundlagen-browser-pruefen` | **28 / 28** |
+| `startseite-pruefen` | **187 / 187** — unverändert |
+| `rewards-pruefen` | **66 / 66** — unverändert |
+| `browser-pruefen` | **15 / 15** — unverändert |
+
+Im Einzelnen: alle neun Fahrzeuge mit ihren Angaben · alle sieben Fotos
+laden wirklich · die zwei ohne Foto ohne leeren Bildbereich und ohne
+Ersatzbild · jeder der fünf Filter zeigt genau die erwartete Zahl · der
+Direktlink auf eine Kategorie · alle neun `?service=`-Einstiege · für jede
+der neun Fahrtarten der vollständige Weg bis zur WhatsApp-Adresse mit
+Wiederfinden **jedes** Werts · Pflichtangaben halten den Dialog an und
+werden benannt · Eingaben überstehen Schließen und Öffnen · Vorbelegung bei
+Dialyse und Chemo · Tastatur, Fokus, Lesbarkeit und mobile Darstellung auf
+allen sieben Astro-Unterseiten.
+
+**Es wurde keine Nachricht versendet.** `window.open` war abgefangen, die
+Adresse nur gelesen. Es wurde nichts angerufen und nichts abgeschickt.
+
+**Zwei Meldungen waren Messfehler des Prüflaufs, keine Seitenfehler** —
+beide korrigiert, statt die Schwelle aufzuweichen:
+
+1. „kein Preis" schlug bei Flughafentransfers an, weil dort das
+   Bestandsfeld **„Festpreisanfrage"** steht. Das ist die *Frage* nach einem
+   Festpreis, keine Preisangabe; sie stand so schon im alten Formular. Die
+   Prüfung sucht jetzt nach einer *Behauptung* — einem Betrag, einer
+   Entfernung, einer zugesagten Bestätigung —, nicht nach einem Wort.
+2. Zwei „überlange Zeilen" entstanden, weil die Breitenbegrenzung an der
+   Hülle statt am Absatz hing: Die Hülle rechnet `em` gegen ihre eigene
+   Schriftgröße (16 px), der Absatz steht auf 15 px. Dieselbe Breite war
+   dort 49 statt 46 em. Begrenzung an den Absatz verschoben.
+
+### 10.5 Unverändert geblieben
+
+Startseite, Hero-Video und sein Verhalten, Rewards, Yumak (weiterhin
+Standbild), Spiele, `admin/`, `fahrer/`, `dashboard/`, Datenbank,
+Berechtigungen und der Ablauf der Anmeldung. Die freigegebenen
+Leistungstexte und der Transportschein-Text stehen wortgleich da; es wurden
+keine Preise, Kostenzusagen, Fahrzeugmerkmale oder Leistungsversprechen
+ergänzt.
+
+### 10.6 Was nach Schritt 019 offen bleibt
+
+Unverändert: **A11** (Kontoseiten ins neue Gewand), **F7** für die
+verbleibenden Bestandsseiten, die Entscheidungen **E1 bis E8** und die
+Angaben **I1 bis I6**. Dazu der Yumak-Startfehler, die ungeprüfte echte
+Anmeldung und die Korrekturen aus `feature/011`.
+
+Aus Bestandsmaterial stammen noch: `anmelden`, `registrieren`,
+`passwort-vergessen`, `passwort-zuruecksetzen`, `meinkonto`, `kundenkonto`,
+`kunden-einstellungen`, `meine-fahrten`, `wallet-gutscheine`, `live-fahrt`
+und `spiele`.

@@ -22,7 +22,8 @@
     "marke-symbole": "node tools/marke-symbole.mjs",
     "grundlagen-pruefen": "node tools/pruefe-grundlagen.mjs",
     "grundlagen-browser-pruefen": "node tools/pruefe-grundlagen-browser.mjs",
-    "rechtsseiten-pruefen": "node tools/pruefe-rechtsseiten.mjs"
+    "rechtsseiten-pruefen": "node tools/pruefe-rechtsseiten.mjs",
+    "flotte-pruefen": "node tools/pruefe-flotte-spezial.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.0",

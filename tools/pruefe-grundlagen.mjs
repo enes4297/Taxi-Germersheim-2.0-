@@ -201,9 +201,16 @@ for (const d of ['index.html', 'rewards.html']) {
   pruefe(t.includes('Zum Inhalt springen'), `${d} hat eine Sprungmarke zum Inhalt`);
   pruefe(/<main[\s>]/.test(t) && /id=["']inhalt["']/.test(t), `${d} hat einen ausgezeichneten Hauptinhaltsbereich`);
 }
-const spezial = await lies('special-services.js');
-pruefe(/input\.tabIndex = -1/.test(spezial) && /select\.tabIndex = -1/.test(spezial),
-  'die unsichtbaren Stellvertreterfelder der Spezialanfrage sind aus der Tabulatorfolge genommen');
+// Bis Schritt 018 stand hier eine Pruefung auf `tabIndex = -1` in
+// special-services.js: Dort lagen zwei unsichtbare Stellvertreterfelder
+// (1 x 1 px, opacity 0) in der Tabulatorfolge, auf denen der Fokus
+// verschwand. Seit Schritt 019 kommt die Spezialanfrage aus Astro, und die
+// Datei wird nicht mehr ausgeliefert - das Problem ist damit nicht behoben,
+// sondern entfallen. Die Pruefung stellt genau das fest.
+pruefe(
+  !existsSync(join(AUSGABE, 'special-services.js')),
+  'die alte Spezialanfrage-Logik wird nicht mehr ausgeliefert - mit ihr entfallen die unsichtbaren Stellvertreterfelder',
+);
 
 // ── 7. Konto-Einstieg ──────────────────────────────────────────────────────
 console.log('\n── Konto-Einstieg ──');

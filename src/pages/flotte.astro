@@ -1,0 +1,222 @@
+---
+/**
+ * Fahrzeugflotte — unter derselben Adresse wie bisher (flotte.html).
+ *
+ * Alle NEUN Fahrzeuge aus FLOTTE in inhalte.ts, mit denselben Angaben wie
+ * im Bestand: Name, Kennzeichen, Kategorie, Sitzplaetze, Einsatzbereich und
+ * Besonderheit. Es wurde kein Merkmal hinzugefuegt.
+ *
+ * ── DIE ZWEI FAHRZEUGE OHNE FOTO ──────────────────────────────────────────
+ *
+ * B-Klasse (GER TX 500) und Tesla Model Y (GER TX 700) haben kein Bild.
+ * Sie erscheinen als Textkarte ohne Bildbereich - nicht mit einem
+ * Platzhalterbild, nicht mit dem Foto eines anderen Fahrzeugs. Ein
+ * erfundenes Bild waere eine Aussage ueber ein Fahrzeug, die wir nicht
+ * belegen koennen.
+ *
+ * Genauso haelt es der Flottenabschnitt der Startseite. Es ist dieselbe
+ * Datenquelle und dieselbe Regel.
+ *
+ * ── DER BILDERKATALOG DES BESTANDS ────────────────────────────────────────
+ *
+ * Die alte flotte.html zog ihre Bilder aus `admin/images/` ueber einen
+ * Katalog im Seitenskript - mit Dateinamen wie
+ * `adminimagesvw-touran-ger-tx-300-premium.jpg.png`. Zwei Eintraege fehlten
+ * dort ganz. Hier kommen die Bilder aus `public/assets/fleet/`, in zwei
+ * Aufloesungen, wie auf der Startseite.
+ *
+ * ── ZUSTIMMUNGSBANNER ─────────────────────────────────────────────────────
+ *
+ * Nicht uebernommen. Es steuerte allein Google-Maps-Einbettungen, und auf
+ * dieser Seite gab es nie eine Karte. Siehe
+ * ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md, Abschnitt 9.2.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
+import Unterseitenkopf from '../components/Unterseitenkopf.astro';
+import Anfragedialog from '../components/Anfragedialog.astro';
+import Enthuellen from '../components/Enthuellen.astro';
+import Symbol from '../components/Symbol.astro';
+import { FAHRTARTEN, FLOTTE, FLOTTE_FILTER } from '../inhalte';
+
+const KOPF = {
+  label: 'Fahrzeugflotte',
+  titel: 'Für jede Fahrt das passende Fahrzeug.',
+  text: 'Unsere Flotte ist auf zuverlässige Taxi-, Transfer- und Spezialfahrten ausgelegt. Alle Fahrzeuge werden täglich einsatzbereit gehalten und passend zum Fahrtbedarf eingeplant.',
+};
+
+/** Welche Leistung ein Fahrzeug nahelegt - fuer den Anfrageknopf je Karte. */
+const LEISTUNG_JE_KATEGORIE: Record<string, string> = {
+  Taxi: 'Taxi',
+  Großraum: 'Ferngruppenfahrten',
+  Elektro: 'Taxi',
+  Rollstuhl: 'Rollstuhlfahrten',
+};
+---
+
+<Grundlage
+  titel="Fahrzeugflotte | Taxi Germersheim GmbH"
+  beschreibung="Die Fahrzeuge der Taxi Germersheim GmbH: Taxis, Großraumtaxi und Rollstuhlfahrzeug – mit Kennzeichen, Sitzplätzen und Einsatzbereich."
+  pfad="flotte.html"
+>
+  <Sprungmarken />
+  <Kopfbereich startseite={false} />
+
+  <main id="inhalt" class="pt-16 lg:pt-20">
+    <Unterseitenkopf label={KOPF.label} titel={KOPF.titel} text={KOPF.text} />
+
+    <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pb-20 lg:pb-28">
+      {/* ── Filter ─────────────────────────────────────────────────── */}
+      <Enthuellen>
+        <div class="mt-10 flex flex-wrap gap-2" role="group" aria-label="Flotte nach Kategorie filtern" data-flotte-filter>
+          {FLOTTE_FILTER.map((k, i) => (
+            <button
+              type="button"
+              data-kategorie={k}
+              aria-pressed={i === 0 ? 'true' : 'false'}
+              class="px-4 py-2.5 border text-sm font-medium transition-colors duration-150 border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground aria-pressed:border-primary aria-pressed:bg-primary/8 aria-pressed:text-foreground"
+            >
+              {k}
+            </button>
+          ))}
+        </div>
+        <p class="mt-3 text-sm text-muted-foreground" role="status" aria-live="polite" data-flotte-anzahl></p>
+      </Enthuellen>
+
+      {/* ── Fahrzeuge ──────────────────────────────────────────────── */}
+      <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-flotte-liste>
+        {FLOTTE.map((v, i) => (
+          <Enthuellen verzoegerung={Math.min(i, 5) * 60} class={v.bild ? 'h-full' : 'self-start'}>
+            <article
+              class={`group bg-card border border-border overflow-hidden flex flex-col ${v.bild ? 'h-full' : ''}`}
+              data-fahrzeug
+              data-kategorie={v.kategorie}
+              data-kennzeichen={v.kennzeichen}
+            >
+              {v.bild && (
+                <div class="relative aspect-[4/3] overflow-hidden bg-secondary">
+                  <img
+                    src={v.bild}
+                    srcset={v.bildMobil ? `${v.bildMobil} 900w, ${v.bild} 1600w` : undefined}
+                    sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
+                    alt={`${v.name}${v.kennzeichen ? `, Kennzeichen ${v.kennzeichen}` : ''}, Fahrzeug der Taxi Germersheim GmbH`}
+                    loading="lazy"
+                    decoding="async"
+                    class="absolute inset-0 w-full h-full object-cover motion-safe:transition-transform motion-safe:duration-700 motion-safe:group-hover:scale-[1.04]"
+                    style="object-position: 50% 62%"
+                  />
+                  <span class="absolute top-3 left-3 bg-background/85 text-foreground text-[11px] font-medium px-2.5 py-1 rounded-full backdrop-blur-sm">{v.typ}</span>
+                </div>
+              )}
+
+              <div class="p-5 lg:p-6 flex-1 flex flex-col">
+                {/* Ohne Bild traegt die Karte das Merkmal als Abzeichen -
+                    so bleibt sichtbar, um welche Art Fahrzeug es geht. */}
+                {!v.bild && (
+                  <span class="self-start mb-3 bg-primary/12 text-primary text-[11px] font-medium px-2.5 py-1 rounded-full">{v.typ}</span>
+                )}
+                <h2 class="text-[17px] font-semibold text-foreground leading-snug">{v.name}</h2>
+                {v.kennzeichen && <p class="mt-1 text-xs tabular-nums tracking-wider text-primary/80">{v.kennzeichen}</p>}
+
+                <dl class="mt-4 space-y-2.5 text-sm flex-1">
+                  <div>
+                    <dt class="text-[11px] uppercase tracking-[0.16em] text-muted-foreground/70">Kategorie</dt>
+                    <dd class="mt-0.5 text-foreground">{v.kategorie}</dd>
+                  </div>
+                  {v.sitzplaetze !== null && (
+                    <div class="flex items-center gap-2 text-muted-foreground">
+                      <Symbol name="sitz" class="w-4 h-4 shrink-0 text-muted-foreground/70" />
+                      <dt class="sr-only">Sitzplätze</dt>
+                      <dd>{v.sitzplaetze} Sitzplätze</dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt class="text-[11px] uppercase tracking-[0.16em] text-muted-foreground/70">Einsatzbereich</dt>
+                    <dd class="mt-0.5 text-muted-foreground">{v.einsatz}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-[11px] uppercase tracking-[0.16em] text-muted-foreground/70">Besonderheit</dt>
+                    <dd class="mt-0.5 text-muted-foreground">{v.besonderheit}</dd>
+                  </div>
+                </dl>
+
+                <button
+                  type="button"
+                  class="mt-5 inline-flex items-center gap-2 self-start text-sm font-medium text-foreground hover:text-primary transition-colors duration-150 tg-press"
+                  data-anfrage-oeffnen
+                  data-leistung={LEISTUNG_JE_KATEGORIE[v.kategorie] ?? 'Taxi'}
+                >
+                  Fahrt anfragen
+                  <Symbol name="pfeil" class="w-4 h-4" />
+                </button>
+              </div>
+            </article>
+          </Enthuellen>
+        ))}
+      </div>
+
+      <Enthuellen verzoegerung={120}>
+        <p class="mt-10 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          Welches Fahrzeug zu Ihrer Fahrt passt, stimmen wir bei der Anfrage mit Ihnen ab.
+          Für Spezialfahrten finden Sie die passenden Angaben unter
+          <a href="spezialfahrten.html" class="text-foreground hover:text-primary transition-colors duration-150 underline underline-offset-4 decoration-border">Spezialfahrten</a>.
+        </p>
+      </Enthuellen>
+    </div>
+  </main>
+
+  <Fusszeile startseite={false} />
+  {/* Die Flottenseite braucht keine Zusatzangaben - hier wird eine ganz
+      gewoehnliche Fahrt angefragt. Deshalb ohne `arten`. */}
+  <Anfragedialog />
+</Grundlage>
+
+<script>
+  // ── Filter ───────────────────────────────────────────────────────────
+  //
+  // Derselbe Umfang wie im Bestand: Alle, Taxi, Großraum, Elektro,
+  // Rollstuhl. Gefiltert wird ueber `hidden`, nicht ueber das Entfernen aus
+  // dem Dokument - so bleiben Eingaben und Fokus erhalten, und die Zahl der
+  // sichtbaren Fahrzeuge laesst sich nachzaehlen.
+  const leiste = document.querySelector<HTMLElement>('[data-flotte-filter]');
+  const liste = document.querySelector<HTMLElement>('[data-flotte-liste]');
+  const anzahl = document.querySelector<HTMLElement>('[data-flotte-anzahl]');
+
+  if (leiste && liste && anzahl) {
+    const knoepfe = [...leiste.querySelectorAll<HTMLButtonElement>('[data-kategorie]')];
+    // Die Huelle von Enthuellen liegt zwischen Liste und Karte - gefiltert
+    // wird die aeusserste Huelle, sonst bliebe eine leere Luecke stehen.
+    const karten = [...liste.querySelectorAll<HTMLElement>('[data-fahrzeug]')].map((k) => ({
+      element: k,
+      huelle: (k.closest('[data-flotte-liste] > *') as HTMLElement) || k,
+      kategorie: k.dataset.kategorie || '',
+    }));
+
+    function zeichnen(gewaehlt: string) {
+      let sichtbar = 0;
+      for (const k of karten) {
+        const zeigen = gewaehlt === 'Alle' || k.kategorie === gewaehlt;
+        k.huelle.hidden = !zeigen;
+        if (zeigen) sichtbar += 1;
+      }
+      for (const b of knoepfe) {
+        b.setAttribute('aria-pressed', String(b.dataset.kategorie === gewaehlt));
+      }
+      anzahl!.textContent =
+        gewaehlt === 'Alle'
+          ? `${sichtbar} Fahrzeuge`
+          : `${sichtbar} von ${karten.length} Fahrzeugen · ${gewaehlt}`;
+    }
+
+    for (const b of knoepfe) {
+      b.addEventListener('click', () => zeichnen(b.dataset.kategorie || 'Alle'));
+    }
+
+    // Direktlink: flotte.html?kategorie=Rollstuhl
+    const gewuenscht = new URLSearchParams(window.location.search).get('kategorie');
+    const gueltig = knoepfe.some((b) => b.dataset.kategorie === gewuenscht);
+    zeichnen(gueltig ? gewuenscht! : 'Alle');
+  }
+</script>
