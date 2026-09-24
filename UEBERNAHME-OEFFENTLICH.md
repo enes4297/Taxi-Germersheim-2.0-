@@ -788,7 +788,88 @@ Bestandsseiten.
 
 ---
 
-## 15. Nächster Schritt
+## 15. Taxi Rush (Schritt 023, einmalig vorgezogen)
+
+> Schritt 022 (Glücksrad) hat hier keinen eigenen Abschnitt: Er hat an
+> Bau und Übernahme nichts geändert. Er steht in
+> `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`, Abschnitt 12.
+
+**Die ausführliche Fassung steht in `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`,
+Abschnitt 13.** Hier nur, was Bau und Übernahme betrifft.
+
+### Keine neue Astro-Seite
+
+`spiele.html` bleibt eine Bestandsseite. Aus Bestandsmaterial stammen
+weiterhin **7 von 20** Seiten. Das Spiel wurde im vorhandenen Markup
+ersetzt, nicht als eigene Seite gebaut.
+
+### Neu in der Übernahmeliste
+
+Eine Zeile in `tools/bestand-uebernehmen.mjs`:
+
+```
+'spiele.css', 'style.css', 'taxi-rush.css', 'wallet-gutscheine.css',
+```
+
+`taxi-rush.js` stand bereits in der Liste. **`design-vorlagen/` steht
+nicht darin** und darf nicht hineinkommen — die Vorlage ist eine
+Designreferenz, keine auszuliefernde Seite. Der Prüflauf stellt das fest.
+
+### Reihenfolge der Stilvorlagen
+
+`taxi-rush.css` wird in `spiele.html` **nach** `spiele.css` geladen. Das
+ist bedeutungstragend: Bei gleicher Genauigkeit gewinnt die spätere Datei.
+Der Prüflauf sieht die Reihenfolge ausdrücklich nach.
+
+### Jede Regel trägt `.tr-app ` als Vorsatz
+
+Nicht Kosmetik, sondern nötig: Das Gestaltungssystem der Seite setzt
+`!important` auf Elementnamen (`style.css:1317` und `:1334`) und benutzt
+`body.tg-public :where(…)` (`public-system.css:72`). Eine einzelne Klasse
+verliert dagegen. Mit `.tr-app ` davor liegen die Regeln des Spiels eine
+Stufe höher — alle gleichmäßig, die Rangfolge untereinander bleibt.
+
+**Wer hier eine Regel ergänzt, setzt `.tr-app ` davor.** Sonst greift sie
+in der ausgelieferten Seite nicht.
+
+Dass trotzdem nichts nach außen wirkt, ist gemessen: dieselbe Seite mit
+und ohne `taxi-rush.css`, 208 Elemente außerhalb des Spiels, null
+Abweichungen.
+
+### `scroll-padding-top` der Seite beachten
+
+`style.css:4230` setzt am `html`-Element `scroll-padding-top: 84px`. **Der
+Browser addiert das zum `scroll-margin-top` eines Abschnitts.** Wer hier
+Werte ändert, rechnet mit 84 px mehr als er schreibt. Die 77 px
+(Schreibtisch) bzw. 16 px (Handy) an `.tr-app` sind entsprechend gewählt.
+
+### `spiele.css` ist um die alte Fassung erleichtert
+
+126 Regeln entfernt, 53.895 → 33.924 Zeichen. Darunter der Fokusmodus
+`taxi-rush-focus-active`, den kein Skript mehr einschaltet. Belegt durch
+einen Vollvergleich aller errechneten Eigenschaften über 302 Elemente bei
+zwei Bildschirmbreiten: null Abweichungen.
+
+### Neuer Prüflauf
+
+```
+npm run rush-pruefen      → 178 Prüfpunkte
+```
+
+Er startet einen eigenen Server auf Port 5287, der **sowohl** aus
+`dist-oeffentlich/` **als auch** aus dem Projekt liefert — Letzteres nur,
+damit die Vorlage zum Vergleich geöffnet werden kann. Deshalb prüft er die
+Nicht-Auslieferung an der Übernahmeliste und nicht an einem HTTP-Status:
+Ein 200 wäre dort die eigene Brücke, kein Befund.
+
+### Voraussetzung unverändert
+
+Die Korrekturen aus `feature/011` (Abschnitt 2) bleiben Voraussetzung
+jeder Veröffentlichung.
+
+---
+
+## 16. Nächster Schritt
 
 > **Die vollständige Bestandsaufnahme der öffentlichen Webseite steht seit
 > dem 23.09.2026 in `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`** — was fertig ist,
@@ -797,6 +878,12 @@ Bestandsseiten.
 
 **Die Schritte 017 bis 020 sind erledigt** — siehe Abschnitt 11 bis 14
 hier sowie Abschnitt 8 bis 11 der Bestandsaufnahme.
+
+**Einmalig vorgezogen und ebenfalls erledigt:** Schritt 022 (Glücksrad,
+Abschnitt 12 der Bestandsaufnahme) und Schritt 023 (Taxi Rush,
+Abschnitt 15 hier und Abschnitt 13 dort). Beides auf ausdrücklichen
+Wunsch des Auftraggebers; die verbindliche Reihenfolge bleibt: öffentliche
+Webseite, Mitarbeiterportal, Zentrale, danach Rewards, Yumak und Spiele.
 
 **Empfohlen: Schritt 021 — Kontoübersichten.** Branch
 `feature/021-kontoseiten` von `feature/020-konto`. Inhalt:

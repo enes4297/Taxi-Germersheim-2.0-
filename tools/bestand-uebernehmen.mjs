@@ -131,7 +131,7 @@ const WURZELDATEIEN = [
   'auth-demo.css', 'home-luxury.css', 'kunden-einstellungen.css',
   'live-ride.css', 'meinefahrten.css', 'public-premium-v2.css',
   'public-states.css', 'public-system.css', 'public-visual-repair.css',
-  'spiele.css', 'style.css', 'wallet-gutscheine.css',
+  'spiele.css', 'style.css', 'taxi-rush.css', 'wallet-gutscheine.css',
   // Skripte
   'customer-auth.js', 'home-luxury.js',
   'public-premium-v2.js', 'public-system.js', 'rewards-customer.js', 'script.js',

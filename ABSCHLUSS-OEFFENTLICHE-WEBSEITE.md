@@ -1430,3 +1430,287 @@ Rewards-Regeln, Gewinnwahrscheinlichkeiten, Anmeldung, Datenbanklogik,
 `admin/`, `fahrer/`, `dashboard/`. An `spiele.js` wurde nur die Radlogik
 herausgelöst; Rewards-Status, Verlauf und Box sind Zeile für Zeile
 dieselben.
+
+---
+
+## 13. Schritt 023 — Taxi Rush (einmalig vorgezogen)
+
+Branch `feature/023-taxi-rush`, abgezweigt von `79fd595`. **Einmalig
+vorgezogen** auf Wunsch des Auftraggebers; danach geht es mit den sechs
+ausstehenden Kontoseiten weiter.
+
+> **Die alte Spielfassung ist ersetzt, nicht ergänzt.** Es gibt genau ein
+> Taxi Rush für Kunden. Keine Rewards-Punkte, keine Gutscheine, keine
+> Anmeldung — der Bestwert liegt allein im Browser des Spielers.
+
+### 13.1 Was übernommen wurde
+
+Aus `design-vorlagen/Taxi-Rush.html`: Spiellogik und Gestaltung
+unverändert. Geprüft und gemessen, nicht behauptet:
+
+| Merkmal | Vorlage | Hier |
+|---|---|---|
+| Fahrzeuge | Limousine, Großraum | gleich |
+| Haltepunkte | 18 | 18 |
+| Startzeit | 75 s | 75 s |
+| Leben | 3 | 3 |
+| Zeitbonus je Fahrt | +12 s | +12 s |
+| Grundtempo | 165 | 165 |
+| Tempoanstieg | `1-exp(-elapsed/120)` | gleich |
+| Ton beim Laden | aus | aus |
+| Werbeflächen am Straßenrand | `roadsideAd()` | gleich oft gezeichnet |
+
+Orts- und Straßennamen stehen **nur in der Anzeige über dem Spielfeld** —
+der Prüflauf sucht nach Namen in den `txt()`-Aufrufen des Spielfelds und
+findet keine. Die Herkunft der Namen (bahnhof.de, germersheim.eu,
+bundeswehr.de) steht als Kommentar über der Liste; die Strecke dazwischen
+ist frei gestaltet, und das sagt auch die Fußzeile des Spiels.
+
+### 13.2 Vier Änderungen für die Einbindung — und nur diese vier
+
+Die Vorlage ist eine eigenständige Seite. Hier läuft sie in einer
+Spielewelt mit Navigation, Formularen und anderen Abschnitten.
+
+1. **Alles hängt an einer Wurzel.** `$()` sucht nur innerhalb von
+   `[data-taxi-rush]`. Die Kennungen heißen `data-tr="…"` statt `id="…"`.
+2. **Die Schleife läuft nur, wenn das Spiel zu sehen ist.** Sie startet
+   beim Öffnen und wird beim Wegscrollen, beim verborgenen Tab und beim
+   Verlassen der Seite gestoppt. `schleifeLaeuft` ist der Riegel gegen
+   eine zweite Schleife — die wäre ein doppelt so schnelles Spiel, und man
+   sähe es nicht sofort.
+3. **Die Tastatur greift nur bei laufendem Spiel und Fokus im Spiel.** Die
+   Vorlage hängt an `window` und ruft `preventDefault()` für Pfeiltasten,
+   Leertaste, P und Escape. Auf einer Seite mit Eingabefeldern wäre das
+   ein Fehler.
+4. **Das Markenzeichen kommt aus einer Datei** statt als eingebettete
+   Daten — dieselbe, die das Glücksrad benutzt.
+
+**Nicht übernommen: `window.taxiRushPreview`.** Die Entwicklungsdiagnostik
+der Vorlage legt den kompletten Spielzustand offen. Der Prüflauf stellt
+fest, dass sie im ausgelieferten Quelltext nicht gesetzt wird — und zur
+Gegenprobe, dass die Vorlage sie sehr wohl enthält.
+
+**Die Vorlage selbst wird nicht ausgeliefert.** `design-vorlagen/` steht
+nicht in der Übernahmeliste.
+
+### 13.3 Der Bestwert der alten Fassung wird NICHT übernommen
+
+Das war eine ausdrückliche Auflage, und die Prüfung ergab: **Die beiden
+Fassungen zählen nachweislich anders.**
+
+| | alte Fassung | diese Fassung |
+|---|---|---|
+| Abholung | +75 | +20 |
+| Ablieferung | +200 | +100 |
+| Münze | +35 | +25 |
+| Bonus | +500 | +400 |
+| Fahrtzeit | `dt · 16 · Tempofaktor` | `Tempo · dt · 0,018` |
+| Speicherschlüssel | `tg_taxi_rush_best_score` | `tg-rush-best-v1` |
+
+Deshalb **eigener Schlüssel**. Der alte Wert wird gelesen, aber weder
+überschrieben noch gelöscht — er gehört dem Spieler. Steht dort etwas,
+sagt die Seite einmal, warum der Rekord hier bei null anfängt:
+
+> „Ihr Bestwert aus der vorigen Fassung (4.711) wird nicht übernommen:
+> Diese Version zählt die Punkte anders. Der alte Wert bleibt
+> gespeichert."
+
+Ohne alten Wert erscheint der Hinweis nicht. Beides geprüft.
+
+### 13.4 Zwei Befunde aus dem Prüflauf, die echte Fehler waren
+
+**Erstens: Der klebende Seitenkopf verdeckte die Bedienung.** Der Kopf
+liegt auf `z-index: 100` und gewinnt gegen alles im Spiel — das soll er
+auch. Aber Punkte, Zeit, Ton- und Pausenknopf lagen darunter. Behoben
+durch einen Abstand beim Anspringen des Abschnitts.
+
+Dabei die eigentliche Stolperstelle: **`style.css` setzt am
+`html`-Element `scroll-padding-top: 84px`. Der Browser addiert das zum
+`scroll-margin-top` des Abschnitts.** Ein „voller" Wert von 130 stand in
+Wahrheit bei 214 und schob unten die Bedienleiste aus dem Bild. Gemessen,
+dann auf 77 (Schreibtisch) bzw. 16 (Handy) korrigiert.
+
+**Zweitens: Die Seite färbte auf das Spiel ab.** Das Gestaltungssystem
+der Seite arbeitet mit `!important` auf Elementnamen:
+
+| Datei | Regel | erzwingt |
+|---|---|---|
+| `style.css:1334` | `button, .button, …` | `min-height`, `border-radius`, `font-size`, `font-weight` |
+| `style.css:1317` | `p, li, small, label` | `color`, `line-height` |
+| `public-system.css:72` | `body.tg-public :where(a, button, …)` | `font-family` |
+| `public-system.css` | `body.tg-public :where(h1, h2, h3, p)` | `letter-spacing` |
+
+Ohne Gegenwehr sahen die Knöpfe des Spiels aus wie Seitenknöpfe (15 px,
+Schriftstärke 850, 16 px Radius, 52 statt 46 px hoch), und die kleinen
+Zeilen im Auftragsfenster hatten die Grautöne der Seite statt des Goldes
+der Vorlage.
+
+Behoben mit zwei Mitteln, beide **ausschließlich innerhalb von
+`.tr-app`**:
+
+- ein Zurücksetzer `.tr-app :where(button)` bzw.
+  `.tr-app :where(p, li, small, label)` — `:where()` zählt bei der
+  Genauigkeit nicht mit, der Zurücksetzer steht damit hoch genug gegen die
+  Elementregeln der Seite und niedrig genug, dass die eigenen Klassen des
+  Spiels ihn wieder überschreiben;
+- `.tr-app ` vor jeder Regel, damit die Regeln des Spiels genauer sind als
+  `body.tg-public :where(…)`.
+
+**`!important` wurde gezielt gesetzt, nicht pauschal.** Ein erster Versuch
+hatte es auf alle betroffenen Eigenschaften gelegt — und damit die
+Rangfolge *innerhalb* der Vorlage verdreht: Dort schlägt `.help`
+(wichtig) das allgemeinere `.hero p` (normal); mit `!important` auf beiden
+gewann plötzlich `.hero p`, und die Bedienhinweise standen in 14 statt
+10 px. Zurückgenommen und auf genau die Stellen beschränkt, die der
+Zurücksetzer sonst überschreiben würde.
+
+### 13.5 Was der Vergleich mit der Vorlage ergeben hat
+
+Nicht acht Stichproben, sondern **jedes Element in Dokumentreihenfolge**:
+28 errechnete Eigenschaften und die Breite, auf Schreibtisch und Handy.
+
+| | Ergebnis |
+|---|---|
+| 1440 px | **2460 Werte über 82 Elemente — alle gleich** |
+| 390 px | **2453 Werte über 82 Elemente — alle gleich** |
+
+> **Achtung, ehrliche Korrektur:** Dieser Vergleich lief zunächst gar
+> nicht und meldete trotzdem „stimmt überein". Die Hülle heißt in der
+> Vorlage `.app`, hier `.tr-app`; der Aufnehmer gab still `null` zurück,
+> und der Vergleich wurde übersprungen. Der Prüflauf stellt seither
+> ausdrücklich fest, dass die Vorlage vermessen werden konnte — ein
+> stiller Ausfall ist schlimmer als eine Abweichung.
+
+Erst danach kamen die echten Unterschiede zum Vorschein, darunter drei
+Portierungsfehler: `width: 260px` und `text-align: center` standen im
+falschen Medienblock, und `min-width: 230px` am Auftragsfenster fehlte
+ganz.
+
+**Drei bewusste Unterschiede**, benannt statt verschwiegen:
+
+1. **Ein Element mehr** — `p.tr-oldbest` mit dem Hinweis zum alten
+   Bestwert. Den gibt es in der Vorlage nicht, weil es dort keine alte
+   Fassung gab.
+2. **Andere Elementnamen:** `main` → `div` (eine Seite hat nur ein
+   `main`, und das gehört der Spielewelt), `h1` → `h4` und `h2` → `h4`
+   (die Seite hat bereits eine `h1`; die Rangfolge der Überschriften muss
+   stimmen). Dazu Klassen, wo die Vorlage `id`s benutzt.
+3. **Andere Höhe des Spielfelds** — `calc(100dvh - 280px)` statt
+   `- 210px`, auf dem Handy `- 210px` statt `- 102px`. Die Vorlage stand
+   allein auf der Seite; hier kommen der klebende Seitenkopf und der
+   Abstand beim Anspringen dazu.
+
+Dazu eine gemessene Folge der Einbettung: **Die Spielespalte der Seite
+ist am Handy 327 statt 390 px breit.** Sechs Teile mit einer Höchstbreite
+(Auftragsfenster, Fahrzeugknöpfe, Hinweistexte) stoßen deshalb früher an.
+Das ist dieselbe CSS in einem engeren Kasten, keine geänderte Gestaltung.
+
+Die Kennzeichnung rechts oben trägt bewusst einen anderen Text: In der
+Vorlage steht dort „SPIELBARE DESIGNVORSCHAU", hier **„NUR SPIELSCORE ·
+KEINE REWARDS"**. Ebenso ist die Ansprache durchgehend auf „Sie"
+umgestellt, wie auf der übrigen Webseite.
+
+### 13.6 Der Beweis, dass das Spiel nicht nach außen abfärbt
+
+Dass jeder Selektor mit `.tr-` beginnt, ist ein Argument. Der Beweis ist
+eine Messung: dieselbe Seite einmal **mit** und einmal **ohne**
+`taxi-rush.css`, dann jedes Element außerhalb des Spiels vergleichen.
+
+> **208 Elemente, 15 Eigenschaften und die Größe je Element — null
+> Abweichungen.**
+
+Die Vorfahren des Spiels sind ausgenommen: Sie ändern ihre Höhe
+zwangsläufig mit, weil das Spiel darin liegt. Und beide Messungen stehen
+am Seitenanfang, sonst trüge der klebende Kopf einmal `is-scrolled` und
+einmal nicht — der Unterschied wäre die eigene Messung gewesen.
+
+### 13.7 Aufräumen: die alte Spielfassung
+
+`spiele.css` enthielt **126 Regeln der alten Fassung**, darunter einen
+kompletten Fokusmodus (`taxi-rush-focus-active`), den kein Skript mehr
+einschaltet. Alle entfernt — 53.895 auf 33.924 Zeichen.
+
+Dass dabei nichts verrutscht ist, wurde gemessen und nicht gehofft: Für
+**jedes** Element der Seite wurden alle errechneten Eigenschaften und der
+Kasten einmal mit der alten und einmal mit der neuen `spiele.css`
+verglichen. **302 Elemente, zwei Bildschirmbreiten, null Abweichungen.**
+
+Ein erster Durchgang war zu vorsichtig: Eine Regel wie
+`.gw-rush-game.is-crashing .gw-rush-viewport` blieb stehen, weil ein Teil
+des Selektors noch lebte. Sie kann trotzdem nie greifen — ein toter Teil
+genügt.
+
+### 13.8 Was geprüft wurde
+
+| Lauf | Ergebnis |
+|---|---|
+| `rush-pruefen` (neu) | **178 / 178** |
+| `ausgabe-pruefen` | 73 / 73 |
+| `grundlagen-pruefen` | 60 / 60 |
+| `rechtsseiten-pruefen` | 167 / 167 |
+| `flotte-pruefen` | 199 / 199 |
+| `anmeldung-pruefen` | 154 / 154 |
+| `gluecksrad-pruefen` | 77 / 77 |
+| `rewards-pruefen` | 66 / 66 |
+| `startseite-pruefen` | 187 / 187 |
+| `browser-pruefen` | 15 / 15 |
+| `grundlagen-browser-pruefen` | 28 / 28 |
+
+**Der Ablauf wurde gespielt, nicht behauptet.** Im echten Chrome:
+gestartet · gelenkt (an den Bildpunkten gemessen: Pfeiltaste, Pfeilknopf,
+Tippen) · Fahrgast aufgenommen · Fahrt abgeschlossen (die Zeit sprang um
+11 s nach oben, der Rest ist die laufende Uhr) · pausiert (Zeit und
+Punkte stehen still) · fortgesetzt · Kollision (ein Leben weniger) ·
+Spielende von selbst · Ergebnis mit Punkten und Fahrten · Neustart (75 s,
+3 Leben) · Rekord gespeichert und nach dem Neuladen noch da · beide
+Fahrzeuge · Tempostufe steigt · Ton an und wieder aus.
+
+Dazu: Pfeiltasten scrollen die Seite, solange der Fokus nicht im Spiel
+liegt · im Menü fängt das Spiel gar nichts ab · die Leertaste tippt in
+einem Eingabefeld ein Leerzeichen, auch während das Spiel läuft ·
+Wegscrollen hält an und reißt die Seite nicht zurück · fünf zusätzliche
+`oeffnen()` lassen die Uhr weiter im Takt laufen (4 s in 4 s; zwei
+Schleifen wären ~8) · verborgener Tab pausiert · nach dem Schließen
+bewegt sich nichts mehr und keine Taste wird abgefangen · reduzierte
+Bewegung · gesperrter Speicher.
+
+### 13.9 Verbleibende Einschränkungen — offen benannt
+
+1. **Mobil wurde EMULIERT, nicht auf einem echten Gerät geprüft.**
+   Chrome mit Touch-Emulation bei 390 × 844, 430 × 932, 320 × 568 und
+   844 × 390. Ein echtes Gerät verhält sich bei Wischgesten, Tastatur und
+   Adressleiste anders.
+
+2. **Zur Flüssigkeit gibt es keine Zusage.** Es wurde **keine Bildrate
+   gemessen**. Was gemessen wurde: dass genau eine Animationsschleife
+   läuft und die Uhr im Takt bleibt. Das ist etwas anderes als „läuft
+   flüssig".
+
+3. **Im Querformat eines Handys (844 × 390) passt das Spiel nicht
+   vollständig ins Bild.** 390 px Höhe minus Seitenkopf lassen zu wenig
+   übrig. Boost und Lenkpfeile sind erst nach kurzem Scrollen zu sehen;
+   Wischen über dem Spielfeld lenkt weiterhin ohne Scrollen. Hochkant
+   passt alles. Ebenso wird bei einem nur 720 px hohen Fenster die
+   Fußzeile des Spiels angeschnitten.
+
+4. **Ein Speicherfehler außerhalb von Taxi Rush.** Bei gesperrtem
+   `localStorage` wirft `customer-auth.js` unbehandelt — die Datei greift
+   an sieben Stellen ohne `try/catch` auf den Speicher zu
+   (`customer-auth.js:118–188`). **Das ist ein Bestandsbefund, nicht
+   Taxi Rush**, und wurde in diesem Schritt bewusst nicht angefasst: Die
+   Anmeldelogik bleibt unverändert. Der Prüflauf trennt beides und nennt
+   den fremden Fehler getrennt.
+
+5. **Der Yumak-Startfehler** bleibt offen wie bisher.
+
+### 13.10 Unverändert geblieben
+
+Glücksrad, Rewards-Regeln, Gewinnwahrscheinlichkeiten, Yumak, Startseite,
+Hero-Video, `customer-auth.js`, `spiele.js`, `admin/`, `fahrer/`,
+`dashboard/`. An `spiele.css` wurden ausschließlich tote Regeln der alten
+Spielfassung entfernt, mit Messung belegt.
+
+Geändert wurden insgesamt fünf Dateien: `spiele.html`, `spiele.css`,
+`taxi-rush.js`, `tools/bestand-uebernehmen.mjs` (eine Zeile: `taxi-rush.css`
+in die Übernahmeliste) und `package.json` (ein Prüfbefehl). Neu:
+`taxi-rush.css`, `tools/pruefe-taxi-rush.mjs` und die Designvorlage.
