@@ -1,0 +1,107 @@
+---
+/**
+ * Fahrtstatus — unter derselben Adresse wie bisher (live-fahrt.html).
+ *
+ * ═══════════════════════════════════════════════════════════════════════
+ * AUCH HIER WIRD NICHTS GELADEN
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * Geprueft am Bestand: kein Datenaufruf, keine Karte, keine Position.
+ * Die alte Seite besteht aus Sitzungspruefung und einem festen Text -
+ * und dieser Text ist der eigentliche Wert der Seite:
+ *
+ *   "Derzeit liegen für dieses Kundenkonto keine verifizierten
+ *    Live-Fahrtdaten vor. Fahrer, Fahrzeug, Kennzeichen, Ankunftszeit
+ *    und Status werden deshalb nicht simuliert."
+ *
+ * Der Satz steht WORTGLEICH hier. Er ist der Grund, warum diese Seite
+ * heute nichts behauptet, was niemand geprueft hat. Wer eine Karte mit
+ * einem fahrenden Wagen daraus macht, erfindet eine Position.
+ *
+ * Statt Daten bietet die Seite den einzigen Weg an, der wirklich
+ * funktioniert: bei der Zentrale nachfragen. Telefonnummer und
+ * WhatsApp-Adresse stehen unveraendert im Bestand.
+ */
+import Kontoseite from '../components/Kontoseite.astro';
+import { FIRMA } from '../inhalte';
+
+/** Was die Seite ueber den Datenstand weiss: naemlich nichts. */
+const STAND = [
+  { was: 'Fahrtstatus', stand: 'Nicht verfügbar' },
+  { was: 'Fahrer', stand: 'Nicht zugewiesen' },
+  { was: 'Fahrzeug', stand: 'Nicht zugewiesen' },
+  { was: 'Ankunft', stand: 'Keine Live-Daten' },
+];
+---
+
+<Kontoseite
+  titel="Fahrtstatus | Taxi Germersheim GmbH"
+  beschreibung="Aktueller Status Ihrer Fahrt bei Taxi Germersheim."
+  pfad="live-fahrt.html"
+  label="Ihr Taxi-Germersheim-Konto"
+  ueberschrift="Fahrtstatus"
+  bereichId="live-ride-page"
+  bereichName="Fahrtstatus"
+  sperrtext="Melden Sie sich an, um den Fahrtstatus Ihres Kundenkontos zu sehen."
+>
+  <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pb-20 lg:pb-28">
+    <section class="mt-10 max-w-3xl border border-border bg-card p-8 lg:p-10">
+      <span
+        class="inline-block border border-border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground"
+      >Keine Live-Daten</span>
+
+      <h2 class="mt-5 text-[26px] font-semibold tracking-[-0.02em] text-foreground">
+        Keine aktive Fahrt verbunden
+      </h2>
+
+      {/* WORTGLEICH aus dem Bestand. Dieser Satz ist der Kern der Seite. */}
+      <p class="mt-4 text-[15px] leading-relaxed text-muted-foreground">
+        Derzeit liegen für dieses Kundenkonto keine verifizierten Live-Fahrtdaten vor.
+        Fahrer, Fahrzeug, Kennzeichen, Ankunftszeit und Status werden deshalb nicht simuliert.
+      </p>
+
+      <dl class="mt-8 grid gap-px border border-border/70 bg-border/70 sm:grid-cols-2">
+        {STAND.map((z) => (
+          <div class="bg-card px-4 py-3">
+            <dt class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              {z.was}
+            </dt>
+            <dd class="mt-1 text-[15px] text-foreground">{z.stand}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div class="mt-8 border-t border-border/70 pt-6">
+        <h3 class="text-[17px] font-semibold text-foreground">Sie erwarten bereits ein Taxi?</h3>
+        <p class="mt-2 text-[15px] leading-relaxed text-muted-foreground">
+          Bitte fragen Sie den aktuellen Stand direkt bei der Zentrale an.
+        </p>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a
+            href={FIRMA.telefonLink}
+            class="border border-primary bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity duration-150 hover:opacity-90"
+          >{FIRMA.telefon} anrufen</a>
+          <a
+            href="https://wa.me/4972743567"
+            target="_blank"
+            rel="noreferrer"
+            class="border border-border px-5 py-2.5 text-sm text-foreground transition-colors duration-150 hover:border-primary"
+          >WhatsApp öffnen</a>
+          <a
+            href="meine-fahrten.html"
+            class="border border-border px-5 py-2.5 text-sm text-foreground transition-colors duration-150 hover:border-primary"
+          >Zu Meine Fahrten</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script is:inline slot="skript">
+    (async function () {
+      const { gesperrt } = await window.tgKontoBereit;
+      if (gesperrt) return;
+      // Nichts zu laden. Siehe den Kopf dieser Seite.
+    })();
+  </script>
+</Kontoseite>

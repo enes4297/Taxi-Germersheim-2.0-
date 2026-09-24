@@ -27,7 +27,8 @@
     "anmeldung-pruefen": "node tools/pruefe-anmeldung.mjs",
     "gluecksrad-pruefen": "node tools/pruefe-gluecksrad.mjs",
     "probe": "node tools/probe-server.mjs",
-    "rush-pruefen": "node tools/pruefe-taxi-rush.mjs"
+    "rush-pruefen": "node tools/pruefe-taxi-rush.mjs",
+    "kontoseiten-pruefen": "node tools/pruefe-kontoseiten.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.0",

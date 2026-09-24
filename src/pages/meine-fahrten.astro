@@ -1,0 +1,79 @@
+---
+/**
+ * Meine Fahrten — unter derselben Adresse wie bisher (meine-fahrten.html).
+ *
+ * ═══════════════════════════════════════════════════════════════════════
+ * HIER WIRD NICHTS GELADEN - UND DAS IST KEIN VERSEHEN
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * Geprueft am Bestand: Die alte Seite ruft KEINE Datenquelle auf. Ihr
+ * ganzes Skript besteht aus Sitzung herstellen, Zugang pruefen, fertig.
+ * Sie zeigt einen festen Text.
+ *
+ * Der Grund steht in der Datenbank, nicht in der Gestaltung:
+ * `public.rides` traegt in `002_rls_policies.sql` alle vier Regeln auf
+ * `private.is_dispatcher_or_admin()`. Ein angemeldeter Kunde hat auf
+ * seine eigenen Fahrten weder Lese- noch Schreibrecht.
+ *
+ * Solange das so ist, waere jede Fahrtenliste hier erfunden. Die Seite
+ * sagt deshalb geradeheraus, dass noch keine Fahrten verbunden sind -
+ * mit denselben Worten wie bisher.
+ *
+ * Das ist Entscheidung E1 der Bestandsaufnahme und bleibt offen.
+ */
+import Kontoseite from '../components/Kontoseite.astro';
+---
+
+<Kontoseite
+  titel="Meine Fahrten | Taxi Germersheim GmbH"
+  beschreibung="Ihre Fahrten bei Taxi Germersheim."
+  pfad="meine-fahrten.html"
+  label="Ihr Taxi-Germersheim-Konto"
+  ueberschrift="Meine Fahrten"
+  text="Hier finden Sie künftig Ihre kommenden und vergangenen Fahrten."
+  bereichId="customer-rides"
+  bereichName="Meine Fahrten"
+>
+  <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pb-20 lg:pb-28">
+    <section class="mt-10 max-w-3xl border border-border bg-card p-8 lg:p-10">
+      <h2 class="text-[26px] font-semibold tracking-[-0.02em] text-foreground">
+        Noch keine Fahrten verfügbar
+      </h2>
+      <p class="mt-4 text-[15px] leading-relaxed text-muted-foreground">
+        Ihre Fahrten werden hier angezeigt, sobald sie mit Ihrem
+        Taxi-Germersheim-Konto verbunden sind.
+      </p>
+
+      {/*
+        Ehrlich sagen, woran es liegt. Ein leerer Kasten ohne Erklaerung
+        laesst den Kunden raten, ob er noch nie gefahren ist oder ob
+        etwas kaputt ist.
+      */}
+      <p class="mt-4 text-[15px] leading-relaxed text-muted-foreground">
+        Diese Verbindung ist noch nicht eingerichtet. Es handelt sich
+        nicht um einen Ladefehler und nicht um einen leeren Verlauf –
+        Fahrtdaten stehen dem Kundenkonto derzeit schlicht nicht zur
+        Verfügung. Ihre gefahrenen Strecken sind davon unberührt.
+      </p>
+
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a
+          href="index.html?page=booking"
+          class="border border-primary bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity duration-150 hover:opacity-90"
+        >Fahrt buchen</a>
+        <a
+          href="meinkonto.html"
+          class="border border-border px-5 py-2.5 text-sm text-foreground transition-colors duration-150 hover:border-primary"
+        >Zurück zu Mein Konto</a>
+      </div>
+    </section>
+  </div>
+
+  <script is:inline slot="skript">
+    (async function () {
+      const { gesperrt } = await window.tgKontoBereit;
+      if (gesperrt) return;
+      // Nichts zu laden. Siehe den Kopf dieser Seite.
+    })();
+  </script>
+</Kontoseite>

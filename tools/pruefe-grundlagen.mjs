@@ -175,7 +175,23 @@ for (const d of [...htmlSeiten, ...jsDateien]) {
   if (/konto-einrichtung\.html|customer-auth-demo\.js|customer-journey-demo\.js/.test(t)) mitDemoVerweis.push(d);
 }
 pruefe(mitDemoVerweis.length === 0, `keine ausgelieferte Datei verweist auf eine entfernte Demo-Datei${mitDemoVerweis.length ? ': ' + mitDemoVerweis.join(', ') : ''}`);
-pruefe(existsSync(join(AUSGABE, 'auth-demo.css')), 'auth-demo.css ist weiterhin dabei - trotz des Namens eine echte Stilvorlage von elf Kontoseiten');
+/*
+  SEIT SCHRITT 021 UMGEDREHT.
+
+  Bis Schritt 020 musste auth-demo.css dabei sein: Trotz des Namens war
+  es eine echte Stilvorlage, und elf Kontoseiten brauchten sie.
+
+  Mit den sechs Kontoseiten aus Schritt 021 ist die letzte davon nach
+  Astro gewandert. Jetzt gilt das Gegenteil - die Datei gehoert nicht
+  mehr in die Auslieferung, und nichts darf sie mehr anfordern. Ein
+  uebrig gebliebener Verweis waere eine fehlende Datei im Browser.
+*/
+pruefe(!existsSync(join(AUSGABE, 'auth-demo.css')), 'auth-demo.css ist nicht mehr dabei - keine ausgelieferte Seite braucht sie noch');
+const mitAuthDemo = [];
+for (const d of [...htmlSeiten, ...jsDateien]) {
+  if ((await lies(d)).includes('auth-demo.css')) mitAuthDemo.push(d);
+}
+pruefe(mitAuthDemo.length === 0, `keine ausgelieferte Datei verweist noch auf auth-demo.css${mitAuthDemo.length ? ': ' + mitAuthDemo.join(', ') : ''}`);
 
 // ── 5. Anrede ──────────────────────────────────────────────────────────────
 console.log('\n── Anrede ──');

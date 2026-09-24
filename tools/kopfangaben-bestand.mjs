@@ -55,6 +55,13 @@ export const AUS_ASTRO = [
   'registrieren.html',
   'passwort-vergessen.html',
   'passwort-zuruecksetzen.html',
+  // Schritt 021
+  'meinkonto.html',
+  'kundenkonto.html',
+  'kunden-einstellungen.html',
+  'meine-fahrten.html',
+  'wallet-gutscheine.html',
+  'live-fahrt.html',
 ];
 
 /** Die Seiten, die dieser Zusatz anfasst. Ausdrueckliche Liste, kein Glob. */

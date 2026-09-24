@@ -1714,3 +1714,247 @@ Geändert wurden insgesamt fünf Dateien: `spiele.html`, `spiele.css`,
 `taxi-rush.js`, `tools/bestand-uebernehmen.mjs` (eine Zeile: `taxi-rush.css`
 in die Übernahmeliste) und `package.json` (ein Prüfbefehl). Neu:
 `taxi-rush.css`, `tools/pruefe-taxi-rush.mjs` und die Designvorlage.
+
+---
+
+## 14. Schritt 021 — Die Kontoübersichten (erledigt)
+
+Branch `feature/021-kontoseiten`, abgezweigt von `feature/023-taxi-rush`
+(`d6977d7`), damit Glücksrad und Taxi Rush erhalten bleiben.
+
+> **Damit stammt keine öffentliche Seite mehr aus dem Bestand außer
+> `spiele.html`.** 19 von 20 Seiten kommen aus Astro.
+
+### 14.1 Was diese Seiten wirklich laden — nachgesehen, nicht vermutet
+
+Vor dem Umbau wurde jede der sechs Seiten auf ihre Datenzugriffe
+durchsucht. Das Ergebnis war überraschend schmal:
+
+| Seite | Lädt | Speichert |
+|---|---|---|
+| `meinkonto.html` | Sitzung (`getProfile`, `getSessionSnapshot`) **und** `rpc('get_my_rewards_overview')` | nichts |
+| `kunden-einstellungen.html` | Sitzung (E-Mail, Telefon – nur Anzeige) | `client.auth.updateUser({ password })` |
+| `wallet-gutscheine.html` | `from('rewards_vouchers').select(…).order('issued_at')` | nichts |
+| `meine-fahrten.html` | **nichts** | nichts |
+| `live-fahrt.html` | **nichts** | nichts |
+| `kundenkonto.html` | **nichts** – Weiterleitung | nichts |
+
+**Drei der sechs Seiten haben überhaupt keine Datenquelle.** Das ist kein
+Versehen: `public.rides` trägt in `002_rls_policies.sql` alle vier Regeln
+auf `private.is_dispatcher_or_admin()`. Ein angemeldeter Kunde hat auf
+seine eigenen Fahrten weder Lese- noch Schreibrecht. Jede Fahrtenliste
+oder Live-Position wäre also erfunden — und genau das war untersagt.
+
+Alle Aufrufe wurden **unverändert** übernommen: dieselben Funktionen,
+dieselben Tabellen, dieselben Spalten, dieselbe Sortierung.
+
+### 14.2 Der gemeldete Speicherfehler — untersucht und behoben
+
+Der Befund aus Schritt 023 wurde zuerst gemessen, dann repariert.
+
+**Die Ursache:** `persistProfile()` in `customer-auth.js` griff ungeschützt
+auf `localStorage` zu. Der Aufruf kam aus `syncSessionState()` und damit
+aus `hydrateSession()`. Ist der Speicher gesperrt, wirft schon der
+Zugriff — die Ausnahme riss `hydrateSession()` ab, und weil die
+Kontoseiten darauf warteten, wurde
+`document.body.classList.remove('auth-pending')` nie erreicht.
+
+**Die gemessene Folge:**
+
+| Seite | vorher | nachher |
+|---|---|---|
+| `meinkonto.html` | dauerhaft „Konto wird geladen …", 2 Fehler | bedienbar |
+| `kunden-einstellungen.html` | dauerhaft „Konto wird geladen …", 2 Fehler | bedienbar |
+| `meine-fahrten.html` | dauerhaft „Konto wird geladen …", 2 Fehler | bedienbar |
+| `wallet-gutscheine.html` | dauerhaft „Konto wird geladen …", 2 Fehler | bedienbar |
+| `live-fahrt.html` | kam durch (benutzte `requireLoginAsync`) | bedienbar |
+
+Vier von fünf Seiten zeigten einen schwarzen Bildschirm mit einem Satz —
+für immer.
+
+**Die Behebung** liegt in `customer-auth.js`, nicht in einer zweiten
+Anmeldelogik. Jeder Speicherzugriff läuft jetzt über drei Funktionen
+(`speicherLesen`, `speicherSchreiben`, `speicherLoeschen`), die **nie
+werfen**. Schlägt der Speicher fehl, merkt sich die Seite den Stand für
+diesen Besuch in einer `Map` — die Anmeldung funktioniert, sie überlebt
+nur kein Neuladen. `bootstrap()` fängt zusätzlich ab, damit nichts
+unbehandelt scheitert.
+
+Neu ist `CustomerAuth.speicherGesperrt()`. Es meldet, **ob es wirklich
+geklemmt hat** — keine Vermutung. Nur dann erscheint unten ein Hinweis:
+
+> „Der Browserspeicher ist gesperrt. Ihre Anmeldung gilt deshalb nur für
+> diesen Besuch und wird beim Schließen des Fensters vergessen. Prüfen Sie
+> die Einstellungen für Cookies und Websitedaten, wenn Sie angemeldet
+> bleiben möchten."
+
+**Keine Sitzung wird vorgetäuscht.** Ohne nachgewiesene Sitzung bleibt
+gesperrt — im Zweifel zu, nie auf. Das ist im Prüflauf für alle fünf
+Seiten festgehalten.
+
+### 14.3 Geschützte Inhalte waren sichtbar
+
+Der zweite Befund aus derselben Messung.
+
+`auth-demo.css` legte über den gesperrten Bereich nur
+`filter: blur(2px) saturate(0.7)`. Gemessen: `visibility: visible`,
+`opacity: 1`, `display: block`. Der Text stand im Dokument, war markierbar
+und kopierbar — bei größerer Schrift auch lesbar. Ein Weichzeichner ist
+keine Zugangssperre.
+
+Jetzt gilt `display: none`. Der Prüflauf misst für jede der fünf Seiten,
+dass der Bereich **nicht sichtbar** ist, und sucht zusätzlich im
+sichtbaren Text nach Wörtern wie „Mitglied seit", „Gutschein" oder
+„Passwort" — er findet keines.
+
+Nebenbei: Die Sperre liegt jetzt **unter** dem Seitenkopf (z-index 30
+gegen 40). Vorher deckte sie auch die Navigation zu; ein abgemeldeter
+Besucher kam nirgendwo mehr hin außer über die drei Knöpfe der Karte.
+
+### 14.4 Ein Ladefehler ist kein leeres Konto
+
+Der dritte Befund, und der ausdrücklich benannte.
+
+Im Bestand stand um den Rewards-Aufruf ein `catch`, das den Fehler
+verschluckte und `rewardsOverview = null` setzte. Danach zeigten alle vier
+Kennzahlen „—". **Bei einem Serverfehler sah ein Kunde genau dasselbe wie
+bei einem frisch angelegten Konto: vier Striche.**
+
+Jetzt drei unterscheidbare Zustände, gemessen:
+
+| Fall | Kennzahl | Hinweis |
+|---|---|---|
+| lädt | `…` | — |
+| leeres Konto | `0` | keiner |
+| Ladefehler | `–` | sichtbarer Kasten mit „Erneut versuchen" |
+
+Der Fehlertext sagt ausdrücklich: *„Das ist ein Ladefehler und bedeutet
+nicht, dass Ihr Konto leer ist."*
+
+Dieselbe Trennung bei den Gutscheinen — dort machte der Bestand es als
+einzige Seite bereits richtig („Noch keine Gutscheine" gegen „Gutscheine
+nicht verfügbar"). Beides bleibt wortgleich, ergänzt um den Satz, dass der
+Fehler nichts über den Bestand aussagt, und um einen
+Wiederholungsknopf.
+
+### 14.5 Die Abmeldung leert jetzt wirklich
+
+Im Bestand rief der Abmeldeknopf `signOut()` und leitete danach weiter.
+Die persönlichen Anzeigen wurden **nicht** geleert — man verließ sich
+darauf, dass die Weiterleitung schneller ist als das Auge. Bleibt sie aus
+(kein Netz, ein Fehler), standen Name, Telefon und E-Mail weiter da.
+
+Jetzt: **erst leeren, dann abmelden, dann weiterleiten.** Gemessen mit
+einer Attrappe, deren `signOut()` absichtlich hängen bleibt — die Seite
+steht dann still, und alle neun `data-konto-persoenlich`-Felder sind
+bereits auf „—". Kein Name, keine E-Mail, keine Telefonnummer, kein
+Punktestand mehr im sichtbaren Text.
+
+Statt `window.alert` erscheint bei einem Fehlschlag ein Kasten auf der
+Seite, der sagt, dass die Angaben bereits ausgeblendet sind.
+
+### 14.6 Eine Schutzprüfung, nicht sechs
+
+Im Bestand stand die Abfolge *Sitzung herstellen → Zugang prüfen →
+freigeben* fünfmal nebeneinander, jedes Mal etwas anders formuliert. Jetzt
+steht sie einmal in `Kontoseite.astro` und liefert ihr Ergebnis über ein
+Versprechen:
+
+```js
+const { gesperrt, auth } = await window.tgKontoBereit;
+if (gesperrt) return;
+```
+
+**Es löst immer auf** — auch wenn die Sitzungsabfrage scheitert. Ein
+hängendes Versprechen wäre genau der Fehler aus 14.2 gewesen.
+
+`customer-auth.js` wurde **eingebunden, nicht ersetzt**. Die Sperre selbst
+kommt weiterhin aus `requireLogin()`; diese Datei ruft sie, sie baut sie
+nicht nach. Der Prüflauf stellt für jede Seite fest, dass kein eigener
+Supabase-Client angelegt und niemand selbst angemeldet wird.
+
+### 14.7 Aus der Bestandskopie genommen
+
+Die sechs HTML-Dateien **und** fünf Stilvorlagen, die ausschließlich zu
+ihnen gehörten: `auth-demo.css`, `kunden-einstellungen.css`,
+`live-ride.css`, `meinefahrten.css`, `wallet-gutscheine.css`.
+Nachgesehen, nicht vermutet — der Prüflauf liest alle ausgelieferten
+Seiten durch und stellt fest, dass keine mehr darauf verweist.
+
+Eine Zusicherung in `pruefe-grundlagen.mjs` musste dabei **umgedreht**
+werden: Bis Schritt 020 verlangte sie, dass `auth-demo.css` dabei ist
+(„trotz des Namens eine echte Stilvorlage von elf Kontoseiten"). Jetzt
+gilt das Gegenteil.
+
+`kundenkonto.html` bleibt eine reine Weiterleitung — bewusst ohne den
+gemeinsamen Seitenrahmen. Alle vier Mechanismen aus dem Bestand sind
+übernommen: `meta refresh`, `location.replace`, ein sichtbarer Verweis und
+`noindex,follow` mit `canonical` auf `meinkonto.html`.
+
+### 14.8 Was geprüft wurde
+
+| Lauf | Ergebnis |
+|---|---|
+| `kontoseiten-pruefen` (neu) | **181 / 181** |
+| `ausgabe-pruefen` | 62 / 62 |
+| `grundlagen-pruefen` | 60 / 60 |
+| `rechtsseiten-pruefen` | 167 / 167 |
+| `flotte-pruefen` | 199 / 199 |
+| `anmeldung-pruefen` | 154 / 154 |
+| `gluecksrad-pruefen` | 77 / 77 |
+| `rush-pruefen` | 178 / 178 |
+| `rewards-pruefen` | 66 / 66 |
+| `startseite-pruefen` | 187 / 187 |
+| `browser-pruefen` | 15 / 15 |
+| `grundlagen-browser-pruefen` | 28 / 28 |
+
+Im Einzelnen, auf Desktop (1440 × 900) und Handy (390 × 844 und
+320 × 568): Adressen und `noindex` · die Weiterleitung · eine
+Anmeldelogik · abgemeldet (Bereich unsichtbar, Sperre sichtbar, Weg zur
+Anmeldung erreichbar) · angemeldet mit Daten (Name, E-Mail, Telefon,
+Beitrittsjahr, Initialen, Punkte deutsch formatiert, Level übersetzt,
+Gutscheine mit Betrag, Code, Status und Datum) · leeres Konto · Ladefehler
+mit Wiederholung · keine erfundenen Fahrten, Beträge, Zeiten oder
+Kennzeichen · gesperrter Speicher (Attrappe **und** echtes
+`customer-auth.js`) · Abmelden (Leeren vor dem Abmelden, Ziel
+`anmelden.html?loggedOut=1`) · Passwortdialog (Regeln, Stärke,
+abweichende Bestätigung, Erfolg, Fehlschlag, Anzeigen-Schalter, Escape,
+Fokusrückkehr) · Tastaturlauf bis zum Abmeldeknopf · kein waagerechter
+Überlauf.
+
+### 14.9 Was dieser Prüflauf NICHT belegt
+
+> **Jede Sitzung und jede Datenantwort in diesem Lauf ist SIMULIERT.**
+> Der gesamte Netzverkehr nach außen wurde abgeschnitten; es gab keine
+> Verbindung zu Supabase. Es wurden keine produktiven Kontodaten
+> angefasst und keine Nachricht ausgelöst.
+
+Offen bleiben deshalb, unverändert:
+
+1. **Die echte Anmeldung ist ungeprüft** — dieselbe offene Prüfung wie in
+   Schritt 020. Die Anleitung dafür steht in `ANLEITUNG-ANMELDETEST.md`.
+2. **Ob `get_my_rewards_overview` einem angemeldeten Kunden antwortet**,
+   ist ungeprüft. Das steht in den Grants und Policies der produktiven
+   Instanz.
+3. **Ob ein Kunde `rewards_vouchers` lesen darf**, ebenso — dieselbe
+   offene Frage wie beim Glücksrad in Schritt 022.
+4. **E1 bleibt offen:** Kunden haben auf `rides` keine Rechte. Solange das
+   so ist, bleiben „Meine Fahrten" und „Fahrtstatus" ohne Daten. Das ist
+   eine Entscheidung, keine Gestaltungsfrage.
+
+Eine bestandene Prüfung mit Attrappe ist **kein Nachweis** für das
+Verhalten der produktiven Instanz.
+
+### 14.10 Unverändert geblieben
+
+Startseite, Hero-Video, Glücksrad, Taxi Rush, Yumak, Rewards-Regeln und
+-Berechnungen, Datenbank, Rollen und Berechtigungen, `admin/`, `fahrer/`,
+`dashboard/`. An `customer-auth.js` wurde ausschließlich der
+Speicherzugriff abgesichert und `speicherGesperrt()` ergänzt — an der
+Anmeldung selbst, an `signInWithPassword`, `signUp`, `signOut`,
+`requireLogin` und `hydrateSession` ändert sich nichts.
+
+**Der offene Taxi-Rush-Befund bleibt bestehen:** Im Querformat eines
+Handys (844 × 390) passt das Spiel samt Bedienleiste nicht vollständig ins
+Bild; Boost und Lenkpfeile sind erst nach kurzem Scrollen zu sehen. Siehe
+Abschnitt 13.9, Punkt 3 — für die abschließende Qualitätsrunde vorgemerkt.

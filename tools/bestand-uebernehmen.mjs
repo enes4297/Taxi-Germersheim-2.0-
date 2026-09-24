@@ -111,9 +111,25 @@ export const UEBERNAHME = [
  *                              konto-einrichtung.html geladen.
  *   customer-journey-demo.js - 499 Zeilen, von keiner einzigen Seite geladen.
  *
- * WEITERHIN enthalten, trotz des Namens: auth-demo.css. Das ist eine reine
- * Stilvorlage und wird von ELF echten Kontoseiten gebraucht. Der Name ist
- * irrefuehrend, die Datei ist es nicht.
+ * SEIT SCHRITT 021 ausdruecklich NICHT MEHR enthalten:
+ *   meinkonto.html              - aus Astro
+ *   kundenkonto.html            - dito (die Weiterleitung)
+ *   kunden-einstellungen.html   - dito
+ *   meine-fahrten.html          - dito
+ *   wallet-gutscheine.html      - dito
+ *   live-fahrt.html             - dito
+ *   auth-demo.css               - wurde von genau diesen Seiten und den
+ *                                 Anmeldeseiten geladen. Nach Schritt 020
+ *                                 und 021 liefert keine ausgelieferte Seite
+ *                                 sie mehr an. Die Sperre gestaltet jetzt
+ *                                 Kontoseite.astro - und blendet den
+ *                                 geschuetzten Bereich wirklich aus, statt
+ *                                 ihn nur mit 2 px zu verwischen.
+ *   kunden-einstellungen.css    - wurde NUR von kunden-einstellungen.html
+ *   live-ride.css               - wurde NUR von live-fahrt.html
+ *   meinefahrten.css            - wurde NUR von meine-fahrten.html
+ *   wallet-gutscheine.css       - wurde NUR von wallet-gutscheine.html
+ * Alle fuenf Stilvorlagen nachgesehen, nicht vermutet.
  *
  * WICHTIG zu index.html und rewards.html: Beide Seiten kommen inzwischen aus
  * Astro - index.html seit Schritt 014, rewards.html seit Schritt 016. Stuenden
@@ -124,14 +140,16 @@ export const UEBERNAHME = [
  */
 const WURZELDATEIEN = [
   // Oeffentliche Seiten
-  'kunden-einstellungen.html', 'kundenkonto.html',
-  'live-fahrt.html', 'meine-fahrten.html', 'meinkonto.html',
-  'spiele.html', 'wallet-gutscheine.html',
+  // Schritt 021: Die sechs Kontoseiten kommen jetzt aus Astro.
+  // Uebrig bleibt genau eine Bestandsseite.
+  'spiele.html',
   // Stilvorlagen
-  'auth-demo.css', 'home-luxury.css', 'kunden-einstellungen.css',
-  'live-ride.css', 'meinefahrten.css', 'public-premium-v2.css',
+  // Schritt 021 entfernt: auth-demo.css, kunden-einstellungen.css,
+  // live-ride.css, meinefahrten.css und wallet-gutscheine.css. Sie
+  // gehoerten ausschliesslich zu den sechs Kontoseiten.
+  'home-luxury.css', 'public-premium-v2.css',
   'public-states.css', 'public-system.css', 'public-visual-repair.css',
-  'spiele.css', 'style.css', 'taxi-rush.css', 'wallet-gutscheine.css',
+  'spiele.css', 'style.css', 'taxi-rush.css',
   // Skripte
   'customer-auth.js', 'home-luxury.js',
   'public-premium-v2.js', 'public-system.js', 'rewards-customer.js', 'script.js',

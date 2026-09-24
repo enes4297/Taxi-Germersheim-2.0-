@@ -869,71 +869,157 @@ jeder Veröffentlichung.
 
 ---
 
-## 16. Nächster Schritt
+## 16. Die Kontoübersichten (Schritt 021)
 
-> **Die vollständige Bestandsaufnahme der öffentlichen Webseite steht seit
-> dem 23.09.2026 in `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`** — was fertig ist,
-> was fehlt, was ohne Rückfrage machbar ist, und was eine Entscheidung
-> braucht. Die dortige Empfehlung ersetzt den Vorschlag unten.
+**Die ausführliche Fassung steht in `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`,
+Abschnitt 14.** Hier nur, was Bau und Übernahme betrifft.
 
-**Die Schritte 017 bis 020 sind erledigt** — siehe Abschnitt 11 bis 14
-hier sowie Abschnitt 8 bis 11 der Bestandsaufnahme.
+### Sechs weitere Seiten aus Astro — und damit fast alle
 
-**Einmalig vorgezogen und ebenfalls erledigt:** Schritt 022 (Glücksrad,
-Abschnitt 12 der Bestandsaufnahme) und Schritt 023 (Taxi Rush,
-Abschnitt 15 hier und Abschnitt 13 dort). Beides auf ausdrücklichen
-Wunsch des Auftraggebers; die verbindliche Reihenfolge bleibt: öffentliche
-Webseite, Mitarbeiterportal, Zentrale, danach Rewards, Yumak und Spiele.
-
-**Empfohlen: Schritt 021 — Kontoübersichten.** Branch
-`feature/021-kontoseiten` von `feature/020-konto`. Inhalt:
 `meinkonto.html`, `kunden-einstellungen.html`, `meine-fahrten.html`,
 `wallet-gutscheine.html`, `live-fahrt.html` und die Weiterleitung
-`kundenkonto.html`.
+`kundenkonto.html`, unter denselben Adressen.
 
-Dabei gilt besonders:
+> **Aus Bestandsmaterial stammt jetzt genau EINE Seite: `spiele.html`.**
+> 19 von 20 kommen aus Astro.
 
-- **Die ehrlichen Leerzustände bleiben, wortgleich.** „Noch keine
-  Fahrten verfügbar" und „Derzeit liegen für dieses Kundenkonto keine
-  verifizierten Live-Fahrtdaten vor … werden deshalb nicht simuliert."
-  Diese Sätze sind der Grund, warum die Seiten heute nichts behaupten.
-- **`meine-fahrten.html` bleibt leer**, solange Entscheidung **E1** offen
-  ist: Kunden haben auf `rides` weder Lese- noch Schreibrecht
-  (`002_rls_policies.sql`, alle vier Policies auf
-  `is_dispatcher_or_admin()`). Das ist keine Sache der Gestaltung.
-- `wallet-gutscheine.html` liest `rewards_vouchers` — bisher ungeprüft.
-- `meinkonto.html` ruft `get_my_rewards_overview` auf, dieselbe Quelle
-  wie die Rewards-Seite.
+### Aus der Übernahmeliste genommen
 
-Danach stammt nur noch `spiele.html` aus dem Bestand, und die gehört zu
-Punkt 4 der Reihenfolge.
+Die sechs HTML-Dateien **und fünf Stilvorlagen**:
 
-Der frühere Vorschlag, alle Unterseiten auf einmal anzugehen:
+| Datei | wurde geladen von |
+|---|---|
+| `auth-demo.css` | den Kontoseiten und den Anmeldeseiten — nach Schritt 020 und 021 von keiner ausgelieferten Seite mehr |
+| `kunden-einstellungen.css` | nur `kunden-einstellungen.html` |
+| `live-ride.css` | nur `live-fahrt.html` |
+| `meinefahrten.css` | nur `meine-fahrten.html` |
+| `wallet-gutscheine.css` | nur `wallet-gutscheine.html` |
 
-Vorher offen, unabhängig von der Reihenfolge:
+Nachgesehen, nicht vermutet. Der neue Prüflauf liest alle ausgelieferten
+Seiten durch und stellt fest, dass keine mehr darauf verweist.
 
-- **Der Yumak-Startfehler** (siehe Abschnitt 10). Solange er offen ist,
-  bleibt `STANDBILD_NUR = true`. Dazu gehört die Frage, warum die
-  automatisierte Prüfung ihn nicht erfasst hat.
-- **Die echte Anmeldung ist ungeprüft.** Alle Kontodarstellungen wurden mit
-  isolierten Testdaten geprüft, nicht gegen die produktive Instanz.
-- **Die Korrekturen aus `feature/011`** (Abschnitt 2) — Voraussetzung jeder
-  Veröffentlichung.
-- **`spiele.html`** stammt weiter aus dem Bestand.
-- Fünf Yumak-Clips (happy, reach, box, sleep, walk-right) sind aufbereitet,
-  aber weder farbkorrigiert noch verwendet.
+**Noch in der Liste, obwohl kaum noch gebraucht:** `script.js`,
+`home-luxury.css/js`, `public-premium-v2.css/js`, `public-states.css`.
+Sie gehören zu Seiten, die bereits aus Astro kommen. Sie wurden hier
+**nicht** angefasst — das ist eine eigene Aufräumrunde und gehört nicht in
+einen Schritt, der Kontoseiten umbaut.
 
-Zur Auswahl, in dieser Reihenfolge sinnvoll:
+### `AUS_ASTRO` wächst auf neunzehn
 
-1. **Rechtliches und Hilfe** — `impressum.html`, `datenschutz.html`,
-   `hilfe-kontakt.html`, `404.html` im neuen Design. Kleinster Umfang, kein
-   Backend berührt.
-2. **Flotte und Spezialfahrten** — `flotte.html` und `spezialfahrten.html`.
-   Beide Inhalte stehen bereits auf der neuen Startseite; zu klären ist, ob die
-   Seiten bleiben oder auf die Abschnitte weiterleiten.
-3. **Demoseiten der Spielewelt** — Glücksrad-Demo und Yumaks-Box-Demo aus der
-   Vorschau. Erst danach dürfen die Rewards-Kacheln wieder „Als Demo
-   ausprobieren" heißen.
-4. **Anmeldung und Konto** — `anmelden.html`, `registrieren.html`, die
-   Kontoseiten. Höchstes Risiko: Hier hängt die echte Anmeldung dran.
-   `customer-auth.js` wird dabei nicht umgeschrieben, nur eingebunden.
+`kopfangaben-bestand.mjs` bearbeitet dadurch nur noch **1** Bestandsseite
+statt 7.
+
+### Eine umgedrehte Zusicherung
+
+In `tools/pruefe-grundlagen.mjs` stand seit Schritt 017:
+
+```js
+pruefe(existsSync(join(AUSGABE, 'auth-demo.css')),
+  'auth-demo.css ist weiterhin dabei - trotz des Namens eine echte Stilvorlage …');
+```
+
+Das war richtig, solange elf Kontoseiten sie brauchten. Jetzt gilt das
+Gegenteil, und die Zusicherung wurde umgedreht — samt Gegenprobe, dass
+keine ausgelieferte Datei sie noch anfordert. **Wer eine Prüfung umdreht,
+schreibt dazu, warum.** Die Begründung steht im Quelltext daneben.
+
+### Neues Bauteil `Kontoseite.astro`
+
+Der gemeinsame Rahmen: Seitenkopf, Überschrift, Sperre, Ladevorhang,
+Speicherhinweis, Abmeldelogik, Fußzeile. Die fünf geschützten Seiten
+füllen nur noch ihren Inhalt und warten auf
+
+```js
+const { gesperrt, auth } = await window.tgKontoBereit;
+```
+
+**Wer eine weitere Kontoseite baut, nimmt dieses Bauteil.** Eine sechste
+eigene Schutzprüfung wäre die Art von Doppelung, bei der eine Fassung
+irgendwann anders entscheidet als die andere.
+
+Die Klassennamen `auth-gate`, `auth-gate-card`, `auth-btn` und
+`auth-gated-content` kommen aus `requireLogin()` in `customer-auth.js` und
+sind dort fest verdrahtet. Sie werden in `Kontoseite.astro` **gestaltet,
+nicht umbenannt** — umbenennen hieße, die Anmeldelogik anzufassen.
+
+### Änderung an `customer-auth.js`
+
+Die zweite überhaupt (die erste war in Schritt 017 der Wechsel vom fremden
+CDN auf die mitgelieferte Bibliothek). Jeder `localStorage`-Zugriff läuft
+jetzt über `speicherLesen` / `speicherSchreiben` / `speicherLoeschen`.
+Diese drei werfen nie.
+
+**Wer hier etwas ergänzt, fasst `localStorage` nicht direkt an.** Der
+Prüflauf zählt nach: genau drei Stellen, jede in einem `try`-Block.
+
+Neu nach außen: `speicherGesperrt()`.
+
+### Neuer Prüflauf
+
+```
+npm run kontoseiten-pruefen      → 181 Prüfpunkte
+```
+
+Port 5288. Er schneidet **den gesamten Netzverkehr nach außen ab** und
+ersetzt `window.CustomerAuth` durch eine Attrappe. Damit kann er die
+produktive Instanz weder lesen noch verändern, unabhängig davon, was in
+`admin/supabase-config.js` steht.
+
+Wo die Attrappe gilt, wird das echte `customer-auth.js` durch eine leere
+Antwort ersetzt — sonst lädt es vom Prüfserver und überschreibt die
+Attrappe am Ende seiner Datei. Das echte `customer-auth.js` läuft dafür in
+Abschnitt 7 des Prüflaufs, mit werfendem Speicher.
+
+### Voraussetzung unverändert
+
+Die Korrekturen aus `feature/011` (Abschnitt 2) bleiben Voraussetzung
+jeder Veröffentlichung.
+
+---
+
+## 17. Nächster Schritt
+
+> **Die vollständige Bestandsaufnahme der öffentlichen Webseite steht in
+> `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`** — was fertig ist, was fehlt, was
+> ohne Rückfrage machbar ist, und was eine Entscheidung braucht.
+
+**Die Schritte 017 bis 021 sind erledigt** — Abschnitt 11 bis 16 hier,
+Abschnitt 8 bis 14 der Bestandsaufnahme. Einmalig vorgezogen und ebenfalls
+erledigt: Schritt 022 (Glücksrad) und Schritt 023 (Taxi Rush).
+
+Die verbindliche Reihenfolge bleibt: öffentliche Webseite,
+Mitarbeiterportal, Zentrale, danach Rewards, Yumak und Spiele.
+
+### Die Übernahme ist damit abgeschlossen
+
+**19 von 20 öffentlichen Seiten kommen aus Astro.** Aus dem Bestand stammt
+nur noch `spiele.html` — und die gehört zu Punkt 4 der Reihenfolge, nicht
+zur öffentlichen Webseite im engeren Sinn.
+
+Was jetzt noch fehlt, ist **keine Übernahme mehr**, sondern:
+
+1. **Die Korrekturen aus `feature/011`** (Abschnitt 2). Voraussetzung
+   jeder Veröffentlichung, unverändert offen.
+2. **Die echte Anmeldung prüfen.** Anleitung in
+   `ANLEITUNG-ANMELDETEST.md`. Alle bisherigen Kontoprüfungen liefen mit
+   Attrappen; die produktive Instanz wurde nie angefragt.
+3. **Die Rechte klären** — ob ein angemeldeter Kunde
+   `get_my_rewards_overview`, `rewards_vouchers` und `spin_rewards_wheel`
+   überhaupt ausführen darf. Das steht in den Grants und Policies der
+   produktiven Instanz, nicht in einer lokalen Datei.
+4. **Die Entscheidungen E1 bis E8 und die Fragen I1 bis I6** aus der
+   Bestandsaufnahme. Darunter E1: Kunden haben auf `rides` keine Rechte,
+   weshalb „Meine Fahrten" und „Fahrtstatus" ohne Daten bleiben.
+5. **Eine abschließende Qualitätsrunde.** Vorgemerkt sind dafür:
+   - der Yumak-Startfehler (Abschnitt 10); solange er offen ist, bleibt
+     `STANDBILD_NUR = true`;
+   - Taxi Rush im Querformat eines Handys (844 × 390): Das Spiel passt
+     samt Bedienleiste nicht vollständig ins Bild (Abschnitt 13.9 der
+     Bestandsaufnahme, Punkt 3);
+   - eine Aufräumrunde für `script.js`, `home-luxury.*`,
+     `public-premium-v2.*` und `public-states.css` — sie stehen noch in
+     der Übernahmeliste, gehören aber zu Seiten, die längst aus Astro
+     kommen;
+   - fünf aufbereitete Yumak-Clips, weder farbkorrigiert noch verwendet.
+
+**Kein Push, Merge oder Deployment** ohne ausdrückliche Freigabe.

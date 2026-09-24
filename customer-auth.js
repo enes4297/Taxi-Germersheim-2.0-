@@ -16,6 +16,75 @@
     }
   }
 
+  /* ═════════════════════════════════════════════════════════════════════
+     Der Browserspeicher darf die Anmeldung nicht aufhalten
+     ═════════════════════════════════════════════════════════════════════
+
+     GEMESSENER BEFUND (Schritt 021): Ist localStorage gesperrt, wirft
+     schon der Zugriff - nicht erst das Schreiben. Das geschah in
+     persistProfile(), das aus syncSessionState() und damit aus
+     hydrateSession() heraus lief. Die Ausnahme riss hydrateSession() ab,
+     und weil die Kontoseiten darauf warten, wurde
+     `document.body.classList.remove('auth-pending')` nie erreicht.
+
+     Ergebnis: Vier von fuenf Kontoseiten blieben DAUERHAFT auf
+     "Konto wird geladen …" stehen - ein schwarzer Bildschirm mit einem
+     Satz, zwei unbehandelte Fehler in der Konsole, und kein Weg weiter.
+
+     Gesperrt ist der Speicher zum Beispiel, wenn Cookies und Websitedaten
+     blockiert sind, in manchen privaten Fenstern, bei strengen
+     Unternehmenseinstellungen - oder wenn er schlicht voll ist.
+
+     Deshalb geht ab hier JEDER Zugriff ueber diese drei Funktionen. Sie
+     werfen nie. Schlaegt der Speicher fehl, merkt sich die Seite den
+     Stand nur fuer diesen Besuch (`cachedProfile`, `speicherErsatz`) -
+     die Anmeldung funktioniert, sie ueberlebt nur kein Neuladen.
+
+     `speicherGesperrt` haelt fest, ob es einmal geklemmt hat. Die
+     Kontoseiten fragen das ueber `CustomerAuth.speicherGesperrt()` ab
+     und sagen dem Kunden verstaendlich, was los ist - statt ihn vor
+     einer haengenden Seite sitzen zu lassen.
+  */
+  let speicherFehlgeschlagen = false;
+  /** Ersatzablage fuer diesen Besuch, wenn der echte Speicher nicht geht. */
+  const speicherErsatz = new Map();
+
+  function speicherLesen(schluessel) {
+    try {
+      return localStorage.getItem(schluessel);
+    } catch (_error) {
+      speicherFehlgeschlagen = true;
+      return speicherErsatz.has(schluessel) ? speicherErsatz.get(schluessel) : null;
+    }
+  }
+
+  function speicherSchreiben(schluessel, wert) {
+    speicherErsatz.set(schluessel, wert);
+    try {
+      localStorage.setItem(schluessel, wert);
+      return true;
+    } catch (_error) {
+      speicherFehlgeschlagen = true;
+      return false;
+    }
+  }
+
+  function speicherLoeschen(schluessel) {
+    speicherErsatz.delete(schluessel);
+    try {
+      localStorage.removeItem(schluessel);
+      return true;
+    } catch (_error) {
+      speicherFehlgeschlagen = true;
+      return false;
+    }
+  }
+
+  /** Hat der Browserspeicher in diesem Besuch geklemmt? */
+  function speicherGesperrt() {
+    return speicherFehlgeschlagen;
+  }
+
   function normalizeConfigFromWindow() {
     if (window.TaxiSupabaseConfig && typeof window.TaxiSupabaseConfig === "object") {
       return window.TaxiSupabaseConfig;
@@ -118,9 +187,9 @@
   function persistProfile(profile) {
     cachedProfile = profile || null;
     if (profile) {
-      localStorage.setItem(STORE_KEYS.profile, JSON.stringify(profile));
+      speicherSchreiben(STORE_KEYS.profile, JSON.stringify(profile));
     } else {
-      localStorage.removeItem(STORE_KEYS.profile);
+      speicherLoeschen(STORE_KEYS.profile);
     }
   }
 
@@ -128,20 +197,20 @@
     if (cachedProfile) {
       return cachedProfile;
     }
-    const stored = localStorage.getItem(STORE_KEYS.profile);
+    const stored = speicherLesen(STORE_KEYS.profile);
     const parsed = safeParse(stored, null);
     cachedProfile = parsed || null;
     return cachedProfile;
   }
 
   function persistPreferences(preferences) {
-    const previous = safeParse(localStorage.getItem(STORE_KEYS.preferences) || "{}", {});
+    const previous = safeParse(speicherLesen(STORE_KEYS.preferences) || "{}", {});
     const merged = Object.assign({}, previous, preferences || {});
-    localStorage.setItem(STORE_KEYS.preferences, JSON.stringify(merged));
+    speicherSchreiben(STORE_KEYS.preferences, JSON.stringify(merged));
   }
 
   function readStoredPreferences() {
-    return safeParse(localStorage.getItem(STORE_KEYS.preferences) || "{}", {});
+    return safeParse(speicherLesen(STORE_KEYS.preferences) || "{}", {});
   }
 
   function getSessionSnapshot() {
@@ -185,7 +254,7 @@
       });
     } else {
       persistProfile(null);
-      localStorage.removeItem(STORE_KEYS.preferences);
+      speicherLoeschen(STORE_KEYS.preferences);
     }
   }
 
@@ -535,8 +604,19 @@
   }
 
   async function bootstrap() {
-    await hydrateSession();
-    patchNav();
+    // Nie unbehandelt scheitern lassen. Schlaegt die Sitzungsabfrage fehl
+    // - kein Netz, gesperrter Speicher, fehlende Konfiguration -, soll die
+    // Navigation trotzdem in einen ehrlichen Zustand kommen: abgemeldet.
+    try {
+      await hydrateSession();
+    } catch (_error) {
+      /* Der Aufrufer der Seite entscheidet, was er anzeigt. */
+    }
+    try {
+      patchNav();
+    } catch (_error) {
+      /* Navigation ist Beiwerk; sie darf nichts abreissen. */
+    }
   }
 
   if (document.readyState === "loading") {
@@ -567,7 +647,10 @@
     logout: signOut,
     normalizeText,
     persistProfile,
-    persistPreferences
+    persistPreferences,
+    // Neu in Schritt 021: Die Kontoseiten fragen damit ab, ob der
+    // Browserspeicher geklemmt hat, und sagen es dem Kunden.
+    speicherGesperrt
   };
 
   window.CustomerAuthDemo = window.CustomerAuth;

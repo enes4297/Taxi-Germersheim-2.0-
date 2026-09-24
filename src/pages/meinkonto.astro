@@ -1,0 +1,301 @@
+---
+/**
+ * Mein Konto — unter derselben Adresse wie bisher (meinkonto.html).
+ *
+ * ═══════════════════════════════════════════════════════════════════════
+ * WAS DIESE SEITE WIRKLICH LAEDT
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * ZWEI Quellen, beide unveraendert aus dem Bestand:
+ *
+ *   1. Die SITZUNG - `CustomerAuth.getProfile()` und
+ *      `getSessionSnapshot()`. Daraus kommen Name, E-Mail, Telefon und
+ *      das Datum der Registrierung. Die Werte stammen aus den
+ *      Anmeldedaten, nicht aus einer Tabelle.
+ *
+ *   2. `rpc('get_my_rewards_overview')` - Punkte, Level, verfuegbare
+ *      Drehs und qualifizierende Fahrten. Derselbe Aufruf wie auf der
+ *      Rewards-Seite.
+ *
+ * GESPEICHERT WIRD HIER NICHTS. Die Seite zeigt an und meldet ab.
+ *
+ * ── DER FEHLER, DER HIER BEHOBEN WURDE ───────────────────────────────
+ *
+ * Im Bestand stand um den Rewards-Aufruf ein `catch`, das den Fehler
+ * verschluckte und `rewardsOverview = null` setzte. Danach zeigten alle
+ * vier Kennzahlen "—".
+ *
+ * Damit sah ein Kunde bei einem SERVERFEHLER genau dasselbe wie bei
+ * einem frisch angelegten Konto ohne Punkte: vier Striche. Das ist
+ * "Ladefehler als leeres Konto ausgeben", und es war ausdruecklich
+ * untersagt.
+ *
+ * Jetzt sind es drei unterscheidbare Zustaende:
+ *   lade   - die Kennzahlen stehen auf "…"
+ *   daten  - die Werte stehen da (auch die Null, wenn es Null ist)
+ *   fehler - ein sichtbarer Hinweis mit Wiederholen-Knopf; die Felder
+ *            bleiben leer und behaupten nichts
+ */
+import Kontoseite from '../components/Kontoseite.astro';
+
+/** Die Schnellaktionen - Ziele und Beschriftungen wie im Bestand. */
+const SCHNELLAKTIONEN = [
+  { text: 'Meine Fahrten', ziel: 'meine-fahrten.html' },
+  { text: 'Wallet & Gutscheine', ziel: 'wallet-gutscheine.html' },
+  { text: 'Rewards', ziel: 'rewards.html' },
+  { text: 'Einstellungen', ziel: 'kunden-einstellungen.html' },
+  { text: 'Hilfe & Kontakt', ziel: 'hilfe-kontakt.html' },
+];
+
+/** Die drei Kennzahlen oben. */
+const KENNZAHLEN = [
+  { kennung: 'punkte', text: 'Punkte' },
+  { kennung: 'level', text: 'Level' },
+  { kennung: 'drehs', text: 'Drehs' },
+];
+---
+
+<Kontoseite
+  titel="Mein Konto | Taxi Germersheim GmbH"
+  beschreibung="Ihr Taxi-Germersheim-Konto: persönliche Daten, Rewards-Stand und Schnellzugriffe."
+  pfad="meinkonto.html"
+  label="Ihr Taxi-Germersheim-Konto"
+  ueberschrift="Mein Konto"
+  text="Ihre persönlichen Daten, Ihr Rewards-Stand und die wichtigsten Wege auf einen Blick."
+  zurueck="Startseite"
+  zurueckZiel="index.html"
+  bereichId="customer-account"
+  bereichName="Mein Konto"
+>
+  <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pb-20 lg:pb-28">
+    <div class="mt-10 grid gap-5 lg:grid-cols-2">
+      {/* ── Person ─────────────────────────────────────────────── */}
+      <article class="border border-border bg-card p-6 lg:p-8">
+        <div class="flex items-start gap-5">
+          <div
+            class="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-primary/40 bg-primary/10 text-lg font-semibold text-primary"
+            data-konto-persoenlich
+            data-feld="initialen"
+            aria-hidden="true"
+          >—</div>
+          <div class="min-w-0">
+            <h2
+              class="truncate text-[22px] font-semibold tracking-[-0.02em] text-foreground"
+              data-konto-persoenlich
+              data-feld="name"
+            >—</h2>
+            <p class="mt-1 text-sm text-muted-foreground" data-konto-persoenlich data-feld="mitglied">
+              Mitglied seit: —
+            </p>
+          </div>
+        </div>
+
+        <dl class="mt-8 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+          <div>
+            <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Name</dt>
+            <dd class="mt-1 text-[15px] text-foreground" data-konto-persoenlich data-feld="name2">—</dd>
+          </div>
+          <div>
+            <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Telefon</dt>
+            <dd class="mt-1 text-[15px] text-foreground" data-konto-persoenlich data-feld="telefon">—</dd>
+          </div>
+          <div>
+            <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">E-Mail</dt>
+            <dd class="mt-1 break-words text-[15px] text-foreground" data-konto-persoenlich data-feld="email">—</dd>
+          </div>
+          <div>
+            <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Konto</dt>
+            <dd class="mt-1 text-[15px] text-foreground">Aktiv</dd>
+          </div>
+        </dl>
+      </article>
+
+      {/* ── Rewards ────────────────────────────────────────────── */}
+      <article class="border border-border bg-card p-6 lg:p-8">
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 class="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Rewards</h2>
+          <a
+            href="rewards.html"
+            class="text-sm text-primary underline-offset-4 transition-colors duration-150 hover:underline"
+          >Rewards öffnen</a>
+        </div>
+
+        {/*
+          Die Kennzahlen. `data-rewards-wert` traegt den Namen des Feldes;
+          das Skript setzt "…" beim Laden und den Wert danach. Bei einem
+          Fehler bleiben sie leer - dann spricht der Kasten darunter.
+        */}
+        <div class="mt-6 grid grid-cols-3 gap-3" data-rewards-zahlen>
+          {KENNZAHLEN.map((k) => (
+            <div class="border border-border/70 bg-background/40 px-3 py-4 text-center">
+              <span class="block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                {k.text}
+              </span>
+              <strong
+                class="mt-2 block text-2xl font-semibold tabular-nums text-primary"
+                data-rewards-wert={k.kennung}
+                data-konto-persoenlich
+              >…</strong>
+            </div>
+          ))}
+        </div>
+
+        <dl class="mt-6 divide-y divide-border/70 border-y border-border/70">
+          <div class="flex items-center justify-between gap-4 py-3">
+            <dt class="text-sm text-muted-foreground">Qualifizierende Fahrten</dt>
+            <dd class="text-[15px] font-medium tabular-nums text-foreground" data-rewards-wert="fahrten" data-konto-persoenlich>…</dd>
+          </div>
+          <div class="flex items-center justify-between gap-4 py-3">
+            <dt class="text-sm text-muted-foreground">Verfügbare Drehs</dt>
+            <dd class="text-[15px] font-medium tabular-nums text-foreground" data-rewards-wert="drehs2" data-konto-persoenlich>…</dd>
+          </div>
+        </dl>
+
+        {/*
+          Der Ladefehler. Sichtbar nur, wenn der Aufruf wirklich
+          gescheitert ist - nicht bei einem leeren Konto.
+        */}
+        <div
+          id="rewardsFehler"
+          class="mt-5 border border-primary/40 bg-primary/[0.07] px-4 py-3 text-sm"
+          role="status"
+          aria-live="polite"
+          hidden
+        >
+          <strong class="block font-semibold text-foreground">Ihr Rewards-Stand ist gerade nicht abrufbar.</strong>
+          <span class="mt-1 block text-muted-foreground">
+            Das ist ein Ladefehler und bedeutet nicht, dass Ihr Konto leer ist.
+          </span>
+          <button
+            type="button"
+            id="rewardsErneut"
+            class="mt-3 border border-border px-3 py-1.5 text-xs text-foreground transition-colors duration-150 hover:border-primary"
+          >Erneut versuchen</button>
+        </div>
+      </article>
+    </div>
+
+    {/* ── Schnellaktionen ──────────────────────────────────────── */}
+    <article class="mt-5 border border-border bg-card p-6 lg:p-8">
+      <h2 class="text-[22px] font-semibold tracking-[-0.02em] text-foreground">Schnellaktionen</h2>
+      <div class="mt-6 flex flex-wrap gap-3">
+        {SCHNELLAKTIONEN.map((a) => (
+          <a
+            href={a.ziel}
+            class="border border-border px-4 py-2.5 text-sm text-foreground transition-colors duration-150 hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >{a.text}</a>
+        ))}
+        <button
+          type="button"
+          id="kontoAbmelden"
+          class="border border-border px-4 py-2.5 text-sm text-foreground transition-colors duration-150 hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >Abmelden</button>
+      </div>
+      <p
+        id="kontoAbmeldefehler"
+        class="mt-4 border border-primary/40 bg-primary/[0.07] px-4 py-3 text-sm text-foreground"
+        role="status"
+        aria-live="polite"
+        hidden
+      ></p>
+    </article>
+  </div>
+
+  <script is:inline slot="skript">
+    (async function () {
+      const { gesperrt, auth } = await window.tgKontoBereit;
+      if (gesperrt) return;
+
+      const feld = (name) => document.querySelector('[data-feld="' + name + '"]');
+      const wert = (name) => document.querySelector('[data-rewards-wert="' + name + '"]');
+
+      /* ── 1. Die Angaben aus der Sitzung ──────────────────────────── */
+      const profil = auth && typeof auth.getProfile === 'function' ? auth.getProfile() : {};
+      const schnappschuss = auth && typeof auth.getSessionSnapshot === 'function'
+        ? auth.getSessionSnapshot() : null;
+      const nutzer = schnappschuss && schnappschuss.user ? schnappschuss.user : null;
+
+      const text = (v, ersatz) => (v && String(v).trim() ? String(v).trim() : ersatz);
+      const setze = (knoten, v) => { if (knoten) knoten.textContent = v; };
+
+      const name = text(
+        profil.fullName || [profil.firstName, profil.lastName].filter(Boolean).join(' ')
+          || (nutzer && nutzer.user_metadata && nutzer.user_metadata.full_name),
+        'Kunde',
+      );
+      const email = text(profil.email || (nutzer && nutzer.email), '—');
+      const telefon = text(
+        profil.phone || (nutzer && nutzer.user_metadata && nutzer.user_metadata.phone),
+        '—',
+      );
+      const seit = profil.registeredAt || (nutzer && nutzer.created_at) || null;
+      const jahr = seit ? new Date(seit).getFullYear() : null;
+
+      setze(feld('name'), name);
+      setze(feld('name2'), name);
+      setze(feld('email'), email);
+      setze(feld('telefon'), telefon);
+      setze(feld('mitglied'), jahr ? 'Mitglied seit: ' + jahr : 'Mitglied seit: —');
+      setze(
+        feld('initialen'),
+        name && name !== 'Kunde'
+          ? name.split(/\s+/).filter(Boolean).slice(0, 2).map((t) => t.charAt(0).toUpperCase()).join('')
+          : 'K',
+      );
+
+      /* ── 2. Der Rewards-Stand ────────────────────────────────────── */
+      const FELDER = {
+        punkte: 'points_balance',
+        level: 'level',
+        drehs: 'available_spins',
+        drehs2: 'available_spins',
+        fahrten: 'qualifying_rides',
+      };
+      const STUFEN = { bronze: 'Bronze', silver: 'Silber', gold: 'Gold', platinum: 'Platin', vip: 'VIP' };
+
+      const zahl = (v) => (Number.isFinite(Number(v)) ? new Intl.NumberFormat('de-DE').format(Number(v)) : String(v));
+      const stufe = (v) => {
+        const s = String(v || '').trim().toLowerCase();
+        if (!s) return '—';
+        return STUFEN[s] || (s.charAt(0).toUpperCase() + s.slice(1));
+      };
+
+      const fehlerkasten = document.getElementById('rewardsFehler');
+
+      function zeigeZustand(zustand, daten) {
+        if (fehlerkasten) fehlerkasten.hidden = zustand !== 'fehler';
+        for (const name of Object.keys(FELDER)) {
+          const knoten = wert(name);
+          if (!knoten) continue;
+          if (zustand === 'lade') { knoten.textContent = '…'; continue; }
+          if (zustand === 'fehler') { knoten.textContent = '–'; continue; }
+          const roh = daten ? daten[FELDER[name]] : null;
+          if (roh === null || roh === undefined || roh === '') { knoten.textContent = '—'; continue; }
+          knoten.textContent = name === 'level' ? stufe(roh) : zahl(roh);
+        }
+      }
+
+      async function ladeRewards() {
+        zeigeZustand('lade');
+        if (!auth || typeof auth.getClient !== 'function') { zeigeZustand('fehler'); return; }
+        try {
+          const client = await auth.getClient();
+          if (!client || typeof client.rpc !== 'function') { zeigeZustand('fehler'); return; }
+          const antwort = await client.rpc('get_my_rewards_overview');
+          // Ein Fehler ist ein Fehler. Kein Ausweichen auf "leer".
+          if (antwort.error || !antwort.data) { zeigeZustand('fehler'); return; }
+          zeigeZustand('daten', antwort.data);
+        } catch (_e) {
+          zeigeZustand('fehler');
+        }
+      }
+
+      const erneut = document.getElementById('rewardsErneut');
+      if (erneut) erneut.addEventListener('click', ladeRewards);
+      await ladeRewards();
+
+      /* ── 3. Abmelden ─────────────────────────────────────────────── */
+      window.tgKontoAbmelden(document.getElementById('kontoAbmelden'));
+    })();
+  </script>
+</Kontoseite>

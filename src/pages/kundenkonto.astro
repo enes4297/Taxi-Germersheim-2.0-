@@ -1,0 +1,77 @@
+---
+/**
+ * Kundenkonto — die bestehende Weiterleitung auf meinkonto.html.
+ *
+ * ═══════════════════════════════════════════════════════════════════════
+ * DIESE SEITE IST EIN WEGWEISER, KEINE SEITE
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * Sie existiert, weil die Adresse `kundenkonto.html` verlinkt war und
+ * verlinkt bleiben darf. Sie tut genau das, was sie im Bestand tat:
+ *
+ *   1. `<meta http-equiv="refresh" content="0; url=meinkonto.html">`
+ *      - fuer Besucher ohne JavaScript
+ *   2. `location.replace('meinkonto.html')`
+ *      - ersetzt den Eintrag im Verlauf, damit die Zurueck-Taste nicht
+ *        in einer Schleife landet
+ *   3. ein sichtbarer Verweis
+ *      - falls beides nicht greift
+ *   4. `robots: noindex,follow` und `canonical` auf meinkonto.html
+ *      - damit nicht zwei Adressen fuer dieselbe Seite im Index stehen
+ *
+ * Alle vier Punkte sind aus dem Bestand uebernommen.
+ *
+ * Bewusst OHNE den gemeinsamen Seitenrahmen: Kopfzeile, Navigation und
+ * Fusszeile zu laden, um sie nach Millisekunden wieder zu verlassen,
+ * waere verschwendete Ladezeit. Der Bestand hielt es genauso.
+ */
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta http-equiv="refresh" content="0; url=meinkonto.html" />
+    <meta name="theme-color" content="#18181b" />
+    <title>Kundenkonto | Taxi Germersheim GmbH</title>
+    <meta name="description" content="Kundenkonto von Taxi Germersheim." />
+    <meta name="robots" content="noindex,follow" />
+    <link rel="canonical" href="https://taxigermersheim.de/meinkonto.html" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: system-ui, sans-serif;
+        background: #18181b;
+        color: #f0ebe0;
+      }
+      body {
+        min-height: 100vh;
+        min-height: 100dvh;
+        margin: 0;
+        padding: 24px;
+        display: grid;
+        place-items: center;
+        box-sizing: border-box;
+      }
+      p {
+        margin: 0;
+        color: rgba(240, 235, 224, 0.64);
+        font-size: 0.875rem;
+        line-height: 1.6;
+        text-align: center;
+      }
+      a {
+        color: #c8a96e;
+        text-underline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Weiterleitung zu <a href="meinkonto.html">Mein Konto</a> …</p>
+    <script is:inline>
+      window.location.replace('meinkonto.html');
+    </script>
+  </body>
+</html>
