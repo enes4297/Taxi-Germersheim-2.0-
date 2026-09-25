@@ -1568,7 +1568,7 @@ body.tg-public.auth-page .auth-spotlight {
     linear-gradient(0deg, rgba(3, 4, 5, 0.94), rgba(3, 4, 5, 0.08) 70%),
     linear-gradient(90deg, rgba(3, 4, 5, 0.62), transparent 72%),
     radial-gradient(ellipse at 52% 44%, rgba(231, 189, 85, 0.08), transparent 68%),
-    url("admin/images/mercedes-v-klasse-ger-tx-800-premium.jpg.png") center / contain no-repeat #070809;
+    url("assets/spielewelt/ger-tx-800-hintergrund.webp") center / contain no-repeat #070809;
   box-shadow: none;
 }
 

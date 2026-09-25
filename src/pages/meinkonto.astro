@@ -206,6 +206,19 @@ const KENNZAHLEN = [
       const { gesperrt, auth } = await window.tgKontoBereit;
       if (gesperrt) return;
 
+      /*
+        DER ABMELDEKNOPF WIRD ZUERST VERDRAHTET.
+
+        GEMESSENER BEFUND (Schritt 024): Vorher stand diese Zeile ganz
+        unten, hinter `await ladeRewards()`. Bei einer langsamen Antwort
+        war der Knopf so lange tot - der Kunde drueckte "Abmelden", und
+        nichts geschah. Bei drei Sekunden Antwortzeit waren es drei
+        Sekunden ohne Wirkung.
+
+        Abmelden muss immer gehen, und zwar sofort.
+      */
+      window.tgKontoAbmelden(document.getElementById('kontoAbmelden'));
+
       const feld = (name) => document.querySelector('[data-feld="' + name + '"]');
       const wert = (name) => document.querySelector('[data-rewards-wert="' + name + '"]');
 
@@ -276,16 +289,27 @@ const KENNZAHLEN = [
       }
 
       async function ladeRewards() {
+        // Der Sitzungsstand VOR der Abfrage. Aendert er sich, ist der
+        // Kunde inzwischen abgemeldet - dann wird die Antwort verworfen
+        // und nichts mehr geschrieben.
+        const stand = window.tgKontoStand();
+        const nochGueltig = () => stand === window.tgKontoStand();
+
         zeigeZustand('lade');
         if (!auth || typeof auth.getClient !== 'function') { zeigeZustand('fehler'); return; }
         try {
           const client = await auth.getClient();
+          if (!nochGueltig()) return;
           if (!client || typeof client.rpc !== 'function') { zeigeZustand('fehler'); return; }
+
           const antwort = await client.rpc('get_my_rewards_overview');
+          if (!nochGueltig()) return;
+
           // Ein Fehler ist ein Fehler. Kein Ausweichen auf "leer".
           if (antwort.error || !antwort.data) { zeigeZustand('fehler'); return; }
           zeigeZustand('daten', antwort.data);
         } catch (_e) {
+          if (!nochGueltig()) return;
           zeigeZustand('fehler');
         }
       }
@@ -293,9 +317,6 @@ const KENNZAHLEN = [
       const erneut = document.getElementById('rewardsErneut');
       if (erneut) erneut.addEventListener('click', ladeRewards);
       await ladeRewards();
-
-      /* ── 3. Abmelden ─────────────────────────────────────────────── */
-      window.tgKontoAbmelden(document.getElementById('kontoAbmelden'));
     })();
   </script>
 </Kontoseite>

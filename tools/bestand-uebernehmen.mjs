@@ -147,12 +147,19 @@ const WURZELDATEIEN = [
   // Schritt 021 entfernt: auth-demo.css, kunden-einstellungen.css,
   // live-ride.css, meinefahrten.css und wallet-gutscheine.css. Sie
   // gehoerten ausschliesslich zu den sechs Kontoseiten.
-  'home-luxury.css', 'public-premium-v2.css',
-  'public-states.css', 'public-system.css', 'public-visual-repair.css',
+  // Schritt 024 entfernt: home-luxury.css, public-premium-v2.css und
+  // public-states.css. Gemessen ueber ALLE 213 durchsuchbaren Dateien
+  // des Ausgabeordners - admin/, fahrer/ und dashboard/ eingeschlossen:
+  // Kein Verweis. public-states.css verwies als einzige auf
+  // home-luxury.css; faellt sie weg, ist auch jene verwaist.
+  'public-system.css', 'public-visual-repair.css',
   'spiele.css', 'style.css', 'taxi-rush.css',
   // Skripte
-  'customer-auth.js', 'home-luxury.js',
-  'public-premium-v2.js', 'public-system.js', 'rewards-customer.js', 'script.js',
+  // Schritt 024 entfernt: home-luxury.js, public-premium-v2.js und
+  // script.js - ebenfalls ohne einen einzigen Verweis. script.js allein
+  // sind 278 KB.
+  'customer-auth.js',
+  'public-system.js', 'rewards-customer.js',
   'gluecksrad.js', 'spiele.js', 'taxi-rush.js',
   // Bilder
   'logo.png', 'yumak-avatar.png',

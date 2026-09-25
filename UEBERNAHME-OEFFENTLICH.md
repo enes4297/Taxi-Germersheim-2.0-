@@ -977,49 +977,176 @@ jeder Veröffentlichung.
 
 ---
 
-## 17. Nächster Schritt
+---
 
-> **Die vollständige Bestandsaufnahme der öffentlichen Webseite steht in
-> `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`** — was fertig ist, was fehlt, was
-> ohne Rückfrage machbar ist, und was eine Entscheidung braucht.
+## 17. Die Qualitätsrunde (Schritt 024)
 
-**Die Schritte 017 bis 021 sind erledigt** — Abschnitt 11 bis 16 hier,
-Abschnitt 8 bis 14 der Bestandsaufnahme. Einmalig vorgezogen und ebenfalls
-erledigt: Schritt 022 (Glücksrad) und Schritt 023 (Taxi Rush).
+**Die ausführliche Fassung steht in `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`,
+Abschnitt 15.** Hier nur, was Bau und Übernahme betrifft.
+
+### Sechs Dateien weniger in der Übernahmeliste
+
+| Datei | Größe | Befund |
+|---|---|---|
+| `script.js` | 278 KB | kein Verweis |
+| `public-premium-v2.css` | 74 KB | kein Verweis |
+| `public-states.css` | 71 KB | kein Verweis |
+| `home-luxury.css` | 40 KB | nur von `public-states.css` |
+| `home-luxury.js` | 7 KB | kein Verweis |
+| `public-premium-v2.js` | 1 KB | kein Verweis |
+
+Gemessen über **alle 213 durchsuchbaren Dateien** des Ausgabeordners,
+`admin/`, `fahrer/` und `dashboard/` eingeschlossen. Der Prüflauf
+`qualitaet-pruefen` wiederholt diese Gegenprobe bei jedem Lauf.
+
+**Nicht entfernt, weil gebraucht:** `logo.png` (63 Seiten in `admin/`
+und `fahrer/`), `yumak-avatar.png` (Bild auf der Startseite, lädt erst
+beim Scrollen), `style.css`, `public-system.*`,
+`public-visual-repair.css`, `rewards-customer.js`. Die vorbereiteten
+Yumak-Medien wurden nicht angefasst.
+
+### Neuer Ordner `assets/spielewelt/`
+
+Zwei Hintergrundbilder der Spielewelt, nach WebP umgerechnet:
+
+```
+assets/spielewelt/ger-tx-100-hintergrund.webp    206 KB  (vorher 2679 KB)
+assets/spielewelt/ger-tx-800-hintergrund.webp    174 KB  (vorher 2436 KB)
+```
+
+`assets/` wird als Ganzes übernommen — kein neuer Eintrag nötig.
+
+**Die Originale in `admin/images/` bleiben liegen und unverändert.**
+Geändert wurden nur `spiele.css` (5 Verweise) und `public-system.css`
+(1 Verweis). Wer dort ein Hintergrundbild ergänzt, nimmt eine Datei aus
+`assets/`, keine aus `admin/images/` — dort liegen unkomprimierte
+Vorlagen im Megabyte-Bereich.
+
+### Neu im gemeinsamen Kontogerüst
+
+`Kontoseite.astro` stellt zwei Funktionen bereit:
+
+```js
+window.tgKontoStand()     // Zähler, steigt bei jeder Abmeldung
+window.tgKontoRaeumen()   // leert alles Persönliche und zählt hoch
+```
+
+**Wer eine Kontoseite um eine Abfrage erweitert, prüft den Stand:**
+
+```js
+const stand = window.tgKontoStand();
+const antwort = await abfrage();
+if (stand !== window.tgKontoStand()) return;   // abgemeldet, verwerfen
+```
+
+Ohne das schreibt eine verspätete Antwort persönliche Daten zurück auf
+den Bildschirm. Genau das war der Befund. Listen, die ausgeräumt werden
+sollen, tragen `data-konto-liste`; Einzelwerte `data-konto-persoenlich`.
+
+### Neuer Prüflauf
+
+```
+npm run qualitaet-pruefen      → 45 Prüfpunkte
+```
+
+Port 5289. Netzverkehr nach außen abgeschnitten, `window.open`
+abgefangen, `window.CustomerAuth` durch eine Attrappe ersetzt.
+
+### Eine Vorbedingung, die im Prüflauf fehlt
+
+`pruefe-rewards.mjs` startet **keinen eigenen Server**, sondern erwartet
+einen auf Port 5200:
+
+```
+npm run preview -- --port 5200
+```
+
+Läuft keiner, bricht der Lauf mit `ERR_CONNECTION_REFUSED` ab — das ist
+kein Rückschritt an der Seite. Alle übrigen Prüfläufe bringen ihren
+Server selbst mit.
+
+
+## 18. Was noch offen ist
+
+> **Die vollständige Bestandsaufnahme steht in
+> `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`.**
+
+**Die Schritte 017 bis 024 sind erledigt** — Abschnitt 11 bis 17 hier,
+Abschnitt 8 bis 15 der Bestandsaufnahme.
 
 Die verbindliche Reihenfolge bleibt: öffentliche Webseite,
 Mitarbeiterportal, Zentrale, danach Rewards, Yumak und Spiele.
 
-### Die Übernahme ist damit abgeschlossen
+### Die öffentliche Webseite ist gebaut und durchgeprüft
 
-**19 von 20 öffentlichen Seiten kommen aus Astro.** Aus dem Bestand stammt
-nur noch `spiele.html` — und die gehört zu Punkt 4 der Reihenfolge, nicht
-zur öffentlichen Webseite im engeren Sinn.
+19 von 20 Seiten kommen aus Astro; aus dem Bestand stammt nur noch
+`spiele.html`. Die Qualitätsrunde hat fünf Fehler gefunden und behoben.
 
-Was jetzt noch fehlt, ist **keine Übernahme mehr**, sondern:
+**Nichts davon ersetzt die vier Punkte unten.** Sie sind keine Bauarbeit
+mehr, sondern Prüfung, Entscheidung und Zuarbeit.
 
-1. **Die Korrekturen aus `feature/011`** (Abschnitt 2). Voraussetzung
-   jeder Veröffentlichung, unverändert offen.
+---
+
+### A. Vor einer Veröffentlichung zwingend erforderlich
+
+1. **Die Korrekturen aus `feature/011`** (Abschnitt 2). Unverändert
+   offen, seit dem ersten Schritt.
 2. **Die echte Anmeldung prüfen.** Anleitung in
-   `ANLEITUNG-ANMELDETEST.md`. Alle bisherigen Kontoprüfungen liefen mit
-   Attrappen; die produktive Instanz wurde nie angefragt.
-3. **Die Rechte klären** — ob ein angemeldeter Kunde
-   `get_my_rewards_overview`, `rewards_vouchers` und `spin_rewards_wheel`
-   überhaupt ausführen darf. Das steht in den Grants und Policies der
-   produktiven Instanz, nicht in einer lokalen Datei.
-4. **Die Entscheidungen E1 bis E8 und die Fragen I1 bis I6** aus der
-   Bestandsaufnahme. Darunter E1: Kunden haben auf `rides` keine Rechte,
-   weshalb „Meine Fahrten" und „Fahrtstatus" ohne Daten bleiben.
-5. **Eine abschließende Qualitätsrunde.** Vorgemerkt sind dafür:
-   - der Yumak-Startfehler (Abschnitt 10); solange er offen ist, bleibt
-     `STANDBILD_NUR = true`;
-   - Taxi Rush im Querformat eines Handys (844 × 390): Das Spiel passt
-     samt Bedienleiste nicht vollständig ins Bild (Abschnitt 13.9 der
-     Bestandsaufnahme, Punkt 3);
-   - eine Aufräumrunde für `script.js`, `home-luxury.*`,
-     `public-premium-v2.*` und `public-states.css` — sie stehen noch in
-     der Übernahmeliste, gehören aber zu Seiten, die längst aus Astro
-     kommen;
-   - fünf aufbereitete Yumak-Clips, weder farbkorrigiert noch verwendet.
+   `ANLEITUNG-ANMELDETEST.md`. Sämtliche Kontoprüfungen liefen bisher mit
+   Attrappen; die produktive Instanz wurde nie angefragt. Solange das so
+   ist, ist unbewiesen, dass sich überhaupt jemand anmelden kann.
+3. **Die Rechte in der produktiven Datenbank klären.** Ob ein
+   angemeldeter Kunde `get_my_rewards_overview`, `rewards_vouchers` und
+   `spin_rewards_wheel` ausführen darf, steht in den Grants und Policies
+   — nicht in einer lokalen Datei. Ungeprüft.
+4. **Der Yumak-Startfehler.** Solange er offen ist, bleibt
+   `STANDBILD_NUR = true`. Dazu gehört die Frage, warum die automatisierte
+   Prüfung ihn nicht erfasst hat.
+
+### B. Entscheidungen des Auftraggebers
+
+1. **Das Hero-Video wiegt beim ersten Besuch 22,5 MB (PC) bzw. 9,2 MB
+   (Handy).** Gemessen mit Bereichsanfragen, sechs Sekunden nach dem
+   Laden. Es ist freigegeben und wurde nicht angefasst. Wer das ändern
+   möchte, entscheidet zwischen: kürzer schneiden, stärker komprimieren,
+   erst auf Klick laden — oder so lassen.
+2. **Ein Feld „Fahrtrichtung" bei Flughafenanfragen.** Eine Fahrt *vom*
+   Flughafen hat ihn als Abhol-, nicht als Zieladresse. Das wäre eine
+   neue Pflichtangabe im Formular.
+3. **Die offenen Fachfragen E1 bis E8** der Bestandsaufnahme, darunter:
+   Kunden haben auf `rides` keine Rechte, weshalb „Meine Fahrten" und
+   „Fahrtstatus" ohne Daten bleiben; was bei einem abgebrochenen
+   Glücksrad-Dreh geschieht; was „Yumaks Box" für den Kunden bedeutet.
+4. **Eine echte Online-Annahme für Fahrtanfragen.** Heute endet jeder Weg
+   bei WhatsApp oder Telefon. Das ist bewusst so und ehrlich benannt —
+   aber es ist eine Entscheidung, keine technische Grenze.
+
+### C. Angaben, die vom ITler kommen müssen
+
+Die Fragen I1 bis I6 der Bestandsaufnahme. Im Kern:
+
+1. **Wo und wie wird die Seite ausgeliefert?** Davon hängt ab, ob eine
+   echte HTTP-404-Antwort möglich ist (heute gibt es nur die gestaltete
+   `404.html`) und ob Kompression aktiv ist — ohne sie wären aus 16 KB
+   Logo wieder 231 KB.
+2. **Die Weiterleitungen der bestehenden WordPress-Adressen** auf die
+   neuen Seiten.
+3. **Die Supabase-Rückkehradressen** für Bestätigungs- und Reset-Mails.
+   Eine ausbleibende Mail beweist nicht, dass sie falsch stehen (siehe
+   Abschnitt 8.8 der Bestandsaufnahme) — geprüft ist es trotzdem nicht.
+
+### D. Bewusst später vorgesehen
+
+1. **Taxi Rush im Querformat** (844 × 390): Das Spiel passt samt
+   Bedienleiste nicht vollständig ins Bild. Hochkant passt alles; der
+   Auftraggeber hat es auf einem echten Gerät gespielt und für gut
+   befunden. Gehört zu Punkt 4 der Reihenfolge.
+2. **Fünf aufbereitete Yumak-Clips**, weder farbkorrigiert noch
+   verwendet.
+3. **`spiele.html`** ist die letzte Bestandsseite. Ihr Umbau gehört
+   ebenfalls zu Punkt 4.
+4. **`logo.png` mit 566 KB** wird von 63 Seiten in `admin/` und `fahrer/`
+   geladen. Eine Verkleinerung gehört zum Mitarbeiterportal, nicht zur
+   öffentlichen Webseite.
 
 **Kein Push, Merge oder Deployment** ohne ausdrückliche Freigabe.

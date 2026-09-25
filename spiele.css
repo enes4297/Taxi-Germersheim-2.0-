@@ -60,7 +60,7 @@ body.gameworld-body::after {
   background:
     linear-gradient(90deg, rgba(5, 5, 5, 0.98) 0%, rgba(5, 5, 5, 0.78) 42%, rgba(5, 5, 5, 0.1) 78%),
     linear-gradient(0deg, rgba(5, 5, 5, 0.94) 0%, rgba(5, 5, 5, 0.1) 45%, rgba(5, 5, 5, 0.34) 100%),
-    url("admin/images/mercedes-v-klasse-ger-tx-800-premium.jpg.png") 76% 48% / min(880px, 68vw) auto no-repeat,
+    url("assets/spielewelt/ger-tx-800-hintergrund.webp") 76% 48% / min(880px, 68vw) auto no-repeat,
     #080909;
 }
 
@@ -1137,7 +1137,7 @@ body.gameworld-body::after {
   border-top: 1px solid var(--gw-line);
   background:
     linear-gradient(90deg, rgba(5, 5, 5, 0.98), rgba(5, 5, 5, 0.54)),
-    url("admin/images/mercedes-e-klasse-ger-tx-100-premium.jpg.png") 84% 52% / min(640px, 52vw) auto no-repeat,
+    url("assets/spielewelt/ger-tx-100-hintergrund.webp") 84% 52% / min(640px, 52vw) auto no-repeat,
     #080909;
 }
 
@@ -1170,7 +1170,7 @@ body.gameworld-body::after {
     background:
       linear-gradient(90deg, rgba(5, 5, 5, 0.98), rgba(5, 5, 5, 0.65) 58%, rgba(5, 5, 5, 0.2)),
       linear-gradient(0deg, rgba(5, 5, 5, 0.96), transparent 54%),
-      url("admin/images/mercedes-v-klasse-ger-tx-800-premium.jpg.png") 82% 36% / min(760px, 82vw) auto no-repeat,
+      url("assets/spielewelt/ger-tx-800-hintergrund.webp") 82% 36% / min(760px, 82vw) auto no-repeat,
       #080909;
   }
 
@@ -1230,7 +1230,7 @@ body.gameworld-body::after {
     align-items: flex-end;
     background:
       linear-gradient(0deg, rgba(5, 5, 5, 0.98) 0%, rgba(5, 5, 5, 0.78) 48%, rgba(5, 5, 5, 0.22) 100%),
-      url("admin/images/mercedes-v-klasse-ger-tx-800-premium.jpg.png") 54% 18% / 620px auto no-repeat,
+      url("assets/spielewelt/ger-tx-800-hintergrund.webp") 54% 18% / 620px auto no-repeat,
       #080909;
   }
 
@@ -1350,7 +1350,7 @@ body.gameworld-body::after {
     min-height: 540px;
     background:
       linear-gradient(0deg, rgba(5, 5, 5, 0.98), rgba(5, 5, 5, 0.5)),
-      url("admin/images/mercedes-e-klasse-ger-tx-100-premium.jpg.png") 64% 20% / 560px auto no-repeat,
+      url("assets/spielewelt/ger-tx-100-hintergrund.webp") 64% 20% / 560px auto no-repeat,
       #080909;
   }
 }

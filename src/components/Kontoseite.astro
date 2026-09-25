@@ -298,6 +298,50 @@ const {
       ist als das Auge. Bleibt sie aus - kein Netz, ein Fehler -, standen
       Name, Telefon und E-Mail weiter auf dem Bildschirm.
     */
+    /*
+      DER SITZUNGSSTAND — gegen verspaetete Antworten.
+
+      GEMESSENER BEFUND (Schritt 024): `display: none` schuetzt nur die
+      Darstellung. Laeuft beim Abmelden noch eine Abfrage, kommt ihre
+      Antwort DANACH an und schreibt die persoenlichen Angaben wieder auf
+      den Bildschirm. Gemessen an wallet-gutscheine.html: Der
+      Gutscheincode stand nach dem Abmelden wieder da.
+
+      Deshalb zaehlt dieser Stand bei jeder Abmeldung eins hoch. Jede
+      Seite merkt sich den Stand VOR ihrer Abfrage und verwirft die
+      Antwort, wenn er sich inzwischen geaendert hat:
+
+          const stand = window.tgKontoStand();
+          const antwort = await irgendeineAbfrage();
+          if (stand !== window.tgKontoStand()) return;   // verwerfen
+
+      Das ersetzt keine Rechtepruefung auf dem Server - es verhindert
+      nur, dass der Browser Daten zeigt, die niemand mehr sehen soll.
+    */
+    let sitzungsstand = 1;
+    window.tgKontoStand = function () { return sitzungsstand; };
+
+    /**
+     * Alles Persoenliche vom Bildschirm nehmen und laufende Antworten
+     * ungueltig machen.
+     *
+     * Eine benannte Funktion und nicht drei Zeilen im Abmeldeknopf:
+     * So laesst sie sich pruefen, und eine spaetere Stelle - etwa eine
+     * abgelaufene Sitzung - kann dasselbe tun, ohne es nachzubauen.
+     */
+    window.tgKontoRaeumen = function () {
+      sitzungsstand += 1;
+      document.querySelectorAll('[data-konto-persoenlich]').forEach((el) => {
+        el.textContent = '—';
+      });
+      // Ganze Listen - etwa die Gutscheine - werden ausgeraeumt, nicht
+      // nur auf einen Strich gesetzt.
+      document.querySelectorAll('[data-konto-liste]').forEach((el) => {
+        el.replaceChildren();
+        el.setAttribute('aria-busy', 'false');
+      });
+    };
+
     window.tgKontoAbmelden = function (knopf) {
       if (!knopf) return;
       knopf.addEventListener('click', async function () {
@@ -306,10 +350,9 @@ const {
         knopf.disabled = true;
         knopf.textContent = 'Wird abgemeldet …';
 
-        // Erst leeren, dann abmelden.
-        document.querySelectorAll('[data-konto-persoenlich]').forEach((el) => {
-          el.textContent = '—';
-        });
+        // ZUERST aufraeumen. Ab hier ist jede noch laufende Antwort
+        // ungueltig - auch die, die in dieser Millisekunde ankommt.
+        window.tgKontoRaeumen();
 
         try {
           const auth = window.CustomerAuth;

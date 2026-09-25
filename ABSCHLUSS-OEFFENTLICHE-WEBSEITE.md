@@ -1958,3 +1958,255 @@ Anmeldung selbst, an `signInWithPassword`, `signUp`, `signOut`,
 Handys (844 × 390) passt das Spiel samt Bedienleiste nicht vollständig ins
 Bild; Boost und Lenkpfeile sind erst nach kurzem Scrollen zu sehen. Siehe
 Abschnitt 13.9, Punkt 3 — für die abschließende Qualitätsrunde vorgemerkt.
+
+---
+
+## 15. Schritt 024 — Die abschließende Qualitätsrunde
+
+Branch `feature/024-qualitaetsrunde`, abgezweigt von
+`feature/021-kontoseiten` (`eb98f9e`).
+
+Keine Übernahme mehr, sondern ein Durchgang über den fertigen Auftritt:
+Was ist noch falsch, unklar oder unnötig schwer?
+
+### 15.1 Fünf gemessene Fehler, alle behoben
+
+#### (1) Eine verspätete Antwort brachte persönliche Daten zurück
+
+Der Auftrag nannte es ausdrücklich: *„`display:none` schützt lediglich
+die Darstellung."* Genau daran hing ein echter Fehler.
+
+**Gemessen** mit einer Antwortzeit von drei Sekunden: Meldet sich jemand
+ab, während die Abfrage noch läuft, kommt deren Antwort **danach** an —
+und schrieb die Werte zurück auf den Bildschirm.
+
+| Seite | vorher | nachher |
+|---|---|---|
+| `wallet-gutscheine.html` | Gutscheincode `TG-GEHEIM-1` stand nach dem Abmelden wieder da | nichts |
+| `meinkonto.html` | Name „Test Kundin" stand wieder da | nichts |
+
+Behoben mit einem **Sitzungsstand**: `window.tgKontoStand()` zählt bei
+jeder Abmeldung hoch. Jede Seite merkt sich den Stand vor ihrer Abfrage
+und verwirft die Antwort, wenn er sich geändert hat.
+
+```js
+const stand = window.tgKontoStand();
+const antwort = await abfrage();
+if (stand !== window.tgKontoStand()) return;   // verwerfen
+```
+
+Das Aufräumen selbst ist jetzt eine benannte Funktion
+(`window.tgKontoRaeumen()`), damit es prüfbar ist und eine spätere Stelle
+— etwa eine abgelaufene Sitzung — dasselbe tun kann, ohne es nachzubauen.
+
+> **Was das NICHT ist:** eine Rechteprüfung. Es verhindert nur, dass der
+> Browser zeigt, was niemand mehr sehen soll. Ob der Server die Daten
+> überhaupt herausgeben darf, bleibt eine Frage der Grants und Policies —
+> unverändert offen.
+
+**Ebenfalls gemessen und in Ordnung:** Ohne Sitzung wird **gar nichts**
+angefordert. Weder `meinkonto.html` noch `wallet-gutscheine.html` ruft
+`getClient()`, `rpc()` oder `from()` auf, solange die Sperre greift.
+
+#### (2) Der Abmeldeknopf war wirkungslos, solange geladen wurde
+
+Auf `meinkonto.html` stand die Verdrahtung des Abmeldeknopfs **hinter**
+`await ladeRewards()`. Bei drei Sekunden Antwortzeit waren das drei
+Sekunden, in denen ein Druck auf „Abmelden" nichts tat.
+
+Jetzt wird der Knopf **als Erstes** verdrahtet. Gemessen: Er greift,
+während die Kennzahlen noch auf „…" stehen.
+
+#### (3) Serien- und Firmenanfragen trugen eine fremde Leistung
+
+Der Auftrag nannte auch das ausdrücklich. Es stimmte:
+
+| Fahrtart | angezeigt (vorher) |
+|---|---|
+| Serienfahrt, ohne Vorwahl | **Taxi** — nie gewählt, nur vorbelegt |
+| Serienfahrt nach Flughafenwahl | **Flughafentransfer** — übernommen |
+| Firmenkonto nach Krankenfahrt | **Krankenfahrten** — übernommen |
+
+`fahrtartSetzen()` setzte die Leistung nur, wenn die Fahrtart eine hatte
+— nahm eine vorhandene aber nie weg. Serienfahrt und Firmenkonto haben
+bewusst `leistung: null`.
+
+Jetzt steht dort die **Fahrtart selbst** — das, was der Kunde wirklich
+angeklickt hat:
+
+> vorher: `GEWÄHLTE LEISTUNG  Flughafentransfer`
+> nachher: `IHRE ANFRAGE  Serienfahrten`
+
+Und die Nachricht an die Zentrale trägt gar keine `Leistung:`-Zeile mehr,
+wenn es keine gibt. Vorher wäre dort eine Angabe gestanden, die der Kunde
+nie gemacht hat. Fahrtarten **mit** Leistung zeigen sie unverändert.
+
+#### (4) Flughafen und Ziel standen unverbunden nebeneinander
+
+In der Nachricht:
+
+```
+Zieladresse: Testziel 2
+…
+Flughafen: Frankfurt Airport FRA
+```
+
+Welche Angabe gilt? Das musste die Zentrale raten.
+
+Jetzt wird ein **leeres** Zielfeld mit dem gewählten Flughafen gefüllt.
+Ein bereits ausgefülltes Ziel wird **nie** überschrieben — gemessen mit
+„Hotel Mustermann, Speyer": bleibt stehen.
+
+> **Offen und als Vorschlag unten:** Eine Fahrt *vom* Flughafen hat ihn
+> als Abhol-, nicht als Zieladresse. Dafür bräuchte es ein Feld
+> „Fahrtrichtung". Das ist eine neue Pflichtangabe und damit eine
+> Entscheidung des Auftraggebers, keine stille Änderung.
+
+#### (5) Der Anfragedialog ließ den Fokus draußen
+
+Der Dialog trägt `role="dialog"` und `aria-modal="true"` — verspricht
+also, dass nichts dahinter erreichbar ist. Gemessen stand der Fokus beim
+Öffnen noch auf der Sprungmarke am Seitenanfang. Wer mit der Tastatur
+arbeitet, wanderte mit Tab durch die Seite **hinter** dem offenen Dialog.
+
+Behoben in drei Teilen, alle gemessen:
+1. Beim Öffnen fährt der Fokus ins erste Eingabefeld (`dlg-pickup`).
+2. Die Tabulatortaste läuft im Dialog um und verlässt ihn nicht.
+3. Beim Schließen kehrt der Fokus auf den öffnenden Knopf zurück —
+   geprüft auf `index.html` („Fahrt anfragen") und `spezial-anfrage.html`
+   („Anfrage vorbereiten").
+
+### 15.2 Ladeverhalten — mit einer Korrektur an meiner eigenen Messung
+
+> **Erst falsch gemessen, dann richtig.** Ein erster Durchgang meldete
+> das Logo mit 231 KB auf jeder Seite und die Startseite mit 25,2 MB.
+> Beides war ein Fehler meines Prüfservers: Er lieferte unkomprimiert
+> aus, und die Zählung addierte `dataReceived` und `loadingFinished` —
+> also jedes Byte zweimal.
+
+Richtig gemessen:
+
+| Datei | roh | gzip | brotli |
+|---|---|---|---|
+| `taxi-germersheim-logo.svg` | 231 KB | 21 KB | **16 KB** |
+| `style.css` | 311 KB | 45 KB | **36 KB** |
+| `_astro/…css` (Design) | 68 KB | 11 KB | **9 KB** |
+
+**Das Logo ist also kein Befund.** Eine vorbereitete Verkleinerung wurde
+verworfen — sie hätte 14 % gebracht, bei einem Wert, der über die Leitung
+ohnehin 16 KB beträgt.
+
+Was sich **nicht** wegkomprimieren lässt, sind Bilder und Video. Dort lag
+der echte Befund:
+
+**Die Spielewelt lud zwei Fotos von 2,6 und 2,4 MB** —
+`admin/images/mercedes-*-ger-tx-*-premium.jpg.png`, beides Fotos in PNG
+kodiert, 1448 px breit, dargestellt mit höchstens 640 px, hinter einem
+dunklen Verlauf.
+
+| | vorher | nachher |
+|---|---|---|
+| Bild 1 | 2679 KB | **206 KB** |
+| Bild 2 | 2436 KB | **174 KB** |
+| `spiele.html` gesamt | 6260 KB | **1526 KB** |
+
+Umgerechnet nach WebP bei 1280 px. **Die Ähnlichkeit ist gemessen:**
+SSIM 0,979 und 0,982 gegenüber der Vorlage; die gerenderte Seite vorher
+gegen nachher erreicht SSIM 0,995. Dieselben Fotos, nur nicht mehr als
+PNG. Die Originale in `admin/images/` bleiben unangetastet.
+
+### 15.3 Ausgelieferte Dateien ohne einen einzigen Verweis
+
+Gemessen über **alle 213 durchsuchbaren Dateien** des Ausgabeordners —
+`admin/`, `fahrer/` und `dashboard/` eingeschlossen, wie beauftragt:
+
+| Datei | Größe | Befund |
+|---|---|---|
+| `script.js` | 278 KB | kein Verweis |
+| `public-premium-v2.css` | 74 KB | kein Verweis |
+| `public-states.css` | 71 KB | kein Verweis |
+| `home-luxury.css` | 40 KB | nur von `public-states.css` |
+| `home-luxury.js` | 7 KB | kein Verweis |
+| `public-premium-v2.js` | 1 KB | kein Verweis |
+
+Alle sechs aus der Übernahmeliste genommen: **471 KB**.
+
+**Bewusst NICHT entfernt**, weil nachweislich gebraucht:
+
+- `logo.png` (566 KB) — von **63** Seiten in `admin/` und `fahrer/`.
+- `yumak-avatar.png` (165 KB) — ein echtes Bild auf der Startseite. Es
+  erschien in der ersten Messung als „ungenutzt", weil es unterhalb der
+  Falz liegt und erst beim Scrollen geladen wird.
+- `style.css`, `public-system.css`, `public-visual-repair.css`,
+  `public-system.js`, `rewards-customer.js` — von `spiele.html` bzw.
+  `rewards.html` geladen.
+- Die vorbereiteten Yumak-Medien wurden nicht angefasst.
+
+### 15.4 Der Rundgang
+
+13 öffentliche Seiten, Desktop (1440 × 900) und Handy (390 × 844):
+
+| Prüfung | Ergebnis |
+|---|---|
+| Kopfzeile vorhanden | 13 / 13 auf beiden |
+| Fußzeile vorhanden | 13 / 13 |
+| genau eine `h1` | 13 / 13 |
+| waagerechter Überlauf | keiner |
+| fehlende Dateien | keine |
+| Skriptfehler in der Konsole | keine |
+| Sprungmarke als erster Tabstopp | 13 / 13 |
+| Bedienpunkte ohne Fokusring | **0 von 472** |
+| Verweise ohne Ziel (`#`, leer) | 0 |
+
+### 15.5 Taxi Rush — vom Auftraggeber auf einem echten Gerät gespielt
+
+> **Der Auftraggeber hat Taxi Rush auf einem echten Handy gespielt,
+> einschließlich Wischsteuerung, und für gut befunden** (25.09.2026).
+
+Das hebt die Einschränkung aus Abschnitt 13.9 Punkt 1 **teilweise** auf.
+Weiterhin gilt und ist **nicht** geprüft:
+
+- **ein Gerät, nicht viele.** Über andere Geräte, Bildschirmgrößen,
+  Browser oder ältere Hardware sagt das nichts.
+- **das Querformat nicht.** Bei 844 × 390 passt das Spiel samt
+  Bedienleiste weiterhin nicht vollständig ins Bild; Boost und Lenkpfeile
+  sind erst nach kurzem Scrollen zu sehen. Siehe Abschnitt 13.9 Punkt 3.
+- **keine Bildratenmessung.** Es gibt weiterhin keine Zusage zur
+  Flüssigkeit, nur den Nachweis, dass genau eine Animationsschleife
+  läuft.
+
+An Taxi Rush wurde in dieser Runde nichts geändert.
+
+### 15.6 Was geprüft wurde
+
+| Lauf | Ergebnis |
+|---|---|
+| `qualitaet-pruefen` (neu) | **45 / 45** |
+| `ausgabe-pruefen` | 56 / 56 |
+| `grundlagen-pruefen` | 60 / 60 |
+| `startseite-pruefen` | 187 / 187 |
+| `flotte-pruefen` | 199 / 199 |
+| `rechtsseiten-pruefen` | 167 / 167 |
+| `anmeldung-pruefen` | 154 / 154 |
+| `kontoseiten-pruefen` | 181 / 181 |
+| `gluecksrad-pruefen` | 77 / 77 |
+| `rush-pruefen` | 178 / 178 |
+| `rewards-pruefen` | 66 / 66 |
+| `browser-pruefen` | 15 / 15 |
+| `grundlagen-browser-pruefen` | 28 / 28 |
+
+`ausgabe-pruefen` sank von 62 auf 56, weil sechs Bestandsdateien weniger
+ausgeliefert werden. Kein Rückschritt.
+
+> **Alle Sitzungen und Datenantworten sind simuliert.** Der Netzverkehr
+> nach außen war abgeschnitten; keine Verbindung zu Supabase, keine
+> Nachricht hat den Rechner verlassen (`window.open` abgefangen), keine
+> produktiven Daten wurden angefasst, kein Gewinn ausgelöst.
+
+### 15.7 Unverändert geblieben
+
+Startseite und Hero-Video, Glücksrad, Taxi Rush, Yumak (weiterhin
+Standbild), Rewards-Regeln und -Berechnungen, Datenbank, Rollen und
+Berechtigungen, `admin/`, `fahrer/`, `dashboard/`. Die Originalbilder in
+`admin/images/` sind unberührt; geändert wurden nur die beiden
+Stilvorlagen, die sie als Hintergrund luden.

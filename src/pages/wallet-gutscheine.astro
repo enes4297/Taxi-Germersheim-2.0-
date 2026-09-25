@@ -53,7 +53,7 @@ import Kontoseite from '../components/Kontoseite.astro';
   bereichName="Wallet & Gutscheine"
 >
   <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pb-20 lg:pb-28">
-    <div id="gutscheinListe" class="mt-10" aria-busy="true" aria-live="polite">
+    <div id="gutscheinListe" class="mt-10" aria-busy="true" aria-live="polite" data-konto-liste>
       {/* Der Ladezustand steht im Markup, damit er sofort sichtbar ist. */}
       <p class="text-[15px] text-muted-foreground">Ihre Gutscheine werden geladen …</p>
     </div>
@@ -189,9 +189,21 @@ import Kontoseite from '../components/Kontoseite.astro';
       }
 
       async function laden() {
+        /*
+          Der Sitzungsstand VOR der Abfrage.
+
+          GEMESSENER BEFUND (Schritt 024): Ohne diese Pruefung schrieb
+          eine verspaetete Antwort die Gutscheine nach dem Abmelden
+          wieder auf den Bildschirm - Code, Betrag und alles. Gemessen
+          mit einer Antwortzeit von drei Sekunden.
+        */
+        const stand = window.tgKontoStand();
+        const nochGueltig = () => stand === window.tgKontoStand();
+
         zeigeLaden();
         try {
           const client = auth && typeof auth.getClient === 'function' ? await auth.getClient() : null;
+          if (!nochGueltig()) return;
           if (!client || typeof client.from !== 'function') { zeigeFehler(); return; }
 
           const antwort = await client
@@ -199,6 +211,7 @@ import Kontoseite from '../components/Kontoseite.astro';
             .select('code, value_cents, status, valid_until, redeemed_at, issued_at')
             .order('issued_at', { ascending: false });
 
+          if (!nochGueltig()) return;
           if (antwort.error || !Array.isArray(antwort.data)) { zeigeFehler(); return; }
 
           const offen = [];
@@ -216,6 +229,7 @@ import Kontoseite from '../components/Kontoseite.astro';
           if (verlauf.length) teile.push(abschnitt('Verlauf', verlauf, true));
           liste.replaceChildren(...teile);
         } catch (_e) {
+          if (!nochGueltig()) return;
           zeigeFehler();
         }
       }

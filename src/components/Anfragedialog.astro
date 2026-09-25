@@ -107,6 +107,27 @@ const { arten = [], pflichtDetails = false } = Astro.props;
               <strong class="text-[15px] font-semibold text-foreground">{l.label}</strong>
             </span>
           ))}
+          {/*
+            FAHRTARTEN OHNE FREIGEGEBENE LEISTUNG.
+
+            GEMESSENER BEFUND (Schritt 024): Serienfahrt und Firmenkonto
+            haben bewusst keine der sieben Leistungen. Trotzdem stand im
+            Dialog eine - entweder die Vorbelegung "Taxi" oder die zuvor
+            gewaehlte. Gemessen:
+              Serienfahrt ohne Vorwahl        → "Taxi"
+              Serienfahrt nach Flughafen      → "Flughafentransfer"
+              Firmenkonto nach Krankenfahrt   → "Krankenfahrten"
+            Der Kunde haette das weder gewaehlt noch gewollt, und die
+            Nachricht an die Zentrale haette es als seine Angabe gefuehrt.
+
+            Hier steht stattdessen die Fahrtart selbst - sie ist das, was
+            der Kunde tatsaechlich angeklickt hat.
+          */}
+          <span class="contents" data-leistungsanzeige="" hidden>
+            <Symbol name="taxi" class="w-[18px] h-[18px] text-primary shrink-0" />
+            <span class="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Ihre Anfrage</span>
+            <strong class="text-[15px] font-semibold text-foreground" data-fahrtart-anzeige>—</strong>
+          </span>
         </div>
 
         {/* ── Schritt 1: Adressen ─────────────────────────────────── */}
@@ -403,7 +424,13 @@ const { arten = [], pflichtDetails = false } = Astro.props;
     if (detailHinweis) detailHinweis.textContent = art ? art.hinweis : '';
 
     if (art) {
-      if (art.leistung) leistungSetzen(art.leistung);
+      // Hat die Fahrtart eine freigegebene Leistung, wird sie gesetzt.
+      // Hat sie KEINE, wird eine vorher gesetzte ausdruecklich
+      // weggenommen - siehe den Befund am Anzeigebanner oben.
+      leistungSetzen(art.leistung || '');
+      const anzeige = dialog.querySelector<HTMLElement>('[data-fahrtart-anzeige]');
+      if (anzeige) anzeige.textContent = art.titel;
+      flughafenVerbinden();
       // Vorbelegung wie im Bestand - aber nur, solange das Feld leer ist.
       // Sonst ueberschriebe ein Wechsel der Fahrtart eine eigene Eingabe.
       const satz = aktiverSatz();
@@ -456,9 +483,64 @@ const { arten = [], pflichtDetails = false } = Astro.props;
     }
   }
 
+  /*
+    ── Flughafen und Zieladresse zusammenbringen ────────────────────────
+
+    GEMESSENER BEFUND (Schritt 024): Bei einer Flughafenanfrage standen
+    zwei Ortsangaben unverbunden nebeneinander in der Nachricht:
+
+        Zieladresse: Testziel 2
+        ...
+        Flughafen: Frankfurt Airport FRA
+
+    Welche gilt? Das musste die Zentrale raten. Wer oben "Mannheim"
+    eintippt und unten "Frankfurt Airport FRA" auswaehlt, hat zwei
+    verschiedene Ziele angegeben, ohne es zu merken.
+
+    Behoben ohne neues Pflichtfeld: Waehlt jemand einen Flughafen und das
+    Zielfeld ist noch LEER, wird der Flughafen dort eingetragen. Ein
+    bereits ausgefuelltes Zielfeld wird nie ueberschrieben - sonst ginge
+    eine bewusste Eingabe verloren.
+
+    OFFEN und als Vorschlag im Bericht: Eine Fahrt VOM Flughafen hat ihn
+    als Abhol-, nicht als Zieladresse. Dafuer braeuchte es ein Feld
+    "Fahrtrichtung". Das ist eine neue Pflichtangabe und damit eine
+    Entscheidung des Auftraggebers, keine stille Aenderung.
+  */
+  function flughafenVerbinden() {
+    const satz = aktiverSatz();
+    if (!satz) return;
+    const wahl = satz.querySelector<HTMLSelectElement>('[data-detail-feld="airport"]');
+    if (!wahl || wahl.dataset.verbunden === 'ja') return;
+    wahl.dataset.verbunden = 'ja';
+
+    const uebernehmen = () => {
+      const flughafen = wahl.value.trim();
+      // Nur ein echter Flughafen, nicht "Weiterer Flughafen auf Anfrage".
+      if (!flughafen || /auf Anfrage/i.test(flughafen)) return;
+      if (daten.destination.trim()) return;   // nie ueberschreiben
+      feldSetzen('destination', flughafen);
+      for (const el of felder()) {
+        if (el.dataset.anfrageFeld === 'destination') el.value = flughafen;
+      }
+      fehlerZeigen('destination', false);
+    };
+
+    wahl.addEventListener('change', uebernehmen);
+    uebernehmen();
+  }
+
   // ── Leistung ───────────────────────────────────────────────────────────
+  /**
+   * Die Leistung setzen - oder sie ausdruecklich wegnehmen.
+   *
+   * `id === ''` bedeutet: Diese Anfrage hat KEINE der sieben Leistungen.
+   * Das ist bei Serienfahrten und Firmenkonten der richtige Zustand, und
+   * er muss herstellbar sein. Vorher konnte man eine einmal gesetzte
+   * Leistung nicht mehr loswerden.
+   */
   function leistungSetzen(id: string) {
-    if (!LEISTUNGEN.some((l) => l.id === id)) return;
+    if (id !== '' && !LEISTUNGEN.some((l) => l.id === id)) return;
     daten.service = id;
 
     // Banner: sichtbar ab Schritt 1.
@@ -546,10 +628,13 @@ const { arten = [], pflichtDetails = false } = Astro.props;
 
   function zusammenfassungZeichnen() {
     const L = LEISTUNGEN.find((l) => l.id === daten.service);
+    const art = fahrtart ? artVon(fahrtart) : null;
     const werte: Record<string, string> = {
       pickup: daten.pickup,
       destination: daten.destination,
-      service: L ? L.label : daten.service,
+      // Ohne Leistung steht hier die Fahrtart - und wenn es auch die
+      // nicht gibt, ein Strich. Nie eine Leistung, die niemand waehlte.
+      service: L ? L.label : (art ? art.titel : '—'),
       timing: zeitpunktText(),
     };
     for (const el of dialog.querySelectorAll<HTMLElement>('[data-zus]')) {
@@ -664,11 +749,19 @@ const { arten = [], pflichtDetails = false } = Astro.props;
     const zeilen = [
       'Fahrtanfrage über die Website',
       '',
-      `Leistung: ${L ? L.label : daten.service}`,
+    ];
+
+    // Die Leistungszeile steht NUR da, wenn es wirklich eine gibt.
+    // Serienfahrt und Firmenkonto haben keine - dort traegt die Zeile
+    // "Fahrtart" weiter unten die Angabe. Eine leere oder erfundene
+    // Leistung waere eine Angabe, die der Kunde nie gemacht hat.
+    if (daten.service && L) zeilen.push(`Leistung: ${L.label}`);
+
+    zeilen.push(
       `Abholadresse: ${daten.pickup}`,
       `Zieladresse: ${daten.destination}`,
       `Zeitpunkt: ${zeitpunktText()}`,
-    ];
+    );
 
     // Zusatzangaben der Spezialfahrten, in der Reihenfolge der Felder. Die
     // Fahrtart steht immer dabei - auch und gerade dann, wenn sie keiner der
@@ -793,11 +886,68 @@ const { arten = [], pflichtDetails = false } = Astro.props;
       dialog.classList.add('opacity-100', 'pointer-events-auto');
       blatt.classList.remove('translate-y-full');
       blatt.classList.add('translate-y-0', 'md:translate-y-0');
+      // Der Fokus gehoert IN den Dialog. Siehe den Block unten.
+      ersterFokus();
     });
   }
 
+  /*
+    ── Der Fokus und der Dialog ─────────────────────────────────────────
+
+    GEMESSENER BEFUND (Schritt 024): Der Dialog traegt role="dialog" und
+    aria-modal="true", aber der Fokus blieb beim Oeffnen ausserhalb -
+    gemessen stand er noch auf der Sprungmarke am Seitenanfang. Fuer
+    jemanden, der mit der Tastatur arbeitet, heisst das: Der Dialog ist
+    offen, die Tabulatortaste laeuft aber durch die Seite DAHINTER.
+    aria-modal="true" verspricht genau das Gegenteil.
+
+    Behoben in drei Teilen:
+      1. Beim Oeffnen faehrt der Fokus ins erste Feld.
+      2. Die Tabulatortaste bleibt im Dialog (Umlauf vorne/hinten).
+      3. Beim Schliessen kehrt er auf den Knopf zurueck, der geoeffnet
+         hat - sonst beginnt die Tastaturbedienung wieder von vorn.
+  */
+  let ausloeser: HTMLElement | null = null;
+
+  function fokussierbare(): HTMLElement[] {
+    return [...blatt.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    )].filter((e) => {
+      if (e.closest('[hidden]')) return false;
+      const k = e.getBoundingClientRect();
+      return k.width > 0 && k.height > 0;
+    });
+  }
+
+  function ersterFokus() {
+    const liste = fokussierbare();
+    // Das erste Eingabefeld, sonst der erste Bedienpunkt ueberhaupt.
+    const ziel = liste.find((e) => e.matches('input, select, textarea')) || liste[0];
+    if (ziel) ziel.focus();
+  }
+
+  dialog.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab' || !offen) return;
+    const liste = fokussierbare();
+    if (!liste.length) return;
+    const erster = liste[0];
+    const letzter = liste[liste.length - 1];
+    if (e.shiftKey && document.activeElement === erster) {
+      e.preventDefault();
+      letzter.focus();
+    } else if (!e.shiftKey && document.activeElement === letzter) {
+      e.preventDefault();
+      erster.focus();
+    }
+  });
+
   function schliessen() {
     offen = false;
+    // Zurueck auf den Knopf, der geoeffnet hat.
+    if (ausloeser && document.contains(ausloeser)) {
+      ausloeser.focus({ preventScroll: true });
+      ausloeser = null;
+    }
     dialog.classList.add('opacity-0', 'pointer-events-none');
     dialog.classList.remove('opacity-100', 'pointer-events-auto');
     blatt.classList.add('translate-y-full');
@@ -813,7 +963,11 @@ const { arten = [], pflichtDetails = false } = Astro.props;
   // Jede Schaltflaeche auf der Seite oeffnet denselben Dialog - im Kopf, im
   // Einstieg, an jedem der sieben Leistungsbloecke. Ohne Scrollen.
   for (const b of document.querySelectorAll<HTMLElement>('[data-anfrage-oeffnen]')) {
-    b.addEventListener('click', () => oeffnen(b.dataset.leistung || undefined, b.dataset.fahrtart || undefined));
+    b.addEventListener('click', () => {
+      // Merken, wohin der Fokus beim Schliessen zurueckkehrt.
+      ausloeser = b;
+      oeffnen(b.dataset.leistung || undefined, b.dataset.fahrtart || undefined);
+    });
   }
 
   document.addEventListener('tg:anfrage-oeffnen', (e) => {
