@@ -184,6 +184,25 @@ Das ist der Punkt, den ich nur simuliert prüfen konnte.
 
 ## Test 4 — Passwort vergessen und neu vergeben
 
+> ## ⛔ Dieser Test ist erledigt — er schlägt fehl, und die Ursache liegt nicht an der Webseite
+>
+> **Am 28.09.2026 durchgeführt, mehrfach, mit frischen Mails.** Ergebnis:
+> Der Link aus der Reset-Mail führt auf `http://127.0.0.1:8000/admin/login.html`
+> statt auf die Kundenseite. Am Handy erscheint dort „keine Verbindung".
+>
+> Belegt ist dabei:
+> - Die Kundenseite sendet nachweislich das **richtige** Ziel mit.
+> - Supabase nimmt den Recovery-Link **an** (`/verify`, `status 303`, kein Fehler).
+> - Die Weiterleitung fällt trotzdem auf die alte Site URL zurück.
+>
+> **Bitte diesen Test nicht wiederholen** — auch, weil der eingebaute
+> Maildienst nur **zwei Authentifizierungs-E-Mails pro Stunde** zulässt und
+> weitere Versuche das Kontingent für die übrigen Tests aufbrauchen.
+>
+> Die vollständige Untersuchung und der Weg zur Behebung stehen in
+> `ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md`, Abschnitte 17 bis 19.
+> Als Nächstes zu klären ist der Inhalt der Recovery-Mailvorlage.
+
 1. `passwort-vergessen.html` öffnen, Testadresse eintragen, **Reset-Link
    senden**.
 2. **Erwartung:** die neutrale Bestätigung erscheint.

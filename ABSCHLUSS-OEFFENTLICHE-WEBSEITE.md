@@ -323,7 +323,7 @@ anzutasten:
 | # | Angabe | Wofür |
 |---|---|---|
 | **I1** | **Liste aller Adressen der heutigen WordPress-Seite.** Am einfachsten deren `sitemap.xml`, sonst ein Bildschirmfoto der Seitenübersicht im WordPress-Menü | 301-Weiterleitungen, sonst brechen Suchtreffer und verteilte Verweise weg |
-| **I2** | **Supabase-Projekteinstellungen**: Trägt „Site URL" die künftige Domain? Steht `https://taxigermersheim.de/passwort-zuruecksetzen.html` in den „Redirect URLs"? **Keine Schlüssel nötig — nur die Antwort ja oder nein** | Bestätigungs- und Reset-Mails brechen sonst nach dem Umzug |
+| **I2** | **Supabase-Projekteinstellungen.** ⚠️ **Seit dem 28.09.2026 kein offener Punkt mehr, sondern ein belegter Fehler** — siehe Abschnitt 17. Der Kunden-Reset landet auf der alten Site URL `http://127.0.0.1:8000/admin/login.html`, obwohl die Kundenseite nachweislich das richtige Ziel sendet. **Zuerst zu klären: Verwendet die Recovery-Mailvorlage `{{ .ConfirmationURL }}`?** Danach die Empfehlung aus Abschnitt 19.2 | Ohne das kommt kein Kunde ins Konto zurück, der sein Passwort vergisst |
 | **I3** | **Wie wird ausgeliefert?** Statischer Webspace, Objektspeicher, Container? Wer spielt `dist-oeffentlich/` ein? | Bauanleitung und Übergabeform |
 | **I4** | **Kann `404.html` als Fehlerseite gesetzt werden?** | Fehlerseite |
 | **I5** | **Sollen `admin/` und `fahrer/` unter derselben Domain liegen** oder auf eine eigene Subdomain? | Zuschnitt des Ausgabeordners |
@@ -361,7 +361,8 @@ STUFE 3 — vor der Veröffentlichung, nicht davor lösbar
    feature/011 in den Veröffentlichungsstand    ← blockierend
    E6 rechtliche Prüfung der Rechtstexte        ← blockierend
    I1 Adressliste WordPress → Weiterleitungen   ← blockierend
-   I2 Supabase-Adressen prüfen                  ← blockierend
+   I2 Passwort-Reset Kunde reparieren            ← blockierend, belegt
+   eigener SMTP-Dienst statt 2 Mails/Stunde      ← blockierend, belegt
    I3–I5 Auslieferung klären
    echte Anmeldeprüfung mit Ihrem Testkonto
 
@@ -2411,3 +2412,257 @@ und vergleicht den Rest Byte für Byte.
 Vorschaugrafik nicht mehr verwendet. Die Tabelle bildet die Feldaufteilung
 aus Migration 007 ab und wurde deshalb stehen gelassen, statt sie
 beiläufig zu löschen.
+
+---
+
+## 17. Passwort-Reset für Kunden — belegtes Veröffentlichungshindernis
+
+Stand 28.09.2026. Untersucht in Schritt 026, **nicht behoben**.
+
+### 17.1 Der Befund in einem Satz
+
+Die Kundenseite fordert den Reset technisch korrekt an, Supabase nimmt den
+Link an — **die Weiterleitung landet trotzdem auf der alten Site URL**, und
+der Kunde kommt nie auf die Seite, auf der er sein Passwort vergeben könnte.
+
+### 17.2 Was gemessen wurde
+
+**a) Die Kundenseite sendet das richtige Ziel.** Nicht aus dem Quelltext
+geschlossen, sondern zur Laufzeit abgefangen (die Anfrage wurde dabei
+abgebrochen, es ging keine Mail hinaus):
+
+```
+Herkunft http://192.168.178.141:5200
+  POST /auth/v1/recover
+  redirect_to = http://192.168.178.141:5200/passwort-zuruecksetzen.html
+
+Herkunft http://127.0.0.1:5200
+  POST /auth/v1/recover
+  redirect_to = http://127.0.0.1:5200/passwort-zuruecksetzen.html
+```
+
+Bestätigt in einem zweiten Durchgang durch eine vorübergehend eingebaute,
+sichtbare Diagnosezeile auf dem Gerät des Auftraggebers:
+
+```
+redirectTo: http://192.168.178.141:5200/passwort-zuruecksetzen.html
+Projekt:    rzqhzyzabakrsokuqebc.supabase.co
+```
+
+Das Projekt ist damit ebenfalls bestätigt — die Einstellungen wurden im
+richtigen Projekt vorgenommen.
+
+**b) Supabase nimmt den Link an.** Aus dem Auth-Log des Projekts:
+
+| Feld | Wert |
+|---|---|
+| Endpunkt | `/verify` |
+| action | `login` |
+| status | `303` |
+| Fehler | keiner |
+| referer | `http://127.0.0.1:8000/admin/login.html` |
+
+Der Recovery-Code war also gültig, der Dienst hat eine Sitzung ausgestellt
+und weitergeleitet. **Der Fehler liegt nicht beim Code und nicht beim
+Zeitablauf.**
+
+**c) Die Weiterleitung geht trotzdem an die alte Adresse.** Eine
+**frisch nach der Änderung** erzeugte Mail führte erneut auf
+`http://127.0.0.1:8000/admin/login.html`. Am Handy erscheint dort „keine
+Verbindung", weil `127.0.0.1:8000` der eigene Rechner des Telefons ist.
+
+Und das, obwohl zu diesem Zeitpunkt unter **Redirect URLs** gespeichert war:
+
+```
+http://192.168.178.141:5200/passwort-zuruecksetzen.html
+http://127.0.0.1:5200/passwort-zuruecksetzen.html
+http://192.168.178.141:5200/**
+```
+
+### 17.3 Was der Code NICHT ist
+
+Im ganzen Projekt durchsucht:
+
+| Suche | Treffer |
+|---|---|
+| `:8000` | **0** |
+| `admin/login` als Weiterleitungsziel | **0** |
+| `SITE_URL` / `site_url` | **0** |
+| `resetPasswordForEmail` in `admin/`, `fahrer/`, `dashboard/` | **0** |
+| `verifyOtp`, `exchangeCodeForSession` | **0** |
+
+Alle fünf `createClient`-Aufrufe lesen dieselbe `admin/supabase-config.js`
+(`window.TaxiSupabaseConfig`) — **ein Projekt, ein Schlüssel**. Der
+Flow-Typ ist mangels `flowType`-Angabe **implicit**; Recovery-Links kommen
+also als `#access_token=…&type=recovery`.
+`src/pages/passwort-zuruecksetzen.astro` nimmt beide Formen an (Raute mit
+`access_token` oder Abfrage mit `code`), wartet auf `PASSWORD_RECOVERY`,
+leert danach die Adresszeile und ruft `updateUser({ password })`. **Diese
+Seite ist vollständig und korrekt.**
+
+### 17.4 Warum die alte Site URL vermutlich mit Absicht dort steht
+
+`admin/login.html` ist **selbst eine Recovery-Landeseite**:
+
+```js
+// admin/login.js:303-315
+function parseRecoveryHash() {
+  const params = new URLSearchParams(hash);
+  if (params.get("type") === "recovery" && accessToken && refreshToken) …
+}
+// :440 → client.auth.setSession({…}) → toggleRecoveryMode(true)
+```
+
+Sie liest den Recovery-Hash, setzt die Sitzung und zeigt ein
+Passwortformular. Damit das funktioniert, muss die Site URL auf sie zeigen —
+und der Adminbereich lief während der Entwicklung auf Port 8000.
+
+**Die Site URL wurde deshalb nicht angefasst.** Sie zu ersetzen, würde die
+Passwortwiederherstellung für Verwaltung und Mitarbeiterportal unbrauchbar
+machen. Der Auftraggeber hat das ausdrücklich so entschieden.
+
+### 17.5 Was noch offen ist
+
+Eine Prüfung steht aus und ist die naheliegendste verbliebene Erklärung:
+
+> **Der Inhalt der Mailvorlage `Authentication → Emails → Reset Password`
+> ist nicht bekannt.** Verwendet sie `{{ .ConfirmationURL }}`, baut Supabase
+> das Ziel selbst. Steht dort dagegen `{{ .SiteURL }}` oder eine
+> ausgeschriebene Adresse, ist das Ziel fest eingebaut — dann hilft **keine
+> Erlaubnisliste**, und genau das würde das beobachtete Verhalten
+> vollständig erklären.
+
+Weitere denkbare, ebenfalls ungeprüfte Ursachen: eine Abweichung in der
+Schreibweise der gespeicherten Einträge, oder eine Verzögerung, bis
+geänderte Einstellungen greifen. **Keine davon ist nachgewiesen** — sie
+werden hier als offen geführt, nicht als Ursache behauptet.
+
+### 17.6 Folge
+
+**Der Passwort-Reset für Kundenkonten ist nicht funktionsfähig.** Ein Kunde,
+der sein Passwort vergisst, erhält zwar eine Mail, landet aber auf einer
+Adresse, die es für ihn nicht gibt. Es gibt keinen zweiten Weg zurück ins
+Konto.
+
+Das ist ein **Veröffentlichungshindernis** und gehört in die Liste
+„vor Veröffentlichung erforderlich".
+
+---
+
+## 18. Der eingebaute Maildienst reicht für den Betrieb nicht
+
+Der Supabase-Standardversand ist auf **zwei Authentifizierungs-E-Mails pro
+Stunde** begrenzt — projektweit, nicht pro Empfänger.
+
+Betroffen sind alle Mails, die an Konten hängen: Registrierungsbestätigung,
+Passwort-Reset, Einladungen, Adressänderungen.
+
+**Was das im Betrieb bedeutet:** Melden sich an einem Vormittag drei Kunden
+neu an, bekommt der dritte seine Bestätigungsmail nicht. Vergisst jemand
+sein Passwort, während zwei Registrierungen liefen, kommt sein Reset-Link
+nicht an. Der Versand schlägt dabei **still** fehl — die Seite zeigt
+weiterhin ihre neutrale Bestätigung, denn sie erfährt nichts davon.
+
+Hinzu kommt: Der eingebaute Versand ist ausdrücklich nur für Entwicklung
+gedacht und gibt keine Zustellgarantie.
+
+> **Vor der Veröffentlichung muss ein eigener SMTP-Dienst eingerichtet
+> werden** (`Project Settings → Authentication → SMTP Settings`), zum
+> Beispiel über den vorhandenen Geschäftsmailanbieter. Dafür werden
+> Zugangsdaten des Mailkontos benötigt — sie gehören in die
+> Supabase-Einstellungen, **nicht** in dieses Projektverzeichnis.
+
+Zusätzlich empfehlenswert, sobald die Domain steht: SPF-, DKIM- und
+DMARC-Einträge für `taxigermersheim.de`, sonst landen die Mails mit hoher
+Wahrscheinlichkeit im Spam.
+
+**Das ist eine zweite, unabhängige Veröffentlichungsbedingung** — sie
+besteht auch dann, wenn die Weiterleitung aus Abschnitt 17 behoben ist.
+
+---
+
+## 19. Getrennte Ziele für Kunden und Verwaltung — Bestandsaufnahme
+
+### 19.1 Was es heute gibt (nur gelesen, nichts geändert)
+
+Durchsucht wurden Quelltext, Migrationen, Setup-Dateien und die interne
+Dokumentation.
+
+| Gesucht | Ergebnis |
+|---|---|
+| Konzeptpapier oder Notiz zu getrennten Recovery-Zielen | **nicht vorhanden** |
+| SQL, Migration oder Setup-Datei zu Auth-Adressen | **nicht vorhanden** — die Werte stehen ausschließlich im Dashboard |
+| `emailRedirectTo` irgendwo im Code | **0 Treffer** |
+
+**Zwei Landeseiten existieren, aber unabgestimmt:**
+
+| Seite | Nimmt entgegen | Ziel wird gesetzt durch |
+|---|---|---|
+| `admin/login.html` | `#access_token…&type=recovery` (implicit) | **nichts im Code** — allein die Site URL |
+| `passwort-zuruecksetzen.html` | Raute *oder* `?code=` | `redirectTo` aus `passwort-vergessen.html` |
+
+Sie sind unabhängig voneinander entstanden. Ein gemeinsames Konzept, welche
+Mail wohin führen soll, gibt es nicht.
+
+**Zweite Folge derselben Lücke:** `signUp` übergibt **kein**
+`emailRedirectTo`. Die Registrierungsbestätigung hängt damit ebenfalls
+allein an der Site URL — sie führt heute also genauso auf die alte
+Admin-Adresse. Das war bereits als Angabe **I2** vermerkt und ist damit
+kein neuer, aber ein nun belegter Punkt.
+
+### 19.2 Empfehlung für den produktiven Stand unter taxigermersheim.de
+
+**Nichts davon jetzt umsetzen.** Die Site URL, die Authentifizierung und die
+Datenbank bleiben unverändert, bis der Auftraggeber freigibt.
+
+Der Kern: **Die Site URL ist nur ein Rückfallwert.** Wer sie als Steuerung
+benutzt, kann immer nur einen Weg bedienen. Jeder Mailweg sollte sein Ziel
+selbst mitgeben; dann ist es gleich, worauf die Site URL zeigt.
+
+**Schritt 1 — Jeder Weg nennt sein Ziel selbst.**
+
+| Stelle | Heute | Vorschlag |
+|---|---|---|
+| `passwort-vergessen` (Kunde) | `redirectTo` wird gesetzt ✓ | unverändert |
+| Registrierung (Kunde) | kein `emailRedirectTo` | `emailRedirectTo: <Herkunft>/anmelden.html?bestaetigt=1` ergänzen |
+| Passwort-Reset Verwaltung | **gibt es nicht** — läuft über das Dashboard und damit über die Site URL | eine eigene Anforderung in `admin/login.js` mit `redirectTo: <Herkunft>/admin/login.html` |
+
+Erst wenn die Verwaltung ihr Ziel selbst mitgibt, ist die Site URL frei.
+
+**Schritt 2 — Erlaubnisliste vollständig.** Alle Ziele eintragen, die
+tatsächlich vorkommen:
+
+```
+https://taxigermersheim.de/passwort-zuruecksetzen.html
+https://taxigermersheim.de/anmelden.html
+https://taxigermersheim.de/admin/login.html
+```
+
+Die lokalen Entwicklungsadressen können daneben stehen bleiben; sie sind
+im Internet nicht erreichbar und damit kein Risiko.
+
+**Schritt 3 — Site URL erst danach.** Sie sollte dann auf
+`https://taxigermersheim.de` zeigen — den Weg, der im Betrieb der
+häufigste ist. **Voraussetzung ist Schritt 1**, sonst verliert die
+Verwaltung ihre Passwortwiederherstellung.
+
+**Schritt 4 — Eigener SMTP-Dienst** (Abschnitt 18). Unabhängig von allem
+Übrigen.
+
+**Schritt 5 — Mailvorlage prüfen.** Enthält die Recovery-Vorlage etwas
+anderes als `{{ .ConfirmationURL }}`, greift keiner der Schritte 1 bis 3.
+Diese Prüfung steht noch aus (Abschnitt 17.5) und sollte die **erste** sein.
+
+**Reihenfolge:** 5 → 1 → 2 → 3 → 4.
+
+### 19.3 Was in dieser Untersuchung nicht getan wurde
+
+Keine Supabase-Einstellung geändert. Keine Site URL angefasst. Keine
+Datenbank, keine Rolle, keine Berechtigung, keine Rewards-Regel berührt.
+Keine E-Mail ausgelöst — die Messung in 17.2 a) brach die Anfrage ab, bevor
+sie das Gerät verließ. Keine Tokens, Passwörter, Schlüssel oder
+Authorization-Header angefordert, ausgegeben oder protokolliert.
+
+Die vorübergehend eingebaute Diagnosezeile ist wieder entfernt; die Quelle
+ist danach buchstabengleich mit dem Stand davor, und im gebauten Ergebnis
+findet sich keine Spur mehr davon.
