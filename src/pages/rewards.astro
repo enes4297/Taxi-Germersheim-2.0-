@@ -110,6 +110,18 @@ const AKTIONEN = [
           {/* `weiter=rewards.html` bringt den Fahrgast nach der Anmeldung
               hierher zurueck statt ins Konto. */}
           <div class="mt-8" data-rewards-abgemeldet hidden>
+            {/* Erscheint nur, wenn der Dienst den Widerruf nicht bestätigt
+                hat. Siehe die Abmeldung weiter unten. */}
+            <p
+              data-rewards-abmeldehinweis
+              hidden
+              class="mb-4 border border-amber-700/35 bg-amber-950/25 px-4 py-3 text-sm leading-relaxed text-amber-100"
+              role="alert"
+            >
+              Die Abmeldung wurde vom Dienst nicht bestätigt. Auf dieser Seite
+              steht nichts Persönliches mehr; auf anderen Geräten kann die
+              Anmeldung noch gelten.
+            </p>
             <div class="flex flex-wrap gap-3">
               <a href="anmelden.html?weiter=rewards.html" class="inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold hover:bg-[#d4b87d] tg-press">
                 Anmelden
@@ -653,13 +665,21 @@ const AKTIONEN = [
     persoenlichesLeeren();
     zeige('laedt');
     const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
+    let widerrufBestaetigt = true;
     try {
       if (auth && typeof auth.signOut === 'function') await auth.signOut();
     } catch {
-      // Auch wenn die Abmeldung beim Server scheitert: hier steht nichts
-      // Persoenliches mehr.
+      /*
+        Auf dieser Seite steht jetzt nichts Persoenliches mehr - aber das
+        heisst nicht, dass der Dienst die Sitzung widerrufen hat. Frueher
+        wurde der Fehler hier stillschweigend verschluckt und anschliessend
+        "abgemeldet" angezeigt. Das war eine falsche Auskunft.
+      */
+      widerrufBestaetigt = false;
     }
     zeige('abgemeldet');
+    const abmeldeHinweis = document.querySelector<HTMLElement>('[data-rewards-abmeldehinweis]');
+    if (abmeldeHinweis) abmeldeHinweis.hidden = widerrufBestaetigt;
   });
 
   async function starten() {

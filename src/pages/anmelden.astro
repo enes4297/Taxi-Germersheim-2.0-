@@ -162,6 +162,100 @@ const VORTEILE = [
     notice.textContent = 'Sie wurden abgemeldet.';
   }
 
+  /*
+    ══ RÜCKKEHR AUS DER BESTÄTIGUNGSMAIL ═══════════════════════════════════
+
+    Seit Schritt 027 gibt `CustomerAuth.signUp` ein eigenes
+    `emailRedirectTo` auf `anmelden.html?bestaetigt=1` mit, statt sich auf
+    die projektweite Site URL zu verlassen. Diese Seite ist damit das Ziel
+    der Bestätigungsmail und muss die Rückkehr verarbeiten.
+
+    SUPABASE KENNT ZWEI FORMEN — beide werden hier bedient:
+
+      implicit  …/anmelden.html?bestaetigt=1#access_token=…&type=signup
+                Der Client übernimmt die Sitzung selbst
+                (`detectSessionInUrl: true` in customer-auth.js) und räumt
+                die Raute ab. Hier ist dann bereits eine Sitzung da.
+
+      PKCE      …/anmelden.html?bestaetigt=1&code=…
+                Der Client tauscht den Code gegen eine Sitzung - ebenfalls
+                über `detectSessionInUrl`. Das Projekt läuft derzeit auf
+                implicit (kein `flowType` gesetzt); die Form wird trotzdem
+                bedient, damit ein Wechsel nichts zerbricht.
+
+      Fehlerfall …?error=…&error_description=… oder dasselbe in der Raute.
+
+    Gewartet wird auf die Sitzung, statt sie einmal abzufragen: Das
+    Einlesen aus der Adresse läuft asynchron und ist beim ersten Blick
+    oft noch nicht fertig.
+
+    WICHTIG: Weitergeleitet wird NUR bei einer Rückkehr aus der Mail. Wer
+    die Anmeldeseite einfach so aufruft, während er angemeldet ist, soll
+    hier bleiben dürfen.
+  */
+  const raute = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const ausMail =
+    params.get('bestaetigt') === '1'
+    || raute.get('type') === 'signup'
+    || Boolean(params.get('code'))
+    || Boolean(raute.get('access_token'));
+
+  const fehlerAusMail = params.get('error') || raute.get('error');
+
+  if (fehlerAusMail) {
+    /* Nur die Kennung des Dienstes, nicht die Beschreibung: Die kann die
+       E-Mail-Adresse enthalten und stünde dann im Verlauf und in jedem
+       Bildschirmfoto. */
+    notice.textContent =
+      'Der Bestätigungslink konnte nicht eingelöst werden ('
+      + (params.get('error_code') || raute.get('error_code') || fehlerAusMail)
+      + '). Bitte fordern Sie einen neuen an oder melden Sie sich an.';
+    adresseAufraeumen();
+  } else if (ausMail) {
+    notice.textContent = 'E-Mail-Adresse wird bestätigt …';
+    void bestaetigungAbschliessen();
+  }
+
+  /** Zugangsmerkmale gehören nicht in Verlauf, Referer oder Bildschirmfoto. */
+  function adresseAufraeumen() {
+    if (window.history?.replaceState) {
+      window.history.replaceState(null, document.title, window.location.pathname);
+    }
+  }
+
+  async function bestaetigungAbschliessen() {
+    const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
+    let angemeldet = false;
+
+    for (let versuch = 0; versuch < 20; versuch += 1) {
+      try {
+        if (auth && typeof auth.hydrateSession === 'function') await auth.hydrateSession();
+        if (auth && typeof auth.isLoggedIn === 'function' && auth.isLoggedIn()) {
+          angemeldet = true;
+          break;
+        }
+      } catch {
+        // Weiterversuchen: Ein einzelner Fehlschlag heisst noch nichts.
+      }
+      await new Promise((f) => setTimeout(f, 250));
+    }
+
+    adresseAufraeumen();
+
+    if (angemeldet) {
+      window.location.href = zielNachAnmeldung;
+      return;
+    }
+
+    /* Keine Sitzung entstanden. Das ist KEIN Beweis dafür, dass die
+       Bestätigung fehlgeschlagen ist - verlangt das Projekt nach der
+       Bestätigung eine gesonderte Anmeldung, ist genau das der normale
+       Verlauf. Deshalb wird hier nichts behauptet. */
+    notice.textContent =
+      'Falls Sie Ihre E-Mail-Adresse gerade bestätigt haben, melden Sie sich '
+      + 'bitte hier mit Ihren Zugangsdaten an.';
+  }
+
   // ── Passwort anzeigen und verbergen ────────────────────────────────────
   for (const schalter of document.querySelectorAll<HTMLButtonElement>('.auth-pass-toggle')) {
     schalter.addEventListener('click', () => {

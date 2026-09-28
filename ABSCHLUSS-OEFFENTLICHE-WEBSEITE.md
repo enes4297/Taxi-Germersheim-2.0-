@@ -277,7 +277,7 @@ schreiben noch lesen. Dasselbe gilt für `public.customers`.
 | Mitarbeiterbereiche unter derselben Domain | **Tatsache**: `admin/` und `fahrer/` liegen im Auslieferordner, tragen `noindex`, sind aber über die Adresse erreichbar. Der Zugriffsschutz sitzt in Supabase. Ob das so gewollt ist, ist zu entscheiden |
 | `404.html` als Fehlerseite des Servers | **offen**, Servereinstellung |
 | HTTPS, `www` → ohne `www` | laut Auskunft vorhanden |
-| Korrekturen aus `feature/011` | **offen und blockierend**, siehe `UEBERNAHME-OEFFENTLICH.md` Abschnitt 2 |
+| Korrekturen aus `feature/011` | **erledigt am 28.09.2026** — die vier Code-Korrekturen sind übernommen, siehe Abschnitt 20.6. Die SQL-Einspielung bleibt bewusst auf ihrem Branch und gehört zum Admin-/Dispatcher-Paket |
 
 ---
 
@@ -358,11 +358,13 @@ STUFE 2 — Seiten ins neue Gewand, aufsteigendes Risiko
    A11 Kontoseiten           (echte Anmeldung hängt dran)
 
 STUFE 3 — vor der Veröffentlichung, nicht davor lösbar
-   feature/011 in den Veröffentlichungsstand    ← blockierend
+   feature/011 Code-Korrekturen                 ← erledigt (Schritt 027)
    E6 rechtliche Prüfung der Rechtstexte        ← blockierend
    I1 Adressliste WordPress → Weiterleitungen   ← blockierend
    I2 Passwort-Reset Kunde reparieren            ← blockierend, belegt
    eigener SMTP-Dienst statt 2 Mails/Stunde      ← blockierend, belegt
+   SPF, DKIM, DMARC fuer die Domain              ← blockierend
+   taxigermersheim.de in die Redirect URLs       ← blockierend
    I3–I5 Auslieferung klären
    echte Anmeldeprüfung mit Ihrem Testkonto
 
@@ -2666,3 +2668,261 @@ Authorization-Header angefordert, ausgegeben oder protokolliert.
 Die vorübergehend eingebaute Diagnosezeile ist wieder entfernt; die Quelle
 ist danach buchstabengleich mit dem Stand davor, und im gebauten Ergebnis
 findet sich keine Spur mehr davon.
+
+---
+
+## 20. Schritt 027 — Auth-Korrekturen und Übernahme aus feature/011
+
+Branch `feature/027-auth-korrekturen`, abgezweigt von `b8d0155`.
+
+### 20.1 Registrierungsbestätigung gibt ihr Ziel jetzt selbst mit
+
+**Vorher:** `CustomerAuth.signUp` übergab kein `emailRedirectTo`. Die
+Bestätigungsmail hing damit an der projektweiten **Site URL** — und die
+zeigt gemessen auf `http://127.0.0.1:8000/admin/login.html`, die
+Anmeldeseite der Verwaltung. Ein Kunde wäre nach dem Klick in der
+Bestätigungsmail dort gelandet, nicht im eigenen Konto.
+
+**Jetzt:** `signUp` baut das Ziel aus der eigenen Herkunft — dieselbe
+Bauart wie beim Passwort-Reset:
+
+```js
+new URL('/anmelden.html?bestaetigt=1', window.location.origin).href
+```
+
+Damit stimmt es in jeder Umgebung: lokal, im WLAN und später unter der
+echten Domain, ohne dass irgendwo eine Adresse fest eingetragen werden
+müsste. Bei `file://` gibt es keine brauchbare Herkunft; dann wird kein
+Ziel mitgegeben und die Registrierung bleibt trotzdem möglich.
+
+**Gemessen** auf Netzebene — die Anfrage wurde abgefangen und
+abgebrochen, es ging nichts an Supabase:
+
+```
+POST /auth/v1/signup
+redirect_to = http://127.0.0.1:5295/anmelden.html?bestaetigt=1
+```
+
+> **Was das NICHT belegt:** ob Supabase dieses Ziel auch **befolgt**. Das
+> hängt an der Erlaubnisliste des Projekts („Redirect URLs"). Steht die
+> Adresse nicht dort, fällt Supabase weiterhin auf die Site URL zurück.
+> Das ist eine Projekteinstellung und lässt sich aus dem Code nicht
+> erzwingen. **Für die künftige Domain muss
+> `https://taxigermersheim.de/anmelden.html` in die Liste.**
+
+### 20.2 Warum `anmelden.html` das richtige Ziel ist
+
+Geprüft wurden die vorhandenen öffentlichen Seiten. `anmelden.html` ist
+die passende Landeseite:
+
+- Sie wertet bereits `?registered=1` aus und kennt den Zustand „gerade
+  registriert".
+- Sie ist der Ort, an dem es nach der Bestätigung weitergeht — entweder
+  durch Weiterleitung ins Konto oder durch die Anmeldung.
+- `meinkonto.html` wäre falsch: Sie ist geschützt und würde ohne Sitzung
+  sofort zurückwerfen.
+- Eine eigene Seite wäre eine zusätzliche Seite für einen Zustand, der
+  schon abgebildet ist.
+
+**Beide Rückkehrformen werden verarbeitet** — geprüft:
+
+| Form | Adresse | Verhalten |
+|---|---|---|
+| implicit | `?bestaetigt=1#access_token=…&type=signup` | Sitzung wird übernommen, Weiterleitung ins Konto |
+| PKCE | `?bestaetigt=1&code=…` | ebenso |
+| ohne Merkmal | `?bestaetigt=1` | Hinweis, hier anzumelden |
+| Fehler | `?error=…&error_code=…` | Fehlerkennung wird benannt |
+
+Das Projekt läuft derzeit auf **implicit** (kein `flowType` gesetzt,
+Vorgabe von supabase-js v2). Die PKCE-Form wird trotzdem bedient, damit
+ein Wechsel nichts zerbricht.
+
+In **allen** Fällen wird die Adresszeile geleert — Zugangsmerkmale
+gehören nicht in Verlauf, Referer oder Bildschirmfoto. Die Fehlermeldung
+zeigt nur die **Kennung** des Dienstes, nicht seine Beschreibung: Die kann
+die E-Mail-Adresse enthalten.
+
+Weitergeleitet wird **nur** bei einer Rückkehr aus der Mail. Wer die
+Anmeldeseite angemeldet aufruft, bleibt dort.
+
+### 20.3 Abmelden verschluckt keine Fehler mehr
+
+**Vorher** in `customer-auth.js`:
+
+```js
+try { await client.auth.signOut(); } catch (_error) { /* ignore */ }
+syncSessionState(null);
+return true;          // ← meldete IMMER Erfolg
+```
+
+Die Oberfläche sagte „abgemeldet", auch wenn der Dienst nichts widerrufen
+hatte. Für eine Sicherheitshandlung ist das die falsche Auskunft: Auf
+anderen Geräten wäre die Anmeldung weiter gültig gewesen, ohne dass es
+jemand erfahren hätte.
+
+**Jetzt** werden **beide** Wege geprüft, auf denen ein Fehlschlag ankommen
+kann — eine geworfene Ausnahme **und** ein zurückgegebenes `{ error }`.
+Der mitgelieferte Client meldet Fehler nämlich als Rückgabewert, nicht als
+Ausnahme; das war der Weg, der durchrutschte.
+
+Örtlich aufgeräumt wird **immer** — niemand soll angemeldet aussehen, wenn
+er es nicht mehr sein will. Erst danach wird der Fehler weitergereicht.
+
+**Gemessen** gegen die echte `customer-auth.js`, auf Netzebene:
+
+| Antwort des Dienstes | Ergebnis |
+|---|---|
+| 204 | Erfolg |
+| 500 | **Fehler** gemeldet |
+| Verbindungsabbruch | **Fehler** gemeldet |
+| 403 | Erfolg — der Client wertet 401/403/404 bewusst als „Sitzung ohnehin fort" |
+
+In **allen vier** Fällen ist die Sitzung örtlich beendet. Der Wortlaut des
+Dienstes erscheint nie in der Oberfläche.
+
+> Dass der Abmelde-Endpunkt wirklich gerufen wurde, zeigen die
+> unterschiedlichen Ergebnisse je Antwort: Ohne Sitzung wäre jeder Fall
+> gleich ausgegangen.
+
+**Drei aufrufende Stellen wurden angepasst**, damit der Fehler dort
+ankommt, wo er hingehört:
+
+- `meinkonto.html` und `kunden-einstellungen.html` zeigten schon eine
+  ehrliche Meldung — sie greift jetzt tatsächlich.
+- `rewards.html` verschluckte den Fehler ebenfalls und zeigte „abgemeldet".
+  Jetzt erscheint daneben ein Hinweis, wenn der Widerruf nicht bestätigt
+  wurde.
+- `passwort-zuruecksetzen.html` meldete sich **innerhalb** desselben
+  `try` ab, in dem das Passwort geändert wird. Ein Fehler beim Abmelden
+  hätte die bereits angezeigte Erfolgsmeldung überschrieben und dem Kunden
+  gesagt, das Passwort sei nicht geändert worden — **das wäre falsch
+  gewesen**. Der Aufruf hat jetzt ein eigenes `try`, und ein
+  fehlgeschlagener Widerruf erscheint als Zusatz neben dem Erfolg.
+
+**Der Geltungsbereich bleibt `global`** — der Vorgabewert. Nachgesehen im
+mitgelieferten Client (`signOut(e = {scope:'global'})`) und in der
+offiziellen Dokumentation. Damit verfallen alle Refresh-Tokens des Kontos.
+
+> **Grenze, unverändert:** Ein bereits ausgestellter Access-Token bleibt
+> bis zu seinem Ablauf gültig — ein signiertes JWT lässt sich nicht
+> zurückholen. Der Widerruf trifft die Refresh-Tokens.
+
+### 20.4 Der Kunden-Passwortreset bleibt offen
+
+Unverändert gegenüber Abschnitt 17: **Er funktioniert nicht.** Die
+Kundenseite sendet das richtige Ziel, Supabase nimmt den Link an, die
+Weiterleitung fällt trotzdem auf die alte Site URL zurück.
+
+Die Korrektur aus 20.1 ändert daran **nichts** — sie betrifft die
+Registrierungsbestätigung, einen anderen Mailweg. Beide hingen an
+derselben Ursache; behoben ist bisher nur der eine, und auch der nur
+soweit es der Code kann.
+
+**Als Nächstes zu klären bleibt der Inhalt der Recovery-Mailvorlage**
+(Abschnitt 17.5).
+
+### 20.5 Mailversand bleibt Veröffentlichungsvoraussetzung
+
+Unverändert gegenüber Abschnitt 18: Der eingebaute Supabase-Versand lässt
+**zwei Authentifizierungs-E-Mails pro Stunde** zu, projektweit, und
+schlägt still fehl. Vor der Veröffentlichung sind erforderlich:
+
+- ein **eigener SMTP-Dienst** (`Project Settings → Authentication → SMTP Settings`)
+- **SPF**, **DKIM** und **DMARC** für `taxigermersheim.de`
+
+Ohne beides landen Bestätigungs- und Reset-Mails im Spam oder gar nicht
+beim Kunden — unabhängig davon, ob die Weiterleitung stimmt.
+
+### 20.6 Übernommen aus feature/011
+
+| Commit | Übernommen | Inhalt |
+|---|---|---|
+| `316de73` | **ja**, unverändert | Anhang-Badge im Mitarbeiterportal wertet `document_submission_id` aus |
+| `8ff510a` | **ja**, unverändert | Rollenprüfung aus `profiles`, Navigationseintrag „Dokumentfristen", verwaistes `</div>` entfernt |
+| `2c7dc39` | **nur der CLAUDE.md-Teil** | Regel zu den Plattform-Grants auf `storage.objects`/`storage.buckets` |
+| `266de08` | **nein** | Prüfbelege zum Rückweg R1–R3 der 011-Einspielung |
+| `8102c08` | **nein** | Funktionstest und Testdaten-Bereinigung der 011-Einspielung |
+
+**Warum die drei SQL-Commits nicht vollständig übernommen wurden:**
+
+- Sie enthalten rund 4 000 Zeilen SQL zur Einspielung der Bestandsdatenbank
+  — **Protokoll eines Vorgangs, der gegen die produktive Instanz bereits
+  ausgeführt wurde.** Sie gehören zum Admin-/Dispatcher-Paket, nicht zum
+  Abschluss der öffentlichen Webseite.
+- Der übernommene Code **hängt nicht davon ab**: geprüft, 0 Verweise aus
+  `fahrer/mitarbeiter.js`, `admin/dokumenteingang-supabase.js`,
+  `admin/sidebar.js` und `admin/dokumentfristen.html` auf diese Dateien.
+  Die Datenbankseite ist über `supabase/migrations/011_…` bereits
+  vorhanden.
+- `266de08` und `8102c08` ließen sich einzeln **nicht sauber anwenden** —
+  sie bauen auf Dateien auf, die erst `2c7dc39` anlegt.
+- `2c7dc39` ändert außerdem `supabase/tests/local/02_plattform_shim.sql`,
+  das **lokale Testgerüst**. Diese Änderung ließe sich nur mit einem Lauf
+  des portablen PostgreSQL belegen, der hier nicht Teil des Auftrags war.
+  Eine ungeprüfte Änderung am Testgerüst zu übernehmen wäre schlechter,
+  als sie auf ihrem Branch zu lassen.
+- **Nichts geht verloren:** `feature/011-einspielung-bestandsdatenbank`
+  besteht unverändert weiter.
+
+**Warum der CLAUDE.md-Teil doch übernommen wurde:** Er hält fest, dass
+Supabase das Entziehen von Rechten an API-Rollen in `storage` seit dem
+21.04.2025 nicht mehr zulässt — ein `REVOKE` dort läuft ohne Fehler durch
+und bewirkt nichts. Ohne diese Notiz läuft die nächste Arbeit am
+Dateizugriff erneut in dieselbe Falle. Die Regel gilt unabhängig davon, wo
+die Einspielskripte liegen.
+
+**Keine bestehende Migration wurde angefasst** — geprüft: 0 Dateien unter
+`supabase/migrations/` berührt.
+
+### 20.7 Ein zusätzlicher Befund
+
+Beim Nachzählen nach der Übernahme fiel in `admin/dokumentfristen.html`
+ein **zweiter** Markup-Fehler auf, eine Zeile unter dem behobenen: Im
+Abschnitt „Eingang aus dem Mitarbeiterportal" wird
+`<div class="admin-panel-head">` geöffnet und nie geschlossen — drei
+öffnende, zwei schließende `<div>`.
+
+Vorher hob sich das gegen das verwaiste `</div>` aus dem Nachbarabschnitt
+in der **Gesamtzahl** auf. Beide Stellen waren trotzdem falsch, nur in
+entgegengesetzter Richtung: Nach der Übernahme stand die Datei bei 17
+öffnenden zu 16 schließenden, während die Schwesterseiten `fahrzeuge.html`
+und `rechnungen.html` ausgeglichen sind.
+
+Ergänzt, jetzt 17 zu 17. **Das ging über den Auftrag hinaus** — es wurde
+beim Prüfen der beauftragten Korrektur gefunden und betrifft dieselbe
+Datei und dieselbe Zeilengruppe.
+
+### 20.8 Was nicht gemacht wurde
+
+- **Keine neue Admin-Passwortwiederherstellung.** Sie gehört zum
+  Admin-/Dispatcher-Paket.
+- Keine Supabase-Einstellung geändert, keine Site URL angefasst, keine
+  Datenbank, Rolle, Berechtigung oder Rewards-Regel berührt.
+- Keine E-Mail ausgelöst, kein Konto angelegt, keine Anmeldung
+  durchgeführt.
+
+### 20.9 Prüfläufe
+
+| Lauf | Ergebnis |
+|---|---|
+| `auth-027-pruefen` (neu) | **37 / 37** |
+| `ausgabe-pruefen` | 56 / 56 |
+| `anmeldung-pruefen` | 154 / 154 |
+| `kontoseiten-pruefen` | 181 / 181 |
+| `rewards-pruefen` | 66 / 66 |
+| `qualitaet-pruefen` | 45 / 45 |
+
+Gefahren wurden nur die Läufe, die diese Änderungen berühren.
+
+> **Alles simuliert.** Der Netzverkehr nach außen war abgeschnitten.
+> Die Prüfung belegt, dass die Seiten das Richtige senden und richtig
+> reagieren — **nicht**, dass Supabase die Ziele befolgt oder Mails
+> zustellt.
+
+**Ein eigener Fehler in der Prüfung sei erwähnt,** weil er beinahe drei
+Fehlalarme erzeugt hätte: Die ersten Fassungen ersetzten
+`window.CustomerAuth.getClient` durch eine Attrappe. `customer-auth.js`
+holt ihren Client aber über eine Funktion **im Modulabschluss** — die
+Attrappe wirkte nie, und der Lauf meldete Fehler im Code, wo keine waren.
+Gemessen wird jetzt auf **Netzebene**: Die Anfragen werden abgefangen und
+selbst beantwortet.

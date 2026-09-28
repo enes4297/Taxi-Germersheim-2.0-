@@ -86,6 +86,18 @@ import Passwortregeln from '../components/Passwortregeln.astro';
       {/* ── Zustand 3: geschafft ──────────────────────────────────────── */}
       <div id="recoverySuccess" hidden role="status" aria-live="polite">
         <p class="text-sm leading-relaxed text-foreground">Ihr Passwort wurde erfolgreich geändert.</p>
+        {/* Erscheint nur, wenn der Dienst den Widerruf der Reset-Sitzung
+            nicht bestätigt hat. Das Passwort ist dann trotzdem geändert —
+            deshalb steht es hier als Zusatz und nicht als Fehler. */}
+        <p
+          id="abmeldeHinweis"
+          hidden
+          class="mt-3 text-sm leading-relaxed text-amber-200/90"
+        >
+          Hinweis: Die Abmeldung der Reset-Sitzung wurde nicht bestätigt.
+          Melden Sie sich bitte mit dem neuen Passwort an; falls Sie an
+          anderen Geräten angemeldet sind, melden Sie sich dort einmal ab.
+        </p>
         <a
           href="anmelden.html"
           class="mt-5 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold hover:bg-[#d4b87d] transition-colors duration-150 tg-press"
@@ -285,9 +297,28 @@ import Passwortregeln from '../components/Passwortregeln.astro';
       zustandPruefen.hidden = true;
       zustandErfolg.hidden = false;
 
-      // Abmelden: Die Sitzung des Reset-Links soll nicht weiterleben.
+      /*
+        Abmelden: Die Sitzung des Reset-Links soll nicht weiterleben.
+
+        EIGENES try/catch, mit Absicht. Das Passwort ist an dieser Stelle
+        bereits geändert und der Erfolg steht auf dem Bildschirm. Seit
+        `signOut()` einen nicht bestätigten Widerruf meldet, statt ihn zu
+        verschlucken, würde ein gemeinsames catch diesen Erfolg
+        überschreiben und dem Kunden sagen, das Passwort sei nicht geändert
+        worden — das wäre schlicht falsch.
+
+        Scheitert der Widerruf, bleibt der Erfolg stehen und daneben ein
+        ehrlicher Zusatz.
+      */
       const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
-      if (auth && typeof auth.signOut === 'function') await auth.signOut();
+      if (auth && typeof auth.signOut === 'function') {
+        try {
+          await auth.signOut();
+        } catch {
+          const zusatz = document.getElementById('abmeldeHinweis');
+          if (zusatz) zusatz.hidden = false;
+        }
+      }
     } catch {
       // Ohne den Fehlertext des Dienstes - er koennte die Adresse enthalten.
       console.error('Passwort konnte nicht geändert werden.');

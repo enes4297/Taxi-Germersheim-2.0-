@@ -420,23 +420,69 @@
     }
   }
 
+  /**
+   * Wohin die Bestaetigungsmail zurueckfuehren soll.
+   *
+   * Dieselbe Bauart wie beim Passwort-Reset: die eigene Herkunft plus die
+   * vorgesehene Seite. Damit stimmt das Ziel in jeder Umgebung - lokal, im
+   * WLAN und spaeter unter der echten Domain -, ohne dass irgendwo eine
+   * Adresse fest eingetragen werden muesste.
+   *
+   * Bei `file://` gibt es keine brauchbare Herkunft. Dann wird KEIN Ziel
+   * mitgegeben; die Registrierung selbst bleibt moeglich.
+   */
+  function bestaetigungsAdresse() {
+    try {
+      const schema = window.location.protocol;
+      if (schema !== "http:" && schema !== "https:") return null;
+      return new URL("/anmelden.html?bestaetigt=1", window.location.origin).href;
+    } catch (_error) {
+      return null;
+    }
+  }
+
   async function signUp(email, password, metadata = {}) {
     const client = await getClient();
     if (!client) {
       throw new Error("Supabase ist noch nicht konfiguriert.");
     }
 
+    /*
+      Das Ziel der Bestaetigungsmail wird MITGEGEBEN.
+
+      Ohne `emailRedirectTo` nimmt Supabase die im Projekt hinterlegte
+      "Site URL". Die ist projektweit und kann nur auf EINEN Weg zeigen -
+      gemessen am 28.09.2026 zeigte sie auf die Anmeldeseite der
+      Verwaltung, weil diese ebenfalls eine Recovery-Landeseite ist. Ein
+      Kunde waere nach dem Klick in der Bestaetigungsmail also dort
+      gelandet, nicht im eigenen Konto.
+
+      Mit einem eigenen Ziel ist die Site URL fuer diesen Weg gleichgueltig.
+      Voraussetzung: Die Adresse steht in der Erlaubnisliste des Projekts
+      ("Redirect URLs"). Steht sie nicht dort, faellt Supabase weiterhin auf
+      die Site URL zurueck - das ist eine Projekteinstellung und laesst sich
+      von hier aus nicht erzwingen.
+
+      Ziel ist `anmelden.html?bestaetigt=1`: Die Seite wertet diesen Wert
+      aus und nimmt auch eine Sitzung entgegen, die beim Bestaetigen
+      entstanden ist.
+    */
+    const options = {
+      data: {
+        first_name: metadata.firstName || "",
+        last_name: metadata.lastName || "",
+        full_name: metadata.fullName || "",
+        phone: metadata.phone || ""
+      }
+    };
+
+    const rueckkehr = bestaetigungsAdresse();
+    if (rueckkehr) options.emailRedirectTo = rueckkehr;
+
     const { data, error } = await client.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          first_name: metadata.firstName || "",
-          last_name: metadata.lastName || "",
-          full_name: metadata.fullName || "",
-          phone: metadata.phone || ""
-        }
-      }
+      options: options
     });
 
     if (error) {
@@ -457,17 +503,80 @@
     return data;
   }
 
+  /**
+   * Abmelden - und zwar ehrlich.
+   *
+   * ───────────────────────────────────────────────────────────────────────
+   * WAS HIER FRUEHER FALSCH WAR
+   * ───────────────────────────────────────────────────────────────────────
+   *
+   * Der Aufruf stand in einem try/catch, das den Fehler verschluckte, und
+   * die Funktion meldete anschliessend in jedem Fall Erfolg. Die Oberflaeche
+   * sagte dann "abgemeldet", obwohl der Dienst die Sitzung gar nicht
+   * widerrufen hatte. Fuer eine Sicherheitshandlung ist das die falsche
+   * Auskunft: Auf anderen Geraeten waere die Anmeldung weiter gueltig
+   * gewesen, ohne dass es jemand erfahren haette.
+   *
+   * Der mitgelieferte Client verschluckt zudem selbst die Antworten 401,
+   * 403 und 404 vom Abmelde-Endpunkt und raeumt trotzdem lokal auf. Ein
+   * ausbleibender Ausnahmefehler ist also KEIN Beleg fuer einen Widerruf.
+   *
+   * ───────────────────────────────────────────────────────────────────────
+   * WIE ES JETZT LAEUFT
+   * ───────────────────────────────────────────────────────────────────────
+   *
+   * Geprueft werden BEIDE Wege, auf denen ein Fehlschlag ankommen kann:
+   * eine geworfene Ausnahme UND ein zurueckgegebenes `{ error }`.
+   *
+   * Oertlich aufgeraeumt wird IMMER - niemand soll hier angemeldet
+   * aussehen, wenn er es nicht mehr sein will. Erst danach wird der Fehler
+   * weitergereicht, damit die Seite ihn anzeigen kann.
+   *
+   * Der Geltungsbereich bleibt der Vorgabewert 'global': Der Client setzt
+   * ihn selbst (nachgesehen in vendor/supabase-js-2.117.0.js:
+   * `signOut(e = {scope:'global'})`), und die offizielle Dokumentation
+   * nennt ihn ebenfalls als Vorgabe. Damit verfallen ALLE Refresh-Tokens
+   * des Kontos.
+   *
+   * ACHTUNG, GRENZE: Ein bereits ausgestellter Access-Token bleibt bis zu
+   * seinem Ablauf gueltig - ein signiertes JWT laesst sich nicht
+   * zurueckholen. Der Widerruf trifft die Refresh-Tokens.
+   *
+   * @returns {Promise<true>} bei erfolgreichem Widerruf
+   * @throws {Error} wenn der Dienst den Widerruf NICHT bestaetigt hat.
+   *                 Oertlich ist dann trotzdem aufgeraeumt.
+   */
   async function signOut() {
     const client = await getClient();
+    let fehler = null;
+
     if (client && client.auth && typeof client.auth.signOut === "function") {
       try {
-        await client.auth.signOut();
-      } catch (_error) {
-        // ignore and continue with local cleanup
+        const ergebnis = await client.auth.signOut();
+        // Der Client meldet Fehler als Rueckgabewert, nicht als Ausnahme.
+        if (ergebnis && ergebnis.error) fehler = ergebnis.error;
+      } catch (ausnahme) {
+        fehler = ausnahme;
       }
+    } else {
+      fehler = new Error("Abmelden ist nicht verfuegbar.");
     }
 
+    // Immer zuerst: hier soll nichts Persoenliches stehen bleiben.
     syncSessionState(null);
+
+    if (fehler) {
+      const text = (fehler && fehler.message) || "";
+      const weiter = new Error(
+        "Die Abmeldung wurde vom Dienst nicht bestaetigt. Oertlich ist die "
+        + "Sitzung beendet; auf anderen Geraeten kann sie noch gelten."
+      );
+      // Der urspruengliche Grund bleibt fuer die Fehlersuche erhalten,
+      // wandert aber nicht in die Oberflaeche.
+      weiter.grund = text;
+      throw weiter;
+    }
+
     return true;
   }
 
