@@ -1,7 +1,16 @@
 (() => {
   "use strict";
 
-  const SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+  /*
+    Die Bibliothek kommt aus dem eigenen Bestand, nicht von einem fremden
+    Netz. Gemessen wurde vorher ein Aufruf an
+    cdn.jsdelivr.net/npm/@supabase/supabase-js@2 - ohne feste Version.
+
+    Zwei Gruende: Das Portal haengt sonst an der Erreichbarkeit eines
+    Dritten, und "@2" laedt jede kuenftige Nebenversion ungeprueft nach.
+    Dieselbe Datei liefert die oeffentliche Webseite seit Schritt 017 mit.
+  */
+  const SUPABASE_LIB = "../vendor/supabase-js-2.117.0.js";
 
   let _client = null;
   let _clientReady = false;
@@ -28,7 +37,7 @@
         return;
       }
       const s = document.createElement("script");
-      s.src = SUPABASE_CDN;
+      s.src = SUPABASE_LIB;
       s.async = false;
       s.onload = () => resolve(window.supabase);
       s.onerror = () => resolve(null);
@@ -127,10 +136,38 @@
 
   /**
    * Abmelden.
+   *
+   * Geprueft werden BEIDE Wege, auf denen ein Fehlschlag ankommen kann:
+   * eine geworfene Ausnahme UND ein zurueckgegebenes { error }. Der
+   * Supabase-Client meldet Fehler als Rueckgabewert; wer nur auf eine
+   * Ausnahme wartet, haelt jeden Fehlschlag fuer einen Erfolg. Genau das
+   * stand hier vorher.
+   *
+   * Der Geltungsbereich ist der Vorgabewert 'global' - alle Refresh-Tokens
+   * des Kontos verfallen. Ein bereits ausgestellter Access-Token bleibt bis
+   * zu seinem Ablauf gueltig; ein signiertes JWT laesst sich nicht
+   * zurueckholen.
+   *
+   * @returns {Promise<true>} wenn der Dienst den Widerruf bestaetigt hat
+   * @throws {Error} wenn nicht. Die aufrufende Seite raeumt oertlich
+   *                 trotzdem auf und sagt es dem Mitarbeiter.
    */
   async function signOut() {
     const cl = await client();
-    if (cl) await cl.auth.signOut();
+    if (!cl) {
+      /* Ohne Client gibt es auf dem Server nichts zu widerrufen. Das ist
+         kein Erfolg, sondern eine unbeantwortete Frage. */
+      throw new Error("ABMELDUNG_NICHT_BESTAETIGT");
+    }
+    let fehler = null;
+    try {
+      const ergebnis = await cl.auth.signOut();
+      if (ergebnis && ergebnis.error) fehler = ergebnis.error;
+    } catch (ausnahme) {
+      fehler = ausnahme;
+    }
+    if (fehler) throw new Error("ABMELDUNG_NICHT_BESTAETIGT");
+    return true;
   }
 
   /**

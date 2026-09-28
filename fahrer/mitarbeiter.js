@@ -2,8 +2,36 @@
   const P = window.AdminPersonnelDemo;
   const ES = window.EmployeeSupabase || null;
   const STORAGE_KEY = "tgEmployeeDemoSession";
+  /*
+    Der oertliche Altbestand - und warum er abgesichert werden musste.
+
+    `AdminPersonnelDemo.loadState()` liest aus dem Browserspeicher. Bei
+    gesperrtem Speicher (privates Fenster, blockierte Website-Daten) warf
+    der Aufruf eine Ausnahme, und das Portal brach beim Laden ab - gemessen,
+    die Ausnahme kam aus admin/personal-shared.js:835.
+
+    Faellt der Aufruf aus, wird mit einer LEEREN Struktur weitergearbeitet:
+    Dann fehlen nur die oertlichen Zusatzhinweise (etwa "noch nicht
+    uebermittelt"); alles Echte kommt ohnehin aus Supabase.
+
+    OFFEN: Dieses Modul bringt Vorgabedaten mit erfundenen Personen mit.
+    Sie erscheinen im Portal nicht, weil jede Anzeige auf die
+    Mitarbeiterkennung aus der geprueften Sitzung filtert und die
+    Vorgabekennungen (MA-1xx) nie passen - nachgemessen. Das Modul ganz
+    abzuloesen beruehrt 26 Stellen und gehoert in einen eigenen Schritt.
+  */
+  function oertlicherBestand() {
+    const leer = { employees: [], documents: [], vacations: [], absences: [], messages: [] };
+    if (!P || typeof P.loadState !== "function") return leer;
+    try {
+      return P.loadState() || leer;
+    } catch {
+      return leer;
+    }
+  }
+
   const state = {
-    data: P ? P.loadState() : { employees: [], documents: [], vacations: [], absences: [], messages: [] },
+    data: oertlicherBestand(),
     employeeId: "MA-101",
     activeSection: "dienstplan",
     supabaseEmployee: null, /* { id, first_name, last_name, ... } */
@@ -35,29 +63,64 @@
     return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
   }
 
-  function requireDemoSession() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) { window.location.replace("index.html"); return false; }
-      const session = JSON.parse(raw);
-      if (!session || !session.authenticated) { window.location.replace("index.html"); return false; }
-      return true;
-    } catch {
-      window.location.replace("index.html");
-      return false;
-    }
+  /*
+    ══ ES GIBT NUR EINEN WEG INS PORTAL ═══════════════════════════════════
+
+    Frueher stand hier `requireDemoSession()`: Sie las eine Marke aus dem
+    Browserspeicher und liess durch, wenn darin `authenticated: true`
+    stand. Gemessen und nachgestellt: Eine einzige Zeile im Speicher
+    genuegte, um `mitarbeiter.html` direkt aufzurufen und den vollen
+    Portalinhalt zu sehen.
+
+    Schlimmer noch: Fiel `admin/supabase-config.js` aus - 404, gesperrt,
+    Netz weg -, schaltete das Portal von sich aus in einen "Demo-Modus"
+    um, in dem genau diese Marke die einzige Pruefung war. Der Inhalt kam
+    dann aus `AdminPersonnelDemo` und zeigte ERFUNDENE Personen.
+
+    Beides ist entfernt. Es gibt nur noch eine Eintrittspruefung:
+    `EmployeeSupabase.checkSession()`. Sie prueft die echte Sitzung UND
+    das Profil (aktiv, mit Mitarbeiterkennung). Faellt die Konfiguration
+    aus, kommt niemand hinein - und es wird ehrlich gesagt, warum.
+
+    Die Marke im Speicher bleibt als reine Bequemlichkeit bestehen (sie
+    erspart beim Neuladen ein Flackern), traegt aber KEINE Entscheidung
+    mehr.
+  */
+  function portalSperren(grund) {
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* gesperrter Speicher */ }
+    const ziel = grund ? `index.html?grund=${encodeURIComponent(grund)}` : "index.html";
+    window.location.replace(ziel);
   }
 
+  /**
+   * Abmelden - und ehrlich sagen, wenn der Widerruf nicht bestaetigt wurde.
+   *
+   * Oertlich aufgeraeumt wird IMMER: Niemand soll angemeldet aussehen, wenn
+   * er es nicht mehr sein will. Bestaetigt der Dienst den Widerruf nicht,
+   * erfaehrt der Mitarbeiter das - denn auf einem anderen Geraet kann die
+   * Anmeldung dann noch gelten.
+   */
   function logout() {
-    if (ES && ES.isConfigured()) {
-      ES.signOut().finally(() => {
-        localStorage.removeItem(STORAGE_KEY);
-        window.location.replace("index.html");
-      });
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
+    const oertlichRaeumen = () => {
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* gesperrter Speicher */ }
+    };
+
+    if (!ES || !ES.isConfigured()) {
+      oertlichRaeumen();
       window.location.replace("index.html");
+      return;
     }
+
+    ES.signOut()
+      .then(() => {
+        oertlichRaeumen();
+        window.location.replace("index.html");
+      })
+      .catch(() => {
+        /* Erst raeumen, dann melden - in dieser Reihenfolge. */
+        oertlichRaeumen();
+        window.location.replace("index.html?abmeldung=unbestaetigt");
+      });
   }
 
   function formatDate(value) {
@@ -1073,7 +1136,7 @@
         if (!row) return;
         row.status = "zurueckgezogen";
         P.saveState(state.data);
-        state.data = P.loadState();
+        state.data = oertlicherBestand();
         renderVacations();
         return;
       }
@@ -1082,7 +1145,7 @@
       if (read) {
         const id = read.getAttribute("data-portal-msg-read") || "";
         P.pushMessageRead(state.data, id, state.employeeId, "read");
-        state.data = P.loadState();
+        state.data = oertlicherBestand();
         renderMessages();
         return;
       }
@@ -1092,7 +1155,7 @@
         const id = conf.getAttribute("data-portal-msg-confirm") || "";
         P.pushMessageRead(state.data, id, state.employeeId, "confirm");
         P.pushMessageRead(state.data, id, state.employeeId, "read");
-        state.data = P.loadState();
+        state.data = oertlicherBestand();
         renderMessages();
         return;
       }
@@ -1168,7 +1231,7 @@
         /* Kein Backend verfuegbar: Der Antrag bleibt auf diesem Geraet.
            Er wird gespeichert, damit nichts verloren geht - aber er darf
            nicht als gesendet ausgegeben werden. */
-        state.data = P.loadState();
+        state.data = oertlicherBestand();
         renderVacations();
         renderHome();
         renderMessageSummary();
@@ -1317,7 +1380,7 @@
           transmitted: false,
           affectedShifts: []
         });
-        state.data = P.loadState();
+        state.data = oertlicherBestand();
         renderAbsences();
         renderHome();
         renderMessageSummary();
@@ -1398,7 +1461,7 @@
           demoFileType: file ? file.type : "",
           transmitted: false
         });
-        state.data = P.loadState();
+        state.data = oertlicherBestand();
         docForm.reset();
         renderDocs();
         renderHome();
@@ -1413,24 +1476,36 @@
     /* Seite ist zunächst ausgeblendet (data-portal-loading am body). */
     /* Nach Auth-Prüfung wird das Attribut entfernt. */
 
-    const isSupabase = ES && ES.isConfigured();
+    /*
+      EINE einzige Eintrittspruefung - siehe portalSperren() weiter oben.
 
-    if (isSupabase) {
-      /* ---- Supabase-Session prüfen ---- */
-      const sessionResult = await ES.checkSession();
-      if (!sessionResult) {
-        localStorage.removeItem("tgEmployeeDemoSession");
-        window.location.replace("index.html");
-        return;
-      }
-      state.employeeId = sessionResult.employeeId;
-
-      /* Schichten und Mitarbeiterdaten laden */
-      await loadSupabaseData();
-    } else {
-      /* ---- Demo-Modus ---- */
-      if (!requireDemoSession()) return;
+      Ist die Verbindung nicht eingerichtet, gibt es keinen Ersatzweg mehr.
+      Frueher sprang das Portal hier in einen Demo-Modus mit erfundenen
+      Personen; das war der Weg, ueber den eine Zeile im Browserspeicher
+      genuegte.
+    */
+    if (!ES || !ES.isConfigured()) {
+      portalSperren("nicht-eingerichtet");
+      return;
     }
+
+    let sessionResult = null;
+    try {
+      sessionResult = await ES.checkSession();
+    } catch {
+      /* Antwortet der Dienst nicht, ist die Sitzung UNGEPRUEFT. Ungeprueft
+         ist nicht dasselbe wie gueltig. */
+      portalSperren("nicht-erreichbar");
+      return;
+    }
+    if (!sessionResult) {
+      portalSperren("abgemeldet");
+      return;
+    }
+    state.employeeId = sessionResult.employeeId;
+
+    /* Schichten und Mitarbeiterdaten laden */
+    await loadSupabaseData();
 
     /* Ladestate aufheben */
     document.body.removeAttribute("data-portal-loading");
@@ -1449,7 +1524,10 @@
     setActiveSection("dienstplan", { scroll: false });
 
     /* Auto-Logout nur für Supabase-Nutzer starten */
-    if (isSupabase) initIdleTimer();
+    /* Die Abmeldung bei Untaetigkeit gilt ab hier immer: Wer bis hierher
+       kommt, hat eine geprüfte Sitzung. Frueher hing das an `isSupabase`;
+       die Variable gibt es seit dem Wegfall des Demo-Modus nicht mehr. */
+    initIdleTimer();
   });
 
   /* ------------------------------------------------------------------ */
@@ -1465,9 +1543,33 @@
     let warnShown  = false;
     let tickHandle = null;
 
+    /*
+      Speicherzugriffe, die nie werfen.
+
+      Gemessen: Bei gesperrtem Browserspeicher (privates Fenster, blockierte
+      Website-Daten) warf der Zugriff hier eine Ausnahme, und das Portal
+      brach ab. Ein gesperrter Speicher ist aber kein Fehler, sondern eine
+      Einstellung des Browsers - sie darf die Bedienung nicht verhindern.
+
+      Faellt er aus, haelt ein Wert im Arbeitsspeicher her: Der Zaehler
+      wirkt dann nur in diesem Tab, aber das Portal laeuft weiter.
+    */
+    let stempelErsatz = null;
+    const stempelLesen = () => {
+      try { return localStorage.getItem(STAMP_KEY); } catch { return stempelErsatz; }
+    };
+    const stempelSchreiben = (wert) => {
+      stempelErsatz = wert;
+      try { localStorage.setItem(STAMP_KEY, wert); } catch { /* gesperrt */ }
+    };
+    const stempelLoeschen = () => {
+      stempelErsatz = null;
+      try { localStorage.removeItem(STAMP_KEY); } catch { /* gesperrt */ }
+    };
+
     /* --- Zeitstempel setzen / Warnung ggf. wegblenden --- */
     function touch() {
-      localStorage.setItem(STAMP_KEY, String(Date.now()));
+      stempelSchreiben(String(Date.now()));
       if (warnShown) {
         warnShown = false;
         const banner = document.querySelector("[data-portal-idle-warning]");
@@ -1485,7 +1587,7 @@
 
     /* --- Prüfen ob Timeout abgelaufen --- */
     async function check() {
-      const raw = localStorage.getItem(STAMP_KEY);
+      const raw = stempelLesen();
       if (!raw) return; /* Noch nicht initialisiert */
       const elapsed = Date.now() - Number(raw);
 
@@ -1493,7 +1595,7 @@
         clearInterval(tickHandle);
         const banner = document.querySelector("[data-portal-idle-warning]");
         if (banner) banner.hidden = true;
-        localStorage.removeItem(STAMP_KEY);
+        stempelLoeschen();
         await ES.signOut();
         window.location.replace("index.html");
         return;

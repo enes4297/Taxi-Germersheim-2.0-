@@ -2926,3 +2926,197 @@ holt ihren Client aber über eine Funktion **im Modulabschluss** — die
 Attrappe wirkte nie, und der Lauf meldete Fehler im Code, wo keine waren.
 Gemessen wird jetzt auf **Netzebene**: Die Anfragen werden abgefangen und
 selbst beantwortet.
+
+---
+
+## 21. Schritt 028 — Mitarbeiterportal: Gestaltung und Zugangsschutz
+
+Branch `feature/028-mitarbeiterportal`, abgezweigt von `14d137e`.
+
+### 21.1 Bestandsaufnahme
+
+| Frage | Befund |
+|---|---|
+| Seiten | zwei: `fahrer/index.html` (Anmeldung), `fahrer/mitarbeiter.html` (Portal) |
+| Skripte | `app.js`, `employee-supabase.js`, `mitarbeiter-login.js`, `mitarbeiter.js`; dazu aus `admin/`: `supabase-config.js`, `personal-shared.js`, `qualitaet-shared.js`, `ui-visible-terms.js`, `ui-text.js` |
+| Stil | eine Datei, `fahrer/app.css` |
+| Echte Sitzung nötig | `mitarbeiter.html` — geprüft über `EmployeeSupabase.checkSession()`: echte Supabase-Sitzung **und** Profil mit `active = true` und `employee_id` |
+| Daten gelesen | `profiles`, `employees`, `shifts` (nur veröffentlichte), `vehicles`, `vacation_requests`, `sickness_reports`, `document_types`, `document_submissions` |
+| Daten geschrieben | Urlaubsantrag, Krankmeldung, Dokumenteinreichung |
+| Dateien | Upload in den Storage-Bucket der Nachweise; Abruf nur über **signierte Adresse** (`getSignedDocumentUrl`, 60 Sekunden) |
+| Besonders schützenswert | Krankmeldungen mit Zeitraum und Nachweis, Führerschein, Personenbeförderungsschein, Name, Beschäftigungsart |
+| Nur Attrappe | die örtlichen Zusatzhinweise aus `AdminPersonnelDemo` (siehe 21.5) |
+
+**Vor der Anmeldung sichtbar?** Nein. `body[data-portal-loading]` verbirgt
+den Inhalt, bis die Sitzungsprüfung durch ist. Gemessen bei absichtlich
+verlangsamter Antwort: Der Inhalt bleibt verborgen.
+
+### 21.2 Drei Sicherheitsbefunde — belegt, dann behoben
+
+Alle drei wurden **zuerst nachgestellt**, bevor etwas geändert wurde.
+
+**Befund 1 — eine Zeile im Browserspeicher genügte.**
+Der Wächter `requireDemoSession()` las eine Marke aus dem Browserspeicher
+und ließ durch, wenn darin `authenticated: true` stand. Nachgestellt:
+Marke gesetzt, `mitarbeiter.html` direkt aufgerufen → **Portalinhalt
+sichtbar**, ohne jede Anmeldung.
+
+Behoben: Es gibt nur noch **eine** Eintrittsprüfung, `checkSession()`.
+Die Marke bleibt als Bequemlichkeit, trägt aber keine Entscheidung mehr.
+Nachgemessen: derselbe Aufruf landet jetzt auf `index.html`, und im
+Dokument steht kein Portalinhalt.
+
+**Befund 2 — ein Ausfall der Konfiguration machte aus dem Portal ein Demo.**
+Fiel `admin/supabase-config.js` aus (404, gesperrt, Netz weg), schaltete
+das Portal in einen Demo-Modus, in dem allein die Marke aus Befund 1
+geprüft wurde. Die Inhalte kamen dann aus `AdminPersonnelDemo` — mit
+**erfundenen Personen**. Die Anmeldeseite zeigte in diesem Fall den
+Hinweis „Demo-Zugang: demo / demo".
+
+> **Genau gemessen, damit nichts Falsches behauptet wird:** Der Zugang
+> selbst ließ sich nicht auslösen — das E-Mail-Feld weist „demo" als
+> ungültig ab, bevor das Formular absendet. Wirksam war der **Hinweis**:
+> Er nannte Zugangsdaten, sobald die Konfiguration ausfiel.
+
+Behoben: Kein Ersatzweg mehr. Ohne eingerichtete Verbindung gibt es keine
+Anmeldung, und die Seite sagt, woran es liegt. Der Demo-Zugang und sein
+Hinweis sind aus Quelle **und** Auslieferung entfernt.
+
+**Befund 3 — die Bibliothek kam von einem fremden Netz.**
+`employee-supabase.js` lud `cdn.jsdelivr.net/npm/@supabase/supabase-js@2`
+— ohne feste Version. Gemessen: Der Aufruf ging beim Öffnen der
+Anmeldeseite hinaus.
+
+Behoben: Es wird die mitgelieferte `vendor/supabase-js-2.117.0.js`
+geladen, dieselbe Datei wie auf der öffentlichen Webseite seit Schritt 017.
+Nachgemessen: kein Aufruf mehr an ein fremdes CDN.
+
+### 21.3 Zwei weitere Befunde aus der eigenen Prüfung
+
+**Gesperrter Browserspeicher brach das Portal ab.** Die Ausnahme kam aus
+`admin/personal-shared.js:835`. Ein gesperrter Speicher ist keine
+Störung, sondern eine Einstellung des Browsers — sie darf die Bedienung
+nicht verhindern. Abgesichert an allen acht Stellen im Portal; der Zähler
+für Untätigkeit hält dann einen Wert im Arbeitsspeicher.
+`admin/personal-shared.js` selbst wurde **nicht** angefasst — die
+Verwaltung gehört in ein eigenes Paket.
+
+**Abmelden meldete Erfolg, auch wenn der Dienst nichts widerrief.**
+`signOut()` prüfte weder eine geworfene Ausnahme noch ein
+zurückgegebenes `{ error }` — dieselbe Lücke wie im Kundenbereich, dort in
+Schritt 027 geschlossen. Jetzt wird örtlich immer aufgeräumt, und bei
+unbestätigtem Widerruf erscheint auf der Anmeldeseite: *„Sie sind auf
+diesem Gerät abgemeldet. Der Abschluss der Abmeldung wurde allerdings
+nicht bestätigt …"* Kein technischer Wortlaut, keine Kennung.
+
+> Unverändert gilt: Ein bereits ausgestellter Access-Token bleibt bis zu
+> seinem Ablauf gültig. Der Widerruf trifft die Refresh-Tokens.
+
+### 21.4 Die Gestaltung
+
+Dieselbe Bildsprache wie die öffentliche Webseite — kein zweites Design,
+sondern dieselben Werte:
+
+| | vorher | nachher |
+|---|---|---|
+| Schrift | Segoe UI (System) | **Outfit** und **Lora**, aus dem eigenen Bestand |
+| Gold | `#f0c96b` (hell, gelblich) | **`#c8a96e`** — der Markenton |
+| Grund | Blauverlauf `#090b12 → #121723` | **`#18181b`**, flächig |
+| Kanten | 12–20 px rund | **gerade**, wie auf der Webseite |
+| Marke | Textplatzhalter „TG" | **das Bildzeichen**, 107 × 52 px wie im Seitenkopf |
+| Symbole | Emoji (🗓️ 🌴 🩺 📄) | **Strichzeichnungen** im Stil der Webseite |
+| Eingabefelder | 15 px | **16 px** — darunter zoomt iOS beim Antippen |
+
+**Zwei Darstellungsfehler nebenbei behoben**, beide gemessen und im Bild
+gesehen:
+
+- Bei 390 px standen „Heute" und „Morgen" nebeneinander; die Zustandsmarke
+  und der rechte Kartenrand wurden **abgeschnitten**. Jetzt untereinander
+  bis 720 px.
+- Die Dienstplanzeile war eine umbrechende Flexbox: Bei 390 px rutschte
+  das Fahrzeug neben das Datum und die Uhrzeit darunter. Jetzt ein Gitter
+  mit fester Zuordnung, unter 380 px untereinander.
+
+**Was besonders verlangt war:**
+
+- „Heute" und „Morgen" stehen als eigene Karten mit eigener Überschrift;
+  die Karte für heute trägt einen goldenen Rand.
+- Die **Schichtzeit** ist die größte Zeile der Karte (bis 38 px, Lora).
+- Das **Fahrzeug** steht abgesetzt unter einer Trennlinie. Fehlt es,
+  heißt es „Fahrzeug offen" — nichts wird erfunden.
+- **Dienstplan und Veröffentlichungszustand** sind unterscheidbar: der
+  geplante Dienst in Gold, die Veröffentlichung schlicht mit Rand.
+- **Urlaub und Krankmeldung** sind getrennte Schnellaktionen und getrennte
+  Bereiche.
+- Beim **Dokumentenupload** bleibt die gewählte Datei als goldgerahmte
+  Zeile mit Entfernen-Schaltfläche sichtbar.
+- **Keine untere Navigationsleiste** — geprüft.
+
+### 21.5 Was NICHT geändert wurde
+
+- **Keine Funktion entfernt**, kein Klassenname umbenannt: `mitarbeiter.js`
+  erzeugt einen Teil des Markups zur Laufzeit und setzt feste Namen.
+- **Anmeldung, Supabase-Anbindung, Rollen, Abfragen, Speicherzugriffe und
+  Geschäftslogik** unverändert.
+- **Keine Datenbankmigration**, keine produktiven Daten angefasst.
+- **Öffentliche Webseite, Dispatcher- und Adminbereich** gestalterisch
+  unberührt. Gegengeprüft: `ausgabe-pruefen` 56/56, `startseite-pruefen`
+  187/187, `kontoseiten-pruefen` 181/181, `auth-027-pruefen` 37/37.
+- **Keine E-Mail-Funktion** erfunden oder aktiviert.
+
+**Offen, bewusst nicht in diesem Schritt:** Das Portal lädt weiterhin
+`admin/personal-shared.js` für örtliche Zusatzhinweise („noch nicht
+übermittelt"). Das Modul bringt Vorgabedaten mit erfundenen Personen mit.
+Sie erscheinen im Portal **nicht** — jede Anzeige filtert auf die
+Mitarbeiterkennung aus der geprüften Sitzung, und die Vorgabekennungen
+(MA-1xx) passen nie. Nachgemessen: null erfundene Namen im Portaltext. Das
+Modul ganz abzulösen berührt 26 Stellen und gehört in einen eigenen
+Schritt.
+
+### 21.6 Prüfung
+
+`npm run portal-pruefen` — **69 / 69**:
+
+| Bereich | geprüft |
+|---|---|
+| Zugangsschutz | abgemeldet · gefälschte Marke · Konfiguration fehlt · Dienst antwortet nicht · angemeldet |
+| Herkunft | kein fremdes CDN · keine erfundenen Personen |
+| Datenstände | Schicht heute und morgen · kein veröffentlichter Plan · langsame Antwort · Fahrzeug vorhanden und nicht vorhanden |
+| Abmelden | bestätigt · **nicht** bestätigt |
+| Dateien | zu groß · unzulässiger Typ · ohne Datei — gegen die **echte** Anbindung, vor jedem Netzaufruf |
+| Browserspeicher | gesperrt |
+| Darstellung | 320 · 390 · 430 · 1440 px, je Überlauf, Schriftgrößen, Bedienflächen, Schrift, untere Leiste, Skriptfehler, fehlende Dateien |
+| Tastatur | 7 Elemente in 8 Schritten, jedes mit sichtbarem Umriss |
+
+> **Alles simuliert.** Keine Anmeldung, kein Upload, kein Datensatz, kein
+> Netzverkehr nach außen. Alle Namen, Zeiten und Kennzeichen erfunden.
+
+**Ein eigener Fehler in der Prüfung sei erwähnt**, weil er echte Arbeit
+gekostet hat: Die erste Fassung ersetzte `window.EmployeeSupabase` durch
+eine Attrappe. Das echte Skript lädt danach und **überschreibt** sie — die
+Aufnahmen zeigten in Wahrheit die Anmeldeseite. Ersetzt wird jetzt die
+Datei auf Netzebene.
+
+Der Prüflauf hat außerdem einen Fehler gefunden, den ich selbst eingebaut
+hatte: Beim Entfernen des Demo-Modus blieb eine Verwendung der gelöschten
+Variablen `isSupabase` stehen — `ReferenceError` bei jedem Seitenaufruf.
+
+### 21.7 Offen und nur am echten System prüfbar
+
+Diese drei sind **nicht** belegt und bleiben als manueller Test:
+
+1. **Ob die Regeln der Datenbank (RLS) fremde Daten wirklich abweisen** —
+   ob also eine manipulierte Kennung ins Leere läuft. Hier wurde nur
+   geprüft, dass das Portal keine fremde Kennung *sendet*.
+2. **Ob eine Mitarbeiterrolle wirklich keine Verwaltungsrechte hat.**
+   `checkSession()` verlangt `active` und `employee_id`; ob die Datenbank
+   einer solchen Rolle Dispatcher- oder Adminfunktionen verweigert, muss
+   am Projekt geprüft werden.
+3. **Ob eine Datei im Speicher ohne signierte Adresse unerreichbar ist.**
+   Das Portal ruft ausschließlich über `getSignedDocumentUrl` ab
+   (60 Sekunden Gültigkeit) — dass der Bucket privat ist, ist damit nicht
+   bewiesen.
+
+Ein solcher Test verlangt eine echte Anmeldung gegen die produktive
+Instanz. Produktive personenbezogene Daten dürfen dabei nicht verändert
+werden.
