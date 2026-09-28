@@ -2,7 +2,18 @@
 
 Interne Arbeitsunterlage. Sie wird **nicht** mit ausgeliefert.
 
-Stand: 23.09.2026, nach Schritt 020.
+Stand: 28.09.2026, nach Schritt 025.
+
+> **Was sich gegenüber dem Stand vom 23.09.2026 geändert hat**
+>
+> - `npm run preview` bindet nur auf `127.0.0.1` und ist vom Handy **nicht**
+>   erreichbar. Der Aufruf unten ist entsprechend korrigiert.
+> - Seit Schritt 021 gibt es fünf weitere Kontoseiten. Nach der Anmeldung
+>   ist deshalb mehr zu sehen als nur „Mein Konto"; Test 2 nennt jetzt, was
+>   dort im Einzelnen stehen muss.
+> - Ein sichtbarer Kontoname allein beweist noch nicht, dass die Kontodaten
+>   geladen wurden. Die Seite hat für den Fehlerfall eigene, benannte
+>   Meldungen — sie stehen jetzt in Test 2.
 
 ---
 
@@ -26,8 +37,14 @@ produktiven Daten verändert.
 
 ```
 npm run build
-npm run preview
+npx astro preview --host 0.0.0.0 --port 5200
 ```
+
+> **Warum nicht `npm run preview`?** Der Aufruf ohne `--host` bindet nur auf
+> `127.0.0.1`. Am PC funktioniert er, vom Handy ist er nicht erreichbar —
+> der Aufruf läuft dann scheinbar, und das Handy bekommt eine
+> Zeitüberschreitung. Mit `--host 0.0.0.0` hört der Server auf allen
+> Netzwerkkarten.
 
 **Die Seiten liegen dann hier:**
 
@@ -36,6 +53,10 @@ npm run preview
 | Anmelden | http://127.0.0.1:5200/anmelden.html | http://192.168.178.141:5200/anmelden.html |
 | Registrieren | http://127.0.0.1:5200/registrieren.html | http://192.168.178.141:5200/registrieren.html |
 | Passwort vergessen | http://127.0.0.1:5200/passwort-vergessen.html | http://192.168.178.141:5200/passwort-vergessen.html |
+| Mein Konto | http://127.0.0.1:5200/meinkonto.html | http://192.168.178.141:5200/meinkonto.html |
+
+Die WLAN-Adresse ist die des Entwicklungsrechners und kann sich ändern; sie
+lässt sich mit `ipconfig` nachsehen (Eintrag „IPv4-Adresse").
 
 **Legen Sie sich eine Testadresse zu**, die Sie wirklich abrufen können und
 die kein Kundenkonto ist — zum Beispiel eine Plus-Adresse Ihres eigenen
@@ -96,6 +117,51 @@ Mail kam und wie lange es dauerte · wohin der Link geführt hat.
 verknüpft werden" erscheint: Das Konto existiert in Supabase, ist aber nicht
 mit einem Kundendatensatz verbunden. Das ist **kein Fehler dieser Seite** —
 die Verknüpfung passiert im Backend. Bitte melden.
+
+### Und dann bitte genau hinsehen
+
+**Ein sichtbarer Name beweist noch nichts.** Der Name kommt aus der Sitzung
+selbst; die übrigen Angaben kommen aus zwei getrennten Abfragen, und die
+können einzeln fehlschlagen, ohne dass die Seite leer aussieht.
+
+Auf `meinkonto.html` stehen sechs Felder. Bitte alle sechs ansehen:
+
+| Feld | Woher es kommt |
+|---|---|
+| Name | aus der Sitzung |
+| E-Mail | aus der Sitzung |
+| Telefon | aus dem Kundendatensatz |
+| Mitglied seit | aus dem Kundendatensatz |
+| Punkte und Stufe | aus der Rewards-Abfrage |
+| Qualifizierende Fahrten und verfügbare Drehs | aus der Rewards-Abfrage |
+
+**Was die Zeichen bedeuten:**
+
+| Was Sie sehen | Bedeutung |
+|---|---|
+| Echte Werte in allen sechs Feldern | Alles geladen. |
+| **`…`** bleibt stehen | Die Abfrage läuft noch oder hängt. Nach einigen Sekunden bitte melden. |
+| **`—`** steht dort | Das Feld wurde geleert, ein Wert kam nicht an. |
+| **„Ihr Rewards-Stand ist gerade nicht abrufbar."** mit „Erneut versuchen" | Die Rewards-Abfrage ist fehlgeschlagen. Name und E-Mail können trotzdem dastehen. Bitte melden. |
+| **„Der Browserspeicher ist gesperrt."** | Der Browser lässt keine Sitzung speichern (privates Fenster, blockierte Website-Daten). Kein Fehler der Seite. |
+
+**Bitte melden:** welche der sechs Felder gefüllt waren und welche nicht —
+die **Werte selbst brauche ich nicht**, „gefüllt" oder „leer" genügt.
+
+### Die weiteren Kontoseiten (seit Schritt 021)
+
+Erst ansehen, wenn Test 2 durch ist:
+
+| Seite | Was dort stehen sollte |
+|---|---|
+| `kunden-einstellungen.html` | Ihre Stammdaten, änderbar |
+| `meine-fahrten.html` | **Noch keine Fahrten.** Für Kundenkonten gibt es auf die Fahrtentabelle bislang keinen Zugriff (alle vier Regeln hängen an der Dispatcher-/Admin-Prüfung). Die Seite sagt das mit „Hier finden Sie künftig Ihre kommenden und vergangenen Fahrten." — das ist der bekannte offene Punkt, kein neuer Fehler. |
+| `wallet-gutscheine.html` | Guthaben und Gutscheine |
+| `live-fahrt.html` | die laufende Fahrt — ohne laufende Fahrt ein Hinweis |
+
+> Ein **leerer** Bereich und ein **Ladefehler** sind zweierlei. Die Seiten
+> sollen das auseinanderhalten und es sagen. Wenn eine Seite einfach leer
+> aussieht, ohne zu erklären warum, ist das ein Befund — bitte melden.
 
 ---
 
