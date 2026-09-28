@@ -17,19 +17,11 @@
  * die bestehende spiele.html, und die Beschriftung sagt, was dort tatsaechlich
  * zu finden ist — siehe REWARDS_STATIONEN in src/inhalte.ts.
  */
-import { BEWERTUNG, RAD_FELDER, REWARDS, REWARDS_STATIONEN } from '../inhalte';
+import { BEWERTUNG, REWARDS, REWARDS_STATIONEN } from '../inhalte';
 import Abschnitt from './Abschnitt.astro';
 import Enthuellen from './Enthuellen.astro';
 import Symbol from './Symbol.astro';
 
-// Feldaufteilung des Rades aus den hinterlegten Gewinnregeln.
-const farben = ['#332f27', '#443d31', '#574c3b', '#6d5d46', '#8b7452', '#ab9063', '#c8a96e'];
-let winkel = 0;
-const segmente = RAD_FELDER.map((g, i) => {
-  const von = winkel;
-  winkel += (g.anteil / 100) * 360;
-  return `${farben[i % farben.length]} ${von}deg ${winkel}deg`;
-});
 ---
 
 <Abschnitt id="rewards">
@@ -94,19 +86,52 @@ const segmente = RAD_FELDER.map((g, i) => {
                 }`}
               >
                 <div class="relative aspect-[4/3] overflow-hidden bg-[#0b0b0d]">
+                  {/*
+                    DAS ECHTE RAD, nicht mehr nachgezeichnet.
+
+                    Bis Schritt 025 stand hier ein Rad aus Farbverlaeufen mit
+                    einem "Y" in der Nabe. In der Spielewelt steht seit
+                    Schritt 022 das freigegebene Rad: Goldring mit Riffelung,
+                    Zeiger, Nabe mit dem Bildzeichen ohne Schriftzug. Die
+                    Vorschau zeigte also etwas, das es dort nicht gibt.
+
+                    Das Bild ist eine Aufnahme AUS der gebauten Spielewelt -
+                    erzeugt von tools/spielbilder.mjs, neu erzeugbar bei jeder
+                    Aenderung am Rad. Es ist ein stehendes Bild: In der Karte
+                    laeuft kein Spiel.
+
+                    Das Rad ist quadratisch, die Karte 4:3 - deshalb
+                    `object-contain`. So bleibt es rund und vollstaendig,
+                    statt oben und unten angeschnitten zu werden.
+
+                    WICHTIG - ZWEIMAL GEMESSEN, ZWEIMAL NACHGEBESSERT:
+
+                    `h-[92%] w-auto` ergab ein 356 Pixel hohes Bild in einer
+                    290 Pixel hohen Flaeche. `h-full w-full` in einem
+                    Gitter-Kasten ergab 290 statt 218 Pixel Hoehe - eine
+                    Prozenthoehe in einem Gitter, dessen Zeile sich nach dem
+                    Inhalt richtet, laeuft im Kreis und faellt auf die
+                    Eigenhoehe zurueck. Beide Male war das Rad oben und unten
+                    angeschnitten.
+
+                    Deshalb steht das Bild jetzt selbst absolut auf
+                    `inset-0`: Es bekommt seinen Kasten unmittelbar von der
+                    4:3-Flaeche, ohne Gitter dazwischen. Das Innenmass haelt
+                    den Zeiger vom Rand frei.
+                  */}
                   {s.id === 'gluecksrad' && (
-                    <div class="absolute inset-0 grid place-items-center">
+                    <>
                       <div aria-hidden="true" class="absolute inset-0" style="background: radial-gradient(60% 55% at 50% 48%, rgba(200,169,110,0.16) 0%, rgba(200,169,110,0) 70%)"></div>
-                      <div aria-hidden="true" class="relative w-[70%] aspect-square">
-                        <span class="absolute -inset-[4%] rounded-full" style="background: conic-gradient(from 210deg, #8b7452, #c8a96e, #6d5d46, #c8a96e, #8b7452)"></span>
-                        <span class="absolute inset-0 rounded-full" style={`background: conic-gradient(${segmente.join(', ')}); box-shadow: inset 0 0 40px rgba(0,0,0,0.55)`}></span>
-                        <span class="absolute inset-0 rounded-full opacity-40" style="background: repeating-conic-gradient(from 0deg, rgba(11,11,13,0.9) 0deg 0.6deg, transparent 0.6deg 36deg)"></span>
-                        <span class="absolute inset-[30%] rounded-full bg-[#0f0f12] ring-1 ring-primary/40 grid place-items-center">
-                          <span class="text-primary font-semibold text-xl lg:text-2xl">Y</span>
-                        </span>
-                        <span class="absolute left-1/2 -top-[7%] -translate-x-1/2 w-0 h-0 border-x-[10px] border-x-transparent border-t-[18px] border-t-primary drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]"></span>
-                      </div>
-                    </div>
+                      <img
+                        src="/assets/spielewelt/gluecksrad-vorschau.webp"
+                        alt="Das Glücksrad der Spielewelt: sieben Felder von 5 Punkten bis zu Yumaks Box, Goldring und Zeiger."
+                        width="900"
+                        height="900"
+                        loading="lazy"
+                        decoding="async"
+                        class="absolute inset-0 block h-full w-full object-contain p-3 sm:p-4"
+                      />
+                    </>
                   )}
 
                   {s.id === 'box' && (
@@ -126,28 +151,30 @@ const segmente = RAD_FELDER.map((g, i) => {
                     </div>
                   )}
 
+                  {/*
+                    EINE ECHTE SPIELSZENE, nicht mehr nachgezeichnet.
+
+                    Vorher standen hier ein paar Balken und ein Rechteck,
+                    das ein Auto andeuten sollte - samt einer
+                    Dauer-Animation der Fahrbahnstriche. Seit Schritt 023
+                    ist Taxi Rush ein ausgearbeitetes Spiel mit Haeusern,
+                    Baeumen, Gegenverkehr und Abholzone.
+
+                    Das Bild ist eine Aufnahme AUS dem gebauten Spiel,
+                    erzeugt von tools/spielbilder.mjs: gestartet, drei
+                    Sekunden gefahren, mittig auf 4:3 geschnitten. Ein
+                    STEHENDES Bild - in der Karte laeuft kein Spiel.
+                  */}
                   {s.id === 'rush' && (
-                    <div class="absolute inset-0 overflow-hidden">
-                      <div aria-hidden="true" class="absolute inset-0" style="background: linear-gradient(to bottom, #101014 0%, #17171c 34%, #1f1f25 100%)"></div>
-                      <div aria-hidden="true" class="absolute inset-x-0 top-[26%] h-[18%]" style="background: radial-gradient(70% 100% at 50% 100%, rgba(200,169,110,0.20) 0%, rgba(200,169,110,0) 72%)"></div>
-                      <div aria-hidden="true" class="absolute left-1/2 -translate-x-1/2 bottom-0 w-[86%] h-[66%]" style="background: linear-gradient(to bottom, #24242b 0%, #303039 100%); clip-path: polygon(42% 0%, 58% 0%, 104% 100%, -4% 100%)"></div>
-                      {[0, 1, 2, 3].map((i2) => (
-                        <span
-                          aria-hidden="true"
-                          class="absolute left-1/2 -translate-x-1/2 bg-primary/70 motion-safe:[animation:tg-rush-strich_1.5s_linear_infinite]"
-                          style={`bottom: ${4 + i2 * 17}%; width: ${3 + i2 * 2.2}px; height: ${5 + i2 * 3.4}%; animation-delay: ${i2 * 0.375}s`}
-                        ></span>
-                      ))}
-                      <span aria-hidden="true" class="absolute left-1/2 -translate-x-1/2 bottom-[16%] w-[62%] h-[48%]" style="background: linear-gradient(to top, rgba(200,169,110,0.20) 0%, rgba(200,169,110,0) 78%); clip-path: polygon(38% 100%, 62% 100%, 100% 0%, 0% 0%)"></span>
-                      <span aria-hidden="true" class="absolute left-1/2 -translate-x-1/2 bottom-[8%] w-[21%]" style="aspect-ratio: 3 / 4.6">
-                        <span class="absolute inset-0 rounded-[26%_26%_18%_18%/16%_16%_11%_11%]" style="background: linear-gradient(to bottom, #33333a 0%, #16161a 62%, #0e0e11 100%); box-shadow: 0 0 0 1px rgba(200,169,110,0.45), 0 14px 32px -8px rgba(0,0,0,0.95)"></span>
-                        <span class="absolute left-1/2 -translate-x-1/2 -top-[7%] w-[42%] h-[9%] rounded-[2px] bg-primary"></span>
-                        <span class="absolute inset-x-[17%] top-[14%] h-[22%] rounded-[20%] bg-primary/20"></span>
-                        <span class="absolute inset-x-[26%] top-[45%] h-[10%] rounded-sm bg-primary/55"></span>
-                        <span class="absolute left-[11%] bottom-[8%] w-[18%] h-[6%] rounded-full bg-primary"></span>
-                        <span class="absolute right-[11%] bottom-[8%] w-[18%] h-[6%] rounded-full bg-primary"></span>
-                      </span>
-                    </div>
+                    <img
+                      src="/assets/spielewelt/taxi-rush-vorschau.webp"
+                      alt="Taxi Rush: das gelbe Taxi auf der Strasse durch Germersheim, mit Haeusern, Baeumen und Gegenverkehr."
+                      width="1200"
+                      height="900"
+                      loading="lazy"
+                      decoding="async"
+                      class="absolute inset-0 h-full w-full object-cover"
+                    />
                   )}
 
                   <span aria-hidden="true" class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to bottom, rgba(11,11,13,0.5) 0%, rgba(11,11,13,0) 30%, rgba(11,11,13,0) 70%, rgba(11,11,13,0.6) 100%)"></span>

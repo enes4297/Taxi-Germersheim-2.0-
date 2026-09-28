@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import bestandUebernehmen from './tools/bestand-uebernehmen.mjs';
 import suchmaschinenDateien from './tools/suchmaschinen-dateien.mjs';
 import kopfangabenBestand from './tools/kopfangaben-bestand.mjs';
+import kopfzeileBestand from './tools/kopfzeile-bestand.mjs';
 
 // Grundgeruest fuer die oeffentliche Webseite.
 //
@@ -56,8 +57,12 @@ export default defineConfig({
 
   // Reihenfolge ist bedeutungstragend:
   //   1. bestandUebernehmen  kopiert die Bestandsseiten in den Ausgabeordner
-  //   2. kopfangabenBestand  ergaenzt dort Symbole, canonical und noindex -
+  //   2. kopfzeileBestand    setzt in spiele.html die freigegebene Kopfzeile
+  //                          ein - geholt aus einer FERTIG GEBAUTEN
+  //                          Astro-Seite, also nach dem Kopieren und vor
+  //                          allem, was am Kopfbereich noch ergaenzt wird
+  //   3. kopfangabenBestand  ergaenzt dort Symbole, canonical und noindex -
   //                          es muss also NACH dem Kopieren laufen
-  //   3. suchmaschinenDateien schreibt robots.txt und sitemap.xml
-  integrations: [bestandUebernehmen(), kopfangabenBestand(), suchmaschinenDateien()],
+  //   4. suchmaschinenDateien schreibt robots.txt und sitemap.xml
+  integrations: [bestandUebernehmen(), kopfzeileBestand(), kopfangabenBestand(), suchmaschinenDateien()],
 });

@@ -1150,3 +1150,65 @@ Die Fragen I1 bis I6 der Bestandsaufnahme. Im Kern:
    öffentlichen Webseite.
 
 **Kein Push, Merge oder Deployment** ohne ausdrückliche Freigabe.
+
+---
+
+## Nachtrag zu Schritt 025
+
+### Die Kopfzeile der Spielewelt kommt jetzt aus dem Build
+
+`spiele.html` trägt seit Schritt 025 dieselbe Kopfzeile wie alle übrigen
+Seiten. Sie wird nicht nachgebaut, sondern beim Bauen aus dem fertigen
+Astro-Ergebnis herausgeschnitten und eingesetzt —
+`tools/kopfzeile-bestand.mjs`, ausgeführt nach `bestandUebernehmen()`.
+
+**Wer `Kopfbereich.astro` ändert, ändert `spiele.html` mit.** Ein eigener
+Handgriff ist nicht nötig.
+
+**Eingefügt wird nur, nie entfernt.** Die alte Kopfzeile bleibt im
+Dokument stehen und wird per CSS ausgeblendet. Der eingesetzte Text liegt
+in zwei benannten Blöcken:
+
+```
+<!-- tg:kopfzeile Anfang - eingesetzt von tools/kopfzeile-bestand.mjs -->
+…
+<!-- tg:kopfzeile Ende -->
+```
+
+`ausgabe-pruefen` schneidet beide wieder heraus und vergleicht den Rest
+Byte für Byte gegen das Repository. Die Zusicherung „der Bestand wird
+unverändert ausgeliefert" bleibt damit maschinell nachrechenbar.
+
+**Was NICHT mitkommt:** das ganze Design-Bündel. Ein `<link>` darauf hatte
+Tailwinds Grundbereinigung in die Spielewelt getragen und dort gemessen
+Innenabstände, Außenabstände und Schriftstärken verändert. Eingesetzt
+werden nur Schriften, Eigenschaftsanmeldungen und Variablen — die
+Variablen auf der Kopfzeile selbst, nicht auf `:root` — sowie die auf
+`header[data-kopf]` umgeschriebenen Regeln.
+
+`public-system.js` erkennt die neue Kopfzeile an `data-kopf` und lässt sie
+in Ruhe; ohne diese Abfrage würde es sie beim Laden durch seine eigene
+ersetzen.
+
+### Vorschaubilder der Spiele neu erzeugen
+
+```
+npm run build          # die Spielewelt muss gebaut sein
+npm run spielbilder
+npm run build          # die neuen Bilder mit ausliefern
+```
+
+`tools/spielbilder.mjs` startet einen Browser, nimmt das Rad und eine
+Szene aus Taxi Rush auf und rechnet beides nach WebP um. Nötig ist das
+nur, wenn sich eines der beiden Spiele sichtbar ändert. Die PNG-Aufnahmen
+landen im Temp-Ordner, nicht in `public/`.
+
+Voraussetzung ist ffmpeg unter
+`%USERPROFILE%\ffmpeg-tg\ffmpeg-9.0.1-essentials_build\bin`.
+
+### Offener Punkt aus Schritt 025
+
+**Das ovale Glücksrad auf dem iPhone** ließ sich hier nicht nachstellen —
+in Chrome war es bei allen neun gemessenen Breiten exakt quadratisch. Die
+Ursache im CSS ist beseitigt (der Goldring rechnet seine Höhe nicht mehr
+selbst aus), aber ob das genügt, muss auf dem Gerät nachgesehen werden.

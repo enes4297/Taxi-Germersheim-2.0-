@@ -2210,3 +2210,204 @@ Standbild), Rewards-Regeln und -Berechnungen, Datenbank, Rollen und
 Berechtigungen, `admin/`, `fahrer/`, `dashboard/`. Die Originalbilder in
 `admin/images/` sind unberührt; geändert wurden nur die beiden
 Stilvorlagen, die sie als Hintergrund luden.
+
+---
+
+## 16. Schritt 025 — Kopfzeile, Spielevorschauen und drei Handy-Fehler
+
+Branch `feature/025-kopfzeile-teaser`, abgezweigt von `159901a`.
+
+### 16.1 Die Kopfzeile auf `spiele.html`
+
+Die Spielewelt ist übernommener Bestand und wird nicht gebaut. Sie trug
+deshalb noch eine eigene, zur Laufzeit zusammengesetzte Kopfzeile.
+Gemessen bei 1440 px:
+
+| | freigegeben (Astro) | Spielewelt (vorher) |
+|---|---|---|
+| Logo | 107 × 52 px | deutlich größer |
+| Kopfhöhe | 81 px | 114 px |
+| Navigation | Leistungen, Fahrzeugflotte, Rewards, Spiele, Kontakt, Anmelden, Telefon, WhatsApp, Fahrt anfragen | Startseite, Leistungen-Aufklappmenü, Fahrzeugflotte, Rewards, Kontakt |
+
+`tools/kopfzeile-bestand.mjs` schneidet beim Bauen die **echte** Kopfzeile
+aus dem fertigen Astro-Ergebnis heraus und setzt sie in `spiele.html` ein.
+Eine Quelle, ein Aussehen: Ändert sich `Kopfbereich.astro`, ändert sich
+`spiele.html` beim nächsten Build mit.
+
+**Die eigentliche Schwierigkeit waren Kaskadenschichten.** Tailwind legt
+seine Klassen in `@layer utilities`. Ungeschichtetes CSS gewinnt gegen
+geschichtetes **immer** — unabhängig von Genauigkeit und Reihenfolge.
+`style.css` ist ungeschichtet und schlug deshalb jede Regel der neuen
+Kopfzeile. Gemessen:
+
+| Bestandsregel | schlug | Folge |
+|---|---|---|
+| `.hidden` aus `style.css` | `.lg\:flex` | Navigation unsichtbar |
+| `a{color:inherit}` | `.text-white/72` | falsche Verweisfarbe |
+| `button{…!important}` | Schriftklassen | falsche Schriftgröße |
+| `button svg{width:22px!important}` | `.w-[18px]` | zu große Symbole |
+| `body.gameworld-body::after` (z-index 99) | Kopfzeile (z-index 40) | Kopfzeile vollständig verdeckt |
+
+Von Hand dagegenzuhalten wäre eine zweite Kopfzeile in Zeitlupe gewesen.
+Das Werkzeug arbeitet deshalb **mechanisch**: Es liest alle Klassennamen
+der Kopfzeile — aus dem Markup *und* aus ihrem Bedienskript — sucht im
+Design-Bündel die zugehörigen Regeln und gibt sie noch einmal aus,
+ungeschichtet und auf `header[data-kopf]` begrenzt.
+
+**Was dabei dreimal schiefging und gemessen korrigiert wurde:**
+
+1. *Das ganze Bündel verlinkt.* Das holt Tailwinds Grundbereinigung
+   („Preflight") mit, und die nimmt **der ganzen Spielewelt** Abstände und
+   Schriftstärken: `BUTTON.drive` padding-left 6 px → 0, `P` margin-top
+   14 px → 0, `H2` font-weight 700 → 400. Jetzt kommen nur Schriften,
+   Eigenschaftsanmeldungen und Variablen mit — Letztere auf der Kopfzeile
+   selbst statt auf `:root`, damit kein Variablenname der Spielewelt
+   überschrieben werden kann. Die Grundbereinigung wird eigens auf
+   `header[data-kopf]` umgeschrieben.
+2. *Nur Nachfahren angesprochen.* Die Kopfzeile trägt Klassen am
+   Wurzelelement selbst (`border-b`). `header[data-kopf] .border-b` trifft
+   die nicht — sie war dadurch 80 statt 81 px hoch.
+3. *Klassen des Bedienskripts übersehen.* Mit geöffnetem Mobilmenü wird
+   die Kopfzeile schmaler; das Logo maß auf `rewards.html` 74 × 36 px und
+   auf `spiele.html` 0 × 0.
+
+**Ergebnis:** 0 von 50 Elementen weichen ab — bei 1440 px und bei 390 px,
+im geschlossenen wie im geöffneten Mobilmenü. Logo 107 × 52 (PC) und
+82 × 40 (Handy) auf beiden Seiten, Mobilmenü mit denselben zehn Einträgen
+einschließlich Konto-Einstieg.
+
+**Eine benannte Abweichung bleibt:** `spiele.html` setzt für das Dokument
+`overflow-y: auto` und zeigt am Schreibtisch eine klassische
+Bildlaufleiste; die Astro-Seiten blenden ihre aus. Der nutzbare Streifen
+ist dadurch am PC 15 px schmaler. Das ist eine Eigenschaft der Seite, kein
+Fehler der Kopfzeile, und auf dem Handy nicht vorhanden. Die Spielewelt
+behält ihre Bildlaufleiste.
+
+### 16.2 Die Spielevorschauen auf der Startseite
+
+Vorher standen dort nachgezeichnete Motive: ein Rad aus Farbverläufen mit
+einem „Y" in der Nabe und ein Rechteck auf ein paar Balken, samt einer
+dauerhaft laufenden Animation der Fahrbahnstriche.
+
+`tools/spielbilder.mjs` (`npm run spielbilder`) nimmt die Bilder jetzt dort
+auf, wo sie herkommen: in der gebauten Spielewelt, im echten Browser.
+
+| Datei | Größe | Inhalt |
+|---|---|---|
+| `gluecksrad-vorschau.webp` | 900 × 900, 63 KB | das Rad, wie es in der Spielewelt steht — Goldring, Zeiger, Nabe mit dem Bildzeichen. **Kein Dreh wird ausgelöst.** |
+| `taxi-rush-vorschau.webp` | 1200 × 900, 30 KB | eine Spielszene: Taxi, Straße, Häuser, Bäume, Abholzone |
+
+Beide zusammen 93 KB übertragen, im Browser gemessen. Die PNG-Aufnahmen
+bleiben als Zwischenstand im Temp-Ordner und werden **nicht** ausgeliefert.
+
+Zwei Bildausschnitte mussten nachgebessert werden — beide gemessen, nicht
+geschätzt:
+
+- Das Rad war in der Karte 356 px hoch bei 290 px Fläche und oben wie
+  unten angeschnitten. Erst `h-[92%] w-auto`, dann `h-full w-full` im
+  Gitter ergaben beide ein zu großes Bild; eine Prozenthöhe in einem
+  Gitter, dessen Zeile sich nach dem Inhalt richtet, läuft im Kreis. Das
+  Bild steht jetzt selbst absolut auf `inset-0`.
+- Die Marke „Sofort spielbar" schnitt die Anzeige mit Abhol- und Zielort
+  an. Die oberste Zeile des Spielfelds wird deshalb nicht mehr
+  mitaufgenommen.
+
+In den Karten läuft nichts dauerhaft: 0 Dauer-Animationen, kein Video,
+kein Spielfeld, kein eingebetteter Rahmen. Die Aussagen stimmen: Das Rad
+ist „Noch gesperrt" und führt zu „In der Spielewelt ansehen" mit dem
+Zusatz „für Kundenkonten derzeit gesperrt" — **keine Teilnahme wird
+versprochen**. Yumaks Box ist „Noch gesperrt" und „erscheint nur nach
+einem bestätigten Gewinn" — **nicht als fertige Funktion dargestellt**.
+Taxi Rush ist „Sofort spielbar" und führt auf `spiele.html#taxiRushTitle`.
+
+### 16.3 Drei Fehler von einem echten iPhone
+
+Gemeldet mit zwei Bildschirmaufnahmen.
+
+**Die Mitgliedskarte schnitt Punkte und Status ab.** Die Karte hatte
+`aspect-ratio: 1.586 / 1` — das Maß einer Scheckkarte — und
+`overflow-hidden`. Das war ein Deckel. Nachgestellt mit auf 140 Prozent
+vergrößerter Schrift: 248 px Inhalt in 209 px Karte, „Punkte" und
+„Status" unten weg; ein langer Name wurde zusätzlich mit `truncate`
+gekürzt. Die Kartenform ist jetzt eine **Mindesthöhe** (210 / 260 / 322 px
+— dieselben Werte, die das alte Seitenverhältnis an den jeweiligen
+Spaltenbreiten ergab), die Karte selbst eine Spalte, ihr Inhalt nimmt den
+übrigen Platz ein, und der Name bricht um. Kleinere Schrift wäre die
+falsche Antwort gewesen: Sie macht die Karte nicht lesbarer, nur enger.
+
+**Die Kopfzeile überdeckte „Ihre Spiele".** `spiele.html` rechnet mit
+`scroll-padding-top: 84px`, gemessen für die alte 88-px-Kopfzeile. Mit der
+freigegebenen landete „Glücksrad" 59 px unter dem oberen Rand und damit
+hinter der Kopfzeile. Der eingesetzte Block setzt jetzt 121 px am
+Schreibtisch und 105 px am Handy — Kopfhöhe plus 40 px Luft. Alle sechs
+Sprungziele der Spielewelt stehen frei; geprüft wird nicht nur gerechnet,
+sondern der Punkt im Text wirklich abgefragt.
+
+**Das Glücksrad war oval.** Der Goldring war ein Gitterelement mit
+`width: 100%; aspect-ratio: 1`. Damit hängen zwei Größen voneinander ab:
+Die Zeilenhöhe des Gitters richtet sich nach dem Element, die Höhe des
+Elements nach dem Gitter. Wie ein Browser das auflöst, ist nicht überall
+gleich.
+
+> **Offen gesagt: Der Fehler ließ sich hier nicht nachstellen.** In Chrome
+> war das Rad bei allen neun gemessenen Breiten (320 bis 1440 px) exakt
+> quadratisch — Bühne, Goldring, Scheibe und Nabe. Geändert wurde
+> trotzdem, weil die Ursache benennbar ist: Der Ring liegt jetzt absolut
+> auf der quadratischen Bühne und hat keine eigene Höhenrechnung mehr.
+> Ob das auf dem iPhone genügt, kann nur ein Blick auf dem Gerät zeigen.
+
+Die Scheibe selbst ist ein SVG mit quadratischer `viewBox` und der Vorgabe
+`xMidYMid meet` — sie kann durch Skalierung nicht verzerrt werden.
+
+### 16.4 Zwei neue Prüfläufe
+
+| Lauf | Umfang |
+|---|---|
+| `npm run kopf-teaser-pruefen` | 55 / 55 — Kopfzeile Element für Element gegen `rewards.html`, Mobilmenü, Vorschaubilder, Aussagen und Ziele der drei Karten |
+| `npm run handy-pruefen` | 13 / 13 — Mitgliedskarte in drei Fällen, sechs Sprungziele, Radform bei neun Breiten |
+
+Beide laufen mit abgeschnittenem Netzverkehr. Die Anzeigewerte der
+Mitgliedskarte werden für die Messung gesetzt — erfundene Zahlen, **keine
+echten Kontodaten**, kein Dreh am Rad.
+
+Ein eigener Fehler in der Prüfung selbst sei erwähnt, weil er beinahe
+einen Fehlalarm erzeugt hätte: Die erste Ruheprüfung maß los, bevor das
+weiche Scrollen überhaupt begonnen hatte, hielt die stehende Seite für
+Ruhe und meldete eine verdeckte Überschrift, wo keine war. Sie wartet
+jetzt, bis die Seite sich bewegt hat **und** danach ruhig bleibt.
+
+### 16.5 Alle Prüfläufe nach Schritt 025
+
+| Lauf | Ergebnis |
+|---|---|
+| `ausgabe-pruefen` | 56 / 56 |
+| `grundlagen-pruefen` | 60 / 60 |
+| `rechtsseiten-pruefen` | 167 / 167 |
+| `flotte-pruefen` | 199 / 199 |
+| `anmeldung-pruefen` | 154 / 154 |
+| `kontoseiten-pruefen` | 181 / 181 |
+| `gluecksrad-pruefen` | 77 / 77 |
+| `rush-pruefen` | 178 / 178 |
+| `startseite-pruefen` | 187 / 187 |
+| `qualitaet-pruefen` | 45 / 45 |
+| `browser-pruefen` | 15 / 15 |
+| `grundlagen-browser-pruefen` | 28 / 28 |
+| `kopf-teaser-pruefen` | 55 / 55 |
+| `handy-pruefen` | 13 / 13 |
+
+`rewards-pruefen` braucht einen laufenden Vorschau-Server auf Port 5200
+und wurde hier nicht gefahren.
+
+### 16.6 Unverändert geblieben
+
+Hero und Hero-Video, Spiellogik, Gewinnregeln, Rewards-Berechnungen,
+Datenbank, Rollen und Berechtigungen, `admin/`, `fahrer/`, `dashboard/`.
+Yumak bleibt Standbild. Die alte Kopfzeile bleibt im Dokument stehen und
+wird nur ausgeblendet — so bleibt die byteweise Prüfung des Bestands
+möglich; `ausgabe-pruefen` schneidet die eingesetzten Blöcke wieder heraus
+und vergleicht den Rest Byte für Byte.
+
+`RAD_FELDER` in `src/inhalte.ts` wird seit dem Austausch der
+Vorschaugrafik nicht mehr verwendet. Die Tabelle bildet die Feldaufteilung
+aus Migration 007 ab und wurde deshalb stehen gelassen, statt sie
+beiläufig zu löschen.

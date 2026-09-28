@@ -29,7 +29,10 @@
     "probe": "node tools/probe-server.mjs",
     "rush-pruefen": "node tools/pruefe-taxi-rush.mjs",
     "kontoseiten-pruefen": "node tools/pruefe-kontoseiten.mjs",
-    "qualitaet-pruefen": "node tools/pruefe-qualitaet.mjs"
+    "qualitaet-pruefen": "node tools/pruefe-qualitaet.mjs",
+    "spielbilder": "node tools/spielbilder.mjs",
+    "kopf-teaser-pruefen": "node tools/pruefe-kopf-teaser.mjs",
+    "handy-pruefen": "node tools/pruefe-handy-fehler.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.0",

@@ -21,6 +21,7 @@ import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NIE_MITNEHMEN, UEBERNAHME } from './bestand-uebernehmen.mjs';
 import { ANFANG, ENDE, BETROFFENE_SEITEN } from './kopfangaben-bestand.mjs';
+import { KOPF_ANFANG, KOPF_ENDE } from './kopfzeile-bestand.mjs';
 import { OEFFENTLICHE_SEITEN, NICHT_INS_VERZEICHNIS } from './suchmaschinen-dateien.mjs';
 
 const WURZEL = fileURLToPath(new URL('..', import.meta.url));
@@ -69,11 +70,45 @@ function kopfblockEntfernen(text) {
 
 const pruefsumme = async (p) => createHash('sha256').update(await readFile(p)).digest('hex');
 
-/** Wie pruefsumme, aber ohne den eingesetzten Kopfblock. */
+/**
+ * Die in Schritt 025 eingesetzte Kopfzeile wieder herausschneiden.
+ *
+ * tools/kopfzeile-bestand.mjs setzt ZWEI Bloecke in spiele.html ein: einen
+ * vor `</head>` (Stilvorlage und Regeln) und einen nach `<body>` (die
+ * Kopfzeile samt Skript). Beide sind benannt begrenzt und werden hier
+ * entfernt, bevor verglichen wird - dieselbe Logik wie beim Kopfblock aus
+ * Schritt 017, nur beliebig oft.
+ *
+ * Der eine Block steht als `BLOCK + "\n"` vor `</head>`, der andere als
+ * `"\n" + BLOCK` hinter `<body …>`. Der Zeilenumbruch liegt also einmal
+ * dahinter und einmal davor; beide Faelle werden abgeraeumt - sonst
+ * bliebe ein einzelnes Zeichen stehen und der Byte-Vergleich schluege
+ * fehl, ohne dass am Bestand irgendetwas geaendert waere.
+ */
+function kopfzeileEntfernen(text) {
+  let raus = text;
+  let zahl = 0;
+  for (;;) {
+    let a = raus.indexOf(KOPF_ANFANG);
+    if (a < 0) break;
+    const e = raus.indexOf(KOPF_ENDE, a);
+    if (e < 0) break;
+    let ende = e + KOPF_ENDE.length;
+    if (raus.startsWith('\n', ende)) ende += 1;
+    else if (a > 0 && raus[a - 1] === '\n') a -= 1;
+    raus = raus.slice(0, a) + raus.slice(ende);
+    zahl += 1;
+    if (zahl > 10) break; // Reissleine gegen eine Endlosschleife.
+  }
+  return { text: raus, zahl };
+}
+
+/** Wie pruefsumme, aber ohne die eingesetzten Bloecke. */
 async function pruefsummeOhneKopfblock(p) {
   const roh = await readFile(p, 'utf8');
   const { text } = kopfblockEntfernen(roh);
-  return createHash('sha256').update(Buffer.from(text, 'utf8')).digest('hex');
+  const { text: ohneKopfzeile } = kopfzeileEntfernen(text);
+  return createHash('sha256').update(Buffer.from(ohneKopfzeile, 'utf8')).digest('hex');
 }
 
 if (!existsSync(AUSGABE)) {

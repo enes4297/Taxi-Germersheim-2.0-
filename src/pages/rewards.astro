@@ -149,14 +149,38 @@ const AKTIONEN = [
 
         {/* ── Digitale Mitgliedskarte ───────────────────────────────── */}
         <div class="relative">
+          {/*
+            DIE KARTE WAECHST MIT IHREM INHALT.
+
+            Vorher stand hier `aspect-ratio: 1.586 / 1` - das Mass einer
+            Scheckkarte. Zusammen mit `overflow-hidden` war das ein
+            Deckel: Passte der Inhalt nicht, wurde er abgeschnitten.
+            Gemeldet vom Handy und hier nachgestellt - mit auf 140 Prozent
+            vergroesserter Schrift standen 248 Pixel Inhalt in 209 Pixel
+            Karte, und "Punkte" wie "Status" waren unten weg.
+
+            Jetzt ist die Kartenform eine MINDESTHOEHE. Reicht der Platz,
+            sieht die Karte aus wie zuvor; reicht er nicht, waechst sie
+            nach unten. Die Karte ist dafuer selbst eine Spalte, und der
+            Inhalt darin nimmt den uebrigen Platz ein (`flex-1`) - so
+            bleibt die Aufteilung oben/Mitte/unten erhalten.
+
+            Kleinere Schrift waere die falsche Antwort gewesen: Sie macht
+            die Karte nicht lesbarer, sondern nur enger.
+
+            Die drei Mindesthoehen (210 / 260 / 322 Pixel) entsprechen
+            dem, was das alte Seitenverhaeltnis an den jeweiligen
+            Spaltenbreiten ergab. Solange der Inhalt hineinpasst, sieht
+            die Karte also genauso aus wie zuvor.
+          */}
           <div
-            class="relative overflow-hidden border border-primary/25 p-8 lg:p-10"
-            style="background: linear-gradient(145deg, #262530 0%, #1c1b21 40%, #26221c 76%, #332b22 100%); box-shadow: 0 40px 90px -30px rgba(0,0,0,0.92); aspect-ratio: 1.586 / 1"
+            class="tg-mitgliedskarte relative flex flex-col overflow-hidden border border-primary/25 p-6 sm:p-8 lg:p-10 min-h-[210px] sm:min-h-[260px] lg:min-h-[322px]"
+            style="background: linear-gradient(145deg, #262530 0%, #1c1b21 40%, #26221c 76%, #332b22 100%); box-shadow: 0 40px 90px -30px rgba(0,0,0,0.92)"
           >
             <div aria-hidden="true" class="absolute inset-0 pointer-events-none" style="background: radial-gradient(120% 85% at 86% 6%, rgba(200,169,110,0.28) 0%, rgba(200,169,110,0) 56%)"></div>
             <div aria-hidden="true" class="absolute inset-0 pointer-events-none opacity-[0.07]" style="background-image: repeating-linear-gradient(115deg, #c8a96e 0 1px, transparent 1px 13px)"></div>
 
-            <div class="relative h-full flex flex-col justify-between">
+            <div class="relative flex-1 flex flex-col justify-between gap-6">
               <div class="flex items-start justify-between gap-4">
                 <img src="/assets/brand/taxi-germersheim-logo.svg" alt="Taxi Germersheim GmbH" class="h-11 lg:h-12 w-auto" />
                 <div class="text-right">
@@ -167,7 +191,7 @@ const AKTIONEN = [
 
               <div>
                 <p class="text-[10px] uppercase tracking-[0.22em] text-white/45">Mitglied</p>
-                <p class="mt-1.5 text-xl lg:text-2xl font-medium text-white truncate" data-rewards-customer-name>Nicht angemeldet</p>
+                <p class="mt-1.5 text-xl lg:text-2xl font-medium text-white break-words hyphens-auto" data-rewards-customer-name>Nicht angemeldet</p>
               </div>
 
               <div class="flex items-end justify-between gap-6">

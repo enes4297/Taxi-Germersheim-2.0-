@@ -435,10 +435,29 @@ body.gameworld-body::after {
 /* ── Der Goldring ────────────────────────────────────────────────────
    Ein Kegelverlauf mit hellen und dunklen Stellen erzeugt den Eindruck
    von poliertem Metall - ohne Bild, ohne Filter. */
+/*
+   WARUM DER RING ABSOLUT LIEGT UND KEIN EIGENES SEITENVERHAELTNIS HAT
+
+   Vorher stand hier `width: 100%; aspect-ratio: 1` - der Ring war ein
+   Gitterelement der Buehne und rechnete sich seine Hoehe selbst aus.
+   Damit haengen zwei Groessen voneinander ab: Die Zeilenhoehe des
+   Gitters richtet sich nach dem Element, und die Hoehe des Elements
+   richtet sich nach dem Gitter. Wie ein Browser diesen Ringschluss
+   aufloest, ist nicht ueberall gleich - auf einem iPhone wurde das Rad
+   dadurch oval, waehrend es in der Messung hier rund blieb.
+
+   Jetzt liegt der Ring absolut auf der Buehne (`inset: 0`) und
+   uebernimmt deren Kasten unveraendert. Die Buehne ist quadratisch
+   (`width: min(100%, 540px); aspect-ratio: 1`), und weil ausser ihr
+   kein Element mehr im Fluss steht, kann nichts mehr auf ihre Hoehe
+   zurueckwirken. Rund bleibt rund - unabhaengig vom Browser.
+
+   Zeiger und Nabe lagen ohnehin schon absolut; am Aussehen aendert
+   sich nichts.
+*/
 .gw-wheel-rim {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
+  position: absolute;
+  inset: 0;
   padding: 25px;
   border-radius: 50%;
   background: conic-gradient(
