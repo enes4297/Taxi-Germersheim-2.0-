@@ -6516,3 +6516,33 @@ input:disabled {
     font-size: 18px;
   }
 }
+
+/* ── Tagesauswahl vor dem Veröffentlichen ──────────────────────────────
+   Bewusst schlicht: Diese Ergänzung soll die Verwaltung nicht neu
+   gestalten, sondern nur das Datum lesbar machen, das veröffentlicht
+   wird. Sie übernimmt die Masse der benachbarten Schaltflächen. */
+.admin-publish-day {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 4px;
+  font-size: 13px;
+}
+.admin-publish-day-label {
+  white-space: nowrap;
+  opacity: 0.8;
+}
+.admin-publish-day select {
+  min-height: 36px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 14px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+}
+.admin-publish-day select:focus-visible {
+  outline: 2px solid #f0c96b;
+  outline-offset: 2px;
+}

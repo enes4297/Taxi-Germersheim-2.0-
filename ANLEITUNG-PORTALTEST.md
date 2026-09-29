@@ -70,22 +70,47 @@ das erleichtert das Aufräumen in Schritt „Bereinigung".
 
 ### B) Testschicht für **heute**
 
-1. `admin/schichtplanung.html` (oder der Bereich, in dem Sie Schichten
-   pflegen) öffnen.
-2. Schicht anlegen:
-   - **Mitarbeiter:** Testfahrer
-   - **Datum:** heute
-   - **Zeit:** z. B. 06:00–14:00
+1. `admin/schichtplanung.html` öffnen.
+2. In der Zeile des Testfahrers unter **„Heute"** eintragen:
+   - **Beginn:** `06:00`
+   - **Ende:** `14:00`
    - **Fahrzeug:** `TESTWAGEN-029`
-3. **Wichtig: veröffentlichen.** Das Portal zeigt ausschließlich
-   veröffentlichte Schichten (`plan_status = 'published'`). Eine nur
-   gespeicherte Schicht erscheint dort **nicht** — das ist kein Fehler.
+3. Oben rechts auf **„Planung speichern"**.
+   Damit ist die Schicht gespeichert — aber noch ein **Entwurf**. Im
+   Portal ist sie jetzt bewusst **nicht** sichtbar.
+4. Oben rechts bei **„Veröffentlichen für"** von *morgen* auf
+   **heute · TT.MM.JJJJ** umstellen. Das Datum steht im Klartext da.
+5. Auf **„Plan veröffentlichen"** klicken.
+6. Die Rückfrage nennt noch einmal den Tag und die Anzahl der Schichten —
+   bestätigen.
+
+**Erwartung:** Unter der Kopfleiste erscheint
+„Plan für heute, TT.MM.JJJJ, veröffentlicht: N Schicht(en) sind jetzt im
+Mitarbeiterportal sichtbar."
+
+> **Warum zwei Schritte?** Speichern ist nicht Veröffentlichen. Das Portal
+> zeigt ausschließlich veröffentlichte Schichten
+> (`plan_status = 'published'`, Regel `shifts_select_self_published`).
+> Eine nur gespeicherte Schicht erscheint dort **nicht** — das ist kein
+> Fehler, sondern Absicht.
+
+> **Hinweis zur Vorauswahl:** Es steht **morgen** voreingestellt. Wer
+> nichts umstellt, veröffentlicht wie bisher den morgigen Plan. Für den
+> heutigen Tag muss die Auswahl bewusst umgestellt werden — so kann kein
+> Tag versehentlich veröffentlicht werden.
+
+> **Bis Schritt 029 war das nicht möglich.** „Plan veröffentlichen" war
+> fest auf morgen verdrahtet; für heute gab es überhaupt keinen Weg. Das
+> ist behoben — siehe Abschnitt 23 der Abschlussunterlage.
 
 ### C) Testschicht für **morgen**
 
-Wie B), aber Datum = morgen, Zeit z. B. 14:00–22:00, und **ohne
-Fahrzeug**. So lässt sich beides prüfen: zugewiesenes Fahrzeug (heute) und
-offenes Fahrzeug (morgen).
+Wie B), aber in der Spalte **„Morgen"**, Zeit `14:00`–`22:00` und
+**ohne Fahrzeug**. Beim Veröffentlichen die Auswahl auf
+**morgen · TT.MM.JJJJ** stellen (das ist die Vorauswahl).
+
+So lässt sich beides prüfen: zugewiesenes Fahrzeug (heute) und offenes
+Fahrzeug (morgen).
 
 ### D) Test-Urlaubsantrag
 
@@ -314,3 +339,23 @@ Löschen.
 - Signierte Dateiadressen, Tokens, Schlüssel
 - Bildschirmfotos mit echten Namen, Kennzeichen oder Dokumenten
 - Echte Mitarbeiterdaten
+
+---
+
+## Anhang A — Protokoll der manuellen Tests am echten System
+
+Hier wird nur festgehalten, **was** geprüft wurde und **wie es ausging**.
+Keine Namen, keine E-Mail-Adressen, keine Kennungen, keine Zugangsdaten.
+
+| Test | Datum | Ergebnis |
+|---|---|---|
+| **1 — Anmelden** | 29.09.2026 | **bestanden.** Anmeldung mit dem Testfahrer-Konto führte zur Weiterleitung auf `mitarbeiter.html`; die Begrüßung nannte die angemeldete Person und die Tageszeit. Vom Auftraggeber am echten System durchgeführt und bestätigt. |
+| **Testfahrzeug anlegen** | 29.09.2026 | **bestanden.** `TESTWAGEN-029` / `GER-TEST 999` über `admin/fahrzeuge.html` angelegt; nach dem Neuladen weiterhin in der Liste. Damit ist belegt, dass die Verwaltung in die Tabelle `vehicles` schreiben kann. |
+
+> **Was Test 1 belegt:** Der Anmeldeweg funktioniert gegen die produktive
+> Instanz — Passwortprüfung, Profilprüfung (`active`, `employee_id`),
+> Weiterleitung und die Anzeige der eigenen Identität.
+>
+> **Was er NICHT belegt:** ob fremde Daten abgewiesen werden, ob die
+> Rollentrennung greift und ob Dateien im Speicher geschützt sind. Dafür
+> stehen die Tests 4, 7 und 8 aus.

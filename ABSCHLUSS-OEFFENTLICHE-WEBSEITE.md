@@ -3338,3 +3338,108 @@ Portal durchgegangen wären:
 Dazu unverändert die Hindernisse der öffentlichen Webseite (Abschnitte 17
 bis 20): Kunden-Passwortreset, eigener SMTP-Dienst, SPF/DKIM/DMARC,
 `taxigermersheim.de` in den Redirect URLs.
+
+---
+
+## 23. Schritt 029b — Veröffentlichen für den ausgewählten Tag
+
+Branch `feature/029b-tagesveroeffentlichung`, abgezweigt von `8013fa4`.
+
+### 23.1 Die Ursache
+
+`admin/schichtplanung.html` ist als **Übersicht für heute + Planer für
+morgen** gebaut. Es gibt zwei getrennte Listen: `todayAssignments` und
+`tomorrowPlan`.
+
+| Schaltfläche | was sie tat |
+|---|---|
+| **„Planung speichern"** | schrieb **beide** Listen — mit `planStatus: row.planStatus \|\| "draft"`. Richtig so: Speichern ist nicht Veröffentlichen. |
+| **„Plan veröffentlichen"** | war fest auf `state.dateTomorrow` verdrahtet (Zeile 1490) und lief ausschließlich über `tomorrowPlan`. |
+
+Für den heutigen Tag gab es damit **überhaupt keinen Weg**, `plan_status`
+auf `published` zu setzen. Das Portal zeigt nach
+`shifts_select_self_published` nur veröffentlichte Schichten — eine
+heutige Schicht war also gespeichert, aber für den Mitarbeiter unsichtbar.
+
+Die übrigen Wege halfen nicht:
+
+- `tagesplanung.html` → „Plan veröffentlichen" schreibt **gar nicht** in
+  die Datenbank, sondern nur in den lokalen Browserspeicher
+  (`dayState.publishedPlan`).
+- `wochenplanung.js` speichert Schichten stets mit `planStatus: "draft"`.
+
+**Betriebliche Folge:** Fällt jemand kurzfristig aus und wird ersetzt,
+erfährt die Vertretung es im Portal nicht.
+
+### 23.2 Die Korrektur — so klein wie möglich
+
+Neben der Schaltfläche steht jetzt eine Auswahl **„Veröffentlichen für"**
+mit den beiden Tagen, die diese Seite kennt — jeweils mit dem Datum im
+Klartext (`morgen · 30.09.2026`, `heute · 29.09.2026`).
+
+| Anforderung | Umsetzung |
+|---|---|
+| Datum vor dem Klick sichtbar | in der Auswahl **und** in der Rückfrage |
+| nie versehentlich ein anderer Tag | vorausgewählt bleibt **morgen**; der Wert wird **einmal** gelesen und weitergereicht, damit ein Wechsel mitten im Vorgang nicht wirken kann |
+| bestehender Ablauf unverändert | wer nichts umstellt, veröffentlicht wie bisher den morgigen Plan |
+| leerer Plan | wird abgewiesen: „Für heute, TT.MM.JJJJ, ist keine Schicht eingetragen. Es wurde nichts veröffentlicht." |
+| Doppelklick | Schaltfläche gesperrt, Beschriftung „Wird veröffentlicht …", Freigabe im `finally` |
+| Ladezustand | „Plan für TT.MM.JJJJ wird veröffentlicht …" |
+| Erfolg | nennt Tag, Datum und Anzahl der Schichten |
+| Fehler | „… konnte nicht veröffentlicht werden. Er bleibt ein Entwurf." |
+| Teilabbruch | „… wurde nur teilweise übertragen. Bitte erneut veröffentlichen und danach prüfen." |
+| Rechte | unverändert — es wird nur `plan_status` gesetzt, keine Policy und kein Grant berührt |
+
+**Ein Fehler in der eigenen Umsetzung, vom Prüflauf gefunden:** Die
+ehrlichen Fehlermeldungen wurden von `renderQuickInfo()` sofort wieder
+überschrieben — und zwar mit dem **Wortlaut des Dienstes**
+(„Veroeffentlichung abgelehnt"). Auf dem Bildschirm stand damit weder die
+verständliche Auskunft noch der Hinweis, dass der Entwurf ein Entwurf
+bleibt. In beiden Fehlerzweigen entfällt der Aufruf jetzt.
+
+### 23.3 Prüfung
+
+`npm run schichten-pruefen` — **39 / 39**:
+
+| Fall | geprüft |
+|---|---|
+| Auswahl | vorhanden, „morgen" vorausgewählt, beide Einträge nennen ein Datum |
+| morgen veröffentlichen | eine Veröffentlichung, Datum morgen, alle Schichten `published` |
+| **heute veröffentlichen** | eine Veröffentlichung, Datum **heute**, alle Schichten `published`, **keine** Schicht für morgen mitveröffentlicht |
+| Auswahl = geschriebenes Datum | für beide Tage je genau ein Datum geschrieben |
+| Speichern | schreibt **keine** Veröffentlichung, alle Schichten `draft` |
+| Doppelklick | gesperrt während des Schreibens, genau **eine** Veröffentlichung, danach wieder bedienbar |
+| Fehlerantwort | keine Schicht geschrieben, Meldung nennt „Entwurf", kein Erfolg behauptet |
+| Abbruch mittendrin | Teilabbruch benannt, kein Erfolg behauptet |
+| leerer Plan | nichts geschrieben, Begründung genannt |
+| erneut veröffentlichen | zweite Veröffentlichung für denselben Tag, dieselben Schichten |
+| andere Bereiche | Wochenplanung weiterhin nur Entwurf, Portal unberührt, Regeln unverändert |
+
+**Gegenprobe:** `portal-pruefen` 99/99 · `ausgabe-pruefen` 56/56 ·
+`kontoseiten-pruefen` 181/181.
+
+> **Alles simuliert.** Der Datendienst ist eine Attrappe, die jeden
+> Schreibvorgang nur mitschreibt. Keine Anfrage an Supabase, kein
+> Datensatz, keine Anmeldung, keine Migration, kein SQL.
+
+**Drei eigene Fehler in der Prüfung**, alle benannt, weil sie sonst als
+Fehler der Software durchgegangen wären:
+
+1. Die Attrappe setzte nur `window.TaxiDataService`. `schichtplanung.js`
+   bindet aber `window.TaxiData || window.TaxiDataService`, und
+   `taxi-data-service.js` setzt `window.TaxiData` — es lief der echte
+   Dienst ins abgeschnittene Netz, und das Veröffentlichen blieb hängen.
+2. Den Attrappen-Mitarbeitern fehlte `role: "Fahrer"`. Die Planung baut
+   ihre Zeilen nur für Fahrer auf; beide Listen blieben leer, und jede
+   Prüfung landete im Zweig „leerer Plan".
+3. Der zweite Klick der Doppelklick-Prüfung wartete auf eine
+   Schaltfläche, die absichtlich gesperrt ist — Zeitüberschreitung statt
+   Befund.
+
+### 23.4 Was nicht geändert wurde
+
+Keine gestalterische Überarbeitung von Dispatcher oder Admin — nur eine
+Auswahl neben der vorhandenen Schaltfläche, in der Formensprache der
+Nachbarschaltflächen. Keine Migration, kein SQL, keine Rolle, kein Grant,
+keine Policy. Die Planung für morgen funktioniert unverändert. Keine
+produktive Anmeldung, keine produktive Datenänderung.

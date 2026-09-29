@@ -39,6 +39,19 @@
         <div class="admin-topbar-actions">
           <button class="admin-btn" type="button" data-plan-generate>Planung für morgen erstellen</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-plan-accept-all>Kompletten Plan übernehmen</button>
+          <!-- Welcher Tag veroeffentlicht wird, muss VOR dem Klick sichtbar
+               sein. Vorher war "morgen" fest verdrahtet, und ein Plan fuer
+               heute liess sich ueberhaupt nicht veroeffentlichen. Die
+               Vorauswahl bleibt "morgen" - der bisherige Ablauf aendert
+               sich dadurch nicht. Die Datumsangaben traegt
+               schichtplanung.js beim Laden ein. -->
+          <label class="admin-publish-day">
+            <span class="admin-publish-day-label">Veröffentlichen für</span>
+            <select data-publish-day>
+              <option value="tomorrow" selected data-publish-day-option="tomorrow">morgen</option>
+              <option value="today" data-publish-day-option="today">heute</option>
+            </select>
+          </label>
           <button class="admin-btn admin-btn-secondary" type="button" data-plan-publish>Plan veröffentlichen</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-plan-save>Planung speichern</button>
         </div>

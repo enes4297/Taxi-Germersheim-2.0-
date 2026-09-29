@@ -1028,6 +1028,208 @@
     }).join("");
   }
 
+  /* ══════════════════════════════════════════════════════════════════════
+     VERÖFFENTLICHEN — für den ausgewählten Tag, nicht nur für morgen
+     ══════════════════════════════════════════════════════════════════════
+
+     URSACHE DES FEHLERS
+
+     Diese Seite ist als "Übersicht heute + Planer für morgen" gebaut. Es
+     gibt zwei getrennte Listen: `todayAssignments` und `tomorrowPlan`.
+
+     "Planung speichern" schreibt beide Listen, aber mit
+     `planStatus: row.planStatus || "draft"` — also als Entwurf. Das ist
+     richtig so: Speichern ist nicht Veröffentlichen.
+
+     "Plan veröffentlichen" war dagegen fest auf `state.dateTomorrow`
+     verdrahtet und lief ausschließlich über `tomorrowPlan`. Für den
+     heutigen Tag gab es damit ÜBERHAUPT KEINEN Weg, `plan_status` auf
+     `published` zu setzen — und das Mitarbeiterportal zeigt nach
+     `shifts_select_self_published` nur veröffentlichte Schichten.
+
+     Betriebliche Folge: Fällt jemand kurzfristig aus und wird ersetzt,
+     erfährt die Vertretung es im Portal nicht.
+
+     DIE KORREKTUR
+
+     Der Tag wird nicht mehr angenommen, sondern aus der Auswahl neben der
+     Schaltfläche gelesen. Vorausgewählt bleibt "morgen" — wer nichts
+     umstellt, erlebt denselben Ablauf wie bisher.
+
+     Alles Weitere folgt daraus:
+       - Das Datum steht im Klartext in der Auswahl UND in der Rückfrage.
+       - Veröffentlicht wird genau die Liste, die zu diesem Tag gehört.
+       - Ein leerer Plan wird abgewiesen, nicht stillschweigend
+         veröffentlicht.
+       - Während des Schreibens ist die Schaltfläche gesperrt.
+       - Schlägt etwas fehl, bleibt der Entwurf ein Entwurf.
+  */
+
+  /** Die beiden Tage, die diese Seite kennt. */
+  function veroeffentlichbareTage() {
+    return [
+      { schluessel: "tomorrow", datum: state.dateTomorrow, name: "morgen", liste: "tomorrowPlan" },
+      { schluessel: "today", datum: state.dateToday, name: "heute", liste: "todayAssignments" },
+    ];
+  }
+
+  /**
+   * Der gewählte Tag - aus der Auswahl, mit "morgen" als Rückfall.
+   *
+   * WICHTIG: Gelesen wird der Wert genau EINMAL und danach weitergereicht.
+   * Würde an mehreren Stellen neu gelesen, könnte ein Wechsel mitten im
+   * Vorgang dazu führen, dass die Rückfrage einen anderen Tag nennt als
+   * den, der geschrieben wird.
+   */
+  function gewaehlterTag() {
+    const auswahl = document.querySelector("[data-publish-day]");
+    const wert = auswahl ? String(auswahl.value || "") : "tomorrow";
+    const tage = veroeffentlichbareTage();
+    return tage.find((t) => t.schluessel === wert) || tage[0];
+  }
+
+  /** Die Beschriftungen der Auswahl mit den echten Datumsangaben füllen. */
+  function initPublishDaySelect() {
+    for (const tag of veroeffentlichbareTage()) {
+      const option = document.querySelector(`[data-publish-day-option="${tag.schluessel}"]`);
+      if (option && tag.datum) option.textContent = `${tag.name} · ${formatDate(tag.datum)}`;
+    }
+  }
+
+  /**
+   * Zählt, was an diesem Tag überhaupt zu veröffentlichen wäre.
+   *
+   * Die beiden Listen haben verschiedene Gestalt: `tomorrowPlan` hat ein
+   * Kennzeichen `active`, `todayAssignments` hat keines - dort zählt, ob
+   * eine Zeit hinterlegt ist und die Person nicht abwesend ist.
+   */
+  function zuVeroeffentlichendeZeilen(tag) {
+    const zeilen = state.planner[tag.liste] || [];
+    if (tag.schluessel === "tomorrow") {
+      return zeilen.filter((row) => row.employeeId && row.active);
+    }
+    return zeilen.filter((row) => {
+      if (!row.employeeId || !row.start || !row.end) return false;
+      const zustand = normalize(row.status);
+      return !zustand.includes("urlaub") && !zustand.includes("krank") && !zustand.includes("frei");
+    });
+  }
+
+  /** Eine Rückmeldung in die vorhandene Hinweiszeile schreiben. */
+  function publishMeldung(text) {
+    const node = document.querySelector("[data-shift-feedback]");
+    if (node) node.textContent = text;
+  }
+
+  async function veroeffentlichen(knopf) {
+    /* Doppelklick: Der zweite Klick trifft eine gesperrte Schaltfläche. */
+    if (knopf.disabled) return;
+
+    const tag = gewaehlterTag();
+    if (!tag.datum) {
+      publishMeldung("Kein Datum ermittelbar. Bitte die Seite neu laden.");
+      return;
+    }
+
+    const zeilen = zuVeroeffentlichendeZeilen(tag);
+    if (!zeilen.length) {
+      /* Ein leerer Plan darf nicht unbemerkt als gültiger Plan gelten.
+         Die Zentrale hielte ihn sonst für abgestimmt, und im Portal
+         stünde bei allen "frei". */
+      publishMeldung(
+        `Für ${tag.name}, ${formatDate(tag.datum)}, ist keine Schicht eingetragen. `
+        + "Es wurde nichts veröffentlicht."
+      );
+      return;
+    }
+
+    const frage =
+      `Plan für ${tag.name}, ${formatDate(tag.datum)}, veröffentlichen?\n\n`
+      + `${zeilen.length} Schicht(en) werden für die Mitarbeiter sichtbar.`;
+    if (!window.confirm(frage)) return;
+
+    const vorherText = knopf.textContent;
+    knopf.disabled = true;
+    knopf.textContent = "Wird veröffentlicht …";
+    publishMeldung(`Plan für ${formatDate(tag.datum)} wird veröffentlicht …`);
+    D?.clearLastError?.();
+
+    try {
+      const payload = {
+        date: tag.datum,
+        status: "published",
+        version: 1,
+        publishedAt: new Date().toISOString(),
+        publishedBy: "Admin",
+      };
+      const publication = await D?.publishPlan?.(payload);
+      if (!publication) {
+        /* Kein Eintrag, keine Veröffentlichung. Der Entwurf bleibt ein
+           Entwurf - es wird NICHTS lokal auf "veröffentlicht" gesetzt. */
+        /* KEIN renderQuickInfo() hier: Es schreibt in dieselbe Zeile und
+           wuerde diese Auskunft durch den Wortlaut des Dienstes ersetzen. */
+        publishMeldung(
+          `Der Plan für ${formatDate(tag.datum)} konnte nicht veröffentlicht werden. `
+          + "Er bleibt ein Entwurf."
+        );
+        return;
+      }
+
+      const praefix = tag.schluessel === "tomorrow" ? "TOM" : "TOD";
+      for (const row of zeilen) {
+        const saved = await D?.saveShift?.({
+          id: row.sourceId || (row.id && !String(row.id).startsWith(praefix) ? row.id : null),
+          employeeId: row.employeeId,
+          date: tag.datum,
+          startTime: row.start,
+          endTime: row.end,
+          status: "planned",
+          vehicleId: row.vehicle || null,
+          note: row.exceptionNote || row.note || "",
+          planStatus: "published",
+        });
+        if (!saved) {
+          /* Mittendrin abgebrochen. Was schon geschrieben wurde, steht
+             geschrieben - aber es wird NICHT behauptet, der Plan sei
+             veröffentlicht. */
+          /* Ebenfalls ohne renderQuickInfo - siehe oben. */
+          publishMeldung(
+            `Der Plan für ${formatDate(tag.datum)} wurde nur teilweise übertragen. `
+            + "Bitte erneut veröffentlichen und danach prüfen."
+          );
+          return;
+        }
+        row.planStatus = "published";
+      }
+
+      /* Der lokale Veröffentlichungszustand gehört weiterhin zum Plan für
+         morgen - nur dort zeigt ihn die Oberfläche an. Für heute wird er
+         nicht gesetzt, damit die Anzeige nicht etwas Falsches behauptet. */
+      if (tag.schluessel === "tomorrow") {
+        state.planner.publicationStatus = String(publication.status || "published");
+        state.planner.publication = publication;
+        state.planner.publishedAt = publication.publishedAt || publication.published_at || payload.publishedAt || "";
+      }
+      savePlanner();
+      await syncPlanningDataFromService();
+      renderAll();
+      publishMeldung(
+        `Plan für ${tag.name}, ${formatDate(tag.datum)}, veröffentlicht: `
+        + `${zeilen.length} Schicht(en) sind jetzt im Mitarbeiterportal sichtbar.`
+      );
+    } catch (fehler) {
+      /* Ohne den Wortlaut des Dienstes - er könnte Kennungen enthalten. */
+      console.error("Veröffentlichen fehlgeschlagen.", fehler?.code || "unbekannt");
+      publishMeldung(
+        `Der Plan für ${formatDate(tag.datum)} konnte nicht veröffentlicht werden. `
+        + "Er bleibt ein Entwurf."
+      );
+    } finally {
+      knopf.disabled = false;
+      knopf.textContent = vorherText;
+    }
+  }
+
   function renderQuickInfo() {
     const node = document.querySelector("[data-shift-feedback]");
     if (!node) return;
@@ -1487,39 +1689,7 @@
 
       const publishAction = event.target.closest("[data-plan-publish]");
       if (publishAction) {
-        D?.clearLastError?.();
-        const payload = { date: state.dateTomorrow, status: "published", version: 1, publishedAt: new Date().toISOString(), publishedBy: "Admin" };
-        const publication = await D?.publishPlan?.(payload);
-        if (!publication) {
-          renderQuickInfo();
-          return;
-        }
-
-        for (const row of state.planner.tomorrowPlan) {
-          if (!row.employeeId) continue;
-          const saved = await D?.saveShift?.({
-            id: row.sourceId || (row.id && !String(row.id).startsWith("TOM") ? row.id : null),
-            employeeId: row.employeeId,
-            date: state.dateTomorrow,
-            startTime: row.start,
-            endTime: row.end,
-            status: row.active ? "planned" : "draft",
-            vehicleId: row.vehicle || null,
-            note: row.note || "",
-            planStatus: row.active ? "published" : "draft"
-          });
-          if (!saved) {
-            renderQuickInfo();
-            return;
-          }
-        }
-
-        state.planner.publicationStatus = String(publication.status || "published");
-        state.planner.publication = publication;
-        state.planner.publishedAt = publication.publishedAt || publication.published_at || payload.publishedAt || "";
-        savePlanner();
-        await syncPlanningDataFromService();
-        renderAll();
+        await veroeffentlichen(publishAction);
       }
     });
 
@@ -1691,6 +1861,7 @@
     ensureTomorrowPlan();
 
     initBulkTemplateSelect();
+    initPublishDaySelect();
     bindFilters();
     bindToolbar();
     bindActions();

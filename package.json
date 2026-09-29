@@ -34,7 +34,8 @@
     "kopf-teaser-pruefen": "node tools/pruefe-kopf-teaser.mjs",
     "handy-pruefen": "node tools/pruefe-handy-fehler.mjs",
     "auth-027-pruefen": "node tools/pruefe-auth-027.mjs",
-    "portal-pruefen": "node tools/pruefe-mitarbeiterportal.mjs"
+    "portal-pruefen": "node tools/pruefe-mitarbeiterportal.mjs",
+    "schichten-pruefen": "node tools/pruefe-schichtveroeffentlichung.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.0",
