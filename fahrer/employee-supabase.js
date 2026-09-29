@@ -97,10 +97,25 @@
 
     const { data, error } = await cl.auth.signInWithPassword({ email, password });
     if (error) {
+      /*
+        Der Wortlaut des Dienstes darf NICHT auf den Bildschirm.
+
+        Vorher wurde alles ausser "Invalid login credentials" unveraendert
+        durchgereicht. Meldungen wie "Email not confirmed" oder "User is
+        banned" verraten damit den Zustand eines Kontos - wer eine Adresse
+        durchprobiert, erfaehrt, ob es sie gibt.
+
+        Jetzt gibt es genau zwei Auskuenfte: zu viele Versuche (das muss
+        man wissen, sonst probiert man weiter) und "falsch". Die Kennung
+        des Dienstes bleibt fuer die Fehlersuche im Protokoll.
+      */
+      const kennung = String(error.code || error.status || "").toLowerCase();
+      const zuViele = /429|rate|too_many/.test(kennung);
+      console.error("Anmeldung fehlgeschlagen.", kennung || "unbekannt");
       throw new Error(
-        error.message === "Invalid login credentials"
-          ? "E-Mail-Adresse oder Passwort ist falsch."
-          : (error.message || "Anmeldung fehlgeschlagen.")
+        zuViele
+          ? "Zu viele Versuche. Bitte warte einen Moment und versuche es erneut."
+          : "E-Mail-Adresse oder Passwort ist falsch."
       );
     }
 

@@ -3120,3 +3120,221 @@ Diese drei sind **nicht** belegt und bleiben als manueller Test:
 Ein solcher Test verlangt eine echte Anmeldung gegen die produktive
 Instanz. Produktive personenbezogene Daten dürfen dabei nicht verändert
 werden.
+
+---
+
+## 22. Schritt 029 — Mitarbeiterportal funktional fertiggestellt
+
+Branch `feature/029-portal-fertigstellung`, abgezweigt von `a04bbdb`.
+
+### 22.1 Die Abhängigkeit von `admin/personal-shared.js` — entfernt
+
+**Nicht aus dem Quelltext geschlossen, sondern gemessen.**
+`window.AdminPersonnelDemo` wurde durch einen Stellvertreter ersetzt, der
+jeden Zugriff mitschrieb; dann wurde das Portal über alle Bereiche
+bedient. Ergebnis:
+
+```
+Tatsaechlich aufgerufen:
+  loadState     2x
+  getEmployee   2x
+```
+
+Von zwölf im Quelltext sichtbaren Aufrufen waren also **zwei** erreichbar
+— und beide trugen nichts bei:
+
+| Funktion | was sie lieferte |
+|---|---|
+| `loadState()` | die örtlichen Vorgabedaten mit erfundenen Personen — die das Portal danach nie anzeigte |
+| `getEmployee()` | **`null`**, weil die echte Mitarbeiterkennung aus der Sitzung nie zu einer Vorgabekennung (`MA-1xx`) passt |
+
+**Warum die übrigen zehn unerreichbar waren:** Jede Anzeige und jeder
+Absendeweg hat die Form
+
+```js
+if (ES && ES.isConfigured()) { …Supabase…; return; }
+…Rückfall auf die örtlichen Daten…
+```
+
+Seit Schritt 028 öffnet das Portal ohne eingerichtete Verbindung **gar
+nicht mehr** (`portalSperren("nicht-eingerichtet")`). Der Rückfall ist
+damit toter Code.
+
+**Was daraus wurde:**
+
+| Stelle | vorher | nachher |
+|---|---|---|
+| `const P = window.AdminPersonnelDemo` | Modulverweis | entfernt |
+| `loadState()` | Vorgabedaten | leere Struktur |
+| `getEmployee()` | `null` aus der Vorgabeliste | die **echte** Person aus der geprüften Sitzung |
+| `todayIso()` | aus dem Adminmodul | drei Zeilen lokal |
+| `getEmployeePortalSnapshot`, `getVacationQuota`, `getEmployeeDayPlan` | Vorgabedaten | ersatzlos (`null`) |
+| `addVacationRequest`, `addAbsence`, `submitEmployeeDocument` | speicherten still **auf dem Gerät** | ehrliche Fehlermeldung |
+| `saveState`, `pushMessageRead` | örtliches Zurückziehen und Quittieren | ersatzlos |
+| `<script src="../admin/personal-shared.js">` | geladen | entfernt |
+
+**Nachgemessen:** null `P.`-Aufrufe im Skript, null Anfragen an das Modul
+im Betrieb, `window.AdminPersonnelDemo` ist `undefined`, null erfundene
+Personennamen im Portaltext.
+
+**Was dabei bewusst wegfiel** — und warum es kein Verlust ist:
+
+- *Urlaub zurückziehen* und *Mitteilung quittieren* arbeiteten auf den
+  örtlichen Vorgabedaten. Ein Zurückziehen im Backend gibt es nicht:
+  `vacation_requests` erlaubt Mitarbeitern nur `INSERT` und `SELECT`
+  (Policies `vacation_requests_employee_insert`, `..._select_self`). Eine
+  Schaltfläche, die nichts bewirkt, ist schlechter als keine.
+- Die Rückfälle legten Anträge, Krankmeldungen und **Dateinamen** (nicht
+  die Datei!) örtlich ab und meldeten „nicht übermittelt". Das sah nach
+  Einreichung aus und war keine.
+
+**Keine Adminlogik, keine Adminrechte, keine erfundenen Personen** sind in
+den Fahrerbereich gewandert. `admin/personal-shared.js` selbst ist
+unverändert — die Verwaltung benutzt sie weiter.
+
+### 22.2 Die Datenwege, vollständig
+
+| Ablauf | Tabelle / Bucket | gelesen | geschrieben | Rolle | Zustände | Stand |
+|---|---|---|---|---|---|---|
+| **Anmeldung** | `auth`, `profiles` | `employee_id`, `active`, `role` | — | authenticated | Laden, Fehler | **funktionsfähig** |
+| **Schicht heute / morgen** | `shifts` | `shift_date`, `start_time`, `end_time`, `vehicle_id`, `plan_status` | — | eigener Datensatz, nur `published` | Laden, Leer („frei"), Fehler | **funktionsfähig** |
+| **Wochenplan** | `shifts` | dieselben | — | dito | dito | **funktionsfähig** |
+| **Zugewiesenes Fahrzeug** | `vehicles` | `name`, `license_plate`, `vehicle_type` | — | nur wenn dem eigenen veröffentlichten Dienst zugewiesen | Laden, „Fahrzeug offen" | **funktionsfähig** |
+| **Urlaubsantrag** | `vacation_requests` | eigene Anträge | `start_date`, `end_date`, `note` | INSERT + SELECT self | Laden, Leer, Erfolg **mit Zeitraum**, Fehler | **funktionsfähig** |
+| **Krankmeldung** | `sickness_reports` | eigene Meldungen | Zeitraum, Notiz, `document_submission_id`, `client_request_id` | INSERT + SELECT self | alle vier | **funktionsfähig**, mit Doppelschutz über Vorgangskennung |
+| **Dokumentenupload** | Bucket `employee-documents` + `document_submissions` | eigene Einreichungen | Datei, `file_path`, `file_name`, `mime_type`, `document_type_id` | eigener Ordner, aktiver Mitarbeiter | alle vier, Dateiname sichtbar | **funktionsfähig** |
+| **Vorhandene Dokumente** | `document_submissions`, `document_types` | Liste + Bezeichnungen | — | SELECT self | Laden, Leer | **funktionsfähig** |
+| **Datei ansehen** | Bucket | signierte Adresse, 60 s | — | eigener Ordner | Fehler | **funktionsfähig** |
+| **Fehlende / ablaufende Dokumente** | `employee_documents` | — | — | — | — | **nur vorbereitet** — das Portal fragt die Tabelle nicht ab |
+| **Persönliche Hinweise / Mitteilungen** | *keine* | — | — | — | zeigt immer „Keine neuen Mitteilungen" | **nicht angebunden** |
+| **Abmelden** | `auth` | — | Widerruf `scope: global` | authenticated | Erfolg, ehrlicher Fehler | **funktionsfähig** |
+
+> **Keiner dieser Wege ist gegen die produktive Instanz geprüft.** Alle
+> Prüfungen liefen mit Attrappen. „Funktionsfähig" heißt hier: Der Weg ist
+> vollständig gebaut und reagiert richtig — nicht, dass er am echten
+> System durchgelaufen wäre. Dafür gibt es `ANLEITUNG-PORTALTEST.md`.
+
+### 22.3 Behobene Sicherheitsbefunde
+
+**1. Doppeltes Absenden beim Urlaubsantrag.** Krankmeldung und Upload
+sperrten ihren Knopf während der Übermittlung; der Urlaubsantrag nicht.
+Zwei schnelle Klicks hätten zwei Anträge erzeugt — und
+`vacation_requests` hat keinen Doppelschutz wie die Krankmeldung, wo eine
+Vorgangskennung das abfängt. Der Knopf zeigt jetzt „Wird gesendet …", ist
+gesperrt und wird in jedem Ausgang wieder freigegeben. Gemessen:
+`disabled: true` während, `false` danach.
+
+**2. Der Wortlaut des Dienstes stand auf dem Bildschirm.** `signIn` reichte
+alles außer „Invalid login credentials" unverändert durch. Meldungen wie
+*„Email not confirmed"* verraten damit den Zustand eines Kontos. Jetzt gibt
+es zwei Auskünfte: „zu viele Versuche" und „E-Mail-Adresse oder Passwort
+ist falsch". Gemessen mit einer abgefangenen Antwort
+`{code: "email_not_confirmed", message: "Email not confirmed for user
+1234-abcd"}` — auf dem Bildschirm erschien nichts davon.
+
+**3. Beim Abmelden blieben persönliche Angaben stehen.** Erst wurde
+`ES.signOut()` abgewartet, dann gesprungen. In dieser Zeit — Sekunden,
+oder unbegrenzt bei einem Fehler — standen Name, Schicht und Fahrzeug
+weiter da. Jetzt wird **zuerst** geleert.
+
+**4. Späte Antworten nach dem Abmelden.** Eine vor dem Abmelden
+losgeschickte Abfrage konnte danach persönliche Angaben zurückzeichnen.
+Eingeführt wurde ein **Sitzungsstand**: Jede Abmeldung zählt ihn hoch,
+jede der sechs Zuweisungen prüft ihn. Dasselbe Mittel wie auf den
+Kontoseiten (Schritt 024). Gemessen mit einer Antwort, die drei Sekunden
+nach dem Abmelden eintrifft: Es wird nichts zurückgeschrieben.
+
+**Keine neue Migration.** Die bestehenden Regeln decken ab, was zu prüfen
+war — siehe 22.4. Es gab keinen belegten Bedarf, also wurde nichts
+angelegt.
+
+### 22.4 Was die bestehenden Regeln bereits leisten
+
+Statisch gegen die Migrationen gelesen, nicht gegen eine Datenbank:
+
+| Anforderung | Regel | Fundstelle |
+|---|---|---|
+| Nur der eigene Datensatz | `employees_select_self`, `profiles_select_self`, `vacation_requests_select_self` | 002 |
+| Manipulierte Schichtkennung | `shifts_select_self_published`: eigener Mitarbeiter **und** `plan_status = 'published'` | 002 |
+| Manipulierte Fahrzeugkennung | `vehicles_select_admin_dispatcher`: ein Fahrer sieht ein Fahrzeug **nur**, wenn es einem seiner eigenen veröffentlichten Dienste zugewiesen ist | 002 |
+| Keine öffentliche Dateiadresse | Bucket `public = false` | 011 |
+| Dateityp serverseitig | `allowed_mime_types` = PDF, JPEG, PNG — **HTML, SVG und Skripte werden von der Plattform abgewiesen**, nicht nur vom Browser | 011 |
+| Dateigröße serverseitig | `file_size_limit = 10485760` | 011 |
+| Fremder Ordner | `(storage.foldername(name))[1] = auth.uid()::text` für Lesen **und** Schreiben | 011 |
+| Kein Überschreiben | `revoke update on storage.objects from authenticated` | 011 |
+| `anon` | `revoke all on storage.objects from anon` | 011 |
+
+Das Portal selbst setzt **keine** Kennung aus der Oberfläche in eine
+Abfrage ein: Die einzige Stelle mit `.eq("employee_id", …)` nimmt
+`session.employeeId` aus der geprüften Sitzung. Die Anbindung liest
+überhaupt nichts aus DOM oder Adresszeile.
+
+### 22.5 Prüfergebnisse — nach Art der Prüfung getrennt
+
+**Statisch geprüft** (Quelltext und Migrationen gelesen):
+Bucket nicht öffentlich · erlaubte Dateitypen · Größengrenze · `anon` ohne
+Rechte · eigener Ordner · kein Überschreiben · fünf RLS-Regeln auf den
+eigenen Datensatz · Herkunft jeder Mitarbeiterkennung · kein
+Skript-Verweis mehr auf das Adminmodul.
+
+**Mit isolierter Attrappe geprüft** (`npm run portal-pruefen`, **99 / 99**):
+Zugangsschutz in fünf Lagen · Modul wird nicht geladen · keine erfundenen
+Personen · Schicht heute und morgen · kein veröffentlichter Plan · langsame
+Antwort · Fahrzeug vorhanden und nicht vorhanden · Abmelden bestätigt und
+**nicht** bestätigt · späte Antwort nach dem Abmelden · doppeltes Absenden
+bei Urlaub und Krankmeldung · Dateityp, Größe, fehlende Datei gegen die
+**echte** Anbindung · gesperrter Browserspeicher · Fehlertext verrät den
+Kontozustand nicht · 320/390/430/1440 px · Tastatur mit sichtbarem Fokus.
+
+**Gegenprobe, dass nichts anderes betroffen ist:**
+`ausgabe-pruefen` 56/56 · `auth-027-pruefen` 37/37 ·
+`startseite-pruefen` 187/187 · `kontoseiten-pruefen` 181/181.
+
+**Lokal gegen echte Policies geprüft:** **nichts.** Ein Lauf gegen das
+portable PostgreSQL war nicht Teil dieses Pakets.
+
+**Auf der produktiven Instanz manuell geprüft:** nur das, was Sie selbst
+bestätigt haben — Anmeldung, Portal öffnet, Ab- und erneutes Anmelden,
+Abweisung im Adminbereich mit „Zugriff verweigert …", und „frei" bei
+Schicht und Fahrzeug mangels Zuweisung. **Das sind Ihre Beobachtungen, kein
+Messergebnis von mir**; ich habe sie nicht nachgestellt und lege sie auch
+nicht als technischen Beweis aus.
+
+**Weiterhin ungeprüft:**
+1. Ob die RLS-Regeln fremde Daten **tatsächlich** abweisen.
+2. Ob eine Mitarbeiterrolle **tatsächlich** keine Dispatcher- oder
+   Adminfunktion ausführen kann.
+3. Ob die Datei im Speicher ohne signierte Adresse **tatsächlich**
+   unerreichbar ist.
+4. Ob der Upload am echten Bucket durchläuft.
+
+Für alle vier gibt es `ANLEITUNG-PORTALTEST.md`.
+
+### 22.6 Drei eigene Fehler in der Prüfung
+
+Sie haben Zeit gekostet und werden benannt, weil sie sonst als Fehler im
+Portal durchgegangen wären:
+
+1. Die Attrappe verzögerte **jeden** Aufruf, auch das Laden. Nach
+   2,6 Sekunden war die Oberfläche noch nicht fertig, der Behandler hing
+   nicht am Formular — gemessen wurde ein Knopf, den niemand gedrückt
+   hatte. Ladeverzögerung und Sendedauer sind jetzt getrennt.
+2. Zwei Prüfungen trafen den **erklärenden Kommentar** statt des
+   Verweises und meldeten Fehler, wo keine waren.
+3. Die Kennungsprüfung verbot jede Verwendung von `employee_id` und schlug
+   deshalb genau bei der Stelle an, die es richtig macht.
+
+### 22.7 Offen vor einer Freigabe
+
+| # | Punkt | Art |
+|---|---|---|
+| 1 | Manueller Test am echten System nach `ANLEITUNG-PORTALTEST.md` | **blockierend** |
+| 2 | Zweites Testkonto für den Fremdzugriffstest | Entscheidung von Ihnen |
+| 3 | Mitteilungen sind nicht angebunden — das Portal zeigt immer „Keine neuen Mitteilungen" | bewusst später |
+| 4 | Fehlende und ablaufende Dokumente werden nicht angezeigt (`employee_documents` wird nicht abgefragt) | bewusst später |
+| 5 | Urlaub zurückziehen gibt es im Backend nicht | bewusst später |
+| 6 | Dispatcher- und Adminbereich sind gestalterisch unverändert | eigenes Paket |
+
+Dazu unverändert die Hindernisse der öffentlichen Webseite (Abschnitte 17
+bis 20): Kunden-Passwortreset, eigener SMTP-Dienst, SPF/DKIM/DMARC,
+`taxigermersheim.de` in den Redirect URLs.
