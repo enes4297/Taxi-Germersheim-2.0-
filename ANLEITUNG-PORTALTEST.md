@@ -70,35 +70,43 @@ das erleichtert das Aufräumen in Schritt „Bereinigung".
 
 ### B) Testschicht für **heute**
 
-1. `admin/schichtplanung.html` öffnen.
-2. Die Zeile des Testfahrers suchen (Karte mit seinem Namen).
-3. Auf **„Mitarbeiter für heute einplanen"** klicken.
-   Oben in der Karte wechselt der Zustand auf **„im Dienst"**.
-4. Auf **„Fahrzeug zuweisen"** klicken.
-   Darunter klappt **„Fahrzeug wählen"** auf und zeigt **alle Fahrzeuge
-   aus der Fahrzeugverwaltung** als Karten — je mit Fahrzeugname und
-   Kennzeichen.
-5. Die Karte **TESTWAGEN-029 · GER-TEST 999** anklicken.
-   Sie schließt sich, und bei **„Zugewiesenes Fahrzeug"** steht jetzt
-   `GER-TEST 999`. Beim erneuten Öffnen ist die Karte **gold umrandet**.
-6. Auf **„Schicht ändern"** klicken.
-   Darunter klappt **„Schicht wählen"** auf: oben die Vorlagen
-   (Frühschicht, Tagschicht, Spätschicht, Nachtschicht …), darunter
-   **„oder eigene Zeit"** mit zwei Feldern.
-7. Entweder eine Vorlage anklicken — oder Beginn und Ende selbst
-   eintragen und auf **„Zeit übernehmen"** klicken.
-   Bei **„Schichtbeginn"** und **„Schichtende"** stehen danach die
-   gewählten Zeiten.
-8. Oben rechts auf **„Planung speichern"**.
-   Damit ist die Schicht gespeichert — aber noch ein **Entwurf**. Im
-   Portal ist sie jetzt bewusst **nicht** sichtbar.
-9. Oben rechts bei **„Veröffentlichen für"** von *morgen* auf
-   **heute · TT.MM.JJJJ** umstellen. Das Datum steht im Klartext da.
-10. Auf **„Plan veröffentlichen"** klicken.
-11. Die Rückfrage nennt noch einmal den Tag und die Anzahl der Schichten —
-    bestätigen.
+Seit Schritt 029c gibt es für eine Schicht **einen einzigen Weg**: die
+Schaltfläche auf der Mitarbeiterkarte. Alles andere passiert in einem
+Fenster, das sich über die Seite legt.
 
-**Erwartung:** Unter der Kopfleiste erscheint
+1. `admin/schichtplanung.html` öffnen.
+2. **Oben über den Mitarbeiterkarten** steht die Leiste **„Tag
+   bearbeiten"**. Dort ist **heute** vorausgewählt, mit Wochentag und
+   vollem Datum. Dieser Tag wird angezeigt, bearbeitet **und**
+   veröffentlicht — einen zweiten Ort zum Umstellen gibt es nicht.
+3. Die Karte des Testfahrers suchen und auf **„Schicht planen"**
+   klicken. (Ist für den Tag schon etwas gespeichert, heißt die
+   Schaltfläche **„Schicht bearbeiten"**.)
+4. Das Fenster **„Schicht für <Name>"** öffnet sich. Es führt von oben
+   nach unten durch vier Abschnitte:
+   1. **Arbeitet <Name> an diesem Tag?** — **Im Dienst** anklicken.
+      (Bei **Frei** verschwinden die Abschnitte 2 und 3.)
+   2. **Schichtzeit** — eine Vorlage anklicken (Frühschicht,
+      Tagschicht …) **oder** **„Eigene Zeit"**; erst dann erscheinen die
+      beiden Felder **Beginn** und **Ende**.
+   3. **Fahrzeug** — alle Fahrzeuge aus der Fahrzeugverwaltung stehen
+      als Karten da, je mit Fahrzeugname und Kennzeichen. **TESTWAGEN-029
+      · GER-TEST 999** anklicken; die Karte wird **gold umrandet**.
+      **„Kein Fahrzeug"** ist ebenfalls eine Karte.
+   4. **Zusammenfassung** — dort steht in Worten, was gespeichert wird:
+      Status, Zeit, Fahrzeug, Tag.
+5. Unten im Fenster auf **„Schicht speichern"**. Das Fenster schließt
+   sich, die Karte zeigt die Schicht.
+
+   Gespeichert ist die Schicht damit — aber noch ein **Entwurf**. Im
+   Mitarbeiterportal ist sie jetzt bewusst **nicht** sichtbar.
+
+6. In der Tagesleiste oben auf **„Tagesplan veröffentlichen"** klicken.
+   Die Schaltfläche nennt den Tag, der auch links eingestellt ist.
+7. Die Rückfrage nennt noch einmal Tag und Anzahl der Schichten —
+   bestätigen.
+
+**Erwartung:** In der Tagesleiste steht danach
 „Plan für heute, TT.MM.JJJJ, veröffentlicht: N Schicht(en) sind jetzt im
 Mitarbeiterportal sichtbar."
 
@@ -108,25 +116,28 @@ Mitarbeiterportal sichtbar."
 > Eine nur gespeicherte Schicht erscheint dort **nicht** — das ist kein
 > Fehler, sondern Absicht.
 
-> **Hinweis zur Vorauswahl:** Es steht **morgen** voreingestellt. Wer
-> nichts umstellt, veröffentlicht wie bisher den morgigen Plan. Für den
-> heutigen Tag muss die Auswahl bewusst umgestellt werden — so kann kein
-> Tag versehentlich veröffentlicht werden.
+> **Zur Vorauswahl:** Vorausgewählt ist **heute** — der Tag, an dem
+> gearbeitet wird. Das ist eine bewusste Änderung gegenüber dem früheren
+> Stand, bei dem *morgen* voreingestellt war. Versehentlich kann trotzdem
+> kein falscher Tag veröffentlicht werden: die Schaltfläche trägt den Tag
+> im Text, und die Rückfrage nennt ihn erneut.
 
-> **Bis Schritt 029 war beides nicht möglich.** „Plan veröffentlichen"
-> war fest auf morgen verdrahtet, und „Fahrzeug zuweisen" bzw. „Schicht
-> ändern" waren Umschalter mit festen Werten — man konnte weder ein
-> Fahrzeug noch eine Schichtzeit auswählen. Beides ist behoben — siehe
-> Abschnitte 23 und 24 der Abschlussunterlage.
+> **Was es nicht mehr gibt.** Die früheren Schaltflächen „Mitarbeiter für
+> heute einplanen", „Fahrzeug zuweisen", „Schicht ändern" und
+> „Planung speichern" sind entfernt. Sie klappten Auswahlen unter der
+> Karte auf und gespeichert wurde an ganz anderer Stelle — im echten
+> Bedienversuch hat das nicht funktioniert. Siehe Abschnitt 25 der
+> Abschlussunterlage.
 
 ### C) Testschicht für **morgen**
 
-Wie B), aber in der Spalte **„Morgen"**, Zeit `14:00`–`22:00` und
-**ohne Fahrzeug**. Beim Veröffentlichen die Auswahl auf
-**morgen · TT.MM.JJJJ** stellen (das ist die Vorauswahl).
+Wie B), aber vorher in der Tagesleiste oben von **heute** auf **morgen**
+umstellen. Dann Zeit `14:00`–`22:00` wählen und im Abschnitt **Fahrzeug**
+die Karte **„Kein Fahrzeug"** anklicken.
 
 So lässt sich beides prüfen: zugewiesenes Fahrzeug (heute) und offenes
-Fahrzeug (morgen).
+Fahrzeug (morgen). Beim Umstellen des Tages bleibt die Schicht von heute
+unangetastet — jeder Tag wird getrennt gespeichert.
 
 ### D) Test-Urlaubsantrag
 

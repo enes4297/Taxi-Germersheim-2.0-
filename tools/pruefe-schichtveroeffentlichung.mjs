@@ -93,7 +93,7 @@ const MORGEN = ISO(1);
 async function seite(zustand = {}) {
   const l = {
     publishFehlt: false, saveFehltAb: -1, leer: false,
-    verzoegerung: 0, heute: HEUTE, morgen: MORGEN, ...zustand,
+    verzoegerung: 0, speicherDauer: 0, heute: HEUTE, morgen: MORGEN, ...zustand,
   };
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   await ctx.route('**://**', (r) => {
@@ -153,11 +153,20 @@ async function seite(zustand = {}) {
       saveShift: async (payload) => {
         window.__geschrieben.shifts.push(payload);
         const n = window.__geschrieben.shifts.length;
+        /*
+          `speicherDauer` bremst NUR das Speichern; das Laden der Seite
+          bleibt schnell.
+
+          Mit dem gemeinsamen Regler war die Oberfläche nach zwei Sekunden
+          noch nicht fertig, und die Doppelklick-Probe fand das Fenster
+          gar nicht erst — ein Fehlalarm der Prüfung, nicht der Software.
+        */
+        const halt = (w) => new Promise((f) => setTimeout(() => f(w), cfg.speicherDauer || cfg.verzoegerung));
         if (cfg.saveFehltAb >= 0 && n > cfg.saveFehltAb) {
           window.__letzterFehler = 'Schicht abgelehnt';
-          return warte(null);
+          return halt(null);
         }
-        return warte({ ...payload, id: `S-${n}` });
+        return halt({ ...payload, id: `S-${n}` });
       },
       /* Diese Namen liest die Seite beim Nachladen nach dem Speichern. */
       getEmployees: async () => warte(cfg.leer ? [] : mitarbeiter),
@@ -216,7 +225,15 @@ console.log('\n── 1. Der Tag ist vor dem Klick sichtbar ──');
     };
   });
   pruefe(!m.fehlt, 'die Tagesauswahl ist vorhanden');
-  pruefe(m.wert === 'tomorrow', `vorausgewaehlt ist "morgen" - der bisherige Ablauf bleibt (${m.wert})`);
+  /*
+    Bewusste Aenderung in diesem Schritt: Die Leiste heisst jetzt
+    "Tag bearbeiten" und steht ueber den Mitarbeiterkarten. Sie bestimmt,
+    welcher Tag angezeigt, bearbeitet UND veroeffentlicht wird. Der
+    Dispatcher arbeitet am laufenden Tag, deshalb ist "heute"
+    vorausgewaehlt. Die frueher gepruefte Vorbelegung "morgen" gilt damit
+    nicht mehr - das ist keine Regression, sondern der neue Stand.
+  */
+  pruefe(m.wert === 'today', `vorausgewaehlt ist "heute" - der bearbeitete Tag (${m.wert})`);
   const heuteText = (m.optionen || []).find((o) => o.wert === 'today')?.text || '';
   const morgenText = (m.optionen || []).find((o) => o.wert === 'tomorrow')?.text || '';
   pruefe(/\d{2}\.\d{2}\.\d{4}/.test(heuteText) && /\d{2}\.\d{2}\.\d{4}/.test(morgenText),
@@ -229,6 +246,10 @@ console.log('\n── 1. Der Tag ist vor dem Klick sichtbar ──');
 console.log('\n── 2. Morgen veroeffentlichen (bisheriger Ablauf) ──');
 {
   const { ctx, page } = await seite();
+  // Seit der neuen Tagesleiste ist "heute" vorbelegt; fuer diesen Fall
+  // wird morgen ausdruecklich gewaehlt.
+  await page.selectOption('[data-publish-day]', 'tomorrow');
+  await page.waitForTimeout(300);
   await page.click('[data-plan-publish]');
   await page.waitForTimeout(1500);
   const g = await page.evaluate(() => window.__geschrieben);
@@ -424,153 +445,430 @@ console.log('\n── 11. Keine Auswirkung auf andere Bereiche (statisch) ──
   hinweis('Statisch gelesen. Ob die Regeln in der produktiven Instanz aktiv sind, ist damit nicht belegt.');
 }
 
-// ═══ 12. Auswahl von Fahrzeug und Schicht ═════════════════════════════════
+// ═══ 12. Das Schichtfenster ═══════════════════════════════════════════════
 //
 //   DER BEHOBENE BEFUND
 //
-//   Die drei Schaltflaechen der Tageszeile waren keine Auswahl, sondern
-//   Umschalter mit festen Werten: "Fahrzeug zuweisen" nahm das NAECHSTE
-//   freie Fahrzeug, "Schicht aendern" setzte immer dieselbe fest
-//   verdrahtete Vorlage (14-22 Uhr). Der Wert wurde danach angezeigt und
-//   sah aus wie ein Vorschlag - zu waehlen oder zu bestaetigen gab es
-//   nichts.
+//   Vorher standen sechs Schaltflaechen nebeneinander, jede aenderte fuer
+//   sich einen Teilwert, und gespeichert wurde an ganz anderer Stelle der
+//   Seite. Im echten Bedienversuch war nicht erkennbar, wie eine Schicht
+//   vollstaendig ausgewaehlt und gesichert wird.
 //
-console.log('\n── 12. Auswahl von Fahrzeug und Schicht ──');
+//   Jetzt: EIN Knopf je Karte, EIN Fenster, EIN Speichern.
+//
+console.log('\n── 12. Das Schichtfenster ──');
+
+/** Das Fenster fuer den ersten Mitarbeiter oeffnen. */
+async function fensterOeffnen(page) {
+  await page.click('[data-shift-plan]');
+  await page.waitForTimeout(500);
+}
+
 {
   const { ctx, page, fehler } = await seite();
 
-  /* ── Fahrzeugauswahl ── */
-  await page.click('[data-today-action="vehicle"]');
-  await page.waitForTimeout(500);
+  /* ── Nur noch eine Aktion auf der Karte ── */
+  const karte = await page.evaluate(() => {
+    const k = document.querySelector('.shift-driver-card');
+    if (!k) return { fehlt: true };
+    return {
+      knoepfe: [...k.querySelectorAll('button')].map((b) => b.textContent.trim()),
+      alteAktionen: k.querySelectorAll('[data-today-action="vehicle"], [data-today-action="shift"], [data-today-action="status"], [data-today-action="plan"]').length,
+      aufklapp: k.querySelectorAll('[data-shift-picker]').length,
+    };
+  });
+  pruefe(!karte.fehlt, 'die Mitarbeiterkarte steht da');
+  pruefe(karte.alteAktionen === 0,
+    `die vier missverstaendlichen Aktionen sind weg (${karte.alteAktionen})`);
+  pruefe(karte.aufklapp === 0, 'unter der Karte klappt nichts mehr auf');
+  pruefe((karte.knoepfe || []).some((b) => /Schicht (planen|bearbeiten)/.test(b)),
+    `es gibt einen klaren Hauptknopf (${(karte.knoepfe || []).join(' | ')})`);
+
+  /* ── Das Fenster und seine Reihenfolge ── */
+  await fensterOeffnen(page);
   const f = await page.evaluate(() => {
-    const p = document.querySelector('[data-shift-picker="vehicle"]');
-    if (!p) return { fehlt: true };
-    const karten = [...p.querySelectorAll('[data-pick-vehicle]')]
-      .filter((k) => k.getAttribute('data-pick-vehicle'))
-      .map((k) => ({
-        name: k.querySelector('strong')?.textContent.trim() || '',
-        kennzeichen: k.querySelector('span')?.textContent.trim() || '',
-        gewaehlt: k.classList.contains('is-selected'),
-        gedrueckt: k.getAttribute('aria-pressed'),
-      }));
-    return { karten, titel: p.querySelector('.shift-picker-title')?.textContent.trim() || '' };
-  });
-  pruefe(!f.fehlt, 'die Fahrzeugauswahl oeffnet sich');
-  pruefe((f.karten || []).length > 0, `sie listet die Fahrzeuge auf (${(f.karten || []).length})`);
-  pruefe((f.karten || []).every((k) => k.name && k.kennzeichen),
-    'jede Karte nennt Fahrzeugname UND Kennzeichen');
-  const testwagen = (f.karten || []).find((k) => /TESTWAGEN-029/.test(k.name));
-  pruefe(Boolean(testwagen), `das Fahrzeug aus der Fahrzeugverwaltung steht darin (${testwagen ? testwagen.name + ' / ' + testwagen.kennzeichen : 'fehlt'})`);
-
-  /* Anklicken - und es muss gold markiert wieder erscheinen. */
-  await page.click('[data-pick-vehicle]:not([data-pick-vehicle=""])');
-  await page.waitForTimeout(600);
-  await page.click('[data-today-action="vehicle"]');
-  await page.waitForTimeout(500);
-  const nachWahl = await page.evaluate(() => {
-    const k = document.querySelector('[data-pick-vehicle].is-selected');
-    const zeile = document.querySelector('.shift-driver-card');
+    const box = document.querySelector('.shift-dialog-box');
+    if (!box) return { fehlt: true };
     return {
-      markiert: Boolean(k),
-      gedrueckt: k?.getAttribute('aria-pressed'),
-      rand: k ? getComputedStyle(k).borderColor : '',
-      zeilentext: (zeile?.textContent || '').replace(/\s+/g, ' '),
+      modal: box.getAttribute('aria-modal'),
+      titel: box.querySelector('h2')?.textContent.trim() || '',
+      kicker: box.querySelector('.shift-dialog-kicker')?.textContent.trim() || '',
+      schritte: [...box.querySelectorAll('.shift-dialog-step h3')].map((h) => h.textContent.trim()),
+      hatSpeichern: Boolean(box.querySelector('[data-dialog-save]')),
+      speichernText: box.querySelector('[data-dialog-save]')?.textContent.trim() || '',
+      hatAbbrechen: box.querySelectorAll('button[data-dialog-cancel]').length,
+      zusammenfassung: [...box.querySelectorAll('.shift-dialog-summary dt')].map((d) => d.textContent.trim()),
+      fokusImFenster: box.contains(document.activeElement),
+      hintergrundGesperrt: document.body.classList.contains('shift-dialog-open'),
     };
   });
-  pruefe(nachWahl.markiert, 'das gewaehlte Fahrzeug ist markiert');
-  pruefe(nachWahl.gedrueckt === 'true', 'und zwar auch fuer Vorleseprogramme (aria-pressed)');
-  pruefe(/240, 201, 107/.test(nachWahl.rand),
-    `die Markierung ist gold (${nachWahl.rand})`);
-  pruefe(/GER-TEST 999/.test(nachWahl.zeilentext),
-    'das Kennzeichen steht in der Zeile');
+  pruefe(!f.fehlt, 'das Fenster oeffnet sich');
+  pruefe(f.modal === 'true', 'es ist als Dialog ausgewiesen (aria-modal)');
+  pruefe(/\d{2}\.\d{2}\.\d{4}/.test(f.kicker), `oben steht Tag und Datum ("${f.kicker}")`);
+  pruefe((f.schritte || []).length === 4,
+    `vier Schritte in fester Reihenfolge (${(f.schritte || []).join(' / ')})`);
+  pruefe(/Arbeitet/.test(f.schritte?.[0] || ''), 'Schritt 1 fragt, ob die Person arbeitet');
+  pruefe(/Schichtzeit/.test(f.schritte?.[1] || ''), 'Schritt 2 ist die Schichtzeit');
+  pruefe(/Fahrzeug/.test(f.schritte?.[2] || ''), 'Schritt 3 ist das Fahrzeug');
+  pruefe(/Zusammenfassung/.test(f.schritte?.[3] || ''), 'Schritt 4 ist die Zusammenfassung');
+  pruefe(f.speichernText === 'Schicht speichern', `der Hauptknopf heisst "${f.speichernText}"`);
+  pruefe(f.hatAbbrechen >= 1, `es gibt einen Abbrechen-Knopf (${f.hatAbbrechen})`);
+  pruefe(JSON.stringify(f.zusammenfassung) === JSON.stringify(['Mitarbeiter', 'Datum', 'Status', 'Schichtzeit', 'Fahrzeug']),
+    `die Zusammenfassung nennt alle fuenf Angaben (${(f.zusammenfassung || []).join(', ')})`);
+  pruefe(f.fokusImFenster, 'der Fokus steht im Fenster');
+  pruefe(f.hintergrundGesperrt, 'der Hintergrund ist gesperrt');
 
-  /* ── Schichtauswahl ── */
-  await page.click('[data-picker-close]');
+  /* ── Keine Fachbegriffe ── */
+  const text = await page.evaluate(() =>
+    document.querySelector('.shift-dialog-box')?.textContent.replace(/\s+/g, ' ') || '');
+  pruefe(!/\bdraft\b|\bpublished\b|plan_status/i.test(text),
+    'im Fenster steht kein Fachbegriff wie draft oder published');
+
+  /* ── Jede Vorlage waehlbar ── */
+  const vorlagen = await page.evaluate(() =>
+    [...document.querySelectorAll('[data-dialog-template]')].map((b) => ({
+      id: b.getAttribute('data-dialog-template'),
+      name: b.querySelector('strong')?.textContent.trim() || '',
+      zeit: b.querySelector('span')?.textContent.trim() || '',
+    })));
+  pruefe(vorlagen.length >= 7,
+    `alle Vorlagen plus "Eigene Zeit" stehen zur Wahl (${vorlagen.length}: ${vorlagen.map((v) => v.name).join(', ')})`);
+
+  let alleWaehlbar = true;
+  for (const v of vorlagen.filter((x) => x.id)) {
+    await page.click(`[data-dialog-template="${v.id}"]`);
+    await page.waitForTimeout(200);
+    const markiert = await page.evaluate((id) => {
+      const b = document.querySelector(`[data-dialog-template="${id}"]`);
+      return b?.classList.contains('is-selected') && b.getAttribute('aria-pressed') === 'true';
+    }, v.id);
+    if (!markiert) alleWaehlbar = false;
+  }
+  pruefe(alleWaehlbar, `jede Vorlage laesst sich waehlen und wird gold markiert (${vorlagen.filter((x) => x.id).length} geprueft)`);
+
+  /* ── Eigene Zeit, auch ueber Mitternacht ── */
+  await page.click('[data-dialog-template=""]');
   await page.waitForTimeout(300);
-  await page.click('[data-today-action="shift"]');
-  await page.waitForTimeout(500);
-  const s = await page.evaluate(() => {
-    const p = document.querySelector('[data-shift-picker="shift"]');
-    if (!p) return { fehlt: true };
+  const felderDa = await page.evaluate(() => ({
+    start: Boolean(document.querySelector('[data-dialog-start]')),
+    ende: Boolean(document.querySelector('[data-dialog-end]')),
+    groesse: document.querySelector('[data-dialog-start]')
+      ? parseFloat(getComputedStyle(document.querySelector('[data-dialog-start]')).fontSize) : 0,
+  }));
+  pruefe(felderDa.start && felderDa.ende, 'bei "Eigene Zeit" erscheinen Beginn und Ende');
+  pruefe(felderDa.groesse >= 16, `die Zeitfelder sind mindestens 16 px (${felderDa.groesse})`);
+
+  await page.fill('[data-dialog-start]', '22:00');
+  await page.fill('[data-dialog-end]', '06:00');
+  await page.click('[data-dialog-vehicle]');
+  await page.waitForTimeout(300);
+  const nacht = await page.evaluate(() => {
+    const dd = [...document.querySelectorAll('.shift-dialog-summary dd')].map((x) => x.textContent.trim());
+    return dd;
+  });
+  pruefe(nacht.some((x) => /22:00\s*–\s*06:00/.test(x)),
+    `eine Nachtschicht ueber Mitternacht wird uebernommen (${nacht.join(' | ')})`);
+
+  /* ── Fahrzeug waehlen und wechseln ── */
+  const wagen = await page.evaluate(() =>
+    [...document.querySelectorAll('[data-dialog-vehicle]')].map((b) => ({
+      kennung: b.getAttribute('data-dialog-vehicle'),
+      name: b.querySelector('strong')?.textContent.trim() || '',
+      kennzeichen: b.querySelector('span')?.textContent.trim() || '',
+    })));
+  const echte = wagen.filter((w) => w.kennung);
+  pruefe(echte.length >= 2, `mehrere Fahrzeuge stehen zur Wahl (${echte.length})`);
+  pruefe(echte.every((w) => w.name && w.kennzeichen),
+    'jede Fahrzeugkarte nennt Name und Kennzeichen');
+
+  await page.click(`[data-dialog-vehicle="${echte[0].kennung}"]`);
+  await page.waitForTimeout(250);
+  const ersteWahl = await page.evaluate((k) => {
+    const b = document.querySelector(`[data-dialog-vehicle="${k}"]`);
+    return { markiert: b?.classList.contains('is-selected'), farbe: b ? getComputedStyle(b).borderColor : '' };
+  }, echte[0].kennung);
+  pruefe(ersteWahl.markiert, 'das gewaehlte Fahrzeug ist markiert');
+  pruefe(/240, 201, 107/.test(ersteWahl.farbe), `und zwar gold (${ersteWahl.farbe})`);
+
+  await page.click(`[data-dialog-vehicle="${echte[1].kennung}"]`);
+  await page.waitForTimeout(250);
+  const wechsel = await page.evaluate((k) => ({
+    neu: document.querySelector(`[data-dialog-vehicle="${k[1]}"]`)?.classList.contains('is-selected'),
+    alt: document.querySelector(`[data-dialog-vehicle="${k[0]}"]`)?.classList.contains('is-selected'),
+  }), [echte[0].kennung, echte[1].kennung]);
+  pruefe(wechsel.neu && !wechsel.alt, 'ein Wechsel hebt die vorherige Wahl auf');
+
+  await page.click('[data-dialog-vehicle=""]');
+  await page.waitForTimeout(250);
+  const ohne = await page.evaluate(() => {
+    const dd = [...document.querySelectorAll('.shift-dialog-summary dd')].map((x) => x.textContent.trim());
+    return dd.some((x) => /Kein Fahrzeug/.test(x));
+  });
+  pruefe(ohne, '"Kein Fahrzeug" laesst sich waehlen');
+
+  /* ── Frei setzen blendet Zeit und Fahrzeug aus ── */
+  await page.click('[data-dialog-duty="nein"]');
+  await page.waitForTimeout(300);
+  const frei = await page.evaluate(() => {
+    const schritte = [...document.querySelectorAll('.shift-dialog-step')];
     return {
-      vorlagen: [...p.querySelectorAll('[data-pick-template]')].map((k) => ({
-        name: k.querySelector('strong')?.textContent.trim() || '',
-        zeit: k.querySelector('span')?.textContent.trim() || '',
-      })),
-      hatBeginn: Boolean(p.querySelector('[data-shift-start]')),
-      hatEnde: Boolean(p.querySelector('[data-shift-end]')),
-      hatUebernehmen: Boolean(p.querySelector('[data-shift-apply]')),
-      feldgroesse: p.querySelector('[data-shift-start]')
-        ? parseFloat(getComputedStyle(p.querySelector('[data-shift-start]')).fontSize) : 0,
+      versteckt: schritte.filter((s) => s.hidden).length,
+      status: [...document.querySelectorAll('.shift-dialog-summary dd')][2]?.textContent.trim() || '',
     };
   });
-  pruefe(!s.fehlt, 'die Schichtauswahl oeffnet sich');
-  pruefe((s.vorlagen || []).length > 1,
-    `es stehen mehrere Vorlagen zur Wahl (${(s.vorlagen || []).length}: ${(s.vorlagen || []).map((v) => v.name).join(', ')})`);
-  pruefe((s.vorlagen || []).every((v) => /\d{2}:\d{2}\s*–\s*\d{2}:\d{2}/.test(v.zeit)),
-    'jede Vorlage nennt ihre Zeit');
-  pruefe(s.hatBeginn && s.hatEnde && s.hatUebernehmen,
-    'daneben gibt es Felder fuer eine eigene Anfangs- und Endzeit');
-  pruefe(s.feldgroesse >= 16, `die Zeitfelder sind mindestens 16 px gross (${s.feldgroesse})`);
-
-  /* Vorlage waehlen. */
-  const ersteVorlage = await page.evaluate(() => {
-    const k = document.querySelector('[data-pick-template]');
-    return { id: k?.getAttribute('data-pick-template') || '', zeit: k?.querySelector('span')?.textContent.trim() || '' };
-  });
-  await page.click('[data-pick-template]');
-  await page.waitForTimeout(600);
-  const nachVorlage = await page.evaluate(() =>
-    (document.querySelector('.shift-driver-card')?.textContent || '').replace(/\s+/g, ' '));
-  const [vonV] = (ersteVorlage.zeit.match(/\d{2}:\d{2}/g) || []);
-  pruefe(Boolean(vonV) && nachVorlage.includes(vonV),
-    `die gewaehlte Vorlage steht in der Zeile (${vonV})`);
-
-  /* Eigene Zeit setzen. */
-  await page.click('[data-today-action="shift"]');
-  await page.waitForTimeout(400);
-  await page.fill('[data-shift-start]', '05:30');
-  await page.fill('[data-shift-end]', '13:45');
-  await page.click('[data-shift-apply]');
-  await page.waitForTimeout(700);
-  const nachZeit = await page.evaluate(() =>
-    (document.querySelector('.shift-driver-card')?.textContent || '').replace(/\s+/g, ' '));
-  pruefe(/05:30/.test(nachZeit) && /13:45/.test(nachZeit),
-    'eine eigene Zeit wird uebernommen (05:30 / 13:45)');
-
-  /* Unvollstaendige Eingabe wird abgewiesen. */
-  await page.click('[data-today-action="shift"]');
-  await page.waitForTimeout(400);
-  await page.fill('[data-shift-start]', '');
-  await page.click('[data-shift-apply]');
-  await page.waitForTimeout(400);
-  const meldung = await page.evaluate(() => {
-    const h = document.querySelector('[data-shift-picker-hinweis]');
-    return { sichtbar: h ? !h.hidden : false, text: (h?.textContent || '').trim() };
-  });
-  pruefe(meldung.sichtbar && /Beginn und Ende/.test(meldung.text),
-    `eine unvollstaendige Zeit wird abgewiesen ("${meldung.text}")`);
-  const nochDa = await page.evaluate(() =>
-    (document.querySelector('.shift-driver-card')?.textContent || '').includes('05:30'));
-  pruefe(nochDa, 'und die vorherige Zeit bleibt unveraendert stehen');
+  pruefe(frei.versteckt === 2, `bei "Frei" entfallen Schichtzeit und Fahrzeug (${frei.versteckt} Schritte verborgen)`);
+  pruefe(frei.status === 'Frei', `die Zusammenfassung sagt "${frei.status}"`);
 
   pruefe(fehler.length === 0, `keine Skriptfehler${fehler.length ? ' (' + fehler[0] + ')' : ''}`);
   await ctx.close();
 }
 
-// ═══ 13. Kein blindes Umschalten mehr ═════════════════════════════════════
-console.log('\n── 13. Die alten Umschalter sind weg ──');
+// ═══ 13. Speichern, Abbrechen, Doppelklick, Fehler ════════════════════════
+console.log('\n── 13. Speichern und Abbrechen ──');
 {
-  const quelle = await readFile(join(AUSGABE, 'admin', 'schichtplanung.js'), 'utf8');
-  const ohneKommentare = quelle.replace(/\/\*[\s\S]*?\*\//g, '');
-  pruefe(!/findTemplateById\("late"\)/.test(ohneKommentare),
-    'die fest verdrahtete Vorlage "late" wird nicht mehr gesetzt');
-  pruefe(!/isVehicleAvailable\(v\.plate\) && \(!row\.vehicle/.test(ohneKommentare),
-    'das blinde Weiterschalten zum naechsten Fahrzeug ist entfernt');
-  pruefe(/data-pick-vehicle/.test(ohneKommentare) && /data-pick-template/.test(ohneKommentare),
-    'stattdessen gibt es anklickbare Karten');
-  pruefe(/vehicleId: row\.vehicleId \|\| row\.vehicle/.test(ohneKommentare),
-    'beim Speichern wird die echte Fahrzeugkennung bevorzugt');
+  /* ── Neue Schicht speichern ── */
+  const { ctx, page } = await seite();
+  await fensterOeffnen(page);
+  await page.click('[data-dialog-duty="ja"]');
+  await page.waitForTimeout(200);
+  const vorlage = await page.evaluate(() =>
+    document.querySelector('[data-dialog-template]:not([data-dialog-template=""])')?.getAttribute('data-dialog-template') || '');
+  await page.click(`[data-dialog-template="${vorlage}"]`);
+  await page.waitForTimeout(200);
+  const wagenKennung = await page.evaluate(() =>
+    document.querySelector('[data-dialog-vehicle]:not([data-dialog-vehicle=""])')?.getAttribute('data-dialog-vehicle') || '');
+  await page.click(`[data-dialog-vehicle="${wagenKennung}"]`);
+  await page.waitForTimeout(200);
+  await page.click('[data-dialog-save]');
+  await page.waitForTimeout(1200);
+  const nachSpeichern = await page.evaluate(() => ({
+    offen: Boolean(document.querySelector('.shift-dialog-box')),
+    meldung: (document.querySelector('[data-shift-feedback]')?.textContent || '').trim(),
+    geschrieben: window.__geschrieben.shifts.length,
+    letzte: window.__geschrieben.shifts[window.__geschrieben.shifts.length - 1] || null,
+    knopf: document.querySelector('[data-shift-plan]')?.textContent.trim() || '',
+  }));
+  pruefe(!nachSpeichern.offen, 'nach bestaetigtem Speichern schliesst das Fenster');
+  pruefe(/Schicht gespeichert/.test(nachSpeichern.meldung),
+    `es gibt eine sichtbare Bestaetigung ("${nachSpeichern.meldung.slice(0, 64)}…")`);
+  pruefe(/noch nicht veröffentlicht/i.test(nachSpeichern.meldung),
+    'und sie sagt, dass der Tagesplan noch Entwurf ist');
+  pruefe(nachSpeichern.geschrieben === 1,
+    `genau EIN Datensatz geschrieben (${nachSpeichern.geschrieben})`);
+  pruefe(nachSpeichern.letzte?.date === HEUTE,
+    `und zwar fuer den angezeigten Tag (${nachSpeichern.letzte?.date})`);
+  pruefe(nachSpeichern.letzte?.planStatus === 'draft',
+    `als Entwurf - Speichern veroeffentlicht nicht (${nachSpeichern.letzte?.planStatus})`);
+  pruefe(/Schicht bearbeiten/.test(nachSpeichern.knopf),
+    `der Knopf heisst jetzt "${nachSpeichern.knopf}"`);
+
+  /* ── Vorhandene Schicht bearbeiten: alles vorausgewaehlt ── */
+  await fensterOeffnen(page);
+  const vorbelegt = await page.evaluate(() => ({
+    dienst: document.querySelector('[data-dialog-duty="ja"]')?.classList.contains('is-selected'),
+    vorlage: Boolean(document.querySelector('[data-dialog-template].is-selected')),
+    fahrzeug: Boolean(document.querySelector('[data-dialog-vehicle].is-selected')),
+  }));
+  pruefe(vorbelegt.dienst, 'beim Bearbeiten ist "Im Dienst" vorausgewaehlt');
+  pruefe(vorbelegt.vorlage, 'die gespeicherte Schichtzeit ist vorausgewaehlt');
+  pruefe(vorbelegt.fahrzeug, 'das gespeicherte Fahrzeug ist vorausgewaehlt');
+
+  /* ── Abbrechen aendert nichts ── */
+  const vorherZahl = await page.evaluate(() => window.__geschrieben.shifts.length);
+  await page.click('[data-dialog-duty="nein"]');
+  await page.waitForTimeout(200);
+  await page.click('button[data-dialog-cancel]');
+  await page.waitForTimeout(400);
+  const nachAbbruch = await page.evaluate(() => ({
+    offen: Boolean(document.querySelector('.shift-dialog-box')),
+    zahl: window.__geschrieben.shifts.length,
+    knopf: document.querySelector('[data-shift-plan]')?.textContent.trim() || '',
+    fokus: document.activeElement?.getAttribute('data-shift-plan') !== null,
+  }));
+  pruefe(!nachAbbruch.offen, 'Abbrechen schliesst das Fenster');
+  pruefe(nachAbbruch.zahl === vorherZahl,
+    `und schreibt nichts (${nachAbbruch.zahl} statt ${vorherZahl})`);
+  pruefe(/Schicht bearbeiten/.test(nachAbbruch.knopf),
+    'die Planung bleibt unveraendert bestehen');
+  pruefe(nachAbbruch.fokus, 'der Fokus kehrt zum ausloesenden Knopf zurueck');
+
+  /* ── Escape ebenso ── */
+  await fensterOeffnen(page);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  const nachEscape = await page.evaluate(() => ({
+    offen: Boolean(document.querySelector('.shift-dialog-box')),
+    zahl: window.__geschrieben.shifts.length,
+  }));
+  pruefe(!nachEscape.offen && nachEscape.zahl === vorherZahl,
+    'Escape schliesst ebenfalls, ohne etwas zu aendern');
+  await ctx.close();
+}
+
+{
+  /* ── Doppelklick ── */
+  /* verzoegerung bremst saveShift - genau das braucht diese Probe.
+     sendeDauer wirkt nur beim Veroeffentlichen; mit ihr war das Speichern
+     sofort fertig und die Pruefung las einen Knopf, den es nicht mehr gab. */
+  const { ctx, page } = await seite({ speicherDauer: 1500 });
+  await fensterOeffnen(page);
+  await page.click('[data-dialog-duty="ja"]');
+  await page.waitForTimeout(200);
+  await page.click('[data-dialog-save]');
+  const gesperrt = await page.evaluate(() => {
+    const b = document.querySelector('[data-dialog-save]');
+    return { disabled: b?.disabled, text: b?.textContent.trim() };
+  });
+  await page.evaluate(() => document.querySelector('[data-dialog-save]')?.click());
+  await page.waitForTimeout(3000);
+  const danach = await page.evaluate(() => window.__geschrieben.shifts.length);
+  pruefe(gesperrt.disabled === true, 'waehrend des Speicherns ist der Knopf gesperrt');
+  pruefe(/Wird gespeichert/.test(gesperrt.text || ''), `und sagt, dass etwas laeuft ("${gesperrt.text}")`);
+  pruefe(danach === 1, `trotz zweier Klicks genau EIN Datensatz (${danach})`);
+  await ctx.close();
+}
+
+{
+  /* ── Speicherfehler ── */
+  const { ctx, page } = await seite({ saveFehltAb: 0 });
+  await fensterOeffnen(page);
+  await page.click('[data-dialog-duty="ja"]');
+  await page.waitForTimeout(200);
+  await page.click('[data-dialog-save]');
+  await page.waitForTimeout(1200);
+  const fehlerfall = await page.evaluate(() => ({
+    offen: Boolean(document.querySelector('.shift-dialog-box')),
+    meldung: (document.querySelector('[data-dialog-error]')?.textContent || '').trim(),
+    versteckt: document.querySelector('[data-dialog-error]')?.hidden,
+    knopfFrei: document.querySelector('[data-dialog-save]')?.disabled === false,
+  }));
+  pruefe(fehlerfall.offen, 'bei einem Fehler bleibt das Fenster offen');
+  pruefe(fehlerfall.versteckt === false && /nicht gespeichert/.test(fehlerfall.meldung),
+    `der Fehler steht sichtbar da ("${fehlerfall.meldung.slice(0, 60)}…")`);
+  pruefe(/nichts geändert/.test(fehlerfall.meldung),
+    'und es wird gesagt, dass nichts geaendert wurde');
+  pruefe(fehlerfall.knopfFrei, 'ein zweiter Versuch ist moeglich');
+  await ctx.close();
+}
+
+{
+  /* ── Heute und morgen strikt getrennt ── */
+  const { ctx, page } = await seite();
+  await page.selectOption('[data-publish-day]', 'tomorrow');
+  await page.waitForTimeout(800);
+  const kopf = await page.evaluate(() => ({
+    knopf: document.querySelector('[data-plan-publish]')?.textContent.trim() || '',
+    zustand: document.querySelector('[data-plan-day-state]')?.textContent.trim() || '',
+  }));
+  pruefe(/Morgen/.test(kopf.knopf) && /\d{2}\.\d{2}\.\d{4}/.test(kopf.knopf),
+    `am Knopf stehen Tag und volles Datum ("${kopf.knopf}")`);
+  pruefe(!/draft|published/i.test(kopf.zustand),
+    `der Zustand steht in gewoehnlichem Deutsch ("${kopf.zustand.slice(0, 60)}…")`);
+
+  await fensterOeffnen(page);
+  await page.click('[data-dialog-duty="ja"]');
+  await page.waitForTimeout(200);
+  await page.click('[data-dialog-save]');
+  await page.waitForTimeout(1200);
+  const geschrieben = await page.evaluate(() => window.__geschrieben.shifts);
+  pruefe(geschrieben.length === 1 && geschrieben[0].date === MORGEN,
+    `am gewaehlten Tag "morgen" wird auch fuer morgen geschrieben (${geschrieben[0]?.date})`);
+  pruefe(!geschrieben.some((s) => s.date === HEUTE),
+    'und nichts fuer heute');
+  await ctx.close();
+}
+
+// ═══ 14. Darstellung und Tastatur ═════════════════════════════════════════
+console.log('\n── 14. Darstellung und Tastatur ──');
+{
+  for (const [name, w] of [['320 px', 320], ['390 px', 390], ['430 px', 430], ['1440 px', 1440]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: w < 500 ? 844 : 900 } });
+    await ctx.route('**://**', (r) => {
+      const u = r.request().url();
+      if (/admin\/(auth|supabase-auth|taxi-data-service)\.js/.test(u)) {
+        return r.fulfill({ status: 200, contentType: 'text/javascript', body: '' });
+      }
+      if (/admin\/supabase-config\.js/.test(u)) {
+        return r.fulfill({ status: 200, contentType: 'text/javascript', body: "window.TaxiSupabaseConfig={isConfigured:true};" });
+      }
+      return u.startsWith(ADRESSE) ? r.continue() : r.abort();
+    });
+    await ctx.addInitScript((cfg) => {
+      const ma = [{ id: 'TEST-1', employeeId: 'TEST-1', role: 'Fahrer', firstName: 'Testperson', lastName: 'Eins', status: 'im Dienst', employmentType: 'Vollzeit', qualifications: [] }];
+      const d = {
+        isEnabled: () => true, clearLastError: () => {}, getLastError: () => '',
+        resolveBackendMode: () => 'supabase',
+        getEmployees: async () => ma,
+        getVehicles: async () => ([{ id: 'V-TEST', name: 'TESTWAGEN-029', licensePlate: 'GER-TEST 999', plate: 'GER-TEST 999', vehicleType: 'Testfahrzeug', status: 'Verfügbar' }]),
+        getShifts: async () => ([]), getDocuments: async () => [], getVacations: async () => [], getAbsences: async () => [],
+        getPlanPublications: async () => [],
+        publishPlan: async (p) => ({ ...p, id: 'PUB' }), saveShift: async (p) => ({ ...p, id: 'S' }),
+      };
+      window.TaxiData = d; window.TaxiDataService = d;
+      void cfg;
+    }, {});
+    const page = await ctx.newPage();
+    page.on('dialog', (x) => x.accept());
+    await page.goto(`${ADRESSE}/admin/schichtplanung.html`, { waitUntil: 'load' });
+    await page.waitForTimeout(2200);
+    await page.click('[data-shift-plan]');
+    await page.waitForTimeout(600);
+    const m = await page.evaluate(() => {
+      const d = document.documentElement;
+      const box = document.querySelector('.shift-dialog-box');
+      const felder = [...document.querySelectorAll('.shift-dialog-box input')]
+        .map((e) => parseFloat(getComputedStyle(e).fontSize)).filter((px) => px < 16);
+      const klein = [...document.querySelectorAll('.shift-dialog-box button')]
+        .filter((e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height < 44; }).length;
+      return {
+        ueberlauf: d.scrollWidth - d.clientWidth,
+        passt: box ? box.getBoundingClientRect().height <= window.innerHeight + 1 : false,
+        scrollt: box ? box.querySelector('.shift-dialog-body').scrollHeight >= 0 : false,
+        kleineFelder: felder.length,
+        kleineKnoepfe: klein,
+      };
+    });
+    pruefe(m.ueberlauf <= 0, `${name}: kein waagerechter Ueberlauf (${m.ueberlauf})`);
+    pruefe(m.passt, `${name}: das Fenster passt auf den Bildschirm`);
+    pruefe(m.kleineFelder === 0, `${name}: kein Eingabefeld unter 16 px (${m.kleineFelder})`);
+    pruefe(m.kleineKnoepfe === 0, `${name}: keine Bedienflaeche unter 44 px (${m.kleineKnoepfe})`);
+    await ctx.close();
+  }
+
+  /* ── Tastatur: der Fokus bleibt im Fenster ── */
+  const { ctx, page } = await seite();
+  await page.click('[data-shift-plan]');
+  await page.waitForTimeout(600);
+  let drin = true;
+  let sichtbar = true;
+  for (let i = 0; i < 25; i += 1) {
+    await page.keyboard.press('Tab');
+    const s = await page.evaluate(() => {
+      const box = document.querySelector('.shift-dialog-box');
+      const e = document.activeElement;
+      if (!box || !e || e === document.body) return { drin: false, umriss: false };
+      const cs = getComputedStyle(e);
+      /*
+        Gemessen, nicht angenommen: Ein Zeitfeld in Chrome hat innen
+        zwei Abschnitte (Stunde, Minute). Beim Weitertasten aus dem
+        letzten Abschnitt heraus bleibt das Feld kurz
+        "document.activeElement", erfuellt aber ":focus" nicht mehr.
+        In diesem Zwischenzustand kann keine Regel einen Umriss geben.
+        Bewertet wird deshalb nur, wenn das Element wirklich den Fokus
+        hat.
+      */
+      const hatFokus = e.matches(':focus');
+      return {
+        drin: box.contains(e),
+        umriss: !hatFokus || (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0),
+      };
+    });
+    if (!s.drin) drin = false;
+    if (!s.umriss) sichtbar = false;
+  }
+  pruefe(drin, 'beim Weitertasten bleibt der Fokus im Fenster (25 Schritte)');
+  pruefe(sichtbar, 'und ist an jeder Stelle sichtbar');
+  await ctx.close();
 }
 
 await browser.close();

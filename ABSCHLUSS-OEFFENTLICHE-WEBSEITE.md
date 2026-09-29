@@ -3532,3 +3532,115 @@ Weiterschalten ist weg · die echte Fahrzeugkennung wird bevorzugt.
 Auswahl wurde umgeschaltet, aber nie gezeichnet — das Raster mit den
 Tageszeilen zeichnet `renderTodayList()`, aufgerufen wurde
 `renderDriverDayPlans()`, ein anderer Bereich derselben Seite.
+
+---
+
+## 25. Schritt 029d — Ein Weg statt vier: das Schichtfenster
+
+**Branch:** `feature/029b-tagesveroeffentlichung`
+**Anlass:** Der echte Bedienversuch ist gescheitert. Die Einzelteile aus
+Schritt 029c funktionierten nachweislich — Fahrzeugkarten, Vorlagen,
+eigene Zeit —, der Ablauf als Ganzes war trotzdem nicht bedienbar. Der
+Geschäftsführer hat nicht erkannt, wie eine Schicht vollständig
+ausgewählt und gespeichert wird. Das ist ein Befund über die
+Oberfläche, kein Bedienfehler.
+
+> **Ehrlich zur Quelle:** Die Aufgabe nennt ein beigefügtes Video. In
+> dieser Sitzung lag keines vor. Grundlage waren ausschließlich die
+> schriftlich genannten Anforderungen; sie waren vollständig genug.
+
+### 25.1 Warum der alte Ablauf nicht tragen konnte
+
+Vier Schaltflächen mit je einem Aufklappbereich unter der Karte
+(„Mitarbeiter für heute einplanen", „Fahrzeug zuweisen", „Schicht
+ändern") und eine fünfte, die weit entfernt in der Kopfleiste
+gespeichert hat („Planung speichern"). Wer eine Schicht anlegen wollte,
+musste die richtige Reihenfolge erraten, zwischen Karte und Kopfleiste
+wechseln und wissen, dass Speichern und Veröffentlichen zwei Dinge sind.
+Nichts davon stand irgendwo.
+
+### 25.2 Was jetzt da ist
+
+**Eine** Schaltfläche pro Mitarbeiterkarte: **„Schicht planen"**, bei
+bereits geplanter Schicht **„Schicht bearbeiten"**. Sie öffnet ein
+Fenster über der Seite, das von oben nach unten führt:
+
+| Abschnitt | Inhalt |
+|---|---|
+| 1 | Arbeitet die Person an diesem Tag? **Im Dienst** / **Frei** |
+| 2 | Schichtzeit — Vorlagen oder **Eigene Zeit** mit Beginn/Ende |
+| 3 | Fahrzeug — alle Fahrzeuge der Fahrzeugverwaltung als Karten, gold markiert, mit Name und Kennzeichen; dazu **Kein Fahrzeug** |
+| 4 | Zusammenfassung in Worten: Status, Zeit, Fahrzeug, Tag |
+| Fuß | **Schicht speichern** / **Abbrechen** |
+
+Bei **Frei** verschwinden die Abschnitte 2 und 3 — es gibt dann nichts
+zu wählen.
+
+Über den Mitarbeiterkarten steht die Leiste **„Tag bearbeiten"** mit
+Wochentag und vollem Datum. Derselbe Tag wird angezeigt, bearbeitet und
+veröffentlicht; einen zweiten Ort zum Umstellen gibt es nicht.
+
+**Entfernt:** „Mitarbeiter für heute einplanen", „Fahrzeug zuweisen",
+„Schicht ändern", „Planung speichern" samt der Aufklappbereiche unter
+den Karten.
+
+### 25.3 Bewusste Änderung: Vorauswahl ist jetzt *heute*
+
+Bis Schritt 029c war in der Veröffentlichungsauswahl *morgen*
+vorbelegt. Die Leiste steuert jetzt aber den **bearbeiteten** Tag, und
+gearbeitet wird am laufenden Tag — deshalb ist **heute** vorausgewählt.
+Die frühere Zusicherung „wer nichts umstellt, veröffentlicht wie bisher
+morgen" gilt damit **nicht mehr**. Gegen ein Versehen schützt weiterhin,
+dass die Schaltfläche den Tag im Text trägt und die Rückfrage ihn
+wiederholt. Zwei Prüfungen aus Schritt 029b wurden entsprechend
+umgeschrieben, eine davon wählt *morgen* jetzt ausdrücklich.
+
+### 25.4 Bestandsschutz beim Speichern
+
+`dialogSpeichern()` legt vor dem Schreiben eine Kopie der Zeile an
+(`const vorher = { ...row }`) und stellt sie bei jedem Fehlschlag mit
+`Object.assign(row, vorher)` wieder her. Geschrieben wird ausschließlich
+der eine Mitarbeiter und der angezeigte Tag, mit
+`planStatus: row.planStatus || "draft"` — ein bereits veröffentlichter
+Tag wird durch ein Speichern nicht stillschweigend zurückgestuft.
+Rollen, Policies und Grants in Supabase blieben unverändert.
+
+### 25.5 Zwei gemessene Mängel, behoben
+
+- **Seitlicher Überlauf bei 320 px (15 px).** Ursache gemessen, nicht
+  geraten: `.shift-day-choice` ist ein eigener Flex-Kasten, dessen
+  kleinstmögliche Breite aus Beschriftung plus Auswahlfeld entsteht —
+  305 px bei 262 px Platz. Ein Flex-Element schrumpft von sich aus nicht
+  darunter. Behoben mit `min-width: 0` und einer Spaltenanordnung unter
+  560 px.
+- **Fehlender Fokusumriss auf den Zeitfeldern.** Behoben mit einer
+  eigenen Regel für alle bedienbaren Elemente im Fenster.
+
+Beim Nachmessen kam ein Fund über die Prüfung selbst: Ein Zeitfeld in
+Chrome hat innen zwei Abschnitte (Stunde, Minute). Tastet man aus dem
+letzten Abschnitt heraus, bleibt das Feld kurz `document.activeElement`,
+erfüllt aber `:focus` nicht mehr. In diesem Zwischenzustand kann **keine**
+Regel einen Umriss geben. Die Prüfung bewertet den Umriss deshalb nur
+noch, wenn das Element den Fokus tatsächlich hat. Das ist eine Korrektur
+am Messverfahren, keine Ausnahme für die Oberfläche.
+
+### 25.6 Prüfstand
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `schichten-pruefen` (14 Blöcke) | **115 bestanden, 0 offen** |
+| `portal-pruefen` | 99 bestanden, 0 offen |
+| `kontoseiten-pruefen` | 181 bestanden, 0 offen |
+| `ausgabe-pruefen` | 56 bestanden, 0 offen |
+
+Neu sind die Blöcke 12–14: Fenster öffnen und schließen, Speichern,
+Abbrechen, Doppelklick, Fehlerfall mit Wiederherstellung, Trennung der
+Tage sowie Darstellung bei 320, 390, 430 und 1440 px samt
+Tastaturbedienung.
+
+> **Einordnung, unverändert streng:** Alles oben ist **mit einer
+> isolierten Attrappe geprüft**. Der Datendienst ist nachgebaut und
+> schreibt jeden Vorgang nur mit. Es gab keine Anfrage an Supabase,
+> keinen Datensatz, keine Anmeldung. Ob die Oberfläche am echten System
+> trägt, zeigt erst der manuelle Test nach
+> `ANLEITUNG-PORTALTEST.md`, Abschnitt B.

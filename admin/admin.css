@@ -6648,3 +6648,240 @@ input:disabled {
   gap: 8px;
   margin-top: 14px;
 }
+
+/* ── Tagesleiste über den Mitarbeiterkarten ────────────────────────────
+   Welcher Tag bearbeitet wird, muss man sehen, ohne danach zu suchen. */
+.shift-day-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  margin-bottom: 16px;
+}
+.shift-day-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.shift-day-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.shift-day-choice select {
+  min-height: 48px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: inherit;
+  background: rgba(240, 201, 107, 0.12);
+  border: 2px solid #f0c96b;
+  border-radius: 12px;
+}
+.shift-day-choice select:focus-visible {
+  outline: 2px solid #f0c96b;
+  outline-offset: 3px;
+}
+.shift-day-state {
+  margin: 0;
+  flex: 1 1 200px;
+  font-size: 14px;
+  opacity: 0.85;
+}
+.shift-day-publish {
+  min-height: 52px;
+  padding: 12px 22px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ── Der Knopf auf der Mitarbeiterkarte ────────────────────────────── */
+.shift-plan-btn {
+  min-height: 52px;
+  padding: 12px 22px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ── Das Schichtfenster ────────────────────────────────────────────── */
+.shift-dialog[hidden] { display: none; }
+.shift-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+/* Der Hintergrund ist während des Fensters nicht bedienbar. */
+.shift-dialog-open { overflow: hidden; }
+
+.shift-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 6, 10, 0.78);
+  backdrop-filter: blur(6px);
+}
+
+.shift-dialog-box {
+  position: relative;
+  z-index: 1;
+  width: min(760px, 100%);
+  max-height: calc(100vh - 32px);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: #11141e;
+  border: 1px solid rgba(240, 201, 107, 0.35);
+  border-radius: 18px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.shift-dialog-head,
+.shift-dialog-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.shift-dialog-foot {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 0;
+}
+.shift-dialog-head h2 { margin: 2px 0 0; font-size: 21px; }
+.shift-dialog-kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f0c96b;
+}
+
+/* Der Inhalt scrollt, der Rahmen bleibt - so wird nichts abgeschnitten. */
+.shift-dialog-body {
+  padding: 20px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: 24px;
+}
+
+.shift-dialog-step h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.shift-dialog-step[hidden] { display: none; }
+
+.shift-pick-grid-zwei { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+
+.shift-dialog-summary {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+}
+.shift-dialog-summary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.shift-dialog-summary dt { opacity: 0.75; font-size: 14px; }
+.shift-dialog-summary dd { margin: 0; font-weight: 700; font-size: 15px; text-align: right; }
+
+.shift-dialog-error {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #ff8d8d;
+  border-radius: 10px;
+  color: #ff8d8d;
+  font-size: 15px;
+}
+.shift-dialog-error[hidden] { display: none; }
+
+.shift-dialog-save {
+  min-height: 52px;
+  padding: 12px 26px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.shift-dialog-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 560px) {
+  .shift-dialog { padding: 8px; }
+  .shift-dialog-box { max-height: calc(100vh - 16px); border-radius: 14px; }
+  .shift-dialog-body { padding: 16px; gap: 20px; }
+  .shift-dialog-head, .shift-dialog-foot { padding: 14px 16px; }
+  .shift-dialog-foot { flex-direction: column-reverse; align-items: stretch; }
+  .shift-dialog-foot .admin-btn { width: 100%; }
+  .shift-day-bar { flex-direction: column; align-items: stretch; }
+  .shift-day-publish { width: 100%; }
+}
+
+/* ── Nachgebessert nach der Messung bei 320, 390 und 430 Pixeln ────────
+   Zwei Schaltflächen im Fenster blieben unter 44 Pixel Höhe, und bei
+   320 Pixeln lief die Tagesleiste seitlich hinaus. Beides gemessen. */
+.shift-dialog-box .admin-btn,
+.shift-day-bar .admin-btn {
+  min-height: 44px;
+}
+.shift-day-bar {
+  min-width: 0;
+}
+.shift-day-publish {
+  /* Die lange Beschriftung mit Tag und Datum darf umbrechen, statt die
+     Zeile aufzuspannen. */
+  white-space: normal;
+  text-align: center;
+  max-width: 100%;
+}
+.shift-day-choice select { max-width: 100%; }
+
+/* ── Zweite Messung bei 320 Pixeln ─────────────────────────────────────
+   Die Tagesleiste lief um 15 Pixel hinaus. Ursache gemessen, nicht
+   geraten: ".shift-day-choice" ist ein eigener Flex-Kasten, dessen
+   kleinstmoegliche Breite aus Beschriftung plus Auswahlfeld entsteht
+   (305 Pixel bei 262 Pixeln Platz). Ein Flex-Element schrumpft von sich
+   aus nicht unter diese Breite. Deshalb wird hier ausdruecklich
+   erlaubt, kleiner zu werden. */
+.shift-day-bar > * {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 560px) {
+  .shift-day-choice {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .shift-day-choice select {
+    width: 100%;
+  }
+}
+
+/* Jedes anklickbare Feld im Schichtfenster braucht einen sichtbaren
+   Umriss - die Zeitfelder hatten keinen. Ebenfalls gemessen. */
+.shift-dialog-box :is(button, select, input, a[href]):focus-visible {
+  outline: 2px solid #f0c96b;
+  outline-offset: 3px;
+}
+
+/* Bei Zeitfeldern springt der Fokus in Chrome zwischen Stunde und Minute
+   innerhalb desselben Feldes. Dabei greift ":focus-visible" nicht mehr,
+   der Umriss verschwand mitten in der Eingabe. Gemessen. Deshalb fuer
+   Eingabefelder im Fenster zusaetzlich der einfache Fokus. */
+.shift-dialog-box input:focus {
+  outline: 2px solid #f0c96b;
+  outline-offset: 3px;
+}
