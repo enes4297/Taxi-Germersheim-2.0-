@@ -430,7 +430,7 @@
                 aria-pressed="${stand.zuzahlung === w.id}"><strong>${h(w.name)}</strong></button>`).join("")}
           </div>
 
-          <h4 class="unterueberschrift">Kostenträger-Genehmigung</h4>
+          <h4 class="unterueberschrift">Genehmigung der Krankenkasse</h4>
           <div class="wahlraster">
             ${D.genehmigungWerte.map((w) => `
               <button class="wahlkarte" type="button" data-tun="fa-genehmigung:${h(w.id)}"
@@ -440,7 +440,7 @@
       ${medizinisch && !darfMedizinisches() ? `
         <div class="dialog-schritt">
           ${R.zustandsKasten("keinrecht", "Angaben zur Abrechnung",
-            "Transportschein, Zuzahlungsbefreiung und Genehmigung gehören nicht zu Ihrer Rolle. Die Fahrt lässt sich trotzdem aufnehmen; die Abrechnung ergänzt die Angaben.")}
+            "Transportschein, Zuzahlungsbefreiung und die Genehmigung der Krankenkasse gehören nicht zu Ihrer Rolle. Die Fahrt lässt sich trotzdem aufnehmen; die Abrechnung ergänzt die Angaben.")}
         </div>` : ""}
 
       <div class="dialog-schritt">
@@ -509,7 +509,7 @@
       ${medizinisch ? abschnitt("Für die Abrechnung", 5, [
         ["Transportschein", nameVon(D.scheinWerte, stand.schein)],
         ["Zuzahlung", nameVon(D.zuzahlungWerte, stand.zuzahlung)],
-        ["Genehmigung", nameVon(D.genehmigungWerte, stand.genehmigung)]
+        ["Genehmigung der Krankenkasse", nameVon(D.genehmigungWerte, stand.genehmigung)]
       ]) : ""}
       ${abschnitt("Hinweise", 5, [["Text", stand.hinweis]])}
       ${abschnitt("Zuteilung", 6, [["Fahrer und Fahrzeug", "wird später zugewiesen"]])}

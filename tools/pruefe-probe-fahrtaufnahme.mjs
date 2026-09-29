@@ -410,7 +410,8 @@ console.log("\n── 10. Krankenfahrt: Transportschein und Zuzahlung ──");
   const kranken = await rumpf(page);
   pruefe(/Transportschein/.test(kranken), "der Transportschein wird abgefragt");
   pruefe(/Zuzahlungsbefreiung/.test(kranken), "die Zuzahlungsbefreiung wird abgefragt");
-  pruefe(/Kostenträger-Genehmigung/.test(kranken), "die Genehmigung wird abgefragt");
+  pruefe(/Genehmigung der Krankenkasse/.test(kranken), "die Genehmigung der Krankenkasse wird abgefragt");
+  pruefe(!/Kostenträger-Genehmigung/.test(kranken), "die alte Ueberschrift ist weg");
   pruefe(/kein Behandlungsgrund und keine Diagnose/.test(kranken),
     "es steht ausdruecklich da, dass keine Diagnose erfasst wird");
   pruefe(/nur für berechtigte Rollen/.test(kranken), "der Abschnitt ist als geschuetzt gekennzeichnet");
@@ -428,6 +429,24 @@ console.log("\n── 10. Krankenfahrt: Transportschein und Zuzahlung ──");
     await page.waitForTimeout(150);
     const g = await page.$eval(`[data-tun="fa-zuzahlung:${id}"]`, (el) => el.getAttribute("aria-pressed"));
     pruefe(g === "true", `Zuzahlung „${id}“ laesst sich waehlen`);
+  }
+
+  /* Genehmigung der Krankenkasse: genau fuenf Moeglichkeiten, in der
+     vorgegebenen Reihenfolge, und das Wort "Genehmigung" darf sich in
+     den Moeglichkeiten NICHT wiederholen - es steht schon in der
+     Ueberschrift. */
+  const genehmigung = await page.$$eval('[data-tun^="fa-genehmigung:"]',
+    (n) => n.map((x) => x.textContent.trim()));
+  pruefe(genehmigung.length === 5, `genau fuenf Moeglichkeiten (${genehmigung.length})`);
+  pruefe(genehmigung.join(" | ") === "Vorhanden | Beantragt | Nicht vorhanden | Nicht erforderlich | Noch ungeklärt",
+    `in der vorgegebenen Reihenfolge (${genehmigung.join(" | ")})`);
+  pruefe(!genehmigung.some((x) => /Genehmigung/.test(x)),
+    "das Wort „Genehmigung“ wiederholt sich nicht in den Moeglichkeiten");
+  for (const id of ["vorhanden", "beantragt", "fehlt", "nichtnoetig", "unklar"]) {
+    await page.click(`[data-tun="fa-genehmigung:${id}"]`);
+    await page.waitForTimeout(150);
+    const g = await page.$eval(`[data-tun="fa-genehmigung:${id}"]`, (el) => el.getAttribute("aria-pressed"));
+    pruefe(g === "true", `Genehmigung „${id}“ laesst sich waehlen`);
   }
 
   /* Serienfahrt verhaelt sich wie die Krankenfahrt. */
@@ -550,7 +569,7 @@ console.log("\n── 13. Zusammenfassung mit Bearbeiten ──");
     ["Datum", "Uhrzeit"], ["Uhrzeit", "07:15"],
     ["Leistung", "Krankenfahrt"], ["Rollstuhl", "Bleibt im Rollstuhl"],
     ["Gepäck", "Viel Gepäck"], ["Transportschein", "Wird nachgereicht"],
-    ["Zuzahlung", "Befreit"], ["Genehmigung", "Beantragt"],
+    ["Zuzahlung", "Befreit"], ["Genehmigung der Krankenkasse", "Beantragt"],
     ["Hinweis", "Testhinweis"], ["Zuteilung", "später zugewiesen"]
   ]) {
     pruefe(z.includes(text), `die Zusammenfassung nennt ${was}`);
@@ -726,6 +745,21 @@ for (const [name, breite, hoehe] of [["320 px", 320, 568], ["390 px", 390, 844],
   await page.waitForTimeout(250);
   await page.click('[data-tun="fa-rollstuhl:fahrzeug"]');
   await page.waitForTimeout(250); await schritte();
+
+  /* Auch die Zusammenfassung messen: Dort stehen die laengsten
+     Beschriftungen, seit die Genehmigung "Genehmigung der
+     Krankenkasse" heisst. */
+  await page.click('[data-tun="fa-schein:nachreichen"]');
+  await page.waitForTimeout(150);
+  await page.click('[data-tun="fa-zuzahlung:befreit"]');
+  await page.waitForTimeout(150);
+  await page.click('[data-tun="fa-genehmigung:nichtnoetig"]');
+  await page.waitForTimeout(150);
+  await weiter(page);
+  await schritte();
+  const zusammen = await page.textContent(".dialog-rumpf");
+  pruefe(/Genehmigung der Krankenkasse/.test(zusammen),
+    `${name}: die Zusammenfassung nennt die Genehmigung der Krankenkasse`);
 
   pruefe(ueberlauf === 0, `${name}: kein waagerechter Ueberlauf (${ueberlauf} Schritte)`);
   pruefe(passtNicht === 0, `${name}: das Fenster passt immer auf den Bildschirm (${passtNicht})`);

@@ -385,10 +385,16 @@ wird.
 Flughafenfahrt wird der Abschnitt hervorgehoben.
 
 **Krankenfahrt und Serienfahrt** blenden einen eigenen, als geschützt
-gekennzeichneten Abschnitt ein: Transportschein (vorhanden ·
-nachgereicht · nicht vorhanden · ungeklärt), Zuzahlungsbefreiung
-(befreit · nicht befreit · ungeklärt) und Kostenträger-Genehmigung
-(vorhanden · nicht erforderlich · beantragt · fehlt · ungeklärt).
+gekennzeichneten Abschnitt ein:
+
+| Überschrift | Auswahlmöglichkeiten |
+|---|---|
+| Transportschein | Vorhanden · Wird nachgereicht · Nicht vorhanden · Noch ungeklärt |
+| Zuzahlungsbefreiung | Befreit · Nicht befreit · Noch ungeklärt |
+| **Genehmigung der Krankenkasse** | Vorhanden · Beantragt · Nicht vorhanden · Nicht erforderlich · Noch ungeklärt |
+
+Das Wort „Genehmigung" steht nur in der Überschrift und wiederholt sich
+in keiner der Auswahlmöglichkeiten.
 
 > **Es wird kein Behandlungsgrund und keine Diagnose erfasst.** Nur, was
 > für Fahrt und Abrechnung gebraucht wird. Der Abschnitt erscheint nur
@@ -428,7 +434,9 @@ bleibt.
 Vor dem Speichern stehen Kunde, Telefon, Kundennummer, Kundenhinweis,
 Abholadresse, Ziel, Datum, Uhrzeit, Leistung, Rollstuhlanforderung,
 Begleitung, weitere Fahrgäste, Platzbedarf, Gepäck, Transportschein,
-Zuzahlung, Genehmigung, Hinweise und die Zuteilung.
+Zuzahlung, Genehmigung der Krankenkasse, Hinweise und die Zuteilung.
+In der Zusammenfassung steht sie als „Genehmigung der Krankenkasse:
+Vorhanden“ beziehungsweise mit dem gewählten Zustand.
 
 Jeder Abschnitt hat **„Bearbeiten"** und springt direkt in den
 betreffenden Schritt, ohne etwas anderes zu verlieren.
@@ -462,7 +470,7 @@ heißt).
 
 | Prüflauf | Ergebnis |
 |---|---|
-| `probe-fahrt-pruefen` (17 Blöcke, neu) | **155 bestanden, 0 offen** |
+| `probe-fahrt-pruefen` (17 Blöcke, neu) | **168 bestanden, 0 offen** |
 | `probe-portal-pruefen` | 104 bestanden, 0 offen |
 
 Geprüft sind alle vom Auftraggeber genannten Fälle: neuer Kunde,
@@ -470,7 +478,8 @@ Bestandskunde mit und ohne Standardadresse, Ziel aus der letzten Fahrt,
 Suche im Bestand von 2400, Gastfahrt, Eingabetaste in jedem Schritt und
 bei ungültigem Feld, Eingabetaste im mehrzeiligen Feld, alle drei
 Rollstuhlfälle, alle drei Gepäckfälle, alle vier
-Transportschein-Zustände, alle drei Zuzahlungszustände, Zurückgehen ohne
+Transportschein-Zustände, alle drei Zuzahlungszustände, alle fünf
+Zustände der Genehmigung der Krankenkasse samt ihrer Reihenfolge, Zurückgehen ohne
 Datenverlust, Klick daneben, Abbrechen und Escape mit Sicherheitsabfrage,
 Speichern als reine Sitzungsfahrt, vollständige Zusammenfassung, 320 ·
 390 · 430 · 1440 px, Tastatur mit sichtbarem Fokus und **null
@@ -478,3 +487,26 @@ Netzwerkaufrufe im gesamten Lauf**.
 
 > **Einordnung unverändert:** Das ist eine Designprobe. Sie hat keine
 > Datenquelle. Der Lauf sagt nichts über die produktive Instanz.
+
+### 15.9 Manueller Durchlauf und letzte sprachliche Änderung
+
+Der Geschäftsführer hat die überarbeitete Fahrtaufnahme am 29.09.2026
+**manuell vollständig durchgespielt** und als richtig bestätigt.
+
+> **Einordnung:** Das ist ein manueller Test **an der Designprobe**,
+> nicht am produktiven System. Die Probe hat keine Datenquelle. Über das
+> Verhalten gegen Supabase sagt dieser Durchlauf nichts.
+
+Daraus folgte eine sprachliche Änderung: Die Überschrift heißt jetzt
+**„Genehmigung der Krankenkasse"** statt „Kostenträger-Genehmigung",
+und die Auswahlmöglichkeiten wiederholen das Wort „Genehmigung" nicht
+mehr. Die Reihenfolge ist vorgegeben: Vorhanden · Beantragt · Nicht
+vorhanden · Nicht erforderlich · Noch ungeklärt. In der Zusammenfassung
+steht die Zeile als „Genehmigung der Krankenkasse: Vorhanden"
+beziehungsweise mit dem gewählten Zustand.
+
+Die Prüfung sichert seither zusätzlich ab, dass es **genau fünf**
+Möglichkeiten in **dieser Reihenfolge** gibt, dass sich das Wort
+„Genehmigung" in keiner von ihnen wiederholt, dass die alte Überschrift
+verschwunden ist und dass die längere Beschriftung auch bei 320 Pixeln
+nicht seitlich ausbricht.

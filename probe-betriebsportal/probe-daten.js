@@ -362,12 +362,16 @@
     { id: "unklar",      name: "Noch ungeklärt" }
   ];
 
+  /* Die Ueberschrift heisst "Genehmigung der Krankenkasse" - deshalb
+     steht das Wort "Genehmigung" hier bewusst in keiner der
+     Auswahlmoeglichkeiten mehr. Die Reihenfolge ist vom
+     Geschaeftsfuehrer vorgegeben. */
   const genehmigungWerte = [
-    { id: "vorhanden",     name: "Vorhanden" },
-    { id: "nichtnoetig",   name: "Nicht erforderlich" },
-    { id: "beantragt",     name: "Beantragt" },
-    { id: "fehlt",         name: "Fehlt" },
-    { id: "unklar",        name: "Noch ungeklärt" }
+    { id: "vorhanden",   name: "Vorhanden" },
+    { id: "beantragt",   name: "Beantragt" },
+    { id: "fehlt",       name: "Nicht vorhanden" },
+    { id: "nichtnoetig", name: "Nicht erforderlich" },
+    { id: "unklar",      name: "Noch ungeklärt" }
   ];
 
   window.ProbeDaten = {
