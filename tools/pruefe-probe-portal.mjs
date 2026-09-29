@@ -97,14 +97,20 @@ console.log("\n── 1. Die Probe laedt und nennt sich Probe ──");
 console.log("\n── 2. Nur offensichtlich fiktive Daten ──");
 {
   const quellen = await Promise.all(
-    ["probe-daten.js", "probe-bereiche.js", "probe-rahmen.js"]
+    ["probe-daten.js", "probe-bereiche.js", "probe-rahmen.js", "probe-fahrtassistent.js"]
       .map((f) => readFile(join(PROBE, f), "utf8"))
   );
   const text = quellen.join("\n");
+  /* Fuer die inhaltlichen Pruefungen ohne Kommentare: In probe-daten.js
+     steht ausdruecklich, dass ein Ziel "Testklinik 01" heisst und NICHT
+     "Dialyse". Dieser Hinweis ist richtig und darf nicht ausloesen. */
+  const textOhneKommentar = text
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/^\s*\/\/.*$/gm, " ");
   pruefe(!/Mustermann|Musterfrau|Herr Müller|Frau Schmidt|Herr Cakir/.test(text),
     "keine erfundenen Personennamen aus dem Bestand");
   pruefe(!/\b01[5-7][0-9]\s?\d{6,}/.test(text), "keine erfundenen Telefonnummern");
-  pruefe(!/Dialyse|Strahlentherapie|Chemotherapie/.test(text), "keine Gesundheitsangaben");
+  pruefe(!/Dialyse|Strahlentherapie|Chemotherapie/.test(textOhneKommentar), "keine Gesundheitsangaben");
   pruefe(/Testkunde 01/.test(text) && /Testfahrer 01/.test(text) && /GER-TEST 001/.test(text),
     "stattdessen ausdruecklich benannte Testdaten");
   /* Kommentare erst entfernen: Die Probe SPRICHT ueber Supabase
@@ -192,26 +198,17 @@ console.log("\n── 5. Neue Fahrt: ein gefuehrter Ablauf ──");
   const schritte = await page.$$eval(".schrittleiste li", (n) => n.length);
   pruefe(schritte === 6, `sechs Schritte sind sichtbar (${schritte})`);
 
-  await page.click('[data-tun="nf-kunde:Testkunde 01"]');
-  await page.waitForTimeout(150);
-  const gewaehlt = await page.$eval('[data-tun="nf-kunde:Testkunde 01"]', (el) => el.getAttribute("aria-pressed"));
-  pruefe(gewaehlt === "true", "der gewaehlte Kunde ist markiert");
-
-  for (let i = 0; i < 5; i += 1) {
-    await page.click('[data-tun="nf-weiter"]');
-    await page.waitForTimeout(120);
-  }
+  /* Der Ablauf selbst wird seit dem echten Bedienversuch in einem
+     eigenen Lauf geprueft: tools/pruefe-probe-fahrtaufnahme.mjs.
+     Hier bleibt nur, dass der Weg dorthin da ist und sich das Fenster
+     richtig verhaelt. */
   const rumpf = await page.textContent(".dialog-rumpf");
-  pruefe(/Stimmt das so/.test(rumpf), "am Ende steht die Zusammenfassung");
-  pruefe(/Testkunde 01/.test(rumpf), "und nennt, was gewaehlt wurde");
-  const fuss = await page.textContent(".dialog-fuss");
-  pruefe(/Fahrt speichern/.test(fuss), "die Schaltflaeche sagt, was sie tut");
+  pruefe(/Für wen ist die Fahrt\?/.test(rumpf), "er beginnt bei der Kundenauswahl");
+  pruefe(await page.isVisible("[data-suchfeld]"), "mit einem Suchfeld statt Kundenkarten");
 
-  await page.click('[data-tun="nf-speichern"]');
-  await page.waitForTimeout(200);
-  const hinweis = await page.textContent(".dialog-rumpf");
-  pruefe(/Probe/.test(hinweis) && /nichts/.test(hinweis),
-    "die Probe sagt ehrlich, dass nichts gespeichert wird");
+  await page.click(".dialog-hinter", { position: { x: 5, y: 5 } });
+  await page.waitForTimeout(250);
+  pruefe(await page.isVisible(".dialog-kasten"), "ein Klick daneben schliesst ihn nicht");
 
   const verschachtelt = await page.$$eval(".dialog-kasten", (n) => n.length);
   pruefe(verschachtelt === 1, `nie zwei Fenster uebereinander (${verschachtelt})`);

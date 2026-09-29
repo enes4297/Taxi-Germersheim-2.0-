@@ -319,3 +319,162 @@ große ungeprüfte Gesamtersetzung.
 - Keine E-Mail, keine Nachricht, keinen Upload, keine PAJ-Anfrage.
 - Die Datenschutzerklärung nicht ergänzt.
 - Kein Push, kein Merge, kein Deployment.
+
+---
+
+## 15. Nachbesserung nach dem echten Bedienversuch: Fahrtaufnahme
+
+Der Geschäftsführer hat den Ablauf „Neue Fahrt aufnehmen" vollständig
+durchgespielt. Die daraus folgenden Änderungen betreffen **nur die
+Designprobe** — es ist weiterhin kein produktiver Portalcode verändert.
+
+### 15.1 Bestandskunde und neuer Kunde sind jetzt zwei Wege
+
+| vorher | jetzt |
+|---|---|
+| Vier Kundenkarten, fest eingebaut | Suchfeld „Name, Telefonnummer oder Kundennummer" |
+| Überschrift „Wer fährt?" | **„Für wen ist die Fahrt?"** |
+| Kein Weg für einen neuen Kunden | Eigenes Stammdatenformular, Privatperson oder Firma |
+| Adresse immer von Hand | Beim Bestandskunden **vorausgewählt, ein Klick genügt** |
+
+**Bestandskunde.** Nach der Auswahl stehen Telefonnummer und
+Standardadresse bereit. Der Schritt „Abholung" zeigt sie als
+gespeicherte Adresse mit der Schaltfläche „Diese Adresse übernehmen" —
+und daneben „Andere Abholadresse", mit Rückweg.
+
+**Ziel-Vorschläge.** Aus den letzten Fahrten des Kunden: das zuletzt
+verwendete Ziel mit Datum, häufige Ziele mit Anzahl, und die ganze
+Strecke der letzten Fahrt in einem Klick. **Kein Behandlungsgrund in den
+Vorschlägen** — ein Ziel heißt „Testklinik 01", nicht „Dialyse".
+
+**Neuer Kunde.** Vorname und Nachname oder Firmenname, Telefonnummer,
+Straße, Hausnummer, Postleitzahl, Ort — alle Pflicht, jedes mit einem
+verständlichen Fehlertext. Nach dem Anlegen ist der Kunde für die Fahrt
+ausgewählt und seine Adresse als Abholung übernommen. Dass in der echten
+Umsetzung eine Dublettenprüfung über Telefonnummer und Adresse laufen
+muss, steht im Formular.
+
+**Der Bestand wird nie ganz gezeichnet.** Die Probe führt jetzt **2400
+Testkunden**. Die Suche beginnt ab zwei Zeichen, zeigt höchstens acht
+Treffer und sagt, wenn es mehr gibt. Auch die Kundenliste im Bereich
+„Kunden" zeigt nur die ersten 25 von 2400.
+
+### 15.2 Die Eingabetaste
+
+| Ort | Verhalten |
+|---|---|
+| Suchfeld | wählt den **markierten** Treffer; Pfeiltasten bewegen die Markierung |
+| einzeiliges Pflichtfeld | geht weiter — aber nur, wenn der Schritt gültig ist |
+| ungültiges Feld | bleibt stehen und zeigt den Fehler im Klartext |
+| mehrzeiliges Hinweisfeld | erzeugt einen Zeilenumbruch |
+| letzter Schritt | tut **nichts** — „Fahrt speichern" muss geklickt werden |
+
+Nach jedem Schritt springt der Fokus in das nächste sinnvolle Feld.
+
+### 15.3 Leistung, Rollstuhl, Gepäck, Krankenfahrt
+
+**Rollstuhl** ist kein Ja/Nein mehr, sondern drei verständliche Fälle:
+kein Rollstuhl · faltbarer Rollstuhl, Fahrgast kann umgesetzt werden ·
+Fahrgast bleibt im Rollstuhl, Rollstuhlfahrzeug erforderlich. Beim
+dritten Fall kommen Begleitperson, weitere Fahrgäste und besonderer
+Platzbedarf dazu, und es steht da, dass ein ungeeignetes Fahrzeug bei
+der Zuweisung als Konflikt gemeldet und nicht stillschweigend vergeben
+wird.
+
+**Gepäck**: kein oder normales · viel · sperriges. Bei einer
+Flughafenfahrt wird der Abschnitt hervorgehoben.
+
+**Krankenfahrt und Serienfahrt** blenden einen eigenen, als geschützt
+gekennzeichneten Abschnitt ein: Transportschein (vorhanden ·
+nachgereicht · nicht vorhanden · ungeklärt), Zuzahlungsbefreiung
+(befreit · nicht befreit · ungeklärt) und Kostenträger-Genehmigung
+(vorhanden · nicht erforderlich · beantragt · fehlt · ungeklärt).
+
+> **Es wird kein Behandlungsgrund und keine Diagnose erfasst.** Nur, was
+> für Fahrt und Abrechnung gebraucht wird. Der Abschnitt erscheint nur
+> für Rollen mit `operations.write` oder `finance.read`; andere sehen
+> einen Hinweis, dass die Abrechnung die Angaben ergänzt. Diese Angaben
+> erscheinen **weder in Meldungen noch in der Auswertung** — das ist in
+> der Oberfläche auch so benannt.
+
+### 15.4 Das Fenster verschwindet nicht mehr aus Versehen
+
+- Ein Klick auf den dunklen Hintergrund schließt **nicht** — und löst
+  auch keine Rückfrage aus.
+- Geschlossen wird über „Abbrechen", das Schließen-Symbol oder Escape —
+  alle drei mit derselben Sicherheitsprüfung.
+- Sobald etwas eingegeben wurde: **„Fahrtaufnahme wirklich abbrechen?
+  Ihre bisherigen Eingaben gehen verloren."** mit „Weiter bearbeiten"
+  (hervorgehoben) und „Eingaben verwerfen".
+- Die Abfrage steht **im selben Fenster**, nicht in einem zweiten
+  darüber.
+- Zurückgehen zwischen den Schritten verliert nichts.
+- Ein versehentliches Neuladen bietet einen **klar gekennzeichneten
+  lokalen Entwurf** an. Er liegt nur in diesem Browser, hängt an der
+  Anmeldung und ist für eine andere Anmeldung nicht sichtbar. Nach dem
+  Speichern wird er entfernt.
+
+### 15.5 Was „Speichern" in der Probe tut
+
+Die Fahrt erscheint in der Liste der ungeplanten Fahrten — **nur in
+dieser Sitzung**, mit der Marke „nur Designprobe – nicht gespeichert".
+Die Erfolgsmeldung sagt ausdrücklich, dass nichts zentral gespeichert
+wurde und die Fahrt nach dem Neuladen wieder weg ist. Sie ist es auch:
+der Prüflauf lädt neu und stellt fest, dass keine Probenfahrt übrig
+bleibt.
+
+### 15.6 Zusammenfassung
+
+Vor dem Speichern stehen Kunde, Telefon, Kundennummer, Kundenhinweis,
+Abholadresse, Ziel, Datum, Uhrzeit, Leistung, Rollstuhlanforderung,
+Begleitung, weitere Fahrgäste, Platzbedarf, Gepäck, Transportschein,
+Zuzahlung, Genehmigung, Hinweise und die Zuteilung.
+
+Jeder Abschnitt hat **„Bearbeiten"** und springt direkt in den
+betreffenden Schritt, ohne etwas anderes zu verlieren.
+
+### 15.7 Drei eigene Fehler, vom Prüflauf gefunden
+
+Alle drei standen im Code, den ich selbst geschrieben hatte:
+
+1. **Der Entwurf wurde eine Stufe zu früh gesichert** — beim Fortsetzen
+   landete man einen Schritt vor der Stelle, an der man aufgehört hatte.
+2. **Beim Neuzeichnen ging der Fokus verloren.** Der Fensterinhalt wird
+   ersetzt; ohne Zutun landet der Fokus beim Seitenkörper und die
+   Fokusfalle wäre wirkungslos. Jetzt wird gemerkt, was den Fokus hatte,
+   und dasselbe Element danach wieder angesprungen — samt
+   Blätterstellung.
+3. **Die Sicherheitsabfrage blieb nach dem Speichern hängen** und hätte
+   das Erfolgsfenster blockiert.
+
+Dazu eine **Lücke in der Bedienung**, die erst der Prüflauf zeigte: Nach
+„Bearbeiten" musste man sich durch alle folgenden Schritte zurück zur
+Zusammenfassung klicken. Es gibt jetzt **„Zurück zur Prüfung"**, das in
+einem Zug zurückführt.
+
+Und zwei Fehler in den Prüfungen selbst: ein Hinweistext, der nie zu
+sehen war, weil er in einem unerreichbaren Zweig stand — und zwei
+Prüfungen, die über ihre eigenen Kommentare stolperten (in
+`probe-daten.js` steht ausdrücklich, dass ein Ziel **nicht** „Dialyse"
+heißt).
+
+### 15.8 Prüfstand
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-fahrt-pruefen` (17 Blöcke, neu) | **155 bestanden, 0 offen** |
+| `probe-portal-pruefen` | 104 bestanden, 0 offen |
+
+Geprüft sind alle vom Auftraggeber genannten Fälle: neuer Kunde,
+Bestandskunde mit und ohne Standardadresse, Ziel aus der letzten Fahrt,
+Suche im Bestand von 2400, Gastfahrt, Eingabetaste in jedem Schritt und
+bei ungültigem Feld, Eingabetaste im mehrzeiligen Feld, alle drei
+Rollstuhlfälle, alle drei Gepäckfälle, alle vier
+Transportschein-Zustände, alle drei Zuzahlungszustände, Zurückgehen ohne
+Datenverlust, Klick daneben, Abbrechen und Escape mit Sicherheitsabfrage,
+Speichern als reine Sitzungsfahrt, vollständige Zusammenfassung, 320 ·
+390 · 430 · 1440 px, Tastatur mit sichtbarem Fokus und **null
+Netzwerkaufrufe im gesamten Lauf**.
+
+> **Einordnung unverändert:** Das ist eine Designprobe. Sie hat keine
+> Datenquelle. Der Lauf sagt nichts über die produktive Instanz.

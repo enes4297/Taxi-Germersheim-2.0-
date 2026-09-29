@@ -201,7 +201,9 @@
             <td>${h(f.nach)}</td>
             <td>${fa ? h(fa.name) : R.marke("warnung", "offen")}</td>
             <td>${fz ? h(fz.kennzeichen) : R.marke("warnung", "offen")}</td>
-            <td>${zustandMarke(f.zustand)}${f.hinweis ? `<br><span style="font-size:13px;color:var(--gedaempft)">${h(f.hinweis)}</span>` : ""}</td>
+            <td>${zustandMarke(f.zustand)}
+              ${f.nurProbe ? `<br>${R.marke("aktiv", "nur Designprobe – nicht gespeichert")}` : ""}
+              ${f.hinweis ? `<br><span style="font-size:13px;color:var(--gedaempft)">${h(f.hinweis)}</span>` : ""}</td>
             <td><button class="knopf klein" type="button" data-tun="fahrt-oeffnen:${h(f.id)}">Öffnen</button></td>
           </tr>`;
         }).join("")}</tbody></table></div>`;
@@ -245,81 +247,6 @@
           <button class="wahlkarte" type="button" data-tun="fahrt-zustand:leer" aria-pressed="${vorfuehrung === "leer"}"><strong>Leer</strong><span>nichts eingetragen</span></button>
           <button class="wahlkarte" type="button" data-tun="fahrt-zustand:fehler" aria-pressed="${vorfuehrung === "fehler"}"><strong>Fehler</strong><span>Server nicht erreichbar</span></button>
         </div>
-      </div>`;
-  }
-
-  /* ---- Neue Fahrt: ein gefuehrter Ablauf, ein Fenster ---- */
-  const neueFahrtStand = { schritt: 1, kunde: "", von: "", nach: "", datum: "", zeit: "", art: "", plaetze: "1" };
-
-  function neueFahrtDialog() {
-    const s = neueFahrtStand;
-    const schritte = ["Kunde", "Abholung", "Ziel", "Zeit", "Leistung", "Zusammenfassung"];
-    const leiste = `<ul class="schrittleiste">${schritte.map((name, i) => {
-      const nr = i + 1;
-      const art = nr === s.schritt ? "ist-jetzt" : nr < s.schritt ? "ist-fertig" : "";
-      return `<li class="${art}">${nr}. ${h(name)}</li>`;
-    }).join("")}</ul>`;
-
-    let inhalt = "";
-    if (s.schritt === 1) {
-      inhalt = `<div class="dialog-schritt"><h3>1. Wer fährt?</h3>
-        <div class="wahlraster">
-          ${D.kunden.map((k) => `<button class="wahlkarte" type="button" data-tun="nf-kunde:${h(k.name)}"
-            aria-pressed="${s.kunde === k.name}"><strong>${h(k.name)}</strong><span>${h(k.fahrten)} Fahrten bisher</span></button>`).join("")}
-          <button class="wahlkarte" type="button" data-tun="nf-kunde:Gastfahrt" aria-pressed="${s.kunde === "Gastfahrt"}">
-            <strong>Gastfahrt</strong><span>ohne Kundenkonto</span></button>
-        </div></div>`;
-    } else if (s.schritt === 2) {
-      inhalt = `<div class="dialog-schritt"><h3>2. Wo wird abgeholt?</h3>
-        <label>Abholadresse<input type="text" data-nf="von" value="${h(s.von)}" placeholder="Straße, Ort"></label></div>`;
-    } else if (s.schritt === 3) {
-      inhalt = `<div class="dialog-schritt"><h3>3. Wohin geht es?</h3>
-        <label>Zieladresse<input type="text" data-nf="nach" value="${h(s.nach)}" placeholder="Straße, Ort"></label>
-        <p class="wichtig" style="font-size:14px;margin-top:10px;">
-          Entfernung und Fahrzeit werden nicht berechnet — es ist keine Kartenquelle angebunden.</p></div>`;
-    } else if (s.schritt === 4) {
-      inhalt = `<div class="dialog-schritt"><h3>4. Wann?</h3>
-        <div class="feldpaar">
-          <label>Datum<input type="date" data-nf="datum" value="${h(s.datum || D.alsIso(D.heute))}"></label>
-          <label>Uhrzeit<input type="time" data-nf="zeit" value="${h(s.zeit)}"></label>
-        </div></div>`;
-    } else if (s.schritt === 5) {
-      inhalt = `<div class="dialog-schritt"><h3>5. Was wird gebraucht?</h3>
-        <div class="wahlraster">
-          ${["Normalfahrt", "Krankenfahrt", "Flughafen", "Serienfahrt"].map((a) =>
-            `<button class="wahlkarte" type="button" data-tun="nf-art:${h(a)}" aria-pressed="${s.art === a}">
-              <strong>${h(a)}</strong></button>`).join("")}
-        </div>
-        <div class="feldpaar" style="margin-top:12px;">
-          <label>Fahrgäste<input type="number" min="1" max="8" data-nf="plaetze" value="${h(s.plaetze)}"></label>
-        </div></div>`;
-    } else {
-      inhalt = `<div class="dialog-schritt"><h3>6. Stimmt das so?</h3>
-        <dl class="zusammenfassung">
-          <div><dt>Kunde</dt><dd>${h(s.kunde || "— nicht gewählt")}</dd></div>
-          <div><dt>Abholung</dt><dd>${h(s.von || "— nicht eingetragen")}</dd></div>
-          <div><dt>Ziel</dt><dd>${h(s.nach || "— nicht eingetragen")}</dd></div>
-          <div><dt>Wann</dt><dd>${h(s.datum || D.alsIso(D.heute))} um ${h(s.zeit || "—")}</dd></div>
-          <div><dt>Leistung</dt><dd>${h(s.art || "— nicht gewählt")}</dd></div>
-          <div><dt>Fahrgäste</dt><dd>${h(s.plaetze)}</dd></div>
-          <div><dt>Fahrer</dt><dd>wird später zugewiesen</dd></div>
-        </dl></div>`;
-    }
-
-    return `
-      <div class="dialog-hinter" data-dialog-zu></div>
-      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="nfTitel">
-        <header class="dialog-kopf">
-          <h2 id="nfTitel">Neue Fahrt aufnehmen</h2>
-          <button class="knopf klein" type="button" data-dialog-zu>Abbrechen</button>
-        </header>
-        <div class="dialog-rumpf">${leiste}${inhalt}</div>
-        <footer class="dialog-fuss">
-          ${s.schritt > 1 ? '<button class="knopf" type="button" data-tun="nf-zurueck">Zurück</button>' : ""}
-          ${s.schritt < 6
-            ? '<button class="knopf haupt-knopf" type="button" data-tun="nf-weiter">Weiter</button>'
-            : '<button class="knopf haupt-knopf" type="button" data-tun="nf-speichern">Fahrt speichern</button>'}
-        </footer>
       </div>`;
   }
 
@@ -531,22 +458,26 @@
      6. Kunden
      ============================================================ */
   function kunden() {
+    /* Gezeigt werden hoechstens 25 Zeilen. Der Bestand hat ueber
+       zweitausend Eintraege - die Oberflaeche zeichnet ihn nie ganz. */
+    const gezeigt = D.kunden.slice(0, 25);
     return `
       <div class="bereichskopf"><div>
         <h1>Kunden</h1>
-        <p class="wichtig">${h(D.kunden.length)} Testkunden</p>
+        <p class="wichtig">${h(D.kunden.length)} Testkunden im Bestand</p>
       </div></div>
       <div class="flaeche">
         <h2>Suche</h2>
-        <label style="max-width:360px">Name oder Nummer<input type="search" placeholder="Testkunde …"></label>
+        <label style="max-width:420px">Name, Telefonnummer oder Kundennummer
+          <input type="search" placeholder="Testkunde …"></label>
       </div>
       <div class="flaeche">
-        <h2>Liste</h2>
+        <h2>Liste <span class="offen">die ersten ${h(gezeigt.length)} von ${h(D.kunden.length)}</span></h2>
         <div class="tabelle-huelle"><table class="liste">
           <thead><tr><th>Name</th><th>Kontakt</th><th>Kundenkonto</th><th>Fahrten</th><th>Hinweis</th></tr></thead>
-          <tbody>${D.kunden.map((k) => `<tr>
+          <tbody>${gezeigt.map((k) => `<tr>
             <td><strong>${h(k.name)}</strong></td>
-            <td>${h(k.kontakt)}</td>
+            <td>${h(k.telefon)}</td>
             <td>${k.konto === "verknüpft" ? R.marke("gut", "verknüpft") : R.marke("ruhig", "nicht verknüpft")}</td>
             <td>${h(k.fahrten)}</td>
             <td>${h(k.hinweis) || "—"}</td>
@@ -862,21 +793,18 @@
      Wegfuehrung der Aktionen
      ============================================================ */
   function tun(befehl) {
-    const [name, wert] = befehl.split(":");
+    /* Nur am ERSTEN Doppelpunkt trennen: ein Ziel wie
+       "Testklinik 01, Speyer" darf nicht zerfallen. */
+    const trenn = befehl.indexOf(":");
+    const name = trenn < 0 ? befehl : befehl.slice(0, trenn);
+    const wert = trenn < 0 ? undefined : befehl.slice(trenn + 1);
     const e = R.zustand.planEntwurf;
 
+    /* Alles rund um die Fahrtaufnahme gehoert dem eigenen Modul. */
+    if (name.startsWith("fa-")) { window.ProbeFahrtassistent.tun(name, wert); return; }
+
     switch (name) {
-      case "neue-fahrt":
-        Object.assign(neueFahrtStand, { schritt: 1, kunde: "", von: "", nach: "", datum: "", zeit: "", art: "", plaetze: "1" });
-        R.dialogOeffnen(neueFahrtDialog()); return;
-      case "nf-kunde":   neueFahrtStand.kunde = wert; R.dialogOeffnen(neueFahrtDialog()); return;
-      case "nf-art":     neueFahrtStand.art = wert;   R.dialogOeffnen(neueFahrtDialog()); return;
-      case "nf-weiter":  neueFahrtStand.schritt = Math.min(6, neueFahrtStand.schritt + 1); R.dialogOeffnen(neueFahrtDialog()); return;
-      case "nf-zurueck": neueFahrtStand.schritt = Math.max(1, neueFahrtStand.schritt - 1); R.dialogOeffnen(neueFahrtDialog()); return;
-      case "nf-speichern":
-        R.dialogOeffnen(hinweisDialog("In der Probe wird nichts gespeichert",
-          "Im echten Portal würde die Fahrt jetzt als ungeplante Fahrt angelegt und in der Liste erscheinen. Diese Probe schreibt nichts.", "vorbereitet"));
-        return;
+      case "neue-fahrt": window.ProbeFahrtassistent.starten(); return;
 
       case "fahrt-filter":  R.zustand.fahrtFilter = wert; R.zeichnen(); return;
       case "fahrt-zustand": R.zustand.fahrtenZustand = wert; R.zeichnen(); return;
@@ -967,6 +895,8 @@
 
   window.ProbeBereiche = {
     zeichne: (id) => (bereiche[id] ? bereiche[id]() : R.kastenLeer("Inhalte")),
-    tun, geaendert
+    tun, geaendert,
+    taste: (e) => window.ProbeFahrtassistent.taste(e),
+    eingabe: (feld) => window.ProbeFahrtassistent.eingabe(feld)
   };
 })();

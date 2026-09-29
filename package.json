@@ -37,7 +37,8 @@
     "portal-pruefen": "node tools/pruefe-mitarbeiterportal.mjs",
     "schichten-pruefen": "node tools/pruefe-schichtveroeffentlichung.mjs",
     "probe-portal": "node tools/probe-betriebsportal-server.mjs",
-    "probe-portal-pruefen": "node tools/pruefe-probe-portal.mjs"
+    "probe-portal-pruefen": "node tools/pruefe-probe-portal.mjs",
+    "probe-fahrt-pruefen": "node tools/pruefe-probe-fahrtaufnahme.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.0",

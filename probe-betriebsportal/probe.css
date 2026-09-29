@@ -604,3 +604,188 @@ table.liste tbody tr:hover { background: var(--flaeche-2); }
   white-space: normal;
   max-width: 100%;
 }
+
+/* ============================================================
+   Fahrtassistent
+   ============================================================ */
+
+/* Fehler im Schritt - steht ueber dem Feld, nicht am Seitenrand. */
+.feldfehler {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(224, 108, 90, 0.5);
+  border-left: 3px solid var(--rot);
+  border-radius: var(--radius);
+  background: rgba(224, 108, 90, 0.09);
+  color: var(--rot);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.schritt-hinweis {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--gedaempft);
+  max-width: 62ch;
+}
+
+.unterueberschrift {
+  margin: 14px 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gedaempft);
+}
+
+.dialog-schritt.geschuetzt {
+  padding: 14px;
+  border: 1px dashed var(--gold);
+  border-radius: var(--radius);
+  background: rgba(200, 169, 110, 0.05);
+}
+
+.band-gold, .band-warnung {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: var(--radius-gross);
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.band-gold { background: rgba(200, 169, 110, 0.18); color: var(--gold-hell); }
+.band-warnung { background: rgba(224, 108, 90, 0.16); color: var(--rot); }
+
+/* Suche und Treffer */
+.suchhinweis {
+  margin: 12px 0 6px;
+  font-size: 14px;
+  color: var(--gedaempft);
+}
+
+.trefferliste {
+  display: grid;
+  gap: 6px;
+}
+.treffer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 52px;
+  padding: 9px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  color: var(--schrift);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.treffer:hover { border-color: var(--gedaempft); }
+.treffer strong { font-size: 15px; font-weight: 600; }
+.treffer span { font-size: 13px; color: var(--gedaempft); }
+/* Die Markierung muss ohne Farbe erkennbar sein - deshalb auch der
+   Balken links und die fettere Schrift. */
+.treffer.ist-markiert {
+  border-color: var(--gold-hell);
+  border-left-width: 4px;
+  background: rgba(200, 169, 110, 0.12);
+}
+.treffer.ist-markiert strong { color: var(--gold-hell); }
+
+/* Gewaehlter Kunde / gespeicherte Adresse */
+.gewaehlt-kasten, .vorschlag-kasten {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 14px;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  background: rgba(200, 169, 110, 0.08);
+}
+.gewaehlt-kasten > div, .vorschlag-kasten { flex-direction: column; align-items: flex-start; }
+.gewaehlt-kasten > div { display: flex; }
+.gewaehlt-kasten strong, .vorschlag-kasten strong { font-size: 16px; }
+.gewaehlt-kasten span, .vorschlag-kasten span { font-size: 14px; color: var(--gedaempft); }
+.gewaehlt-kasten .knopf { margin-left: auto; }
+.vorschlag-band {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: var(--radius-gross);
+  background: rgba(200, 169, 110, 0.18);
+  color: var(--gold-hell) !important;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.knopfzeile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.knopfzeile .knopf { flex: 1 1 auto; min-width: 0; }
+
+.unterfeld {
+  margin-top: 12px;
+  padding: 12px;
+  border-left: 3px solid var(--gold);
+  background: var(--flaeche-2);
+  border-radius: var(--radius);
+}
+
+.kaestchen {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 15px;
+  color: var(--schrift);
+}
+.kaestchen input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--gold);
+}
+
+textarea {
+  min-height: 84px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* Zusammenfassung mit "Bearbeiten" je Abschnitt */
+.pruef-block {
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+}
+.pruef-block + .pruef-block { margin-top: 10px; }
+.pruef-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.pruef-kopf h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+.pruef-kopf .knopf { margin-left: auto; }
+
+.knopf-schliessen { margin-left: auto; }
+
+@media (max-width: 560px) {
+  .gewaehlt-kasten .knopf, .knopfzeile .knopf { margin-left: 0; width: 100%; }
+  .pruef-kopf { flex-wrap: wrap; }
+  .pruef-kopf .knopf { margin-left: 0; width: 100%; }
+}

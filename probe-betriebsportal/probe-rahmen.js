@@ -129,6 +129,16 @@
   /* ---- Dialog. Genau eine Ebene, mit Fokusfalle. ---- */
   let dialogAusloeser = null;
 
+  /*
+    Ein Fenster kann sich gegen versehentliches Schliessen wehren.
+    Setzt ein Bereich eine Schutzfrage, wird sie vor jedem Schliessen
+    gefragt - egal ob ueber Hintergrund, Abbrechen oder Escape. Gibt sie
+    false zurueck, bleibt das Fenster offen und darf selbst eine
+    Sicherheitsabfrage zeichnen. Verschachtelte Fenster gibt es nicht.
+  */
+  let dialogSchutz = null;
+  const dialogSchutzSetzen = (fn) => { dialogSchutz = fn; };
+
   function dialogOeffnen(markup, ausloeser) {
     dialogAusloeser = ausloeser || document.activeElement;
     const ziel = document.querySelector("[data-dialog]");
@@ -139,7 +149,9 @@
     if (erstes) erstes.focus();
   }
 
-  function dialogSchliessen() {
+  function dialogSchliessen(erzwingen) {
+    if (!erzwingen && dialogSchutz && dialogSchutz() === false) return;
+    dialogSchutz = null;
     const ziel = document.querySelector("[data-dialog]");
     ziel.hidden = true;
     ziel.innerHTML = "";
@@ -261,9 +273,16 @@
       if (window.ProbeBereiche.geaendert(e.target)) return;
     });
 
+    /* Tippen im Suchfeld: nur die Trefferliste wird neu gezeichnet,
+       nie das ganze Fenster - sonst springt der Fokus aus dem Feld. */
+    document.addEventListener("input", (e) => {
+      if (window.ProbeBereiche.eingabe) window.ProbeBereiche.eingabe(e.target);
+    });
+
     /* Tastatur: Escape schliesst, Tab bleibt im Dialog. */
     document.addEventListener("keydown", (e) => {
       if (!dialogOffen()) return;
+      if (window.ProbeBereiche.taste && window.ProbeBereiche.taste(e) === true) return;
       if (e.key === "Escape") { e.preventDefault(); dialogSchliessen(); return; }
       if (e.key !== "Tab") return;
       const kasten = document.querySelector(".dialog-kasten");
@@ -281,7 +300,7 @@
   window.ProbeRahmen = {
     zustand, darf, h, symbol, marke, kennzahl,
     zustandsKasten, kastenLeer, kastenFehler, kastenKeinRecht, kastenVorbereitet,
-    dialogOeffnen, dialogSchliessen, dialogOffen, zeichnen, geheZu,
+    dialogOeffnen, dialogSchliessen, dialogOffen, dialogSchutzSetzen, zeichnen, geheZu,
     ROLLENNAMEN, BEREICHE
   };
 
