@@ -1,0 +1,606 @@
+/* ============================================================
+   Designprobe Betriebsportal - Design-System
+   ============================================================
+   Alle Farb- und Schriftwerte stammen aus src/styles/design.css der
+   freigegebenen oeffentlichen Webseite. Es ist nichts neu erfunden.
+
+   Diese Datei ist NICHT Teil der Produktionsausgabe. Sie gehoert zur
+   getrennten Designprobe.
+   ============================================================ */
+
+/* ---- Schriften, lokal. Kein CDN. ---- */
+@font-face {
+  font-family: "Outfit";
+  src: url("/schriften/outfit-400-latin.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("/schriften/outfit-500-latin.woff2") format("woff2");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("/schriften/outfit-600-latin.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("/schriften/outfit-700-latin.woff2") format("woff2");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+
+:root {
+  --grund:        #18181b;
+  --flaeche:      #1f1f23;
+  --flaeche-2:    #252528;
+  --linie:        #2e2e32;
+  --schrift:      #f0ebe0;
+  --gedaempft:    #8d8a82;
+  --gold:         #c8a96e;
+  --gold-hell:    #f0c96b;
+  --auf-gold:     #18181b;
+  --rot:          #e06c5a;
+  --gruen:        #6fae7c;
+  --radius:       0.125rem;
+  --radius-gross: 0.25rem;
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--grund);
+  color: var(--schrift);
+  font-family: "Outfit", system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+
+/* Sichtbarer Fokus auf allem Bedienbaren - ausnahmslos. */
+:is(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--gold-hell);
+  outline-offset: 3px;
+}
+/* Zeitfelder verlieren in Chrome beim Wechsel zwischen Stunde und
+   Minute ":focus-visible". Deshalb hier zusaetzlich der einfache Fokus. */
+input:focus {
+  outline: 2px solid var(--gold-hell);
+  outline-offset: 3px;
+}
+
+/* ============================================================
+   Das Banner. Dauerhaft, nicht wegklickbar.
+   ============================================================ */
+.probe-banner {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 10px 16px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  background: repeating-linear-gradient(
+    135deg, #3a2f18 0 14px, #342a15 14px 28px
+  );
+  border-bottom: 2px solid var(--gold);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.probe-banner strong { color: var(--gold-hell); }
+.probe-banner span { font-weight: 400; color: #d8cfb8; }
+
+/* ============================================================
+   Rahmen
+   ============================================================ */
+.portal {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  min-height: 100vh;
+}
+
+.seitenleiste {
+  border-right: 1px solid var(--linie);
+  background: var(--flaeche);
+  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.marke {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+}
+.marke img { width: 34px; height: 34px; object-fit: contain; }
+.marke b { display: block; font-size: 15px; font-weight: 700; }
+.marke small { display: block; font-size: 12px; color: var(--gedaempft); }
+
+.navigation { display: flex; flex-direction: column; gap: 2px; }
+.nav-knopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--schrift);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.nav-knopf:hover { background: var(--flaeche-2); }
+.nav-knopf[aria-current="page"] {
+  background: var(--flaeche-2);
+  border-left-color: var(--gold);
+  font-weight: 600;
+}
+.nav-knopf .zaehler {
+  margin-left: auto;
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: var(--radius-gross);
+  background: var(--gold);
+  color: var(--auf-gold);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.nav-knopf svg { flex: 0 0 20px; }
+
+.rollenwahl {
+  margin-top: auto;
+  padding: 12px;
+  border: 1px dashed var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+}
+.rollenwahl h2 { margin: 0 0 4px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gedaempft); }
+.rollenwahl p { margin: 0 0 8px; font-size: 12px; color: var(--gedaempft); }
+.rollenwahl select { width: 100%; }
+
+/* ============================================================
+   Hauptbereich
+   ============================================================ */
+.haupt { padding: 20px 22px 80px; min-width: 0; }
+
+.bereichskopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 18px;
+  margin-bottom: 18px;
+}
+.bereichskopf h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.bereichskopf .wichtig { margin: 4px 0 0; font-size: 15px; color: var(--gedaempft); }
+.bereichskopf .hauptaktion { margin-left: auto; }
+
+/* ---- Flaechen ---- */
+.flaeche {
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  padding: 16px;
+}
+.flaeche + .flaeche { margin-top: 14px; }
+.flaeche > h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.flaeche > h2 .offen {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gedaempft);
+}
+
+/* ---- Knoepfe ---- */
+.knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche-2);
+  color: var(--schrift);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.knopf:hover { border-color: var(--gedaempft); }
+.knopf.haupt-knopf {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--auf-gold);
+}
+.knopf.haupt-knopf:hover { background: var(--gold-hell); border-color: var(--gold-hell); }
+.knopf.still { background: transparent; }
+.knopf[disabled] { opacity: 0.5; cursor: not-allowed; }
+.knopf.klein { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+
+/* ---- Eingaben: am Handy nie unter 16 px ---- */
+input, select, textarea {
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  color: var(--schrift);
+  font: inherit;
+  font-size: 16px;
+}
+label { display: block; font-size: 14px; color: var(--gedaempft); }
+label > input, label > select, label > textarea { margin-top: 4px; width: 100%; }
+
+/* ============================================================
+   Kennzahlen - anklickbar, fuehren zur gefilterten Liste
+   ============================================================ */
+.kennzahlen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.kennzahl {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 84px;
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  color: var(--schrift);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.kennzahl:hover { background: var(--flaeche-2); }
+.kennzahl .wert { font-size: 28px; font-weight: 700; line-height: 1.1; }
+.kennzahl .name { font-size: 13px; color: var(--gedaempft); }
+.kennzahl.ist-warnung { border-left-color: var(--rot); }
+.kennzahl.ist-warnung .wert { color: var(--rot); }
+.kennzahl.ist-gut { border-left-color: var(--gruen); }
+.kennzahl.ist-marke { border-left-color: var(--gold); }
+
+/* ============================================================
+   Tabelle / Liste
+   ============================================================ */
+.tabelle-huelle { overflow-x: auto; }
+table.liste { width: 100%; border-collapse: collapse; font-size: 15px; }
+table.liste th {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--linie);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+  text-align: left;
+  white-space: nowrap;
+}
+table.liste td { padding: 10px; border-bottom: 1px solid var(--linie); vertical-align: middle; }
+table.liste tr:last-child td { border-bottom: 0; }
+table.liste tbody tr:hover { background: var(--flaeche-2); }
+
+/* ============================================================
+   Zustaende - Farbe nie allein, immer mit Text und Symbol
+   ============================================================ */
+.marke-zustand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.marke-zustand::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+.marke-zustand.gut     { color: var(--gruen); border-color: rgba(111, 174, 124, 0.4); }
+.marke-zustand.warnung { color: var(--rot);   border-color: rgba(224, 108, 90, 0.4); }
+.marke-zustand.aktiv   { color: var(--gold-hell); border-color: rgba(240, 201, 107, 0.4); }
+.marke-zustand.ruhig   { color: var(--gedaempft); }
+
+/* Die grossen Zustandskaesten. Ein Ladefehler sieht NIE aus wie leer. */
+.zustand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 22px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--gedaempft);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+.zustand h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.zustand p { margin: 0; font-size: 15px; color: var(--gedaempft); max-width: 62ch; }
+.zustand.leer         { border-left-color: var(--gedaempft); }
+.zustand.fehler       { border-left-color: var(--rot); background: rgba(224, 108, 90, 0.07); }
+.zustand.fehler h3    { color: var(--rot); }
+.zustand.keinrecht    { border-left-color: var(--gold); background: rgba(200, 169, 110, 0.07); }
+.zustand.keinrecht h3 { color: var(--gold-hell); }
+.zustand.vorbereitet  { border-left-color: var(--gold); border-style: dashed; }
+.zustand.laedt        { border-left-color: var(--linie); }
+
+.laedt-balken {
+  height: 10px;
+  width: 100%;
+  max-width: 280px;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--flaeche-2) 25%, var(--linie) 50%, var(--flaeche-2) 75%);
+  background-size: 200% 100%;
+  animation: laufen 1.2s linear infinite;
+}
+@keyframes laufen { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .laedt-balken { animation: none; }
+}
+
+/* ============================================================
+   Planung
+   ============================================================ */
+.tagleiste {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-bottom: 14px;
+}
+.tagumschalter {
+  display: inline-flex;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.tagumschalter button {
+  min-height: 46px;
+  padding: 8px 20px;
+  border: 0;
+  background: transparent;
+  color: var(--schrift);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tagumschalter button[aria-pressed="true"] {
+  background: var(--gold);
+  color: var(--auf-gold);
+}
+.tagdatum { font-size: 15px; color: var(--gedaempft); }
+
+.plan-zeile td { padding: 8px 10px; }
+.plan-zeile.ist-geaendert { background: rgba(200, 169, 110, 0.09); }
+.plan-zeile.ist-geaendert td:first-child { box-shadow: inset 3px 0 0 var(--gold); }
+.plan-zeile select { min-width: 132px; }
+.plan-zeile .zeitpaar { display: inline-flex; gap: 6px; align-items: center; }
+.plan-zeile .zeitpaar input { width: 104px; min-width: 0; }
+
+.aktionsleiste {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 14px;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  background: var(--flaeche);
+}
+.aktionsleiste .stand { font-size: 14px; color: var(--gedaempft); margin-right: auto; }
+
+/* ============================================================
+   Dialog - genau eine Ebene, nie verschachtelt
+   ============================================================ */
+.dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.dialog-hinter { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.66); }
+.dialog-kasten {
+  position: relative;
+  width: min(620px, 100%);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  background: var(--flaeche);
+}
+.dialog-kopf, .dialog-fuss {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+}
+.dialog-kopf { border-bottom: 1px solid var(--linie); }
+.dialog-fuss { border-top: 1px solid var(--linie); justify-content: flex-end; }
+.dialog-kopf h2 { margin: 0; font-size: 18px; }
+.dialog-kopf .knopf { margin-left: auto; }
+.dialog-rumpf { padding: 18px; overflow-y: auto; display: grid; gap: 20px; }
+.dialog-schritt h3 { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
+
+.wahlraster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 8px;
+}
+.wahlkarte {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 60px;
+  padding: 10px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  color: var(--schrift);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wahlkarte:hover { border-color: var(--gedaempft); }
+.wahlkarte strong { font-size: 15px; font-weight: 600; }
+.wahlkarte span { font-size: 13px; color: var(--gedaempft); }
+.wahlkarte[aria-pressed="true"] {
+  border-color: var(--gold-hell);
+  border-width: 2px;
+  background: rgba(200, 169, 110, 0.12);
+}
+.wahlkarte[aria-pressed="true"] strong { color: var(--gold-hell); }
+
+.zusammenfassung { display: grid; gap: 6px; }
+.zusammenfassung div { display: flex; gap: 10px; font-size: 15px; }
+.zusammenfassung dt { min-width: 116px; color: var(--gedaempft); }
+.zusammenfassung dd { margin: 0; font-weight: 600; }
+
+/* ============================================================
+   Schritt-fuer-Schritt-Formular (neue Fahrt)
+   ============================================================ */
+.schrittleiste { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.schrittleiste li {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  font-size: 13px;
+  color: var(--gedaempft);
+  list-style: none;
+}
+.schrittleiste li.ist-jetzt { border-color: var(--gold); color: var(--gold-hell); font-weight: 600; }
+.schrittleiste li.ist-fertig { color: var(--gruen); border-color: rgba(111, 174, 124, 0.4); }
+
+.feldpaar { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+
+/* ============================================================
+   Handy
+   ============================================================ */
+.handyleiste { display: none; }
+
+@media (max-width: 900px) {
+  .portal { grid-template-columns: 1fr; }
+  .seitenleiste { display: none; }
+  .haupt { padding: 16px 14px 96px; }
+  .bereichskopf h1 { font-size: 22px; }
+  .bereichskopf .hauptaktion { margin-left: 0; width: 100%; }
+  .bereichskopf .hauptaktion .knopf { width: 100%; }
+
+  .handyleiste {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 50;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    border-top: 1px solid var(--linie);
+    background: var(--flaeche);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .handyleiste button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 56px;
+    padding: 6px 2px;
+    border: 0;
+    border-top: 2px solid transparent;
+    background: transparent;
+    color: var(--gedaempft);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .handyleiste button[aria-current="page"] { color: var(--gold-hell); border-top-color: var(--gold); }
+  .aktionsleiste { bottom: 58px; }
+}
+
+@media (max-width: 560px) {
+  .probe-banner { font-size: 13px; padding: 8px 12px; }
+  .kennzahlen { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
+  .dialog { padding: 8px; }
+  .dialog-kasten { max-height: calc(100vh - 16px); }
+  .dialog-fuss { flex-direction: column-reverse; align-items: stretch; }
+  .dialog-fuss .knopf { width: 100%; }
+  .aktionsleiste { flex-direction: column; align-items: stretch; }
+  .aktionsleiste .stand { margin-right: 0; }
+  .aktionsleiste .knopf { width: 100%; }
+  .tagumschalter { width: 100%; }
+  .tagumschalter button { flex: 1; }
+}
+
+/* ── Rollenwahl im Banner ──────────────────────────────────────────────
+   Gemessener Befund: In der Seitenleiste war sie am Handy nicht
+   erreichbar, weil die Leiste unter 900 px ausgeblendet ist. Im Banner
+   ist sie auf jeder Breite da. */
+.banner-rolle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: #d8cfb8;
+  white-space: nowrap;
+}
+.banner-rolle select {
+  min-height: 36px;
+  padding: 5px 10px;
+  font-size: 16px;
+  font-weight: 600;
+  background: var(--grund);
+  border-color: var(--gold);
+}
+@media (max-width: 720px) {
+  .banner-rolle { margin-left: 0; width: 100%; }
+  .banner-rolle select { flex: 1; min-width: 0; }
+}
+.rollenwahl p[data-rollenname] {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gold-hell);
+}
+
+/* Gemessen bei 320 px: Der Standhinweis in der Tagleiste lief 78 px
+   hinaus, weil "marke-zustand" grundsaetzlich nicht umbricht. Fuer die
+   kurzen Marken in Tabellen ist das richtig - fuer den langen Satz in
+   der Tagleiste nicht. */
+.tagleiste .marke-zustand {
+  white-space: normal;
+  max-width: 100%;
+}

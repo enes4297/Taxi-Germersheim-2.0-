@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Designprobe Betriebsportal — Taxi Germersheim</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="probe.css">
+</head>
+<body>
+
+  <!-- Dauerhaft und nicht wegklickbar. -->
+  <div class="probe-banner" role="note">
+    <strong>Designprobe – keine echten Daten</strong>
+    <span>Keine Verbindung zu Supabase · kein Upload · kein Versand · keine PAJ-Anfrage</span>
+
+    <!-- Die Rollenwahl sitzt im Banner, damit sie auf jeder Breite
+         erreichbar ist. In der Seitenleiste waere sie am Handy weg. -->
+    <label class="banner-rolle">
+      Rolle der Probe
+      <select data-rolle aria-label="Rolle der Designprobe wählen">
+        <option value="dispatcher">Disposition</option>
+        <option value="admin">Administration</option>
+        <option value="personal">Personal</option>
+        <option value="accounting">Buchhaltung</option>
+        <option value="employee">Mitarbeiter</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="portal">
+    <aside class="seitenleiste" aria-label="Bereiche">
+      <div class="marke">
+        <img src="/logo.png" alt="">
+        <div>
+          <b>Betriebsportal</b>
+          <small>Taxi Germersheim</small>
+        </div>
+      </div>
+
+      <nav class="navigation" data-navigation aria-label="Hauptbereiche"></nav>
+
+      <div class="rollenwahl">
+        <h2>Angemeldet als</h2>
+        <p data-rollenname>—</p>
+        <p>Umgestellt wird oben im Banner. Nur zur Anschauung: im echten
+           Portal kommt die Rolle aus der Datenbank und nie aus einem
+           Auswahlfeld.</p>
+      </div>
+    </aside>
+
+    <main class="haupt" data-haupt></main>
+  </div>
+
+  <nav class="handyleiste" data-handyleiste aria-label="Hauptbereiche"></nav>
+
+  <div class="dialog" data-dialog hidden></div>
+
+  <script src="probe-daten.js"></script>
+  <script src="probe-rahmen.js"></script>
+  <script src="probe-bereiche.js"></script>
+</body>
+</html>
