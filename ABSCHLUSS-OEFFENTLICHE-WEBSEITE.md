@@ -3443,3 +3443,92 @@ Auswahl neben der vorhandenen Schaltfläche, in der Formensprache der
 Nachbarschaltflächen. Keine Migration, kein SQL, keine Rolle, kein Grant,
 keine Policy. Die Planung für morgen funktioniert unverändert. Keine
 produktive Anmeldung, keine produktive Datenänderung.
+
+---
+
+## 24. Schritt 029c — Fahrzeug und Schicht werden ausgewählt, nicht geraten
+
+### 24.1 Was der manuelle Test zutage gefördert hat
+
+Beim echten Test war die Tageszeile nicht bedienbar: Werte wurden
+angezeigt, aber nichts ließ sich auswählen oder bestätigen. Die Antwort
+auf die fünf gestellten Fragen:
+
+**1. Welche Bedienfolge war vorgesehen?** Keine Auswahl, sondern drei
+Umschalter mit festen Werten:
+
+| Schaltfläche | was sie tat |
+|---|---|
+| „Mitarbeiter für heute einplanen" | setzte nur `row.status = "im Dienst"` |
+| „Fahrzeug zuweisen" | nahm das **nächste** freie Fahrzeug aus der Liste — reihum, ohne Wahl |
+| „Schicht ändern" | setzte **immer** dieselbe fest verdrahtete Vorlage `findTemplateById("late")` (14–22 Uhr) |
+
+**2. Vorlagen oder freie Zeiten?** Weder noch. Es gab sieben Vorlagen im
+Code, aber nur **eine einzige** war erreichbar; freie Zeiten gar nicht.
+
+**3. Warum war `TESTWAGEN-029` sichtbar, aber nicht auswählbar?** Weil es
+bereits zugewiesen *war* — der Umschalter hatte es gesetzt und die Zeile
+zeigte es an. Es gab nur nichts zum Anklicken. Der angezeigte Wert sah
+deshalb aus wie ein Vorschlag, den man noch bestätigen müsste.
+
+**4. Bedienfehler, deaktiviertes Element, Überlagerung oder
+Programmfehler?** Nichts davon. Die Schaltflächen taten genau das, was im
+Code stand — **die fehlende Auswahl war der Fehler**, nicht ein defektes
+Steuerelement.
+
+**5. Musste erst eingeplant werden?** Nein. „Mitarbeiter für heute
+einplanen" setzt nur den Zustand; die beiden anderen Schaltflächen wirken
+unabhängig davon.
+
+### 24.2 Die Korrektur
+
+Dieselben Schaltflächen öffnen jetzt eine Auswahl **direkt in der Zeile**:
+
+**Fahrzeug wählen** — alle Fahrzeuge aus der Fahrzeugverwaltung als
+Karten, je mit **Fahrzeugname und Kennzeichen**. Ein Klick genügt; das
+gewählte ist **gold umrandet und hinterlegt**, zusätzlich mit
+`aria-pressed="true"` für Vorleseprogramme. Dazu „Kein Fahrzeug" zum
+Entfernen. **Nichts wird getippt.**
+
+**Schicht wählen** — die sieben vorhandenen Vorlagen zum Anklicken, jede
+mit ihrer Zeit, darunter **„oder eigene Zeit"** mit zwei Zeitfeldern und
+„Zeit übernehmen". Eine unvollständige Eingabe wird abgewiesen und die
+bisherige Zeit bleibt stehen. Eine Nachtschicht über Mitternacht ist
+erlaubt — ein Ende vor dem Beginn wird deshalb **nicht** abgewiesen.
+
+**Bestehende Daten bleiben unangetastet.** Es ändert sich nur, *wie* ein
+Wert gewählt wird, nicht wie er abgelegt wird: `row.vehicle` trägt
+weiterhin das Kennzeichen. Zusätzlich merkt sich die Zeile die echte
+Kennung in `row.vehicleId`, die beim Speichern bevorzugt wird — der
+Datendienst nimmt beides an (eine UUID reicht er durch, ein Kennzeichen
+löst er auf).
+
+Nebenbei behoben: `loadVehicles()` verwarf Kennung und Name und ließ nur
+das Kennzeichen übrig. Beides bleibt jetzt erhalten — sonst wäre weder
+der Fahrzeugname anzeigbar noch die echte Kennung weiterreichbar.
+
+### 24.3 Prüfung
+
+`npm run schichten-pruefen` — **61 / 61** (22 davon neu):
+
+Fahrzeugauswahl öffnet · listet alle Fahrzeuge · jede Karte nennt Name
+**und** Kennzeichen · das Fahrzeug aus der Verwaltung steht darin · nach
+dem Klick gold markiert (`rgb(240, 201, 107)` gemessen) · `aria-pressed`
+gesetzt · Kennzeichen steht in der Zeile · Schichtauswahl öffnet ·
+sieben Vorlagen mit Zeiten · Felder für eigene Zeit · Zeitfelder
+mindestens 16 px · Vorlage wird übernommen · eigene Zeit wird übernommen
+· unvollständige Eingabe abgewiesen, bisherige Zeit bleibt · keine
+Skriptfehler · die fest verdrahtete Vorlage ist weg · das blinde
+Weiterschalten ist weg · die echte Fahrzeugkennung wird bevorzugt.
+
+**Gegenprobe:** `portal-pruefen` 99/99 · `ausgabe-pruefen` 56/56 ·
+`kontoseiten-pruefen` 181/181.
+
+> Alles simuliert. Der Datendienst ist eine Attrappe, die jeden
+> Schreibvorgang nur mitschreibt. Keine Anfrage an Supabase, kein
+> Datensatz, keine Anmeldung, keine Migration.
+
+**Ein eigener Fehler in der Umsetzung, vom Prüflauf gefunden:** Die
+Auswahl wurde umgeschaltet, aber nie gezeichnet — das Raster mit den
+Tageszeilen zeichnet `renderTodayList()`, aufgerufen wurde
+`renderDriverDayPlans()`, ein anderer Bereich derselben Seite.

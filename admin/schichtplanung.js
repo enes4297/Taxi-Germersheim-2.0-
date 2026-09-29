@@ -338,7 +338,17 @@
     if (useSupabase) {
       const rows = Array.isArray(state.vehicleCatalog) ? state.vehicleCatalog : [];
       if (!rows.length) return [];
+      /*
+        Kennung und Name bleiben erhalten.
+
+        Vorher fiel beides weg - uebrig blieb nur das Kennzeichen. Damit
+        liess sich in der Auswahl weder der Fahrzeugname anzeigen noch die
+        echte Kennung weiterreichen; geschrieben wurde das Kennzeichen,
+        das der Datendienst erst wieder zurueckuebersetzen musste.
+      */
       return rows.map((vehicle) => ({
+        id: String(vehicle.id || "").trim(),
+        name: String(vehicle.name || "").trim(),
         plate: String(vehicle.licensePlate || vehicle.plate || vehicle.name || vehicle.id || "-").trim(),
         status: mapVehicleStatusForPlanning(vehicle.status),
         type: String(vehicle.vehicleType || vehicle.type || "Normales Taxi").trim()
@@ -348,6 +358,8 @@
     const live = safeParse(localStorage.getItem(LIVE_DISPO_KEY)) || {};
     if (Array.isArray(live.vehicles) && live.vehicles.length) {
       return live.vehicles.map((v) => ({
+        id: String(v.id || "").trim(),
+        name: String(v.name || "").trim(),
         plate: String(v.plate || v.name || v.id || "-").trim(),
         status: v.locked ? "Gesperrt" : (v.status || "Verfügbar"),
         type: v.wheelchair ? "Rollstuhlfahrzeug" : "Normales Taxi"
@@ -839,6 +851,7 @@
             <button class="admin-btn admin-btn-warning" type="button" data-today-action="logout" data-employee-id="${emp.id}">Mitarbeiter abmelden</button>
             <button class="admin-btn admin-btn-secondary" type="button" data-today-action="replace" data-employee-id="${emp.id}">Ersatzfahrer wählen</button>
           </div>
+          ${auswahlMarkup(row, emp.id)}
         </article>
       `;
     }).join("");
@@ -980,6 +993,157 @@
         </article>
       `;
     }).join("");
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     AUSWAHL VON FAHRZEUG UND SCHICHT
+     ══════════════════════════════════════════════════════════════════════
+
+     WAS VORHER WAR — und warum es unbedienbar war
+
+     Die drei Schaltflächen der Tageszeile waren keine Auswahl, sondern
+     Umschalter mit festen Werten:
+
+       "Fahrzeug zuweisen"  nahm das NÄCHSTE freie Fahrzeug aus der Liste;
+                            man konnte keines auswählen
+       "Schicht ändern"     setzte immer dieselbe fest verdrahtete Vorlage
+                            ("late", 14–22 Uhr); andere Vorlagen und freie
+                            Zeiten gab es nicht
+       "Mitarbeiter für heute einplanen"
+                            setzte nur den Status auf "im Dienst"
+
+     Der Wert wurde danach angezeigt - und sah deshalb aus wie ein
+     Vorschlag, den man noch bestätigen müsste. Es gab aber nichts zu
+     bestätigen und nichts zu wählen.
+
+     WAS JETZT IST
+
+     Dieselben Schaltflächen öffnen eine Auswahl direkt in der Zeile:
+
+       Fahrzeug   alle Fahrzeuge aus der Fahrzeugverwaltung, mit Name UND
+                  Kennzeichen. Das zugewiesene ist gold hervorgehoben.
+                  Nichts wird getippt.
+       Schicht    die vorhandenen Vorlagen zum Anklicken, darunter zwei
+                  Felder für eine eigene Anfangs- und Endzeit.
+
+     Gespeicherte Fahrzeuge und Schichten bleiben unangetastet: Es ändert
+     sich nur, WIE ein Wert gewählt wird, nicht wie er abgelegt wird.
+     `row.vehicle` trägt weiterhin das Kennzeichen; zusätzlich wird die
+     echte Kennung in `row.vehicleId` gemerkt und beim Speichern
+     bevorzugt - der Datendienst nimmt beides an.
+  */
+
+  /** Welche Auswahl gerade offen ist. Immer höchstens eine. */
+  let offeneAuswahl = null;   /* { employeeId, art: "vehicle" | "shift" } */
+
+  function auswahlOffen(employeeId, art) {
+    return Boolean(offeneAuswahl && offeneAuswahl.employeeId === employeeId && offeneAuswahl.art === art);
+  }
+
+  function auswahlUmschalten(employeeId, art) {
+    offeneAuswahl = auswahlOffen(employeeId, art) ? null : { employeeId, art };
+  }
+
+  /** Das gerade zugewiesene Fahrzeug einer Zeile finden. */
+  function fahrzeugDerZeile(row) {
+    const liste = loadVehicles();
+    if (row.vehicleId) {
+      const treffer = liste.find((v) => v.id && String(v.id) === String(row.vehicleId));
+      if (treffer) return treffer;
+    }
+    if (!row.vehicle) return null;
+    const gesucht = normalize(row.vehicle);
+    return liste.find((v) => normalize(v.plate) === gesucht || normalize(v.name) === gesucht) || null;
+  }
+
+  function fahrzeugBeschriftung(v) {
+    if (!v) return "";
+    const teile = [];
+    if (v.name) teile.push(v.name);
+    if (v.plate && normalize(v.plate) !== normalize(v.name)) teile.push(v.plate);
+    return teile.join(" · ") || v.plate || "-";
+  }
+
+  /** Die Fahrzeugauswahl einer Zeile. */
+  function fahrzeugAuswahlMarkup(row, employeeId) {
+    const liste = loadVehicles();
+    const aktuell = fahrzeugDerZeile(row);
+    if (!liste.length) {
+      return `
+        <div class="shift-picker" data-shift-picker="vehicle">
+          <p class="shift-picker-title">Fahrzeug wählen</p>
+          <p class="shift-picker-empty">Es ist kein Fahrzeug hinterlegt. Fahrzeuge werden in der Fahrzeugverwaltung gepflegt.</p>
+        </div>`;
+    }
+    const karten = liste.map((v) => {
+      const kennung = v.id || v.plate;
+      const gewaehlt = aktuell && ((v.id && aktuell.id && String(v.id) === String(aktuell.id)) || normalize(v.plate) === normalize(aktuell.plate));
+      const frei = isVehicleAvailable(v.plate);
+      return `
+        <button
+          class="shift-pick-card${gewaehlt ? " is-selected" : ""}"
+          type="button"
+          data-pick-vehicle="${kennung}"
+          data-employee-id="${employeeId}"
+          aria-pressed="${gewaehlt ? "true" : "false"}"
+        >
+          <strong>${v.name || v.plate}</strong>
+          <span>${v.plate}</span>
+          <small>${v.type}${frei ? "" : " · belegt"}</small>
+        </button>`;
+    }).join("");
+    return `
+      <div class="shift-picker" data-shift-picker="vehicle">
+        <p class="shift-picker-title">Fahrzeug wählen</p>
+        <div class="shift-pick-grid">${karten}</div>
+        <div class="shift-picker-actions">
+          <button class="admin-btn admin-btn-secondary" type="button" data-pick-vehicle="" data-employee-id="${employeeId}">Kein Fahrzeug</button>
+          <button class="admin-btn admin-btn-secondary" type="button" data-picker-close>Schließen</button>
+        </div>
+      </div>`;
+  }
+
+  /** Die Schichtauswahl einer Zeile: Vorlagen und freie Zeiten. */
+  function schichtAuswahlMarkup(row, employeeId) {
+    const vorlagen = (state.planner.templates || []).map((t) => {
+      const gewaehlt = String(row.start) === String(t.start) && String(row.end) === String(t.end);
+      return `
+        <button
+          class="shift-pick-card${gewaehlt ? " is-selected" : ""}"
+          type="button"
+          data-pick-template="${t.id}"
+          data-employee-id="${employeeId}"
+          aria-pressed="${gewaehlt ? "true" : "false"}"
+        >
+          <strong>${t.name}</strong>
+          <span>${t.start} – ${t.end} Uhr</span>
+        </button>`;
+    }).join("");
+    return `
+      <div class="shift-picker" data-shift-picker="shift">
+        <p class="shift-picker-title">Schicht wählen</p>
+        <div class="shift-pick-grid">${vorlagen}</div>
+        <p class="shift-picker-title">oder eigene Zeit</p>
+        <div class="shift-picker-times">
+          <label>Beginn
+            <input type="time" data-shift-start value="${row.start || ""}">
+          </label>
+          <label>Ende
+            <input type="time" data-shift-end value="${row.end || ""}">
+          </label>
+          <button class="admin-btn" type="button" data-shift-apply data-employee-id="${employeeId}">Zeit übernehmen</button>
+        </div>
+        <p class="shift-picker-hinweis" data-shift-picker-hinweis hidden></p>
+        <div class="shift-picker-actions">
+          <button class="admin-btn admin-btn-secondary" type="button" data-picker-close>Schließen</button>
+        </div>
+      </div>`;
+  }
+
+  function auswahlMarkup(row, employeeId) {
+    if (auswahlOffen(employeeId, "vehicle")) return fahrzeugAuswahlMarkup(row, employeeId);
+    if (auswahlOffen(employeeId, "shift")) return schichtAuswahlMarkup(row, employeeId);
+    return "";
   }
 
   function renderDriverDayPlans() {
@@ -1184,7 +1348,7 @@
           startTime: row.start,
           endTime: row.end,
           status: "planned",
-          vehicleId: row.vehicle || null,
+          vehicleId: row.vehicleId || row.vehicle || null,
           note: row.exceptionNote || row.note || "",
           planStatus: "published",
         });
@@ -1530,7 +1694,7 @@
             startTime: row.start,
             endTime: row.end,
             status: row.status || "draft",
-            vehicleId: row.vehicle || null,
+            vehicleId: row.vehicleId || row.vehicle || null,
             note: row.exceptionNote || row.note || "",
             planStatus: row.planStatus || "draft"
           });
@@ -1579,6 +1743,97 @@
         return;
       }
 
+      /* ── Auswahl: Fahrzeug ──────────────────────────────────────── */
+      const fahrzeugWahl = event.target.closest("[data-pick-vehicle]");
+      if (fahrzeugWahl) {
+        const employeeId = fahrzeugWahl.getAttribute("data-employee-id") || "";
+        const kennung = fahrzeugWahl.getAttribute("data-pick-vehicle") || "";
+        const row = state.planner.todayAssignments.find((x) => x.employeeId === employeeId);
+        if (!row) return;
+        if (!kennung) {
+          row.vehicle = "";
+          row.vehicleId = "";
+        } else {
+          const treffer = loadVehicles().find((v) => String(v.id || v.plate) === kennung);
+          if (treffer) {
+            /* Das Kennzeichen bleibt der gespeicherte Wert - so bleiben
+               bestehende Schichten unveraendert lesbar. Die Kennung kommt
+               zusaetzlich dazu. */
+            row.vehicle = treffer.plate;
+            row.vehicleId = treffer.id || "";
+          }
+        }
+        offeneAuswahl = null;
+        savePlanner();
+        syncBackToPersonnel();
+        persistToCockpitBridge();
+        renderAll();
+        return;
+      }
+
+      /* ── Auswahl: Schichtvorlage ────────────────────────────────── */
+      const vorlagenWahl = event.target.closest("[data-pick-template]");
+      if (vorlagenWahl) {
+        const employeeId = vorlagenWahl.getAttribute("data-employee-id") || "";
+        const vorlageId = vorlagenWahl.getAttribute("data-pick-template") || "";
+        const row = state.planner.todayAssignments.find((x) => x.employeeId === employeeId);
+        const tpl = findTemplateById(vorlageId);
+        if (!row || !tpl) return;
+        row.shiftTemplateId = tpl.id;
+        row.start = tpl.start;
+        row.end = tpl.end;
+        offeneAuswahl = null;
+        savePlanner();
+        syncBackToPersonnel();
+        persistToCockpitBridge();
+        renderAll();
+        return;
+      }
+
+      /* ── Auswahl: eigene Zeit ──────────────────────────────────── */
+      const zeitUebernehmen = event.target.closest("[data-shift-apply]");
+      if (zeitUebernehmen) {
+        const employeeId = zeitUebernehmen.getAttribute("data-employee-id") || "";
+        const row = state.planner.todayAssignments.find((x) => x.employeeId === employeeId);
+        const feldStart = document.querySelector("[data-shift-start]");
+        const feldEnde = document.querySelector("[data-shift-end]");
+        const hinweis = document.querySelector("[data-shift-picker-hinweis]");
+        if (!row || !feldStart || !feldEnde) return;
+        const beginn = String(feldStart.value || "").trim();
+        const ende = String(feldEnde.value || "").trim();
+        const sagen = (text) => {
+          if (!hinweis) return;
+          hinweis.hidden = false;
+          hinweis.textContent = text;
+        };
+        if (!beginn || !ende) {
+          sagen("Bitte Beginn und Ende angeben.");
+          return;
+        }
+        if (beginn === ende) {
+          sagen("Beginn und Ende dürfen nicht gleich sein.");
+          return;
+        }
+        /* Eine Nachtschicht darf ueber Mitternacht gehen - deshalb wird
+           ein kleineres Ende NICHT abgewiesen. */
+        row.shiftTemplateId = "";
+        row.start = beginn;
+        row.end = ende;
+        offeneAuswahl = null;
+        savePlanner();
+        syncBackToPersonnel();
+        persistToCockpitBridge();
+        renderAll();
+        return;
+      }
+
+      /* ── Auswahl schliessen ────────────────────────────────────── */
+      if (event.target.closest("[data-picker-close]")) {
+        offeneAuswahl = null;
+        renderTodayList();
+        return;
+      }
+
       const todayAction = event.target.closest("[data-today-action]");
       if (todayAction) {
         const action = todayAction.getAttribute("data-today-action") || "";
@@ -1588,15 +1843,17 @@
         if (!row || !emp) return;
 
         if (action === "plan") row.status = "im Dienst";
-        if (action === "vehicle") {
-          const next = loadVehicles().find((v) => isVehicleAvailable(v.plate) && (!row.vehicle || normalize(v.plate) !== normalize(row.vehicle)));
-          row.vehicle = next ? next.plate : row.vehicle;
-        }
-        if (action === "shift") {
-          const tpl = findTemplateById("late");
-          row.shiftTemplateId = tpl.id;
-          row.start = tpl.start;
-          row.end = tpl.end;
+        /*
+          "Fahrzeug zuweisen" und "Schicht ändern" oeffnen jetzt eine
+          Auswahl, statt blind den naechsten Wert einzusetzen. Gewaehlt
+          wird mit den Karten darunter.
+        */
+        if (action === "vehicle" || action === "shift") {
+          auswahlUmschalten(employeeId, action);
+          /* renderTodayList zeichnet das Raster mit den Tageszeilen -
+             renderDriverDayPlans ist ein anderer Bereich der Seite. */
+          renderTodayList();
+          return;
         }
         if (action === "status") row.status = normalize(row.status).includes("dienst") ? "Pause" : "im Dienst";
         if (action === "logout") row.status = "abgemeldet";

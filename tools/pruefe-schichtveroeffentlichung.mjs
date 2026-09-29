@@ -161,7 +161,10 @@ async function seite(zustand = {}) {
       },
       /* Diese Namen liest die Seite beim Nachladen nach dem Speichern. */
       getEmployees: async () => warte(cfg.leer ? [] : mitarbeiter),
-      getVehicles: async () => warte([{ id: 'V-TEST', name: 'TESTWAGEN-029', plate: 'GER-TEST 999', status: 'Verfügbar' }]),
+      getVehicles: async () => warte([
+        { id: 'V-TEST', name: 'TESTWAGEN-029', licensePlate: 'GER-TEST 999', plate: 'GER-TEST 999', vehicleType: 'Testfahrzeug', status: 'Verfügbar' },
+        { id: 'V-ZWEI', name: 'TESTWAGEN-030', licensePlate: 'GER-TEST 998', plate: 'GER-TEST 998', vehicleType: 'Testfahrzeug', status: 'Verfügbar' },
+      ]),
       /*
         Zwei Entwurfsschichten - eine fuer heute, eine fuer morgen.
 
@@ -419,6 +422,155 @@ console.log('\n── 11. Keine Auswirkung auf andere Bereiche (statisch) ──
   pruefe(/shifts_admin_dispatcher_insert/.test(policies) && /shifts_admin_dispatcher_update/.test(policies),
     'Schreiben bleibt Admins und Dispatchern vorbehalten - keine Rechte geaendert');
   hinweis('Statisch gelesen. Ob die Regeln in der produktiven Instanz aktiv sind, ist damit nicht belegt.');
+}
+
+// ═══ 12. Auswahl von Fahrzeug und Schicht ═════════════════════════════════
+//
+//   DER BEHOBENE BEFUND
+//
+//   Die drei Schaltflaechen der Tageszeile waren keine Auswahl, sondern
+//   Umschalter mit festen Werten: "Fahrzeug zuweisen" nahm das NAECHSTE
+//   freie Fahrzeug, "Schicht aendern" setzte immer dieselbe fest
+//   verdrahtete Vorlage (14-22 Uhr). Der Wert wurde danach angezeigt und
+//   sah aus wie ein Vorschlag - zu waehlen oder zu bestaetigen gab es
+//   nichts.
+//
+console.log('\n── 12. Auswahl von Fahrzeug und Schicht ──');
+{
+  const { ctx, page, fehler } = await seite();
+
+  /* ── Fahrzeugauswahl ── */
+  await page.click('[data-today-action="vehicle"]');
+  await page.waitForTimeout(500);
+  const f = await page.evaluate(() => {
+    const p = document.querySelector('[data-shift-picker="vehicle"]');
+    if (!p) return { fehlt: true };
+    const karten = [...p.querySelectorAll('[data-pick-vehicle]')]
+      .filter((k) => k.getAttribute('data-pick-vehicle'))
+      .map((k) => ({
+        name: k.querySelector('strong')?.textContent.trim() || '',
+        kennzeichen: k.querySelector('span')?.textContent.trim() || '',
+        gewaehlt: k.classList.contains('is-selected'),
+        gedrueckt: k.getAttribute('aria-pressed'),
+      }));
+    return { karten, titel: p.querySelector('.shift-picker-title')?.textContent.trim() || '' };
+  });
+  pruefe(!f.fehlt, 'die Fahrzeugauswahl oeffnet sich');
+  pruefe((f.karten || []).length > 0, `sie listet die Fahrzeuge auf (${(f.karten || []).length})`);
+  pruefe((f.karten || []).every((k) => k.name && k.kennzeichen),
+    'jede Karte nennt Fahrzeugname UND Kennzeichen');
+  const testwagen = (f.karten || []).find((k) => /TESTWAGEN-029/.test(k.name));
+  pruefe(Boolean(testwagen), `das Fahrzeug aus der Fahrzeugverwaltung steht darin (${testwagen ? testwagen.name + ' / ' + testwagen.kennzeichen : 'fehlt'})`);
+
+  /* Anklicken - und es muss gold markiert wieder erscheinen. */
+  await page.click('[data-pick-vehicle]:not([data-pick-vehicle=""])');
+  await page.waitForTimeout(600);
+  await page.click('[data-today-action="vehicle"]');
+  await page.waitForTimeout(500);
+  const nachWahl = await page.evaluate(() => {
+    const k = document.querySelector('[data-pick-vehicle].is-selected');
+    const zeile = document.querySelector('.shift-driver-card');
+    return {
+      markiert: Boolean(k),
+      gedrueckt: k?.getAttribute('aria-pressed'),
+      rand: k ? getComputedStyle(k).borderColor : '',
+      zeilentext: (zeile?.textContent || '').replace(/\s+/g, ' '),
+    };
+  });
+  pruefe(nachWahl.markiert, 'das gewaehlte Fahrzeug ist markiert');
+  pruefe(nachWahl.gedrueckt === 'true', 'und zwar auch fuer Vorleseprogramme (aria-pressed)');
+  pruefe(/240, 201, 107/.test(nachWahl.rand),
+    `die Markierung ist gold (${nachWahl.rand})`);
+  pruefe(/GER-TEST 999/.test(nachWahl.zeilentext),
+    'das Kennzeichen steht in der Zeile');
+
+  /* ── Schichtauswahl ── */
+  await page.click('[data-picker-close]');
+  await page.waitForTimeout(300);
+  await page.click('[data-today-action="shift"]');
+  await page.waitForTimeout(500);
+  const s = await page.evaluate(() => {
+    const p = document.querySelector('[data-shift-picker="shift"]');
+    if (!p) return { fehlt: true };
+    return {
+      vorlagen: [...p.querySelectorAll('[data-pick-template]')].map((k) => ({
+        name: k.querySelector('strong')?.textContent.trim() || '',
+        zeit: k.querySelector('span')?.textContent.trim() || '',
+      })),
+      hatBeginn: Boolean(p.querySelector('[data-shift-start]')),
+      hatEnde: Boolean(p.querySelector('[data-shift-end]')),
+      hatUebernehmen: Boolean(p.querySelector('[data-shift-apply]')),
+      feldgroesse: p.querySelector('[data-shift-start]')
+        ? parseFloat(getComputedStyle(p.querySelector('[data-shift-start]')).fontSize) : 0,
+    };
+  });
+  pruefe(!s.fehlt, 'die Schichtauswahl oeffnet sich');
+  pruefe((s.vorlagen || []).length > 1,
+    `es stehen mehrere Vorlagen zur Wahl (${(s.vorlagen || []).length}: ${(s.vorlagen || []).map((v) => v.name).join(', ')})`);
+  pruefe((s.vorlagen || []).every((v) => /\d{2}:\d{2}\s*–\s*\d{2}:\d{2}/.test(v.zeit)),
+    'jede Vorlage nennt ihre Zeit');
+  pruefe(s.hatBeginn && s.hatEnde && s.hatUebernehmen,
+    'daneben gibt es Felder fuer eine eigene Anfangs- und Endzeit');
+  pruefe(s.feldgroesse >= 16, `die Zeitfelder sind mindestens 16 px gross (${s.feldgroesse})`);
+
+  /* Vorlage waehlen. */
+  const ersteVorlage = await page.evaluate(() => {
+    const k = document.querySelector('[data-pick-template]');
+    return { id: k?.getAttribute('data-pick-template') || '', zeit: k?.querySelector('span')?.textContent.trim() || '' };
+  });
+  await page.click('[data-pick-template]');
+  await page.waitForTimeout(600);
+  const nachVorlage = await page.evaluate(() =>
+    (document.querySelector('.shift-driver-card')?.textContent || '').replace(/\s+/g, ' '));
+  const [vonV] = (ersteVorlage.zeit.match(/\d{2}:\d{2}/g) || []);
+  pruefe(Boolean(vonV) && nachVorlage.includes(vonV),
+    `die gewaehlte Vorlage steht in der Zeile (${vonV})`);
+
+  /* Eigene Zeit setzen. */
+  await page.click('[data-today-action="shift"]');
+  await page.waitForTimeout(400);
+  await page.fill('[data-shift-start]', '05:30');
+  await page.fill('[data-shift-end]', '13:45');
+  await page.click('[data-shift-apply]');
+  await page.waitForTimeout(700);
+  const nachZeit = await page.evaluate(() =>
+    (document.querySelector('.shift-driver-card')?.textContent || '').replace(/\s+/g, ' '));
+  pruefe(/05:30/.test(nachZeit) && /13:45/.test(nachZeit),
+    'eine eigene Zeit wird uebernommen (05:30 / 13:45)');
+
+  /* Unvollstaendige Eingabe wird abgewiesen. */
+  await page.click('[data-today-action="shift"]');
+  await page.waitForTimeout(400);
+  await page.fill('[data-shift-start]', '');
+  await page.click('[data-shift-apply]');
+  await page.waitForTimeout(400);
+  const meldung = await page.evaluate(() => {
+    const h = document.querySelector('[data-shift-picker-hinweis]');
+    return { sichtbar: h ? !h.hidden : false, text: (h?.textContent || '').trim() };
+  });
+  pruefe(meldung.sichtbar && /Beginn und Ende/.test(meldung.text),
+    `eine unvollstaendige Zeit wird abgewiesen ("${meldung.text}")`);
+  const nochDa = await page.evaluate(() =>
+    (document.querySelector('.shift-driver-card')?.textContent || '').includes('05:30'));
+  pruefe(nochDa, 'und die vorherige Zeit bleibt unveraendert stehen');
+
+  pruefe(fehler.length === 0, `keine Skriptfehler${fehler.length ? ' (' + fehler[0] + ')' : ''}`);
+  await ctx.close();
+}
+
+// ═══ 13. Kein blindes Umschalten mehr ═════════════════════════════════════
+console.log('\n── 13. Die alten Umschalter sind weg ──');
+{
+  const quelle = await readFile(join(AUSGABE, 'admin', 'schichtplanung.js'), 'utf8');
+  const ohneKommentare = quelle.replace(/\/\*[\s\S]*?\*\//g, '');
+  pruefe(!/findTemplateById\("late"\)/.test(ohneKommentare),
+    'die fest verdrahtete Vorlage "late" wird nicht mehr gesetzt');
+  pruefe(!/isVehicleAvailable\(v\.plate\) && \(!row\.vehicle/.test(ohneKommentare),
+    'das blinde Weiterschalten zum naechsten Fahrzeug ist entfernt');
+  pruefe(/data-pick-vehicle/.test(ohneKommentare) && /data-pick-template/.test(ohneKommentare),
+    'stattdessen gibt es anklickbare Karten');
+  pruefe(/vehicleId: row\.vehicleId \|\| row\.vehicle/.test(ohneKommentare),
+    'beim Speichern wird die echte Fahrzeugkennung bevorzugt');
 }
 
 await browser.close();
