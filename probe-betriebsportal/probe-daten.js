@@ -140,15 +140,24 @@
       was: "Zustand geändert", vorher: "Frei", nachher: "Werkstatt", grund: "Bremsen prüfen" },
     { zeit: "gestern 16:10", wer: "Disposition", betrifft: "Testfahrer 01",
       was: "Fahrzeug zugewiesen", vorher: "kein Fahrzeug", nachher: "GER-TEST 001", grund: "" }
-  ];
+  ].map((x) => Object.freeze(x));
 
+  /*
+    Ein geschriebener Protokolleintrag wird nicht mehr angefasst.
+    Object.freeze macht das nicht nur zur Absprache, sondern zur
+    Eigenschaft des Eintrags: Ein spaeterer Schreibversuch laeuft ins
+    Leere. Eine Korrektur ist ein NEUER Vorgang mit eigenem Grund und
+    eigenem Eintrag.
+  */
   function protokollieren(eintrag) {
-    protokoll.unshift({
+    const fertig = Object.freeze({
       zeit: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
       grund: "",
       ...eintrag
     });
+    protokoll.unshift(fertig);
     if (protokoll.length > 40) protokoll.pop();
+    return fertig;
   }
 
   const letzteAenderung = (betrifft) =>

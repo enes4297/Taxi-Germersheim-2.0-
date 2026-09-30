@@ -374,7 +374,8 @@ console.log("\n── 8. Werkstatt und Sperre setzen ──");
   pruefe(/Bisher/.test(dialog) && /Neu/.test(dialog), "mit vorher und nachher");
   pruefe(await page.isVisible("[data-sperr-grund]"), "ein Grund wird verlangt");
 
-  await page.click('[data-tun="team-zustand-ja"]');
+  /* Ohne Grund kommt man nicht einmal in die Pruefung. */
+  await page.click('[data-tun="team-zustand-pruefen"]');
   await page.waitForTimeout(400);
   pruefe(/Bitte einen Grund eintragen/.test(await page.textContent(".dialog-kasten")),
     "ohne Grund wird der Zustand nicht geaendert");
@@ -383,6 +384,8 @@ console.log("\n── 8. Werkstatt und Sperre setzen ──");
   pruefe(unveraendert === "verfuegbar", "das Fahrzeug ist unveraendert");
 
   await page.fill("[data-sperr-grund]", "Bremsen prüfen.");
+  await page.click('[data-tun="team-zustand-pruefen"]');
+  await page.waitForTimeout(400);
   await page.click('[data-tun="team-zustand-ja"]');
   await page.waitForTimeout(450);
   const quittung = await page.textContent(".dialog-kasten");
@@ -399,6 +402,10 @@ console.log("\n── 8. Werkstatt und Sperre setzen ──");
   pruefe(/heute zugewiesen/.test(await page.textContent(".dialog-kasten")),
     "es wird gewarnt, dass das Fahrzeug zugewiesen ist");
   await page.fill("[data-sperr-grund]", "Unfallschaden.");
+  await page.click('[data-tun="team-zustand-pruefen"]');
+  await page.waitForTimeout(400);
+  pruefe(/wird gelöst/.test(await page.textContent(".dialog-kasten")),
+    "die Pruefung sagt, dass die Zuweisung geloest wird");
   await page.click('[data-tun="team-zustand-ja"]');
   await page.waitForTimeout(450);
   await page.click("button[data-dialog-zu]");
@@ -417,8 +424,11 @@ console.log("\n── 9. Rollen ──");
   await a.page.click(karte("M01"));
   await a.page.waitForTimeout(400);
   const dispo = await a.page.textContent(".dialog-kasten");
-  pruefe(/Lohnabrechnungen/.test(dispo), "die Ueberschrift ist da");
-  pruefe(/Keine Berechtigung/.test(dispo), "aber gesperrt");
+  /* Seit der Vereinfachung fehlt der Lohnbereich fuer die Disposition
+     ganz - nicht einmal als gesperrte Ueberschrift. Die Sperre haengt
+     trotzdem an der Faehigkeit; das prueft Block 17 eigens ueber den
+     direkten Aufruf. */
+  pruefe(!/Lohnabrechnung/.test(dispo), "der Lohnbereich fehlt vollstaendig");
   pruefe(!/Testdatei-M01/.test(dispo), "keine einzige Abrechnung sichtbar");
   pruefe(/Bankdaten und Gehalt/.test(dispo), "Bankdaten und Gehalt sind ausdruecklich gesperrt");
   pruefe(/Testnummer 01/.test(dispo), "betriebliche Kontaktdaten sieht sie dagegen");
@@ -466,8 +476,8 @@ console.log("\n── 10. Lohnabrechnungen ──");
   pruefe(/Testfahrer 01/.test(dialog), "der Mitarbeiter steht fest");
   pruefe(/nichts hochgeladen/.test(dialog), "und es wird nichts hochgeladen");
 
-  /* Ohne Zeitraum und Datei geht nichts. */
-  await page.click('[data-tun="team-lohn-fertig"]');
+  /* Ohne Zeitraum und Datei kommt man nicht einmal in die Pruefung. */
+  await page.click('[data-tun="team-lohn-pruefen"]');
   await page.waitForTimeout(350);
   pruefe(/Bitte Zeitraum und Datei wählen/.test(await page.textContent(".dialog-kasten")),
     "unvollstaendig wird abgelehnt");
@@ -478,22 +488,24 @@ console.log("\n── 10. Lohnabrechnungen ──");
   await page.click('[data-tun="team-lohn-datei:Testdatei-A.pdf"]');
   await page.waitForTimeout(350);
   const mitVersion = await page.textContent(".dialog-kasten");
-  pruefe(/Bestehende Abrechnung wird nicht überschrieben/.test(mitVersion),
+  pruefe(/Die vorhandene Version bleibt erhalten/.test(mitVersion),
     "eine vorhandene Abrechnung wird nicht still ueberschrieben");
   pruefe(/Version 2/.test(mitVersion), "es entsteht eine neue Version");
   pruefe(await page.isVisible("[data-lohn-grund]"), "und der Grund ist Pflicht");
   pruefe(/Testdatei-M01-08-2026-v2\.pdf/.test(mitVersion), "die Bezeichnung ist eindeutig");
 
-  await page.click('[data-tun="team-lohn-fertig"]');
+  await page.click('[data-tun="team-lohn-pruefen"]');
   await page.waitForTimeout(350);
   pruefe(/braucht es einen Grund/.test(await page.textContent(".dialog-kasten")),
     "ohne Grund wird nicht bereitgestellt");
 
   await page.fill("[data-lohn-grund]", "Korrektur der Stundenzahl.");
+  await page.click('[data-tun="team-lohn-pruefen"]');
+  await page.waitForTimeout(350);
   await page.click('[data-tun="team-lohn-fertig"]');
   await page.waitForTimeout(450);
   const quittung = await page.textContent(".dialog-kasten");
-  pruefe(/In der Probe wird nichts bereitgestellt/.test(quittung), "die Probe bleibt ehrlich");
+  pruefe(/In der Probe wird nichts hochgeladen/.test(quittung), "die Probe bleibt ehrlich");
   pruefe(/Korrektur der Stundenzahl/.test(quittung), "der Grund steht im Protokoll");
   pruefe(/Version 1/.test(quittung) && /Version 2/.test(quittung),
     "vorher und nachher stehen darin");
@@ -605,6 +617,217 @@ for (const [name, breite, hoehe] of [["320 px", 320, 568], ["390 px", 390, 844],
   const erreichbar = await page.$eval(karte("M02"), (el) => el.tagName);
   pruefe(erreichbar === "BUTTON", "jede Fahrerkarte ist eine Schaltflaeche");
   await ctx.close();
+}
+
+/* ═══ 14. Letzte Prüfung vor dem Speichern ══════════════════════ */
+console.log("\n── 14. Der erste Klick speichert noch nichts ──");
+{
+  const { ctx, page } = await seite("admin");
+
+  await page.click('[data-tun="team-zustand:F03|werkstatt"]');
+  await page.waitForTimeout(400);
+  pruefe(Boolean(await page.$('[data-tun="team-zustand-pruefen"]')),
+    "das Formular bietet „Änderung prüfen“ an");
+  pruefe(!(await page.$('[data-tun="team-zustand-ja"]')),
+    "und noch nicht „Verbindlich speichern“");
+
+  await page.fill("[data-sperr-grund]", "Bremsen prüfen.");
+  await page.click('[data-tun="team-zustand-pruefen"]');
+  await page.waitForTimeout(400);
+
+  const pruefung = await page.textContent(".dialog-kasten");
+  pruefe(/Letzte Prüfung/.test(pruefung), "es folgt die letzte Prüfung");
+  pruefe(/Noch ist nichts geändert/.test(pruefung), "sie sagt, dass noch nichts geschehen ist");
+  pruefe(/Bremsen prüfen/.test(pruefung), "die Begründung steht in der Zusammenfassung");
+  pruefe(/Geändert von/.test(pruefung), "und wer die Änderung vornimmt");
+  const nochFrei = await page.evaluate(() =>
+    window.ProbeDaten.fahrzeuge.find((f) => f.id === "F03").zustand);
+  pruefe(nochFrei === "verfuegbar", `nach dem ersten Klick ist nichts gespeichert (${nochFrei})`);
+  const protokollVorher = await page.evaluate(() => window.ProbeDaten.protokoll.length);
+
+  /* Zurück und ändern - mit erhaltenen Eingaben. */
+  const zurueck = await page.$eval('[data-tun="team-zustand-zurueck"]', (el) => el.className);
+  pruefe(/haupt-knopf/.test(zurueck), "„Zurück und ändern“ ist die hervorgehobene Aktion");
+  await page.click('[data-tun="team-zustand-zurueck"]');
+  await page.waitForTimeout(400);
+  pruefe((await page.inputValue("[data-sperr-grund]")) === "Bremsen prüfen.",
+    "die Begründung ist vollständig erhalten");
+
+  /* Geänderte Begründung erscheint in der zweiten Prüfung. */
+  await page.fill("[data-sperr-grund]", "Bremsen und Reifen prüfen.");
+  await page.click('[data-tun="team-zustand-pruefen"]');
+  await page.waitForTimeout(400);
+  const zweite = await page.textContent(".dialog-kasten");
+  pruefe(/Bremsen und Reifen prüfen/.test(zweite), "die geänderte Begründung steht in der zweiten Prüfung");
+  pruefe(!/Bremsen prüfen\./.test(zweite.replace("Bremsen und Reifen prüfen.", "")),
+    "die alte Fassung nicht mehr");
+
+  /* Erst jetzt verbindlich. */
+  await page.click('[data-tun="team-zustand-ja"]');
+  await page.waitForTimeout(450);
+  const nachher = await page.evaluate(() =>
+    window.ProbeDaten.fahrzeuge.find((f) => f.id === "F03").zustand);
+  pruefe(nachher === "werkstatt", "„Verbindlich speichern“ schließt die Änderung ab");
+  const quittung = await page.textContent(".dialog-kasten");
+  pruefe(/Was protokolliert würde/.test(quittung), "und erzeugt die Protokollvorschau");
+  pruefe(/Bremsen und Reifen prüfen/.test(quittung), "mit der endgültigen Begründung");
+  const protokollNachher = await page.evaluate(() => window.ProbeDaten.protokoll.length);
+  pruefe(protokollNachher === protokollVorher + 1,
+    `genau ein Protokolleintrag kam dazu (${protokollVorher} → ${protokollNachher})`);
+  await ctx.close();
+}
+
+/* ═══ 15. Protokolleintrag ist unveränderlich ════════════════════ */
+console.log("\n── 15. Ein fertiger Eintrag bleibt, wie er ist ──");
+{
+  const { ctx, page } = await seite("admin");
+
+  const vorgang = async (ziel, grund) => {
+    await page.click(`[data-tun="team-zustand:F03|${ziel}"]`);
+    await page.waitForTimeout(350);
+    if (await page.$("[data-sperr-grund]")) await page.fill("[data-sperr-grund]", grund);
+    await page.click('[data-tun="team-zustand-pruefen"]');
+    await page.waitForTimeout(350);
+    await page.click('[data-tun="team-zustand-ja"]');
+    await page.waitForTimeout(400);
+    await page.click("button[data-dialog-zu]");
+    await page.waitForTimeout(300);
+  };
+
+  await vorgang("werkstatt", "Erster Vorgang.");
+  const ersterEintrag = await page.evaluate(() => ({ ...window.ProbeDaten.protokoll[0] }));
+  const anzahl1 = await page.evaluate(() => window.ProbeDaten.protokoll.length);
+
+  /* Der Versuch, den Eintrag nachtraeglich zu aendern, laeuft ins
+     Leere - er ist eingefroren. */
+  const nachSchreibversuch = await page.evaluate(() => {
+    const e = window.ProbeDaten.protokoll[0];
+    try { e.grund = "nachtraeglich geaendert"; } catch { /* eingefroren */ }
+    try { e.nachher = "manipuliert"; } catch { /* eingefroren */ }
+    return { grund: e.grund, nachher: e.nachher, eingefroren: Object.isFrozen(e) };
+  });
+  pruefe(nachSchreibversuch.eingefroren, "der Protokolleintrag ist eingefroren");
+  pruefe(nachSchreibversuch.grund === ersterEintrag.grund,
+    "der Grund lässt sich nachträglich nicht ändern");
+  pruefe(nachSchreibversuch.nachher === ersterEintrag.nachher,
+    "und der Zustand ebenso wenig");
+
+  /* Eine spaetere Korrektur ist ein NEUER Vorgang mit eigenem Grund. */
+  await vorgang("gesperrt", "Korrektur: doch ein Unfallschaden.");
+  const anzahl2 = await page.evaluate(() => window.ProbeDaten.protokoll.length);
+  const neuerEintrag = await page.evaluate(() => ({ ...window.ProbeDaten.protokoll[0] }));
+  const alterEintrag = await page.evaluate(() => ({ ...window.ProbeDaten.protokoll[1] }));
+  pruefe(anzahl2 === anzahl1 + 1, `die Korrektur erzeugt einen eigenen Eintrag (${anzahl1} → ${anzahl2})`);
+  pruefe(/Korrektur/.test(neuerEintrag.grund), "mit eigenem Grund");
+  pruefe(alterEintrag.grund === ersterEintrag.grund, "der erste Eintrag steht unverändert daneben");
+  await ctx.close();
+}
+
+/* ═══ 16. Lohnvorschau vollständig ═══════════════════════════════ */
+console.log("\n── 16. Vorschau der Lohnabrechnung ──");
+{
+  const { ctx, page } = await seite("personal");
+  await page.click(karte("M01"));
+  await page.waitForTimeout(400);
+  await page.click('[data-tun="team-lohn-neu:M01"]');
+  await page.waitForTimeout(400);
+  await page.selectOption('[data-lohn-neu="monat"]', "08");
+  await page.waitForTimeout(350);
+  await page.click('[data-tun="team-lohn-datei:Testdatei-A.pdf"]');
+  await page.waitForTimeout(350);
+
+  const formular = await page.textContent(".dialog-kasten");
+  for (const [was, text] of [
+    ["Mitarbeiter", "Testfahrer 01"], ["Abrechnungsmonat", "Abrechnungsmonat"],
+    ["Abrechnungsjahr", "Abrechnungsjahr"], ["Dateiname", "Testdatei-M01-08-2026-v2.pdf"],
+    ["neue Version", "Neue Version"], ["vorherige Version", "Vorherige Version"],
+    ["bereitgestellt von", "Bereitgestellt von"], ["Datum und Uhrzeit", "Datum und Uhrzeit"]
+  ]) {
+    pruefe(formular.includes(text), `die Vorschau nennt ${was}`);
+  }
+  pruefe(/Die vorhandene Version bleibt erhalten/.test(formular),
+    "und sagt ausdrücklich, dass die vorhandene Version bleibt");
+
+  await page.fill("[data-lohn-grund]", "Korrektur der Stundenzahl.");
+  await page.click('[data-tun="team-lohn-pruefen"]');
+  await page.waitForTimeout(400);
+  const pruefung = await page.textContent(".dialog-kasten");
+  pruefe(/Letzte Prüfung/.test(pruefung), "danach kommt die letzte Prüfung");
+  pruefe(/Noch ist nichts bereitgestellt/.test(pruefung), "sie sagt, dass noch nichts geschehen ist");
+  pruefe(/Korrektur der Stundenzahl/.test(pruefung), "der Pflichtgrund steht darin");
+  pruefe(/Testdatei-M01-08-2026-v2\.pdf/.test(pruefung), "der Dateiname ebenso");
+  pruefe(!/€|EUR/.test(pruefung), "kein Betrag");
+
+  const vorher = await page.evaluate(() => window.ProbeDaten.lohnProbe.length);
+  await page.click('[data-tun="team-lohn-zurueck"]');
+  await page.waitForTimeout(400);
+  pruefe((await page.inputValue("[data-lohn-grund]")) === "Korrektur der Stundenzahl.",
+    "„Zurück und ändern“ erhält den Grund");
+  pruefe((await page.evaluate(() => window.ProbeDaten.lohnProbe.length)) === vorher,
+    "und es wurde nichts bereitgestellt");
+
+  await page.click('[data-tun="team-lohn-pruefen"]');
+  await page.waitForTimeout(350);
+  await page.click('[data-tun="team-lohn-fertig"]');
+  await page.waitForTimeout(450);
+  const quittung = await page.textContent(".dialog-kasten");
+  pruefe(/Version 1/.test(quittung) && /Version 2/.test(quittung),
+    "das Protokoll nennt vorherige und neue Version");
+  pruefe(!/€|EUR/.test(quittung), "und keinen Betrag");
+
+  /* Die alte Abrechnung ist noch da. */
+  const beide = await page.evaluate(() => window.ProbeDaten.lohnProbe
+    .filter((l) => l.mitarbeiterId === "M01" && l.monat === "08" && l.jahr === "2026")
+    .map((l) => l.version).sort());
+  pruefe(beide.length === 2 && beide[0] === 1 && beide[1] === 2,
+    `beide Versionen liegen vor (${beide.join(", ")})`);
+  await ctx.close();
+}
+
+/* ═══ 17. Lohnbereich für die Disposition ════════════════════════ */
+console.log("\n── 17. Die Disposition sieht den Lohnbereich gar nicht ──");
+{
+  const { ctx, page } = await seite("dispatcher");
+  await page.click(karte("M01"));
+  await page.waitForTimeout(400);
+  const akte = await page.textContent(".dialog-kasten");
+  pruefe(!/Lohnabrechnung/.test(akte), "die Überschrift kommt nicht mehr vor");
+  pruefe(!/Testdatei-M01/.test(akte), "kein Dateiname");
+  pruefe(!/payroll/.test(akte), "und keine Spur der Fähigkeit");
+  pruefe(/Bankdaten und Gehalt/.test(akte),
+    "die Personalakte bleibt weiterhin ausdrücklich gesperrt");
+
+  /* Der direkte Aufruf liefert trotzdem nichts. */
+  const vorher = await page.evaluate(() => window.ProbeDaten.lohnProbe.length);
+  await page.evaluate(() => window.ProbeBereiche.tun("team-lohn-neu:M01"));
+  await page.waitForTimeout(400);
+  const danach = await page.textContent(".dialog-kasten");
+  pruefe(!/Lohnabrechnung bereitstellen/.test(danach),
+    "ein direkter Aufruf öffnet nichts");
+  pruefe((await page.evaluate(() => window.ProbeDaten.lohnProbe.length)) === vorher,
+    "und stellt nichts bereit");
+
+  await page.evaluate(() => window.ProbeBereiche.tun("team-lohn-fertig"));
+  await page.waitForTimeout(400);
+  pruefe((await page.evaluate(() => window.ProbeDaten.lohnProbe.length)) === vorher,
+    "auch der direkte Abschluss bleibt wirkungslos");
+  await ctx.close();
+}
+
+/* ═══ 18. Administration und Personal behalten ihren Zugriff ════ */
+console.log("\n── 18. Der Zugriff der Berechtigten bleibt ──");
+{
+  for (const rolle of ["admin", "personal"]) {
+    const { ctx, page } = await seite(rolle);
+    await page.click(karte("M01"));
+    await page.waitForTimeout(400);
+    const akte = await page.textContent(".dialog-kasten");
+    pruefe(/Lohnabrechnungen/.test(akte), `${rolle} sieht den Lohnbereich`);
+    pruefe(/Testdatei-M01/.test(akte), `${rolle} sieht die vorhandenen Abrechnungen`);
+    pruefe(Boolean(await page.$('[data-tun="team-lohn-neu:M01"]')),
+      `${rolle} darf bereitstellen`);
+    await ctx.close();
+  }
 }
 
 /* ═══ 13. Nichts geht nach draussen ══════════════════════════════ */

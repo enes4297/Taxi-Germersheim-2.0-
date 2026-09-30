@@ -457,10 +457,10 @@ console.log("\n── 9. Betrieblicher Konflikt ──");
     const iso = window.ProbeDaten.alsIso(window.ProbeDaten.heute);
     return window.ProbeDaten.planung[iso].veroeffentlichtUm;
   });
-  await page.click('[data-tun="plan-trotzdem-ja"]');
+  await page.click('[data-tun="plan-trotzdem-pruefen"]');
   await page.waitForTimeout(400);
   pruefe(/Bitte einen Grund eintragen/.test(await page.textContent(".dialog-kasten")),
-    "ohne Grund wird nicht veroeffentlicht");
+    "ohne Grund kommt man nicht einmal in die Pruefung");
   const zwischen = await page.evaluate(() => {
     const iso = window.ProbeDaten.alsIso(window.ProbeDaten.heute);
     return window.ProbeDaten.planung[iso].veroeffentlichtUm;
@@ -477,6 +477,14 @@ console.log("\n── 9. Betrieblicher Konflikt ──");
   await page.click('[data-tun="plan-trotzdem"]');
   await page.waitForTimeout(300);
   await page.fill("[data-grund]", "Fahrzeugwechsel ist mündlich geklärt.");
+  await page.click('[data-tun="plan-trotzdem-pruefen"]');
+  await page.waitForTimeout(400);
+  const letzte = await page.textContent(".dialog-kasten");
+  pruefe(/Letzte Prüfung/.test(letzte), "vor dem Veroeffentlichen kommt die letzte Pruefung");
+  pruefe(/Noch ist nichts veröffentlicht/.test(letzte), "sie sagt, dass noch nichts geschehen ist");
+  pruefe(/Fahrzeugwechsel ist mündlich geklärt/.test(letzte), "die Begruendung steht darin");
+  pruefe(Boolean(await page.$('[data-tun="plan-trotzdem-zurueck"]')),
+    "und es gibt den Weg zurueck");
   await page.click('[data-tun="plan-trotzdem-ja"]');
   await page.waitForTimeout(450);
   const erfolg = await page.textContent(".dialog-kasten");
@@ -744,16 +752,25 @@ console.log("\n── 17. Bewusste Ausnahme mit Pflichtgrund ──");
   await page.click('[data-tun="plan-ausnahme-grund"]');
   await page.waitForTimeout(350);
   pruefe(await page.isVisible("[data-ausnahme-grund]"), "das Grundfeld erscheint");
-  await page.click('[data-tun="plan-ausnahme-speichern"]');
+  await page.click('[data-tun="plan-ausnahme-pruefen"]');
   await page.waitForTimeout(400);
   pruefe(/Bitte einen Grund eintragen/.test(await page.textContent(".dialog-kasten")),
-    "ohne Grund wird die Ausnahme nicht gesetzt");
+    "ohne Grund kommt man nicht einmal in die Pruefung");
   const nochKrank = await page.evaluate(() =>
     window.ProbeRahmen.zustand.planEntwurf.zeilen.find((z) => z.mitarbeiterId === "M02").ausnahme);
   pruefe(!nochKrank, "und es ist keine Ausnahme entstanden");
 
   /* Mit Grund. */
   await page.fill("[data-ausnahme-grund]", "Fahrer hat sich gesund gemeldet.");
+  await page.click('[data-tun="plan-ausnahme-pruefen"]');
+  await page.waitForTimeout(400);
+  const ausnahmePruefung = await page.textContent(".dialog-kasten");
+  pruefe(/Letzte Prüfung/.test(ausnahmePruefung), "vor der Ausnahme kommt die letzte Pruefung");
+  pruefe(/Fahrer hat sich gesund gemeldet/.test(ausnahmePruefung), "mit der Begruendung");
+  pruefe(/Neuer Status/.test(ausnahmePruefung), "und dem neuen Status");
+  const nochKeineAusnahme = await page.evaluate(() =>
+    window.ProbeRahmen.zustand.planEntwurf.zeilen.find((z) => z.mitarbeiterId === "M02").ausnahme);
+  pruefe(!nochKeineAusnahme, "nach dem ersten Klick ist noch nichts gesetzt");
   await page.click('[data-tun="plan-ausnahme-speichern"]');
   await page.waitForTimeout(450);
   const statusMitAusnahme = await page.$eval('.plan-zeile[data-mitarbeiter="M02"]', (el) => el.dataset.status);
@@ -788,6 +805,8 @@ console.log("\n── 18. Die Ausnahme taucht bei der Veroeffentlichung auf ─�
   await page.click('[data-tun="plan-ausnahme-grund"]');
   await page.waitForTimeout(300);
   await page.fill("[data-ausnahme-grund]", "Kommt früher zurück, mit Zentrale geklärt.");
+  await page.click('[data-tun="plan-ausnahme-pruefen"]');
+  await page.waitForTimeout(350);
   await page.click('[data-tun="plan-ausnahme-speichern"]');
   await page.waitForTimeout(450);
 
@@ -810,6 +829,8 @@ console.log("\n── 18. Die Ausnahme taucht bei der Veroeffentlichung auf ─�
   await page.click('[data-tun="plan-trotzdem"]');
   await page.waitForTimeout(350);
   await page.fill("[data-grund]", "Tagesplan muss raus.");
+  await page.click('[data-tun="plan-trotzdem-pruefen"]');
+  await page.waitForTimeout(350);
   await page.click('[data-tun="plan-trotzdem-ja"]');
   await page.waitForTimeout(500);
   const erfolg = await page.textContent(".dialog-kasten");
@@ -868,6 +889,8 @@ console.log("\n── 20. Abwesenheit deckt nur einen Teil der Schicht ──");
   await page.click('[data-tun="plan-ausnahme-grund"]');
   await page.waitForTimeout(300);
   await page.fill("[data-ausnahme-grund]", "Arbeitet trotz Urlaub.");
+  await page.click('[data-tun="plan-ausnahme-pruefen"]');
+  await page.waitForTimeout(350);
   await page.click('[data-tun="plan-ausnahme-speichern"]');
   await page.waitForTimeout(450);
   await page.selectOption(feld("M06", "vorlage"), "nacht");

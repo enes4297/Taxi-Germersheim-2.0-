@@ -1098,7 +1098,20 @@
       : "Fahrer hat genehmigten Urlaub";
     const tagText = D.alsText(D.tagAls(R.zustand.planTag));
 
-    const rumpf = s.grundSichtbar
+    const rumpf = s.stufe === "pruefung"
+      ? `
+        ${R.zustandsKasten("keinrecht", "Letzte Prüfung",
+          "Noch ist nichts geändert. Erst „Verbindlich speichern“ setzt die Ausnahme und erzeugt den Protokolleintrag.")}
+        <dl class="zusammenfassung">
+          <div><dt>Fahrer</dt><dd>${h(m ? m.name : s.mitarbeiterId)}</dd></div>
+          <div><dt>Tag</dt><dd>${h(tagText)}</dd></div>
+          <div><dt>Abwesenheit</dt><dd>${h(art === "krank" ? "krank gemeldet" : "genehmigter Urlaub")} · ${h(D.zeitraumText(abw.wirksam))}</dd></div>
+          <div><dt>Neuer Status</dt><dd>Im Dienst (Ausnahme)</dd></div>
+          <div><dt>Grund</dt><dd>${h(s.grund)}</dd></div>
+          <div><dt>Entschieden von</dt><dd>${h(R.ROLLENNAMEN[R.zustand.rolle])}</dd></div>
+        </dl>
+        <p class="schritt-hinweis">Die eingetragene Abwesenheit bleibt unverändert bestehen.</p>`
+      : s.grundSichtbar
       ? `
         ${R.zustandsKasten("fehler", satz,
           `${m ? m.name : s.mitarbeiterId} ist am ${tagText} als ${art === "krank" ? "krank gemeldet" : "im genehmigten Urlaub"} eingetragen (${D.zeitraumText(abw.wirksam)}). Eine Ausnahme wird festgehalten und bei der Veröffentlichung erneut angezeigt.`)}
@@ -1114,10 +1127,14 @@
         ${R.zustandsKasten("fehler", satz,
           `${m ? m.name : s.mitarbeiterId} ist am ${tagText} als ${art === "krank" ? "krank gemeldet" : "im genehmigten Urlaub"} eingetragen (${D.zeitraumText(abw.wirksam)}). Einplanen ist möglich, aber nur als ausdrückliche Ausnahme mit Grund.`)}`
 
-    const fuss = s.grundSichtbar
+    const fuss = s.stufe === "pruefung"
+      ? `
+        <button class="knopf haupt-knopf" type="button" data-tun="plan-ausnahme-zurueck-formular">Zurück und ändern</button>
+        <button class="knopf leise" type="button" data-tun="plan-ausnahme-speichern">Verbindlich speichern</button>`
+      : s.grundSichtbar
       ? `
         <button class="knopf haupt-knopf" type="button" data-tun="plan-ausnahme-abbrechen">Status beibehalten</button>
-        <button class="knopf leise" type="button" data-tun="plan-ausnahme-speichern">Trotz Abwesenheit einplanen</button>`
+        <button class="knopf leise" type="button" data-tun="plan-ausnahme-pruefen">Änderung prüfen</button>`
       : `
         <button class="knopf leise" type="button" data-tun="plan-ausnahme-grund">Trotz Abwesenheit einplanen</button>
         <button class="knopf haupt-knopf" type="button" data-tun="plan-ausnahme-abbrechen">Status beibehalten</button>`
@@ -1142,6 +1159,9 @@
      kann - und wenn ja, ob ohne oder mit bewusster Entscheidung.
   */
   let veroeffentlichungsGrund = "";
+  /* "grund" = Formular, "pruefung" = letzte Ansicht vor dem
+     verbindlichen Veroeffentlichen. */
+  let trotzdemStufe = "grund";
 
   function konfliktZeilen(liste, art) {
     const gefiltert = liste.filter((k) => k.art === art);
@@ -1237,16 +1257,26 @@
           </dl>
           ${konfliktZeilen(liste, "betrieblich")}
           ${fehler ? `<div class="feldfehler" role="alert">${h(fehler)}</div>` : ""}
-          <label>Grund für die Veröffentlichung <span class="band-warnung">Pflichtfeld</span>
-            <textarea data-grund rows="3"
-              placeholder="Zum Beispiel: Fahrzeugwechsel ist mündlich geklärt.">${h(veroeffentlichungsGrund)}</textarea></label>
+          ${trotzdemStufe === "pruefung"
+            ? `${R.zustandsKasten("keinrecht", "Letzte Prüfung",
+                 "Noch ist nichts veröffentlicht. Erst „Trotz Konflikten verbindlich veröffentlichen“ schließt den Vorgang ab.")}
+               <dl class="zusammenfassung">
+                 <div><dt>Grund</dt><dd>${h(veroeffentlichungsGrund)}</dd></div>
+                 <div><dt>Veröffentlicht von</dt><dd>${h(R.ROLLENNAMEN[R.zustand.rolle])}</dd></div>
+               </dl>`
+            : `<label>Grund für die Veröffentlichung <span class="band-warnung">Pflichtfeld</span>
+              <textarea data-grund rows="3"
+                placeholder="Zum Beispiel: Fahrzeugwechsel ist mündlich geklärt.">${h(veroeffentlichungsGrund)}</textarea></label>`}
           <p class="schritt-hinweis">In der späteren echten Umsetzung wird protokolliert: wer
             veröffentlicht hat, wann, für welchen Tag, welche Konflikte offen waren und der
             angegebene Grund. <strong>In dieser Designprobe wird nichts gespeichert.</strong></p>
         </div>
         <footer class="dialog-fuss">
-          <button class="knopf haupt-knopf" type="button" data-tun="plan-zurueck-zur-pruefung">Abbrechen</button>
-          <button class="knopf leise" type="button" data-tun="plan-trotzdem-ja">Trotz Konflikten veröffentlichen</button>
+          ${trotzdemStufe === "pruefung"
+            ? `<button class="knopf haupt-knopf" type="button" data-tun="plan-trotzdem-zurueck">Zurück und ändern</button>
+               <button class="knopf leise" type="button" data-tun="plan-trotzdem-ja">Trotz Konflikten verbindlich veröffentlichen</button>`
+            : `<button class="knopf haupt-knopf" type="button" data-tun="plan-zurueck-zur-pruefung">Abbrechen</button>
+               <button class="knopf leise" type="button" data-tun="plan-trotzdem-pruefen">Änderung prüfen</button>`}
         </footer>
       </div>`;
   }
@@ -1402,8 +1432,29 @@
       /* ---- Ausnahme bei eingetragener Abwesenheit ---- */
       case "plan-ausnahme-grund":
         ausnahmeStand.grundSichtbar = true;
+        ausnahmeStand.stufe = "formular";
         R.dialogOeffnen(ausnahmeDialog());
         { const f = document.querySelector("[data-ausnahme-grund]"); if (f) f.focus(); }
+        return;
+      /* Erster Klick: nur pruefen. Hier wird nichts gesetzt. */
+      case "plan-ausnahme-pruefen": {
+        const f = document.querySelector("[data-ausnahme-grund]");
+        ausnahmeStand.grund = f ? f.value.trim() : "";
+        if (ausnahmeStand.grund.length < 3) {
+          ausnahmeStand.fehler = "Bitte einen Grund eintragen. Ohne Grund bleibt der Status unverändert.";
+          R.dialogOeffnen(ausnahmeDialog());
+          const neu = document.querySelector("[data-ausnahme-grund]");
+          if (neu) neu.focus();
+          return;
+        }
+        ausnahmeStand.fehler = "";
+        ausnahmeStand.stufe = "pruefung";
+        R.dialogOeffnen(ausnahmeDialog());
+        return;
+      }
+      case "plan-ausnahme-zurueck-formular":
+        ausnahmeStand.stufe = "formular";
+        R.dialogOeffnen(ausnahmeDialog());
         return;
       case "plan-ausnahme-abbrechen":
         ausnahmeStand = null;
@@ -1411,14 +1462,11 @@
         R.zeichnen();
         return;
       case "plan-ausnahme-speichern": {
-        const f = document.querySelector("[data-ausnahme-grund]");
-        const grund = f ? f.value.trim() : "";
+        const grund = ausnahmeStand.grund;
         if (grund.length < 3) {
-          ausnahmeStand.grund = grund;
           ausnahmeStand.fehler = "Bitte einen Grund eintragen. Ohne Grund bleibt der Status unverändert.";
+          ausnahmeStand.stufe = "formular";
           R.dialogOeffnen(ausnahmeDialog());
-          const neu = document.querySelector("[data-ausnahme-grund]");
-          if (neu) neu.focus();
           return;
         }
         const z = zeileVon(e, ausnahmeStand.mitarbeiterId);
@@ -1461,8 +1509,10 @@
       case "plan-zurueck-zur-pruefung":
         R.dialogOeffnen(pruefungsDialog()); return;
       case "plan-trotzdem":
+        trotzdemStufe = "grund";
         R.dialogOeffnen(trotzdemDialog("")); return;
-      case "plan-trotzdem-ja": {
+      /* Erster Klick: nur pruefen. Hier wird nichts veroeffentlicht. */
+      case "plan-trotzdem-pruefen": {
         const feld = document.querySelector("[data-grund]");
         veroeffentlichungsGrund = feld ? feld.value.trim() : "";
         if (veroeffentlichungsGrund.length < 3) {
@@ -1471,6 +1521,21 @@
           if (neu) neu.focus();
           return;
         }
+        trotzdemStufe = "pruefung";
+        R.dialogOeffnen(trotzdemDialog(""));
+        return;
+      }
+      case "plan-trotzdem-zurueck":
+        trotzdemStufe = "grund";
+        R.dialogOeffnen(trotzdemDialog(""));
+        return;
+      case "plan-trotzdem-ja": {
+        if (veroeffentlichungsGrund.length < 3) {
+          trotzdemStufe = "grund";
+          R.dialogOeffnen(trotzdemDialog("Bitte einen Grund eintragen. Ohne Grund wird nicht veröffentlicht."));
+          return;
+        }
+        trotzdemStufe = "grund";
         planVeroeffentlichen(true); return;
       }
       case "plan-veroeffentlichen-ja":

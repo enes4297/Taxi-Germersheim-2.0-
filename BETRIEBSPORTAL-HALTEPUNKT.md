@@ -996,3 +996,116 @@ Array-Positionen, der Zustandsabgleich mit der Planung, 320 · 390 · 430 ·
 
 > **Einordnung unverändert:** Designprobe ohne Datenquelle. Der Lauf
 > sagt nichts über die produktive Instanz.
+
+---
+
+## 19. Letzte Prüfung vor dem Speichern
+
+Nach der manuellen Freigabe von „Fahrer & Fahrzeuge" drei
+Bedienkorrekturen. **Nur die Designprobe — kein produktiver
+Portalcode verändert, keine Migration ausgeführt.**
+
+### 19.1 Der manuelle Befund
+
+Der Geschäftsführer hat „Fahrer & Fahrzeuge" vollständig geprüft und
+zwölf Punkte als bestanden bestätigt — darunter, dass die Disposition
+keine Lohndaten sieht, die Zuweisung sofort in der Planung erscheint,
+gesperrte Fahrzeuge begründet und nicht wählbar sind und Version 2 einer
+Abrechnung einen Pflichtgrund verlangt.
+
+> **Einordnung:** Auch das ist eine **manuelle Prüfung der
+> Designprobe**, nicht des produktiven Portals.
+
+### 19.2 Zwei Stufen statt einer
+
+Bei jeder begründungspflichtigen Änderung schließt der erste Klick
+nichts mehr ab:
+
+```
+Eingaben  →  „Änderung prüfen"  →  Zusammenfassung mit Begründung
+                                   ├─ „Zurück und ändern"   (hervorgehoben)
+                                   └─ „Verbindlich speichern"
+```
+
+„Zurück und ändern" führt mit **vollständig erhaltenen Eingaben** ins
+Formular. Erst „Verbindlich speichern" schließt ab und erzeugt die
+Protokollvorschau.
+
+Angewendet auf: **Werkstattstatus · Fahrzeugsperre · Einplanung trotz
+Abwesenheit · Veröffentlichung trotz Konflikt · neue Version einer
+Lohnabrechnung.**
+
+### 19.3 Ein Protokolleintrag bleibt, wie er ist
+
+Das ist nicht nur eine Absprache. `protokollieren()` friert jeden
+Eintrag mit `Object.freeze` ein, und die beiden Anfangseinträge sind es
+ebenfalls. Ein nachträglicher Schreibversuch läuft ins Leere — der
+Prüflauf **versucht es ausdrücklich** und stellt fest, dass Grund und
+Zustand unverändert bleiben.
+
+Eine spätere Korrektur ist damit zwangsläufig ein **neuer Vorgang** mit
+eigenem Grund und eigenem Eintrag. Auch das ist geprüft: Nach einer
+Korrektur steht der erste Eintrag unverändert daneben.
+
+### 19.4 Lohnvorschau vollständig
+
+Vor dem verbindlichen Bereitstellen **und** in der Protokollvorschau
+stehen: Mitarbeiter, Abrechnungsmonat, Abrechnungsjahr, Dateiname, neue
+Versionsnummer, vorherige Versionsnummer, der Satz **„Die vorhandene
+Version bleibt erhalten."**, bereitgestellt von, Datum und Uhrzeit sowie
+der Pflichtgrund.
+
+**Keine Beträge, keine Inhalte der Datei** — weder in der Vorschau noch
+im allgemeinen Prüfprotokoll. Der Prüflauf sucht gezielt nach `€` und
+`EUR` und findet nichts.
+
+Die vorhandene Abrechnung bleibt in der Liste stehen; die neue kommt als
+eigene Version dazu. Auch das ist gemessen: Nach dem Vorgang liegen
+Version 1 **und** Version 2 vor.
+
+### 19.5 Disposition vereinfacht
+
+Der Bereich „Lohnabrechnungen" fehlt in der Fahrerakte für die
+Disposition jetzt **vollständig** — nicht einmal als gesperrte
+Überschrift. Das hält die Akte einfach.
+
+**Die Sperre hängt trotzdem an der Fähigkeit, nicht an der
+Sichtbarkeit.** `lohnAbschnitt()` wird ohne `payroll.read` nie
+aufgerufen; `team-lohn-neu` und `team-lohn-fertig` prüfen
+`payroll.write` jeweils noch einmal eigens. Der Prüflauf ruft beides als
+Disposition **direkt** auf und stellt fest, dass nichts geöffnet und
+nichts bereitgestellt wird.
+
+Administration und Personal behalten ihren Zugriff unverändert — auch
+das ist eigens geprüft.
+
+### 19.6 Drei angepasste Prüfblöcke — keine Fehler, sondern Folgen
+
+| Block | Warum er anschlug |
+|---|---|
+| 8 (Fahrzeugzustand) | fuhr den alten einstufigen Ablauf |
+| 10 (Lohnabrechnung) | ebenso, dazu zwei geänderte Texte |
+| 9 (Rollen) | erwartete die entfernte gesperrte Überschrift |
+
+Alle drei sind Folgen **gewollter** Verhaltensänderungen. Sie haben
+sofort angeschlagen, statt stillschweigend weiterzulaufen — genau dafür
+sind sie da. Dasselbe in der Planungsprüfung an sieben Stellen.
+
+Beim Umstellen habe ich nicht nur den Klick verschoben, sondern die neue
+Stufe belegt: dass „Letzte Prüfung" erscheint, die Begründung darin
+steht, der Weg zurück da ist und **nach dem ersten Klick nachweislich
+noch nichts gesetzt ist**.
+
+### 19.7 Prüfstand
+
+| Prüflauf | vorher | jetzt |
+|---|---:|---:|
+| `probe-team-pruefen` | 144 | **197 / 0** |
+| `probe-planung-pruefen` | 163 | **171 / 0** |
+| `probe-fahrt-pruefen` | 168 | **168 / 0** |
+| `probe-portal-pruefen` | 107 | **107 / 0** |
+
+Alle vollständig beendet, null Netzwerkaufrufe.
+
+> **Einordnung unverändert:** Designprobe ohne Datenquelle. Der Lauf
+> sagt nichts über die produktive Instanz.

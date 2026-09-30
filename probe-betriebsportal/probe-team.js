@@ -372,12 +372,15 @@
     const morgen = D.planung[D.alsIso(D.tagAls(1))];
     const morgenZeile = morgen ? morgen.zeilen.find((x) => x.mitarbeiterId === id) : null;
 
-    const lohnBereich = darfLohn()
-      ? lohnAbschnitt(id)
-      : `<div class="dialog-schritt">
-          <h3>Lohnabrechnungen</h3>
-          ${R.kastenKeinRecht("Lohnabrechnungen")}
-        </div>`;
+    /*
+      Ohne payroll.read erscheint der Abschnitt GAR NICHT - nicht
+      einmal als gesperrte Ueberschrift. Das haelt die Akte fuer die
+      Disposition einfach. Die Sperre haengt trotzdem an der
+      Faehigkeit und nicht an der Sichtbarkeit: lohnAbschnitt() wird
+      ohne sie nie aufgerufen, und "team-lohn-neu" prueft sie noch
+      einmal eigens.
+    */
+    const lohnBereich = darfLohn() ? lohnAbschnitt(id) : "";
 
     return `
       <div class="dialog-hinter" data-dialog-zu></div>
@@ -468,15 +471,71 @@
     </div>`;
   }
 
-  function lohnDialog() {
-    const s = stand.lohnNeu;
+  /*
+    Zwei Stufen, wie bei jeder begruendungspflichtigen Aenderung. Die
+    Pruefung zeigt alles, was in den Vorgang eingeht - Mitarbeiter,
+    Monat, Jahr, Dateiname, neue und vorherige Version, wer und wann,
+    und den Grund. Betraege oder Inhalte der Datei kommen dort NICHT
+    vor; sie gehoeren nicht ins allgemeine Pruefprotokoll.
+  */
+  function lohnAngaben(s) {
     const m = mitarbeiterVon(s.mitarbeiterId);
     const vorhanden = D.lohnProbe.find((l) =>
       l.mitarbeiterId === s.mitarbeiterId && l.monat === s.monat && l.jahr === s.jahr);
-    const brauchtGrund = Boolean(vorhanden);
+    const neueVersion = vorhanden ? vorhanden.version + 1 : 1;
     const bezeichnung = s.monat
-      ? `Testdatei-${s.mitarbeiterId}-${s.monat}-${s.jahr}${vorhanden ? `-v${vorhanden.version + 1}` : ""}.pdf`
+      ? `Testdatei-${s.mitarbeiterId}-${s.monat}-${s.jahr}${vorhanden ? `-v${neueVersion}` : ""}.pdf`
       : "—";
+    return { m, vorhanden, neueVersion, bezeichnung };
+  }
+
+  function lohnVorschau(s) {
+    const { m, vorhanden, neueVersion, bezeichnung } = lohnAngaben(s);
+    const jetzt = new Date().toLocaleString("de-DE",
+      { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    return `<dl class="zusammenfassung">
+      <div><dt>Mitarbeiter</dt><dd>${h(m ? m.name : s.mitarbeiterId)}</dd></div>
+      <div><dt>Abrechnungsmonat</dt><dd>${h(s.monat || "— nicht gewählt")}</dd></div>
+      <div><dt>Abrechnungsjahr</dt><dd>${h(s.jahr)}</dd></div>
+      <div><dt>Dateiname</dt><dd>${h(bezeichnung)}</dd></div>
+      <div><dt>Neue Version</dt><dd>${h(neueVersion)}</dd></div>
+      <div><dt>Vorherige Version</dt><dd>${vorhanden ? h(vorhanden.version) : "keine"}</dd></div>
+      <div><dt>Bereitgestellt von</dt><dd>${h(R.ROLLENNAMEN[R.zustand.rolle])}</dd></div>
+      <div><dt>Datum und Uhrzeit</dt><dd>${h(jetzt)} Uhr</dd></div>
+      ${vorhanden ? `<div><dt>Grund</dt><dd>${h(s.grund || "— noch nicht eingetragen")}</dd></div>` : ""}
+      <div><dt>Sichtbar für</dt><dd>nur ${h(m ? m.name : "den Mitarbeiter")}</dd></div>
+    </dl>
+    ${vorhanden ? `<p class="schritt-hinweis"><strong>Die vorhandene Version bleibt erhalten.</strong>
+      Version ${h(vorhanden.version)} vom ${h(vorhanden.am)} wird nicht überschrieben.</p>` : ""}`;
+  }
+
+  function lohnDialog() {
+    const s = stand.lohnNeu;
+    const { m, vorhanden, neueVersion } = lohnAngaben(s);
+    const brauchtGrund = Boolean(vorhanden);
+    const pruefung = s.stufe === "pruefung";
+
+    if (pruefung) {
+      return `
+        <div class="dialog-hinter" data-dialog-zu></div>
+        <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="lohnNeuTitel">
+          <header class="dialog-kopf">
+            <h2 id="lohnNeuTitel">Letzte Prüfung</h2>
+            <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+          </header>
+          <div class="dialog-rumpf">
+            ${R.zustandsKasten("keinrecht", "Noch ist nichts bereitgestellt",
+              "Prüfen Sie die Angaben. Erst „Verbindlich speichern“ schließt den Vorgang ab und erzeugt den Protokolleintrag.")}
+            ${lohnVorschau(s)}
+            <p class="schritt-hinweis">Weder Beträge noch Inhalte der Datei gehen in das
+              Prüfprotokoll ein. <strong>In dieser Designprobe wird nichts hochgeladen.</strong></p>
+          </div>
+          <footer class="dialog-fuss">
+            <button class="knopf haupt-knopf" type="button" data-tun="team-lohn-zurueck">Zurück und ändern</button>
+            <button class="knopf leise" type="button" data-tun="team-lohn-fertig">Verbindlich speichern</button>
+          </footer>
+        </div>`;
+    }
 
     return `
       <div class="dialog-hinter" data-dialog-zu></div>
@@ -523,26 +582,20 @@
           ${brauchtGrund ? `
             <div class="dialog-schritt">
               <h3>4. Es gibt schon eine Abrechnung für ${h(s.monat)}/${h(s.jahr)}</h3>
-              ${R.zustandsKasten("keinrecht", "Bestehende Abrechnung wird nicht überschrieben",
-                `Vorhanden ist Version ${vorhanden.version} vom ${vorhanden.am}. Es entsteht eine neue Version ${vorhanden.version + 1}; die alte bleibt erhalten.`)}
+              ${R.zustandsKasten("keinrecht", "Die vorhandene Version bleibt erhalten",
+                `Vorhanden ist Version ${vorhanden.version} vom ${vorhanden.am}. Es entsteht Version ${neueVersion}; die alte wird nicht überschrieben.`)}
               <label>Grund für die neue Version <span class="band-warnung">Pflichtfeld</span>
                 <textarea data-lohn-grund rows="2"
                   placeholder="Zum Beispiel: Korrektur der Stundenzahl.">${h(s.grund)}</textarea></label>
             </div>` : ""}
           <div class="dialog-schritt">
-            <h3>${brauchtGrund ? "5" : "4"}. Bitte prüfen</h3>
-            <dl class="zusammenfassung">
-              <div><dt>Mitarbeiter</dt><dd>${h(m ? m.name : s.mitarbeiterId)}</dd></div>
-              <div><dt>Zeitraum</dt><dd>${s.monat ? `${h(s.monat)}/${h(s.jahr)}` : "— nicht gewählt"}</dd></div>
-              <div><dt>Datei</dt><dd>${h(s.datei || "— nicht gewählt")}</dd></div>
-              <div><dt>Bezeichnung</dt><dd>${h(bezeichnung)}</dd></div>
-              <div><dt>Sichtbar für</dt><dd>nur ${h(m ? m.name : "den Mitarbeiter")}</dd></div>
-            </dl>
+            <h3>${brauchtGrund ? "5" : "4"}. Was bereitgestellt wird</h3>
+            ${lohnVorschau(s)}
           </div>
         </div>
         <footer class="dialog-fuss">
           <button class="knopf" type="button" data-tun="team-lohn-ab">Abbrechen</button>
-          <button class="knopf haupt-knopf" type="button" data-tun="team-lohn-fertig">Bereitstellen</button>
+          <button class="knopf haupt-knopf" type="button" data-tun="team-lohn-pruefen">Änderung prüfen</button>
         </footer>
       </div>`;
   }
@@ -688,6 +741,12 @@
   /* ============================================================
      Fahrzeugzustand ändern
      ============================================================ */
+  /*
+    Zwei Stufen: erst das Formular, dann die letzte Pruefung. Der erste
+    Klick schliesst nichts ab - er zeigt, was gespeichert wuerde,
+    einschliesslich der Begruendung. Zurueck fuehrt mit allen Eingaben
+    ins Formular.
+  */
   function sperreDialog() {
     const s = stand.sperre;
     const f = fahrzeugVon(s.fahrzeugId);
@@ -695,6 +754,38 @@
     const belegt = fahrerZuFahrzeug(e, s.fahrzeugId);
     const zielName = D.FAHRZEUG_ZUSTAENDE[s.ziel];
     const brauchtGrund = s.ziel === "gesperrt" || s.ziel === "werkstatt";
+    const pruefung = s.stufe === "pruefung";
+
+    const kopfDaten = `<dl class="zusammenfassung">
+      <div><dt>Fahrzeug</dt><dd>${h(f.name)} · ${h(f.kennzeichen)}</dd></div>
+      <div><dt>Bisher</dt><dd>${h(D.FAHRZEUG_ZUSTAENDE[f.zustand])}</dd></div>
+      <div><dt>Neu</dt><dd>${h(zielName)}</dd></div>
+      ${pruefung && brauchtGrund ? `<div><dt>Grund</dt><dd>${h(s.grund)}</dd></div>` : ""}
+      ${pruefung ? `<div><dt>Geändert von</dt><dd>${h(R.ROLLENNAMEN[R.zustand.rolle])}</dd></div>` : ""}
+      ${pruefung && belegt ? `<div><dt>Zuweisung</dt><dd>wird gelöst (${h(belegt.mitarbeiter.name)})</dd></div>` : ""}
+    </dl>`;
+
+    const rumpf = pruefung
+      ? `${R.zustandsKasten("keinrecht", "Letzte Prüfung",
+            "Noch ist nichts geändert. Prüfen Sie die Angaben — erst „Verbindlich speichern“ schließt den Vorgang ab und erzeugt den Protokolleintrag.")}
+         ${kopfDaten}`
+      : `${s.fehler ? `<div class="feldfehler" role="alert">${h(s.fehler)}</div>` : ""}
+         ${kopfDaten}
+         ${belegt && brauchtGrund
+           ? R.zustandsKasten("keinrecht", "Das Fahrzeug ist heute zugewiesen",
+               `${belegt.mitarbeiter.name} fährt es ${belegt.zeile.von}–${belegt.zeile.bis}. Mit dem neuen Zustand wird die Zuweisung gelöst.`)
+           : ""}
+         ${brauchtGrund ? `
+           <label>Grund <span class="band-warnung">Pflichtfeld</span>
+             <textarea data-sperr-grund rows="2"
+               placeholder="${s.ziel === "gesperrt" ? "Zum Beispiel: Unfallschaden, Gutachten steht aus." : "Zum Beispiel: Bremsen prüfen."}">${h(s.grund)}</textarea></label>`
+           : `<p class="schritt-hinweis">Das Fahrzeug wird wieder als einsatzbereit geführt.</p>`}`;
+
+    const fuss = pruefung
+      ? `<button class="knopf haupt-knopf" type="button" data-tun="team-zustand-zurueck">Zurück und ändern</button>
+         <button class="knopf leise" type="button" data-tun="team-zustand-ja">Verbindlich speichern</button>`
+      : `<button class="knopf" type="button" data-tun="team-zustand-ab">Abbrechen</button>
+         <button class="knopf haupt-knopf" type="button" data-tun="team-zustand-pruefen">Änderung prüfen</button>`;
 
     return `
       <div class="dialog-hinter" data-dialog-zu></div>
@@ -703,27 +794,8 @@
           <h2 id="sperrTitel">${h(f.name)}: Zustand ändern</h2>
           <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
         </header>
-        <div class="dialog-rumpf">
-          ${s.fehler ? `<div class="feldfehler" role="alert">${h(s.fehler)}</div>` : ""}
-          <dl class="zusammenfassung">
-            <div><dt>Fahrzeug</dt><dd>${h(f.name)} · ${h(f.kennzeichen)}</dd></div>
-            <div><dt>Bisher</dt><dd>${h(D.FAHRZEUG_ZUSTAENDE[f.zustand])}</dd></div>
-            <div><dt>Neu</dt><dd>${h(zielName)}</dd></div>
-          </dl>
-          ${belegt && brauchtGrund
-            ? R.zustandsKasten("keinrecht", "Das Fahrzeug ist heute zugewiesen",
-                `${belegt.mitarbeiter.name} fährt es ${belegt.zeile.von}–${belegt.zeile.bis}. Mit dem neuen Zustand wird die Zuweisung gelöst.`)
-            : ""}
-          ${brauchtGrund ? `
-            <label>Grund <span class="band-warnung">Pflichtfeld</span>
-              <textarea data-sperr-grund rows="2"
-                placeholder="${s.ziel === "gesperrt" ? "Zum Beispiel: Unfallschaden, Gutachten steht aus." : "Zum Beispiel: Bremsen prüfen."}">${h(s.grund)}</textarea></label>`
-            : `<p class="schritt-hinweis">Das Fahrzeug wird wieder als einsatzbereit geführt.</p>`}
-        </div>
-        <footer class="dialog-fuss">
-          <button class="knopf" type="button" data-tun="team-zustand-ab">Abbrechen</button>
-          <button class="knopf haupt-knopf" type="button" data-tun="team-zustand-ja">Übernehmen</button>
-        </footer>
+        <div class="dialog-rumpf">${rumpf}</div>
+        <footer class="dialog-fuss">${fuss}</footer>
       </div>`;
   }
 
@@ -860,7 +932,7 @@
       case "team-zustand": {
         if (!darfFahrzeugPflegen()) return;
         const [fahrzeugId, ziel] = wert.split("|");
-        stand.sperre = { fahrzeugId, ziel, grund: "", fehler: "" };
+        stand.sperre = { fahrzeugId, ziel, grund: "", fehler: "", stufe: "formular" };
         R.dialogOeffnen(sperreDialog());
         return;
       }
@@ -868,20 +940,34 @@
         stand.sperre = null;
         R.dialogSchliessen(true);
         return;
-      case "team-zustand-ja": {
+      /* Erster Klick: nur pruefen. Hier wird noch nichts geaendert. */
+      case "team-zustand-pruefen": {
         const s = stand.sperre;
-        const f = fahrzeugVon(s.fahrzeugId);
         const feld = document.querySelector("[data-sperr-grund]");
-        const grund = feld ? feld.value.trim() : "";
+        s.grund = feld ? feld.value.trim() : "";
         const brauchtGrund = s.ziel === "gesperrt" || s.ziel === "werkstatt";
-        if (brauchtGrund && grund.length < 3) {
-          s.grund = grund;
+        if (brauchtGrund && s.grund.length < 3) {
           s.fehler = "Bitte einen Grund eintragen. Ohne Grund wird der Zustand nicht geändert.";
           R.dialogOeffnen(sperreDialog());
           const neu = document.querySelector("[data-sperr-grund]");
           if (neu) neu.focus();
           return;
         }
+        s.fehler = "";
+        s.stufe = "pruefung";
+        R.dialogOeffnen(sperreDialog());
+        return;
+      }
+      /* Zurueck ins Formular - mit allen Eingaben. */
+      case "team-zustand-zurueck":
+        stand.sperre.stufe = "formular";
+        R.dialogOeffnen(sperreDialog());
+        return;
+      case "team-zustand-ja": {
+        const s = stand.sperre;
+        const f = fahrzeugVon(s.fahrzeugId);
+        const grund = s.grund;
+        const brauchtGrund = s.ziel === "gesperrt" || s.ziel === "werkstatt";
         const vorher = D.FAHRZEUG_ZUSTAENDE[f.zustand];
         /* Beim Sperren oder in die Werkstatt: eine bestehende Zuweisung
            wird geloest, sonst stuende ein nicht einsatzbereites
@@ -922,8 +1008,10 @@
 
       /* ---- Lohn ---- */
       case "team-lohn-neu":
+        /* Auch ein direkter Aufruf fuehrt ohne die Faehigkeit zu
+           nichts - die Sperre haengt nicht an der Sichtbarkeit. */
         if (!darfLohnPflegen()) return;
-        stand.lohnNeu = { mitarbeiterId: wert, monat: "", jahr: "2026", datei: "", grund: "", fehler: "" };
+        stand.lohnNeu = { mitarbeiterId: wert, monat: "", jahr: "2026", datei: "", grund: "", fehler: "", stufe: "formular" };
         R.dialogOeffnen(lohnDialog());
         return;
       case "team-lohn-datei":
@@ -934,12 +1022,12 @@
         stand.lohnNeu = null;
         R.dialogOeffnen(fahrerDialog());
         return;
-      case "team-lohn-fertig": {
+      /* Erster Klick: nur pruefen. Hier wird nichts bereitgestellt. */
+      case "team-lohn-pruefen": {
         const s = stand.lohnNeu;
         const grundFeld = document.querySelector("[data-lohn-grund]");
         if (grundFeld) s.grund = grundFeld.value.trim();
-        const vorhanden = D.lohnProbe.find((l) =>
-          l.mitarbeiterId === s.mitarbeiterId && l.monat === s.monat && l.jahr === s.jahr);
+        const { vorhanden } = lohnAngaben(s);
         if (!s.monat || !s.datei) {
           s.fehler = "Bitte Zeitraum und Datei wählen.";
           R.dialogOeffnen(lohnDialog());
@@ -952,19 +1040,43 @@
           if (neu) neu.focus();
           return;
         }
-        const m = mitarbeiterVon(s.mitarbeiterId);
+        s.fehler = "";
+        s.stufe = "pruefung";
+        R.dialogOeffnen(lohnDialog());
+        return;
+      }
+      case "team-lohn-zurueck":
+        stand.lohnNeu.stufe = "formular";
+        R.dialogOeffnen(lohnDialog());
+        return;
+      case "team-lohn-fertig": {
+        const s = stand.lohnNeu;
+        if (!darfLohnPflegen()) return;
+        const { m, vorhanden, neueVersion, bezeichnung } = lohnAngaben(s);
         const eintrag = {
           wer: R.ROLLENNAMEN[R.zustand.rolle],
           zeit: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
           betrifft: m ? m.name : s.mitarbeiterId,
           was: "Lohnabrechnung bereitgestellt",
           vorher: vorhanden ? `Version ${vorhanden.version}` : "keine Abrechnung",
-          nachher: `${s.monat}/${s.jahr}${vorhanden ? ` · Version ${vorhanden.version + 1}` : ""}`,
+          nachher: `${s.monat}/${s.jahr} · Version ${neueVersion} · ${bezeichnung}`,
           grund: s.grund
         };
+        /* Die vorhandene Abrechnung bleibt in der Liste stehen - die
+           neue kommt als eigene Version dazu. */
+        D.lohnProbe.unshift({
+          id: "LP" + Date.now(),
+          mitarbeiterId: s.mitarbeiterId,
+          monat: s.monat, jahr: s.jahr,
+          version: neueVersion,
+          datei: bezeichnung,
+          von: R.ROLLENNAMEN[R.zustand.rolle],
+          am: new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " Uhr",
+          grund: s.grund
+        });
         D.protokollieren(eintrag);
         stand.lohnNeu = null;
-        R.dialogOeffnen(protokollDialog("In der Probe wird nichts bereitgestellt", eintrag, ""));
+        R.dialogOeffnen(protokollDialog("In der Probe wird nichts hochgeladen", eintrag, ""));
         return;
       }
 
