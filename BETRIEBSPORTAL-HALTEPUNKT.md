@@ -672,3 +672,128 @@ Klick, keine Konfliktdaten in der Mitarbeiteransicht, 320 · 390 · 430 ·
 
 > **Einordnung unverändert:** Designprobe ohne Datenquelle. Der Lauf
 > sagt nichts über die produktive Instanz.
+
+---
+
+## 17. Abwesenheiten wirken auf die Planung
+
+Vor „Fahrer & Fahrzeuge" eingeschoben: Krankheit und genehmigter Urlaub
+bestimmen jetzt den Tagesstatus. **Nur die Designprobe — kein
+produktiver Portalcode verändert, keine Migration ausgeführt.**
+
+### 17.1 Vier Zustände statt zwei
+
+Aus „Im Dienst / Frei" sind vier echte Planungszustände geworden:
+**Im Dienst · Frei · Krank · Urlaub**. Sie sind keine Optik — sie
+schlagen auf Filter, Kennzahlen, Konflikterkennung und Veröffentlichung
+durch.
+
+| Datensatz | Wirkung auf die Planung |
+|---|---|
+| Krankmeldung | Status **Krank**, roter Hinweis „Fahrer ist an diesem Tag krank" mit Zeitraum |
+| Urlaub, **genehmigt** | Status **Urlaub**, Hinweis „Fahrer hat an diesem Tag genehmigten Urlaub" mit Zeitraum |
+| Urlaub, **beantragt** | nur Hinweis „Urlaub beantragt – noch nicht genehmigt", der Fahrer **bleibt planbar**, keine Sperre |
+| Urlaub, **abgelehnt** oder **storniert** | **keine** Wirkung, wird nicht angezeigt |
+
+**Krankheit hat Vorrang vor Urlaub.** Liegt für denselben Tag beides
+wirksam vor, gilt Krank — und der Widerspruch wird zusätzlich als
+**technischer Datenkonflikt** gemeldet, der die Veröffentlichung
+vollständig sperrt.
+
+Zugeordnet wird ausschließlich über **Mitarbeiterkennung und Datum**.
+Keine Array-Stellen, keine angezeigten Namen. Ein Wechsel zwischen heute
+und morgen rechnet die Abwesenheiten neu.
+
+### 17.2 Die Ausnahme — möglich, aber nicht nebenbei
+
+Wer einen Kranken oder Urlauber auf „Im Dienst" setzt, bekommt **keine
+stille Übernahme**. Es öffnet sich eine Nachfrage, die die Lage benennt
+(„Fahrer ist krank" beziehungsweise „Fahrer hat genehmigten Urlaub") und
+zwei Wege anbietet:
+
+- **„Status beibehalten"** — hervorgehoben, die sichere Wahl
+- **„Trotz Abwesenheit einplanen"** — zurückhaltend; erst dann erscheint
+  das **Pflichtfeld für den Grund**
+
+Ohne Grund entsteht keine Ausnahme. Mit Grund wird die Zeile sichtbar
+markiert: „Ausnahme: trotz Abwesenheit eingeplant" samt Grund — und der
+rote Abwesenheitshinweis **bleibt daneben stehen**. Die Ausnahme lässt
+sich mit einem Klick wieder aufheben.
+
+**Der Abwesenheitsdatensatz wird dabei nie verändert.** Kein Klick auf
+„Im Dienst" löscht eine Krankmeldung oder einen Urlaub. Es entsteht
+ausschließlich eine begründete Ausnahme für **diesen einen Tag** in der
+Planzeile. Der Prüflauf stellt nach jeder Ausnahme ausdrücklich fest,
+dass der Datensatz unverändert vorhanden ist.
+
+### 17.3 Konflikte
+
+| Fall | Art |
+|---|---|
+| krank **und** genehmigter Urlaub am selben Tag | **technisch** — sperrt vollständig |
+| krank/Urlaub **und** begründete Ausnahme im Dienst | betrieblich, als „begründete Ausnahme" gekennzeichnet |
+| abwesend, aber eine Schicht steht noch im Plan | betrieblich — „Diese Schicht ist nicht aktiv — bitte auf ‚Krank' setzen oder eine Ausnahme begründen." |
+| Abwesenheit deckt nur einen Teil der Schicht | betrieblich — bei Nachtschichten über Mitternacht |
+| Abwesenheit **ohne** eingeplante Schicht | **kein** Konflikt |
+
+Die Konfliktliste nennt Fahrer, Datum, Art der Abwesenheit, Zeitraum und
+die geplante Schicht mit Kennzeichen.
+
+### 17.4 Filter
+
+Sieben Ansichten als umbrechende Schaltflächen mit Zähler: **Alle · Im
+Dienst · Frei · Krank · Urlaub · Nur ungeplant · Nur Konflikte**. Jede
+hat ihren eigenen ehrlichen Leerzustand; der allgemeine Satz „Für diesen
+Zeitraum ist nichts eingetragen" erscheint in keinem davon.
+
+### 17.5 Was der Mitarbeiter später sieht
+
+Das Erfolgsfenster zeigt eine **Mitarbeitervorschau**. Dort steht bei
+einer Ausnahme genau ein Satz:
+
+> „Trotz eingetragener Abwesenheit eingeplant – bitte mit der Zentrale
+> klären."
+
+**Nicht** dort: der interne Grund, die Art der Abwesenheit, irgendeine
+Angabe zur Krankheit. Der Prüflauf liest gezielt diesen Abschnitt aus und
+stellt fest, dass weder der Grund noch das Wort „krank" darin vorkommt.
+Kommentarlos „Krank" neben einer normalen Schicht kann im Portal nicht
+entstehen.
+
+Im Protokollteil — getrennt davon, für die Zentrale — stehen dagegen
+alle Angaben: wer, wann, welcher Fahrer, welche Abwesenheit, welcher
+Zeitraum, welche Schicht und welcher Grund. **In der Designprobe wird
+nichts gespeichert**, das steht auch so da.
+
+### 17.6 Ein Zeitzonenfehler, vom Prüflauf gefunden
+
+Die Prüfung der teilweisen Überschneidung schlug fehl, und die Ursache
+lag tiefer: `alsIso()` bildete das Datum über `toISOString()`, also nach
+UTC. In Mitteleuropa ist örtlich Mitternacht bereits der Vortag in UTC —
+ein aus `2026-09-30T00:00:00` gebautes Datum ergab `2026-09-29`. Beim
+Rechnen mit dem Folgetag hat das einen Konflikt verschluckt.
+
+Behoben: Das Datum wird jetzt aus den örtlichen Feldern gebildet. Der
+Fehler wäre im Betrieb nur nachts aufgefallen — also genau dann, wenn
+Nachtschichten geplant werden.
+
+### 17.7 Prüfstand
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-planung-pruefen` (20 Blöcke) | **163 bestanden, 0 offen** |
+| `probe-fahrt-pruefen` | 168 bestanden, 0 offen |
+| `probe-portal-pruefen` | 107 bestanden, 0 offen |
+
+Neu geprüft: Krankheit setzt den Tagesstatus, genehmigter Urlaub setzt
+ihn, beantragter Urlaub bleibt planbar, abgelehnter und stornierter
+Urlaub wirken nicht, ein Klick auf „Im Dienst" löscht keine Abwesenheit,
+die Ausnahme verlangt einen Pflichtgrund, krank plus Urlaub wird als
+Datenkonflikt erkannt und sperrt, die teilweise Überschneidung bei
+Nachtschicht wird erkannt, der Konfliktfilter zeigt die Betroffenen, die
+Veröffentlichung nennt den Konflikt verständlich, die Ausnahme erscheint
+in der Protokollvorschau, Kennungen bleiben stabil, der Wechsel von heute
+auf morgen rechnet neu — und **null Netzwerkaufrufe**.
+
+> **Einordnung unverändert:** Designprobe ohne Datenquelle. Der Lauf
+> sagt nichts über die produktive Instanz.

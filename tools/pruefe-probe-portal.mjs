@@ -293,8 +293,14 @@ console.log("\n── 7. Kein Tag wird versehentlich veroeffentlicht ──");
      tools/pruefe-probe-planung.mjs in voller Tiefe geprueft. */
   pruefe(/Konfliktprüfung vor dem Veröffentlichen/.test(rumpf),
     "der erste Klick oeffnet die Pruefung statt zu veroeffentlichen");
+  /* Fuer MORGEN liegt in den Testdaten ein Widerspruch vor: ein
+     Mitarbeiter ist gleichzeitig krank gemeldet und im genehmigten
+     Urlaub. Das ist technisch ungueltig, deshalb gibt es genau einen
+     Weg - zurueck. Die Abwesenheitsfaelle selbst prueft
+     tools/pruefe-probe-planung.mjs. */
   const fuss = await page.textContent(".dialog-fuss");
-  pruefe(/korrigieren|veröffentlichen/i.test(fuss), "der Fuss bietet den passenden Weg an");
+  pruefe(/Zur Planung zurück/.test(fuss), "bei technisch ungueltigen Daten fuehrt der Fuss nur zurueck");
+  pruefe(!/Trotzdem veröffentlichen/.test(fuss), "und bietet keinen Ausweg an");
   await ctx.close();
 }
 

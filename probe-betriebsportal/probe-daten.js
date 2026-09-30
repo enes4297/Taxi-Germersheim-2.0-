@@ -18,7 +18,20 @@
     d.setDate(d.getDate() + versatz);
     return d;
   };
-  const alsIso = (d) => d.toISOString().slice(0, 10);
+  /*
+    Datum als JJJJ-MM-TT - aus den OERTLICHEN Feldern, nicht ueber
+    toISOString(). Letzteres rechnet nach UTC: In Mitteleuropa ist
+    oertlich Mitternacht schon der Vortag in UTC, und ein aus
+    "2026-09-30T00:00:00" gebautes Datum ergab dann "2026-09-29".
+    Beim Rechnen mit Folgetagen hat genau das einen Konflikt
+    verschluckt.
+  */
+  const alsIso = (d) => {
+    const jahr = d.getFullYear();
+    const monat = String(d.getMonth() + 1).padStart(2, "0");
+    const tag = String(d.getDate()).padStart(2, "0");
+    return `${jahr}-${monat}-${tag}`;
+  };
   const alsText = (d) => d.toLocaleDateString("de-DE", {
     weekday: "long", day: "2-digit", month: "2-digit", year: "numeric"
   });
@@ -49,6 +62,93 @@
     { id: "nacht",       name: "Nachtschicht", von: "22:00", bis: "06:00" },
     { id: "individuell", name: "Individuell", von: "",      bis: "" }
   ];
+
+  /* ---- Abwesenheiten ----
+     Krankmeldungen und Urlaub. Sie werden NIE von der Planung
+     veraendert - die Planung liest sie nur. Zugeordnet wird ueber
+     Mitarbeiterkennung und Datum, nie ueber eine Listenstelle oder
+     einen angezeigten Namen.
+
+     Wirksam fuer die Planung sind:
+       - jede Krankmeldung
+       - Urlaub NUR im Zustand "genehmigt"
+     Beantragter Urlaub ist ein Hinweis und sperrt nicht. Abgelehnter
+     und stornierter Urlaub wirkt gar nicht.
+
+     Hier werden bewusst KEINE Diagnosen oder Krankheitsgruende
+     gefuehrt - die gehoeren nicht in die Planung. */
+  const abwesenheiten = [
+    /* Krank heute und die beiden Folgetage. */
+    { id: "AB01", mitarbeiterId: "M02", art: "krank", status: "gemeldet",
+      von: alsIso(heute), bis: alsIso(tagAls(2)) },
+
+    /* Genehmigter Urlaub heute und morgen. */
+    { id: "AB02", mitarbeiterId: "M06", art: "urlaub", status: "genehmigt",
+      von: alsIso(tagAls(-1)), bis: alsIso(tagAls(1)) },
+
+    /* Nur beantragt - der Fahrer bleibt planbar. */
+    { id: "AB03", mitarbeiterId: "M04", art: "urlaub", status: "beantragt",
+      von: alsIso(tagAls(1)), bis: alsIso(tagAls(3)) },
+
+    /* Abgelehnt - ohne jede Wirkung. */
+    { id: "AB04", mitarbeiterId: "M05", art: "urlaub", status: "abgelehnt",
+      von: alsIso(heute), bis: alsIso(heute) },
+
+    /* Storniert - ebenfalls ohne Wirkung. */
+    { id: "AB05", mitarbeiterId: "M01", art: "urlaub", status: "storniert",
+      von: alsIso(heute), bis: alsIso(heute) },
+
+    /* Widerspruch fuer MORGEN: krank UND genehmigter Urlaub am selben
+       Tag. Das ist ein Datenkonflikt und muss die Veroeffentlichung
+       sperren. */
+    { id: "AB06", mitarbeiterId: "M03", art: "krank", status: "gemeldet",
+      von: alsIso(tagAls(1)), bis: alsIso(tagAls(1)) },
+    { id: "AB07", mitarbeiterId: "M03", art: "urlaub", status: "genehmigt",
+      von: alsIso(tagAls(1)), bis: alsIso(tagAls(2)) }
+  ];
+
+  const ABWESENHEIT_NAMEN = {
+    krank: "Krank",
+    urlaub: "Urlaub"
+  };
+
+  const imZeitraum = (iso, von, bis) => iso >= von && iso <= bis;
+
+  /* Alle Eintraege eines Mitarbeiters an einem Tag. */
+  const abwesenheitenAmTag = (mitarbeiterId, iso) =>
+    abwesenheiten.filter((a) => a.mitarbeiterId === mitarbeiterId && imZeitraum(iso, a.von, a.bis));
+
+  const istWirksam = (a) => a.art === "krank" || (a.art === "urlaub" && a.status === "genehmigt");
+
+  /*
+    Was gilt fuer diesen Mitarbeiter an diesem Tag?
+    Krankheit hat Vorrang vor Urlaub. Liegt beides wirksam vor, wird
+    das zusaetzlich als Widerspruch gemeldet.
+  */
+  function abwesenheitFuer(mitarbeiterId, iso) {
+    const alle = abwesenheitenAmTag(mitarbeiterId, iso);
+    const wirksame = alle.filter(istWirksam);
+    const krank = wirksame.find((a) => a.art === "krank") || null;
+    const urlaub = wirksame.find((a) => a.art === "urlaub") || null;
+    const beantragt = alle.find((a) => a.art === "urlaub" && a.status === "beantragt") || null;
+
+    return {
+      /* Was den Tagesstatus bestimmt - Krankheit vor Urlaub. */
+      wirksam: krank || urlaub || null,
+      krank,
+      urlaub,
+      beantragt,
+      widerspruch: Boolean(krank && urlaub),
+      alle
+    };
+  }
+
+  const zeitraumText = (a) => {
+    if (!a) return "";
+    const fmt = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("de-DE",
+      { day: "2-digit", month: "2-digit", year: "numeric" });
+    return a.von === a.bis ? fmt(a.von) : `${fmt(a.von)} bis ${fmt(a.bis)}`;
+  };
 
   /* ---- Planung. Heute teils geplant, morgen noch offen. ---- */
   const planung = {
@@ -380,6 +480,8 @@
     fahrten, fahrtZustaende, meldungen,
     personal, lohn, rewards, kunden, rechnungen, analyse,
     standardadresse, letzteKunden, kundenSuche, haeufigeZiele,
+    abwesenheiten, abwesenheitFuer, abwesenheitenAmTag, istWirksam,
+    zeitraumText, ABWESENHEIT_NAMEN,
     leistungsarten, rollstuhlWerte, gepaeckWerte,
     scheinWerte, zuzahlungWerte, genehmigungWerte
   };

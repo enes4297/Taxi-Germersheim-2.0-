@@ -70,6 +70,44 @@
     if (e.verlauf.length > 25) e.verlauf.shift();
   }
 
+  /* ============================================================
+     Abwesenheiten in der Planung
+     ============================================================
+     Die Planung LIEST Krankmeldungen und Urlaub. Sie schreibt dort
+     nichts und loescht dort nichts. Weicht der Dispatcher bewusst ab,
+     entsteht ausschliesslich eine begruendete Ausnahme FUER DIESEN TAG
+     in der Planzeile - der Abwesenheitsdatensatz bleibt, wie er ist.
+  */
+  const abwesenheitVon = (e, mitarbeiterId) => D.abwesenheitFuer(mitarbeiterId, e.iso);
+
+  /*
+    Der Tagesstatus. Vier echte Zustaende, keine reine Optik:
+    "krank" und "urlaub" schlagen auf Filter, Kennzahlen, Konflikte und
+    die Veroeffentlichung durch.
+  */
+  function tagesstatus(e, z) {
+    const abw = abwesenheitVon(e, z.mitarbeiterId);
+    if (abw.wirksam && !z.ausnahme) return abw.wirksam.art;   // "krank" | "urlaub"
+    return z.imDienst ? "dienst" : "frei";
+  }
+
+  const STATUSNAMEN = { dienst: "Im Dienst", frei: "Frei", krank: "Krank", urlaub: "Urlaub" };
+
+  /* Arbeitet die Person an diesem Tag tatsaechlich? Eine begruendete
+     Ausnahme zaehlt als Dienst. */
+  const arbeitetAmTag = (e, z) => tagesstatus(e, z) === "dienst";
+
+  /* Deckt die Abwesenheit die Schicht nur teilweise ab? Das kann bei
+     einer Nachtschicht vorkommen: Der Teil nach Mitternacht faellt auf
+     den Folgetag, den die Abwesenheit nicht mehr umfasst. */
+  function nurTeilweiseAbgedeckt(e, z, abw) {
+    if (!abw || !abw.wirksam) return false;
+    if (!z.von || !z.bis) return false;
+    if (!window.ProbeZeit.ueberMitternacht(z.von, z.bis)) return false;
+    const folgetag = D.alsIso(new Date(new Date(e.iso + "T00:00:00").getTime() + 86400000));
+    return !(folgetag >= abw.wirksam.von && folgetag <= abw.wirksam.bis);
+  }
+
   /* ---- Konflikte ----
      Getrennt nach zwei Arten, weil sie verschieden schwer wiegen:
 
@@ -100,7 +138,10 @@
 
   function konflikteVon(entwurf) {
     const liste = [];
-    const imDienst = entwurf.zeilen.filter((z) => z.imDienst);
+    /* Fuer die Fahrzeugpruefung zaehlt, wer an diesem Tag wirklich
+       faehrt - wer krank oder im Urlaub ist, belegt kein Fahrzeug. */
+    const imDienst = entwurf.zeilen.filter((z) => arbeitetAmTag(entwurf, z));
+    const tagText = D.alsText(new Date(entwurf.iso + "T00:00:00"));
 
     for (const z of entwurf.zeilen) {
       const m = mitarbeiterVon(z.mitarbeiterId);
@@ -114,7 +155,59 @@
         });
         continue;
       }
-      if (!z.imDienst) continue;
+      const abw = abwesenheitVon(entwurf, z.mitarbeiterId);
+
+      /* Technisch: krank UND genehmigter Urlaub am selben Tag. Das ist
+         ein Widerspruch in den Daten, keine Ermessensfrage. */
+      if (abw.widerspruch) {
+        liste.push({
+          art: "technisch", kennung: z.mitarbeiterId, kurz: "Krank und Urlaub zugleich",
+          text: `${name} ist am ${tagText} gleichzeitig krank gemeldet und im genehmigten Urlaub. Diese beiden Angaben widersprechen sich.`
+        });
+        continue;
+      }
+
+      /* Betrieblich: Abwesenheit und Schicht treffen aufeinander.
+         Zwei verschiedene Lagen, die verschieden zu lesen sind:
+
+         a) Der Dispatcher hat bewusst abgewichen - es gibt eine
+            begruendete Ausnahme. Die Person arbeitet.
+         b) Es steht noch eine Schicht im Plan, obwohl die Abwesenheit
+            gilt. Die Schicht ist NICHT aktiv; der Plan ist nur noch
+            nicht aufgeraeumt.
+
+         Eine Abwesenheit ganz ohne Schicht ist dagegen kein Konflikt -
+         das ist der Normalfall. */
+      if (abw.wirksam) {
+        const artName = abw.wirksam.art === "krank" ? "krank gemeldet" : "im genehmigten Urlaub";
+        const schicht = z.von && z.bis ? `${z.von}–${z.bis}` : "ohne Zeit";
+        const fz = z.fahrzeugId ? fahrzeugVon(z.fahrzeugId) : null;
+
+        if (z.ausnahme) {
+          liste.push({
+            art: "betrieblich", kennung: z.mitarbeiterId,
+            kurz: abw.wirksam.art === "krank" ? "Krank, trotzdem im Dienst" : "Urlaub, trotzdem im Dienst",
+            text: `${name} ist am ${tagText} ${artName} (${D.zeitraumText(abw.wirksam)}), ist aber für ${schicht}${fz ? ` mit ${fz.kennzeichen}` : ""} eingeplant.`,
+            ausnahme: z.ausnahme.grund
+          });
+        } else if (z.imDienst || z.von || z.bis || z.fahrzeugId) {
+          liste.push({
+            art: "betrieblich", kennung: z.mitarbeiterId,
+            kurz: "Abwesend, Schicht noch im Plan",
+            text: `${name} ist am ${tagText} ${artName} (${D.zeitraumText(abw.wirksam)}), im Plan steht aber noch ${schicht}${fz ? ` mit ${fz.kennzeichen}` : ""}. Diese Schicht ist nicht aktiv — bitte auf „${D.ABWESENHEIT_NAMEN[abw.wirksam.art]}“ setzen oder eine Ausnahme begründen.`
+          });
+        }
+      }
+
+      /* Betrieblich: die Abwesenheit deckt nur einen Teil der Schicht. */
+      if (nurTeilweiseAbgedeckt(entwurf, z, abw)) {
+        liste.push({
+          art: "betrieblich", kennung: z.mitarbeiterId, kurz: "Abwesenheit deckt nur einen Teil",
+          text: `${name}: Die Schicht ${z.von}–${z.bis} geht über Mitternacht hinaus, die eingetragene Abwesenheit endet aber am ${tagText}.`
+        });
+      }
+
+      if (!arbeitetAmTag(entwurf, z)) continue;
 
       /* Technisch: die Uhrzeit ist unvollstaendig oder ungueltig. */
       if (entwurf.zeitfehler[z.mitarbeiterId]) {
@@ -386,6 +479,16 @@
   /* ============================================================
      3. Planung
      ============================================================ */
+  const FILTER = [
+    { id: "alle",      name: "Alle" },
+    { id: "dienst",    name: "Im Dienst" },
+    { id: "frei",      name: "Frei" },
+    { id: "krank",     name: "Krank" },
+    { id: "urlaub",    name: "Urlaub" },
+    { id: "ungeplant", name: "Nur ungeplant" },
+    { id: "konflikte", name: "Nur Konflikte" }
+  ];
+
   function planung() {
     const e = planEntwurf();
     const tag = D.tagAls(R.zustand.planTag);
@@ -394,9 +497,9 @@
     const betroffen = betroffene(konflikte);
     const geaendert = anzahlGeaendert(e);
 
-    const imDienst = e.zeilen.filter((z) => z.imDienst).length;
-    const frei = e.zeilen.length - imDienst;
-    const ohneFahrzeug = e.zeilen.filter((z) => z.imDienst && !z.fahrzeugId).length;
+    const zaehle = (art) => e.zeilen.filter((z) => tagesstatus(e, z) === art).length;
+    const imDienst = zaehle("dienst");
+    const ohneFahrzeug = e.zeilen.filter((z) => arbeitetAmTag(e, z) && !z.fahrzeugId).length;
 
     let stand;
     if (!quelle.veroeffentlicht) {
@@ -407,12 +510,14 @@
       stand = R.marke("gut", `Veröffentlicht um ${quelle.veroeffentlichtUm} Uhr — Mitarbeiter sehen den Plan`);
     }
 
-    /* Filtern. Wichtig: Gefiltert wird nur die ANZEIGE. Die Werte in
-       e.zeilen bleiben unangetastet - ein Filterwechsel kann nichts
-       loeschen. */
+    /* Gefiltert wird nur die ANZEIGE. Die Werte in e.zeilen bleiben
+       unangetastet - ein Filterwechsel kann nichts loeschen. */
     let sichtbar = e.zeilen.slice();
+    if (["dienst", "frei", "krank", "urlaub"].includes(e.filter)) {
+      sichtbar = sichtbar.filter((z) => tagesstatus(e, z) === e.filter);
+    }
     if (e.filter === "ungeplant") {
-      sichtbar = sichtbar.filter((z) => z.imDienst && (!z.von || !z.bis || !z.fahrzeugId));
+      sichtbar = sichtbar.filter((z) => arbeitetAmTag(e, z) && (!z.von || !z.bis || !z.fahrzeugId));
     }
     if (e.filter === "konflikte") {
       sichtbar = sichtbar.filter((z) => betroffen.has(z.mitarbeiterId));
@@ -436,11 +541,18 @@
         </div>`
       : leerZustand(e, konflikte);
 
+    const zaehler = (id) => {
+      if (id === "konflikte") return konflikte.length;
+      if (["dienst", "frei", "krank", "urlaub"].includes(id)) return zaehle(id);
+      return null;
+    };
+
     return `
       <div class="bereichskopf">
         <div>
           <h1>Planung</h1>
-          <p class="wichtig">${h(imDienst)} im Dienst · ${h(frei)} frei · ${h(ohneFahrzeug)} ohne Fahrzeug · ${h(konflikte.length)} Konflikte</p>
+          <p class="wichtig">${h(imDienst)} im Dienst · ${h(zaehle("frei"))} frei · ${h(zaehle("krank"))} krank ·
+            ${h(zaehle("urlaub"))} Urlaub · ${h(ohneFahrzeug)} ohne Fahrzeug · ${h(konflikte.length)} Konflikte</p>
         </div>
       </div>
 
@@ -454,13 +566,15 @@
           ${stand}
         </div>
 
+        <div class="filterzeile" role="group" aria-label="Ansicht filtern">
+          ${FILTER.map((f) => {
+            const n = zaehler(f.id);
+            return `<button class="filterchip" type="button" data-tun="plan-filter:${h(f.id)}"
+              aria-pressed="${e.filter === f.id}">${h(f.name)}${n === null ? "" : ` (${h(n)})`}</button>`;
+          }).join("")}
+        </div>
+
         <div class="tagleiste">
-          <div class="tagumschalter" role="group" aria-label="Filter">
-            <button type="button" data-tun="plan-filter:alle" aria-pressed="${e.filter === "alle"}">Alle</button>
-            <button type="button" data-tun="plan-filter:ungeplant" aria-pressed="${e.filter === "ungeplant"}">Nur ungeplant</button>
-            <button type="button" data-tun="plan-filter:konflikte" aria-pressed="${e.filter === "konflikte"}">
-              Nur Konflikte${konflikte.length ? ` (${h(konflikte.length)})` : ""}</button>
-          </div>
           <label style="min-width:180px;">Suche
             <input type="search" data-plan-suche value="${h(e.suche)}" placeholder="Name suchen"></label>
           <button class="knopf klein" type="button" data-tun="plan-uebernehmen-gestern">Plan von gestern übernehmen</button>
@@ -528,6 +642,12 @@
         </div>
       </div>`;
     }
+    if (["dienst", "frei", "krank", "urlaub"].includes(e.filter)) {
+      const name = { dienst: "im Dienst", frei: "frei", krank: "krank gemeldet", urlaub: "im Urlaub" }[e.filter];
+      return R.zustandsKasten("leer", `Niemand ist ${name}`,
+        `An diesem Tag trifft das auf keinen Mitarbeiter zu. Das ist kein Fehler — es ist der Stand.`,
+        { name: "Alle Mitarbeiter anzeigen", tun: "plan-filter:alle" });
+    }
     return R.zustandsKasten("leer", "Keine Mitarbeiter",
       "Für diesen Tag ist kein Mitarbeiter hinterlegt.");
   }
@@ -535,25 +655,70 @@
   function planZeile(e, z, konflikte, geaendert) {
     const m = mitarbeiterVon(z.mitarbeiterId);
     const id = z.mitarbeiterId;
-    const eigene = z.imDienst && !z.vorlage;
+    const abw = abwesenheitVon(e, id);
+    const status = tagesstatus(e, z);
+    const arbeitet = status === "dienst";
+    const eigene = arbeitet && !z.vorlage;
     const hinweis = kurzHinweis(konflikte, id);
     const zeitfehler = e.zeitfehler[id] || "";
 
-    return `<tr class="plan-zeile ${geaendert ? "ist-geaendert" : ""}" data-mitarbeiter="${h(id)}">
-      <td><strong>${h(m ? m.name : id)}</strong><br>
-        <span style="font-size:13px;color:var(--gedaempft)">${h(m ? m.beschaeftigung : "unbekannte Kennung")}</span></td>
-      <td>
-        <select data-plan="dienst" data-mitarbeiter="${h(id)}" aria-label="Status von ${h(m ? m.name : id)}">
+    /* Der Hinweis zur Abwesenheit steht IMMER in der Zeile - auch wenn
+       eine Ausnahme erteilt wurde. Sonst waere nicht mehr erkennbar,
+       dass hier bewusst abgewichen wird. */
+    let abwesenheitsHinweis = "";
+    if (abw.widerspruch) {
+      abwesenheitsHinweis = `<div class="abw-hinweis ist-krank">
+        <strong>Krank und Urlaub am selben Tag</strong>
+        <span>Krank ${h(D.zeitraumText(abw.krank))} · Urlaub ${h(D.zeitraumText(abw.urlaub))}</span>
+      </div>`;
+    } else if (abw.krank) {
+      abwesenheitsHinweis = `<div class="abw-hinweis ist-krank">
+        <strong>Fahrer ist an diesem Tag krank</strong>
+        <span>${h(D.zeitraumText(abw.krank))}</span>
+      </div>`;
+    } else if (abw.urlaub) {
+      abwesenheitsHinweis = `<div class="abw-hinweis ist-urlaub">
+        <strong>Fahrer hat an diesem Tag genehmigten Urlaub</strong>
+        <span>${h(D.zeitraumText(abw.urlaub))}</span>
+      </div>`;
+    } else if (abw.beantragt) {
+      abwesenheitsHinweis = `<div class="abw-hinweis ist-beantragt">
+        <strong>Urlaub beantragt – noch nicht genehmigt</strong>
+        <span>${h(D.zeitraumText(abw.beantragt))} · der Fahrer bleibt planbar</span>
+      </div>`;
+    }
+
+    const ausnahmeMarke = z.ausnahme
+      ? `<div class="abw-hinweis ist-ausnahme">
+          <strong>Ausnahme: trotz Abwesenheit eingeplant</strong>
+          <span>Grund: ${h(z.ausnahme.grund)}</span>
+          <button class="knopf klein" type="button" data-tun="plan-ausnahme-zurueck:${h(id)}">Ausnahme aufheben</button>
+        </div>`
+      : "";
+
+    const statusWahl = abw.wirksam
+      ? `<select data-plan="dienst" data-mitarbeiter="${h(id)}" aria-label="Status von ${h(m ? m.name : id)}">
+          <option value="abwesend" ${!z.ausnahme ? "selected" : ""}>${h(D.ABWESENHEIT_NAMEN[abw.wirksam.art])}</option>
+          <option value="ja" ${z.ausnahme ? "selected" : ""}>Im Dienst (Ausnahme)</option>
+          <option value="nein">Frei</option>
+        </select>`
+      : `<select data-plan="dienst" data-mitarbeiter="${h(id)}" aria-label="Status von ${h(m ? m.name : id)}">
           <option value="ja" ${z.imDienst ? "selected" : ""}>Im Dienst</option>
           <option value="nein" ${!z.imDienst ? "selected" : ""}>Frei</option>
-        </select>
-      </td>
-      <td>${z.imDienst ? `
+        </select>`;
+
+    return `<tr class="plan-zeile ${geaendert ? "ist-geaendert" : ""} ${abw.wirksam ? "ist-abwesend" : ""}"
+        data-mitarbeiter="${h(id)}" data-status="${h(status)}">
+      <td><strong>${h(m ? m.name : id)}</strong><br>
+        <span style="font-size:13px;color:var(--gedaempft)">${h(m ? m.beschaeftigung : "unbekannte Kennung")}</span>
+        ${abwesenheitsHinweis}${ausnahmeMarke}</td>
+      <td>${statusWahl}</td>
+      <td>${arbeitet ? `
         <select data-plan="vorlage" data-mitarbeiter="${h(id)}" aria-label="Schicht von ${h(m ? m.name : id)}">
           ${D.vorlagen.map((v) => `<option value="${h(v.id)}" ${z.vorlage === v.id || (eigene && v.id === "individuell") ? "selected" : ""}>
             ${h(v.name)}${v.von ? ` · ${h(v.von)}–${h(v.bis)}` : ""}</option>`).join("")}
-        </select>` : '<span style="color:var(--gedaempft)">—</span>'}</td>
-      <td>${z.imDienst ? `
+        </select>` : `<span style="color:var(--gedaempft)">${h(STATUSNAMEN[status])}</span>`}</td>
+      <td>${arbeitet ? `
         <span class="zeitpaar">
           ${window.ProbeZeit.markup({ kennung: id, teil: "von", wert: z.von, beschriftung: `Beginn von ${m ? m.name : id}`, fehler: zeitfehler })}
           ${window.ProbeZeit.markup({ kennung: id, teil: "bis", wert: z.bis, beschriftung: `Ende von ${m ? m.name : id}`, fehler: "" })}
@@ -561,7 +726,7 @@
         ${window.ProbeZeit.ueberMitternacht(z.von, z.bis)
           ? '<br><span style="font-size:13px;color:var(--gedaempft)">über Mitternacht</span>' : ""}
         ` : '<span style="color:var(--gedaempft)">—</span>'}</td>
-      <td>${z.imDienst ? `
+      <td>${arbeitet ? `
         <select data-plan="fahrzeug" data-mitarbeiter="${h(id)}" aria-label="Fahrzeug von ${h(m ? m.name : id)}">
           <option value="">Kein Fahrzeug</option>
           ${D.fahrzeuge.map((f) => `<option value="${h(f.id)}" ${z.fahrzeugId === f.id ? "selected" : ""}>
@@ -569,7 +734,7 @@
         </select>` : '<span style="color:var(--gedaempft)">—</span>'}</td>
       <td>${hinweis
         ? R.marke("warnung", hinweis)
-        : (z.imDienst ? R.marke("gut", "vollständig") : R.marke("ruhig", "frei"))}</td>
+        : (arbeitet ? R.marke("gut", "vollständig") : R.marke("ruhig", STATUSNAMEN[status]))}</td>
     </tr>`;
   }
 
@@ -961,6 +1126,64 @@
   }
 
   /* ============================================================
+     Ausnahme: trotz Abwesenheit einplanen
+     ============================================================
+     Der Dispatcher soll abweichen duerfen - jemand kommt frueher
+     zurueck oder arbeitet trotz eingetragenem Urlaub. Aber nicht
+     nebenbei: Es braucht eine ausdrueckliche Entscheidung und einen
+     Grund. Die Krankmeldung beziehungsweise der Urlaubsdatensatz
+     wird dabei NICHT veraendert.
+  */
+  let ausnahmeStand = null;
+
+  function ausnahmeDialog() {
+    const e = planEntwurf();
+    const s = ausnahmeStand;
+    const m = mitarbeiterVon(s.mitarbeiterId);
+    const abw = abwesenheitVon(e, s.mitarbeiterId);
+    const art = abw.wirksam ? abw.wirksam.art : "krank";
+    const satz = art === "krank"
+      ? "Fahrer ist krank"
+      : "Fahrer hat genehmigten Urlaub";
+    const tagText = D.alsText(D.tagAls(R.zustand.planTag));
+
+    const rumpf = s.grundSichtbar
+      ? `
+        ${R.zustandsKasten("fehler", satz,
+          `${m ? m.name : s.mitarbeiterId} ist am ${tagText} als ${art === "krank" ? "krank gemeldet" : "im genehmigten Urlaub"} eingetragen (${D.zeitraumText(abw.wirksam)}). Eine Ausnahme wird festgehalten und bei der Veröffentlichung erneut angezeigt.`)}
+        ${s.fehler ? `<div class="feldfehler" role="alert">${h(s.fehler)}</div>` : ""}
+        <label>Grund für die Ausnahme <span class="band-warnung">Pflichtfeld</span>
+          <textarea data-ausnahme-grund rows="3"
+            placeholder="Zum Beispiel: Fahrer hat sich gesund gemeldet und möchte fahren.">${h(s.grund)}</textarea></label>
+        <p class="schritt-hinweis">Die eingetragene Abwesenheit bleibt unverändert bestehen.
+          Später wird protokolliert: wer, wann, welcher Fahrer, welche Abwesenheit,
+          welcher neue Dienststatus und der Grund.
+          <strong>In dieser Designprobe wird nichts gespeichert.</strong></p>`
+      : `
+        ${R.zustandsKasten("fehler", satz,
+          `${m ? m.name : s.mitarbeiterId} ist am ${tagText} als ${art === "krank" ? "krank gemeldet" : "im genehmigten Urlaub"} eingetragen (${D.zeitraumText(abw.wirksam)}). Einplanen ist möglich, aber nur als ausdrückliche Ausnahme mit Grund.`)}`
+
+    const fuss = s.grundSichtbar
+      ? `
+        <button class="knopf haupt-knopf" type="button" data-tun="plan-ausnahme-abbrechen">Status beibehalten</button>
+        <button class="knopf leise" type="button" data-tun="plan-ausnahme-speichern">Trotz Abwesenheit einplanen</button>`
+      : `
+        <button class="knopf leise" type="button" data-tun="plan-ausnahme-grund">Trotz Abwesenheit einplanen</button>
+        <button class="knopf haupt-knopf" type="button" data-tun="plan-ausnahme-abbrechen">Status beibehalten</button>`
+
+    return `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="ausnTitel">
+        <header class="dialog-kopf">
+          <h2 id="ausnTitel">Abwesenheit eingetragen</h2>
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>
+        <div class="dialog-rumpf">${rumpf}</div>
+        <footer class="dialog-fuss">${fuss}</footer>
+      </div>`;
+  }
+
+  /* ============================================================
      Veroeffentlichen - mit Konfliktpruefung
      ============================================================
      Der erste Klick veroeffentlicht NICHTS. Er oeffnet die Pruefung.
@@ -973,8 +1196,8 @@
     const gefiltert = liste.filter((k) => k.art === art);
     if (!gefiltert.length) return "";
     return `<ul class="konfliktliste ${art}">
-      ${gefiltert.map((k) => `<li>
-        <strong>${h(k.kurz)}</strong>
+      ${gefiltert.map((k) => `<li${k.ausnahme ? " class=\"ist-ausnahme\"" : ""}>
+        <strong>${h(k.kurz)}${k.ausnahme ? " · begründete Ausnahme" : ""}</strong>
         <span>${h(k.text)}</span>
       </li>`).join("")}
     </ul>`;
@@ -986,14 +1209,18 @@
     const technisch = liste.filter((k) => k.art === "technisch");
     const betrieblich = liste.filter((k) => k.art === "betrieblich");
     const tag = D.tagAls(R.zustand.planTag);
-    const imDienst = e.zeilen.filter((z) => z.imDienst).length;
-    const ohneFahrzeug = e.zeilen.filter((z) => z.imDienst && !z.fahrzeugId).length;
+    const imDienst = e.zeilen.filter((z) => arbeitetAmTag(e, z)).length;
+    const ohneFahrzeug = e.zeilen.filter((z) => arbeitetAmTag(e, z) && !z.fahrzeugId).length;
+    const krank = e.zeilen.filter((z) => tagesstatus(e, z) === "krank").length;
+    const urlaub = e.zeilen.filter((z) => tagesstatus(e, z) === "urlaub").length;
 
     const kopf = `<dl class="zusammenfassung">
       <div><dt>Tag</dt><dd>${R.zustand.planTag === 0 ? "Heute" : "Morgen"}</dd></div>
       <div><dt>Datum</dt><dd>${h(D.alsText(tag))}</dd></div>
       <div><dt>Eingeplant</dt><dd>${h(imDienst)} Mitarbeiter</dd></div>
       <div><dt>Ohne Fahrzeug</dt><dd>${h(ohneFahrzeug)}</dd></div>
+      <div><dt>Krank</dt><dd>${h(krank)}</dd></div>
+      <div><dt>Urlaub</dt><dd>${h(urlaub)}</dd></div>
       <div><dt>Konflikte</dt><dd>${h(liste.length)}</dd></div>
     </dl>`;
 
@@ -1084,6 +1311,43 @@
     e.verlauf = [];
 
     const tag = D.tagAls(R.zustand.planTag);
+
+    /* Die begruendeten Ausnahmen dieses Tages - sie gehoeren ins
+       Protokoll und in die Mitarbeitervorschau. */
+    const ausnahmen = e.zeilen
+      .filter((z) => z.ausnahme)
+      .map((z) => ({ zeile: z, mitarbeiter: mitarbeiterVon(z.mitarbeiterId) }));
+
+    const ausnahmeProtokoll = ausnahmen.length
+      ? `<h4 class="unterueberschrift">Ausnahmen trotz eingetragener Abwesenheit</h4>
+         <ul class="konfliktliste betrieblich">
+           ${ausnahmen.map(({ zeile, mitarbeiter }) => `<li class="ist-ausnahme">
+             <strong>${h(mitarbeiter ? mitarbeiter.name : zeile.mitarbeiterId)} · ${h(zeile.ausnahme.art === "krank" ? "Krank" : "Urlaub")}</strong>
+             <span>Abwesenheit ${h(zeile.ausnahme.zeitraum)} · eingeplant ${h(zeile.von)}–${h(zeile.bis)} · Grund: ${h(zeile.ausnahme.grund)}</span>
+           </li>`).join("")}
+         </ul>`
+      : "";
+
+    /*
+      Was der Mitarbeiter spaeter sieht. Ausdruecklich OHNE die interne
+      Begruendung und ohne jede Angabe zur Krankheit - im
+      Mitarbeiterportal darf weder der Grund noch eine
+      Gesundheitsangabe erscheinen. Und es darf dort nie kommentarlos
+      "Krank" neben einer normalen Schicht stehen.
+    */
+    const mitarbeitersicht = ausnahmen.length
+      ? `<h4 class="unterueberschrift">So sieht es der Mitarbeiter</h4>
+         <ul class="konfliktliste">
+           ${ausnahmen.map(({ zeile, mitarbeiter }) => `<li>
+             <strong>${h(mitarbeiter ? mitarbeiter.name : zeile.mitarbeiterId)}</strong>
+             <span>Schicht ${h(zeile.von)}–${h(zeile.bis)} · Trotz eingetragener Abwesenheit eingeplant – bitte mit der Zentrale klären.</span>
+           </li>`).join("")}
+         </ul>
+         <p class="schritt-hinweis">Der interne Grund und die Art der Abwesenheit
+           erscheinen dort nicht. Jeder Mitarbeiter sieht ausschließlich seine
+           eigene Schicht.</p>`
+      : "";
+
     const protokoll = mitGrund
       ? `<h4 class="unterueberschrift">Was protokolliert würde</h4>
          <dl class="zusammenfassung">
@@ -1092,8 +1356,8 @@
            <div><dt>Tag</dt><dd>${h(D.alsText(tag))}</dd></div>
            <div><dt>Konflikte</dt><dd>${h(liste.length)}</dd></div>
            <div><dt>Grund</dt><dd>${h(veroeffentlichungsGrund)}</dd></div>
-         </dl>`
-      : "";
+         </dl>${ausnahmeProtokoll}${mitarbeitersicht}`
+      : ausnahmeProtokoll + mitarbeitersicht;
 
     veroeffentlichungsGrund = "";
 
@@ -1182,6 +1446,60 @@
         e.verlauf = [];
         R.zeichnen(); return;
 
+      /* ---- Ausnahme bei eingetragener Abwesenheit ---- */
+      case "plan-ausnahme-grund":
+        ausnahmeStand.grundSichtbar = true;
+        R.dialogOeffnen(ausnahmeDialog());
+        { const f = document.querySelector("[data-ausnahme-grund]"); if (f) f.focus(); }
+        return;
+      case "plan-ausnahme-abbrechen":
+        ausnahmeStand = null;
+        R.dialogSchliessen(true);
+        R.zeichnen();
+        return;
+      case "plan-ausnahme-speichern": {
+        const f = document.querySelector("[data-ausnahme-grund]");
+        const grund = f ? f.value.trim() : "";
+        if (grund.length < 3) {
+          ausnahmeStand.grund = grund;
+          ausnahmeStand.fehler = "Bitte einen Grund eintragen. Ohne Grund bleibt der Status unverändert.";
+          R.dialogOeffnen(ausnahmeDialog());
+          const neu = document.querySelector("[data-ausnahme-grund]");
+          if (neu) neu.focus();
+          return;
+        }
+        const z = zeileVon(e, ausnahmeStand.mitarbeiterId);
+        const abw = abwesenheitVon(e, ausnahmeStand.mitarbeiterId);
+        if (z) {
+          merken(e);
+          /* Nur die Planzeile bekommt eine Ausnahme. Die Krankmeldung
+             beziehungsweise der Urlaub bleibt unveraendert bestehen. */
+          z.ausnahme = {
+            grund,
+            art: abw.wirksam ? abw.wirksam.art : "",
+            zeitraum: D.zeitraumText(abw.wirksam)
+          };
+          z.imDienst = true;
+          if (!z.von || !z.bis) { z.vorlage = "tag"; z.von = "09:00"; z.bis = "17:00"; }
+        }
+        ausnahmeStand = null;
+        R.dialogSchliessen(true);
+        R.zeichnen();
+        return;
+      }
+      case "plan-ausnahme-zurueck": {
+        const z = zeileVon(e, wert);
+        if (z) {
+          merken(e);
+          z.ausnahme = null;
+          z.imDienst = false;
+          z.vorlage = null; z.von = ""; z.bis = ""; z.fahrzeugId = null;
+          delete e.zeitfehler[wert];
+        }
+        R.zeichnen();
+        return;
+      }
+
       /* Der erste Klick veroeffentlicht nichts - er prueft. */
       case "plan-veroeffentlichen":
         R.dialogOeffnen(pruefungsDialog()); return;
@@ -1230,12 +1548,36 @@
       merken(e);
       const was = feld.dataset.plan;
       if (was === "dienst") {
-        z.imDienst = feld.value === "ja";
-        if (!z.imDienst) {
+        const abw = abwesenheitVon(e, z.mitarbeiterId);
+
+        /* Krank oder im genehmigten Urlaub und trotzdem "Im Dienst"?
+           Das wird NICHT still uebernommen. Es gibt eine ausdrueckliche
+           Nachfrage, und nur mit Grund entsteht eine Ausnahme. Der
+           Abwesenheitsdatensatz bleibt dabei unberuehrt. */
+        if (abw.wirksam && feld.value === "ja" && !z.ausnahme) {
+          e.verlauf.pop();               // die Vormerkung wieder zuruecknehmen
+          ausnahmeStand = { mitarbeiterId: z.mitarbeiterId, grundSichtbar: false, grund: "", fehler: "" };
+          R.dialogOeffnen(ausnahmeDialog());
+          R.zeichnen();                  // die Auswahl springt sichtbar zurueck
+          return true;
+        }
+
+        if (feld.value === "abwesend") {
+          /* Zurueck auf den Stand der Abwesenheit. Geloescht wird nur
+             die Planung dieses Tages, nie die Abwesenheit selbst. */
+          z.ausnahme = null;
+          z.imDienst = false;
           z.vorlage = null; z.von = ""; z.bis = ""; z.fahrzeugId = null;
           delete e.zeitfehler[z.mitarbeiterId];
-        } else if (!z.vorlage) {
-          z.vorlage = "tag"; z.von = "09:00"; z.bis = "17:00";
+        } else {
+          z.imDienst = feld.value === "ja";
+          if (!z.imDienst) {
+            z.ausnahme = null;
+            z.vorlage = null; z.von = ""; z.bis = ""; z.fahrzeugId = null;
+            delete e.zeitfehler[z.mitarbeiterId];
+          } else if (!z.vorlage) {
+            z.vorlage = "tag"; z.von = "09:00"; z.bis = "17:00";
+          }
         }
       } else if (was === "vorlage") {
         const v = vorlageVon(feld.value);

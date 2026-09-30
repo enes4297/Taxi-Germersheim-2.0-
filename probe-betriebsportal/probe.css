@@ -891,3 +891,76 @@ textarea {
 @media (max-width: 560px) {
   .plan-nebenaktionen .knopf { flex: 1 1 100%; }
 }
+
+/* ============================================================
+   Abwesenheiten in der Planzeile
+   ============================================================ */
+.abw-hinweis {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--gedaempft);
+  border-radius: var(--radius);
+  background: var(--grund);
+  max-width: 260px;
+}
+.abw-hinweis strong { font-size: 13px; font-weight: 700; }
+.abw-hinweis span { font-size: 12px; color: var(--gedaempft); }
+/* Rot bedeutet hier: Achtung, die Person ist nicht verfuegbar.
+   Zusaetzlich steht es im Klartext da - Farbe allein traegt nie. */
+.abw-hinweis.ist-krank {
+  border-left-color: var(--rot);
+  background: rgba(224, 108, 90, 0.09);
+}
+.abw-hinweis.ist-krank strong { color: var(--rot); }
+.abw-hinweis.ist-urlaub {
+  border-left-color: var(--gold);
+  background: rgba(200, 169, 110, 0.09);
+}
+.abw-hinweis.ist-urlaub strong { color: var(--gold-hell); }
+.abw-hinweis.ist-beantragt { border-left-color: var(--gedaempft); }
+.abw-hinweis.ist-ausnahme {
+  border-left-color: var(--gold);
+  border-style: dashed;
+}
+.abw-hinweis.ist-ausnahme strong { color: var(--gold-hell); }
+.abw-hinweis .knopf { margin-top: 6px; align-self: flex-start; }
+
+.plan-zeile.ist-abwesend td:first-child { box-shadow: inset 3px 0 0 var(--rot); }
+.plan-zeile.ist-geaendert.ist-abwesend td:first-child {
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.konfliktliste li.ist-ausnahme { border-style: dashed; }
+
+/* ============================================================
+   Filterzeile - sieben Zustaende, die umbrechen duerfen
+   ============================================================ */
+.filterzeile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.filterchip {
+  min-height: 40px;
+  padding: 6px 14px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  background: var(--flaeche-2);
+  color: var(--schrift);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.filterchip:hover { border-color: var(--gedaempft); }
+.filterchip[aria-pressed="true"] {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--auf-gold);
+}
