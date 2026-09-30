@@ -326,17 +326,168 @@
     { id: "klaerung",      name: "Klärungsbedarf" }
   ];
 
-  /* ---- Meldungen. Rollenabhaengig, ohne vertrauliche Inhalte. ---- */
-  const meldungen = [
-    { id: "ME01", art: "ungeplant",  stufe: "warnung", faehigkeit: "operations.read", text: "2 Fahrten für heute sind noch niemandem zugewiesen.", zeit: "vor 10 Min" },
-    { id: "ME02", art: "fahrzeug",   stufe: "warnung", faehigkeit: "operations.read", text: "Testfahrer 03 ist im Dienst, hat aber kein Fahrzeug.", zeit: "vor 25 Min" },
-    { id: "ME03", art: "konflikt",   stufe: "warnung", faehigkeit: "operations.read", text: "Testwagen 01 ist heute zweimal gleichzeitig verplant.", zeit: "vor 31 Min" },
-    { id: "ME04", art: "krank",      stufe: "ruhig",   faehigkeit: "operations.read", text: "Neue Krankmeldung eingegangen – im geschützten Personalbereich prüfen.", zeit: "vor 1 Std" },
-    { id: "ME05", art: "krank-voll", stufe: "ruhig",   faehigkeit: "personnel.read",  text: "Krankmeldung von Testfahrer 04, eingegangen heute, Nachweis noch offen.", zeit: "vor 1 Std" },
-    { id: "ME06", art: "frist",      stufe: "warnung", faehigkeit: "personnel.read",  text: "Führerschein von Testfahrer 02 läuft in 14 Tagen ab.", zeit: "vor 3 Std" },
-    { id: "ME07", art: "urlaub",     stufe: "ruhig",   faehigkeit: "personnel.read",  text: "Urlaubsantrag von Testfahrer 06 wartet auf Entscheidung.", zeit: "gestern" },
-    { id: "ME08", art: "integration",stufe: "ruhig",   faehigkeit: "operations.read", text: "PAJ GPS ist nicht angebunden – Positionen stehen nicht zur Verfügung.", zeit: "dauerhaft" }
+
+  /* ============================================================
+     Vorgaenge - Meldungen, Aufgaben, Warnungen, Nachrichten
+     ============================================================
+     Vier Arten in EINER Liste, aber deutlich bezeichnet:
+
+       meldung   - reine Information, noch ohne Arbeitsauftrag
+       aufgabe   - braucht eine Entscheidung oder Bearbeitung
+       warnung   - entsteht automatisch aus einem kritischen Zustand
+       nachricht - von Hand geschriebene betriebliche Mitteilung
+
+     WICHTIG: Warnungen werden NICHT hier gespeichert. Sie entstehen
+     aus dem vorhandenen Zustand - Dokumentfristen, Planungskonflikte.
+     Sonst gaebe es zwei Wahrheiten. Gespeichert wird nur, wie mit
+     ihnen umgegangen wurde (Zustand, Zustaendigkeit, gesehen).
+
+     "sichtbar" sagt, wer den Vorgang ueberhaupt sieht.
+     "vertraulich" sagt, wer zusaetzlich die geschuetzten Angaben sieht
+     - etwa die eingereichte Bescheinigung. Fehlt die Faehigkeit, wird
+     die Datei gar nicht erst in die Ansicht gegeben.
+  */
+  const VORGANG_ARTEN = {
+    meldung:   "Meldung",
+    aufgabe:   "Aufgabe",
+    warnung:   "Warnung",
+    nachricht: "Nachricht"
+  };
+
+  const VORGANG_ZUSTAENDE = {
+    neu:         "Neu",
+    bearbeitung: "In Bearbeitung",
+    warten:      "Wartet auf Rückmeldung",
+    erledigt:    "Erledigt",
+    archiviert:  "Archiviert"
+  };
+
+  const VORGANG_THEMEN = {
+    urlaub:    "Urlaub",
+    krankheit: "Krankheit",
+    dokument:  "Dokumente",
+    fahrt:     "Fahrten und Kundenanfragen",
+    fahrzeug:  "Fahrzeuge",
+    finanzen:  "Rechnungen und Zahlungen",
+    system:    "Systemwarnungen",
+    nachricht: "Betriebliche Nachrichten"
+  };
+
+  const vorgaenge = [
+    {
+      id: "V0001", art: "aufgabe", thema: "urlaub",
+      titel: "Neuer Urlaubsantrag – Testfahrer 03",
+      betrifft: { art: "mitarbeiter", id: "M03", name: "Testfahrer 03" },
+      eingang: "heute 07:48", dringlichkeit: "normal",
+      zustaendig: "", zustand: "neu", gesehen: false, version: 1,
+      sichtbar: ["operations.read", "personnel.read"],
+      vertraulich: [],
+      daten: { von: alsIso(tagAls(6)), bis: alsIso(tagAls(12)) },
+      empfehlung: "", antwort: "", notizen: []
+    },
+    {
+      id: "V0002", art: "aufgabe", thema: "krankheit",
+      titel: "Krankmeldung eingegangen – Testfahrer 02",
+      betrifft: { art: "mitarbeiter", id: "M02", name: "Testfahrer 02" },
+      eingang: "heute 06:05", dringlichkeit: "hoch",
+      zustaendig: "", zustand: "neu", gesehen: false, version: 1,
+      sichtbar: ["operations.read", "personnel.read"],
+      /* Die Bescheinigung sehen nur Personal und Administration. */
+      vertraulich: ["personnel.read"],
+      daten: {
+        von: alsIso(heute), bis: alsIso(tagAls(2)),
+        datei: "Testbescheinigung-M02-01.pdf",
+        folge: []
+      },
+      empfehlung: "", antwort: "", notizen: []
+    },
+    {
+      id: "V0003", art: "aufgabe", thema: "fahrt",
+      titel: "Neue Fahrtanfrage von der Webseite",
+      betrifft: { art: "fahrt", id: "FA-0001", name: "FA-0001" },
+      eingang: "heute 10:40", dringlichkeit: "hoch",
+      zustaendig: "", zustand: "neu", gesehen: false, version: 1,
+      sichtbar: ["operations.read"], vertraulich: [],
+      daten: { hinweis: "über das Formular aufgenommen" },
+      empfehlung: "", antwort: "", notizen: []
+    },
+    {
+      id: "V0004", art: "aufgabe", thema: "fahrt",
+      titel: "Kunde bittet um Änderung der Abholzeit",
+      betrifft: { art: "fahrt", id: "FA-0005", name: "FA-0005" },
+      eingang: "heute 09:20", dringlichkeit: "normal",
+      zustaendig: "Disposition", zustand: "bearbeitung", gesehen: true, version: 1,
+      sichtbar: ["operations.read"], vertraulich: [],
+      daten: { hinweis: "Rückruf vereinbart" },
+      empfehlung: "", antwort: "", notizen: []
+    },
+    {
+      id: "V0005", art: "nachricht", thema: "nachricht",
+      titel: "Betriebsversammlung am Freitag",
+      betrifft: { art: "alle", id: "", name: "alle Mitarbeiter" },
+      eingang: "gestern 16:30", dringlichkeit: "niedrig",
+      zustaendig: "Administration", zustand: "erledigt", gesehen: true, version: 1,
+      sichtbar: ["self.read"], vertraulich: [],
+      daten: { text: "Die Betriebsversammlung findet am Freitag um 14:00 Uhr statt." },
+      empfehlung: "", antwort: "", notizen: []
+    },
+    {
+      id: "V0006", art: "meldung", thema: "system",
+      titel: "PAJ GPS ist nicht angebunden",
+      betrifft: { art: "system", id: "", name: "Integration" },
+      eingang: "dauerhaft", dringlichkeit: "niedrig",
+      zustaendig: "", zustand: "neu", gesehen: true, version: 1,
+      sichtbar: ["operations.read"], vertraulich: [],
+      daten: { text: "Es werden keine Positionen angezeigt und keine erfunden." },
+      empfehlung: "", antwort: "", notizen: []
+    },
+    {
+      id: "V0007", art: "aufgabe", thema: "urlaub",
+      titel: "Urlaubsantrag entschieden – Testfahrer 06",
+      betrifft: { art: "mitarbeiter", id: "M06", name: "Testfahrer 06" },
+      eingang: "vor 3 Tagen", dringlichkeit: "normal",
+      zustaendig: "Personal", zustand: "erledigt", gesehen: true, version: 2,
+      sichtbar: ["operations.read", "personnel.read"], vertraulich: [],
+      daten: { von: alsIso(tagAls(-1)), bis: alsIso(tagAls(1)), entscheidung: "genehmigt" },
+      empfehlung: "Aus Planungssicht möglich",
+      antwort: "Ihr Urlaubsantrag wurde genehmigt.",
+      notizen: [{ wer: "Personal", text: "Resturlaub reicht aus." }]
+    }
   ];
+
+  /*
+    Die Handhabung abgeleiteter Warnungen. Die Warnung selbst entsteht
+    jedes Mal neu aus dem Zustand; hier steht nur, was jemand damit
+    gemacht hat. So kann beides nicht auseinanderlaufen.
+  */
+  const warnungsHandhabung = {};
+
+  function vorgangVon(id) {
+    return vorgaenge.find((v) => v.id === id) || null;
+  }
+
+  let vorgangZaehler = 100;
+  function vorgangAnlegen(neu) {
+    vorgangZaehler += 1;
+    const v = {
+      id: "V0" + vorgangZaehler,
+      art: "aufgabe", thema: "system", dringlichkeit: "normal",
+      zustaendig: "", zustand: "neu", gesehen: false, version: 1,
+      sichtbar: ["operations.read"], vertraulich: [],
+      daten: {}, empfehlung: "", antwort: "", notizen: [],
+      eingang: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
+      ...neu
+    };
+    vorgaenge.unshift(v);
+    return v;
+  }
+
+  /* ---- Meldungen. Rollenabhaengig, ohne vertrauliche Inhalte. ---- */
+  /* Die frueher hier gefuehrte Liste "meldungen" ist entfallen.
+     Seit es "Meldungen & Aufgaben" gibt, waere sie eine zweite
+     Wahrheit neben den Vorgaengen gewesen - Uebersicht und Eingang
+     haetten verschiedene Zahlen gezeigt. Beide lesen jetzt
+     denselben Bestand. */
 
   /* ---- Personal ---- */
   const personal = mitarbeiter.map((m, i) => ({
@@ -599,13 +750,15 @@
   window.ProbeDaten = {
     heute, tagAls, alsIso, alsText, tageZurueck,
     mitarbeiter, fahrzeuge, vorlagen, planung,
-    fahrten, fahrtZustaende, meldungen,
+    fahrten, fahrtZustaende,
     personal, lohn, rewards, kunden, rechnungen, analyse,
     standardadresse, letzteKunden, kundenSuche, haeufigeZiele,
     abwesenheiten, abwesenheitFuer, abwesenheitenAmTag, istWirksam,
     FAHRZEUG_ZUSTAENDE, istEinsatzbereit,
     fahrerDokumente, dokumentstand, DOKUMENT_LAGE, DOKUMENT_PFLICHT,
     protokoll, protokollieren, letzteAenderung, lohnProbe,
+    vorgaenge, vorgangVon, vorgangAnlegen, warnungsHandhabung,
+    VORGANG_ARTEN, VORGANG_ZUSTAENDE, VORGANG_THEMEN,
     zeitraumText, ABWESENHEIT_NAMEN,
     leistungsarten, rollstuhlWerte, gepaeckWerte,
     scheinWerte, zuzahlungWerte, genehmigungWerte

@@ -381,15 +381,17 @@ console.log("\n── 10. Die Disposition sieht keine Krankmeldungsinhalte ─�
   await page.click('[data-bereich="meldungen"]');
   await page.waitForTimeout(250);
   const dispo = await page.textContent(".haupt");
-  pruefe(/Neue Krankmeldung eingegangen/.test(dispo), "sie sieht, DASS eine Krankmeldung da ist");
-  pruefe(!/Krankmeldung von Testfahrer/.test(dispo), "aber nicht, von wem");
-  pruefe(!/Führerschein von Testfahrer/.test(dispo), "auch keine Dokumentfristen");
+  pruefe(/Krankmeldung eingegangen/.test(dispo), "sie sieht, DASS eine Krankmeldung da ist");
+  pruefe(!/Testbescheinigung/.test(dispo), "aber nicht die eingereichte Bescheinigung");
+  pruefe(!/Diagnose:|Befund/.test(dispo), "und keine medizinische Angabe");
 
   await rolleSetzen(page, "personal");
-  await page.click('[data-bereich="meldungen"]');
-  await page.waitForTimeout(250);
+  await page.evaluate(() => window.ProbeRahmen.geheZu("meldungen"));
+  await page.waitForTimeout(300);
   const pers = await page.textContent(".haupt");
-  pruefe(/Krankmeldung von Testfahrer/.test(pers), "Personal sieht den Inhalt");
+  pruefe(/Krankmeldung eingegangen/.test(pers), "Personal sieht den Vorgang ebenfalls");
+  /* Den geschuetzten Teil prueft der eigene Lauf fuer Meldungen und
+     Aufgaben - dort wird der Vorgang geoeffnet. */
   await ctx.close();
 }
 

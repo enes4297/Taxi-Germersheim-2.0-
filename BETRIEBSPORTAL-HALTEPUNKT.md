@@ -1109,3 +1109,198 @@ Alle vollständig beendet, null Netzwerkaufrufe.
 
 > **Einordnung unverändert:** Designprobe ohne Datenquelle. Der Lauf
 > sagt nichts über die produktive Instanz.
+
+### 19.8 Manuelle Freigabe von „Fahrer & Fahrzeuge"
+
+Am 30.09.2026 hat der Geschäftsführer den Bereich vollständig manuell
+durchgespielt und freigegeben. Bestätigt wurden: Fahrerzustände und
+Dokumentwarnungen, die Rollenbegrenzungen, die Fahrzeugzuweisung in
+beide Richtungen mit sofortiger Wirkung in der Planung, die
+Unauswählbarkeit gesperrter Fahrzeuge, Werkstattstatus mit Pflichtgrund,
+der Erhalt vorhandener Lohnabrechnungsversionen, die vollständige Sperre
+für die Buchhaltung, der zweistufige Ablauf „Änderung prüfen → Zurück
+und ändern → Verbindlich speichern" und die Unveränderlichkeit des
+Protokolls nach dem verbindlichen Speichern.
+
+> **Einordnung — ausdrücklich:** Das ist eine **manuelle Prüfung der
+> Designprobe**. Die Probe hat keine Datenquelle, keine
+> Supabase-Verbindung und keine echten Daten. Der Durchlauf belegt, dass
+> der entworfene Bedienweg verstanden und als richtig empfunden wurde —
+> **nicht**, wie sich das produktive Betriebsportal verhält.
+
+---
+
+## 20. Meldungen & Aufgaben
+
+Ein Eingang für alles, was bearbeitet werden muss. **Nur die
+Designprobe — kein produktiver Portalcode verändert, keine Migration
+ausgeführt, keine Supabase-Daten berührt.**
+
+### 20.1 Vier Arten, eine Liste
+
+| Art | Bedeutung |
+|---|---|
+| **Meldung** | reine Information, noch ohne Arbeitsauftrag |
+| **Aufgabe** | braucht eine Entscheidung oder Bearbeitung |
+| **Warnung** | entsteht automatisch aus einem kritischen Zustand |
+| **Nachricht** | von Hand geschriebene betriebliche Mitteilung |
+
+Jede Art ist im Klartext bezeichnet, nicht nur farblich. Reiter: **Neu ·
+Mir zugewiesen · In Bearbeitung · Wartet auf Rückmeldung · Erledigt ·
+Alle**, dazu ein Themenfilter über acht Themen und eine Suche über
+Vorgang und betroffene Person.
+
+Jeder Eintrag nennt Titel, Art, Thema, betroffene Person oder Fahrt,
+Eingangszeit, Dringlichkeit, Zuständigkeit, Bearbeitungsstand — und hat
+**genau eine Hauptaktion**.
+
+### 20.2 Warnungen werden nicht gespeichert
+
+Das ist die wichtigste Entscheidung dieses Bereichs. Warnungen entstehen
+**jedes Mal neu** aus dem vorhandenen Zustand: Dokumentfristen aus
+`dokumentstand()`, Planungskonflikte aus `konflikteVon()`. Gespeichert
+wird ausschließlich, wie jemand mit ihnen umgegangen ist — Zustand,
+Zuständigkeit, gesehen.
+
+Der Grund steht im Bestand: 48 Seiten mit eigenem Browserspeicher, die
+alle ihre eigene Wahrheit führen. Eine zweite Kopie einer Warnung wäre
+genau derselbe Fehler im Kleinen.
+
+### 20.3 Die Glocke ist keine Aufgabenverwaltung
+
+Sie zählt nur **Ungesehenes** und sitzt im Portalkopf über jedem
+Bereich. Ein Klick auf eine Glockenmeldung öffnet den passenden Vorgang.
+
+**„Gesehen" heißt nicht „erledigt".** Das Öffnen setzt den Punkt
+zurück, ändert aber weder Zustand noch Zuständigkeit — der Prüflauf
+stellt fest, dass der Vorgang danach weiterhin unter „Neu" steht. Keine
+Aufgabe kann allein dadurch verschwinden, dass jemand die Glocke öffnet.
+
+### 20.4 Urlaub — über Fähigkeiten, nicht über Rollennamen
+
+Entschieden wird mit `absence.decide`. Diese Fähigkeit ist bewusst
+**eigenständig**, damit sie einer Person einzeln gegeben werden kann,
+ohne ihr die ganze Personalrolle zu geben.
+
+| | sieht Antrag | Planungswirkung | Empfehlung | entscheidet |
+|---|:-:|:-:|:-:|:-:|
+| Administration | ✔ | ✔ | — | ✔ |
+| Personal | ✔ | ✔ | — | ✔ |
+| Disposition | ✔ | ✔ | ✔ | — |
+| Buchhaltung | — | — | — | — |
+
+Die Disposition hinterlässt „Aus Planungssicht möglich" oder „Ersatz
+erforderlich". Ein Schalter in der Probe führt vor, wie ihr
+`absence.decide` **einzeln** gegeben würde — der Prüflauf weist nach,
+dass die Rolle dabei „dispatcher" bleibt und nur diese eine Fähigkeit
+dazukommt.
+
+Der Ablauf: Antrag öffnen → Zeitraum, Arbeitstage und Auswirkung auf
+veröffentlichte Schichten → Genehmigen, Ablehnen oder Rückfrage →
+**letzte Prüfung** → Verbindlich speichern. Eine Ablehnung verlangt
+einen Grund; der Mitarbeiter sieht ihn. Interne Notizen bleiben intern
+und sind als solche gekennzeichnet.
+
+**Gemeinsamer Zustand:** Eine Genehmigung schreibt in dieselben
+`abwesenheiten`, aus denen Planung und Fahrerstatus lesen. Der Prüflauf
+genehmigt einen Urlaub und findet danach in der Planung `urlaub` und auf
+der Fahrerkarte `urlaub` — ohne zweite Kopie.
+
+### 20.5 Krankmeldung
+
+Die Planung kennt den Status sofort — der Prüflauf stellt fest, dass
+`M02` dort als `krank` geführt wird, bevor irgendjemand den Vorgang
+geöffnet hat.
+
+| | Zeitraum | Planungswirkung | Ersatzbedarf | Bescheinigung |
+|---|:-:|:-:|:-:|:-:|
+| Disposition | ✔ | ✔ | ✔ | — |
+| Personal / Administration | ✔ | ✔ | ✔ | ✔ |
+
+In der allgemeinen Übersicht steht **keine Diagnose und keine
+medizinische Angabe** — das ist auch so ausgeschrieben. Die
+Bescheinigung wird der Disposition nicht angezeigt und nicht
+ausgeliefert; sie öffnet sich nur über eine kurz gültige, signierte
+Adresse, nie über eine öffentliche und nie als Anhang.
+
+Eine **Folgebescheinigung** hängt am bestehenden Vorgang und erzeugt
+keinen zweiten. Eine **Zeitraumkorrektur** dagegen überschreibt nichts:
+Sie legt einen neuen Vorgang an, der auf den alten verweist, und
+protokolliert das. Der Prüflauf zählt nach.
+
+### 20.6 Zuständigkeit und Paralleländerung
+
+Eine Aufgabe kann niemandem zugewiesen, einer Person zugewiesen,
+übernommen oder weitergegeben werden. Jede Übernahme und Weitergabe ist
+protokolliert, mit wer und wann.
+
+Ändert jemand anderes den Vorgang, während er offen ist, erkennt die
+Ansicht das an der Versionsnummer und warnt: **„Jemand anderes hat
+diesen Vorgang inzwischen geändert"** mit dem Weg „Aktuellen Stand
+laden". Es wird nie still überschrieben.
+
+### 20.7 Fahrt- und Kundenanfragen
+
+Nur als Eingang und Verweis. Die Hauptaktion führt zur Fahrt; es
+entsteht **keine zweite Kopie** der Fahrt in der Aufgabenliste. Das steht
+auch im Vorgang selbst.
+
+### 20.8 Protokoll
+
+Bei jeder wichtigen Änderung: wer, wann, welcher Vorgang, vorher,
+nachher, Entscheidung, Begründung, Zuweisung. Der Prüflauf durchsucht
+das gesamte Protokoll und stellt fest, dass weder Passwörter noch
+Tokens, weder Diagnosen noch Beträge darin vorkommen.
+
+Ein geschriebener Eintrag ist per `Object.freeze` unveränderlich — auch
+hier wird der Schreibversuch ausdrücklich unternommen.
+
+### 20.9 Ein echter Befund aus dem Gegenlauf: zwei Wahrheiten
+
+Der Portallauf schlug an — und die Ursache war keine veraltete
+Erwartung, sondern ein echter Mangel. Der neue Eingang führt Vorgänge,
+während **Übersicht und Navigationszähler noch aus der alten
+`meldungen`-Liste zählten**. Beide Ansichten hätten verschiedene Zahlen
+gezeigt: genau der Fehler, den dieser Bereich vermeiden soll.
+
+Behoben: Die alte Liste ist entfallen. Übersicht und Navigation zählen
+jetzt aus `offeneFuerMich()` — demselben Bestand wie der Eingang. Im
+Code steht, warum.
+
+Dabei fiel ein zweiter Punkt auf: Der Navigationszähler läuft beim
+allerersten Zeichnen, bevor das Vorgangsmodul geladen ist. Er bleibt
+dann leer, statt zu scheitern.
+
+### 20.10 Drei eigene Fehler in den Prüfungen — getrennt benannt
+
+Diesmal lagen alle drei in den Prüfungen, nicht in der Oberfläche:
+
+1. **Zwei Fehlalarme derselben Sorte.** Die Suche nach „Diagnose"
+   schlug auf den Satz an, der genau das zusichert — „weder Diagnose
+   noch medizinische Angaben". Ebenso bei „interne Notizen": Der Treffer
+   war der Hinweis, dass sie in der Mitarbeiter-Vorschau **nicht**
+   erscheinen. Beide Prüfungen verlangen den Satz jetzt, statt ihn zu
+   verbieten, und suchen zusätzlich nach einem Feld, das solche Angaben
+   aufnehmen würde. *Das ist in dieser Sitzung bereits das dritte Mal —
+   eine Zusicherung im Text sieht für eine Textsuche aus wie ein
+   Verstoß.*
+2. **Reiter-Fallstrick an drei Stellen.** Nach „Übernehmen" steht ein
+   Vorgang unter „In Bearbeitung", nach einer Entscheidung unter
+   „Erledigt" — im Reiter „Neu" ist er dann zu Recht nicht mehr.
+3. **`page.$eval` statt `page.$$eval`** — die Einzahlform liefert ein
+   Element, keine Liste.
+
+### 20.11 Prüfstand
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-vorgaenge-pruefen` (15 Blöcke, neu) | **138 bestanden, 0 offen** |
+| `probe-team-pruefen` | 197 bestanden, 0 offen |
+| `probe-planung-pruefen` | 171 bestanden, 0 offen |
+| `probe-fahrt-pruefen` | 168 bestanden, 0 offen |
+| `probe-portal-pruefen` | 107 bestanden, 0 offen |
+
+Alle vollständig beendet, **null Netzwerkaufrufe**.
+
+> **Einordnung unverändert:** Designprobe ohne Datenquelle. Der Lauf
+> sagt nichts über die produktive Instanz.

@@ -302,8 +302,11 @@
     const eingang = D.fahrten.filter((f) => f.zustand === "eingang").length;
     const unterwegs = D.fahrten.filter((f) => f.zustand === "unterwegs").length;
     const heuteAlle = D.fahrten.filter((f) => !["storniert"].includes(f.zustand)).length;
-    const meldungen = D.meldungen.filter((m) => R.darf(m.faehigkeit));
-    const warnungen = meldungen.filter((m) => m.stufe === "warnung").length;
+    /* Aus demselben Bestand wie "Meldungen & Aufgaben" - nicht aus
+       einer zweiten Liste. Sonst zeigten Uebersicht und Eingang
+       verschiedene Zahlen. */
+    const meldungen = window.ProbeVorgaenge.offeneFuerMich();
+    const warnungen = meldungen.filter((v) => v.dringlichkeit === "hoch" || v.art === "warnung").length;
 
     const naechste = D.fahrten
       .filter((f) => ["geplant", "unterwegs", "ungeplant"].includes(f.zustand))
@@ -749,29 +752,10 @@
   /* ============================================================
      5. Meldungen
      ============================================================ */
-  function meldungen() {
-    const liste = D.meldungen.filter((m) => R.darf(m.faehigkeit));
-    if (!liste.length) return `<div class="bereichskopf"><div><h1>Meldungen</h1></div></div>${R.kastenLeer("Meldungen")}`;
-    return `
-      <div class="bereichskopf"><div>
-        <h1>Meldungen</h1>
-        <p class="wichtig">${h(liste.length)} für Ihre Rolle (${h(R.ROLLENNAMEN[R.zustand.rolle])})</p>
-      </div></div>
-      <div class="flaeche">
-        <h2>Offen</h2>
-        <div class="tabelle-huelle"><table class="liste">
-          <thead><tr><th>Wann</th><th>Meldung</th><th>Stufe</th></tr></thead>
-          <tbody>${liste.map((m) => `<tr>
-            <td style="white-space:nowrap">${h(m.zeit)}</td>
-            <td>${h(m.text)}</td>
-            <td>${m.stufe === "warnung" ? R.marke("warnung", "Warnung") : R.marke("ruhig", "Information")}</td>
-          </tr>`).join("")}</tbody></table></div>
-        <p class="wichtig" style="font-size:14px;margin-top:10px;">
-          Die Disposition sieht bei einer Krankmeldung nur, dass eine eingegangen ist — nicht den Inhalt.
-          E-Mail-Benachrichtigungen sind nicht eingerichtet und werden nicht vorgetäuscht.
-        </p>
-      </div>`;
-  }
+  /* Der Eingang steht in probe-vorgaenge.js - vier Arten in einer
+     Liste, mit demselben gemeinsamen Zustand wie Planung und
+     "Fahrer & Fahrzeuge". */
+  function meldungen() { return window.ProbeVorgaenge.zeichne(); }
 
   /* ============================================================
      6. Kunden
@@ -1374,6 +1358,8 @@
     if (name.startsWith("fa-")) { window.ProbeFahrtassistent.tun(name, wert); return; }
     /* Ebenso Fahrer & Fahrzeuge. */
     if (name.startsWith("team-")) { window.ProbeTeam.tun(name, wert); return; }
+    /* Und alles rund um Meldungen und Aufgaben. */
+    if (name.startsWith("vg-")) { window.ProbeVorgaenge.tun(name, wert); return; }
 
     switch (name) {
       case "neue-fahrt": window.ProbeFahrtassistent.starten(); return;
@@ -1615,6 +1601,7 @@
     }
     if (feld.matches("[data-lohn]")) { lohnStand[feld.dataset.lohn] = feld.value; R.dialogOeffnen(lohnDialog()); return true; }
     if (window.ProbeTeam.geaendert(feld)) return true;
+    if (window.ProbeVorgaenge.geaendert(feld)) return true;
     return false;
   }
 
@@ -1657,10 +1644,12 @@
   /* Fahrer & Fahrzeuge arbeitet auf DEMSELBEN Tagesentwurf wie die
      Planung. Deshalb bekommt das Modul die Helfer gereicht, statt
      eigene zu bauen - sonst gaebe es zwei Wahrheiten. */
-  window.ProbeTeam.anmelden({
+  const planungsHelfer = {
     planEntwurf, tagesstatus, arbeitetAmTag, merken, zeileVon,
     konflikteVon, STATUSNAMEN
-  });
+  };
+  window.ProbeTeam.anmelden(planungsHelfer);
+  window.ProbeVorgaenge.anmelden(planungsHelfer);
 
   window.ProbeZeit.anmelden({
     uebernehmen(kennung, teil, ergebnis, feld) {
@@ -1681,7 +1670,7 @@
     eingabe: (feld) => {
       /* Suchfelder filtern beim Tippen. Der Fokus bleibt, weil
          zeichnen() ihn samt Schreibzeiger wiederherstellt. */
-      if (feld && feld.matches && feld.matches("[data-plan-suche], [data-team-fahrersuche], [data-team-fahrzeugsuche]")) {
+      if (feld && feld.matches && feld.matches("[data-plan-suche], [data-team-fahrersuche], [data-team-fahrzeugsuche], [data-vg-suche]")) {
         return geaendert(feld);
       }
       return window.ProbeFahrtassistent.eingabe(feld);

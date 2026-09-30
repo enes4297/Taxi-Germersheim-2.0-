@@ -17,9 +17,10 @@
             "personnel.read", "personnel.write", "payroll.read", "payroll.write",
             "customers.read", "customers.write", "finance.read", "finance.write",
             "rewards.read", "rewards.write", "analytics.read",
-            "security.read", "security.write", "self.read"],
+            "security.read", "security.write", "absence.decide", "self.read"],
     dispatcher: ["operations.read", "operations.write", "fleet.read", "self.read"],
-    personal:   ["personnel.read", "personnel.write", "payroll.read", "payroll.write", "self.read"],
+    personal:   ["personnel.read", "personnel.write", "payroll.read", "payroll.write",
+                 "absence.decide", "self.read"],
     accounting: ["customers.read", "customers.write", "finance.read", "finance.write",
                  "analytics.read", "self.read"],
     employee:   ["self.read"]
@@ -69,6 +70,10 @@
   /* ---- Zustand der Probe ---- */
   const zustand = {
     rolle: "dispatcher",
+    /* Einzeln vergebene Faehigkeiten - zusaetzlich zur Rolle. So
+       bekaeme eine Dispositionsperson die Urlaubsentscheidung, ohne
+       dass die ganze Rolle erweitert wird. */
+    zusatz: [],
     bereich: "uebersicht",
     fahrtFilter: "alle",
     planTag: 0,
@@ -80,7 +85,7 @@
      Bereich "Fahrer & Fahrzeuge" ist der erste, den mehrere Rollen
      aus verschiedenen Gruenden brauchen. */
   const darf = (faehigkeit) => {
-    const meine = FAEHIGKEITEN[zustand.rolle] || [];
+    const meine = (FAEHIGKEITEN[zustand.rolle] || []).concat(zustand.zusatz);
     if (Array.isArray(faehigkeit)) return faehigkeit.some((f) => meine.includes(f));
     return meine.includes(faehigkeit);
   };
@@ -164,8 +169,9 @@
       Ein Klick daneben oder ein versehentliches Escape darf eine
       begonnene Begruendung nicht verschlucken.
     */
-    if (!erzwingen && window.ProbeTeam && window.ProbeTeam.offeneEingabe
-        && window.ProbeTeam.offeneEingabe()) {
+    const offen = (window.ProbeTeam && window.ProbeTeam.offeneEingabe && window.ProbeTeam.offeneEingabe())
+      || (window.ProbeVorgaenge && window.ProbeVorgaenge.offeneEingabe && window.ProbeVorgaenge.offeneEingabe());
+    if (!erzwingen && offen) {
       const kasten = document.querySelector(".dialog-kasten");
       if (kasten && !kasten.querySelector("[data-offen-warnung]")) {
         const warnung = document.createElement("div");
@@ -194,8 +200,12 @@
      ============================================================ */
   function navigationZeichnen() {
     const bereiche = sichtbareBereiche();
-    const offeneMeldungen = window.ProbeDaten.meldungen
-      .filter((m) => darf(m.faehigkeit)).length;
+    /* Aus demselben Bestand wie der Eingang selbst - eine Wahrheit.
+       Beim allerersten Zeichnen ist das Modul noch nicht geladen;
+       dann bleibt der Zaehler leer statt zu scheitern. */
+    const offeneMeldungen = window.ProbeVorgaenge
+      ? window.ProbeVorgaenge.offeneFuerMich().length
+      : 0;
 
     document.querySelector("[data-navigation]").innerHTML = bereiche.map((b) => {
       const zaehler = b.id === "meldungen" && offeneMeldungen
@@ -272,17 +282,34 @@
     }
   }
 
+  /*
+    Die Glocke zeigt NUR neue, noch nicht gesehene Ereignisse. Sie
+    ist keine Aufgabenverwaltung: "gesehen" heisst nicht "erledigt",
+    und nichts verschwindet dadurch aus der Arbeitsliste.
+  */
+  function portalkopf() {
+    const offen = window.ProbeVorgaenge ? window.ProbeVorgaenge.ungesehen() : [];
+    return `<div class="portal-kopf">
+      <span class="pk-rolle">Angemeldet als <strong>${h(ROLLENNAMEN[zustand.rolle])}</strong></span>
+      <button class="pk-glocke${offen.length ? " hat-neue" : ""}" type="button" data-glocke
+        aria-label="Neue Ereignisse: ${offen.length}">
+        ${symbol("meldungen")}
+        <span class="pk-zahl">${offen.length}</span>
+      </button>
+    </div>`;
+  }
+
   function zeichnen() {
     const merker = fokusMerken();
     navigationZeichnen();
     const bereich = BEREICHE.find((b) => b.id === zustand.bereich);
     const ziel = document.querySelector("[data-haupt]");
     if (!bereich || !darf(bereich.braucht)) {
-      ziel.innerHTML = `<div class="bereichskopf"><h1>Kein Zugriff</h1></div>
+      ziel.innerHTML = portalkopf() + `<div class="bereichskopf"><h1>Kein Zugriff</h1></div>
         ${kastenKeinRecht("diesen Bereich")}`;
       return;
     }
-    ziel.innerHTML = window.ProbeBereiche.zeichne(zustand.bereich);
+    ziel.innerHTML = portalkopf() + window.ProbeBereiche.zeichne(zustand.bereich);
     fokusWiederherstellen(merker);
     if (!merker) { ziel.scrollTop = 0; window.scrollTo(0, 0); }
   }
@@ -302,6 +329,7 @@
       const nav = e.target.closest("[data-bereich]");
       if (nav) { zustand.klicks += 1; geheZu(nav.dataset.bereich); return; }
 
+      if (e.target.closest("[data-glocke]")) { window.ProbeVorgaenge.glocke(); return; }
       if (e.target.closest("[data-mehr]")) { mehrDialog(); return; }
       if (e.target.closest("[data-dialog-zu]")) { dialogSchliessen(); return; }
 
@@ -321,6 +349,7 @@
     document.addEventListener("change", (e) => {
       if (e.target.matches("[data-rolle]")) {
         zustand.rolle = e.target.value;
+        zustand.zusatz = [];
         const erlaubt = sichtbareBereiche();
         if (!erlaubt.some((b) => b.id === zustand.bereich)) {
           zustand.bereich = erlaubt.length ? erlaubt[0].id : "uebersicht";

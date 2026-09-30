@@ -1115,3 +1115,120 @@ textarea {
   .fz-aktionen .knopf { flex: 1 1 100%; }
   .fk-titel, .fz-daten dt { min-width: 92px; }
 }
+
+/* ============================================================
+   Portalkopf mit Glocke
+   ============================================================ */
+.portal-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--linie);
+}
+.pk-rolle { font-size: 14px; color: var(--gedaempft); }
+.pk-rolle strong { color: var(--schrift); }
+.pk-glocke {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  color: var(--gedaempft);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pk-glocke:hover { border-color: var(--gedaempft); color: var(--schrift); }
+.pk-glocke.hat-neue { border-color: var(--gold); color: var(--gold-hell); }
+.pk-zahl {
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: var(--radius-gross);
+  background: var(--flaeche-2);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.pk-glocke.hat-neue .pk-zahl { background: var(--gold); color: var(--auf-gold); }
+
+/* ============================================================
+   Vorgangsliste
+   ============================================================ */
+.vorgangsliste {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 10px;
+}
+.vorgang {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+.vorgang[data-art="warnung"]   { border-left-color: var(--rot); }
+.vorgang[data-art="aufgabe"]   { border-left-color: var(--gold); }
+.vorgang[data-art="meldung"]   { border-left-color: var(--gedaempft); }
+.vorgang[data-art="nachricht"] { border-left-color: var(--gruen); }
+.vorgang[data-zustand="erledigt"],
+.vorgang[data-zustand="archiviert"] { opacity: 0.72; }
+
+.vg-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.vg-thema {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+/* Der Punkt ist nur eine Zugabe - "Neu" steht zusaetzlich im Text. */
+.vg-punkt {
+  width: 9px; height: 9px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--gold);
+}
+.vg-titel { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.35; }
+
+.vg-daten { display: grid; gap: 2px; margin: 0; font-size: 14px; }
+.vg-daten div { display: flex; gap: 8px; }
+.vg-daten dt {
+  min-width: 92px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+.vg-daten dd { margin: 0; }
+.vg-aktionen { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.zusatz-schalter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px dashed var(--gold);
+  border-radius: var(--radius);
+  background: rgba(200, 169, 110, 0.06);
+}
+.zusatz-schalter strong { display: block; font-size: 15px; }
+.zusatz-schalter span { display: block; font-size: 13px; color: var(--gedaempft); max-width: 62ch; }
+.zusatz-schalter .knopf { margin-left: auto; }
+
+@media (max-width: 560px) {
+  .vorgangsliste { grid-template-columns: 1fr; }
+  .vg-aktionen .knopf { flex: 1 1 100%; }
+  .zusatz-schalter .knopf { margin-left: 0; width: 100%; }
+  .portal-kopf { flex-wrap: wrap; }
+  .pk-glocke { margin-left: auto; }
+}
