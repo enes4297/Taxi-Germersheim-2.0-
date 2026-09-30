@@ -741,59 +741,10 @@
   /* ============================================================
      4. Fahrer & Fahrzeuge
      ============================================================ */
-  function team() {
-    const iso = D.alsIso(D.heute);
-    const plan = D.planung[iso];
-    return `
-      <div class="bereichskopf"><div>
-        <h1>Fahrer & Fahrzeuge</h1>
-        <p class="wichtig">Betriebliche Angaben. Persönliche Daten stehen im Personalbereich.</p>
-      </div></div>
-
-      <div class="flaeche">
-        <h2>Fahrer heute</h2>
-        <div class="tabelle-huelle"><table class="liste">
-          <thead><tr><th>Name</th><th>Status</th><th>Schicht</th><th>Fahrzeug</th><th>Aktuelle Fahrt</th><th></th></tr></thead>
-          <tbody>${plan.zeilen.map((z) => {
-            const m = mitarbeiterVon(z.mitarbeiterId);
-            const f = fahrzeugVon(z.fahrzeugId);
-            const fahrt = D.fahrten.find((x) => x.fahrerId === z.mitarbeiterId && x.zustand === "unterwegs");
-            return `<tr>
-              <td><strong>${h(m.name)}</strong></td>
-              <td>${z.imDienst ? R.marke("gut", "Im Dienst") : R.marke("ruhig", "Frei")}</td>
-              <td>${z.von ? `${h(z.von)}–${h(z.bis)}` : "—"}</td>
-              <td>${f ? h(f.kennzeichen) : (z.imDienst ? R.marke("warnung", "offen") : "—")}</td>
-              <td>${fahrt ? `${h(fahrt.id)} · ${h(fahrt.nach)}` : "—"}</td>
-              <td><button class="knopf klein" type="button" data-tun="wechsel-fahrzeug">Fahrzeug wechseln</button></td>
-            </tr>`;
-          }).join("")}</tbody></table></div>
-      </div>
-
-      <div class="flaeche">
-        <h2>Fahrzeuge</h2>
-        <div class="tabelle-huelle"><table class="liste">
-          <thead><tr><th>Fahrzeug</th><th>Kennzeichen</th><th>Art</th><th>Plätze</th><th>Rollstuhl</th><th>Zustand</th><th>Heute zugewiesen</th></tr></thead>
-          <tbody>${D.fahrzeuge.map((f) => {
-            const zeile = plan.zeilen.find((z) => z.fahrzeugId === f.id);
-            const m = zeile ? mitarbeiterVon(zeile.mitarbeiterId) : null;
-            return `<tr>
-              <td><strong>${h(f.name)}</strong></td>
-              <td>${h(f.kennzeichen)}</td>
-              <td>${h(f.art)}</td>
-              <td>${h(f.plaetze)}</td>
-              <td>${f.rollstuhl ? R.marke("gut", "geeignet") : R.marke("ruhig", "nein")}</td>
-              <td>${f.zustand === "verfuegbar" ? R.marke("gut", "Verfügbar") : R.marke("warnung", "Werkstatt")}</td>
-              <td>${m ? h(m.name) : "—"}</td>
-            </tr>`;
-          }).join("")}</tbody></table></div>
-      </div>
-
-      <div class="flaeche">
-        <h2>PAJ GPS</h2>
-        ${R.zustandsKasten("vorbereitet", "PAJ GPS — nicht angebunden",
-          "Es besteht keine Verbindung zu PAJ. Es werden keine Positionen angezeigt und keine erfunden. Nötig sind: offizielle API, serverseitige Zugangsdaten, Zuordnung Gerät zu Fahrzeug sowie eine Rollen- und Datenschutzprüfung.")}
-      </div>`;
-  }
+  /* Der Bereich steht in probe-team.js - er ist gross genug fuer ein
+     eigenes Modul und braucht denselben Tagesentwurf wie die
+     Planung. */
+  function team() { return window.ProbeTeam.zeichne(); }
 
   /* ============================================================
      5. Meldungen
@@ -1391,6 +1342,8 @@
 
     /* Alles rund um die Fahrtaufnahme gehoert dem eigenen Modul. */
     if (name.startsWith("fa-")) { window.ProbeFahrtassistent.tun(name, wert); return; }
+    /* Ebenso Fahrer & Fahrzeuge. */
+    if (name.startsWith("team-")) { window.ProbeTeam.tun(name, wert); return; }
 
     switch (name) {
       case "neue-fahrt": window.ProbeFahrtassistent.starten(); return;
@@ -1596,6 +1549,7 @@
       planEntwurf().suche = feld.value; R.zeichnen(); return true;
     }
     if (feld.matches("[data-lohn]")) { lohnStand[feld.dataset.lohn] = feld.value; R.dialogOeffnen(lohnDialog()); return true; }
+    if (window.ProbeTeam.geaendert(feld)) return true;
     return false;
   }
 
@@ -1635,6 +1589,14 @@
      Ein Ort fuer alle Zeitfelder der Probe. Die Kennung sagt, wohin
      der Wert gehoert: "fahrt" ist der Fahrtassistent, alles andere ist
      eine Mitarbeiterkennung der Planung. */
+  /* Fahrer & Fahrzeuge arbeitet auf DEMSELBEN Tagesentwurf wie die
+     Planung. Deshalb bekommt das Modul die Helfer gereicht, statt
+     eigene zu bauen - sonst gaebe es zwei Wahrheiten. */
+  window.ProbeTeam.anmelden({
+    planEntwurf, tagesstatus, arbeitetAmTag, merken, zeileVon,
+    konflikteVon, STATUSNAMEN
+  });
+
   window.ProbeZeit.anmelden({
     uebernehmen(kennung, teil, ergebnis, feld) {
       if (kennung === "fahrt") { window.ProbeFahrtassistent.zeit(teil, ergebnis, feld); return; }
@@ -1651,6 +1613,13 @@
     zeichne: (id) => (bereiche[id] ? bereiche[id]() : R.kastenLeer("Inhalte")),
     tun, geaendert,
     taste: (e) => window.ProbeFahrtassistent.taste(e),
-    eingabe: (feld) => window.ProbeFahrtassistent.eingabe(feld)
+    eingabe: (feld) => {
+      /* Suchfelder filtern beim Tippen. Der Fokus bleibt, weil
+         zeichnen() ihn samt Schreibzeiger wiederherstellt. */
+      if (feld && feld.matches && feld.matches("[data-plan-suche], [data-team-fahrersuche], [data-team-fahrzeugsuche]")) {
+        return geaendert(feld);
+      }
+      return window.ProbeFahrtassistent.eingabe(feld);
+    }
   };
 })();

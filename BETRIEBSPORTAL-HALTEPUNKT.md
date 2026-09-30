@@ -797,3 +797,202 @@ auf morgen rechnet neu — und **null Netzwerkaufrufe**.
 
 > **Einordnung unverändert:** Designprobe ohne Datenquelle. Der Lauf
 > sagt nichts über die produktive Instanz.
+
+### 17.8 Manuelle Freigabe der Planungsprobe
+
+Am 30.09.2026 hat der Geschäftsführer die Planung vollständig manuell
+durchgespielt und freigegeben. Bestätigt wurden: die Zeiteingabe,
+Konflikte und Filter, der Erhalt aller Änderungen, die verständliche
+Warnung beim Veröffentlichen und der Pflichtgrund bei „Trotzdem
+veröffentlichen".
+
+> **Einordnung — ausdrücklich:** Das ist eine **manuelle Prüfung der
+> Designprobe**. Die Probe hat keine Datenquelle, keine
+> Supabase-Verbindung und keine echten Daten. Dieser Durchlauf sagt
+> **nichts** darüber aus, wie sich das produktive Betriebsportal
+> verhält. Er belegt, dass der entworfene Bedienweg verstanden und als
+> richtig empfunden wurde — nicht mehr und nicht weniger.
+
+---
+
+## 18. Fahrer & Fahrzeuge
+
+Nach der Freigabe der Planung gebaut. **Nur die Designprobe — kein
+produktiver Portalcode verändert, keine Migration ausgeführt, keine
+Supabase-Daten berührt.**
+
+### 18.1 Eine Wahrheit, zwei Ansichten
+
+Der Bereich arbeitet auf **demselben Tagesentwurf wie die Planung**. Er
+hat denselben Umschalter Heute/Morgen, und eine Zuweisung hier steht
+dort sofort genauso — der Prüflauf weist das nach, indem er nach einer
+Zuweisung in die Planung wechselt und denselben Konflikt vorfindet.
+
+Deshalb bekommt das Modul [probe-team.js](probe-betriebsportal/probe-team.js)
+die Planungshelfer gereicht, statt eigene zu bauen. Zwei getrennte
+Rechnungen über denselben Tag wären genau die Sorte Fehler, die im
+Bestand zu 48 Seiten mit eigenem Browserspeicher geführt hat.
+
+### 18.2 Fahrer
+
+Karten statt Tabelle, weil eine Karte mehr Platz für Klartext hat.
+Jede zeigt Initialen, Name, Beschäftigung, Tagesstatus, Schichtzeit,
+Fahrzeug, Telefonnummer (nur für berechtigte Rollen), eine
+Dokumentwarnung und als Vorschau des späteren Prüfprotokolls die letzte
+Änderung mit Person und Uhrzeit.
+
+Filter: **Alle · Im Dienst · Frei · Urlaub · Krank · Dokument fehlt**,
+jeweils mit Zähler. Dazu eine Namenssuche, die beim Tippen filtert.
+
+Ein Klick öffnet die Fahrerakte mit: heutiger und morgiger Schicht,
+aktuellem Fahrzeug, Kontakt und Beschäftigung, Fahrerdokumenten mit
+Gültigkeit, Urlaub und Krankheit (nur Art und Zeitraum — **kein
+Krankheitsgrund, keine ärztliche Angabe**) sowie dem Lohnbereich.
+
+### 18.3 Fahrzeuge
+
+Der angezeigte Zustand wird **abgeleitet**, nicht doppelt gespeichert:
+Grundzustand (frei / Werkstatt / gesperrt) zuerst, darüber Zuweisung und
+laufende Fahrt. So können Karte und Plan nicht auseinanderlaufen.
+
+| Zustand | Herkunft |
+|---|---|
+| Frei | einsatzbereit, niemand fährt es an diesem Tag |
+| Zugewiesen | ein Fahrer im Dienst hat es im Tagesplan |
+| Unterwegs | zusätzlich läuft eine Fahrt darauf |
+| Werkstatt / Gesperrt | gepflegter Grundzustand, schlägt alles andere |
+
+Jede Karte zeigt Name, Kennzeichen, Art, Sitzplätze,
+Rollstuhleignung, aktuellen Fahrer, heutigen Einsatz, Kilometerstand
+sowie TÜV, Versicherung und nächsten Service mit Warnung bei
+abgelaufenem oder bald ablaufendem Termin.
+
+**Sicherheitskritische Zustände stehen als Text da, nicht nur als
+Farbe.** Bei einem gesperrten Fahrzeug steht der Sperrgrund im Klartext
+auf der Karte.
+
+### 18.4 Zuweisung
+
+Zwei Wege, beide über dieselbe einfache Auswahl: vom Fahrzeug aus
+(„Fahrer zuweisen") und aus der Fahrerakte („Fahrzeug zuweisen").
+
+- Angeboten werden **nur einsatzbereite** Fahrzeuge. Werkstatt und
+  Sperre stehen in einem eigenen Abschnitt darunter — sichtbar, mit
+  Grund, aber nicht wählbar.
+- Ein bereits belegtes Fahrzeug ist gekennzeichnet („belegt durch …").
+- Vor dem Übernehmen kommt eine Zusammenfassung mit vorher und nachher.
+- Bei Doppelbelegung wird vorher gesagt, dass ein Konflikt entsteht;
+  „Trotzdem zuweisen" ist zurückhaltend gestaltet und führt über den
+  bereits freigegebenen Konfliktweg.
+- Danach gibt es **Rückgängig**.
+
+Wird ein Fahrzeug trotzdem angesteuert, das gesperrt ist, erklärt die
+Oberfläche warum und was zu tun ist — sie lehnt nicht wortlos ab.
+
+### 18.5 Fahrzeugzustand ändern
+
+„Werkstatt" und „Sperren" verlangen einen **Pflichtgrund**. Ist das
+Fahrzeug an diesem Tag zugewiesen, wird vorher gewarnt und die Zuweisung
+beim Übernehmen gelöst — sonst stünde ein nicht einsatzbereites Fahrzeug
+im Tagesplan.
+
+### 18.6 Lohnabrechnungen
+
+Sichtbar nur mit `payroll.read`, bereitstellen nur mit `payroll.write` —
+also Administration und Personal. **Die Disposition sieht die Überschrift
+und darunter „Keine Berechtigung", sonst nichts**; kein einziger
+Dateiname, kein Weg zum Hochladen. Bankdaten und Gehalt sind ihr
+ausdrücklich verschlossen.
+
+Der Ablauf: Mitarbeiter steht fest, Monat und Jahr wählen, Datei wählen,
+eindeutige Bezeichnung wird gebildet. **Eine vorhandene Abrechnung wird
+nicht still überschrieben** — es entsteht eine neue Version, und dafür
+ist ein Grund Pflicht. Sichtbar bleibt, wer sie wann bereitgestellt hat.
+
+In der Probe wird nichts hochgeladen. Der Mitarbeiter bekäme später nur
+einen Hinweis, dass eine Abrechnung bereitliegt — nie die Datei als
+E-Mail- oder Nachrichtenanhang.
+
+### 18.7 Rollen
+
+Ausschließlich über das entworfene Fähigkeitenmodell — keine Rolle aus
+`localStorage`, kein Rückfall.
+
+| | Fahrer | Fahrzeuge | Zuweisen | Zustand ändern | Lohn |
+|---|:-:|:-:|:-:|:-:|:-:|
+| Administration | ✔ | ✔ | ✔ | ✔ | ✔ |
+| Disposition | ✔ | ✔ | ✔ | — | — |
+| Personal | ✔ | — | — | — | ✔ |
+| Buchhaltung | — | — | — | — | — |
+
+Personal sieht die Fahrer, aber keine Fahrzeugkarten — und bekommt das
+gesagt statt nur nichts zu sehen. Buchhaltung kommt in den Bereich gar
+nicht hinein.
+
+### 18.8 Protokollvorschau
+
+Jede wichtige Änderung endet mit einem Fenster „Was protokolliert
+würde": wer, wann, was betroffen ist, vorher, nachher und gegebenenfalls
+der Grund. Ausdrücklich **nicht** darin: Passwörter, Zugangsschlüssel,
+ärztliche Inhalte, Lohnbeträge. Der Prüflauf stellt fest, dass im
+Lohnprotokoll kein Betrag vorkommt.
+
+### 18.9 Vier eigene Fehler, vom Prüflauf gefunden
+
+1. **Die Suche filterte erst beim Verlassen des Feldes.** Ursache: Sie
+   hing am `change`-Ereignis. Live zu filtern hieß bisher, den Fokus zu
+   verlieren, weil der Bereich neu gezeichnet wird. Behoben an der
+   Wurzel: `zeichnen()` merkt sich jetzt, welches Feld den Fokus hatte
+   **und wo der Schreibzeiger stand**, und stellt beides wieder her. Das
+   hilft auch der Suche in der Planung.
+2. **Vom Fahrer aus gab es keinen Weg zur Zuweisung** — nur vom Fahrzeug
+   aus. Aufgefallen ist es, weil meine Prüfung den Weg über einen
+   internen Aufruf nahm statt über die Oberfläche. Das war ein Notbehelf,
+   der genau diese Lücke verdeckt hätte. Jetzt gibt es den Knopf in der
+   Fahrerakte, und die Prüfung benutzt ihn.
+3. **Das Zuweisungsfenster vom Fahrer aus zeigte keinen Fehlertext.**
+   Ein abgelehntes gesperrtes Fahrzeug hätte dort keinen Grund genannt.
+4. **Die Initialen ergaben „T0"** statt „T01", weil der zweite Namensteil
+   aus Ziffern besteht.
+5. **Der PAJ-GPS-Platzhalter war verschwunden.** Er stand im alten
+   Bereich, den ich ersetzt habe — beim Neubau ist er untergegangen. Das
+   ist eine echte Regression: Die Probe hätte den offenen
+   Integrationsstand nicht mehr benannt. Der Gegenlauf
+   `probe-portal-pruefen` hat sie gefunden, nicht der neue Lauf. Genau
+   dafür gibt es Gegenläufe.
+
+### 18.10 Zwei Fehlalarme in den Prüfungen — getrennt benannt
+
+- Ich hatte erwartet, dass F01 „zugewiesen" ist. Gemessen ist es
+  **unterwegs**, weil eine Fahrt darauf läuft — und F02 gilt als
+  **frei**, weil sein eingetragener Fahrer krank ist. Beides ist richtig
+  so; falsch war meine Erwartung.
+- Die Suche nach Gesundheitsangaben schlug an, weil die Oberfläche den
+  Satz „kein Krankheitsgrund und keine ärztliche Angabe" enthält. Die
+  Prüfung sucht jetzt nach Behandlungsarten und nach einem Datenfeld,
+  das so etwas aufnehmen würde — und verlangt zusätzlich, dass dieser
+  Satz dasteht.
+
+Dazu ein bekannter Fallstrick, der wieder zuschlug: `[data-dialog-zu]`
+trifft zuerst den Hintergrund, der vom Fenster verdeckt wird. Gemeint
+war die Schaltfläche.
+
+### 18.11 Prüfstand
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-team-pruefen` (13 Blöcke, neu) | **144 bestanden, 0 offen** |
+| `probe-planung-pruefen` | 163 bestanden, 0 offen |
+| `probe-fahrt-pruefen` | 168 bestanden, 0 offen |
+| `probe-portal-pruefen` | 107 bestanden, 0 offen |
+
+Geprüft: Rollen und gesperrte Bereiche, Suche und Filter, Fahrer- und
+Fahrzeugzustände, Zuweisen und Lösen, gesperrtes Fahrzeug,
+Werkstattfahrzeug, Rollstuhlkennzeichnung, Doppelzuweisung, Rückgängig,
+offene Eingaben beim Schließen, der Lohnbereich für Administration und
+Personal, keine Lohndaten für die Disposition, stabile Kennungen statt
+Array-Positionen, der Zustandsabgleich mit der Planung, 320 · 390 · 430 ·
+1440 px, Tastatur und sichtbarer Fokus — und **null Netzwerkaufrufe**.
+
+> **Einordnung unverändert:** Designprobe ohne Datenquelle. Der Lauf
+> sagt nichts über die produktive Instanz.

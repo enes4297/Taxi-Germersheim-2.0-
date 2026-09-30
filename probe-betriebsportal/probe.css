@@ -964,3 +964,154 @@ textarea {
   border-color: var(--gold);
   color: var(--auf-gold);
 }
+
+/* ============================================================
+   Fahrer & Fahrzeuge
+   ============================================================ */
+.fahrerraster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+.fahrerkarte {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  color: var(--schrift);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fahrerkarte:hover { background: var(--flaeche-2); border-color: var(--gedaempft); }
+.fahrerkarte[data-status="dienst"] { border-left-color: var(--gruen); }
+.fahrerkarte[data-status="krank"]  { border-left-color: var(--rot); }
+.fahrerkarte[data-status="urlaub"] { border-left-color: var(--gold); }
+
+.fk-kopf { display: flex; align-items: center; gap: 10px; }
+.fk-initialen {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px; height: 38px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--flaeche-2);
+  border: 1px solid var(--linie);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.fk-name { display: flex; flex-direction: column; min-width: 0; }
+.fk-name strong { font-size: 15px; }
+.fk-name span { font-size: 12px; color: var(--gedaempft); }
+.fk-kopf .marke-zustand { margin-left: auto; }
+
+.fk-zeilen { display: grid; gap: 3px; font-size: 14px; }
+.fk-zeilen > span { display: flex; gap: 8px; }
+.fk-titel {
+  min-width: 78px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+.fk-warnung {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gedaempft);
+}
+.fk-warnung.ist-warnung { color: var(--rot); }
+.fk-protokoll {
+  font-size: 12px;
+  color: var(--gedaempft);
+  border-top: 1px solid var(--linie);
+  padding-top: 6px;
+}
+
+.fahrzeugraster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 10px;
+}
+.fahrzeugkarte {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+.fahrzeugkarte[data-lage="verfuegbar"] { border-left-color: var(--gruen); }
+.fahrzeugkarte[data-lage="zugewiesen"],
+.fahrzeugkarte[data-lage="unterwegs"]  { border-left-color: var(--gold); }
+.fahrzeugkarte[data-lage="werkstatt"],
+.fahrzeugkarte[data-lage="gesperrt"]   { border-left-color: var(--rot); }
+
+.fz-kopf { display: flex; align-items: center; gap: 10px; }
+.fz-kopf strong { display: block; font-size: 16px; }
+.fz-kennzeichen {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 1px 8px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+.fz-kopf .marke-zustand { margin-left: auto; }
+
+.fz-daten { display: grid; gap: 3px; margin: 0; font-size: 14px; }
+.fz-daten div { display: flex; gap: 8px; }
+.fz-daten dt {
+  min-width: 118px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+.fz-daten dd { margin: 0; }
+
+.fz-termine { display: flex; flex-wrap: wrap; gap: 6px; }
+.fz-termin {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 9px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  font-size: 13px;
+}
+.fz-termin.ist-laeuft-ab { border-color: rgba(200, 169, 110, 0.5); color: var(--gold-hell); }
+.fz-termin.ist-abgelaufen { border-color: rgba(224, 108, 90, 0.5); color: var(--rot); }
+
+.fz-sperrgrund {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--rot);
+  background: rgba(224, 108, 90, 0.09);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+.fz-sperrgrund.ist-termin { border-left-color: var(--gold); background: rgba(200, 169, 110, 0.09); }
+
+.fz-aktionen { display: flex; flex-wrap: wrap; gap: 6px; }
+.fz-hinweis { font-size: 13px; color: var(--gedaempft); }
+
+.dialog-kopf .fk-initialen { width: 34px; height: 34px; font-size: 13px; }
+
+@media (max-width: 560px) {
+  .fahrerraster, .fahrzeugraster { grid-template-columns: 1fr; }
+  .fz-aktionen .knopf { flex: 1 1 100%; }
+  .fk-titel, .fz-daten dt { min-width: 92px; }
+}

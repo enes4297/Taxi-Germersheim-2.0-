@@ -46,12 +46,125 @@
     { id: "M06", name: "Testfahrer 06", beschaeftigung: "Teilzeit",  telefon: "Testnummer 06" }
   ];
 
-  /* ---- Fahrzeuge ---- */
+  /* ---- Fahrzeuge ----
+     "zustand" ist der gepflegte Grundzustand des Fahrzeugs:
+       verfuegbar - einsatzbereit
+       werkstatt  - in Reparatur oder Wartung
+       gesperrt   - darf nicht eingesetzt werden
+     Ob ein Fahrzeug gerade ZUGEWIESEN oder UNTERWEGS ist, wird nicht
+     hier gespeichert, sondern aus Tagesplan und Fahrten abgeleitet.
+     Sonst haette man zwei Wahrheiten, die auseinanderlaufen. */
   const fahrzeuge = [
-    { id: "F01", name: "Testwagen 01", kennzeichen: "GER-TEST 001", art: "Kombi",    plaetze: 4, rollstuhl: false, zustand: "verfuegbar" },
-    { id: "F02", name: "Testwagen 02", kennzeichen: "GER-TEST 002", art: "Van",      plaetze: 8, rollstuhl: true,  zustand: "verfuegbar" },
-    { id: "F03", name: "Testwagen 03", kennzeichen: "GER-TEST 003", art: "Limousine",plaetze: 4, rollstuhl: false, zustand: "verfuegbar" },
-    { id: "F04", name: "Testwagen 04", kennzeichen: "GER-TEST 004", art: "Kombi",    plaetze: 4, rollstuhl: false, zustand: "werkstatt" }
+    { id: "F01", name: "Testwagen 01", kennzeichen: "GER-TEST 001", art: "Kombi",     plaetze: 4, rollstuhl: false, zustand: "verfuegbar",
+      km: 128400, tuev: alsIso(tagAls(120)), versicherung: alsIso(tagAls(210)), service: alsIso(tagAls(18)), sperrgrund: "" },
+    { id: "F02", name: "Testwagen 02", kennzeichen: "GER-TEST 002", art: "Van",       plaetze: 8, rollstuhl: true,  zustand: "verfuegbar",
+      km: 96250,  tuev: alsIso(tagAls(21)),  versicherung: alsIso(tagAls(95)),  service: alsIso(tagAls(60)), sperrgrund: "" },
+    { id: "F03", name: "Testwagen 03", kennzeichen: "GER-TEST 003", art: "Limousine", plaetze: 4, rollstuhl: false, zustand: "verfuegbar",
+      km: 54800,  tuev: alsIso(tagAls(300)), versicherung: alsIso(tagAls(150)), service: alsIso(tagAls(120)), sperrgrund: "" },
+    { id: "F04", name: "Testwagen 04", kennzeichen: "GER-TEST 004", art: "Kombi",     plaetze: 4, rollstuhl: false, zustand: "werkstatt",
+      km: 201300, tuev: alsIso(tagAls(-9)),  versicherung: alsIso(tagAls(40)),  service: alsIso(tagAls(-30)), sperrgrund: "" },
+    { id: "F05", name: "Testwagen 05", kennzeichen: "GER-TEST 005", art: "Van",       plaetze: 8, rollstuhl: true,  zustand: "gesperrt",
+      km: 173900, tuev: alsIso(tagAls(75)),  versicherung: alsIso(tagAls(75)),  service: alsIso(tagAls(45)),
+      sperrgrund: "Unfallschaden, Gutachten steht aus" }
+  ];
+
+  const FAHRZEUG_ZUSTAENDE = {
+    verfuegbar:  "Frei",
+    zugewiesen:  "Zugewiesen",
+    unterwegs:   "Unterwegs",
+    werkstatt:   "Werkstatt",
+    gesperrt:    "Gesperrt"
+  };
+
+  /* Nur "verfuegbar" darf eingeplant werden. Werkstatt und Sperre sind
+     harte Gruende - sie werden nie stillschweigend uebergangen. */
+  const istEinsatzbereit = (f) => Boolean(f) && f.zustand === "verfuegbar";
+
+  /* ---- Fahrerdokumente ----
+     Nur betrieblich notwendige Nachweise. Keine Gesundheitsangaben,
+     keine Personalakteninhalte. */
+  const fahrerDokumente = [
+    { mitarbeiterId: "M01", art: "Führerschein",                  bis: alsIso(tagAls(400)) },
+    { mitarbeiterId: "M01", art: "Personenbeförderungsschein",    bis: alsIso(tagAls(260)) },
+    { mitarbeiterId: "M02", art: "Führerschein",                  bis: alsIso(tagAls(14)) },
+    { mitarbeiterId: "M02", art: "Personenbeförderungsschein",    bis: alsIso(tagAls(180)) },
+    { mitarbeiterId: "M03", art: "Führerschein",                  bis: alsIso(tagAls(520)) },
+    { mitarbeiterId: "M03", art: "Personenbeförderungsschein",    bis: alsIso(tagAls(-5)) },
+    { mitarbeiterId: "M04", art: "Führerschein",                  bis: alsIso(tagAls(700)) },
+    { mitarbeiterId: "M04", art: "Personenbeförderungsschein",    bis: alsIso(tagAls(340)) },
+    { mitarbeiterId: "M05", art: "Führerschein",                  bis: alsIso(tagAls(90)) },
+    { mitarbeiterId: "M05", art: "Personenbeförderungsschein",    bis: alsIso(tagAls(25)) },
+    { mitarbeiterId: "M06", art: "Führerschein",                  bis: alsIso(tagAls(610)) }
+    /* M06 fehlt der Personenbefoerderungsschein - das ist der Fall
+       "Dokument fehlt". */
+  ];
+
+  const DOKUMENT_PFLICHT = ["Führerschein", "Personenbeförderungsschein"];
+
+  /*
+    Dokumentstand eines Fahrers: fehlt / abgelaufen / laeuft bald ab /
+    gueltig. "Bald" heisst hier 30 Tage - das ist eine Annahme der
+    Designprobe und keine Geschaeftsregel.
+  */
+  function dokumentstand(mitarbeiterId) {
+    const heuteIso = alsIso(heute);
+    const grenze = alsIso(tagAls(30));
+    const eigene = fahrerDokumente.filter((d) => d.mitarbeiterId === mitarbeiterId);
+    const eintraege = DOKUMENT_PFLICHT.map((art) => {
+      const d = eigene.find((x) => x.art === art);
+      if (!d) return { art, bis: "", lage: "fehlt" };
+      if (d.bis < heuteIso) return { art, bis: d.bis, lage: "abgelaufen" };
+      if (d.bis <= grenze) return { art, bis: d.bis, lage: "laeuft-ab" };
+      return { art, bis: d.bis, lage: "gueltig" };
+    });
+    const schlimmste = eintraege.find((x) => x.lage === "fehlt")
+      || eintraege.find((x) => x.lage === "abgelaufen")
+      || eintraege.find((x) => x.lage === "laeuft-ab")
+      || null;
+    return { eintraege, warnung: schlimmste };
+  }
+
+  const DOKUMENT_LAGE = {
+    "fehlt": "Dokument fehlt",
+    "abgelaufen": "abgelaufen",
+    "laeuft-ab": "läuft bald ab",
+    "gueltig": "gültig"
+  };
+
+  /* ---- Protokollvorschau ----
+     Was spaeter mitgeschrieben wuerde. Bewusst OHNE Passwoerter,
+     Tokens, medizinische Inhalte und Lohnbetraege. In der Designprobe
+     lebt diese Liste nur in der laufenden Sitzung. */
+  const protokoll = [
+    { zeit: "gestern 17:42", wer: "Administration", betrifft: "Testwagen 04",
+      was: "Zustand geändert", vorher: "Frei", nachher: "Werkstatt", grund: "Bremsen prüfen" },
+    { zeit: "gestern 16:10", wer: "Disposition", betrifft: "Testfahrer 01",
+      was: "Fahrzeug zugewiesen", vorher: "kein Fahrzeug", nachher: "GER-TEST 001", grund: "" }
+  ];
+
+  function protokollieren(eintrag) {
+    protokoll.unshift({
+      zeit: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
+      grund: "",
+      ...eintrag
+    });
+    if (protokoll.length > 40) protokoll.pop();
+  }
+
+  const letzteAenderung = (betrifft) =>
+    protokoll.find((p) => p.betrifft === betrifft) || null;
+
+  /* ---- Lohnabrechnungen der Designprobe ----
+     Keine echten Dateien, keine Betraege. Nur Monat, Jahr, Version und
+     wer sie bereitgestellt hat. */
+  const lohnProbe = [
+    { id: "LP01", mitarbeiterId: "M01", monat: "08", jahr: "2026", version: 1,
+      datei: "Testdatei-M01-08-2026.pdf", von: "Personal", am: "02.09.2026 09:14 Uhr", grund: "" },
+    { id: "LP02", mitarbeiterId: "M01", monat: "07", jahr: "2026", version: 2,
+      datei: "Testdatei-M01-07-2026-v2.pdf", von: "Personal", am: "05.08.2026 11:02 Uhr",
+      grund: "Korrektur der Stundenzahl" },
+    { id: "LP03", mitarbeiterId: "M02", monat: "08", jahr: "2026", version: 1,
+      datei: "Testdatei-M02-08-2026.pdf", von: "Administration", am: "02.09.2026 09:20 Uhr", grund: "" }
   ];
 
   /* ---- Schichtvorlagen. Uhrzeit steht immer dabei. ---- */
@@ -481,6 +594,9 @@
     personal, lohn, rewards, kunden, rechnungen, analyse,
     standardadresse, letzteKunden, kundenSuche, haeufigeZiele,
     abwesenheiten, abwesenheitFuer, abwesenheitenAmTag, istWirksam,
+    FAHRZEUG_ZUSTAENDE, istEinsatzbereit,
+    fahrerDokumente, dokumentstand, DOKUMENT_LAGE, DOKUMENT_PFLICHT,
+    protokoll, protokollieren, letzteAenderung, lohnProbe,
     zeitraumText, ABWESENHEIT_NAMEN,
     leistungsarten, rollstuhlWerte, gepaeckWerte,
     scheinWerte, zuzahlungWerte, genehmigungWerte

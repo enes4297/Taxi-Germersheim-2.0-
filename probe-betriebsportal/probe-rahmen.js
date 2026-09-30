@@ -56,7 +56,7 @@
     { id: "uebersicht", name: "Übersicht",          kurz: "Übersicht", symbol: "uebersicht", braucht: "self.read" },
     { id: "fahrten",    name: "Fahrten",            kurz: "Fahrten",   symbol: "fahrten",    braucht: "operations.read" },
     { id: "planung",    name: "Planung",            kurz: "Planung",   symbol: "planung",    braucht: "operations.read" },
-    { id: "team",       name: "Fahrer & Fahrzeuge", kurz: "Team",      symbol: "team",       braucht: "operations.read" },
+    { id: "team",       name: "Fahrer & Fahrzeuge", kurz: "Team",      symbol: "team",       braucht: ["operations.read", "personnel.read", "fleet.read"] },
     { id: "meldungen",  name: "Meldungen",          kurz: "Meldungen", symbol: "meldungen",  braucht: "self.read" },
     { id: "kunden",     name: "Kunden",             kurz: "Kunden",    symbol: "kunden",     braucht: "customers.read" },
     { id: "personal",   name: "Personal",           kurz: "Personal",  symbol: "personal",   braucht: "personnel.read" },
@@ -76,7 +76,14 @@
     klicks: 0
   };
 
-  const darf = (faehigkeit) => (FAEHIGKEITEN[zustand.rolle] || []).includes(faehigkeit);
+  /* Eine Faehigkeit - oder eine Liste, von der eine genuegt. Der
+     Bereich "Fahrer & Fahrzeuge" ist der erste, den mehrere Rollen
+     aus verschiedenen Gruenden brauchen. */
+  const darf = (faehigkeit) => {
+    const meine = FAEHIGKEITEN[zustand.rolle] || [];
+    if (Array.isArray(faehigkeit)) return faehigkeit.some((f) => meine.includes(f));
+    return meine.includes(faehigkeit);
+  };
   const sichtbareBereiche = () => BEREICHE.filter((b) => darf(b.braucht));
 
   /* ---- Maskieren. Beim Einfuegen in HTML immer. ---- */
@@ -151,6 +158,26 @@
 
   function dialogSchliessen(erzwingen) {
     if (!erzwingen && dialogSchutz && dialogSchutz() === false) return;
+    /*
+      Zweiter Schutz, der fuer JEDES Fenster gilt: Steht in einem
+      Pflichtfeld schon etwas, wird nicht kommentarlos geschlossen.
+      Ein Klick daneben oder ein versehentliches Escape darf eine
+      begonnene Begruendung nicht verschlucken.
+    */
+    if (!erzwingen && window.ProbeTeam && window.ProbeTeam.offeneEingabe
+        && window.ProbeTeam.offeneEingabe()) {
+      const kasten = document.querySelector(".dialog-kasten");
+      if (kasten && !kasten.querySelector("[data-offen-warnung]")) {
+        const warnung = document.createElement("div");
+        warnung.className = "feldfehler";
+        warnung.setAttribute("role", "alert");
+        warnung.setAttribute("data-offen-warnung", "");
+        warnung.textContent = "Ihre Eingabe geht sonst verloren. Zum Schließen noch einmal bestätigen.";
+        const rumpf = kasten.querySelector(".dialog-rumpf");
+        if (rumpf) rumpf.prepend(warnung);
+        return;
+      }
+    }
     dialogSchutz = null;
     const ziel = document.querySelector("[data-dialog]");
     ziel.hidden = true;
@@ -214,7 +241,39 @@
       </div>`);
   }
 
+  /*
+    Beim Neuzeichnen wird der Hauptbereich ersetzt. Stand der Fokus in
+    einem Suchfeld, laege er danach beim Seitenkoerper - man koennte
+    kein zweites Zeichen tippen. Deshalb wird gemerkt, WELCHES Feld
+    den Fokus hatte und an welcher Stelle der Schreibzeiger stand.
+  */
+  function fokusMerken() {
+    const el = document.activeElement;
+    if (!el || !el.dataset || el === document.body) return null;
+    const schluessel = Object.keys(el.dataset)[0];
+    if (!schluessel) return null;
+    const attribut = "data-" + schluessel.replace(/[A-Z]/g, (z) => "-" + z.toLowerCase());
+    const wahl = el.dataset[schluessel]
+      ? `[${attribut}="${el.dataset[schluessel]}"]`
+      : `[${attribut}]`;
+    let anfang = null;
+    let ende = null;
+    try { anfang = el.selectionStart; ende = el.selectionEnd; } catch { /* nicht jedes Feld kann das */ }
+    return { wahl, anfang, ende };
+  }
+
+  function fokusWiederherstellen(merker) {
+    if (!merker) return;
+    const el = document.querySelector(merker.wahl);
+    if (!el) return;
+    el.focus();
+    if (merker.anfang !== null) {
+      try { el.setSelectionRange(merker.anfang, merker.ende); } catch { /* egal */ }
+    }
+  }
+
   function zeichnen() {
+    const merker = fokusMerken();
     navigationZeichnen();
     const bereich = BEREICHE.find((b) => b.id === zustand.bereich);
     const ziel = document.querySelector("[data-haupt]");
@@ -224,8 +283,8 @@
       return;
     }
     ziel.innerHTML = window.ProbeBereiche.zeichne(zustand.bereich);
-    ziel.scrollTop = 0;
-    window.scrollTo(0, 0);
+    fokusWiederherstellen(merker);
+    if (!merker) { ziel.scrollTop = 0; window.scrollTo(0, 0); }
   }
 
   function geheZu(bereichId) {
