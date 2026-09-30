@@ -15,9 +15,16 @@
   const mitarbeiterVon = (id) => D.mitarbeiter.find((m) => m.id === id);
   const fahrzeugVon = (id) => D.fahrzeuge.find((f) => f.id === id);
   const vorlageVon = (id) => D.vorlagen.find((v) => v.id === id);
-
   /* ============================================================
      Planung - Arbeitsstand
+     ============================================================
+     Wichtige Aenderung nach dem manuellen Test: Eine Planzeile wird
+     ueber die MITARBEITERKENNUNG angesprochen, nicht mehr ueber ihre
+     Stelle im Array. Vorher hiess es data-zeile="3" - wurde gefiltert
+     oder umsortiert, konnte dieselbe Nummer auf eine andere Person
+     zeigen. Jetzt traegt jedes Bedienelement die Kennung der Person,
+     zu der es gehoert. Ein Klick bei Mitarbeiter A kann Mitarbeiter B
+     nicht mehr erreichen.
      ============================================================ */
   function planTagIso() { return D.alsIso(D.tagAls(R.zustand.planTag)); }
 
@@ -30,37 +37,164 @@
         zeilen: quelle.zeilen.map((z) => ({ ...z })),
         urzeilen: quelle.zeilen.map((z) => ({ ...z })),
         filter: "alle",
-        suche: ""
+        suche: "",
+        /* Fuer "Letzte Änderung rückgängig". Bewusst klein gehalten. */
+        verlauf: [],
+        zeitfehler: {}
       };
     }
     return R.zustand.planEntwurf;
   }
 
-  const zeileGeaendert = (e, i) =>
-    JSON.stringify(e.zeilen[i]) !== JSON.stringify(e.urzeilen[i]);
+  /* Die eine Stelle, an der eine Zeile gefunden wird. */
+  const zeileVon = (e, mitarbeiterId) =>
+    e.zeilen.find((z) => z.mitarbeiterId === mitarbeiterId) || null;
+  const urzeileVon = (e, mitarbeiterId) =>
+    e.urzeilen.find((z) => z.mitarbeiterId === mitarbeiterId) || null;
 
-  const anzahlGeaendert = (e) => e.zeilen.filter((_, i) => zeileGeaendert(e, i)).length;
-
-  /* Konflikte. Nur belegbare, keine erfundenen Regeln. */
-  function konflikteVon(entwurf) {
-    const treffer = new Map();
-    const belegt = new Map();
-    entwurf.zeilen.forEach((z, i) => {
-      if (!z.imDienst) return;
-      if (!z.von || !z.bis) { treffer.set(i, "Zeit fehlt"); return; }
-      if (!z.fahrzeugId) { treffer.set(i, "kein Fahrzeug"); return; }
-      const fz = fahrzeugVon(z.fahrzeugId);
-      if (fz && fz.zustand === "werkstatt") { treffer.set(i, "Fahrzeug in der Werkstatt"); return; }
-      const schluessel = `${z.fahrzeugId}|${z.von}`;
-      if (belegt.has(schluessel)) {
-        treffer.set(i, "Fahrzeug doppelt verplant");
-        treffer.set(belegt.get(schluessel), "Fahrzeug doppelt verplant");
-      } else {
-        belegt.set(schluessel, i);
-      }
-    });
-    return treffer;
+  function zeileGeaendert(e, mitarbeiterId) {
+    const jetzt = zeileVon(e, mitarbeiterId);
+    const vorher = urzeileVon(e, mitarbeiterId);
+    return JSON.stringify(jetzt) !== JSON.stringify(vorher);
   }
+
+  const anzahlGeaendert = (e) =>
+    e.zeilen.filter((z) => zeileGeaendert(e, z.mitarbeiterId)).length;
+
+  /* Vor jeder Aenderung den Stand sichern - fuer Rueckgaengig. */
+  function merken(e) {
+    e.verlauf.push({
+      zeilen: e.zeilen.map((z) => ({ ...z })),
+      zeitfehler: { ...e.zeitfehler }
+    });
+    if (e.verlauf.length > 25) e.verlauf.shift();
+  }
+
+  /* ---- Konflikte ----
+     Getrennt nach zwei Arten, weil sie verschieden schwer wiegen:
+
+     "technisch"  - die Daten sind nicht verwendbar. Veroeffentlichen
+                    ist ausgeschlossen, nicht nur unerwuenscht.
+     "betrieblich" - fachlich unguenstig, aber eine bewusste
+                    Entscheidung ist moeglich.
+  */
+  function minuten(zeit) {
+    if (!zeit || !/^\d{2}:\d{2}$/.test(zeit)) return null;
+    const [s, m] = zeit.split(":").map(Number);
+    return s * 60 + m;
+  }
+
+  /* Zwei Schichten am selben Fahrzeug ueberschneiden sich? Schichten
+     ueber Mitternacht werden dabei in zwei Stuecke zerlegt. */
+  function abschnitte(von, bis) {
+    const a = minuten(von);
+    const b = minuten(bis);
+    if (a === null || b === null) return [];
+    if (b > a) return [[a, b]];
+    if (b === a) return [[a, a + 1]];
+    return [[a, 1440], [0, b]];
+  }
+  const ueberschneidet = (x, y) =>
+    abschnitte(x.von, x.bis).some(([a1, b1]) =>
+      abschnitte(y.von, y.bis).some(([a2, b2]) => a1 < b2 && a2 < b1));
+
+  function konflikteVon(entwurf) {
+    const liste = [];
+    const imDienst = entwurf.zeilen.filter((z) => z.imDienst);
+
+    for (const z of entwurf.zeilen) {
+      const m = mitarbeiterVon(z.mitarbeiterId);
+      const name = m ? m.name : z.mitarbeiterId;
+
+      /* Technisch: der Mitarbeiter ist gar nicht bekannt. */
+      if (!m) {
+        liste.push({
+          art: "technisch", kennung: z.mitarbeiterId, kurz: "Mitarbeiter unbekannt",
+          text: `Zu der Kennung ${z.mitarbeiterId} gibt es keinen Mitarbeiterdatensatz.`
+        });
+        continue;
+      }
+      if (!z.imDienst) continue;
+
+      /* Technisch: die Uhrzeit ist unvollstaendig oder ungueltig. */
+      if (entwurf.zeitfehler[z.mitarbeiterId]) {
+        liste.push({
+          art: "technisch", kennung: z.mitarbeiterId, kurz: "Uhrzeit ungültig",
+          text: `${name}: ${entwurf.zeitfehler[z.mitarbeiterId]}`
+        });
+        continue;
+      }
+      if (!z.von || !z.bis || minuten(z.von) === null || minuten(z.bis) === null) {
+        liste.push({
+          art: "technisch", kennung: z.mitarbeiterId, kurz: "Uhrzeit unvollständig",
+          text: `${name}: Die individuelle Uhrzeit ist unvollständig.`
+        });
+        continue;
+      }
+
+      /* Technisch: das Fahrzeug gibt es nicht. */
+      if (z.fahrzeugId && !fahrzeugVon(z.fahrzeugId)) {
+        liste.push({
+          art: "technisch", kennung: z.mitarbeiterId, kurz: "Fahrzeug unbekannt",
+          text: `${name}: Die Fahrzeugkennung ${z.fahrzeugId} gehört zu keinem Fahrzeug.`
+        });
+        continue;
+      }
+
+      /* Betrieblich: kein Fahrzeug zugewiesen. */
+      if (!z.fahrzeugId) {
+        liste.push({
+          art: "betrieblich", kennung: z.mitarbeiterId, kurz: "kein Fahrzeug",
+          text: `${name} ist im Dienst, aber es wurde kein Fahrzeug zugewiesen.`
+        });
+        continue;
+      }
+
+      /* Betrieblich: Fahrzeug steht in der Werkstatt. */
+      const fz = fahrzeugVon(z.fahrzeugId);
+      if (fz.zustand !== "verfuegbar") {
+        liste.push({
+          art: "betrieblich", kennung: z.mitarbeiterId, kurz: "Fahrzeug nicht verfügbar",
+          text: `${name} soll ${fz.name} · ${fz.kennzeichen} fahren, das Fahrzeug steht aber in der Werkstatt.`
+        });
+      }
+    }
+
+    /* Betrieblich: dasselbe Fahrzeug zur selben Zeit. */
+    for (let i = 0; i < imDienst.length; i += 1) {
+      for (let j = i + 1; j < imDienst.length; j += 1) {
+        const a = imDienst[i];
+        const b = imDienst[j];
+        if (!a.fahrzeugId || a.fahrzeugId !== b.fahrzeugId) continue;
+        if (!ueberschneidet(a, b)) continue;
+        const fz = fahrzeugVon(a.fahrzeugId);
+        const na = mitarbeiterVon(a.mitarbeiterId);
+        const nb = mitarbeiterVon(b.mitarbeiterId);
+        if (!fz || !na || !nb) continue;
+        liste.push({
+          art: "betrieblich", kennung: a.mitarbeiterId, zweiteKennung: b.mitarbeiterId,
+          kurz: "Fahrzeug doppelt",
+          text: `${na.name} und ${nb.name} verwenden gleichzeitig ${fz.kennzeichen}.`
+        });
+      }
+    }
+    return liste;
+  }
+
+  /* Welche Mitarbeiter sind von mindestens einem Konflikt betroffen? */
+  function betroffene(liste) {
+    const menge = new Set();
+    for (const k of liste) {
+      menge.add(k.kennung);
+      if (k.zweiteKennung) menge.add(k.zweiteKennung);
+    }
+    return menge;
+  }
+
+  const kurzHinweis = (liste, mitarbeiterId) => {
+    const treffer = liste.find((k) => k.kennung === mitarbeiterId || k.zweiteKennung === mitarbeiterId);
+    return treffer ? treffer.kurz : "";
+  };
 
   /* ============================================================
      1. Übersicht
@@ -249,7 +383,6 @@
         </div>
       </div>`;
   }
-
   /* ============================================================
      3. Planung
      ============================================================ */
@@ -258,6 +391,7 @@
     const tag = D.tagAls(R.zustand.planTag);
     const quelle = D.planung[e.iso];
     const konflikte = konflikteVon(e);
+    const betroffen = betroffene(konflikte);
     const geaendert = anzahlGeaendert(e);
 
     const imDienst = e.zeilen.filter((z) => z.imDienst).length;
@@ -273,23 +407,40 @@
       stand = R.marke("gut", `Veröffentlicht um ${quelle.veroeffentlichtUm} Uhr — Mitarbeiter sehen den Plan`);
     }
 
-    let zeilen = e.zeilen.map((z, i) => ({ z, i }));
-    if (e.filter === "ungeplant") zeilen = zeilen.filter(({ z }) => z.imDienst && (!z.von || !z.fahrzeugId));
-    if (e.filter === "konflikte") zeilen = zeilen.filter(({ i }) => konflikte.has(i));
+    /* Filtern. Wichtig: Gefiltert wird nur die ANZEIGE. Die Werte in
+       e.zeilen bleiben unangetastet - ein Filterwechsel kann nichts
+       loeschen. */
+    let sichtbar = e.zeilen.slice();
+    if (e.filter === "ungeplant") {
+      sichtbar = sichtbar.filter((z) => z.imDienst && (!z.von || !z.bis || !z.fahrzeugId));
+    }
+    if (e.filter === "konflikte") {
+      sichtbar = sichtbar.filter((z) => betroffen.has(z.mitarbeiterId));
+    }
     if (e.suche) {
       const s = e.suche.toLowerCase();
-      zeilen = zeilen.filter(({ z }) => (mitarbeiterVon(z.mitarbeiterId)?.name || "").toLowerCase().includes(s));
+      sichtbar = sichtbar.filter((z) => {
+        const m = mitarbeiterVon(z.mitarbeiterId);
+        return (m ? m.name : z.mitarbeiterId).toLowerCase().includes(s);
+      });
     }
 
-    const koerper = zeilen.length
-      ? zeilen.map(({ z, i }) => planZeile(z, i, konflikte.get(i), zeileGeaendert(e, i))).join("")
-      : `<tr><td colspan="6">${R.kastenLeer("Zeilen für diesen Filter")}</td></tr>`;
+    const tabelle = sichtbar.length
+      ? `<div class="tabelle-huelle">
+          <table class="liste">
+            <thead><tr>
+              <th>Mitarbeiter</th><th>Status</th><th>Schicht</th><th>Zeit</th><th>Fahrzeug</th><th>Hinweis</th>
+            </tr></thead>
+            <tbody>${sichtbar.map((z) => planZeile(e, z, konflikte, zeileGeaendert(e, z.mitarbeiterId))).join("")}</tbody>
+          </table>
+        </div>`
+      : leerZustand(e, konflikte);
 
     return `
       <div class="bereichskopf">
         <div>
           <h1>Planung</h1>
-          <p class="wichtig">${h(imDienst)} im Dienst · ${h(frei)} frei · ${h(ohneFahrzeug)} ohne Fahrzeug · ${h(konflikte.size)} Konflikte</p>
+          <p class="wichtig">${h(imDienst)} im Dienst · ${h(frei)} frei · ${h(ohneFahrzeug)} ohne Fahrzeug · ${h(konflikte.length)} Konflikte</p>
         </div>
       </div>
 
@@ -307,7 +458,8 @@
           <div class="tagumschalter" role="group" aria-label="Filter">
             <button type="button" data-tun="plan-filter:alle" aria-pressed="${e.filter === "alle"}">Alle</button>
             <button type="button" data-tun="plan-filter:ungeplant" aria-pressed="${e.filter === "ungeplant"}">Nur ungeplant</button>
-            <button type="button" data-tun="plan-filter:konflikte" aria-pressed="${e.filter === "konflikte"}">Nur Konflikte</button>
+            <button type="button" data-tun="plan-filter:konflikte" aria-pressed="${e.filter === "konflikte"}">
+              Nur Konflikte${konflikte.length ? ` (${h(konflikte.length)})` : ""}</button>
           </div>
           <label style="min-width:180px;">Suche
             <input type="search" data-plan-suche value="${h(e.suche)}" placeholder="Name suchen"></label>
@@ -315,58 +467,109 @@
           <button class="knopf klein" type="button" data-tun="plan-alle-frei">Alle als frei markieren</button>
         </div>
 
-        <div class="tabelle-huelle">
-          <table class="liste">
-            <thead><tr>
-              <th>Mitarbeiter</th><th>Status</th><th>Schicht</th><th>Zeit</th><th>Fahrzeug</th><th>Hinweis</th>
-            </tr></thead>
-            <tbody>${koerper}</tbody>
-          </table>
+        ${tabelle}
+
+        <!-- Gemessen bei 320 x 568: Vier gestapelte Schaltflaechen in
+             einer klebenden Leiste nahmen fast den halben Bildschirm
+             ein und verdeckten die Filter darueber - sie waren nicht
+             mehr anklickbar. Deshalb kleben nur noch der Stand und die
+             Hauptaktion. Die Nebenaktionen stehen im Fluss darueber. -->
+        <div class="plan-nebenaktionen">
+          <button class="knopf klein" type="button" data-tun="plan-rueckgaengig" ${e.verlauf.length ? "" : "disabled"}>Letzte Änderung rückgängig</button>
+          <button class="knopf klein" type="button" data-tun="plan-verwerfen" ${geaendert ? "" : "disabled"}>Änderungen verwerfen</button>
+          <button class="knopf klein" type="button" data-tun="plan-entwurf" ${geaendert ? "" : "disabled"}>Entwurf speichern</button>
         </div>
 
         <div class="aktionsleiste">
           <span class="stand">${geaendert
             ? `${geaendert} Änderung${geaendert === 1 ? "" : "en"} noch nicht gespeichert`
             : "Keine ungespeicherten Änderungen"}</span>
-          <button class="knopf" type="button" data-tun="plan-verwerfen" ${geaendert ? "" : "disabled"}>Änderungen verwerfen</button>
-          <button class="knopf" type="button" data-tun="plan-entwurf" ${geaendert ? "" : "disabled"}>Entwurf speichern</button>
           <button class="knopf haupt-knopf" type="button" data-tun="plan-veroeffentlichen">
             Plan für ${R.zustand.planTag === 0 ? "heute" : "morgen"} veröffentlichen</button>
         </div>
       </div>`;
   }
 
-  function planZeile(z, i, konflikt, geaendert) {
+  /*
+    Der leere Zustand haengt davon ab, WARUM nichts da ist. Der
+    allgemeine Satz "Für diesen Zeitraum ist nichts eingetragen" war im
+    Konfliktfilter schlicht falsch - er stand da, obwohl gerade eben
+    noch Zeilen sichtbar waren und der Plan voll ist.
+  */
+  function leerZustand(e, konflikte) {
+    if (e.suche) {
+      return R.zustandsKasten("leer", "Kein Treffer",
+        `Zu „${e.suche}“ passt keine Zeile. Die Planung ist davon nicht betroffen.`,
+        { name: "Suche zurücksetzen", tun: "plan-suche-leeren" });
+    }
+    if (e.filter === "konflikte") {
+      if (!konflikte.length) {
+        return `<div class="zustand gut-geloest">
+          <h3>Alle Konflikte gelöst.</h3>
+          <p>In diesem Tagesplan gibt es keinen offenen Konflikt mehr.
+             Die Zeilen sind nicht verschwunden — dieser Filter zeigt nur
+             die betroffenen, und das sind gerade keine.</p>
+          <div class="knopfzeile">
+            <button class="knopf haupt-knopf" type="button" data-tun="plan-filter:alle">Alle Mitarbeiter anzeigen</button>
+            ${e.verlauf.length ? '<button class="knopf" type="button" data-tun="plan-rueckgaengig">Letzte Änderung rückgängig</button>' : ""}
+          </div>
+        </div>`;
+      }
+      return R.zustandsKasten("leer", "Keine passende Zeile",
+        "Es gibt Konflikte, aber keiner davon betrifft eine sichtbare Zeile.",
+        { name: "Alle Mitarbeiter anzeigen", tun: "plan-filter:alle" });
+    }
+    if (e.filter === "ungeplant") {
+      return `<div class="zustand gut-geloest">
+        <h3>Alles eingeplant.</h3>
+        <p>Für jeden Mitarbeiter im Dienst sind Zeit und Fahrzeug eingetragen.</p>
+        <div class="knopfzeile">
+          <button class="knopf haupt-knopf" type="button" data-tun="plan-filter:alle">Alle Mitarbeiter anzeigen</button>
+        </div>
+      </div>`;
+    }
+    return R.zustandsKasten("leer", "Keine Mitarbeiter",
+      "Für diesen Tag ist kein Mitarbeiter hinterlegt.");
+  }
+
+  function planZeile(e, z, konflikte, geaendert) {
     const m = mitarbeiterVon(z.mitarbeiterId);
+    const id = z.mitarbeiterId;
     const eigene = z.imDienst && !z.vorlage;
-    return `<tr class="plan-zeile ${geaendert ? "ist-geaendert" : ""}">
-      <td><strong>${h(m ? m.name : z.mitarbeiterId)}</strong><br>
-        <span style="font-size:13px;color:var(--gedaempft)">${h(m ? m.beschaeftigung : "")}</span></td>
+    const hinweis = kurzHinweis(konflikte, id);
+    const zeitfehler = e.zeitfehler[id] || "";
+
+    return `<tr class="plan-zeile ${geaendert ? "ist-geaendert" : ""}" data-mitarbeiter="${h(id)}">
+      <td><strong>${h(m ? m.name : id)}</strong><br>
+        <span style="font-size:13px;color:var(--gedaempft)">${h(m ? m.beschaeftigung : "unbekannte Kennung")}</span></td>
       <td>
-        <select data-plan="dienst" data-zeile="${i}" aria-label="Status von ${h(m ? m.name : "")}">
+        <select data-plan="dienst" data-mitarbeiter="${h(id)}" aria-label="Status von ${h(m ? m.name : id)}">
           <option value="ja" ${z.imDienst ? "selected" : ""}>Im Dienst</option>
           <option value="nein" ${!z.imDienst ? "selected" : ""}>Frei</option>
         </select>
       </td>
       <td>${z.imDienst ? `
-        <select data-plan="vorlage" data-zeile="${i}" aria-label="Schicht von ${h(m ? m.name : "")}">
+        <select data-plan="vorlage" data-mitarbeiter="${h(id)}" aria-label="Schicht von ${h(m ? m.name : id)}">
           ${D.vorlagen.map((v) => `<option value="${h(v.id)}" ${z.vorlage === v.id || (eigene && v.id === "individuell") ? "selected" : ""}>
             ${h(v.name)}${v.von ? ` · ${h(v.von)}–${h(v.bis)}` : ""}</option>`).join("")}
-        </select>` : "<span style=\"color:var(--gedaempft)\">—</span>"}</td>
+        </select>` : '<span style="color:var(--gedaempft)">—</span>'}</td>
       <td>${z.imDienst ? `
         <span class="zeitpaar">
-          <input type="time" data-plan="von" data-zeile="${i}" value="${h(z.von)}" aria-label="Beginn">
-          <input type="time" data-plan="bis" data-zeile="${i}" value="${h(z.bis)}" aria-label="Ende">
+          ${window.ProbeZeit.markup({ kennung: id, teil: "von", wert: z.von, beschriftung: `Beginn von ${m ? m.name : id}`, fehler: zeitfehler })}
+          ${window.ProbeZeit.markup({ kennung: id, teil: "bis", wert: z.bis, beschriftung: `Ende von ${m ? m.name : id}`, fehler: "" })}
         </span>
-        ${z.von && z.bis && z.bis < z.von ? '<br><span style="font-size:13px;color:var(--gedaempft)">über Mitternacht</span>' : ""}
-        ` : "<span style=\"color:var(--gedaempft)\">—</span>"}</td>
+        ${window.ProbeZeit.ueberMitternacht(z.von, z.bis)
+          ? '<br><span style="font-size:13px;color:var(--gedaempft)">über Mitternacht</span>' : ""}
+        ` : '<span style="color:var(--gedaempft)">—</span>'}</td>
       <td>${z.imDienst ? `
-        <select data-plan="fahrzeug" data-zeile="${i}" aria-label="Fahrzeug von ${h(m ? m.name : "")}">
+        <select data-plan="fahrzeug" data-mitarbeiter="${h(id)}" aria-label="Fahrzeug von ${h(m ? m.name : id)}">
           <option value="">Kein Fahrzeug</option>
           ${D.fahrzeuge.map((f) => `<option value="${h(f.id)}" ${z.fahrzeugId === f.id ? "selected" : ""}>
             ${h(f.name)} · ${h(f.kennzeichen)}${f.zustand === "werkstatt" ? " (Werkstatt)" : ""}</option>`).join("")}
-        </select>` : "<span style=\"color:var(--gedaempft)\">—</span>"}</td>
-      <td>${konflikt ? R.marke("warnung", konflikt) : (z.imDienst ? R.marke("gut", "vollständig") : R.marke("ruhig", "frei"))}</td>
+        </select>` : '<span style="color:var(--gedaempft)">—</span>'}</td>
+      <td>${hinweis
+        ? R.marke("warnung", hinweis)
+        : (z.imDienst ? R.marke("gut", "vollständig") : R.marke("ruhig", "frei"))}</td>
     </tr>`;
   }
 
@@ -757,36 +960,158 @@
       </div>`;
   }
 
-  function veroeffentlichenDialog() {
+  /* ============================================================
+     Veroeffentlichen - mit Konfliktpruefung
+     ============================================================
+     Der erste Klick veroeffentlicht NICHTS. Er oeffnet die Pruefung.
+     Erst dort entscheidet sich, ob ueberhaupt veroeffentlicht werden
+     kann - und wenn ja, ob ohne oder mit bewusster Entscheidung.
+  */
+  let veroeffentlichungsGrund = "";
+
+  function konfliktZeilen(liste, art) {
+    const gefiltert = liste.filter((k) => k.art === art);
+    if (!gefiltert.length) return "";
+    return `<ul class="konfliktliste ${art}">
+      ${gefiltert.map((k) => `<li>
+        <strong>${h(k.kurz)}</strong>
+        <span>${h(k.text)}</span>
+      </li>`).join("")}
+    </ul>`;
+  }
+
+  function pruefungsDialog() {
     const e = planEntwurf();
-    const konflikte = konflikteVon(e);
+    const liste = konflikteVon(e);
+    const technisch = liste.filter((k) => k.art === "technisch");
+    const betrieblich = liste.filter((k) => k.art === "betrieblich");
+    const tag = D.tagAls(R.zustand.planTag);
     const imDienst = e.zeilen.filter((z) => z.imDienst).length;
     const ohneFahrzeug = e.zeilen.filter((z) => z.imDienst && !z.fahrzeugId).length;
+
+    const kopf = `<dl class="zusammenfassung">
+      <div><dt>Tag</dt><dd>${R.zustand.planTag === 0 ? "Heute" : "Morgen"}</dd></div>
+      <div><dt>Datum</dt><dd>${h(D.alsText(tag))}</dd></div>
+      <div><dt>Eingeplant</dt><dd>${h(imDienst)} Mitarbeiter</dd></div>
+      <div><dt>Ohne Fahrzeug</dt><dd>${h(ohneFahrzeug)}</dd></div>
+      <div><dt>Konflikte</dt><dd>${h(liste.length)}</dd></div>
+    </dl>`;
+
+    let rumpf;
+    let fuss;
+
+    if (technisch.length) {
+      /* Technisch ungueltig: kein Weg nach vorn. Es gibt bewusst
+         keine Ausweichschaltflaeche. */
+      rumpf = `${kopf}
+        ${R.zustandsKasten("fehler", `${technisch.length} Eintrag technisch ungültig`,
+          "Solange diese Angaben nicht stimmen, lässt sich der Plan nicht veröffentlichen. Das ist keine Ermessensfrage.")}
+        ${konfliktZeilen(liste, "technisch")}
+        ${betrieblich.length ? `<h4 class="unterueberschrift">Außerdem betrieblich auffällig</h4>${konfliktZeilen(liste, "betrieblich")}` : ""}`;
+      fuss = `<button class="knopf haupt-knopf" type="button" data-tun="plan-zurueck-zur-planung">Zur Planung zurück</button>`;
+    } else if (betrieblich.length) {
+      rumpf = `${kopf}
+        ${R.zustandsKasten("keinrecht", `${betrieblich.length} betrieblicher Konflikt`,
+          "Der Plan ist technisch gültig. Die folgenden Punkte sind aber fachlich auffällig und sollten vor dem Veröffentlichen geklärt werden.")}
+        ${konfliktZeilen(liste, "betrieblich")}`;
+      fuss = `
+        <button class="knopf leise" type="button" data-tun="plan-trotzdem">Trotzdem veröffentlichen</button>
+        <button class="knopf haupt-knopf" type="button" data-tun="plan-zurueck-zur-planung">Zurück und korrigieren</button>`;
+    } else {
+      rumpf = `${kopf}
+        ${R.zustandsKasten("leer", "Keine Konflikte",
+          "Der Plan ist vollständig. Nach dem Veröffentlichen sehen die Mitarbeiter ihre eigene Schicht im Mitarbeiterportal.")}`;
+      fuss = `
+        <button class="knopf" type="button" data-tun="plan-zurueck-zur-planung">Abbrechen</button>
+        <button class="knopf haupt-knopf" type="button" data-tun="plan-veroeffentlichen-ja">
+          Ja, für ${R.zustand.planTag === 0 ? "heute" : "morgen"} veröffentlichen</button>`;
+    }
+
+    return `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="pruefTitel">
+        <header class="dialog-kopf">
+          <h2 id="pruefTitel">Konfliktprüfung vor dem Veröffentlichen</h2>
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>
+        <div class="dialog-rumpf">${rumpf}</div>
+        <footer class="dialog-fuss">${fuss}</footer>
+      </div>`;
+  }
+
+  /* Zweite, ausdrueckliche Bestaetigung mit Pflichtgrund. */
+  function trotzdemDialog(fehler) {
+    const e = planEntwurf();
+    const liste = konflikteVon(e).filter((k) => k.art === "betrieblich");
     const tag = D.tagAls(R.zustand.planTag);
     return `
       <div class="dialog-hinter" data-dialog-zu></div>
-      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="vTitel">
-        <header class="dialog-kopf"><h2 id="vTitel">Plan veröffentlichen</h2>
-          <button class="knopf klein" type="button" data-dialog-zu>Abbrechen</button></header>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="trotzTitel">
+        <header class="dialog-kopf">
+          <h2 id="trotzTitel">Trotz Konflikten veröffentlichen?</h2>
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>
         <div class="dialog-rumpf">
           <dl class="zusammenfassung">
             <div><dt>Tag</dt><dd>${R.zustand.planTag === 0 ? "Heute" : "Morgen"}</dd></div>
             <div><dt>Datum</dt><dd>${h(D.alsText(tag))}</dd></div>
-            <div><dt>Im Dienst</dt><dd>${h(imDienst)} Mitarbeiter</dd></div>
-            <div><dt>Ohne Fahrzeug</dt><dd>${h(ohneFahrzeug)}</dd></div>
-            <div><dt>Konflikte</dt><dd>${h(konflikte.size)}</dd></div>
+            <div><dt>Offene Konflikte</dt><dd>${h(liste.length)}</dd></div>
           </dl>
-          ${konflikte.size
-            ? R.zustandsKasten("fehler", `${konflikte.size} Konflikte`, "Der Plan lässt sich veröffentlichen, die Konflikte bleiben aber bestehen und sind für die Mitarbeiter sichtbar.")
-            : ""}
-          <p style="margin:0;color:var(--gedaempft)">Danach sehen die Mitarbeiter diesen Plan im Mitarbeiterportal.</p>
+          ${konfliktZeilen(liste, "betrieblich")}
+          ${fehler ? `<div class="feldfehler" role="alert">${h(fehler)}</div>` : ""}
+          <label>Grund für die Veröffentlichung <span class="band-warnung">Pflichtfeld</span>
+            <textarea data-grund rows="3"
+              placeholder="Zum Beispiel: Fahrzeugwechsel ist mündlich geklärt.">${h(veroeffentlichungsGrund)}</textarea></label>
+          <p class="schritt-hinweis">In der späteren echten Umsetzung wird protokolliert: wer
+            veröffentlicht hat, wann, für welchen Tag, welche Konflikte offen waren und der
+            angegebene Grund. <strong>In dieser Designprobe wird nichts gespeichert.</strong></p>
         </div>
         <footer class="dialog-fuss">
-          <button class="knopf" type="button" data-dialog-zu>Abbrechen</button>
-          <button class="knopf haupt-knopf" type="button" data-tun="plan-veroeffentlichen-ja">
-            Ja, für ${R.zustand.planTag === 0 ? "heute" : "morgen"} veröffentlichen</button>
+          <button class="knopf haupt-knopf" type="button" data-tun="plan-zurueck-zur-pruefung">Abbrechen</button>
+          <button class="knopf leise" type="button" data-tun="plan-trotzdem-ja">Trotz Konflikten veröffentlichen</button>
         </footer>
       </div>`;
+  }
+
+  function planVeroeffentlichen(mitGrund) {
+    const e = planEntwurf();
+    const liste = konflikteVon(e);
+    const quelle = D.planung[e.iso];
+    quelle.zeilen = e.zeilen.map((z) => ({ ...z }));
+    quelle.veroeffentlicht = true;
+    quelle.veroeffentlichtUm = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    e.urzeilen = e.zeilen.map((z) => ({ ...z }));
+    e.verlauf = [];
+
+    const tag = D.tagAls(R.zustand.planTag);
+    const protokoll = mitGrund
+      ? `<h4 class="unterueberschrift">Was protokolliert würde</h4>
+         <dl class="zusammenfassung">
+           <div><dt>Wer</dt><dd>${h(R.ROLLENNAMEN[R.zustand.rolle])} (angemeldete Person)</dd></div>
+           <div><dt>Wann</dt><dd>${h(quelle.veroeffentlichtUm)} Uhr</dd></div>
+           <div><dt>Tag</dt><dd>${h(D.alsText(tag))}</dd></div>
+           <div><dt>Konflikte</dt><dd>${h(liste.length)}</dd></div>
+           <div><dt>Grund</dt><dd>${h(veroeffentlichungsGrund)}</dd></div>
+         </dl>`
+      : "";
+
+    veroeffentlichungsGrund = "";
+
+    R.dialogOeffnen(`
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-label="Plan veröffentlicht">
+        <header class="dialog-kopf"><h2>Plan veröffentlicht</h2>
+          <button class="knopf klein" type="button" data-dialog-zu>Schließen</button></header>
+        <div class="dialog-rumpf">
+          ${R.zustandsKasten("vorbereitet", "Nur in dieser Designprobe",
+            `Der Plan für ${D.alsText(tag)} gilt in dieser Sitzung als veröffentlicht. Es wurde nichts gespeichert und nichts übertragen. Mitarbeiter sehen später ausschließlich ihre eigene Schicht — keine Konfliktliste und keine Daten anderer Mitarbeiter.`)}
+          ${protokoll}
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf haupt-knopf" type="button" data-dialog-zu>Schließen</button>
+        </footer>
+      </div>`);
+    R.zeichnen();
   }
 
   /* ============================================================
@@ -822,28 +1147,63 @@
 
       case "plan-tag":     R.zustand.planTag = Number(wert); R.zustand.planEntwurf = null; R.zeichnen(); return;
       case "plan-filter":  e.filter = wert; R.zeichnen(); return;
+      case "plan-suche-leeren": e.suche = ""; R.zeichnen(); return;
+      case "plan-rueckgaengig": {
+        const vorher = e.verlauf.pop();
+        if (vorher) { e.zeilen = vorher.zeilen; e.zeitfehler = vorher.zeitfehler; }
+        R.zeichnen(); return;
+      }
       case "plan-verwerfen":
-        e.zeilen = e.urzeilen.map((z) => ({ ...z })); R.zeichnen(); return;
+        merken(e);
+        e.zeilen = e.urzeilen.map((z) => ({ ...z }));
+        e.zeitfehler = {};
+        R.zeichnen(); return;
       case "plan-alle-frei":
+        merken(e);
         e.zeilen = e.zeilen.map((z) => ({ ...z, imDienst: false, vorlage: null, von: "", bis: "", fahrzeugId: null }));
+        e.zeitfehler = {};
         R.zeichnen(); return;
-      case "plan-uebernehmen-gestern":
-        e.zeilen = D.planung[D.alsIso(D.heute)].zeilen.map((z) => ({ ...z }));
+      case "plan-uebernehmen-gestern": {
+        /* Ueber die Mitarbeiterkennung zuordnen, nicht ueber die
+           Stelle in der Liste - sonst bekaeme bei anderer Reihenfolge
+           der Falsche die Schicht eines Anderen. */
+        merken(e);
+        const gestern = D.planung[D.alsIso(D.heute)].zeilen;
+        e.zeilen = e.zeilen.map((z) => {
+          const vorbild = gestern.find((g) => g.mitarbeiterId === z.mitarbeiterId);
+          return vorbild ? { ...vorbild } : { ...z };
+        });
+        e.zeitfehler = {};
         R.zeichnen(); return;
+      }
       case "plan-entwurf":
         e.urzeilen = e.zeilen.map((z) => ({ ...z }));
         D.planung[e.iso].zeilen = e.zeilen.map((z) => ({ ...z }));
+        e.verlauf = [];
         R.zeichnen(); return;
+
+      /* Der erste Klick veroeffentlicht nichts - er prueft. */
       case "plan-veroeffentlichen":
-        R.dialogOeffnen(veroeffentlichenDialog()); return;
-      case "plan-veroeffentlichen-ja": {
-        const quelle = D.planung[e.iso];
-        quelle.zeilen = e.zeilen.map((z) => ({ ...z }));
-        quelle.veroeffentlicht = true;
-        quelle.veroeffentlichtUm = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-        e.urzeilen = e.zeilen.map((z) => ({ ...z }));
+        R.dialogOeffnen(pruefungsDialog()); return;
+      case "plan-zurueck-zur-planung":
         R.dialogSchliessen(); R.zeichnen(); return;
+      case "plan-zurueck-zur-pruefung":
+        R.dialogOeffnen(pruefungsDialog()); return;
+      case "plan-trotzdem":
+        R.dialogOeffnen(trotzdemDialog("")); return;
+      case "plan-trotzdem-ja": {
+        const feld = document.querySelector("[data-grund]");
+        veroeffentlichungsGrund = feld ? feld.value.trim() : "";
+        if (veroeffentlichungsGrund.length < 3) {
+          R.dialogOeffnen(trotzdemDialog("Bitte einen Grund eintragen. Ohne Grund wird nicht veröffentlicht."));
+          const neu = document.querySelector("[data-grund]");
+          if (neu) neu.focus();
+          return;
+        }
+        planVeroeffentlichen(true); return;
       }
+      case "plan-veroeffentlichen-ja":
+        planVeroeffentlichen(false); return;
 
       case "lohn-neu":
         Object.assign(lohnStand, { mitarbeiterId: "", monat: "", jahr: "2026", datei: "" });
@@ -861,37 +1221,89 @@
       default: return;
     }
   }
-
-  /* Aenderungen an Feldern */
   function geaendert(feld) {
     if (feld.matches("[data-plan]")) {
       const e = planEntwurf();
-      const i = Number(feld.dataset.zeile);
-      const z = e.zeilen[i];
+      /* Ueber die Mitarbeiterkennung, nie ueber eine Zeilennummer. */
+      const z = zeileVon(e, feld.dataset.mitarbeiter);
+      if (!z) return true;
+      merken(e);
       const was = feld.dataset.plan;
       if (was === "dienst") {
         z.imDienst = feld.value === "ja";
-        if (!z.imDienst) { z.vorlage = null; z.von = ""; z.bis = ""; z.fahrzeugId = null; }
-        else if (!z.vorlage) { z.vorlage = "tag"; z.von = "09:00"; z.bis = "17:00"; }
+        if (!z.imDienst) {
+          z.vorlage = null; z.von = ""; z.bis = ""; z.fahrzeugId = null;
+          delete e.zeitfehler[z.mitarbeiterId];
+        } else if (!z.vorlage) {
+          z.vorlage = "tag"; z.von = "09:00"; z.bis = "17:00";
+        }
       } else if (was === "vorlage") {
         const v = vorlageVon(feld.value);
         z.vorlage = feld.value === "individuell" ? null : feld.value;
-        if (v && v.von) { z.von = v.von; z.bis = v.bis; }
-      } else if (was === "von") { z.von = feld.value; z.vorlage = null; }
-      else if (was === "bis") { z.bis = feld.value; z.vorlage = null; }
-      else if (was === "fahrzeug") { z.fahrzeugId = feld.value || null; }
+        if (v && v.von) {
+          z.von = v.von; z.bis = v.bis;
+          delete e.zeitfehler[z.mitarbeiterId];
+        }
+      } else if (was === "fahrzeug") {
+        z.fahrzeugId = feld.value || null;
+      }
       R.zeichnen();
       return true;
     }
     if (feld.matches("[data-plan-suche]")) {
       planEntwurf().suche = feld.value; R.zeichnen(); return true;
     }
-    if (feld.matches("[data-nf]")) { neueFahrtStand[feld.dataset.nf] = feld.value; return true; }
     if (feld.matches("[data-lohn]")) { lohnStand[feld.dataset.lohn] = feld.value; R.dialogOeffnen(lohnDialog()); return true; }
     return false;
   }
 
+  /* ============================================================
+     Zeitfelder der Planung
+     ============================================================
+     Uebernommen wird erst beim Verlassen oder mit der Eingabetaste -
+     nicht bei jedem Zeichen. Sonst wuerde die Zeile bei jedem Tastendruck
+     neu gezeichnet und der Fokus spraenge aus dem Feld.
+  */
+  function zeitUebernehmen(kennung, teil, ergebnis) {
+    const e = planEntwurf();
+    const z = zeileVon(e, kennung);
+    if (!z) return;
+
+    if (!ergebnis.gueltig && !ergebnis.leer) {
+      /* Ungueltiges bleibt im Feld stehen und wird NICHT in die Zeile
+         uebernommen. Der Fehler steht direkt daneben. */
+      e.zeitfehler[kennung] = ergebnis.fehler;
+      R.zeichnen();
+      return;
+    }
+    delete e.zeitfehler[kennung];
+    const vorher = teil === "von" ? z.von : z.bis;
+    if (vorher === ergebnis.wert) { R.zeichnen(); return; }
+    merken(e);
+    if (teil === "von") z.von = ergebnis.wert; else z.bis = ergebnis.wert;
+    z.vorlage = null;
+    R.zeichnen();
+  }
+
   const bereiche = { uebersicht, fahrten, planung, team, meldungen, kunden, personal, lohn, finanzen, rewards, analyse };
+
+  /* ============================================================
+     Zeitfelder anmelden
+     ============================================================
+     Ein Ort fuer alle Zeitfelder der Probe. Die Kennung sagt, wohin
+     der Wert gehoert: "fahrt" ist der Fahrtassistent, alles andere ist
+     eine Mitarbeiterkennung der Planung. */
+  window.ProbeZeit.anmelden({
+    uebernehmen(kennung, teil, ergebnis, feld) {
+      if (kennung === "fahrt") { window.ProbeFahrtassistent.zeit(teil, ergebnis, feld); return; }
+      zeitUebernehmen(kennung, teil, ergebnis);
+    },
+    weiter(kennung, teil, feld) {
+      if (kennung === "fahrt") window.ProbeFahrtassistent.zeitWeiter(teil, feld);
+    },
+    verwerfen() { /* der Wert im Feld wurde schon zurueckgesetzt */ }
+  });
+  window.ProbeZeit.binden();
 
   window.ProbeBereiche = {
     zeichne: (id) => (bereiche[id] ? bereiche[id]() : R.kastenLeer("Inhalte")),

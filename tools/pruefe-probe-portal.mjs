@@ -255,9 +255,14 @@ console.log("\n── 6. Planung: alles in der Zeile ──");
 
   const klebt = await page.$eval(".aktionsleiste", (el) => getComputedStyle(el).position);
   pruefe(klebt === "sticky", "die Aktionsleiste bleibt sichtbar");
+  /* Seit der Messung bei 320 x 568 kleben nur noch Stand und
+     Hauptaktion - die Nebenaktionen verdeckten dort die Filter und
+     stehen jetzt im Fluss darueber. */
   const knoepfe = await page.textContent(".aktionsleiste");
-  pruefe(/verwerfen/i.test(knoepfe) && /Entwurf speichern/.test(knoepfe) && /veröffentlichen/i.test(knoepfe),
-    "sie traegt alle drei Aktionen");
+  pruefe(/veröffentlichen/i.test(knoepfe), "sie traegt die Hauptaktion");
+  const neben = await page.textContent(".plan-nebenaktionen");
+  pruefe(/verwerfen/i.test(neben) && /Entwurf speichern/.test(neben) && /rückgängig/i.test(neben),
+    "die Nebenaktionen stehen vollstaendig darueber");
   pruefe(/für heute veröffentlichen/i.test(knoepfe), "und nennt den Tag im Text");
 
   /* Konflikte werden erkannt und benannt. */
@@ -281,10 +286,15 @@ console.log("\n── 7. Kein Tag wird versehentlich veroeffentlicht ──");
   const rumpf = await page.textContent(".dialog-kasten");
   pruefe(/Morgen/.test(rumpf), "die Rueckfrage nennt den Tag");
   pruefe(/\d{2}\.\d{2}\.\d{4}/.test(rumpf), "und das vollstaendige Datum");
-  pruefe(/Im Dienst/.test(rumpf) && /Ohne Fahrzeug/.test(rumpf) && /Konflikte/.test(rumpf),
+  pruefe(/Eingeplant/.test(rumpf) && /Ohne Fahrzeug/.test(rumpf) && /Konflikte/.test(rumpf),
     "sie nennt Anzahl, Fahrzeuglage und Konflikte");
+  /* Der erste Klick veroeffentlicht seit dem manuellen Test nichts mehr,
+     sondern oeffnet die Konfliktpruefung. Der Ablauf dahinter wird in
+     tools/pruefe-probe-planung.mjs in voller Tiefe geprueft. */
+  pruefe(/Konfliktprüfung vor dem Veröffentlichen/.test(rumpf),
+    "der erste Klick oeffnet die Pruefung statt zu veroeffentlichen");
   const fuss = await page.textContent(".dialog-fuss");
-  pruefe(/für morgen veröffentlichen/i.test(fuss), "die Schaltflaeche nennt den Tag noch einmal");
+  pruefe(/korrigieren|veröffentlichen/i.test(fuss), "der Fuss bietet den passenden Weg an");
   await ctx.close();
 }
 

@@ -789,3 +789,105 @@ textarea {
   .pruef-kopf { flex-wrap: wrap; }
   .pruef-kopf .knopf { margin-left: 0; width: 100%; }
 }
+
+/* ============================================================
+   Kontrolliertes Zeitfeld
+   ============================================================
+   Ersetzt <input type="time">. Grund steht in probe-zeitfeld.js:
+   das eingebaute Feld springt nach der ersten Ziffer weiter. */
+.zeitfeld {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.zeitfeld input {
+  width: 96px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.zeitfeld.hat-fehler input {
+  border-color: var(--rot);
+  border-width: 2px;
+}
+.zeitfehler {
+  max-width: 220px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--rot);
+  font-weight: 600;
+}
+
+/* ============================================================
+   Konfliktprüfung
+   ============================================================ */
+.konfliktliste {
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+}
+.konfliktliste li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--gedaempft);
+  border-radius: var(--radius);
+  background: var(--grund);
+}
+.konfliktliste li strong {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.konfliktliste li span { font-size: 15px; }
+.konfliktliste.technisch li { border-left-color: var(--rot); }
+.konfliktliste.technisch li strong { color: var(--rot); }
+.konfliktliste.betrieblich li { border-left-color: var(--gold); }
+.konfliktliste.betrieblich li strong { color: var(--gold-hell); }
+
+/* Die zurueckhaltende Nebenaktion. Sie ist erreichbar und gut lesbar,
+   aber sie zieht den Blick nicht auf sich - anders als die sichere
+   Hauptaktion daneben. */
+.knopf.leise {
+  background: transparent;
+  border-color: var(--linie);
+  color: var(--gedaempft);
+  font-weight: 500;
+}
+.knopf.leise:hover {
+  color: var(--schrift);
+  border-color: var(--gedaempft);
+}
+
+/* Gelöster Zustand - kein Fehler, kein leerer Datenbestand. */
+.zustand.gut-geloest {
+  border-left-color: var(--gruen);
+  background: rgba(111, 174, 124, 0.07);
+}
+.zustand.gut-geloest h3 { color: var(--gruen); }
+.zustand .knopfzeile { margin-top: 4px; }
+
+@media (max-width: 560px) {
+  .zeitfeld input { width: 100%; }
+  .zeitpaar { flex-wrap: wrap; }
+}
+
+/* Die Nebenaktionen der Planung stehen im Fluss, nicht in der
+   klebenden Leiste. Gemessen bei 320 x 568: vier gestapelte
+   Schaltflaechen verdeckten dort die Filter darueber. */
+.plan-nebenaktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+@media (max-width: 560px) {
+  .plan-nebenaktionen .knopf { flex: 1 1 100%; }
+}

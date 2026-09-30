@@ -37,6 +37,7 @@
     ziel: "",
     datum: "",
     zeit: "",
+    zeitfehler: "",
     leistung: "",
     rollstuhl: "kein",
     begleitung: false,
@@ -120,7 +121,8 @@
     if (nr === 3) return stand.ziel.trim() ? "" : "Bitte ein Ziel eintragen.";
     if (nr === 4) {
       if (!stand.datum) return "Bitte ein Datum wählen.";
-      if (!stand.zeit) return "Bitte eine Uhrzeit wählen.";
+      if (stand.zeitfehler) return stand.zeitfehler;
+      if (!stand.zeit) return "Bitte eine Uhrzeit im Format HH:MM eintragen, zum Beispiel 15:30.";
       return "";
     }
     if (nr === 5) {
@@ -351,7 +353,9 @@
       <div class="feldpaar">
         <label>Datum<input type="date" data-feld="datum" data-weiter
           value="${h(stand.datum || D.alsIso(D.heute))}"></label>
-        <label>Uhrzeit<input type="time" data-feld="zeit" data-weiter value="${h(stand.zeit)}"></label>
+        <label>Uhrzeit
+          ${window.ProbeZeit.markup({ kennung: "fahrt", teil: "zeit", wert: stand.zeit,
+            beschriftung: "Uhrzeit der Fahrt", fehler: stand.zeitfehler })}</label>
       </div>
     </div>`;
   }
@@ -911,5 +915,26 @@
     return true;
   }
 
-  window.ProbeFahrtassistent = { starten, tun, taste, eingabe };
+  /* Vom gemeinsamen Zeitfeld gerufen. */
+  function zeit(teil, ergebnis) {
+    if (teil !== "zeit") return;
+    if (!ergebnis.gueltig && !ergebnis.leer) {
+      stand.zeitfehler = ergebnis.fehler;
+      stand.fehler = ergebnis.fehler;
+      zeichnen(false);
+      return;
+    }
+    stand.zeitfehler = "";
+    stand.fehler = "";
+    stand.zeit = ergebnis.wert;
+    stand.beruehrt = true;
+    zeichnen(false);
+  }
+
+  /* Eingabetaste im Zeitfeld: nur weiter, wenn der Schritt gueltig ist. */
+  function zeitWeiter() {
+    if (stand.schritt === 4) weiter();
+  }
+
+  window.ProbeFahrtassistent = { starten, tun, taste, eingabe, zeit, zeitWeiter };
 })();

@@ -510,3 +510,165 @@ Möglichkeiten in **dieser Reihenfolge** gibt, dass sich das Wort
 „Genehmigung" in keiner von ihnen wiederholt, dass die alte Überschrift
 verschwunden ist und dass die längere Beschriftung auch bei 320 Pixeln
 nicht seitlich ausbricht.
+
+---
+
+## 16. Nachbesserung nach dem manuellen Test der Planung
+
+Der Geschäftsführer hat die Planung der Designprobe am 30.09.2026
+manuell getestet und drei Bedienprobleme gemeldet. Alle drei sind
+behoben. **Nur die Designprobe — kein produktiver Portalcode verändert,
+keine Migration ausgeführt.**
+
+### 16.1 Der manuelle Befund
+
+| # | Befund | Einordnung |
+|---|---|---|
+| 1 | Beim Tippen von `15:30` wurde die erste `1` sofort als Stunde übernommen, der Fokus sprang zur Minute. Eine normale Eingabe war kaum möglich. | echter Mangel |
+| 2 | Im Konfliktfilter schien sich beim Ändern einer Zeile eine andere mitzuverändern; nach weiteren Klicks verschwanden alle Zeilen, und es stand dort „Für diesen Zeitraum ist nichts eingetragen. Das ist kein Fehler." | echter Mangel |
+| 3 | Beim Veröffentlichen hieß es sinngemäß, der Plan lasse sich veröffentlichen und die Konflikte blieben sichtbar — zu leicht und zu wenig verständlich. | echter Mangel |
+
+### 16.2 Zeiteingabe — Ursache und Behebung
+
+`<input type="time">` hat innen zwei Abschnitte. Der Browser übernimmt
+die erste Ziffer sofort als Stunde und springt weiter. Das ist kein
+Fehler der Probe, sondern das Verhalten des eingebauten Feldes — und für
+die Zentrale unbrauchbar.
+
+Ersetzt durch ein eigenes Modul,
+[probe-zeitfeld.js](probe-betriebsportal/probe-zeitfeld.js):
+
+- gewöhnliches Textfeld, `inputmode="numeric"`, Platzhalter `HH:MM`
+- von links nach rechts tippbar, **nichts springt**
+- `1530` wird beim Verlassen zu `15:30`, `930` zu `09:30`
+- gültig ist `00:00` bis `23:59`; Stunde und Minute werden getrennt
+  begründet abgelehnt
+- Unvollständiges wird **nicht** übernommen; der Fehler steht direkt am
+  Feld
+- Beginn und Ende sind getrennte Felder
+- Nachtschicht über Mitternacht ist erlaubt und wird als solche benannt
+- die Eingabetaste übernimmt nur vollständig Gültiges
+- Escape verwirft die laufende Eingabe und stellt den zuletzt
+  übernommenen Wert wieder her
+- beim Hineinspringen ist der Wert markiert und in einem Zug
+  überschreibbar
+- übernommen wird beim Verlassen, **nie während des Tippens** — sonst
+  würde die Zeile bei jedem Zeichen neu gezeichnet und der Fokus spränge
+  heraus
+
+Dasselbe Feld benutzt jetzt auch der Fahrtassistent.
+
+### 16.3 Zeilenverhalten — die eigentliche Ursache
+
+Der Befund „eine andere Zeile schien sich mitzuverändern" hatte eine
+strukturelle Ursache: **Planzeilen wurden über ihre Stelle im Array
+angesprochen**, nicht über die Person. Im Markup stand `data-zeile="3"`.
+Wer gefiltert oder eine andere Reihenfolge erzeugt hätte, hätte mit
+derselben Nummer eine andere Person getroffen. Auch „Plan von gestern
+übernehmen" kopierte stellenweise statt nach Person.
+
+Behoben: Jede Zeile und jedes Bedienelement trägt die
+**Mitarbeiterkennung**. Es gibt im gesamten Planungscode keine
+Adressierung über Zeilennummern mehr — der Prüflauf stellt das
+ausdrücklich fest. Auch die Konflikte werden nach Kennung geführt, und
+„Plan von gestern übernehmen" ordnet über die Kennung zu.
+
+**Der Leerzustand war zusätzlich falsch beschriftet.** Er benutzte den
+allgemeinen Satz für einen leeren Datenbestand. Jetzt hat jeder Filter
+seinen eigenen, ehrlichen Zustand:
+
+| Lage | Text |
+|---|---|
+| Konfliktfilter, alles gelöst | **„Alle Konflikte gelöst."** — dazu die Erklärung, dass die Zeilen nicht verschwunden sind, sowie „Alle Mitarbeiter anzeigen" und „Letzte Änderung rückgängig" |
+| Filter „nur ungeplant", nichts offen | „Alles eingeplant." |
+| Suche ohne Treffer | „Kein Treffer" mit „Suche zurücksetzen" |
+| wirklich keine Mitarbeiter | „Keine Mitarbeiter" |
+
+Der Satz „Für diesen Zeitraum ist nichts eingetragen" erscheint im
+Konfliktfilter nicht mehr. Gefiltert wird ausschließlich die **Anzeige**
+— ein Filterwechsel kann keine Eingabe löschen. Neu ist außerdem
+**„Letzte Änderung rückgängig"**.
+
+### 16.4 Veröffentlichung mit Konfliktprüfung
+
+**Der erste Klick veröffentlicht nichts mehr.** Er öffnet die
+Konfliktprüfung mit Tag, vollständigem Datum, Anzahl eingeplanter
+Mitarbeiter, Anzahl ohne Fahrzeug, Anzahl der Konflikte — und einer
+Liste, die jeden Punkt im Klartext erklärt:
+
+> „Testfahrer 01 und Testfahrer 05 verwenden gleichzeitig GER-TEST 001."
+> „Testfahrer 03 ist im Dienst, aber es wurde kein Fahrzeug zugewiesen."
+> „Testfahrer 02: Die individuelle Uhrzeit ist unvollständig."
+
+Zwei Arten werden unterschieden:
+
+**Technisch ungültig — Veröffentlichung nicht möglich.** Unvollständige
+oder ungültige Uhrzeit, unbekannter Mitarbeiterdatensatz, ungültige
+Fahrzeugkennung. Es gibt genau **eine** Schaltfläche: „Zur Planung
+zurück". Kein Ausweg.
+
+**Betrieblicher Konflikt — bewusste Entscheidung möglich.** Fahrzeug
+doppelt zur selben Zeit, Mitarbeiter ohne Fahrzeug, Fahrzeug nicht
+verfügbar. Primär und hervorgehoben: „Zurück und korrigieren". Sekundär
+und deutlich zurückhaltender: „Trotzdem veröffentlichen".
+
+Wer trotzdem will, bekommt eine **zweite** Bestätigung: Tag, Datum und
+Konfliktanzahl erneut, dazu ein **Pflichtfeld „Grund für die
+Veröffentlichung"**. Ohne Grund wird nicht veröffentlicht. Der
+endgültige Knopf heißt „Trotz Konflikten veröffentlichen".
+
+Danach zeigt die Probe, **was protokolliert würde**: wer, wann, welcher
+Tag, wie viele Konflikte, welcher Grund. In der Designprobe wird nichts
+gespeichert — das steht auch so da. Ebenso, dass Mitarbeiter später
+ausschließlich ihre eigene Schicht sehen, keine Konfliktliste und keine
+Daten anderer.
+
+Die Überschneidung wird jetzt über **Zeiträume** erkannt, nicht mehr nur
+über gleiche Anfangszeiten; Schichten über Mitternacht werden dafür in
+zwei Abschnitte zerlegt.
+
+### 16.5 Ein vierter Mangel, vom Prüflauf gefunden
+
+Bei **320 × 568** war der Konfliktfilter mit der Maus nicht erreichbar:
+Die klebende Aktionsleiste stapelte vier Schaltflächen übereinander und
+nahm mit dem Banner fast den halben Bildschirm ein — sie lag über den
+Filtern. Das hätte auf einem kleinen Telefon genauso zugeschlagen.
+
+Behoben: In der klebenden Leiste stehen nur noch der Stand und die
+Hauptaktion. „Letzte Änderung rückgängig", „Änderungen verwerfen" und
+„Entwurf speichern" stehen im Fluss darüber.
+
+### 16.6 Zwei Fehler in meinen eigenen Prüfungen
+
+- Ein Testaufbau löste einen Konflikt und erwartete den Leerzustand —
+  dabei blieben zwei weitere Konflikte offen, die der Tagesplan von
+  Anfang an mitbringt. Der Leerzustand war also zu Recht nicht da.
+- Eine Prüfung suchte „Alle Mitarbeiter anzeigen" ohne Einschränkung und
+  traf den Filterknopf in der Werkzeugleiste statt den Knopf im
+  Leerzustand. Sie bestand, ohne etwas zu belegen.
+
+Außerdem: `page.fill` feuert nur `input`, kein `change`. Das Zeitfeld
+übernimmt bewusst erst beim Verlassen — der Prüflauf muss das Feld also
+verlassen, so wie ein Mensch weiterklickt. Angepasst wurde die Prüfung,
+nicht die Anwendung.
+
+### 16.7 Prüfstand
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-planung-pruefen` (13 Blöcke, neu) | **105 bestanden, 0 offen** |
+| `probe-fahrt-pruefen` | 168 bestanden, 0 offen |
+| `probe-portal-pruefen` | 106 bestanden, 0 offen |
+
+Geprüft sind alle vom Auftraggeber genannten Fälle: `15:30`, `1530`,
+unvollständige Zeit, ungültige Minuten, Nachtschicht, Einfügen eines
+kopierten Wertes, zwei unabhängige Mitarbeiterzeilen, Konflikt entsteht,
+Konflikt wird gelöst, richtiger Leerzustand, Filterwechsel ohne
+Datenverlust, Rückgängig, technische Sperre, betrieblicher Konflikt,
+zurück zur Korrektur, bewusste Veröffentlichung mit Pflichtgrund,
+Abbruch der zweiten Bestätigung, keine Veröffentlichung beim ersten
+Klick, keine Konfliktdaten in der Mitarbeiteransicht, 320 · 390 · 430 ·
+1440 px, Tastatur und sichtbarer Fokus, **null Netzwerkaufrufe**.
+
+> **Einordnung unverändert:** Designprobe ohne Datenquelle. Der Lauf
+> sagt nichts über die produktive Instanz.
