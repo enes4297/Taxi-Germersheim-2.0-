@@ -246,12 +246,38 @@
     oder spaeter eine Diagnose aufnehmen. Keines dieser Ergebnisse
     nennt einen medizinischen Grund.
   */
+  /*
+    Jedes Ergebnis hat eine festgelegte Folge. Diese drei und ihre
+    Wirkung sind eine Vorgabe des Geschaeftsfuehrers vom 01.10.2026,
+    keine Annahme der Designprobe.
+
+    Ein vierter Fall - "falsche Person oder falscher Vorgang" - stand
+    hier zwischenzeitlich. Er ist entfernt, weil fuer ihn KEINE Regel
+    vorliegt und eine erfundene Folge schlimmer waere als eine
+    fehlende Auswahl. Das ist eine offene Frage, keine Festlegung.
+  */
   const PRUEFERGEBNISSE = [
-    { id: "gueltig",    name: "Bescheinigung gültig, Zeitraum stimmt", lage: "gut" },
-    { id: "zeitraum",   name: "Zeitraum weicht von der Meldung ab",    lage: "warnung" },
-    { id: "unleserlich", name: "Nicht lesbar oder unvollständig",      lage: "warnung" },
-    { id: "person",     name: "Falsche Person oder falscher Vorgang",  lage: "warnung" }
+    {
+      id: "ok", name: "Alles in Ordnung", lage: "gut",
+      folge: "abschliessbar",
+      erklaerung: "Die Personalprüfung darf abgeschlossen werden."
+    },
+    {
+      id: "zeitraum", name: "Zeitraum weicht ab", lage: "warnung",
+      folge: "rueckfrage",
+      erklaerung: "Die Personalprüfung bleibt offen. Es entsteht eine Rückfrage zum abweichenden Zeitraum. Abgeschlossen werden darf erst nach der Klärung."
+    },
+    {
+      id: "unleserlich", name: "Nicht lesbar oder unvollständig", lage: "warnung",
+      folge: "anforderung",
+      erklaerung: "Die Personalprüfung bleibt offen. Es wird eine neue Bescheinigung angefordert. Abgeschlossen werden darf erst nach Eingang und Prüfung der neuen Datei."
+    }
   ];
+
+  const KLAERUNG_NAMEN = {
+    rueckfrage:  "Rückfrage zum Zeitraum",
+    anforderung: "Neue Bescheinigung angefordert"
+  };
 
   const ABWESENHEIT_NAMEN = {
     krank: "Krank",
@@ -420,19 +446,38 @@
       vertraulich: ["personnel.read"],
       daten: {
         von: alsIso(heute), bis: alsIso(tagAls(2)),
-        datei: "Testbescheinigung-M02-01.pdf",
-        folge: [],
         /*
-          Wer hat die Bescheinigung wann geoeffnet, und mit welchem
-          Ergebnis? Beides leer heisst: nicht geprueft. Der manuelle
-          Test hatte gezeigt, dass sich die Dokumentpruefung sonst
-          abschliessen liess, ohne das Dokument je gesehen zu haben.
-          Gespeichert wird NUR, DASS geprueft wurde und wie das
-          Ergebnis lautet - nie ein Dokumentinhalt und nie eine
-          Diagnose.
+          Eine KETTE von Nachweisen, nicht eine Datei.
+
+          Jede eingehende Datei bekommt ihre eigene Nummer, ihre
+          eigene Eingangszeit und ihre eigene Pruefung. Eine
+          beanstandete Datei wird nie ueberschrieben - sie bleibt
+          mit ihrem Ergebnis stehen, und die neue haengt sich
+          dahinter. Geprueft wird immer der letzte Eintrag.
+
+          "art" unterscheidet die Erstbescheinigung von einer
+          Folgebescheinigung (laengere Krankheit) und von einem
+          Ersatz (die vorige wurde beanstandet).
         */
-        einsicht: null,
-        ergebnis: ""
+        nachweise: [
+          {
+            nr: 1, art: "erst", datei: "Testbescheinigung-M02-01.pdf",
+            eingang: "heute 06:05", eingangIso: alsIso(heute),
+            /* Wer hat sie wann geoeffnet, und mit welchem Ergebnis?
+               Beides leer heisst: nicht geprueft. Gespeichert wird
+               NUR, DASS geprueft wurde und wie das Ergebnis lautet -
+               nie ein Dokumentinhalt und nie eine Diagnose. */
+            einsicht: null, ergebnis: "",
+            /* Steht das Ergebnis fest, ist es gesperrt. Eine
+               Korrektur laeuft dann ueber einen eigenen Vorgang mit
+               Pflichtgrund - siehe Regel 5. */
+            gesperrt: false, beanstandet: false
+          }
+        ],
+        /* Rueckfragen und Anforderungen, die aus einem Pruefergebnis
+           entstehen. Sie halten den Teilschritt offen, bis sie
+           geklaert sind. */
+        klaerungen: []
       },
       /*
         Zwei getrennte Arbeitsschritte. Der manuelle Test hat gezeigt,
@@ -539,6 +584,7 @@
       sichtbar: ["operations.read"], vertraulich: [],
       daten: {}, empfehlung: "", antwort: "", notizen: [],
       teile: null, abgeschlossenAm: "", archivAb: "",
+      nachweise: null, klaerungen: null,
       einsicht: null, ergebnis: "",
       verantwortlich: null, letzterBearbeiter: null,
       eingangIso: alsIso(heute),
@@ -826,7 +872,7 @@
     protokoll, protokollieren, letzteAenderung, lohnProbe,
     vorgaenge, vorgangVon, vorgangAnlegen, warnungsHandhabung,
     VORGANG_ARTEN, VORGANG_ZUSTAENDE, VORGANG_THEMEN,
-    zeitraumText, ABWESENHEIT_NAMEN, PRUEFERGEBNISSE,
+    zeitraumText, ABWESENHEIT_NAMEN, PRUEFERGEBNISSE, KLAERUNG_NAMEN,
     leistungsarten, rollstuhlWerte, gepaeckWerte,
     scheinWerte, zuzahlungWerte, genehmigungWerte
   };

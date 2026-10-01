@@ -101,6 +101,9 @@ const teilstand = (page) => page.evaluate(() =>
 const daten = (page) => page.evaluate(() =>
   window.ProbeDaten.vorgaenge.find((x) => x.id === "V0002").daten);
 const protokoll = (page) => page.evaluate(() => window.ProbeDaten.protokoll.slice());
+/* Seit der Geschaeftsregel vom 01.10.2026 gibt es eine Kette von
+   Nachweisen. Geprueft wird immer der letzte. */
+const aktuell = (d) => d.nachweise[d.nachweise.length - 1];
 
 /* ═══ 1. Erst der Inhalt, dann die Handlung ═════════════════════ */
 console.log("\n── 1. Die Reihenfolge im Dialog ──");
@@ -157,9 +160,9 @@ console.log("\n── 2. Kein Abschluss ohne Einsicht ──");
   pruefe(await teilstand(page) === "offen", "und der zweite Weg ebenso wenig");
 
   /* Ein Ergebnis ohne Einsicht ist keine Pruefung. */
-  await page.evaluate(() => window.ProbeVorgaenge.tun("vg-ergebnis", "V0002|gueltig"));
+  await page.evaluate(() => window.ProbeVorgaenge.tun("vg-ergebnis", "V0002|ok"));
   await page.waitForTimeout(350);
-  pruefe((await daten(page)).ergebnis === "",
+  pruefe(aktuell(await daten(page)).ergebnis === "",
     "ein Prüfergebnis ohne Einsicht wird nicht angenommen");
   await ctx.close();
 }
@@ -203,12 +206,12 @@ console.log("\n── 3. Der Dateiname öffnet die Vorschau ──");
     "der ausdrücklich als Platzhalter bezeichnet ist");
 
   /* Bis zur Bestaetigung ist nichts geschehen. */
-  pruefe((await daten(page)).einsicht === null,
+  pruefe(aktuell(await daten(page)).einsicht === null,
     "das blosse Öffnen des Dialogs gilt noch nicht als Einsicht");
 
   await page.click('[data-tun="vg-einsicht-ja:V0002"]');
   await page.waitForTimeout(450);
-  const d = await daten(page);
+  const d = aktuell(await daten(page));
   pruefe(d.einsicht !== null, "die bestätigte Einsicht wird festgehalten");
   pruefe(/Testpersonal 01/.test(d.einsicht.name), `mit dem Konto (${d.einsicht.name})`);
   pruefe(/Personal/.test(d.einsicht.rolle), "mit der Rolle");
@@ -239,16 +242,16 @@ console.log("\n── 4. Erst bewerten, dann abschliessen ──");
 
   const auswahl = await page.$$eval(".pruefkette .wahlkarte",
     (n) => n.map((x) => x.textContent.trim()));
-  pruefe(auswahl.length === 4, `es gibt vier benannte Ergebnisse (${auswahl.length})`);
-  pruefe(auswahl.some((x) => /gültig/.test(x)), "darunter „gültig, Zeitraum stimmt“");
+  pruefe(auswahl.length === 3, `es gibt drei benannte Ergebnisse (${auswahl.length})`);
+  pruefe(auswahl.some((x) => /Alles in Ordnung/.test(x)), "darunter „Alles in Ordnung“");
   pruefe(auswahl.some((x) => /Zeitraum weicht/.test(x)), "und „Zeitraum weicht ab“");
   pruefe(auswahl.some((x) => /Nicht lesbar/.test(x)), "und „nicht lesbar oder unvollständig“");
   pruefe(!(await page.$(".pruefkette textarea, .pruefkette input[type=text]")),
     "es gibt kein freies Textfeld, das eine Diagnose aufnehmen würde");
 
-  await page.click('[data-tun="vg-ergebnis:V0002|gueltig"]');
+  await page.click('[data-tun="vg-ergebnis:V0002|ok"]');
   await page.waitForTimeout(450);
-  pruefe((await daten(page)).ergebnis === "gueltig", "das Ergebnis wird festgehalten");
+  pruefe(aktuell(await daten(page)).ergebnis === "ok", "das Ergebnis wird festgehalten");
 
   k = await knoepfe(page);
   pruefe(k.some((x) => x === "vg-teil-erledigen:V0002|personal"),
@@ -264,8 +267,16 @@ console.log("\n── 4. Erst bewerten, dann abschliessen ──");
   await ctx.close();
 }
 
-/* ═══ 5. Ergebnis ändern ════════════════════════════════════════ */
-console.log("\n── 5. Ein Ergebnis ist nicht in Stein ──");
+/* ═══ 5. Ein festgehaltenes Ergebnis ist gesperrt ══════════════ */
+/*
+  Fruehere Fassung: "Ein Ergebnis ist nicht in Stein" - es liess
+  sich zuruecknehmen. Die Geschaeftsregel vom 01.10.2026 kehrt das
+  um: Ein festgehaltenes Ergebnis wird NICHT ueberschrieben, eine
+  Korrektur laeuft als eigener Vorgang mit Pflichtgrund. Geprueft
+  wird das ausfuehrlich in pruefe-probe-pruefregeln; hier bleibt
+  die Gegenprobe, dass der alte Weg wirklich zu ist.
+*/
+console.log("\n── 5. Kein stilles Zurücknehmen mehr ──");
 {
   const { ctx, page } = await seite("personal");
   await oeffnen(page);
@@ -274,20 +285,18 @@ console.log("\n── 5. Ein Ergebnis ist nicht in Stein ──");
   await page.click('[data-tun="vg-einsicht-ja:V0002"]');
   await page.waitForTimeout(400);
   await page.click('[data-tun="vg-ergebnis:V0002|zeitraum"]');
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(450);
   pruefe(/Zeitraum weicht/.test(await page.textContent(".pruefkette")),
     "das gewählte Ergebnis steht im Schritt");
-
-  await page.click('[data-tun="vg-ergebnis-neu:V0002"]');
-  await page.waitForTimeout(400);
-  pruefe((await daten(page)).ergebnis === "", "es lässt sich zurücknehmen");
-  const k = await knoepfe(page);
-  pruefe(!k.some((x) => x.startsWith("vg-teil-erledigen")),
-    "danach ist der Abschluss wieder gesperrt");
-
-  const p = await protokoll(page);
-  pruefe(p.some((x) => /zurückgenommen/i.test(x.was)),
-    "auch die Rücknahme steht im Protokoll");
+  pruefe(!(await page.$('[data-tun="vg-ergebnis-neu:V0002"]')),
+    "es gibt kein „Ergebnis ändern“ mehr");
+  pruefe(aktuell(await daten(page)).gesperrt === true, "das Ergebnis ist gesperrt");
+  await page.evaluate(() => window.ProbeVorgaenge.tun("vg-ergebnis-neu", "V0002"));
+  await page.waitForTimeout(300);
+  pruefe(aktuell(await daten(page)).ergebnis === "zeitraum",
+    "auch der direkte Aufruf nimmt es nicht zurück");
+  pruefe(Boolean(await page.$('[data-tun="vg-pruefkorrektur:V0002"]')),
+    "stattdessen gibt es den Weg über einen Korrekturvorgang");
   await ctx.close();
 }
 
@@ -302,7 +311,7 @@ console.log("\n── 6. Was protokolliert wird – und was nicht ──");
   await page.waitForTimeout(400);
   await page.click('[data-tun="vg-einsicht-ja:V0002"]');
   await page.waitForTimeout(400);
-  await page.click('[data-tun="vg-ergebnis:V0002|gueltig"]');
+  await page.click('[data-tun="vg-ergebnis:V0002|ok"]');
   await page.waitForTimeout(400);
   await page.click('[data-tun="vg-teil-erledigen:V0002|personal"]');
   await page.waitForTimeout(450);
@@ -319,7 +328,7 @@ console.log("\n── 6. Was protokolliert wird – und was nicht ──");
 
   const ergebnis = p.find((x) => /Prüfergebnis/i.test(x.was));
   pruefe(Boolean(ergebnis), "das Prüfergebnis ist protokolliert");
-  pruefe(/gültig/.test(ergebnis.nachher), "mit dem benannten Ergebnis");
+  pruefe(/Alles in Ordnung/.test(ergebnis.nachher), "mit dem benannten Ergebnis");
 
   const alles = JSON.stringify(p);
   for (const wort of ["Diagnose", "Krankheitsgrund", "Befund", "Attest"]) {
@@ -358,7 +367,7 @@ console.log("\n── 7. Für die Disposition bleibt alles verschlossen ──")
     "auch der direkte Aufruf öffnet ihr die Vorschau nicht");
   await page.evaluate(() => window.ProbeVorgaenge.tun("vg-einsicht-ja", "V0002"));
   await page.waitForTimeout(350);
-  pruefe((await daten(page)).einsicht === null,
+  pruefe(aktuell(await daten(page)).einsicht === null,
     "und sie kann keine Einsicht für sich eintragen");
 
   /* Ihr eigener Teilschritt bleibt davon unberuehrt. */
@@ -406,7 +415,7 @@ for (const [breite, hoehe] of [[320, 568], [390, 844], [1440, 900]]) {
   await page.keyboard.press("Escape");
   await page.waitForTimeout(350);
   pruefe(!(await page.$(".belegrahmen")), "Escape schliesst die Vorschau");
-  pruefe((await daten(page)).einsicht === null,
+  pruefe(aktuell(await daten(page)).einsicht === null,
     "ein abgebrochenes Ansehen gilt nicht als Einsicht");
   await ctx.close();
 }

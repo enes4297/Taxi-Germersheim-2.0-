@@ -43,6 +43,7 @@
     uebernahme: null,
     wiedereroeffnen: null,
     einsicht: null,
+    pruefkorrektur: null,
     /* Fuer die Vorfuehrung der Paralleländerung. */
     fremdstand: {}
   };
@@ -100,10 +101,66 @@
     Ergebnis betrieblich folgt, ist eine Geschaeftsregel und steht
     hier bewusst nicht.
   */
+  /* Der aktuelle Nachweis ist immer der letzte der Kette. */
+  const nachweise = (v) => (v.daten && v.daten.nachweise) || [];
+  const aktuellerNachweis = (v) => {
+    const liste = nachweise(v);
+    return liste.length ? liste[liste.length - 1] : null;
+  };
+  const ergebnisVon = (id) => D.PRUEFERGEBNISSE.find((x) => x.id === id) || null;
+  const offeneKlaerungen = (v) =>
+    ((v.daten && v.daten.klaerungen) || []).filter((k) => k.zustand === "offen");
+
+  /*
+    Darf dieser Teilschritt abgeschlossen werden?
+
+    Leerer Rueckgabewert heisst ja. Sonst steht hier der Grund, der
+    dem Bearbeiter auch angezeigt wird - eine gesperrte Aktion ohne
+    Begruendung ist keine Hilfe.
+
+    Die Reihenfolge der Pruefungen bildet die Vorgabe des
+    Geschaeftsfuehrers vom 01.10.2026 ab:
+
+      "Alles in Ordnung"   -> abschliessbar
+      "Zeitraum weicht ab" -> offen, bis die Rueckfrage geklaert ist
+      "Nicht lesbar"       -> offen, bis eine NEUE Datei eingegangen
+                              UND ihrerseits geprueft ist
+
+    Weil nach einer neuen Datei immer wieder der letzte Nachweis
+    geprueft wird, ergibt sich der dritte Fall von selbst: Die neue
+    Datei hat noch keine Einsicht, also greift gleich die erste
+    Bedingung.
+  */
   function pruefungOffen(v, erfordert) {
     if (erfordert !== "bescheinigung") return "";
-    if (!v.daten.einsicht) return "Die Bescheinigung wurde noch nicht geöffnet.";
-    if (!v.daten.ergebnis) return "Es liegt noch kein Prüfergebnis vor.";
+    const nw = aktuellerNachweis(v);
+    if (!nw) return "Es liegt keine Bescheinigung vor.";
+    if (!nw.einsicht) {
+      return nw.nr > 1
+        ? "Die neue Bescheinigung wurde noch nicht geöffnet."
+        : "Die Bescheinigung wurde noch nicht geöffnet.";
+    }
+    if (!nw.ergebnis) return "Es liegt noch kein Prüfergebnis vor.";
+    const offen = offeneKlaerungen(v);
+    if (offen.length) {
+      return offen[0].art === "anforderung"
+        ? "Es wurde eine neue Bescheinigung angefordert. Sie ist noch nicht eingegangen."
+        : "Die Rückfrage zum Zeitraum ist noch nicht geklärt.";
+    }
+    const e = ergebnisVon(nw.ergebnis);
+    if (!e) return "Das Prüfergebnis ist unbekannt.";
+    if (e.folge === "abschliessbar") return "";
+    /*
+      Das Ergebnis verlangte eine Folge. Dann muss es dazu auch eine
+      Klaerung geben, und die muss erledigt sein. Offene Klaerungen
+      sind oben schon abgefangen; hier bleibt der Fall, dass gar
+      keine angelegt wurde - der duerfte nicht vorkommen und wird
+      deshalb als Sperre behandelt, nicht als Freigabe.
+    */
+    const dazu = ((v.daten && v.daten.klaerungen) || [])
+      .filter((k) => k.nachweisNr === nw.nr);
+    if (!dazu.length) return e.erklaerung;
+    if (dazu.some((k) => k.zustand !== "geklaert")) return e.erklaerung;
     return "";
   }
 
@@ -478,36 +535,78 @@
     weil ein Ergebnis ohne Einsicht keine Aussage hat.
   */
   function pruefschritte(v) {
-    const e = v.daten.einsicht;
-    const ergebnis = v.daten.ergebnis;
-    const gewaehlt = D.PRUEFERGEBNISSE.find((x) => x.id === ergebnis);
+    const nw = aktuellerNachweis(v);
+    if (!nw) return "";
+    const e = nw.ergebnis ? ergebnisVon(nw.ergebnis) : null;
+    const offen = offeneKlaerungen(v);
     return `<ol class="pruefkette">
-      <li class="${e ? "erledigt" : "dran"}">
-        <strong>1. Bescheinigung ansehen</strong>
-        ${e
-          ? `<span>Geöffnet von ${h(kontoText(e))} · ${h(e.datum)} ${h(e.zeit)}</span>`
+      <li class="${nw.einsicht ? "erledigt" : "dran"}">
+        <strong>1. Bescheinigung ${nw.nr > 1 ? "Nr. " + nw.nr + " " : ""}ansehen</strong>
+        ${nw.einsicht
+          ? `<span>Geöffnet von ${h(kontoText(nw.einsicht))} · ${h(nw.einsicht.datum)} ${h(nw.einsicht.zeit)}</span>`
           : `<span>Noch nicht geöffnet.</span>`}
         <button class="knopf klein" type="button" data-tun="vg-bescheinigung:${h(v.id)}">
-          ${e ? "Erneut öffnen" : "Bescheinigung öffnen"}</button>
+          ${nw.einsicht ? "Erneut öffnen" : "Bescheinigung öffnen"}</button>
       </li>
-      <li class="${ergebnis ? "erledigt" : (e ? "dran" : "spaeter")}">
+      <li class="${e ? "erledigt" : (nw.einsicht ? "dran" : "spaeter")}">
         <strong>2. Prüfergebnis festhalten</strong>
-        ${!e ? `<span>Erst nach der Einsicht. Ein Ergebnis ohne Einsicht wäre keine Prüfung.</span>` : ""}
-        ${e && !ergebnis ? `<div class="wahlraster">
+        ${!nw.einsicht ? `<span>Erst nach der Einsicht. Ein Ergebnis ohne Einsicht wäre keine Prüfung.</span>` : ""}
+        ${nw.einsicht && !e ? `<div class="wahlraster">
           ${D.PRUEFERGEBNISSE.map((x) => `<button class="wahlkarte" type="button"
             data-tun="vg-ergebnis:${h(v.id)}|${h(x.id)}" aria-pressed="false">
-            <strong>${h(x.name)}</strong></button>`).join("")}
-        </div>` : ""}
-        ${gewaehlt ? `<span>${R.marke(gewaehlt.lage === "gut" ? "gut" : "warnung", gewaehlt.name)}</span>
-          <button class="knopf klein" type="button" data-tun="vg-ergebnis-neu:${h(v.id)}">Ergebnis ändern</button>` : ""}
+            <strong>${h(x.name)}</strong>
+            <span>${h(x.erklaerung)}</span></button>`).join("")}
+        </div>
+        <p class="schritt-hinweis">Das Ergebnis lässt sich danach nicht mehr
+          überschreiben. Eine spätere Korrektur läuft über einen eigenen
+          Vorgang mit Pflichtgrund.</p>` : ""}
+        ${e ? `<span>${R.marke(e.lage === "gut" ? "gut" : "warnung", e.name)}</span>
+          <span>${h(e.erklaerung)}</span>
+          <span class="teil-sperre">Festgehalten und gesperrt. Eine Korrektur ist nur
+            als eigener Vorgang mit Begründung möglich.</span>
+          <button class="knopf klein" type="button"
+            data-tun="vg-pruefkorrektur:${h(v.id)}">Ergebnis korrigieren</button>` : ""}
       </li>
-      <li class="${ergebnis ? "dran" : "spaeter"}">
-        <strong>3. Teilschritt abschließen</strong>
-        <span>${ergebnis
+      ${offen.length ? `<li class="dran">
+        <strong>${h(D.KLAERUNG_NAMEN[offen[0].art])}</strong>
+        <span>${h(offen[0].text)}</span>
+        <span>Offen seit ${h(offen[0].seit)} · angestoßen von ${h(kontoText(offen[0].wer))}</span>
+        ${offen[0].art === "rueckfrage"
+          ? `<button class="knopf klein" type="button"
+              data-tun="vg-klaerung-ja:${h(v.id)}">Rückfrage als geklärt eintragen</button>`
+          : `<button class="knopf klein" type="button"
+              data-tun="vg-neue-bescheinigung:${h(v.id)}">Neue Bescheinigung ist eingegangen</button>`}
+      </li>` : ""}
+      ${(() => { const frei = pruefungOffen(v, "bescheinigung") === ""; return `
+      <li class="${frei ? "dran" : "spaeter"}">
+        <strong>${offen.length ? 4 : 3}. Teilschritt abschließen</strong>
+        <span>${frei
           ? "Der Abschluss steht jetzt unten bei „Personalprüfung“ bereit."
-          : "Erst nach Einsicht und Ergebnis."}</span>
-      </li>
+          : h(pruefungOffen(v, "bescheinigung"))}</span>
+      </li>`; })()}
     </ol>`;
+  }
+
+  /* Die Kette der eingegangenen Nachweise. Nichts wird ueberschrieben:
+     Jeder Eintrag behaelt Nummer, Eingangszeit, Art und sein
+     Ergebnis, auch wenn er beanstandet wurde. */
+  function nachweisliste(v) {
+    const ART = { erst: "Erstbescheinigung", folge: "Folgebescheinigung", ersatz: "Ersatz nach Beanstandung" };
+    const letzte = aktuellerNachweis(v);
+    return `<ul class="konfliktliste">
+      ${nachweise(v).map((nw) => {
+        const e = nw.ergebnis ? ergebnisVon(nw.ergebnis) : null;
+        const aktiv = letzte && nw.nr === letzte.nr;
+        return `<li class="${nw.beanstandet ? "ist-ausnahme" : ""}">
+          <strong>${aktiv
+            ? `<button class="alslink" type="button" data-tun="vg-bescheinigung:${h(v.id)}">${h(nw.datei)}</button>`
+            : h(nw.datei)}</strong>
+          <span>Nr. ${nw.nr} · ${h(ART[nw.art] || nw.art)} · eingegangen ${h(nw.eingang)}
+            ${e ? " · " + h(e.name) : " · noch nicht geprüft"}
+            ${nw.beanstandet ? " · beanstandet, bleibt erhalten" : ""}</span>
+        </li>`;
+      }).join("")}
+    </ul>`;
   }
 
   function detailKrankheit(v) {
@@ -528,13 +627,10 @@
       ${vertraulichSichtbar(v)
         ? `<div class="dialog-schritt geschuetzt">
             <h3>Eingereichte Bescheinigung <span class="band-gold">nur Personal und Administration</span></h3>
-            <ul class="konfliktliste">
-              <li><strong><button class="alslink" type="button"
-                  data-tun="vg-bescheinigung:${h(v.id)}">${h(v.daten.datei)}</button></strong>
-                <span>eingereicht ${h(v.eingang)} · wird über eine kurz gültige, signierte Adresse geöffnet</span></li>
-              ${(v.daten.folge || []).map((f) => `<li class="ist-ausnahme">
-                <strong>${h(f.datei)}</strong><span>Folgebescheinigung · ${h(f.zeit)}</span></li>`).join("")}
-            </ul>
+            ${nachweisliste(v)}
+            <p class="schritt-hinweis">Jede Datei wird über eine kurz gültige, signierte
+              Adresse geöffnet. Eine beanstandete Datei wird nie überschrieben — sie bleibt
+              mit Nummer, Eingangszeit und Ergebnis erhalten.</p>
             ${pruefschritte(v)}
             <div class="knopfzeile">
               <button class="knopf klein" type="button" data-tun="vg-folge:${h(v.id)}">Folgebescheinigung zuordnen</button>
@@ -814,9 +910,56 @@
     Der Inhalt der Bescheinigung wird NICHT abgetippt und nirgends
     gespeichert. Festgehalten wird nur, dass geoeffnet wurde.
   */
+  /*
+    Korrektur eines bereits festgehaltenen Pruefergebnisses.
+
+    Das alte Ergebnis bleibt stehen. Es entsteht ein eigener Vorgang
+    mit Pflichtgrund, der auf den urspruenglichen verweist, und die
+    Pruefung beginnt dort von vorn. Stilles Ueberschreiben gibt es
+    nicht.
+  */
+  function pruefkorrekturDialog() {
+    const s = stand.pruefkorrektur;
+    const v = vorgangFinden(s.id);
+    const nw = aktuellerNachweis(v);
+    const e = nw && nw.ergebnis ? ergebnisVon(nw.ergebnis) : null;
+    return `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="pkTitel">
+        <header class="dialog-kopf">
+          <h2 id="pkTitel">Prüfergebnis korrigieren</h2>
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>
+        <div class="dialog-rumpf">
+          ${s.fehler ? `<div class="feldfehler" role="alert">${h(s.fehler)}</div>` : ""}
+          ${R.zustandsKasten("keinrecht", "Ein festgehaltenes Ergebnis wird nicht überschrieben",
+            "Das bisherige Ergebnis bleibt mit Datum, Person und Rolle stehen. Es entsteht ein eigener Vorgang, der auf diesen hier verweist; dort beginnt die Prüfung von vorn.")}
+          <dl class="zusammenfassung">
+            <div><dt>Vorgang</dt><dd>${h(v.titel)}</dd></div>
+            <div><dt>Nachweis</dt><dd>Nr. ${nw ? nw.nr : "—"} · ${h(nw ? nw.datei : "—")}</dd></div>
+            <div><dt>Bisheriges Ergebnis</dt><dd>${h(e ? e.name : "—")}</dd></div>
+            <div><dt>Festgehalten von</dt><dd>${h(nw && nw.einsicht ? kontoText(nw.einsicht) : "—")}</dd></div>
+            <div><dt>Korrigiert von</dt><dd>${h(meinName())}</dd></div>
+          </dl>
+          <label>Grund der Korrektur <span class="band-warnung">Pflichtfeld</span>
+            <textarea data-pruefkorrektur-grund rows="2"
+              placeholder="Zum Beispiel: Zeitraum beim ersten Durchsehen falsch gelesen.">${h(s.grund)}</textarea></label>
+          <p class="schritt-hinweis">Kein medizinischer Freitext. Protokolliert werden Konto,
+            Kennung, Rolle, Datum, Uhrzeit, betroffener Vorgang, vorheriger und neuer Zustand
+            sowie dieser Grund — nichts darüber hinaus.</p>
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf" type="button" data-tun="vg-pruefkorrektur-ab">Abbrechen</button>
+          <button class="knopf haupt-knopf" type="button" data-tun="vg-pruefkorrektur-ja">
+            Korrekturvorgang anlegen</button>
+        </footer>
+      </div>`;
+  }
+
   function bescheinigungDialog() {
     const v = vorgangFinden(stand.einsicht);
-    const e = v.daten.einsicht;
+    const nw = aktuellerNachweis(v);
+    const e = nw ? nw.einsicht : null;
     return `
       <div class="dialog-hinter" data-dialog-zu></div>
       <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="beTitel">
@@ -828,10 +971,11 @@
           ${R.zustandsKasten("vorbereitet", "In dieser Designprobe gibt es keine Datei",
             "Die echte Supabase-Storage-API ist hier nicht verfügbar. Was Sie sehen, ist der Rahmen der Anzeige — nicht ein geprüftes Verhalten der Storage-API.")}
           <dl class="zusammenfassung">
-            <div><dt>Datei</dt><dd>${h(v.daten.datei)}</dd></div>
+            <div><dt>Datei</dt><dd>${h(nw.datei)}</dd></div>
+            <div><dt>Nachweis</dt><dd>Nr. ${nw.nr} · eingegangen ${h(nw.eingang)}</dd></div>
             <div><dt>Mitarbeiter</dt><dd>${h(v.betrifft.name)}</dd></div>
             <div><dt>Gemeldeter Zeitraum</dt><dd>${h(datumText(v.daten.von))} bis ${h(datumText(v.daten.bis))}</dd></div>
-            <div><dt>Eingereicht</dt><dd>${h(v.eingang)}</dd></div>
+            <div><dt>Vorgang</dt><dd>${h(v.id)}</dd></div>
             <div><dt>Angesehen von</dt><dd>${h(meinName())}</dd></div>
           </dl>
           <div class="belegrahmen" role="img"
@@ -1380,7 +1524,7 @@
       /* ---- Einsicht in die Bescheinigung ---- */
       case "vg-bescheinigung": {
         const v = vorgangFinden(wert);
-        if (!v || !vertraulichSichtbar(v)) return;
+        if (!v || !vertraulichSichtbar(v) || !aktuellerNachweis(v)) return;
         stand.einsicht = wert;
         R.dialogOeffnen(bescheinigungDialog());
         return;
@@ -1388,11 +1532,13 @@
       case "vg-einsicht-ja": {
         const v = vorgangFinden(wert);
         if (!v || !vertraulichSichtbar(v)) return;
-        const vorher = v.daten.einsicht ? "bereits geöffnet" : "nicht geöffnet";
-        v.daten.einsicht = { ...meinKonto(), datum: D.alsText(D.heute), zeit: jetzt() };
+        const nw = aktuellerNachweis(v);
+        if (!nw) return;
+        const vorher = nw.einsicht ? "bereits geöffnet" : "nicht geöffnet";
+        nw.einsicht = { ...meinKonto(), datum: D.alsText(D.heute), zeit: jetzt() };
         v.version += 1;
         D.protokollieren({
-          betrifft: v.titel + " · " + v.daten.datei,
+          betrifft: v.titel + " · Nachweis Nr. " + nw.nr + " · " + nw.datei,
           was: "Bescheinigung angesehen",
           vorher, nachher: "über signierte Adresse geöffnet", grund: ""
         });
@@ -1402,40 +1548,190 @@
         R.zeichnen();
         return;
       }
+
+      /*
+        Das Pruefergebnis. Es ist eine einmalige Festlegung: Danach
+        ist der Nachweis gesperrt, und jede Korrektur laeuft ueber
+        einen eigenen Vorgang mit Pflichtgrund (Regel 5).
+
+        Aus dem Ergebnis folgt unmittelbar die naechste Handlung -
+        sie wird nicht dem Bearbeiter ueberlassen, sondern
+        angelegt.
+      */
       case "vg-ergebnis": {
         const [id, ergebnis] = wert.split("|");
         const v = vorgangFinden(id);
         if (!v || !vertraulichSichtbar(v)) return;
+        const nw = aktuellerNachweis(v);
         /* Ein Ergebnis ohne Einsicht waere keine Pruefung. */
-        if (!v.daten.einsicht) return;
-        const gewaehlt = D.PRUEFERGEBNISSE.find((x) => x.id === ergebnis);
-        if (!gewaehlt) return;
-        const vorher = v.daten.ergebnis
-          ? (D.PRUEFERGEBNISSE.find((x) => x.id === v.daten.ergebnis) || {}).name
-          : "kein Ergebnis";
-        v.daten.ergebnis = ergebnis;
+        if (!nw || !nw.einsicht) return;
+        /* Ein festgehaltenes Ergebnis wird nicht ueberschrieben. */
+        if (nw.gesperrt || nw.ergebnis) return;
+        const e = ergebnisVon(ergebnis);
+        if (!e) return;
+
+        nw.ergebnis = ergebnis;
+        nw.gesperrt = true;
         v.version += 1;
         D.protokollieren({
-          betrifft: v.titel + " · " + v.daten.datei,
+          betrifft: v.titel + " · Nachweis Nr. " + nw.nr + " · " + nw.datei,
           was: "Prüfergebnis festgehalten",
-          vorher, nachher: gewaehlt.name, grund: ""
+          vorher: "kein Ergebnis", nachher: e.name, grund: ""
+        });
+
+        /* Die festgelegte Folge. */
+        if (e.folge === "rueckfrage") {
+          v.daten.klaerungen.push({
+            art: "rueckfrage", nachweisNr: nw.nr, zustand: "offen",
+            text: "Der Zeitraum der Bescheinigung weicht von der Meldung ab ("
+              + datumText(v.daten.von) + " bis " + datumText(v.daten.bis)
+              + "). Bitte klären, welcher Zeitraum gilt.",
+            wer: { ...meinKonto() }, seit: D.alsText(D.heute) + " " + jetzt(),
+            geklaertAm: "", geklaertVon: null
+          });
+          D.protokollieren({
+            betrifft: v.titel + " · Nachweis Nr. " + nw.nr,
+            was: "Rückfrage zum Zeitraum erstellt",
+            vorher: "keine Rückfrage", nachher: "Rückfrage offen", grund: ""
+          });
+        } else if (e.folge === "anforderung") {
+          nw.beanstandet = true;
+          v.daten.klaerungen.push({
+            art: "anforderung", nachweisNr: nw.nr, zustand: "offen",
+            text: "Die eingereichte Bescheinigung ist nicht lesbar oder unvollständig."
+              + " Beim Mitarbeiter wurde eine neue Bescheinigung angefordert.",
+            wer: { ...meinKonto() }, seit: D.alsText(D.heute) + " " + jetzt(),
+            geklaertAm: "", geklaertVon: null
+          });
+          D.protokollieren({
+            betrifft: v.titel + " · Nachweis Nr. " + nw.nr,
+            was: "Neue Bescheinigung angefordert",
+            vorher: "keine Anforderung", nachher: "Anforderung offen", grund: ""
+          });
+        }
+
+        R.dialogOeffnen(vorgangDialog());
+        R.zeichnen();
+        return;
+      }
+
+      /* Die Rueckfrage ist geklaert. Erst danach darf abgeschlossen
+         werden - die Klaerung selbst wird protokolliert. */
+      case "vg-klaerung-ja": {
+        const v = vorgangFinden(wert);
+        if (!v || !vertraulichSichtbar(v)) return;
+        const k = offeneKlaerungen(v).find((x) => x.art === "rueckfrage");
+        if (!k) return;
+        k.zustand = "geklaert";
+        k.geklaertAm = D.alsText(D.heute) + " " + jetzt();
+        k.geklaertVon = { ...meinKonto() };
+        v.version += 1;
+        D.protokollieren({
+          betrifft: v.titel + " · Rückfrage zum Zeitraum",
+          was: "Rückfrage geklärt",
+          vorher: "offen", nachher: "geklärt", grund: ""
         });
         R.dialogOeffnen(vorgangDialog());
         R.zeichnen();
         return;
       }
-      case "vg-ergebnis-neu": {
+
+      /*
+        Eine neue Bescheinigung ist eingegangen. In der Probe gibt es
+        keinen Upload - der Eingang wird ausgeloest, nicht
+        hochgeladen.
+
+        Die alte Datei bleibt UNVERAENDERT stehen, mit ihrer Nummer,
+        ihrer Eingangszeit, ihrem Ergebnis und dem Vermerk
+        "beanstandet". Die neue haengt sich dahinter und beginnt bei
+        Schritt 1.
+      */
+      case "vg-neue-bescheinigung": {
         const v = vorgangFinden(wert);
         if (!v || !vertraulichSichtbar(v)) return;
-        const vorher = (D.PRUEFERGEBNISSE.find((x) => x.id === v.daten.ergebnis) || {}).name || "";
-        v.daten.ergebnis = "";
+        const k = offeneKlaerungen(v).find((x) => x.art === "anforderung");
+        if (!k) return;
+        const liste = nachweise(v);
+        const nr = liste.length + 1;
+        liste.push({
+          nr, art: "ersatz",
+          datei: "Testbescheinigung-" + v.betrifft.id + "-0" + nr + ".pdf",
+          eingang: D.alsText(D.heute) + " " + jetzt(),
+          eingangIso: D.alsIso(D.heute),
+          einsicht: null, ergebnis: "", gesperrt: false, beanstandet: false
+        });
+        k.zustand = "geklaert";
+        k.geklaertAm = D.alsText(D.heute) + " " + jetzt();
+        k.geklaertVon = { ...meinKonto() };
         v.version += 1;
         D.protokollieren({
-          betrifft: v.titel + " · " + v.daten.datei,
-          was: "Prüfergebnis zurückgenommen",
-          vorher, nachher: "kein Ergebnis", grund: ""
+          betrifft: v.titel + " · Nachweis Nr. " + nr,
+          was: "Neue Bescheinigung eingegangen",
+          vorher: "Anforderung offen",
+          nachher: "Nachweis Nr. " + nr + " eingegangen, Prüfung beginnt neu", grund: ""
         });
         R.dialogOeffnen(vorgangDialog());
+        R.zeichnen();
+        return;
+      }
+
+      /*
+        Korrektur eines festgehaltenen Pruefergebnisses.
+
+        Das alte Ergebnis wird NICHT ueberschrieben. Es entsteht ein
+        eigener, protokollierter Vorgang mit Pflichtgrund, der auf
+        den urspruenglichen verweist (Regel 5).
+      */
+      case "vg-pruefkorrektur": {
+        const v = vorgangFinden(wert);
+        if (!v || !vertraulichSichtbar(v)) return;
+        stand.pruefkorrektur = { id: wert, grund: "", fehler: "" };
+        R.dialogOeffnen(pruefkorrekturDialog());
+        return;
+      }
+      case "vg-pruefkorrektur-ab":
+        stand.pruefkorrektur = null;
+        R.dialogSchliessen(true);
+        return;
+      case "vg-pruefkorrektur-ja": {
+        const s = stand.pruefkorrektur;
+        const feld = document.querySelector("[data-pruefkorrektur-grund]");
+        s.grund = feld ? feld.value.trim() : "";
+        if (s.grund.length < 3) {
+          s.fehler = "Bitte einen Grund eintragen. Ohne Grund bleibt das Ergebnis stehen.";
+          R.dialogOeffnen(pruefkorrekturDialog());
+          const neuF = document.querySelector("[data-pruefkorrektur-grund]");
+          if (neuF) neuF.focus();
+          return;
+        }
+        const alt = vorgangFinden(s.id);
+        const nw = aktuellerNachweis(alt);
+        const e = ergebnisVon(nw.ergebnis);
+        const neuerVorgang = D.vorgangAnlegen({
+          art: "aufgabe", thema: "krankheit",
+          titel: "Prüfergebnis korrigieren – " + alt.betrifft.name,
+          betrifft: { ...alt.betrifft },
+          sichtbar: ["personnel.read"], vertraulich: ["personnel.read"],
+          daten: {
+            von: alt.daten.von, bis: alt.daten.bis, bezugAuf: alt.id,
+            nachweise: [{
+              nr: 1, art: "erst", datei: nw.datei, eingang: nw.eingang,
+              eingangIso: nw.eingangIso,
+              einsicht: null, ergebnis: "", gesperrt: false, beanstandet: false
+            }],
+            klaerungen: []
+          }
+        });
+        D.protokollieren({
+          betrifft: alt.titel + " · Nachweis Nr. " + nw.nr,
+          was: "Korrektur des Prüfergebnisses angelegt",
+          vorher: e ? e.name : "unbekannt",
+          nachher: "neuer Vorgang " + neuerVorgang.id + ", Prüfung beginnt dort neu",
+          grund: s.grund
+        });
+        stand.pruefkorrektur = null;
+        stand.offen = neuerVorgang.id;
+        R.dialogSchliessen(true);
         R.zeichnen();
         return;
       }
@@ -1447,18 +1743,33 @@
         }, "Im echten Portal entstünde jetzt eine kurz gültige, signierte Adresse. Es gibt keine öffentliche Adresse und keinen Anhang per E-Mail. In dieser Probe gibt es keine Datei."));
         return;
 
+      /*
+        Folgebescheinigung bei laengerer Krankheit. Sie haengt am
+        bestehenden Vorgang und erzeugt keinen zweiten - aber sie ist
+        eine eigene Datei und braucht deshalb ihre eigene Pruefung.
+      */
       case "vg-folge": {
         const v = vorgangFinden(wert);
         if (!v || !vertraulichSichtbar(v)) return;
-        v.daten.folge = v.daten.folge || [];
-        v.daten.folge.push({ datei: `Testbescheinigung-${v.betrifft.id}-0${v.daten.folge.length + 2}.pdf`, zeit: jetzt() });
+        const liste = nachweise(v);
+        const vorher = liste.length;
+        const nr = vorher + 1;
+        liste.push({
+          nr, art: "folge",
+          datei: "Testbescheinigung-" + v.betrifft.id + "-0" + nr + ".pdf",
+          eingang: D.alsText(D.heute) + " " + jetzt(),
+          eingangIso: D.alsIso(D.heute),
+          einsicht: null, ergebnis: "", gesperrt: false, beanstandet: false
+        });
         v.version += 1;
         D.protokollieren({
-          wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle, zeit: jetzt(), betrifft: v.titel,
-          was: "Folgebescheinigung zugeordnet", vorher: `${v.daten.folge.length} Nachweis(e)`,
-          nachher: `${v.daten.folge.length + 1} Nachweis(e)`, grund: ""
+          betrifft: v.titel + " · Nachweis Nr. " + nr,
+          was: "Folgebescheinigung zugeordnet",
+          vorher: vorher + " Nachweis(e)",
+          nachher: nr + " Nachweis(e), Prüfung beginnt neu", grund: ""
         });
         R.dialogOeffnen(vorgangDialog());
+        R.zeichnen();
         return;
       }
 
@@ -1479,7 +1790,21 @@
           betrifft: { ...alt.betrifft },
           dringlichkeit: "normal",
           sichtbar: [...alt.sichtbar], vertraulich: [...alt.vertraulich],
-          daten: { von: neuVon, bis: neuBis, datei: alt.daten.datei, folge: [], bezugAuf: alt.id },
+          daten: {
+            von: neuVon, bis: neuBis, bezugAuf: alt.id,
+            /* Die Datei wird nicht kopiert, sondern als neuer,
+               ungeprueefter Nachweis uebernommen: Der korrigierte
+               Zeitraum will eigens geprueft werden. Der alte Vorgang
+               behaelt seine Kette unveraendert. */
+            nachweise: nachweise(alt).length ? [{
+              nr: 1, art: "erst",
+              datei: aktuellerNachweis(alt).datei,
+              eingang: aktuellerNachweis(alt).eingang,
+              eingangIso: aktuellerNachweis(alt).eingangIso,
+              einsicht: null, ergebnis: "", gesperrt: false, beanstandet: false
+            }] : [],
+            klaerungen: []
+          },
           zustaendig: meineRolle(), zustand: "bearbeitung"
         });
         const eintrag = {
@@ -1561,7 +1886,7 @@
   }
 
   const offeneEingabe = () => {
-    const g = document.querySelector("[data-vg-grund], [data-uebernahme-grund], [data-wieder-grund]");
+    const g = document.querySelector("[data-vg-grund], [data-uebernahme-grund], [data-wieder-grund], [data-pruefkorrektur-grund]");
     return Boolean(g && g.value.trim().length > 0);
   };
 

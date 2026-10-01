@@ -364,7 +364,10 @@ console.log("\n── 8. Krankmeldung ──");
   /* Personal: mit Bescheinigung. */
   const c = await seite("personal");
   await oeffnen(c.page, "V0002");
-  const pers = await c.page.textContent(".dialog-kasten");
+  /* Zeilenumbrueche glaetten: Der Hinweis zur signierten Adresse
+     bricht im Quelltext um, und eine rohe Textsuche sieht das als
+     fehlenden Satz. */
+  const pers = (await c.page.textContent(".dialog-kasten")).replace(/\s+/g, " ");
   pruefe(/Testbescheinigung/.test(pers), "Personal sieht die Bescheinigung");
   pruefe(/nur Personal und Administration/.test(pers), "der Abschnitt ist als geschuetzt gekennzeichnet");
   pruefe(/signierte Adresse/.test(pers), "sie wird ueber eine signierte Adresse geoeffnet");
@@ -386,9 +389,12 @@ console.log("\n── 8. Krankmeldung ──");
   const vorher = await c.page.evaluate(() => window.ProbeDaten.vorgaenge.length);
   await c.page.click('[data-tun="vg-folge:V0002"]');
   await c.page.waitForTimeout(450);
-  const folge = await c.page.evaluate(() => window.ProbeDaten.vorgangVon("V0002").daten.folge.length);
+  /* Folgebescheinigungen stehen seit der Geschaeftsregel vom
+     01.10.2026 in derselben Nachweiskette wie die Erstbescheinigung -
+     eine zweite Liste waere eine zweite Wahrheit gewesen. */
+  const folge = await c.page.evaluate(() => window.ProbeDaten.vorgangVon("V0002").daten.nachweise.length);
   const nachher = await c.page.evaluate(() => window.ProbeDaten.vorgaenge.length);
-  pruefe(folge === 1, "die Folgebescheinigung haengt am bestehenden Vorgang");
+  pruefe(folge === 2, `die Folgebescheinigung haengt am bestehenden Vorgang (${folge} Nachweise)`);
   pruefe(nachher === vorher, "und erzeugt keinen zweiten Vorgang");
 
   /* Korrektur des Zeitraums erzeugt dagegen einen NEUEN Vorgang. */

@@ -111,7 +111,7 @@ const dokumentPruefen = async (page) => {
   await page.waitForTimeout(400);
   await page.click('[data-tun="vg-einsicht-ja:V0002"]');
   await page.waitForTimeout(400);
-  await page.click('[data-tun="vg-ergebnis:V0002|gueltig"]');
+  await page.click('[data-tun="vg-ergebnis:V0002|ok"]');
   await page.waitForTimeout(400);
 };
 
