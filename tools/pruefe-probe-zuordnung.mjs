@@ -99,6 +99,17 @@ const daten = (page, id = "V0002") =>
 const teilstand = (page, id = "V0002") => page.evaluate((x) =>
   window.ProbeDaten.vorgangVon(x).teile.personal.zustand, id);
 const protokoll = (page) => page.evaluate(() => window.ProbeDaten.protokoll.slice());
+/*
+  Einen Teilschritt uebernehmen. Seit dem 01.10.2026 ist das die
+  erste der fuenf Voraussetzungen des Abschlusses: Wer abschliesst,
+  traegt die Verantwortung und soll auch als Verantwortlicher
+  dastehen.
+*/
+const uebernehmen = async (page, teil, id = "V0002") => {
+  const knopf = await page.$(`[data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
+  if (knopf) { await knopf.click(); await page.waitForTimeout(450); }
+};
+
 const titelJetzt = async (page) => (await page.textContent(".dialog-kopf h2")).trim();
 
 /* Bis zum geoeffneten Zuordnungsdialog fuehren. */

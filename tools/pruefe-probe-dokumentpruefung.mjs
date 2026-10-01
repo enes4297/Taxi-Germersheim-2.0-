@@ -105,6 +105,17 @@ const protokoll = (page) => page.evaluate(() => window.ProbeDaten.protokoll.slic
    Nachweisen. Geprueft wird immer der letzte. */
 const aktuell = (d) => d.nachweise[d.nachweise.length - 1];
 
+/*
+  Einen Teilschritt uebernehmen. Seit dem 01.10.2026 ist das die
+  erste der fuenf Voraussetzungen des Abschlusses: Wer abschliesst,
+  traegt die Verantwortung und soll auch als Verantwortlicher
+  dastehen.
+*/
+const uebernehmen = async (page, teil, id = "V0002") => {
+  const knopf = await page.$(`[data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
+  if (knopf) { await knopf.click(); await page.waitForTimeout(450); }
+};
+
 /* ═══ 1. Erst der Inhalt, dann die Handlung ═════════════════════ */
 console.log("\n── 1. Die Reihenfolge im Dialog ──");
 {
@@ -142,7 +153,7 @@ console.log("\n── 2. Kein Abschluss ohne Einsicht ──");
 
   const text = await page.textContent(".dialog-kasten");
   pruefe(/noch nicht geöffnet/i.test(text), "der Grund steht dabei");
-  pruefe(/Erst ansehen, dann bewerten, dann abschließen/.test(text),
+  pruefe(/Erst übernehmen, dann ansehen, dann bewerten, dann abschließen/.test(text),
     "und die Reihenfolge ist ausgeschrieben");
 
   const gesperrt = await page.$$eval(".dialog-kasten button[disabled]",
@@ -228,6 +239,7 @@ console.log("\n── 4. Erst bewerten, dann abschliessen ──");
 {
   const { ctx, page } = await seite("personal");
   await oeffnen(page);
+  await uebernehmen(page, "personal");
   await page.click('[data-tun="vg-bescheinigung:V0002"]');
   await page.waitForTimeout(400);
   await page.click('[data-tun="vg-einsicht-ja:V0002"]');
@@ -253,6 +265,7 @@ console.log("\n── 4. Erst bewerten, dann abschliessen ──");
   await page.click('[data-tun="vg-ergebnis:V0002|ok"]');
   await page.waitForTimeout(450);
   pruefe(aktuell(await daten(page)).ergebnis === "ok", "das Ergebnis wird festgehalten");
+  await uebernehmen(page, "personal");
 
   k = await knoepfe(page);
   pruefe(k.some((x) => x === "vg-teil-erledigen:V0002|personal"),
@@ -307,6 +320,7 @@ console.log("\n── 6. Was protokolliert wird – und was nicht ──");
   const { ctx, page } = await seite("personal");
   await oeffnen(page);
   const vorher = (await protokoll(page)).length;
+  await uebernehmen(page, "personal");
 
   await page.click('[data-tun="vg-bescheinigung:V0002"]');
   await page.waitForTimeout(400);
@@ -314,11 +328,15 @@ console.log("\n── 6. Was protokolliert wird – und was nicht ──");
   await page.waitForTimeout(400);
   await page.click('[data-tun="vg-ergebnis:V0002|ok"]');
   await page.waitForTimeout(400);
+  await uebernehmen(page, "personal");
   await page.click('[data-tun="vg-teil-erledigen:V0002|personal"]');
   await page.waitForTimeout(450);
 
   const p = await protokoll(page);
-  pruefe(p.length === vorher + 3, `drei Einträge: Einsicht, Ergebnis, Abschluss (${p.length - vorher})`);
+  /* Vier seit dem 01.10.2026: die Uebernahme kommt dazu. */
+  pruefe(p.length === vorher + 4,
+    `vier Einträge: Übernahme, Einsicht, Ergebnis, Abschluss (${p.length - vorher})`);
+  pruefe(p.some((x) => /übernommen/i.test(x.was)), "die Übernahme ist darunter");
 
   const einsicht = p.find((x) => /angesehen/i.test(x.was));
   pruefe(Boolean(einsicht), "die Einsicht ist protokolliert");
@@ -372,8 +390,13 @@ console.log("\n── 7. Für die Disposition bleibt alles verschlossen ──")
     "und sie kann keine Einsicht für sich eintragen");
 
   /* Ihr eigener Teilschritt bleibt davon unberuehrt. */
+  /* Auch die Planung braucht die Uebernahme - aber sie braucht keine
+     Dokumentpruefung. Das ist der Unterschied. */
+  pruefe(!(await page.$('[data-tun="vg-teil-erledigen:V0002|planung"]')),
+    "ihr eigener Teilschritt braucht erst die Übernahme");
+  await uebernehmen(page, "planung");
   pruefe(Boolean(await page.$('[data-tun="vg-teil-erledigen:V0002|planung"]')),
-    "ihr eigener Teilschritt „Planung“ ist nicht gesperrt");
+    "danach ist er frei — ohne Dokumentprüfung");
   await ctx.close();
 }
 
@@ -386,7 +409,8 @@ console.log("\n── 8. Auch die Administration prüft, bevor sie abschliesst �
   const k = await knoepfe(page);
   pruefe(!k.some((x) => x === "vg-teil-erledigen:V0002|personal"),
     "aber die Personalprüfung kann sie ohne Einsicht nicht abschliessen");
-  pruefe(k.some((x) => x === "vg-teil-erledigen:V0002|planung"),
+  await uebernehmen(page, "planung");
+  pruefe((await knoepfe(page)).some((x) => x === "vg-teil-erledigen:V0002|planung"),
     "die Planung dagegen schon — dort gibt es nichts anzusehen");
   await ctx.close();
 }

@@ -143,6 +143,28 @@
   const verwendbar = (nw) =>
     Boolean(nw) && !nw.zuordnungUngeklaert && !nw.umgezogenNach;
 
+  /*
+    Was fehlt noch, bevor DIESER Teilschritt abgeschlossen werden
+    darf? Leerer Rueckgabewert heisst: nichts.
+
+    Die Uebernahme steht bewusst an erster Stelle. Wer einen
+    Teilschritt abschliesst, uebernimmt damit die Verantwortung
+    dafuer - dann soll er auch als Verantwortlicher dastehen und
+    nicht als jemand, der im Vorbeigehen einen Haken gesetzt hat.
+  */
+  function teilOffen(v, teil) {
+    if (!teil) return "";
+    const meine = meinKonto().kennung;
+    if (!teil.verantwortlich) {
+      return "Der Teilschritt ist noch niemandem zugewiesen. Bitte zuerst übernehmen.";
+    }
+    if (teil.verantwortlich.kennung !== meine) {
+      return "Verantwortlich ist " + kontoText(teil.verantwortlich)
+        + ". Übernehmen Sie den Teilschritt, wenn Sie ihn abschließen wollen.";
+    }
+    return pruefungOffen(v, teil.erfordert);
+  }
+
   function pruefungOffen(v, erfordert) {
     if (erfordert !== "bescheinigung") return "";
     const nw = aktuellerNachweis(v);
@@ -365,18 +387,32 @@
     nachricht: ["gut", "Nachricht"]
   };
 
+  /*
+    Die Hauptaktion der LISTENKARTE.
+
+    Sie oeffnet ausschliesslich den Vorgang und speichert nichts.
+    Deshalb darf sie auch nur das versprechen.
+
+    Hier stand frueher der Name des eigenen Teilschritts - also
+    "Dokumentpruefung abgeschlossen", und zwar auf einem goldenen
+    Hauptknopf, bei einem neuen Vorgang, ohne Verantwortlichen und
+    ohne dass die Bescheinigung geoeffnet war. Der Klick hat zwar nur
+    geoeffnet, aber die Beschriftung hat etwas anderes behauptet. Das
+    ist genau die Sorte Knopf, die jemanden glauben laesst, er haette
+    etwas abgeschlossen.
+
+    Ein Abschluss wird ausschliesslich IM geoeffneten Vorgang
+    angeboten, am jeweiligen Teilschritt, und auch dort nur, wenn
+    alle Voraussetzungen erfuellt sind.
+  */
   function hauptaktion(v) {
-    if (gesamtstand(v) === "erledigt") return { name: "Ansehen", tun: `vg-oeffnen:${v.id}` };
-    /* Bei geteilten Vorgaengen heisst die Hauptaktion nach dem
-       eigenen Teilschritt - nicht "Erledigt". Niemand schliesst
-       damit den ganzen Vorgang. */
-    const teil = meinTeil(v);
-    if (teil && teil.zustand === "offen") return { name: teil.aktion, tun: `vg-oeffnen:${v.id}` };
-    if (v.thema === "urlaub" && v.art === "aufgabe") return { name: "Antrag öffnen", tun: `vg-oeffnen:${v.id}` };
-    if (v.thema === "krankheit") return { name: "Krankmeldung öffnen", tun: `vg-oeffnen:${v.id}` };
-    if (v.thema === "fahrt") return { name: "Zur Fahrt", tun: `vg-oeffnen:${v.id}` };
-    if (v.thema === "dokument") return { name: "Dokument prüfen", tun: `vg-oeffnen:${v.id}` };
-    return { name: "Öffnen", tun: `vg-oeffnen:${v.id}` };
+    const auf = `vg-oeffnen:${v.id}`;
+    if (gesamtstand(v) === "erledigt") return { name: "Ansehen", tun: auf };
+    if (v.thema === "urlaub" && v.art === "aufgabe") return { name: "Antrag öffnen", tun: auf };
+    if (v.thema === "krankheit") return { name: "Krankmeldung prüfen", tun: auf };
+    if (v.thema === "fahrt") return { name: "Zur Fahrt", tun: auf };
+    if (v.thema === "dokument") return { name: "Dokument öffnen", tun: auf };
+    return { name: "Vorgang öffnen", tun: auf };
   }
 
   const verantwortlichText = (v) => {
@@ -614,12 +650,16 @@
           : `<span class="teil-sperre">Die Klärung der Zuordnung ist Personal und
               Administration vorbehalten.</span>`}
       </li>` : ""}
-      ${(() => { const frei = pruefungOffen(v, "bescheinigung") === ""; return `
+      ${(() => {
+        const meins = meinTeil(v);
+        const grund = meins ? teilOffen(v, meins) : pruefungOffen(v, "bescheinigung");
+        const frei = grund === "";
+        return `
       <li class="${frei ? "dran" : "spaeter"}">
         <strong>${offen.length ? 4 : 3}. Teilschritt abschließen</strong>
         <span>${frei
           ? "Der Abschluss steht jetzt unten bei „Personalprüfung“ bereit."
-          : h(pruefungOffen(v, "bescheinigung"))}</span>
+          : h(grund)}</span>
       </li>`; })()}
     </ol>`;
   }
@@ -755,15 +795,15 @@
               ${x.verantwortlich && x.verantwortlich.kennung === meinKonto().kennung
                 ? `<button class="knopf klein" type="button"
                     data-tun="vg-teil-weitergeben:${h(v.id)}|${h(schluessel)}">Weitergeben</button>` : ""}
-              ${pruefungOffen(v, x.erfordert)
+              ${teilOffen(v, { ...x, schluessel })
                 ? `<button class="knopf klein" type="button" disabled
                     aria-disabled="true">${h(x.aktion)}</button>`
                 : `<button class="knopf klein haupt-knopf" type="button"
                     data-tun="vg-teil-erledigen:${h(v.id)}|${h(schluessel)}">${h(x.aktion)}</button>`}
             </span>
-            ${pruefungOffen(v, x.erfordert)
-              ? `<span class="teil-sperre">${h(pruefungOffen(v, x.erfordert))}
-                  Erst ansehen, dann bewerten, dann abschließen.</span>` : ""}` : ""}
+            ${teilOffen(v, { ...x, schluessel })
+              ? `<span class="teil-sperre">${h(teilOffen(v, { ...x, schluessel }))}
+                  Erst übernehmen, dann ansehen, dann bewerten, dann abschließen.</span>` : ""}` : ""}
           </li>`;
         }).join("")}
       </ul>
@@ -871,11 +911,11 @@
           ${erledigt && !v.abgeleitet
             ? `<button class="knopf" type="button" data-tun="vg-wiedereroeffnen:${h(v.id)}">Wiedereröffnen</button>` : ""}
           ${!erledigt && v.thema !== "urlaub" && teil && teil.zustand === "offen" && meineTeile(v).length === 1
-            ? (pruefungOffen(v, teil.erfordert)
+            ? (teilOffen(v, teil)
               /* Auch hier gesperrt. Ein zweiter, offener Knopf an anderer
                  Stelle haette die ganze Sperre wertlos gemacht. */
               ? `<button class="knopf" type="button" disabled aria-disabled="true"
-                  title="${h(pruefungOffen(v, teil.erfordert))}">${h(teil.aktion)}</button>`
+                  title="${h(teilOffen(v, teil))}">${h(teil.aktion)}</button>`
               : `<button class="knopf haupt-knopf" type="button" data-tun="vg-erledigen:${h(v.id)}">${h(teil.aktion)}</button>`)
             : ""}
           ${!erledigt && v.thema !== "urlaub" && !v.teile
@@ -1563,8 +1603,8 @@
         const x = v.teile[schluessel];
         if (!R.darf(x.braucht) || x.zustand === "erledigt") return;
         /* Der gesperrte Knopf allein genuegt nicht - hier wird es
-           noch einmal geprueft. */
-        if (pruefungOffen(v, x.erfordert)) return;
+           noch einmal geprueft, Uebernahme eingeschlossen. */
+        if (teilOffen(v, { ...x, schluessel })) return;
         x.zustand = "erledigt";
         x.letzter = { ...meinKonto(), zeit: jetzt() };
         if (!x.verantwortlich) x.verantwortlich = { ...meinKonto() };
@@ -1705,7 +1745,7 @@
         if (teil) {
           const echt = v.teile[teil.schluessel];
           if (echt.zustand === "erledigt") return;
-          if (pruefungOffen(v, echt.erfordert)) return;
+          if (teilOffen(v, teil)) return;
           echt.zustand = "erledigt";
           echt.letzter = { ...meinKonto(), zeit: jetzt() };
           if (!echt.verantwortlich) echt.verantwortlich = { ...meinKonto() };

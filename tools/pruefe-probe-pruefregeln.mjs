@@ -116,6 +116,17 @@ const ansehen = async (page) => {
   await page.click('[data-tun="vg-einsicht-ja:V0002"]');
   await page.waitForTimeout(450);
 };
+/*
+  Einen Teilschritt uebernehmen. Seit dem 01.10.2026 ist das die
+  erste der fuenf Voraussetzungen des Abschlusses: Wer abschliesst,
+  traegt die Verantwortung und soll auch als Verantwortlicher
+  dastehen.
+*/
+const uebernehmen = async (page, teil, id = "V0002") => {
+  const knopf = await page.$(`[data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
+  if (knopf) { await knopf.click(); await page.waitForTimeout(450); }
+};
+
 const ergebnisWaehlen = async (page, id) => {
   await page.click(`[data-tun="vg-ergebnis:V0002|${id}"]`);
   await page.waitForTimeout(450);
@@ -165,6 +176,7 @@ console.log("\n── 1. „Alles in Ordnung“ gibt den Abschluss frei ──")
   await ansehen(page);
   pruefe(!(await kannAbschliessen(page)), "nach der Einsicht allein noch immer");
   await ergebnisWaehlen(page, "ok");
+  await uebernehmen(page, "personal");
 
   pruefe(await kannAbschliessen(page), "mit „Alles in Ordnung“ steht er bereit");
   const d = await daten(page);
@@ -182,6 +194,9 @@ console.log("\n── 2. „Zeitraum weicht ab“ hält den Vorgang offen ──
 {
   const { ctx, page } = await seite("personal");
   await oeffnen(page);
+  /* Erst uebernehmen, sonst lautet der Sperrgrund "noch niemandem
+     zugewiesen" statt des fachlichen. */
+  await uebernehmen(page, "personal");
   await ansehen(page);
   await ergebnisWaehlen(page, "zeitraum");
 
@@ -213,6 +228,7 @@ console.log("\n── 2. „Zeitraum weicht ab“ hält den Vorgang offen ──
   await page.click('[data-tun="vg-klaerung-ja:V0002"]');
   await page.waitForTimeout(450);
   const d2 = await daten(page);
+  await uebernehmen(page, "personal");
   pruefe(d2.klaerungen[0].zustand === "geklaert", "die Rückfrage lässt sich klären");
   pruefe(Boolean(d2.klaerungen[0].geklaertAm), "mit Zeitpunkt");
   pruefe(/Testpersonal 01/.test(d2.klaerungen[0].geklaertVon.name), "und mit Person");
@@ -230,6 +246,7 @@ console.log("\n── 3. „Nicht lesbar“ fordert eine neue Bescheinigung ─�
 {
   const { ctx, page } = await seite("personal");
   await oeffnen(page);
+  await uebernehmen(page, "personal");
   await ansehen(page);
   await ergebnisWaehlen(page, "unleserlich");
 
@@ -308,6 +325,7 @@ console.log("\n── 4. Eine neue Datei beginnt die Prüfung von vorn ──");
 
   await ansehen(page);
   await ergebnisWaehlen(page, "ok");
+  await uebernehmen(page, "personal");
   pruefe(await kannAbschliessen(page), "erst nach Einsicht UND Ergebnis der neuen Datei");
 
   const d2 = await daten(page);
@@ -433,6 +451,7 @@ console.log("\n── 6. Rollen und Datenschutz ──");
     "ein Ergebnis ohne Einsicht nimmt sie auch nicht");
   await ansehen(a.page);
   await ergebnisWaehlen(a.page, "ok");
+  await uebernehmen(a.page, "personal");
   pruefe(await kannAbschliessen(a.page), "mit Einsicht und Ergebnis darf sie");
   const pa = await protokoll(a.page);
   pruefe(/Testleitung 01/.test(pa.find((x) => /angesehen/.test(x.was)).wer),
@@ -463,6 +482,7 @@ console.log("\n── 7. Keine technische Aufbewahrungsfrist ──");
   await page.waitForTimeout(450);
   await ansehen(page);
   await ergebnisWaehlen(page, "ok");
+  await uebernehmen(page, "personal");
   await page.click('[data-tun="vg-teil-erledigen:V0002|personal"]');
   await page.waitForTimeout(450);
   const d = await daten(page);

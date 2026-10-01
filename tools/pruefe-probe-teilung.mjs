@@ -100,6 +100,17 @@ const zu = async (page) => {
 const protokoll = (page) => page.evaluate(() => window.ProbeDaten.protokoll.slice());
 
 /*
+  Einen Teilschritt uebernehmen. Seit dem 01.10.2026 ist das die
+  erste der fuenf Voraussetzungen des Abschlusses: Wer abschliesst,
+  traegt die Verantwortung und soll auch als Verantwortlicher
+  dastehen.
+*/
+const uebernehmen = async (page, teil, id = "V0002") => {
+  const knopf = await page.$(`[data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
+  if (knopf) { await knopf.click(); await page.waitForTimeout(450); }
+};
+
+/*
   Die Personalpruefung laesst sich nur abschliessen, wenn die
   Bescheinigung angesehen und ein Ergebnis festgehalten wurde. Das
   ist der eigentliche Gegenstand von pruefe-probe-dokumentpruefung;
@@ -127,6 +138,7 @@ console.log("\n── 1. Ein Vorgang, zwei Verantwortungen ──");
   pruefe(/Ihr Teilschritt/.test(text), "der eigene Teilschritt ist ausgezeichnet");
 
   /* Die Hauptaktion heisst nach dem eigenen Schritt - nicht "Erledigt". */
+  await uebernehmen(page, "planung");
   const knopf = await page.textContent('[data-tun="vg-teil-erledigen:V0002|planung"]');
   pruefe(/Planung bearbeitet/.test(knopf),
     `die Hauptaktion heisst nach dem eigenen Schritt (${knopf.trim()})`);
@@ -146,6 +158,10 @@ console.log("\n── 2. Niemand schliesst den Vorgang der anderen ──");
 {
   const { ctx, page } = await seite("dispatcher");
   await oeffnen(page, "V0002");
+  /* Seit dem 01.10.2026 schliesst nur der Verantwortliche ab. */
+  pruefe(!(await page.$('[data-tun="vg-teil-erledigen:V0002|planung"]')),
+    "ohne Übernahme ist auch die Planung gesperrt");
+  await uebernehmen(page, "planung");
   await page.click('[data-tun="vg-teil-erledigen:V0002|planung"]');
   await page.waitForTimeout(450);
 
@@ -176,6 +192,7 @@ console.log("\n── 2. Niemand schliesst den Vorgang der anderen ──");
   /* Ohne Einsicht und Ergebnis ist der Abschluss gesperrt. */
   pruefe(!(await page.$('[data-tun="vg-teil-erledigen:V0002|personal"]')),
     "ohne Dokumentprüfung ist der Abschluss gesperrt");
+  await uebernehmen(page, "personal");
   await dokumentPruefen(page);
   const perKnopf = await page.textContent('[data-tun="vg-teil-erledigen:V0002|personal"]');
   pruefe(/Dokumentprüfung abgeschlossen/.test(perKnopf),

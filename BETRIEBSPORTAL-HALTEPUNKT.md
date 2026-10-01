@@ -4033,3 +4033,158 @@ setzt zwischen `<dt>` und `<dd>` keines — der Text lautet
 > Storage-API. Belegt ist, dass die Regel in Oberfläche und Aktionen
 > durchgesetzt wird — **nicht**, dass eine echte Bescheinigung beim
 > Umhängen geschützt bliebe.
+
+---
+
+## 26. Ein Knopf, der mehr versprach, als er tat
+
+**Der Befund (Nutzer, 01.10.2026).** Auf der Listenkarte stand ein
+goldener Hauptknopf **„Dokumentprüfung abgeschlossen"** — bei einem
+neuen Vorgang, beide Teilschritte offen, niemand verantwortlich, die
+Bescheinigung nicht geöffnet.
+
+### 26.1 Was daran falsch war
+
+Der Klick selbst war harmlos: `hauptaktion()` hat immer nur
+`vg-oeffnen` zurückgegeben, nie eine speichernde Aktion. Es wurde
+also nichts abgeschlossen.
+
+**Das macht es nicht besser, sondern schlechter.** Ein goldener
+Hauptknopf mit „abgeschlossen" lässt jemanden glauben, er habe etwas
+abgeschlossen. Wer ihn in einer Liste von zwölf Karten drückt und
+weiterklickt, trägt diesen Glauben mit sich. Die Oberfläche hat
+behauptet, was sie nicht tat — und zwar an der Stelle, an der sie am
+lautesten spricht.
+
+Die Ursache war eine gut gemeinte Zeile aus Abschnitt 21: Nachdem
+der Abschlussknopf nicht mehr „Erledigt" heißen sollte, bekam er den
+Namen des eigenen Teilschritts — und diese Benennung landete
+versehentlich auch auf der Listenkarte.
+
+### 26.2 Die Änderung
+
+Die Listenkarte beschreibt jetzt nur noch, **was der Klick tut**:
+
+| Thema | Hauptknopf |
+|---|---|
+| Krankheit | **Krankmeldung prüfen** |
+| Urlaub (Aufgabe) | Antrag öffnen |
+| Fahrt | Zur Fahrt |
+| Dokument | Dokument öffnen |
+| alles andere | **Vorgang öffnen** |
+| bereits erledigt | Ansehen |
+
+Der Name des Teilschritts kommt dort nicht mehr vor. **Eine
+Abschlussbeschriftung erscheint ausschließlich im geöffneten
+Vorgang**, am jeweiligen Teilschritt.
+
+Der Prüflauf geht **alle fünf Rollen und alle Reiter** durch, liest
+jeden Knopf jeder Karte und besteht nur, wenn keiner davon
+„abgeschlossen", „erledigt", „bearbeitet", „gespeichert",
+„bestätigt", „genehmigt" oder „verbindlich" enthält. Die Übersicht
+und die Glocke werden mitgeprüft.
+
+Gesucht wird nach **behauptetem Abschluss**, nicht nach einzelnen
+Wörtern: „Dokument öffnen" und „Krankmeldung prüfen" sagen, was
+passieren wird, und sind in Ordnung.
+
+### 26.3 Fünf Voraussetzungen statt vier
+
+Neu dazugekommen ist die **Übernahme** als erste Bedingung. Bisher
+konnte jemand einen Teilschritt abschließen, ohne je verantwortlich
+gewesen zu sein.
+
+| # | Bedingung | Sperrgrund, wenn sie fehlt |
+|---|---|---|
+| 1 | Teilschritt übernommen | „Der Teilschritt ist noch niemandem zugewiesen. Bitte zuerst übernehmen." |
+| 2 | Bescheinigung geöffnet | „Die Bescheinigung wurde noch nicht geöffnet." |
+| 3 | Einsicht bestätigt | (dieselbe — das Öffnen allein zählt nicht) |
+| 4 | gültiges Prüfergebnis | „Es liegt noch kein Prüfergebnis vor." |
+| 5 | Folgeaufgaben geklärt | „Die Rückfrage zum Zeitraum ist noch nicht geklärt." usw. |
+
+Ist **jemand anderes** verantwortlich, lautet der Grund
+„Verantwortlich ist … Übernehmen Sie den Teilschritt, wenn Sie ihn
+abschließen wollen." Das gilt **auch für die Administration**: Sie
+darf übernehmen — mit Grund —, aber nicht im Vorbeigehen abschließen,
+was jemand anderes bearbeitet.
+
+Die Begründung für Bedingung 1: Wer einen Teilschritt abschließt,
+trägt die Verantwortung dafür. Dann soll er auch als
+Verantwortlicher dastehen und nicht als jemand, der im Vorbeigehen
+einen Haken gesetzt hat.
+
+### 26.4 Die Sperre liegt nicht im Knopf
+
+Alle fünf Bedingungen stehen in `teilOffen()`, und `teilOffen()` wird
+in der **Aktion** geprüft, nicht nur beim Zeichnen. Der Prüflauf ruft
+`vg-teil-erledigen` an jeder der fünf Stationen direkt auf und
+weist jedes Mal nach, dass der Teilschritt offen bleibt.
+
+Die Aktion ist **sichtbar gesperrt, nicht versteckt** — mit
+ausgeschriebenem Grund darunter. Wer nicht abschließen kann, soll
+sehen warum.
+
+### 26.5 Was das für die bestehenden Prüfläufe bedeutete
+
+Vier Läufe schlossen Teilschritte ab, ohne sie vorher zu übernehmen.
+Das ging bisher und geht jetzt nicht mehr. Sie übernehmen den
+Teilschritt nun vorher — **das ist Teil des Ablaufs, keine
+Umgehung**: Genau so läuft es auch für einen Menschen.
+
+Festgehalten, weil die Unterscheidung zählt: Hätte ich stattdessen
+die Zusicherungen aufgeweicht, wäre die neue Regel nicht geprüft,
+sondern wegdefiniert.
+
+### 26.6 Eine eigene Zusicherung, die zu scharf war
+
+Der neue Lauf prüfte „ein Klick auf die Karte ändert und speichert
+nichts" durch Vergleich des **ganzen** Vorgangs. Das schlug fehl —
+und zwar zu Recht: Öffnen setzt `gesehen` auf `true`. Das ist gewollt
+und steht seit Abschnitt 20.3 so da: **gesehen ist nicht erledigt**,
+und die Glocke muss herunterzählen.
+
+Die Zusicherung ist jetzt zweigeteilt:
+
+1. Kein **Fachzustand** ändert sich (Zustand, Teilschritte, Daten,
+   Verantwortliche, Abschlussdatum) und **kein Protokolleintrag**
+   entsteht.
+2. Der Vorgang wird **als gesehen vermerkt** — und das wird eigens
+   geprüft, statt es bloß zu dulden.
+
+Das ist der Unterschied zwischen „der Test war falsch" und „der Test
+war ungenau". Er war ungenau: Er verbot etwas Richtiges mit.
+
+### 26.7 Prüfstand
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-karten-pruefen` (6 Blöcke, neu) | **43 bestanden, 0 offen** |
+| `probe-zuordnung-pruefen` | 125 bestanden, 0 offen |
+| `probe-regeln-pruefen` | 123 bestanden, 0 offen |
+| `probe-dokument-pruefen` | 93 bestanden, 0 offen |
+| `probe-teilung-pruefen` | 100 bestanden, 0 offen |
+| `probe-vorgaenge-pruefen` | 137 bestanden, 0 offen |
+| `probe-team-pruefen` | 197 bestanden, 0 offen |
+| `probe-planung-pruefen` | 171 bestanden, 0 offen |
+| `probe-fahrt-pruefen` | 168 bestanden, 0 offen |
+| `probe-portal-pruefen` | 107 bestanden, 0 offen |
+
+Zusammen **1264 Zusicherungen, 0 offen**, null Netzwerkaufrufe. Alle
+zehn Läufe vollständig beendet, jeder mit gedruckter Bilanz.
+
+**Neun Zusicherungen in drei Läufen waren nachzuziehen**, alle Folge
+der neuen Übernahme-Bedingung:
+
+- Vier Stellen schlossen Teilschritte ohne Übernahme. Sie übernehmen
+  jetzt vorher.
+- Zwei Stellen prüften den Sperrgrund und bekamen jetzt „noch
+  niemandem zugewiesen" statt des fachlichen Grundes — weil die
+  Übernahme als erste Bedingung geprüft wird.
+- Eine Stelle zählte drei Protokolleinträge; es sind vier, die
+  Übernahme kommt dazu.
+- Zwei Stellen sicherten zu, die **Planung** sei nicht gesperrt. Sie
+  ist es jetzt bis zur Übernahme — braucht aber weiterhin keine
+  Dokumentprüfung. Genau dieser Unterschied wird nun geprüft.
+
+> **Einordnung:** Designprobe ohne Datenquelle. Der Lauf sagt nichts
+> über die produktive Instanz.
