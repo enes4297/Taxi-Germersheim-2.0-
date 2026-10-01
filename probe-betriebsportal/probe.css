@@ -1413,3 +1413,82 @@ textarea {
 @media (max-width: 520px) {
   .teil-aktionen .knopf { flex: 1 1 100%; }
 }
+
+/* ============================================================
+   Dokumentpruefung: ansehen, bewerten, abschliessen
+   ============================================================ */
+.pruefkette {
+  list-style: none;
+  counter-reset: schritt;
+  margin: 10px 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.pruefkette li {
+  display: grid;
+  gap: 5px;
+  justify-items: start;
+  padding: 10px 12px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: 8px;
+}
+.pruefkette li.erledigt { border-left-color: #5c8f63; }
+.pruefkette li.dran     { border-left-color: var(--gold); }
+.pruefkette li.spaeter  { opacity: .55; }
+.pruefkette strong { font-size: 14px; }
+.pruefkette span   { font-size: 13px; color: var(--gedaempft); }
+.pruefkette .wahlraster { width: 100%; }
+
+.teil-sperre {
+  display: block;
+  font-size: 12px;
+  color: var(--gedaempft);
+  margin-top: 4px;
+}
+
+/* Der Dateiname ist ein Knopf, sieht aber wie ein Verweis aus -
+   er oeffnet die Bescheinigung. */
+.alslink {
+  background: none;
+  border: 0;
+  /* Mindestens 36px hoch: ein Verweis, der wie Text aussieht, muss
+     trotzdem mit dem Finger zu treffen sein. */
+  min-height: 36px;
+  padding: 6px 0;
+  text-align: left;
+  font: inherit;
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.alslink:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* Platzhalter fuer die Anzeige der Bescheinigung. */
+.belegrahmen {
+  border: 1px dashed var(--linie);
+  border-radius: 10px;
+  padding: 18px 16px;
+  margin: 12px 0;
+  display: grid;
+  gap: 8px;
+  background: rgba(255, 255, 255, .02);
+}
+.belegrahmen p { font-size: 13px; color: var(--gedaempft); margin: 0; }
+.beleg-band {
+  justify-self: start;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.knopf[disabled] {
+  opacity: .45;
+  cursor: not-allowed;
+}

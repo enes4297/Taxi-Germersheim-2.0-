@@ -81,11 +81,30 @@ const zeit = (id, teil) => `[data-zeit-kennung="${id}"][data-zeit-teil="${teil}"
 const feld = (id, was) => `[data-plan="${was}"][data-mitarbeiter="${id}"]`;
 const zeileText = (page, id) => page.textContent(`.plan-zeile[data-mitarbeiter="${id}"]`);
 
+/*
+  Zeit Ziffer fuer Ziffer tippen.
+
+  Das Zeitfeld markiert beim Hineinspringen seinen ganzen Inhalt -
+  aber erst im naechsten Frame (requestAnimationFrame). Wer sofort
+  lostippt, kann mitten hinein geraten: Das select() faellt dann
+  zwischen zwei Anschlaege und die naechste Ziffer ersetzt das schon
+  Getippte. Unter Last ist dieser Lauf deshalb geflattert und hat
+  "30" statt "15:30" gemessen.
+
+  Das ist KEIN Fehler der Oberflaeche: Ein Mensch tippt nicht
+  innerhalb eines Frames nach dem Hineinspringen. Es ist ein Fehler
+  dieses Prueflaufs gewesen. Behoben wird er hier, indem der Frame
+  abgewartet wird - nicht, indem die Zusicherung weicher gemacht
+  wird.
+*/
 async function zeitTippen(page, id, teil, text) {
   const wahl = zeit(id, teil);
   await page.click(wahl);
+  /* Den Frame abwarten, in dem das Feld sich selbst markiert. */
+  await page.evaluate(() => new Promise((f) => requestAnimationFrame(() => requestAnimationFrame(f))));
   await page.fill(wahl, "");
-  await page.type(wahl, text, { delay: 25 });
+  await page.evaluate(() => new Promise((f) => requestAnimationFrame(() => requestAnimationFrame(f))));
+  await page.type(wahl, text, { delay: 40 });
   return wahl;
 }
 

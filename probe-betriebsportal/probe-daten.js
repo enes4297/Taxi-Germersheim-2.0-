@@ -240,6 +240,19 @@
       von: alsIso(tagAls(1)), bis: alsIso(tagAls(2)) }
   ];
 
+  /*
+    Moegliche Ergebnisse einer Dokumentpruefung. Bewusst eine feste
+    Liste statt eines freien Feldes: Ein freies Feld wuerde frueher
+    oder spaeter eine Diagnose aufnehmen. Keines dieser Ergebnisse
+    nennt einen medizinischen Grund.
+  */
+  const PRUEFERGEBNISSE = [
+    { id: "gueltig",    name: "Bescheinigung gültig, Zeitraum stimmt", lage: "gut" },
+    { id: "zeitraum",   name: "Zeitraum weicht von der Meldung ab",    lage: "warnung" },
+    { id: "unleserlich", name: "Nicht lesbar oder unvollständig",      lage: "warnung" },
+    { id: "person",     name: "Falsche Person oder falscher Vorgang",  lage: "warnung" }
+  ];
+
   const ABWESENHEIT_NAMEN = {
     krank: "Krank",
     urlaub: "Urlaub"
@@ -408,7 +421,18 @@
       daten: {
         von: alsIso(heute), bis: alsIso(tagAls(2)),
         datei: "Testbescheinigung-M02-01.pdf",
-        folge: []
+        folge: [],
+        /*
+          Wer hat die Bescheinigung wann geoeffnet, und mit welchem
+          Ergebnis? Beides leer heisst: nicht geprueft. Der manuelle
+          Test hatte gezeigt, dass sich die Dokumentpruefung sonst
+          abschliessen liess, ohne das Dokument je gesehen zu haben.
+          Gespeichert wird NUR, DASS geprueft wurde und wie das
+          Ergebnis lautet - nie ein Dokumentinhalt und nie eine
+          Diagnose.
+        */
+        einsicht: null,
+        ergebnis: ""
       },
       /*
         Zwei getrennte Arbeitsschritte. Der manuelle Test hat gezeigt,
@@ -430,6 +454,8 @@
           name: "Personalprüfung", zustand: "offen",
           braucht: ["personnel.read"],
           aktion: "Dokumentprüfung abgeschlossen",
+          /* Ohne Einsicht und Ergebnis kein Abschluss. */
+          erfordert: "bescheinigung",
           schritte: "Bescheinigung eingegangen · Dokument geprüft · Zeitraum geprüft",
           verantwortlich: null, letzter: null, vertraulich: true
         }
@@ -513,6 +539,7 @@
       sichtbar: ["operations.read"], vertraulich: [],
       daten: {}, empfehlung: "", antwort: "", notizen: [],
       teile: null, abgeschlossenAm: "", archivAb: "",
+      einsicht: null, ergebnis: "",
       verantwortlich: null, letzterBearbeiter: null,
       eingangIso: alsIso(heute),
       eingang: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
@@ -799,7 +826,7 @@
     protokoll, protokollieren, letzteAenderung, lohnProbe,
     vorgaenge, vorgangVon, vorgangAnlegen, warnungsHandhabung,
     VORGANG_ARTEN, VORGANG_ZUSTAENDE, VORGANG_THEMEN,
-    zeitraumText, ABWESENHEIT_NAMEN,
+    zeitraumText, ABWESENHEIT_NAMEN, PRUEFERGEBNISSE,
     leistungsarten, rollstuhlWerte, gepaeckWerte,
     scheinWerte, zuzahlungWerte, genehmigungWerte
   };

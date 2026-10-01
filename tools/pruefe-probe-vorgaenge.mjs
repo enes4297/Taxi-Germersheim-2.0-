@@ -369,11 +369,15 @@ console.log("\n── 8. Krankmeldung ──");
   pruefe(/nur Personal und Administration/.test(pers), "der Abschnitt ist als geschuetzt gekennzeichnet");
   pruefe(/signierte Adresse/.test(pers), "sie wird ueber eine signierte Adresse geoeffnet");
 
-  await c.page.click('[data-tun="vg-datei:V0002"]');
+  /* Der Dateiname selbst oeffnet die Vorschau. "Datei sicher pruefen"
+     gibt es nicht mehr - der Knopf erzeugte nur eine Quittung, ohne
+     dass irgendetwas zu sehen gewesen waere. Siehe
+     pruefe-probe-dokumentpruefung. */
+  await c.page.click('[data-tun="vg-bescheinigung:V0002"]');
   await c.page.waitForTimeout(400);
-  const datei = await c.page.textContent(".dialog-kasten");
+  const datei = (await c.page.textContent(".dialog-kasten")).replace(/\s+/g, " ");
   pruefe(/keine öffentliche Adresse/.test(datei), "es gibt keine oeffentliche Adresse");
-  pruefe(/keinen Anhang per E-Mail/.test(datei), "und keinen Anhang per E-Mail");
+  pruefe(/kein Anhang per E-Mail/.test(datei), "und keinen Anhang per E-Mail");
   await c.page.click("button[data-dialog-zu]");
   await c.page.waitForTimeout(300);
 

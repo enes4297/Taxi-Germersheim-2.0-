@@ -42,6 +42,7 @@
     entscheidung: null, // { id, art, grund, stufe, fehler }
     uebernahme: null,
     wiedereroeffnen: null,
+    einsicht: null,
     /* Fuer die Vorfuehrung der Paralleländerung. */
     fremdstand: {}
   };
@@ -85,6 +86,25 @@
     if (teile.every((x) => x.zustand === "erledigt")) return "erledigt";
     if (teile.some((x) => x.zustand === "erledigt" || x.verantwortlich)) return "bearbeitung";
     return "neu";
+  }
+
+  /*
+    Darf dieser Teilschritt abgeschlossen werden?
+    Leerer Rueckgabewert heisst ja. Sonst steht hier der Grund, der
+    dem Bearbeiter auch angezeigt wird - eine gesperrte Aktion ohne
+    Begruendung ist keine Hilfe.
+
+    Es geht ausdruecklich NICHT darum, welches Ergebnis jemand
+    eintraegt. Es geht darum, dass ueberhaupt eines vorliegt und dass
+    die Datei vorher geoeffnet wurde. Was aus einem auffaelligen
+    Ergebnis betrieblich folgt, ist eine Geschaeftsregel und steht
+    hier bewusst nicht.
+  */
+  function pruefungOffen(v, erfordert) {
+    if (erfordert !== "bescheinigung") return "";
+    if (!v.daten.einsicht) return "Die Bescheinigung wurde noch nicht geöffnet.";
+    if (!v.daten.ergebnis) return "Es liegt noch kein Prüfergebnis vor.";
+    return "";
   }
 
   /* Alle Teilschritte, die diese Rolle bearbeiten darf. Die
@@ -451,6 +471,45 @@
       </div>`;
   }
 
+  /*
+    Die drei Schritte der Dokumentpruefung, in dieser Reihenfolge und
+    sichtbar als Reihenfolge. Schritt 2 erscheint erst, wenn Schritt 1
+    geschehen ist - nicht weil er sonst gefaehrlich waere, sondern
+    weil ein Ergebnis ohne Einsicht keine Aussage hat.
+  */
+  function pruefschritte(v) {
+    const e = v.daten.einsicht;
+    const ergebnis = v.daten.ergebnis;
+    const gewaehlt = D.PRUEFERGEBNISSE.find((x) => x.id === ergebnis);
+    return `<ol class="pruefkette">
+      <li class="${e ? "erledigt" : "dran"}">
+        <strong>1. Bescheinigung ansehen</strong>
+        ${e
+          ? `<span>Geöffnet von ${h(kontoText(e))} · ${h(e.datum)} ${h(e.zeit)}</span>`
+          : `<span>Noch nicht geöffnet.</span>`}
+        <button class="knopf klein" type="button" data-tun="vg-bescheinigung:${h(v.id)}">
+          ${e ? "Erneut öffnen" : "Bescheinigung öffnen"}</button>
+      </li>
+      <li class="${ergebnis ? "erledigt" : (e ? "dran" : "spaeter")}">
+        <strong>2. Prüfergebnis festhalten</strong>
+        ${!e ? `<span>Erst nach der Einsicht. Ein Ergebnis ohne Einsicht wäre keine Prüfung.</span>` : ""}
+        ${e && !ergebnis ? `<div class="wahlraster">
+          ${D.PRUEFERGEBNISSE.map((x) => `<button class="wahlkarte" type="button"
+            data-tun="vg-ergebnis:${h(v.id)}|${h(x.id)}" aria-pressed="false">
+            <strong>${h(x.name)}</strong></button>`).join("")}
+        </div>` : ""}
+        ${gewaehlt ? `<span>${R.marke(gewaehlt.lage === "gut" ? "gut" : "warnung", gewaehlt.name)}</span>
+          <button class="knopf klein" type="button" data-tun="vg-ergebnis-neu:${h(v.id)}">Ergebnis ändern</button>` : ""}
+      </li>
+      <li class="${ergebnis ? "dran" : "spaeter"}">
+        <strong>3. Teilschritt abschließen</strong>
+        <span>${ergebnis
+          ? "Der Abschluss steht jetzt unten bei „Personalprüfung“ bereit."
+          : "Erst nach Einsicht und Ergebnis."}</span>
+      </li>
+    </ol>`;
+  }
+
   function detailKrankheit(v) {
     const w = planungswirkung(v);
     return `
@@ -470,13 +529,14 @@
         ? `<div class="dialog-schritt geschuetzt">
             <h3>Eingereichte Bescheinigung <span class="band-gold">nur Personal und Administration</span></h3>
             <ul class="konfliktliste">
-              <li><strong>${h(v.daten.datei)}</strong>
+              <li><strong><button class="alslink" type="button"
+                  data-tun="vg-bescheinigung:${h(v.id)}">${h(v.daten.datei)}</button></strong>
                 <span>eingereicht ${h(v.eingang)} · wird über eine kurz gültige, signierte Adresse geöffnet</span></li>
               ${(v.daten.folge || []).map((f) => `<li class="ist-ausnahme">
                 <strong>${h(f.datei)}</strong><span>Folgebescheinigung · ${h(f.zeit)}</span></li>`).join("")}
             </ul>
+            ${pruefschritte(v)}
             <div class="knopfzeile">
-              <button class="knopf klein" type="button" data-tun="vg-datei:${h(v.id)}">Datei sicher prüfen</button>
               <button class="knopf klein" type="button" data-tun="vg-folge:${h(v.id)}">Folgebescheinigung zuordnen</button>
               <button class="knopf klein" type="button" data-tun="vg-korrektur:${h(v.id)}">Zeitraum korrigieren</button>
             </div>
@@ -557,9 +617,15 @@
               ${x.verantwortlich && x.verantwortlich.kennung === meinKonto().kennung
                 ? `<button class="knopf klein" type="button"
                     data-tun="vg-teil-weitergeben:${h(v.id)}|${h(schluessel)}">Weitergeben</button>` : ""}
-              <button class="knopf klein haupt-knopf" type="button"
-                data-tun="vg-teil-erledigen:${h(v.id)}|${h(schluessel)}">${h(x.aktion)}</button>
-            </span>` : ""}
+              ${pruefungOffen(v, x.erfordert)
+                ? `<button class="knopf klein" type="button" disabled
+                    aria-disabled="true">${h(x.aktion)}</button>`
+                : `<button class="knopf klein haupt-knopf" type="button"
+                    data-tun="vg-teil-erledigen:${h(v.id)}|${h(schluessel)}">${h(x.aktion)}</button>`}
+            </span>
+            ${pruefungOffen(v, x.erfordert)
+              ? `<span class="teil-sperre">${h(pruefungOffen(v, x.erfordert))}
+                  Erst ansehen, dann bewerten, dann abschließen.</span>` : ""}` : ""}
           </li>`;
         }).join("")}
       </ul>
@@ -619,10 +685,10 @@
               <div><dt>Archiv ab</dt><dd>${h(datumText(v.archivAb))}</dd></div>` : ""}
           </dl>
 
-          ${v.teile ? teileBlock(v) : ""}
-
           ${detail ? detail(v) : `<div class="dialog-schritt">
             <p>${h(v.daten.text || "")}</p></div>`}
+
+          ${v.teile ? teileBlock(v) : ""}
 
           ${v.empfehlung ? `<div class="dialog-schritt">
             <h3>Betriebliche Empfehlung</h3>
@@ -667,7 +733,13 @@
           ${erledigt && !v.abgeleitet
             ? `<button class="knopf" type="button" data-tun="vg-wiedereroeffnen:${h(v.id)}">Wiedereröffnen</button>` : ""}
           ${!erledigt && v.thema !== "urlaub" && teil && teil.zustand === "offen" && meineTeile(v).length === 1
-            ? `<button class="knopf haupt-knopf" type="button" data-tun="vg-erledigen:${h(v.id)}">${h(teil.aktion)}</button>` : ""}
+            ? (pruefungOffen(v, teil.erfordert)
+              /* Auch hier gesperrt. Ein zweiter, offener Knopf an anderer
+                 Stelle haette die ganze Sperre wertlos gemacht. */
+              ? `<button class="knopf" type="button" disabled aria-disabled="true"
+                  title="${h(pruefungOffen(v, teil.erfordert))}">${h(teil.aktion)}</button>`
+              : `<button class="knopf haupt-knopf" type="button" data-tun="vg-erledigen:${h(v.id)}">${h(teil.aktion)}</button>`)
+            : ""}
           ${!erledigt && v.thema !== "urlaub" && !v.teile
             ? `<button class="knopf haupt-knopf" type="button" data-tun="vg-erledigen:${h(v.id)}">Erledigt</button>` : ""}
         </footer>
@@ -727,6 +799,61 @@
         </header>
         <div class="dialog-rumpf">${rumpf}</div>
         <footer class="dialog-fuss">${fuss}</footer>
+      </div>`;
+  }
+
+  /*
+    Sichere Vorschau der Bescheinigung.
+
+    In dieser Probe gibt es keine Datei und keine Storage-API - das
+    steht auch so da. Gezeigt wird, WAS im echten Portal zu sehen
+    waere und unter welchen Bedingungen: kurz gueltige, signierte
+    Adresse, Anzeige im Portal, kein Herunterladen auf Vorrat, kein
+    Anhang per E-Mail, keine oeffentliche Adresse.
+
+    Der Inhalt der Bescheinigung wird NICHT abgetippt und nirgends
+    gespeichert. Festgehalten wird nur, dass geoeffnet wurde.
+  */
+  function bescheinigungDialog() {
+    const v = vorgangFinden(stand.einsicht);
+    const e = v.daten.einsicht;
+    return `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="beTitel">
+        <header class="dialog-kopf">
+          <h2 id="beTitel">Bescheinigung ansehen</h2>
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>
+        <div class="dialog-rumpf">
+          ${R.zustandsKasten("vorbereitet", "In dieser Designprobe gibt es keine Datei",
+            "Die echte Supabase-Storage-API ist hier nicht verfügbar. Was Sie sehen, ist der Rahmen der Anzeige — nicht ein geprüftes Verhalten der Storage-API.")}
+          <dl class="zusammenfassung">
+            <div><dt>Datei</dt><dd>${h(v.daten.datei)}</dd></div>
+            <div><dt>Mitarbeiter</dt><dd>${h(v.betrifft.name)}</dd></div>
+            <div><dt>Gemeldeter Zeitraum</dt><dd>${h(datumText(v.daten.von))} bis ${h(datumText(v.daten.bis))}</dd></div>
+            <div><dt>Eingereicht</dt><dd>${h(v.eingang)}</dd></div>
+            <div><dt>Angesehen von</dt><dd>${h(meinName())}</dd></div>
+          </dl>
+          <div class="belegrahmen" role="img"
+            aria-label="Platzhalter für die Anzeige der Bescheinigung. In dieser Probe ist keine Datei hinterlegt.">
+            <span class="beleg-band">Platzhalter — keine Datei hinterlegt</span>
+            <p>Hier stünde im Portal die Bescheinigung selbst, angezeigt über eine
+              kurz gültige, signierte Adresse.</p>
+            <p>Kein Herunterladen auf Vorrat, kein Anhang per E-Mail, keine öffentliche
+              Adresse.</p>
+          </div>
+          <p class="schritt-hinweis">Der Inhalt der Bescheinigung wird nicht abgetippt und
+            nicht gespeichert. Protokolliert wird allein, <em>dass</em> Sie sie geöffnet
+            haben — mit Konto, Rolle, Datum und Uhrzeit. Keine Diagnose, kein
+            Krankheitsgrund, kein Dokumentinhalt.</p>
+          ${e ? `<p class="schritt-hinweis">Bereits geöffnet von ${h(kontoText(e))} ·
+            ${h(e.datum)} ${h(e.zeit)}. Jedes Öffnen wird einzeln protokolliert.</p>` : ""}
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf" type="button" data-dialog-zu>Schließen</button>
+          <button class="knopf haupt-knopf" type="button" data-tun="vg-einsicht-ja:${h(v.id)}">
+            Einsicht bestätigen und weiter zum Prüfergebnis</button>
+        </footer>
       </div>`;
   }
 
@@ -1027,6 +1154,9 @@
         if (!v || !v.teile || !v.teile[schluessel]) return;
         const x = v.teile[schluessel];
         if (!R.darf(x.braucht) || x.zustand === "erledigt") return;
+        /* Der gesperrte Knopf allein genuegt nicht - hier wird es
+           noch einmal geprueft. */
+        if (pruefungOffen(v, x.erfordert)) return;
         x.zustand = "erledigt";
         x.letzter = { ...meinKonto(), zeit: jetzt() };
         if (!x.verantwortlich) x.verantwortlich = { ...meinKonto() };
@@ -1167,6 +1297,7 @@
         if (teil) {
           const echt = v.teile[teil.schluessel];
           if (echt.zustand === "erledigt") return;
+          if (pruefungOffen(v, echt.erfordert)) return;
           echt.zustand = "erledigt";
           echt.letzter = { ...meinKonto(), zeit: jetzt() };
           if (!echt.verantwortlich) echt.verantwortlich = { ...meinKonto() };
@@ -1242,6 +1373,69 @@
         });
         stand.wiedereroeffnen = null;
         R.dialogSchliessen(true);
+        R.zeichnen();
+        return;
+      }
+
+      /* ---- Einsicht in die Bescheinigung ---- */
+      case "vg-bescheinigung": {
+        const v = vorgangFinden(wert);
+        if (!v || !vertraulichSichtbar(v)) return;
+        stand.einsicht = wert;
+        R.dialogOeffnen(bescheinigungDialog());
+        return;
+      }
+      case "vg-einsicht-ja": {
+        const v = vorgangFinden(wert);
+        if (!v || !vertraulichSichtbar(v)) return;
+        const vorher = v.daten.einsicht ? "bereits geöffnet" : "nicht geöffnet";
+        v.daten.einsicht = { ...meinKonto(), datum: D.alsText(D.heute), zeit: jetzt() };
+        v.version += 1;
+        D.protokollieren({
+          betrifft: v.titel + " · " + v.daten.datei,
+          was: "Bescheinigung angesehen",
+          vorher, nachher: "über signierte Adresse geöffnet", grund: ""
+        });
+        stand.einsicht = null;
+        stand.offen = v.id;
+        R.dialogOeffnen(vorgangDialog());
+        R.zeichnen();
+        return;
+      }
+      case "vg-ergebnis": {
+        const [id, ergebnis] = wert.split("|");
+        const v = vorgangFinden(id);
+        if (!v || !vertraulichSichtbar(v)) return;
+        /* Ein Ergebnis ohne Einsicht waere keine Pruefung. */
+        if (!v.daten.einsicht) return;
+        const gewaehlt = D.PRUEFERGEBNISSE.find((x) => x.id === ergebnis);
+        if (!gewaehlt) return;
+        const vorher = v.daten.ergebnis
+          ? (D.PRUEFERGEBNISSE.find((x) => x.id === v.daten.ergebnis) || {}).name
+          : "kein Ergebnis";
+        v.daten.ergebnis = ergebnis;
+        v.version += 1;
+        D.protokollieren({
+          betrifft: v.titel + " · " + v.daten.datei,
+          was: "Prüfergebnis festgehalten",
+          vorher, nachher: gewaehlt.name, grund: ""
+        });
+        R.dialogOeffnen(vorgangDialog());
+        R.zeichnen();
+        return;
+      }
+      case "vg-ergebnis-neu": {
+        const v = vorgangFinden(wert);
+        if (!v || !vertraulichSichtbar(v)) return;
+        const vorher = (D.PRUEFERGEBNISSE.find((x) => x.id === v.daten.ergebnis) || {}).name || "";
+        v.daten.ergebnis = "";
+        v.version += 1;
+        D.protokollieren({
+          betrifft: v.titel + " · " + v.daten.datei,
+          was: "Prüfergebnis zurückgenommen",
+          vorher, nachher: "kein Ergebnis", grund: ""
+        });
+        R.dialogOeffnen(vorgangDialog());
         R.zeichnen();
         return;
       }

@@ -99,6 +99,22 @@ const zu = async (page) => {
 };
 const protokoll = (page) => page.evaluate(() => window.ProbeDaten.protokoll.slice());
 
+/*
+  Die Personalpruefung laesst sich nur abschliessen, wenn die
+  Bescheinigung angesehen und ein Ergebnis festgehalten wurde. Das
+  ist der eigentliche Gegenstand von pruefe-probe-dokumentpruefung;
+  hier wird es nur durchlaufen, damit der Teilschritt ueberhaupt
+  abschliessbar wird.
+*/
+const dokumentPruefen = async (page) => {
+  await page.click('[data-tun="vg-bescheinigung:V0002"]');
+  await page.waitForTimeout(400);
+  await page.click('[data-tun="vg-einsicht-ja:V0002"]');
+  await page.waitForTimeout(400);
+  await page.click('[data-tun="vg-ergebnis:V0002|gueltig"]');
+  await page.waitForTimeout(400);
+};
+
 /* ═══ 1. Die Krankmeldung hat zwei Teilschritte ═════════════════ */
 console.log("\n── 1. Ein Vorgang, zwei Verantwortungen ──");
 {
@@ -157,6 +173,10 @@ console.log("\n── 2. Niemand schliesst den Vorgang der anderen ──");
   const perText = await page.textContent(".dialog-kasten");
   pruefe(/Bescheinigung eingegangen/.test(perText),
     "Personal sieht seinen offenen Dokumentpruefauftrag");
+  /* Ohne Einsicht und Ergebnis ist der Abschluss gesperrt. */
+  pruefe(!(await page.$('[data-tun="vg-teil-erledigen:V0002|personal"]')),
+    "ohne Dokumentprüfung ist der Abschluss gesperrt");
+  await dokumentPruefen(page);
   const perKnopf = await page.textContent('[data-tun="vg-teil-erledigen:V0002|personal"]');
   pruefe(/Dokumentprüfung abgeschlossen/.test(perKnopf),
     `und seine eigene Hauptaktion (${perKnopf.trim()})`);
@@ -282,10 +302,15 @@ console.log("\n── 5. Uebernahme mit Namen, Grund und Vorgeschichte ──");
      welchen sie meint. Eine mehrdeutige Hauptaktion gibt es nicht. */
   pruefe(!(await page.$(".dialog-fuss .haupt-knopf")),
     "wer mehrere Teilschritte darf, bekommt keine mehrdeutige Hauptaktion");
-  const teilKnoepfe = await page.$$eval(".dialog-kasten [data-tun]",
-    (nodes) => nodes.map((x) => x.dataset.tun).filter((x) => x.startsWith("vg-teil-erledigen")));
-  pruefe(teilKnoepfe.length === 2,
-    "sondern je einen Knopf pro Teilschritt");
+  /* Ein Knopf je Teilschritt. Die Personalpruefung ist dabei noch
+     gesperrt - auch die Administration sieht die Bescheinigung erst
+     an, bevor sie abschliesst. */
+  const teilAktionen = await page.$$eval(".vg-teile .teil-aktionen button",
+    (nodes) => nodes.map((x) => x.textContent.trim()));
+  pruefe(teilAktionen.filter((x) => /Planung bearbeitet|Dokumentprüfung abgeschlossen/.test(x)).length === 2,
+    `je ein Abschlussknopf pro Teilschritt (${teilAktionen.length} Knöpfe)`);
+  pruefe(!(await page.$('[data-tun="vg-teil-erledigen:V0002|personal"]')),
+    "die Personalprüfung bleibt auch für die Administration gesperrt");
   await page.click('[data-tun="vg-teil-uebernehmen:V0002|personal"]');
   await page.waitForTimeout(450);
   pruefe(Boolean(await page.$("[data-uebernahme-grund]")),

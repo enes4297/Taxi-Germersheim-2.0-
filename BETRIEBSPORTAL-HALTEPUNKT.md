@@ -1501,3 +1501,183 @@ beendet — jeder mit einer gedruckten Bilanz, keiner abgebrochen.
 > Instanz. Was hier „bestanden" heißt, ist eine Aussage über die
 > Oberfläche der Probe — nicht über RLS, nicht über Storage, nicht über
 > echte Rollen.
+
+---
+
+## 22. Dokumentprüfung ohne Dokument — ein Befund des manuellen Tests
+
+**Der Befund (Nutzer, 01.10.2026).** Als Personal die Krankmeldung
+übernommen. Die eingereichte Bescheinigung ließ sich nirgends öffnen
+oder ansehen. Sichtbar waren nur „Dokumentprüfung abgeschlossen" und
+darunter „Weitergeben". **Damit ließ sich eine Dokumentprüfung
+abschließen, ohne das Dokument geprüft zu haben.**
+
+### 22.1 Was tatsächlich los war
+
+Der Bescheinigungsblock war vorhanden — er stand nur **unter** dem
+Teilschrittblock mit der Abschlussaktion. Wer nicht weiterscrollte,
+sah den Abschlussknopf und sonst nichts. Dazu kam: Der einzige Knopf
+hieß „Datei sicher prüfen" und erzeugte lediglich eine Quittung — es
+gab **keine Einsicht**, und es gab **kein Prüfergebnis**. Die
+Oberfläche nannte den Schritt „Prüfung", ohne dass irgendetwas zu
+prüfen gewesen wäre.
+
+Das ist nicht in erster Linie ein Darstellungsfehler. Eine Aktion,
+die „abgeschlossen" sagt, ohne dass die Handlung möglich war, ist
+eine **Scheinprüfung** — und im Protokoll stünde anschließend, die
+Prüfung habe stattgefunden.
+
+### 22.2 Die Änderung
+
+**Reihenfolge.** Im Vorgangsdialog steht jetzt erst der Inhalt, dann
+die Handlung: Zusammenfassung → Krankmeldung → Bescheinigung →
+Teilschritte. Der Prüflauf vergleicht die Stellung der beiden Blöcke
+und besteht nur, wenn die Bescheinigung vorne steht.
+
+**Drei benannte Schritte.** Der Bescheinigungsblock führt eine
+sichtbare Kette:
+
+| Schritt | Was geschieht | Was festgehalten wird |
+|---|---|---|
+| 1. Bescheinigung ansehen | Dateiname ist anklickbar, öffnet die sichere Vorschau | Konto, Kennung, Rolle, Datum, Uhrzeit |
+| 2. Prüfergebnis festhalten | vier fest benannte Ergebnisse | das gewählte Ergebnis |
+| 3. Teilschritt abschließen | erst jetzt verfügbar | wie bisher |
+
+**Die Sperre.** Ohne Einsicht **und** Ergebnis gibt es keinen
+Abschluss — weder am Teilschritt noch in der Fußzeile. Die Aktion
+wird **sichtbar gesperrt, nicht versteckt**, mit ausgeschriebenem
+Grund: „Die Bescheinigung wurde noch nicht geöffnet. Erst ansehen,
+dann bewerten, dann abschließen."
+
+Ein gesperrter Knopf ist Bequemlichkeit, kein Schutz. Die Bedingung
+steht deshalb **auch in der Aktion selbst**; der Prüflauf ruft
+`vg-teil-erledigen`, `vg-erledigen` und `vg-ergebnis` unter Umgehung
+der Oberfläche direkt auf und weist nach, dass nichts geschieht.
+
+**Die vier Ergebnisse** sind eine feste Liste, kein Freitextfeld:
+gültig und Zeitraum stimmt · Zeitraum weicht ab · nicht lesbar oder
+unvollständig · falsche Person oder falscher Vorgang. Ein freies Feld
+würde früher oder später eine Diagnose aufnehmen. **Keines dieser
+Ergebnisse nennt einen medizinischen Grund.**
+
+### 22.3 Die Vorschau
+
+Sie zeigt Dateiname, Mitarbeiter, gemeldeten Zeitraum, Eingang und
+wer gerade hineinsieht — und einen deutlich als **Platzhalter**
+bezeichneten Anzeigebereich.
+
+Was dort ausdrücklich steht: In dieser Designprobe gibt es **keine
+Datei**, und die echte Supabase-Storage-API ist hier **nicht
+verfügbar**. Gezeigt wird der Rahmen der Anzeige, nicht ein geprüftes
+Verhalten der Storage-API. Im Portal wäre es eine kurz gültige,
+signierte Adresse — kein Herunterladen auf Vorrat, kein Anhang per
+E-Mail, keine öffentliche Adresse.
+
+**Der Inhalt der Bescheinigung wird nicht abgetippt und nirgends
+gespeichert.** Festgehalten wird allein, *dass* geöffnet wurde.
+
+Das bloße Öffnen des Dialogs gilt noch nicht als Einsicht; es braucht
+die ausdrückliche Bestätigung. Escape bricht ab, ohne etwas zu
+vermerken — der Prüflauf weist beides nach.
+
+### 22.4 Was sich für die Disposition nicht ändert
+
+Sie sieht **weder Datei noch Dateiname**, keinen Anzeigebereich,
+keine Prüfkette und keinen Knopf dafür. Auch der direkte Aufruf von
+`vg-bescheinigung` und `vg-einsicht-ja` bewirkt bei ihr nichts. Ihr
+eigener Teilschritt „Planung" bleibt unberührt — dort gibt es nichts
+anzusehen, also auch nichts zu sperren.
+
+Die Administration sieht die Prüfkette, **muss aber ebenfalls erst
+ansehen und bewerten**, bevor sie die Personalprüfung abschließen
+kann. Eine übergeordnete Berechtigung ist kein Freibrief, einen
+Schritt zu überspringen.
+
+### 22.5 Was ich bewusst NICHT entschieden habe
+
+Was betrieblich folgen soll, wenn das Ergebnis „Zeitraum weicht ab"
+oder „nicht lesbar" lautet — ob der Teilschritt dann überhaupt
+abgeschlossen werden darf, ob automatisch eine Rückfrage entsteht, ob
+eine neue Bescheinigung angefordert wird —, ist eine
+**Geschäftsregel**. Ich habe sie nicht erfunden. Derzeit gilt: Jedes
+der vier Ergebnisse erlaubt den Abschluss, und das Ergebnis steht im
+Protokoll. **Das ist eine offene Frage an den Geschäftsführer, keine
+Festlegung.**
+
+Ebenso offen: die Aufbewahrungsfrist für Bescheinigungen und ob ein
+Prüfergebnis nach dem Abschluss noch änderbar sein soll.
+
+### 22.6 Ein eigener Fehler im Prüflauf — zum vierten Mal derselbe
+
+Die Prüfung „keine Diagnose in der Vorschau" suchte nach dem **Wort**
+„Diagnose". Getroffen hat sie den Satz, der eine Diagnose
+**ausschließt**: „Keine Diagnose, kein Krankheitsgrund, kein
+Dokumentinhalt."
+
+Das ist in dieser Sitzung der **vierte Fehlalarm derselben Art**. Eine
+Zusicherung im Text sieht für eine Textsuche aus wie ein Verstoß.
+Behoben wie zuvor, und diesmal in zwei getrennte Prüfungen zerlegt:
+
+1. Die Zusicherung **muss** dastehen.
+2. Es darf **kein Beschriftungsfeld** (`<dt>`) geben, das eine Diagnose,
+   einen Krankheitsgrund, einen Befund oder ein Attest aufnehmen
+   würde.
+
+Die zweite Form ist die belastbare: Sie prüft die **Struktur**, nicht
+den Fließtext. Dass mir derselbe Fehler viermal unterläuft, gehört
+hierher und nicht in eine Fußnote.
+
+### 22.7 Prüfstand nach der Korrektur
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-dokument-pruefen` (9 Blöcke, neu) | **90 bestanden, 0 offen** |
+| `probe-teilung-pruefen` | 99 bestanden, 0 offen |
+| `probe-vorgaenge-pruefen` | 137 bestanden, 0 offen |
+| `probe-team-pruefen` | 197 bestanden, 0 offen |
+| `probe-planung-pruefen` | 171 bestanden, 0 offen |
+| `probe-fahrt-pruefen` | 168 bestanden, 0 offen |
+| `probe-portal-pruefen` | 107 bestanden, 0 offen |
+
+Zusammen **969 Zusicherungen, 0 offen**, null Netzwerkaufrufe.
+
+Der Planungslauf brach im Reihendurchlauf einmal an `page.goto` ab —
+eine Zeitüberschreitung beim Start des Browsers, keine Zusicherung.
+Einzeln ausgeführt: 171 / 0. Auch das steht hier, statt es
+wegzulassen.
+
+> **Was dieser Lauf NICHT zeigt:** Es gibt in der Probe keine Datei
+> und keine Storage-API. Belegt ist die Reihenfolge der Bedienung und
+> dass die Sperren auch beim direkten Aufruf der Aktionen greifen.
+> **Ob die echte Supabase-Storage-API eine Bescheinigung richtig
+> schützt oder ausliefert, ist damit unverändert ungeprüft.**
+
+### 22.8 Zwei weitere Befunde aus den Gegenläufen
+
+**1. Eine zu kleine Bedienfläche — echter Fehler.** Der anklickbare
+Dateiname sah aus wie ein Verweis im Fließtext und war damit unter
+36 px hoch. Ein Verweis, der wie Text aussieht, muss trotzdem mit dem
+Finger zu treffen sein. Gefunden von `probe-vorgaenge-pruefen` bei
+allen vier Breiten. Behoben mit `min-height: 36px` und Innenabstand.
+
+**2. Ein flatternder Prüflauf — mein Fehler, nicht der der
+Oberfläche.** `probe-planung-pruefen` meldete zweimal, „15:30" sei als
+„30" im Feld gelandet. **Einzeln ausgeführt lief derselbe Prüflauf
+mit 171 / 0 durch.**
+
+Die Ursache: Das Zeitfeld markiert beim Hineinspringen seinen ganzen
+Inhalt, aber erst im nächsten Frame (`requestAnimationFrame`).
+Tippt der Prüflauf sofort los, fällt dieses `select()` zwischen zwei
+Anschläge, und die nächste Ziffer ersetzt das schon Getippte. Unter
+Last — sieben Browserläufe hintereinander — wurde das Zeitfenster
+groß genug.
+
+**Das ist kein Fehler der Oberfläche.** Ein Mensch tippt nicht
+innerhalb eines Frames nach dem Hineinspringen. Es war ein Fehler
+dieses Prüflaufs. Behoben, indem der Frame abgewartet wird — **nicht**,
+indem die Zusicherung weicher gemacht wird.
+
+Festgehalten, weil ein flatternder Prüflauf schlimmer ist als keiner:
+Er gewöhnt daran, Rot zu übersehen. Eine Zusicherung, die mal
+besteht und mal nicht, sagt nichts aus — bis geklärt ist, woran es
+liegt.
