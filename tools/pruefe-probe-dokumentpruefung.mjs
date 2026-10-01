@@ -242,7 +242,8 @@ console.log("\n── 4. Erst bewerten, dann abschliessen ──");
 
   const auswahl = await page.$$eval(".pruefkette .wahlkarte",
     (n) => n.map((x) => x.textContent.trim()));
-  pruefe(auswahl.length === 3, `es gibt drei benannte Ergebnisse (${auswahl.length})`);
+  /* Vier seit dem 01.10.2026 - siehe pruefe-probe-zuordnung. */
+  pruefe(auswahl.length === 4, `es gibt vier benannte Ergebnisse (${auswahl.length})`);
   pruefe(auswahl.some((x) => /Alles in Ordnung/.test(x)), "darunter „Alles in Ordnung“");
   pruefe(auswahl.some((x) => /Zeitraum weicht/.test(x)), "und „Zeitraum weicht ab“");
   pruefe(auswahl.some((x) => /Nicht lesbar/.test(x)), "und „nicht lesbar oder unvollständig“");

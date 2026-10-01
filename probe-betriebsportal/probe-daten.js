@@ -247,14 +247,17 @@
     nennt einen medizinischen Grund.
   */
   /*
-    Jedes Ergebnis hat eine festgelegte Folge. Diese drei und ihre
+    Jedes Ergebnis hat eine festgelegte Folge. Diese vier und ihre
     Wirkung sind eine Vorgabe des Geschaeftsfuehrers vom 01.10.2026,
     keine Annahme der Designprobe.
 
-    Ein vierter Fall - "falsche Person oder falscher Vorgang" - stand
-    hier zwischenzeitlich. Er ist entfernt, weil fuer ihn KEINE Regel
-    vorliegt und eine erfundene Folge schlimmer waere als eine
-    fehlende Auswahl. Das ist eine offene Frage, keine Festlegung.
+    Der vierte Fall - "falsche Person oder falscher Vorgang" - war
+    zwischenzeitlich entfernt, weil fuer ihn keine Regel vorlag.
+    Inzwischen liegt sie vor, deshalb steht er wieder hier. Seine
+    Folge ist die aufwendigste: Der Nachweis wird gesperrt, aber
+    weder geloescht noch von selbst umgehaengt. Eine Neuzuordnung
+    treffen ausschliesslich Personal oder Administration,
+    zweistufig und mit Pflichtgrund.
   */
   const PRUEFERGEBNISSE = [
     {
@@ -271,12 +274,45 @@
       id: "unleserlich", name: "Nicht lesbar oder unvollständig", lage: "warnung",
       folge: "anforderung",
       erklaerung: "Die Personalprüfung bleibt offen. Es wird eine neue Bescheinigung angefordert. Abgeschlossen werden darf erst nach Eingang und Prüfung der neuen Datei."
+    },
+    {
+      id: "person", name: "Falsche Person oder falscher Vorgang", lage: "warnung",
+      folge: "zuordnung",
+      erklaerung: "Die Personalprüfung bleibt offen. Der Nachweis wird als „Zuordnung ungeklärt“ markiert und darf nicht als geprüft gelten. Es entsteht eine Klärungsaufgabe für Personal oder Administration."
     }
   ];
 
+  /*
+    Die Teilschritte eines Krankheitsvorgangs - als Fabrik, nicht als
+    gemeinsames Objekt. Jeder Vorgang braucht seine EIGENEN Zustaende;
+    ein geteiltes Objekt waere eine zweite Wahrheit.
+
+    "erfordert: bescheinigung" ist die Pruefsperre: ohne Einsicht und
+    Ergebnis kein Abschluss. Sie gehoert an jeden solchen Vorgang,
+    auch an die nachtraeglich angelegten.
+  */
+  const krankheitsTeile = () => ({
+    planung: {
+      name: "Planung", zustand: "offen",
+      braucht: ["operations.write"],
+      aktion: "Planung bearbeitet",
+      schritte: "Planung geprüft · Ersatz erforderlich · Ersatz organisiert",
+      verantwortlich: null, letzter: null, vertraulich: false
+    },
+    personal: {
+      name: "Personalprüfung", zustand: "offen",
+      braucht: ["personnel.read"],
+      aktion: "Dokumentprüfung abgeschlossen",
+      erfordert: "bescheinigung",
+      schritte: "Bescheinigung eingegangen · Dokument geprüft · Zeitraum geprüft",
+      verantwortlich: null, letzter: null, vertraulich: true
+    }
+  });
+
   const KLAERUNG_NAMEN = {
     rueckfrage:  "Rückfrage zum Zeitraum",
-    anforderung: "Neue Bescheinigung angefordert"
+    anforderung: "Neue Bescheinigung angefordert",
+    zuordnung:   "Zuordnung ungeklärt"
   };
 
   const ABWESENHEIT_NAMEN = {
@@ -471,7 +507,17 @@
             /* Steht das Ergebnis fest, ist es gesperrt. Eine
                Korrektur laeuft dann ueber einen eigenen Vorgang mit
                Pflichtgrund - siehe Regel 5. */
-            gesperrt: false, beanstandet: false
+            gesperrt: false, beanstandet: false,
+            /* "Zuordnung ungeklaert": Der Nachweis gehoert
+               moeglicherweise zu einer anderen Person oder zu einem
+               anderen Vorgang. Er darf dann NICHT als geprueft oder
+               gueltig verwendet werden, wird aber auch nicht
+               geloescht und nicht von selbst umgehaengt.
+
+               "umgezogenNach" haelt fest, wohin eine Neuzuordnung
+               gefuehrt hat; der Eintrag bleibt hier als Spur stehen.
+               "herkunft" ist die Gegenrichtung im Zielvorgang. */
+            zuordnungUngeklaert: false, umgezogenNach: "", herkunft: ""
           }
         ],
         /* Rueckfragen und Anforderungen, die aus einem Pruefergebnis
@@ -487,24 +533,7 @@
         Zustand, seinen eigenen Verantwortlichen und seine eigene
         Faehigkeit.
       */
-      teile: {
-        planung: {
-          name: "Planung", zustand: "offen",
-          braucht: ["operations.write"],
-          aktion: "Planung bearbeitet",
-          schritte: "Planung geprüft · Ersatz erforderlich · Ersatz organisiert",
-          verantwortlich: null, letzter: null, vertraulich: false
-        },
-        personal: {
-          name: "Personalprüfung", zustand: "offen",
-          braucht: ["personnel.read"],
-          aktion: "Dokumentprüfung abgeschlossen",
-          /* Ohne Einsicht und Ergebnis kein Abschluss. */
-          erfordert: "bescheinigung",
-          schritte: "Bescheinigung eingegangen · Dokument geprüft · Zeitraum geprüft",
-          verantwortlich: null, letzter: null, vertraulich: true
-        }
-      },
+      teile: krankheitsTeile(),
       empfehlung: "", antwort: "", notizen: []
     },
     {
@@ -873,6 +902,7 @@
     vorgaenge, vorgangVon, vorgangAnlegen, warnungsHandhabung,
     VORGANG_ARTEN, VORGANG_ZUSTAENDE, VORGANG_THEMEN,
     zeitraumText, ABWESENHEIT_NAMEN, PRUEFERGEBNISSE, KLAERUNG_NAMEN,
+    krankheitsTeile,
     leistungsarten, rollstuhlWerte, gepaeckWerte,
     scheinWerte, zuzahlungWerte, genehmigungWerte
   };

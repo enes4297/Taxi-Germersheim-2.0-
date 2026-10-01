@@ -1706,15 +1706,15 @@ Supabase-Datenänderung, kein Push, Merge oder Deployment.
 | **Zeitraum weicht ab** | bleibt offen | Rückfrage mit dem abweichenden Zeitraum | erst nach der Klärung |
 | **Nicht lesbar oder unvollständig** | bleibt offen | Anforderung einer neuen Bescheinigung | erst nach Eingang **und** Prüfung der neuen Datei |
 
+| **Falsche Person oder falscher Vorgang** | bleibt offen | Markierung „Zuordnung ungeklärt" + Klärungsaufgabe | erst nach geklärter Zuordnung, siehe Abschnitt 24 |
+
 Jede Auswahlkarte nennt ihre Folge, **bevor** sie gedrückt wird. Wer
 „Zeitraum weicht ab" wählt, weiß vorher, dass daraus eine Rückfrage
 entsteht.
 
-**Ein vierter Fall ist entfallen.** „Falsche Person oder falscher
-Vorgang" stand zwischenzeitlich zur Auswahl. Für ihn liegt **keine
-Regel** vor, und eine erfundene Folge wäre schlimmer als eine
-fehlende Auswahl. Das ist eine **offene Frage**, keine Festlegung —
-falls dieser Fall vorkommt, braucht er eine eigene Entscheidung.
+> **Nachtrag 01.10.2026:** Der vierte Fall war hier zunächst als
+> offene Frage vermerkt, weil keine Regel vorlag. Sie liegt inzwischen
+> vor; er steht wieder zur Auswahl. Siehe Abschnitt 24.
 
 ### 23.2 Eine Kette von Nachweisen statt einer Datei
 
@@ -3724,3 +3724,160 @@ stehen.
 > Storage-API. Belegt ist, dass die Geschäftsregel in Oberfläche und
 > Aktionen durchgesetzt wird — **nicht**, dass eine echte
 > Bescheinigung geschützt oder richtig ausgeliefert würde.
+
+---
+
+## 24. Der vierte Prüffall: falsche Person oder falscher Vorgang
+
+Vorgabe des Geschäftsführers vom 01.10.2026. Umgesetzt ausschließlich
+in der Designprobe: keine Migration, keine Supabase-Datenänderung,
+kein Push, Merge oder Deployment.
+
+Dies ist der aufwendigste der vier Fälle, weil hier ein
+**Gesundheitsdokument von einer Person zu einer anderen wandert**.
+Entsprechend ist nichts davon ein einziger Klick.
+
+### 24.1 Was beim Festhalten des Ergebnisses passiert
+
+| | |
+|---|---|
+| Personalprüfung | **bleibt offen** |
+| Der Nachweis | wird als **„Zuordnung ungeklärt"** markiert und gesperrt |
+| Verwendung | er gilt **nicht** als geprüft oder gültig |
+| Es entsteht | eine **Klärungsaufgabe** für Personal oder Administration |
+| Die Datei | wird **nicht gelöscht** und **nicht von selbst** umgehängt |
+
+Die Sperre sitzt in `pruefungOffen()` und greift deshalb auch, wenn
+die Aktion direkt aufgerufen wird. Der Prüflauf ruft
+`vg-teil-erledigen` und `vg-erledigen` unter Umgehung der
+Oberfläche auf und weist nach, dass nichts geschieht.
+
+### 24.2 Die Neuzuordnung — drei Stufen
+
+**Nur Personal und Administration** sehen die Knöpfe dafür, und nur
+sie kommen durch die Aktionen (`R.darf("personnel.read")` in jeder
+einzelnen).
+
+| Stufe | Was zu sehen ist | Was gespeichert wird |
+|---|---|---|
+| **1. Wahl** | Nachweis, bisherige Zuordnung, Auswahl der Person (die bisherige ist nicht darunter) | nichts |
+| **2. Prüfen** | bisherige Zuordnung, neue Zuordnung, handelnde Person, **Pflichtgrund** | nichts |
+| **Verbindlich speichern** | — | die Neuzuordnung |
+
+Auf Stufe 1 gibt es **kein** „Verbindlich speichern". Ohne Auswahl
+führt „Weiter" nicht weiter, ohne Grund speichert „Verbindlich
+speichern" nichts — kein Vorgang, keine Zuordnung. „Zurück" führt
+nach Stufe 1, Escape bricht wirkungslos ab.
+
+### 24.3 Was mit der Datei geschieht — und was nicht
+
+Die Datei wird **nicht verschoben und nicht gelöscht**. Stattdessen
+ist der Weg von beiden Seiten lesbar:
+
+- Der **alte Eintrag bleibt stehen**, mit Nummer, Eingangszeit,
+  Einsicht, Ergebnis und dem Vermerk „Neu zugeordnet zu Vorgang … ·
+  bleibt hier als Spur erhalten". Er ist dort **nicht mehr anklickbar**
+  und taugt nicht als Nachweis.
+- Der **Zielvorgang** bekommt einen Eintrag mit demselben Dateinamen
+  und derselben Eingangszeit, dem Vermerk „Aus Vorgang … neu
+  zugeordnet" — und **ohne Einsicht und ohne Ergebnis**.
+
+Das ist eine bewusste Modellierung: In einem echten System gibt es
+**eine** Datei im Speicher, und nur die Verknüpfung wandert. Der
+Spur-Eintrag ist die Verknüpfung, die bleibt, damit der alte Vorgang
+nachvollziehbar bleibt.
+
+Der Zielvorgang ist ein offener Krankheitsvorgang dieser Person,
+sonst wird einer angelegt, der auf den alten verweist.
+
+### 24.4 Dort beginnt die Prüfung bei Schritt 1
+
+Im Zielvorgang steht „1. Bescheinigung ansehen — Noch nicht
+geöffnet". **Die Einsicht aus dem falschen Vorgang zählt dort nicht.**
+Ohne Einsicht gibt es kein Ergebnis zu wählen, ohne Ergebnis keinen
+Abschluss — auch nicht per direktem Aufruf.
+
+**Hier lag ein echtes Loch, gefunden beim Durchspielen von Hand:**
+Die neu angelegten Vorgänge hatten **keine Teilschritte** und damit
+auch keine Prüfsperre. Ihr Abschluss wäre ohne Einsicht und ohne
+Ergebnis möglich gewesen — die ganze Regel hätte sich durch eine
+Neuzuordnung umgehen lassen. Dasselbe galt für die beiden
+Korrekturwege aus Abschnitt 23, die vorher schon Vorgänge anlegten.
+
+Behoben mit einer **Fabrik** `D.krankheitsTeile()`: Die Teilschritte
+eines Krankheitsvorgangs stehen jetzt an einer Stelle, und alle drei
+Anlegestellen benutzen sie. Eine Fabrik, nicht ein gemeinsames
+Objekt — jeder Vorgang braucht seine eigenen Zustände, ein geteiltes
+Objekt wäre eine zweite Wahrheit gewesen.
+
+Zweiter Befund derselben Art: Die neuen Vorgänge waren mit
+`sichtbar: ["operations.read"]` angelegt, und Personal hat diese
+Fähigkeit nicht — der eigene Zielvorgang war für Personal gar nicht
+sichtbar. Jetzt `["operations.read", "personnel.read"]`, wie beim
+festen Krankheitsvorgang.
+
+### 24.5 Wenn sich die Zuordnung nicht klären lässt
+
+„Zuordnung lässt sich nicht klären" verlangt ebenfalls einen
+Pflichtgrund und ändert dann **nichts**: Der Nachweis bleibt
+markiert und gesperrt, die Klärungsaufgabe bleibt offen, der Vorgang
+bleibt offen, es entsteht kein neuer Vorgang, nichts wird gelöscht.
+
+Festgehalten wird es trotzdem — damit später niemand raten muss,
+warum hier nichts weitergeht.
+
+### 24.6 Protokoll und Rollen
+
+Protokolliert werden bei der Neuzuordnung: **ursprüngliche Zuordnung**
+(Person und Vorgang), **neue Zuordnung** (Person und Vorgang),
+**handelnde Person**, **unveränderliche Kennung**, **Rolle**,
+**Datum**, **Uhrzeit** und der **Grund**. Der Eintrag ist
+eingefroren. Keine Diagnose, kein medizinischer Freitext.
+
+Die **Disposition** sieht weder Dateiname noch Datei noch
+Nachweisliste, keine Prüfkette, keine Markierung „Zuordnung
+ungeklärt" und keinen Knopf zur Neuzuordnung. Alle fünf Aktionen
+bewirken bei ihr auch beim direkten Aufruf nichts — und löschen
+insbesondere nichts.
+
+### 24.7 Was dieser Stand NICHT belegt
+
+Es gibt in der Probe **keine Datei und keine Storage-API**. Belegt
+ist, dass die Regel in Oberfläche **und** Aktionen durchgesetzt wird
+— nicht, dass eine echte Bescheinigung beim Umhängen zwischen zwei
+Personen geschützt bliebe. Genau dieser Fall — ein Gesundheitsdokument
+wechselt den Betroffenen — ist beim Übergang auf echte Dateien und
+echte RLS-Regeln eigens zu prüfen.
+
+Die **Aufbewahrung** bleibt unverändert eine offene rechtliche
+Entscheidung (Abschnitt 23.5). Die Neuzuordnung macht sie nicht
+einfacher: Der Spur-Eintrag beim alten Vorgang ist ein weiterer
+Datenpunkt, dessen Aufbewahrung zu entscheiden ist.
+
+### 24.8 Prüfstand
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-zuordnung-pruefen` (7 Blöcke, neu) | **115 bestanden, 0 offen** |
+| `probe-regeln-pruefen` | 123 bestanden, 0 offen |
+| `probe-dokument-pruefen` | 91 bestanden, 0 offen |
+| `probe-teilung-pruefen` | 99 bestanden, 0 offen |
+| `probe-vorgaenge-pruefen` | 137 bestanden, 0 offen |
+| `probe-team-pruefen` | 197 bestanden, 0 offen |
+| `probe-planung-pruefen` | 171 bestanden, 0 offen |
+| `probe-fahrt-pruefen` | 168 bestanden, 0 offen |
+| `probe-portal-pruefen` | 107 bestanden, 0 offen |
+
+Zusammen **1208 Zusicherungen, 0 offen**, null Netzwerkaufrufe. Alle
+neun Läufe vollständig beendet, jeder mit gedruckter Bilanz.
+
+**Zwei Zusicherungen waren nachzuziehen, keine Fehler:**
+`probe-regeln-pruefen` und `probe-dokument-pruefen` sicherten „genau
+drei Ergebnisse" zu. Mit dem vierten Fall sind es vier. Die Änderung
+ist gewollt, die Zusicherungen sind angepasst und die Anpassung steht
+hier — statt sie stillschweigend zu verschieben.
+
+> **Einordnung:** Designprobe ohne Datenquelle, ohne Datei, ohne
+> Storage-API. Belegt ist, dass die Regel in Oberfläche und Aktionen
+> durchgesetzt wird — **nicht**, dass eine echte Bescheinigung beim
+> Umhängen zwischen zwei Personen geschützt bliebe.

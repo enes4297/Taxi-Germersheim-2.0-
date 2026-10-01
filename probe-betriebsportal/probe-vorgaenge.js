@@ -44,6 +44,7 @@
     wiedereroeffnen: null,
     einsicht: null,
     pruefkorrektur: null,
+    zuordnung: null,
     /* Fuer die Vorfuehrung der Paralleländerung. */
     fremdstand: {}
   };
@@ -131,10 +132,28 @@
     Datei hat noch keine Einsicht, also greift gleich die erste
     Bedingung.
   */
+  /*
+    Darf dieser Nachweis ueberhaupt als Pruefgrundlage dienen?
+
+    Nein, solange seine Zuordnung ungeklaert ist, und nein, wenn er
+    inzwischen einem anderen Vorgang zugeordnet wurde. Beides heisst
+    ausdruecklich NICHT, dass die Datei verschwindet - sie bleibt
+    stehen, sie taugt hier nur nicht als Nachweis.
+  */
+  const verwendbar = (nw) =>
+    Boolean(nw) && !nw.zuordnungUngeklaert && !nw.umgezogenNach;
+
   function pruefungOffen(v, erfordert) {
     if (erfordert !== "bescheinigung") return "";
     const nw = aktuellerNachweis(v);
     if (!nw) return "Es liegt keine Bescheinigung vor.";
+    if (nw.zuordnungUngeklaert) {
+      return "Die Zuordnung dieses Nachweises ist ungeklärt. Er darf nicht als geprüft gelten.";
+    }
+    if (nw.umgezogenNach) {
+      return "Dieser Nachweis gehört zu Vorgang " + nw.umgezogenNach
+        + ". Für diesen Vorgang liegt keine verwendbare Bescheinigung vor.";
+    }
     if (!nw.einsicht) {
       return nw.nr > 1
         ? "Die neue Bescheinigung wurde noch nicht geöffnet."
@@ -545,8 +564,11 @@
         ${nw.einsicht
           ? `<span>Geöffnet von ${h(kontoText(nw.einsicht))} · ${h(nw.einsicht.datum)} ${h(nw.einsicht.zeit)}</span>`
           : `<span>Noch nicht geöffnet.</span>`}
-        <button class="knopf klein" type="button" data-tun="vg-bescheinigung:${h(v.id)}">
-          ${nw.einsicht ? "Erneut öffnen" : "Bescheinigung öffnen"}</button>
+        ${nw.umgezogenNach
+          ? `<span class="teil-sperre">Dieser Nachweis gehört zu Vorgang
+              ${h(nw.umgezogenNach)}. Die Prüfung läuft dort weiter.</span>`
+          : `<button class="knopf klein" type="button" data-tun="vg-bescheinigung:${h(v.id)}">
+              ${nw.einsicht ? "Erneut öffnen" : "Bescheinigung öffnen"}</button>`}
       </li>
       <li class="${e ? "erledigt" : (nw.einsicht ? "dran" : "spaeter")}">
         <strong>2. Prüfergebnis festhalten</strong>
@@ -574,8 +596,23 @@
         ${offen[0].art === "rueckfrage"
           ? `<button class="knopf klein" type="button"
               data-tun="vg-klaerung-ja:${h(v.id)}">Rückfrage als geklärt eintragen</button>`
-          : `<button class="knopf klein" type="button"
-              data-tun="vg-neue-bescheinigung:${h(v.id)}">Neue Bescheinigung ist eingegangen</button>`}
+          : offen[0].art === "anforderung"
+          ? `<button class="knopf klein" type="button"
+              data-tun="vg-neue-bescheinigung:${h(v.id)}">Neue Bescheinigung ist eingegangen</button>`
+          /* Zuordnung: nur Personal und Administration duerfen hier
+             handeln, und die Datei wird nicht geloescht. */
+          : R.darf("personnel.read")
+          ? `<span class="teil-aktionen">
+              <button class="knopf klein" type="button"
+                data-tun="vg-zuordnung:${h(v.id)}">Nachweis neu zuordnen</button>
+              <button class="knopf klein" type="button"
+                data-tun="vg-zuordnung-unklar:${h(v.id)}">Zuordnung lässt sich nicht klären</button>
+            </span>
+            <span class="teil-sperre">Die Datei wird nicht gelöscht und nicht von selbst
+              einem anderen Mitarbeiter zugeordnet. Eine Neuzuordnung braucht eine
+              Zusammenfassung und einen Grund.</span>`
+          : `<span class="teil-sperre">Die Klärung der Zuordnung ist Personal und
+              Administration vorbehalten.</span>`}
       </li>` : ""}
       ${(() => { const frei = pruefungOffen(v, "bescheinigung") === ""; return `
       <li class="${frei ? "dran" : "spaeter"}">
@@ -598,12 +635,17 @@
         const e = nw.ergebnis ? ergebnisVon(nw.ergebnis) : null;
         const aktiv = letzte && nw.nr === letzte.nr;
         return `<li class="${nw.beanstandet ? "ist-ausnahme" : ""}">
-          <strong>${aktiv
+          <strong>${aktiv && !nw.umgezogenNach
             ? `<button class="alslink" type="button" data-tun="vg-bescheinigung:${h(v.id)}">${h(nw.datei)}</button>`
             : h(nw.datei)}</strong>
           <span>Nr. ${nw.nr} · ${h(ART[nw.art] || nw.art)} · eingegangen ${h(nw.eingang)}
             ${e ? " · " + h(e.name) : " · noch nicht geprüft"}
             ${nw.beanstandet ? " · beanstandet, bleibt erhalten" : ""}</span>
+          ${nw.zuordnungUngeklaert ? `<span class="band-warnung">Zuordnung ungeklärt —
+            nicht als geprüft verwendbar</span>` : ""}
+          ${nw.umgezogenNach ? `<span>Neu zugeordnet zu Vorgang ${h(nw.umgezogenNach)} ·
+            bleibt hier als Spur erhalten</span>` : ""}
+          ${nw.herkunft ? `<span>Aus Vorgang ${h(nw.herkunft)} neu zugeordnet</span>` : ""}
         </li>`;
       }).join("")}
     </ul>`;
@@ -918,6 +960,122 @@
     Pruefung beginnt dort von vorn. Stilles Ueberschreiben gibt es
     nicht.
   */
+  /*
+    Neuzuordnung eines Nachweises - drei Stufen.
+
+      "wahl"     wen betrifft der Nachweis wirklich?
+      "pruefen"  Zusammenfassung: bisherige Zuordnung, neue
+                 Zuordnung, Pflichtgrund. Erst hier wird gespeichert.
+      "unklar"   die Zuordnung laesst sich nicht feststellen; der
+                 Nachweis bleibt gesperrt und der Vorgang offen.
+
+    Die Trennung ist Absicht: Eine Neuzuordnung verschiebt ein
+    Gesundheitsdokument von einer Person zu einer anderen. Das soll
+    nicht in einem Klick passieren.
+  */
+  function zuordnungDialog() {
+    const s = stand.zuordnung;
+    const v = vorgangFinden(s.id);
+    const nw = aktuellerNachweis(v);
+    const ziel = s.ziel ? D.mitarbeiter.find((m) => m.id === s.ziel) : null;
+
+    const kopf = (titel) => `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="zoTitel">
+        <header class="dialog-kopf">
+          <h2 id="zoTitel">${h(titel)}</h2>
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>`;
+
+    const fehler = s.fehler
+      ? `<div class="feldfehler" role="alert">${h(s.fehler)}</div>`
+      : "";
+
+    /* ---- Die Zuordnung laesst sich nicht klaeren ---- */
+    if (s.stufe === "unklar") {
+      return kopf("Zuordnung lässt sich nicht klären") + `
+        <div class="dialog-rumpf">
+          ${fehler}
+          ${R.zustandsKasten("keinrecht", "Der Nachweis bleibt gesperrt",
+            "Es wird nichts gelöscht und nichts zugeordnet. Der Nachweis bleibt gesperrt und der Vorgang offen. Festgehalten wird, was geprüft wurde — damit später niemand raten muss, warum hier nichts weitergeht.")}
+          <dl class="zusammenfassung">
+            <div><dt>Vorgang</dt><dd>${h(v.id)} · ${h(v.titel)}</dd></div>
+            <div><dt>Nachweis</dt><dd>Nr. ${nw ? nw.nr : "—"} · ${h(nw ? nw.datei : "—")}</dd></div>
+            <div><dt>Bisherige Zuordnung</dt><dd>${h(v.betrifft.name)}</dd></div>
+            <div><dt>Festgehalten von</dt><dd>${h(meinName())}</dd></div>
+          </dl>
+          <label>Was wurde geprüft? <span class="band-warnung">Pflichtfeld</span>
+            <textarea data-zuordnung-grund rows="2"
+              placeholder="Zum Beispiel: Name auf der Bescheinigung nicht lesbar, Rückfrage läuft.">${h(s.grund)}</textarea></label>
+          <p class="schritt-hinweis">Keine Diagnose und keine medizinische Angabe in diesem Feld.</p>
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf" type="button" data-tun="vg-zuordnung-ab">Abbrechen</button>
+          <button class="knopf haupt-knopf" type="button" data-tun="vg-zuordnung-unklar-ja">
+            Verbindlich festhalten</button>
+        </footer>
+      </div>`;
+    }
+
+    /* ---- Stufe 2: Zusammenfassung und Pflichtgrund ---- */
+    if (s.stufe === "pruefen") {
+      return kopf("Neuzuordnung prüfen") + `
+        <div class="dialog-rumpf">
+          ${fehler}
+          ${R.zustandsKasten("vorbereitet", "Letzte Prüfung vor dem Speichern",
+            "Hier wird ein Gesundheitsdokument einer anderen Person zugeordnet. Prüfen Sie beide Seiten, bevor Sie verbindlich speichern.")}
+          <dl class="zusammenfassung">
+            <div><dt>Nachweis</dt><dd>Nr. ${nw ? nw.nr : "—"} · ${h(nw ? nw.datei : "—")}</dd></div>
+            <div><dt>Eingegangen</dt><dd>${h(nw ? nw.eingang : "—")}</dd></div>
+            <div><dt>Bisherige Zuordnung</dt><dd>${h(v.betrifft.name)} · Vorgang ${h(v.id)}</dd></div>
+            <div><dt>Neue Zuordnung</dt><dd>${h(ziel ? ziel.name : "—")}</dd></div>
+            <div><dt>Zugeordnet von</dt><dd>${h(meinName())}</dd></div>
+          </dl>
+          <label>Grund der Neuzuordnung <span class="band-warnung">Pflichtfeld</span>
+            <textarea data-zuordnung-grund rows="2"
+              placeholder="Zum Beispiel: Name auf der Bescheinigung gehört zu einer anderen Person.">${h(s.grund)}</textarea></label>
+          <p class="schritt-hinweis">Die Datei wird nicht gelöscht. Der bisherige Eintrag
+            bleibt als Spur stehen, der neue Vorgang vermerkt die Herkunft. Dort beginnt die
+            Prüfung wieder bei Schritt 1: öffnen, Einsicht bestätigen, Ergebnis wählen.</p>
+          <p class="schritt-hinweis">Protokolliert werden ursprüngliche Zuordnung, neue
+            Zuordnung, handelnde Person, Rolle, Datum, Uhrzeit und dieser Grund. Keine
+            Diagnose und keine medizinische Angabe.</p>
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf" type="button" data-tun="vg-zuordnung-zurueck">Zurück</button>
+          <button class="knopf" type="button" data-tun="vg-zuordnung-ab">Abbrechen</button>
+          <button class="knopf haupt-knopf" type="button" data-tun="vg-zuordnung-ja">
+            Verbindlich speichern</button>
+        </footer>
+      </div>`;
+    }
+
+    /* ---- Stufe 1: Zu wem gehoert der Nachweis? ---- */
+    const andere = D.mitarbeiter.filter((m) => m.id !== v.betrifft.id);
+    return kopf("Nachweis neu zuordnen") + `
+      <div class="dialog-rumpf">
+        ${fehler}
+        <dl class="zusammenfassung">
+          <div><dt>Nachweis</dt><dd>Nr. ${nw ? nw.nr : "—"} · ${h(nw ? nw.datei : "—")}</dd></div>
+          <div><dt>Bisherige Zuordnung</dt><dd>${h(v.betrifft.name)} · Vorgang ${h(v.id)}</dd></div>
+        </dl>
+        <h4 class="unterueberschrift">Zu wem gehört der Nachweis?</h4>
+        <div class="wahlraster">
+          ${andere.map((m) => `<button class="wahlkarte" type="button"
+            data-tun="vg-zuordnung-ziel:${h(v.id)}|${h(m.id)}"
+            aria-pressed="${s.ziel === m.id}">
+            <strong>${h(m.name)}</strong><span>${h(m.id)}</span></button>`).join("")}
+        </div>
+        <p class="schritt-hinweis">Es wird nichts gelöscht und nichts von selbst zugeordnet.
+          Im nächsten Schritt sehen Sie beide Zuordnungen und tragen den Grund ein.</p>
+      </div>
+      <footer class="dialog-fuss">
+        <button class="knopf" type="button" data-tun="vg-zuordnung-ab">Abbrechen</button>
+        <button class="knopf haupt-knopf" type="button" data-tun="vg-zuordnung-weiter">Weiter</button>
+      </footer>
+    </div>`;
+  }
+
   function pruefkorrekturDialog() {
     const s = stand.pruefkorrektur;
     const v = vorgangFinden(s.id);
@@ -1594,6 +1752,27 @@
             was: "Rückfrage zum Zeitraum erstellt",
             vorher: "keine Rückfrage", nachher: "Rückfrage offen", grund: ""
           });
+        } else if (e.folge === "zuordnung") {
+          /*
+            Der Nachweis wird GESPERRT, nicht geloescht und nicht von
+            selbst umgehaengt. Er darf ab hier nicht mehr als geprueft
+            oder gueltig verwendet werden.
+          */
+          nw.zuordnungUngeklaert = true;
+          v.daten.klaerungen.push({
+            art: "zuordnung", nachweisNr: nw.nr, zustand: "offen",
+            text: "Der Nachweis gehört möglicherweise nicht zu "
+              + v.betrifft.name + " oder nicht zu diesem Vorgang."
+              + " Die Zuordnung muss von Personal oder Administration geklärt werden.",
+            wer: { ...meinKonto() }, seit: D.alsText(D.heute) + " " + jetzt(),
+            geklaertAm: "", geklaertVon: null
+          });
+          D.protokollieren({
+            betrifft: v.titel + " · Nachweis Nr. " + nw.nr + " · " + nw.datei,
+            was: "Zuordnung als ungeklärt markiert",
+            vorher: "zugeordnet zu " + v.betrifft.name,
+            nachher: "Zuordnung ungeklärt, Nachweis gesperrt", grund: ""
+          });
         } else if (e.folge === "anforderung") {
           nw.beanstandet = true;
           v.daten.klaerungen.push({
@@ -1676,6 +1855,178 @@
       }
 
       /*
+        Neuzuordnung eines Nachweises.
+
+        Zweistufig: erst die Ziel-Person waehlen, dann eine
+        Zusammenfassung mit bisheriger Zuordnung, neuer Zuordnung und
+        Pflichtgrund, und erst "Verbindlich speichern" fuehrt sie aus.
+
+        Die Datei wird dabei NICHT geloescht: Der alte Eintrag bleibt
+        als Spur mit dem Vermerk "neu zugeordnet zu ..." stehen, der
+        Zielvorgang bekommt einen Eintrag mit "aus Vorgang ... neu
+        zugeordnet". So ist der Weg von beiden Seiten lesbar.
+      */
+      case "vg-zuordnung": {
+        const v = vorgangFinden(wert);
+        if (!v || !vertraulichSichtbar(v) || !R.darf("personnel.read")) return;
+        const nw = aktuellerNachweis(v);
+        if (!nw || !nw.zuordnungUngeklaert) return;
+        stand.zuordnung = { id: wert, ziel: "", grund: "", fehler: "", stufe: "wahl" };
+        R.dialogOeffnen(zuordnungDialog());
+        return;
+      }
+      case "vg-zuordnung-ziel": {
+        const [id, ziel] = wert.split("|");
+        if (!stand.zuordnung || stand.zuordnung.id !== id) return;
+        stand.zuordnung.ziel = ziel;
+        stand.zuordnung.fehler = "";
+        R.dialogOeffnen(zuordnungDialog());
+        return;
+      }
+      case "vg-zuordnung-weiter": {
+        const s = stand.zuordnung;
+        if (!s) return;
+        if (!s.ziel) {
+          s.fehler = "Bitte zuerst auswählen, zu wem der Nachweis gehört.";
+          R.dialogOeffnen(zuordnungDialog());
+          return;
+        }
+        s.stufe = "pruefen";
+        s.fehler = "";
+        R.dialogOeffnen(zuordnungDialog());
+        return;
+      }
+      case "vg-zuordnung-zurueck":
+        if (!stand.zuordnung) return;
+        stand.zuordnung.stufe = "wahl";
+        stand.zuordnung.fehler = "";
+        R.dialogOeffnen(zuordnungDialog());
+        return;
+      case "vg-zuordnung-ab":
+        stand.zuordnung = null;
+        R.dialogSchliessen(true);
+        return;
+      case "vg-zuordnung-ja": {
+        const s = stand.zuordnung;
+        if (!s || !R.darf("personnel.read")) return;
+        const feld = document.querySelector("[data-zuordnung-grund]");
+        s.grund = feld ? feld.value.trim() : "";
+        if (s.grund.length < 3) {
+          s.fehler = "Bitte einen Grund eintragen. Ohne Grund bleibt die Zuordnung ungeklärt.";
+          R.dialogOeffnen(zuordnungDialog());
+          const neuF = document.querySelector("[data-zuordnung-grund]");
+          if (neuF) neuF.focus();
+          return;
+        }
+        const alt = vorgangFinden(s.id);
+        const nw = aktuellerNachweis(alt);
+        const ziel = D.mitarbeiter.find((m) => m.id === s.ziel);
+        if (!nw || !ziel) return;
+
+        /* Der Zielvorgang: ein offener Krankheitsvorgang dieser Person,
+           sonst ein neuer, der auf den alten verweist. */
+        let zielVorgang = D.vorgaenge.find((x) => x.thema === "krankheit"
+          && x.betrifft.id === ziel.id && gesamtstand(x) !== "erledigt" && x.id !== alt.id);
+        const neuAngelegt = !zielVorgang;
+        if (!zielVorgang) {
+          zielVorgang = D.vorgangAnlegen({
+            art: "aufgabe", thema: "krankheit",
+            titel: "Krankmeldung – Nachweis neu zugeordnet – " + ziel.name,
+            betrifft: { art: "mitarbeiter", id: ziel.id, name: ziel.name },
+            sichtbar: ["operations.read", "personnel.read"], vertraulich: ["personnel.read"],
+            /* Mit Teilschritten, also auch mit der Pruefsperre: Beim
+               neuen Vorgang beginnt die Dokumentpruefung wirklich von
+               vorn und laesst sich nicht ueberspringen. */
+            teile: D.krankheitsTeile(),
+            daten: { von: alt.daten.von, bis: alt.daten.bis, bezugAuf: alt.id, nachweise: [], klaerungen: [] }
+          });
+        }
+        if (!zielVorgang.daten.nachweise) zielVorgang.daten.nachweise = [];
+        if (!zielVorgang.daten.klaerungen) zielVorgang.daten.klaerungen = [];
+
+        /* Im Zielvorgang beginnt die Pruefung bei Schritt 1: keine
+           Einsicht, kein Ergebnis. Die Einsicht aus dem falschen
+           Vorgang zaehlt dort nicht. */
+        const nr = zielVorgang.daten.nachweise.length + 1;
+        zielVorgang.daten.nachweise.push({
+          nr, art: nw.art, datei: nw.datei,
+          eingang: nw.eingang, eingangIso: nw.eingangIso,
+          einsicht: null, ergebnis: "", gesperrt: false, beanstandet: false,
+          zuordnungUngeklaert: false, umgezogenNach: "", herkunft: alt.id
+        });
+        zielVorgang.version += 1;
+
+        /* Der alte Eintrag bleibt stehen - als Spur, nicht als
+           Nachweis. */
+        nw.zuordnungUngeklaert = false;
+        nw.umgezogenNach = zielVorgang.id;
+        const k = offeneKlaerungen(alt).find((x) => x.art === "zuordnung");
+        if (k) {
+          k.zustand = "geklaert";
+          k.geklaertAm = D.alsText(D.heute) + " " + jetzt();
+          k.geklaertVon = { ...meinKonto() };
+        }
+        alt.version += 1;
+
+        D.protokollieren({
+          betrifft: alt.titel + " · Nachweis Nr. " + nw.nr + " · " + nw.datei,
+          was: "Nachweis neu zugeordnet",
+          vorher: alt.betrifft.name + " (Vorgang " + alt.id + ")",
+          nachher: ziel.name + " (Vorgang " + zielVorgang.id
+            + (neuAngelegt ? ", neu angelegt" : "") + "), Prüfung beginnt dort bei Schritt 1",
+          grund: s.grund
+        });
+
+        stand.zuordnung = null;
+        stand.offen = zielVorgang.id;
+        R.dialogSchliessen(true);
+        R.zeichnen();
+        return;
+      }
+
+      /*
+        Laesst sich die richtige Zuordnung nicht feststellen, bleibt
+        der Nachweis gesperrt und der Vorgang offen. Festgehalten wird
+        das trotzdem - damit niemand spaeter raten muss, warum hier
+        nichts weitergeht.
+      */
+      case "vg-zuordnung-unklar": {
+        const v = vorgangFinden(wert);
+        if (!v || !vertraulichSichtbar(v) || !R.darf("personnel.read")) return;
+        stand.zuordnung = { id: wert, ziel: "", grund: "", fehler: "", stufe: "unklar" };
+        R.dialogOeffnen(zuordnungDialog());
+        return;
+      }
+      case "vg-zuordnung-unklar-ja": {
+        const s = stand.zuordnung;
+        if (!s || !R.darf("personnel.read")) return;
+        const feld = document.querySelector("[data-zuordnung-grund]");
+        s.grund = feld ? feld.value.trim() : "";
+        if (s.grund.length < 3) {
+          s.fehler = "Bitte festhalten, was geprüft wurde und warum es nicht gereicht hat.";
+          R.dialogOeffnen(zuordnungDialog());
+          const neuF = document.querySelector("[data-zuordnung-grund]");
+          if (neuF) neuF.focus();
+          return;
+        }
+        const v = vorgangFinden(s.id);
+        const nw = aktuellerNachweis(v);
+        v.version += 1;
+        D.protokollieren({
+          betrifft: v.titel + " · Nachweis Nr. " + (nw ? nw.nr : "—"),
+          was: "Zuordnung konnte nicht geklärt werden",
+          vorher: "Zuordnung ungeklärt",
+          nachher: "weiterhin ungeklärt, Nachweis bleibt gesperrt und der Vorgang offen",
+          grund: s.grund
+        });
+        stand.zuordnung = null;
+        stand.offen = v.id;
+        R.dialogOeffnen(vorgangDialog());
+        R.zeichnen();
+        return;
+      }
+
+      /*
         Korrektur eines festgehaltenen Pruefergebnisses.
 
         Das alte Ergebnis wird NICHT ueberschrieben. Es entsteht ein
@@ -1695,7 +2046,7 @@
         return;
       case "vg-pruefkorrektur-ja": {
         const s = stand.pruefkorrektur;
-        const feld = document.querySelector("[data-pruefkorrektur-grund]");
+        const feld = document.querySelector("[data-pruefkorrektur-grund], [data-zuordnung-grund]");
         s.grund = feld ? feld.value.trim() : "";
         if (s.grund.length < 3) {
           s.fehler = "Bitte einen Grund eintragen. Ohne Grund bleibt das Ergebnis stehen.";
@@ -1711,7 +2062,8 @@
           art: "aufgabe", thema: "krankheit",
           titel: "Prüfergebnis korrigieren – " + alt.betrifft.name,
           betrifft: { ...alt.betrifft },
-          sichtbar: ["personnel.read"], vertraulich: ["personnel.read"],
+          sichtbar: ["operations.read", "personnel.read"], vertraulich: ["personnel.read"],
+          teile: D.krankheitsTeile(),
           daten: {
             von: alt.daten.von, bis: alt.daten.bis, bezugAuf: alt.id,
             nachweise: [{
@@ -1790,6 +2142,7 @@
           betrifft: { ...alt.betrifft },
           dringlichkeit: "normal",
           sichtbar: [...alt.sichtbar], vertraulich: [...alt.vertraulich],
+          teile: D.krankheitsTeile(),
           daten: {
             von: neuVon, bis: neuBis, bezugAuf: alt.id,
             /* Die Datei wird nicht kopiert, sondern als neuer,

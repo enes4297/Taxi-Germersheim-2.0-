@@ -129,10 +129,16 @@ console.log("\n── 0. Die Auswahl bildet genau die Vorgabe ab ──");
   await ansehen(page);
   const auswahl = await page.$$eval(".pruefkette .wahlkarte strong",
     (n) => n.map((x) => x.textContent.trim()));
-  pruefe(auswahl.length === 3, `drei Ergebnisse, nicht mehr (${auswahl.length})`);
+  /* Seit der Ergaenzung vom 01.10.2026 sind es vier: Der Fall
+     "falsche Person oder falscher Vorgang" hat jetzt eine Regel und
+     steht wieder zur Auswahl. Seine Folge prueft
+     pruefe-probe-zuordnung im Einzelnen. */
+  pruefe(auswahl.length === 4, `vier Ergebnisse, nicht mehr (${auswahl.length})`);
   pruefe(auswahl.includes("Alles in Ordnung"), "„Alles in Ordnung“");
   pruefe(auswahl.includes("Zeitraum weicht ab"), "„Zeitraum weicht ab“");
   pruefe(auswahl.includes("Nicht lesbar oder unvollständig"), "„Nicht lesbar oder unvollständig“");
+  pruefe(auswahl.includes("Falsche Person oder falscher Vorgang"),
+    "„Falsche Person oder falscher Vorgang“");
 
   /* Jede Karte sagt, was folgt - bevor man sie drueckt. */
   const erklaerungen = await page.$$eval(".pruefkette .wahlkarte span",
@@ -142,6 +148,8 @@ console.log("\n── 0. Die Auswahl bildet genau die Vorgabe ab ──");
   pruefe(erklaerungen.some((x) => /Rückfrage/.test(x)), "auch die Rückfrage");
   pruefe(erklaerungen.some((x) => /neue Bescheinigung angefordert/.test(x)),
     "auch die Anforderung");
+  pruefe(erklaerungen.some((x) => /Zuordnung ungeklärt/.test(x)),
+    "und die ungeklärte Zuordnung");
   pruefe(!(await page.$(".pruefkette textarea")),
     "es gibt kein Freitextfeld für ein Ergebnis");
   pruefe(fehler.length === 0, `keine Skriptfehler${fehler.length ? " (" + fehler[0] + ")" : ""}`);

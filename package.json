@@ -44,7 +44,8 @@
     "probe-vorgaenge-pruefen": "node tools/pruefe-probe-vorgaenge.mjs",
     "probe-teilung-pruefen": "node tools/pruefe-probe-teilung.mjs",
     "probe-dokument-pruefen": "node tools/pruefe-probe-dokumentpruefung.mjs",
-    "probe-regeln-pruefen": "node tools/pruefe-probe-pruefregeln.mjs"
+    "probe-regeln-pruefen": "node tools/pruefe-probe-pruefregeln.mjs",
+    "probe-zuordnung-pruefen": "node tools/pruefe-probe-zuordnung.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.0",
