@@ -3752,7 +3752,13 @@ die Aktion direkt aufgerufen wird. Der Prüflauf ruft
 `vg-teil-erledigen` und `vg-erledigen` unter Umgehung der
 Oberfläche auf und weist nach, dass nichts geschieht.
 
-### 24.2 Die Neuzuordnung — drei Stufen
+### 24.2 Die Neuzuordnung — erste Fassung, drei Stufen
+
+> **Überholt am 01.10.2026.** Diese Fassung ließ nur eine *andere*
+> Person wählen und schloss die bisherige aus. Damit war die zweite
+> Hälfte des Falls — *falscher Vorgang* bei richtiger Person — gar
+> nicht abbildbar. Siehe Abschnitt 25. Der Abschnitt bleibt stehen,
+> damit nachvollziehbar ist, was geändert wurde.
 
 **Nur Personal und Administration** sehen die Knöpfe dafür, und nur
 sie kommen durch die Aktionen (`R.darf("personnel.read")` in jeder
@@ -3881,3 +3887,149 @@ hier — statt sie stillschweigend zu verschieben.
 > Storage-API. Belegt ist, dass die Regel in Oberfläche und Aktionen
 > durchgesetzt wird — **nicht**, dass eine echte Bescheinigung beim
 > Umhängen zwischen zwei Personen geschützt bliebe.
+
+---
+
+## 25. Die Neuzuordnung richtet sich auf den Zielvorgang
+
+**Der Befund (Nutzer, 01.10.2026).** Der Fall heißt „Falsche Person
+**oder** falscher Vorgang", aber die Neuzuordnung wählte nur eine
+andere Person und schloss die bisherige aus. **Eine Bescheinigung
+ließ sich nicht einem anderen Krankheitsvorgang derselben Person
+zuordnen.**
+
+Das ist kein Randfall: Wer zweimal im Monat krank war, hat zwei
+Vorgänge, und eine Bescheinigung kann am falschen hängen — bei
+völlig richtiger Person.
+
+### 25.1 Vier Stufen statt drei
+
+| Stufe | Was gewählt wird | Was gespeichert wird |
+|---|---|---|
+| **1. Person** | Suche und Auswahl aus dem Mitarbeiterbestand. **Die bisherige Person steht mit zur Wahl** und ist als „bisherige Zuordnung" gekennzeichnet. Keine freie Texteingabe. | nichts |
+| **2. Vorgang** | ein Krankheitsvorgang dieser Person — mit Vorgangsnummer, gemeldetem Zeitraum, Zustand und vorhandenen Nachweisen. **Der aktuelle Vorgang ist ausgeschlossen.** | nichts |
+| **3. Neu anlegen** | nur wenn kein passender existiert: Zeitraum prüfen und bestätigen | nichts |
+| **4. Letzte Prüfung** | beide Seiten, Dateiname, Eingangszeit, Konto, Rolle, **Pflichtgrund** | nichts |
+| **Verbindlich speichern** | — | die Neuzuordnung |
+
+„Zurück und ändern" führt **eine Stufe zurück**, nicht aus dem
+Vorgang heraus. Wer auf Stufe 1 die Person wechselt, verliert die
+Vorgangswahl — sie hing an der alten Person.
+
+### 25.2 Der Zielvorgang wird gezeigt, nicht erraten
+
+Jede Vorgangskarte nennt **Nummer, gemeldeten Zeitraum, Zustand und
+die Zahl der bereits vorhandenen Nachweise**. Wer entscheidet, wohin
+ein Gesundheitsdokument gehört, soll nicht raten müssen, was dort
+schon liegt.
+
+Der **aktuelle Vorgang ist nie Ziel** — weder als Karte noch über
+den direkten Aufruf von `vg-zuordnung-vorgang`. Der Prüflauf ruft
+ihn mit sich selbst als Ziel auf und weist nach, dass nichts
+geschieht.
+
+### 25.3 Einen neuen Vorgang anlegen — ohne Ableitung
+
+Gibt es keinen passenden, wird das Anlegen **ausdrücklich angeboten**,
+statt es stillschweigend zu tun. Vorher ist der **Zeitraum zu prüfen**:
+Er ist aus dem bisherigen Vorgang übernommen, das steht auch so da,
+und er ist änderbar. Ein Ende vor dem Beginn wird abgewiesen.
+
+**Aus dem Inhalt der Bescheinigung wird nichts gelesen und nichts
+abgeleitet.** Das Dokument ist in dieser Probe ein Platzhalter; aber
+auch im Portal wäre ein aus einem Gesundheitsdokument
+herausgelesener Zeitraum eine Behauptung, die niemand geprüft hat.
+
+### 25.4 Beide Fälle, getrennt geprüft
+
+| | Fall A | Fall B |
+|---|---|---|
+| Person | andere (Testfahrer 05) | **dieselbe** (Testfahrer 02) |
+| Zielvorgang | neu angelegt | vorhandener V0008 |
+| Neuer Vorgang entsteht | ja, genau einer | **nein** |
+| Alter Vorgang | behält die Spur, bleibt offen | behält die Spur, bleibt offen |
+| Im Ziel | Nachweis Nr. 1, ungeprüft | Nachweis Nr. 2 neben dem vorhandenen, ungeprüft |
+
+Damit Fall B überhaupt prüfbar ist, gibt es in den Testdaten einen
+**zweiten Krankheitsvorgang derselben Person** (`V0008`, frühere
+Krankmeldung mit eigenem Nachweis). Er ist kein Beiwerk: Ohne ihn
+ließe sich der halbe Fall nicht prüfen.
+
+### 25.5 Nach dem Speichern
+
+- Der alte Vorgang behält **nur die unveränderliche Spur**: Nummer,
+  Eingangszeit, Einsicht, Ergebnis und den Verweis auf den
+  Zielvorgang. Dort nicht mehr anklickbar, nicht als Nachweis
+  verwendbar, und der Vorgang bleibt **offen**.
+- Im Zielvorgang beginnt die Prüfung **bei Schritt 1**. Frühere
+  Einsicht und früheres Prüfergebnis gelten dort **nicht**.
+- **Keine Datei wird gelöscht.**
+- Die **Disposition** sieht weiterhin keine Dokumentangaben: kein
+  Dateiname, keine Nachweisliste, keine Prüfkette, keine Markierung
+  „Zuordnung ungeklärt", keinen Knopf. Der Prüflauf ruft **neun**
+  Aktionen direkt auf und weist nach, dass bei ihr nichts geschieht
+  und nichts gelöscht wird.
+
+Protokolliert werden bisherige Person **und bisheriger Vorgang**,
+neue Person **und neuer Vorgang** (mit dem Hinweis „neu angelegt",
+wenn er es war), Konto, unveränderliche Kennung, Rolle, Datum,
+Uhrzeit und Grund.
+
+### 25.6 Ein echter Bedienfehler, beim Durchspielen gefunden
+
+Die Mitarbeitersuche wertete erst beim **Verlassen** des Feldes aus
+(`change`). Wer tippte und dann direkt auf eine Karte klickte,
+löste mit dem Verlassen ein Neuzeichnen aus — die Karte unter dem
+Mauszeiger wurde ausgetauscht und **der Klick ging verloren**. Im
+Durchspielen sah das aus wie „die Auswahl greift nicht".
+
+Behoben in zwei Teilen: Die Suche filtert jetzt **beim Tippen**
+(`input`), und beim Verlassen wird nur noch gezeichnet, wenn sich
+der Wert wirklich geändert hat. Der Schreibzeiger bleibt dabei an
+seiner Stelle.
+
+Der Prüflauf sichert genau diesen Ablauf: tippen, dann sofort
+klicken, dann „Weiter" — und Stufe 2 muss kommen.
+
+### 25.7 Was dieser Stand NICHT belegt
+
+Es gibt in der Probe **keine Datei und keine Storage-API**. Belegt
+ist, dass die Regel in Oberfläche **und** Aktionen durchgesetzt wird
+— nicht, dass eine echte Bescheinigung beim Umhängen geschützt
+bliebe. Dieser Fall ist beim Übergang auf echte Dateien und echte
+RLS-Regeln eigens zu prüfen, und er ist der heikelste der vier: Ein
+Gesundheitsdokument wechselt den Betroffenen oder den Vorgang.
+
+Die **Aufbewahrung** bleibt eine offene rechtliche Entscheidung
+(Abschnitt 23.5).
+
+### 25.8 Prüfstand
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-zuordnung-pruefen` (8 Blöcke, neu geschrieben) | **125 bestanden, 0 offen** |
+| `probe-regeln-pruefen` | 123 bestanden, 0 offen |
+| `probe-dokument-pruefen` | 91 bestanden, 0 offen |
+| `probe-teilung-pruefen` | 99 bestanden, 0 offen |
+| `probe-vorgaenge-pruefen` | 137 bestanden, 0 offen |
+| `probe-team-pruefen` | 197 bestanden, 0 offen |
+| `probe-planung-pruefen` | 171 bestanden, 0 offen |
+| `probe-fahrt-pruefen` | 168 bestanden, 0 offen |
+| `probe-portal-pruefen` | 107 bestanden, 0 offen |
+
+Zusammen **1218 Zusicherungen, 0 offen**, null Netzwerkaufrufe. Alle
+neun Läufe vollständig beendet, jeder mit gedruckter Bilanz.
+
+Der zweite Krankheitsvorgang in den Testdaten hat **keine** bestehende
+Zusicherung verschoben — die Läufe zählen Vorgänge nur relativ
+(vorher/nachher), nicht absolut. Das war vor dem Einfügen geprüft.
+
+**Ein eigener Fehler im neuen Prüflauf:** Die Zusicherung suchte
+„Übernommen aus Vorgang V0002" mit einem Leerzeichen. `textContent`
+setzt zwischen `<dt>` und `<dd>` keines — der Text lautet
+„Übernommen ausVorgang V0002". Behoben.
+
+> **Einordnung:** Designprobe ohne Datenquelle, ohne Datei, ohne
+> Storage-API. Belegt ist, dass die Regel in Oberfläche und Aktionen
+> durchgesetzt wird — **nicht**, dass eine echte Bescheinigung beim
+> Umhängen geschützt bliebe.

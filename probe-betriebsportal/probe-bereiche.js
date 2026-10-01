@@ -1730,7 +1730,7 @@
     eingabe: (feld) => {
       /* Suchfelder filtern beim Tippen. Der Fokus bleibt, weil
          zeichnen() ihn samt Schreibzeiger wiederherstellt. */
-      if (feld && feld.matches && feld.matches("[data-plan-suche], [data-team-fahrersuche], [data-team-fahrzeugsuche], [data-vg-suche]")) {
+      if (feld && feld.matches && feld.matches("[data-plan-suche], [data-team-fahrersuche], [data-team-fahrzeugsuche], [data-vg-suche], [data-zuordnung-suche]")) {
         return geaendert(feld);
       }
       return window.ProbeFahrtassistent.eingabe(feld);

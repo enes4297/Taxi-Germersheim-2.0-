@@ -589,6 +589,39 @@
       empfehlung: "Aus Planungssicht möglich",
       antwort: "Ihr Urlaubsantrag wurde genehmigt.",
       notizen: [{ wer: "Personal", text: "Resturlaub reicht aus." }]
+    },
+    {
+      /*
+        EIN ZWEITER Krankheitsvorgang DERSELBEN Person.
+
+        Er ist nicht Zierde: Ohne ihn liesse sich der Fall "falsche
+        Person ODER falscher Vorgang" nur zur Haelfte pruefen. Eine
+        Bescheinigung kann auch zur richtigen Person gehoeren und
+        trotzdem am falschen Vorgang haengen - etwa wenn jemand
+        zweimal im Monat krank war.
+      */
+      id: "V0008", art: "aufgabe", thema: "krankheit",
+      titel: "Frühere Krankmeldung – Testfahrer 02",
+      betrifft: { art: "mitarbeiter", id: "M02", name: "Testfahrer 02" },
+      eingang: "vor 10 Tagen", eingangIso: alsIso(tagAls(-10)), dringlichkeit: "normal",
+      zustaendig: "", zustand: "bearbeitung", gesehen: true, version: 1,
+      sichtbar: ["operations.read", "personnel.read"],
+      vertraulich: ["personnel.read"],
+      daten: {
+        von: alsIso(tagAls(-10)), bis: alsIso(tagAls(-8)),
+        nachweise: [
+          {
+            nr: 1, art: "erst", datei: "Testbescheinigung-M02-fr-01.pdf",
+            eingang: "vor 10 Tagen", eingangIso: alsIso(tagAls(-10)),
+            einsicht: null, ergebnis: "",
+            gesperrt: false, beanstandet: false,
+            zuordnungUngeklaert: false, umgezogenNach: "", herkunft: ""
+          }
+        ],
+        klaerungen: []
+      },
+      teile: krankheitsTeile(),
+      empfehlung: "", antwort: "", notizen: []
     }
   ];
 

@@ -961,35 +961,62 @@
     nicht.
   */
   /*
-    Neuzuordnung eines Nachweises - drei Stufen.
+    Neuzuordnung eines Nachweises - vier Stufen.
 
-      "wahl"     wen betrifft der Nachweis wirklich?
-      "pruefen"  Zusammenfassung: bisherige Zuordnung, neue
-                 Zuordnung, Pflichtgrund. Erst hier wird gespeichert.
-      "unklar"   die Zuordnung laesst sich nicht feststellen; der
-                 Nachweis bleibt gesperrt und der Vorgang offen.
+      "person"   Zu wem gehoert der Nachweis? Mit Suche, und die
+                 BISHERIGE Person steht ausdruecklich mit zur Wahl.
+      "vorgang"  Zu welchem Krankheitsvorgang dieser Person? Mit
+                 Nummer, Zeitraum, Zustand und vorhandenen
+                 Nachweisen. Der aktuelle Vorgang ist ausgeschlossen.
+      "neu"      Gibt es keinen passenden, wird einer angelegt -
+                 aber erst nach Pruefung des Zeitraums.
+      "pruefen"  Letzte Pruefung mit beiden Seiten und Pflichtgrund.
 
-    Die Trennung ist Absicht: Eine Neuzuordnung verschiebt ein
-    Gesundheitsdokument von einer Person zu einer anderen. Das soll
-    nicht in einem Klick passieren.
+    Der manuelle Test hat gezeigt, warum die zweite Stufe fehlte: Der
+    Fall heisst "falsche Person ODER falscher Vorgang". Wer nur die
+    Person waehlen kann, kann eine Bescheinigung nicht an einen
+    anderen Vorgang DERSELBEN Person haengen - und genau das kommt
+    vor, wenn jemand zweimal krank war.
+
+    Keine freie Texteingabe: weder fuer die Person noch fuer den
+    Vorgang. Gewaehlt wird aus dem Bestand.
   */
+
+  /* Moegliche Zielvorgaenge: Krankheitsvorgaenge dieser Person,
+     ohne den aktuellen. */
+  function zielVorgaenge(personId, ausserId) {
+    return D.vorgaenge.filter((x) => x.thema === "krankheit"
+      && x.betrifft.id === personId && x.id !== ausserId);
+  }
+
   function zuordnungDialog() {
     const s = stand.zuordnung;
     const v = vorgangFinden(s.id);
     const nw = aktuellerNachweis(v);
-    const ziel = s.ziel ? D.mitarbeiter.find((m) => m.id === s.ziel) : null;
+    const person = s.person ? D.mitarbeiter.find((m) => m.id === s.person) : null;
+    const ziel = s.vorgang ? vorgangFinden(s.vorgang) : null;
 
-    const kopf = (titel) => `
+    const kopf = (titel, schritt) => `
       <div class="dialog-hinter" data-dialog-zu></div>
       <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="zoTitel">
         <header class="dialog-kopf">
           <h2 id="zoTitel">${h(titel)}</h2>
+          ${schritt ? `<span class="band-gold">${h(schritt)}</span>` : ""}
           <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
         </header>`;
 
     const fehler = s.fehler
       ? `<div class="feldfehler" role="alert">${h(s.fehler)}</div>`
       : "";
+
+    /* Der Nachweis, um den es geht - in jeder Stufe gleich. */
+    const nachweiszeile = `
+      <dl class="zusammenfassung">
+        <div><dt>Datei</dt><dd>${h(nw ? nw.datei : "—")}</dd></div>
+        <div><dt>Eingegangen</dt><dd>${h(nw ? nw.eingang : "—")}</dd></div>
+        <div><dt>Bisherige Person</dt><dd>${h(v.betrifft.name)}</dd></div>
+        <div><dt>Bisheriger Vorgang</dt><dd>${h(v.id)}</dd></div>
+      </dl>`;
 
     /* ---- Die Zuordnung laesst sich nicht klaeren ---- */
     if (s.stufe === "unklar") {
@@ -998,12 +1025,7 @@
           ${fehler}
           ${R.zustandsKasten("keinrecht", "Der Nachweis bleibt gesperrt",
             "Es wird nichts gelöscht und nichts zugeordnet. Der Nachweis bleibt gesperrt und der Vorgang offen. Festgehalten wird, was geprüft wurde — damit später niemand raten muss, warum hier nichts weitergeht.")}
-          <dl class="zusammenfassung">
-            <div><dt>Vorgang</dt><dd>${h(v.id)} · ${h(v.titel)}</dd></div>
-            <div><dt>Nachweis</dt><dd>Nr. ${nw ? nw.nr : "—"} · ${h(nw ? nw.datei : "—")}</dd></div>
-            <div><dt>Bisherige Zuordnung</dt><dd>${h(v.betrifft.name)}</dd></div>
-            <div><dt>Festgehalten von</dt><dd>${h(meinName())}</dd></div>
-          </dl>
+          ${nachweiszeile}
           <label>Was wurde geprüft? <span class="band-warnung">Pflichtfeld</span>
             <textarea data-zuordnung-grund rows="2"
               placeholder="Zum Beispiel: Name auf der Bescheinigung nicht lesbar, Rückfrage läuft.">${h(s.grund)}</textarea></label>
@@ -1017,32 +1039,41 @@
       </div>`;
     }
 
-    /* ---- Stufe 2: Zusammenfassung und Pflichtgrund ---- */
+    /* ---- Stufe 4: letzte Pruefung ---- */
     if (s.stufe === "pruefen") {
-      return kopf("Neuzuordnung prüfen") + `
+      const neuerVorgang = !s.vorgang;
+      return kopf("Letzte Prüfung vor dem Speichern", "Schritt 4 von 4") + `
         <div class="dialog-rumpf">
           ${fehler}
-          ${R.zustandsKasten("vorbereitet", "Letzte Prüfung vor dem Speichern",
-            "Hier wird ein Gesundheitsdokument einer anderen Person zugeordnet. Prüfen Sie beide Seiten, bevor Sie verbindlich speichern.")}
+          ${R.zustandsKasten("vorbereitet", "Ein Gesundheitsdokument wechselt den Vorgang",
+            "Prüfen Sie beide Seiten. Erst „Verbindlich speichern“ führt die Neuzuordnung aus.")}
           <dl class="zusammenfassung">
-            <div><dt>Nachweis</dt><dd>Nr. ${nw ? nw.nr : "—"} · ${h(nw ? nw.datei : "—")}</dd></div>
+            <div><dt>Datei</dt><dd>${h(nw ? nw.datei : "—")}</dd></div>
             <div><dt>Eingegangen</dt><dd>${h(nw ? nw.eingang : "—")}</dd></div>
-            <div><dt>Bisherige Zuordnung</dt><dd>${h(v.betrifft.name)} · Vorgang ${h(v.id)}</dd></div>
-            <div><dt>Neue Zuordnung</dt><dd>${h(ziel ? ziel.name : "—")}</dd></div>
-            <div><dt>Zugeordnet von</dt><dd>${h(meinName())}</dd></div>
+            <div><dt>Bisherige Person</dt><dd>${h(v.betrifft.name)}</dd></div>
+            <div><dt>Bisheriger Vorgang</dt><dd>${h(v.id)} · ${h(v.titel)}</dd></div>
+            <div><dt>Neue Person</dt><dd>${h(person ? person.name : "—")}</dd></div>
+            <div><dt>Neuer Zielvorgang</dt><dd>${neuerVorgang
+              ? `neu anzulegen · ${h(datumText(s.neuVon))} bis ${h(datumText(s.neuBis))}`
+              : `${h(ziel.id)} · ${h(ziel.titel)}`}</dd></div>
+            <div><dt>Handelndes Konto</dt><dd>${h(meinKonto().name)} · ${h(meinKonto().kennung)}</dd></div>
+            <div><dt>Rolle</dt><dd>${h(meinKonto().rolle)}</dd></div>
           </dl>
+          ${person && person.id === v.betrifft.id
+            ? `<p class="schritt-hinweis">Die Person bleibt dieselbe — der Nachweis wechselt
+                nur den Vorgang.</p>` : ""}
           <label>Grund der Neuzuordnung <span class="band-warnung">Pflichtfeld</span>
             <textarea data-zuordnung-grund rows="2"
-              placeholder="Zum Beispiel: Name auf der Bescheinigung gehört zu einer anderen Person.">${h(s.grund)}</textarea></label>
+              placeholder="Zum Beispiel: Zeitraum gehört zur früheren Krankmeldung.">${h(s.grund)}</textarea></label>
           <p class="schritt-hinweis">Die Datei wird nicht gelöscht. Der bisherige Eintrag
-            bleibt als Spur stehen, der neue Vorgang vermerkt die Herkunft. Dort beginnt die
-            Prüfung wieder bei Schritt 1: öffnen, Einsicht bestätigen, Ergebnis wählen.</p>
-          <p class="schritt-hinweis">Protokolliert werden ursprüngliche Zuordnung, neue
-            Zuordnung, handelnde Person, Rolle, Datum, Uhrzeit und dieser Grund. Keine
-            Diagnose und keine medizinische Angabe.</p>
+            bleibt als unveränderliche Spur stehen; im Zielvorgang beginnt die Prüfung wieder
+            bei Schritt 1. Frühere Einsicht und früheres Prüfergebnis gelten dort nicht.</p>
+          <p class="schritt-hinweis">Protokolliert werden bisherige Person und bisheriger
+            Vorgang, neue Person und neuer Vorgang, Konto, Kennung, Rolle, Datum, Uhrzeit und
+            dieser Grund. Keine Diagnose und keine medizinische Angabe.</p>
         </div>
         <footer class="dialog-fuss">
-          <button class="knopf" type="button" data-tun="vg-zuordnung-zurueck">Zurück</button>
+          <button class="knopf" type="button" data-tun="vg-zuordnung-zurueck">Zurück und ändern</button>
           <button class="knopf" type="button" data-tun="vg-zuordnung-ab">Abbrechen</button>
           <button class="knopf haupt-knopf" type="button" data-tun="vg-zuordnung-ja">
             Verbindlich speichern</button>
@@ -1050,24 +1081,99 @@
       </div>`;
     }
 
-    /* ---- Stufe 1: Zu wem gehoert der Nachweis? ---- */
-    const andere = D.mitarbeiter.filter((m) => m.id !== v.betrifft.id);
-    return kopf("Nachweis neu zuordnen") + `
+    /* ---- Stufe 3: neuen Vorgang anlegen ---- */
+    if (s.stufe === "neu") {
+      return kopf("Neuen Krankheitsvorgang anlegen", "Schritt 3 von 4") + `
+        <div class="dialog-rumpf">
+          ${fehler}
+          ${R.zustandsKasten("vorbereitet", "Nichts wird abgeleitet",
+            "Der Zeitraum ist aus dem bisherigen Vorgang übernommen und muss geprüft werden. Aus dem Inhalt der Bescheinigung wird nichts gelesen und nichts erfunden.")}
+          <dl class="zusammenfassung">
+            <div><dt>Für</dt><dd>${h(person ? person.name : "—")}</dd></div>
+            <div><dt>Datei</dt><dd>${h(nw ? nw.datei : "—")}</dd></div>
+            <div><dt>Übernommen aus</dt><dd>Vorgang ${h(v.id)}</dd></div>
+          </dl>
+          <div class="tageswahl">
+            <label class="tagfeld">Krank von
+              <input type="date" data-zuordnung-von value="${h(s.neuVon)}"></label>
+            <label class="tagfeld">bis
+              <input type="date" data-zuordnung-bis value="${h(s.neuBis)}"></label>
+          </div>
+          <p class="schritt-hinweis">Stimmt der Zeitraum nicht, tragen Sie ihn hier richtig
+            ein. Er stammt aus dem bisherigen Vorgang, nicht aus dem Dokument.</p>
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf" type="button" data-tun="vg-zuordnung-zurueck">Zurück</button>
+          <button class="knopf" type="button" data-tun="vg-zuordnung-ab">Abbrechen</button>
+          <button class="knopf haupt-knopf" type="button" data-tun="vg-zuordnung-neu-weiter">Weiter</button>
+        </footer>
+      </div>`;
+    }
+
+    /* ---- Stufe 2: welcher Vorgang dieser Person? ---- */
+    if (s.stufe === "vorgang") {
+      const liste = zielVorgaenge(s.person, v.id);
+      return kopf("Zu welchem Krankheitsvorgang?", "Schritt 2 von 4") + `
+        <div class="dialog-rumpf">
+          ${fehler}
+          <dl class="zusammenfassung">
+            <div><dt>Datei</dt><dd>${h(nw ? nw.datei : "—")}</dd></div>
+            <div><dt>Person</dt><dd>${h(person ? person.name : "—")}</dd></div>
+            <div><dt>Bisheriger Vorgang</dt><dd>${h(v.id)} · nicht wählbar</dd></div>
+          </dl>
+          ${liste.length ? `<div class="wahlraster">
+            ${liste.map((z) => {
+              const anz = ((z.daten && z.daten.nachweise) || []).length;
+              return `<button class="wahlkarte" type="button"
+                data-tun="vg-zuordnung-vorgang:${h(v.id)}|${h(z.id)}"
+                aria-pressed="${s.vorgang === z.id}">
+                <strong>${h(z.id)} · ${h(z.titel)}</strong>
+                <span>Gemeldet ${h(datumText(z.daten.von))} bis ${h(datumText(z.daten.bis))}</span>
+                <span>Stand: ${h(D.VORGANG_ZUSTAENDE[gesamtstand(z)])}</span>
+                <span>${anz === 0 ? "noch kein Nachweis"
+                  : anz === 1 ? "1 Nachweis vorhanden" : anz + " Nachweise vorhanden"}</span>
+              </button>`;
+            }).join("")}
+          </div>`
+          : R.zustandsKasten("leer", "Für diese Person gibt es keinen anderen Krankheitsvorgang",
+              "Legen Sie einen neuen an — oder gehen Sie zurück und wählen eine andere Person.")}
+          <div class="knopfzeile">
+            <button class="knopf klein" type="button" data-tun="vg-zuordnung-neu:${h(v.id)}">
+              Neuen Krankheitsvorgang anlegen</button>
+          </div>
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf" type="button" data-tun="vg-zuordnung-zurueck">Zurück</button>
+          <button class="knopf" type="button" data-tun="vg-zuordnung-ab">Abbrechen</button>
+          <button class="knopf haupt-knopf" type="button" data-tun="vg-zuordnung-weiter2">Weiter</button>
+        </footer>
+      </div>`;
+    }
+
+    /* ---- Stufe 1: zu wem gehoert der Nachweis? ---- */
+    const suche = (s.suche || "").toLowerCase();
+    const treffer = D.mitarbeiter.filter((m) => !suche
+      || m.name.toLowerCase().includes(suche) || m.id.toLowerCase().includes(suche));
+    return kopf("Zu wem gehört der Nachweis?", "Schritt 1 von 4") + `
       <div class="dialog-rumpf">
         ${fehler}
-        <dl class="zusammenfassung">
-          <div><dt>Nachweis</dt><dd>Nr. ${nw ? nw.nr : "—"} · ${h(nw ? nw.datei : "—")}</dd></div>
-          <div><dt>Bisherige Zuordnung</dt><dd>${h(v.betrifft.name)} · Vorgang ${h(v.id)}</dd></div>
-        </dl>
-        <h4 class="unterueberschrift">Zu wem gehört der Nachweis?</h4>
-        <div class="wahlraster">
-          ${andere.map((m) => `<button class="wahlkarte" type="button"
-            data-tun="vg-zuordnung-ziel:${h(v.id)}|${h(m.id)}"
-            aria-pressed="${s.ziel === m.id}">
-            <strong>${h(m.name)}</strong><span>${h(m.id)}</span></button>`).join("")}
-        </div>
-        <p class="schritt-hinweis">Es wird nichts gelöscht und nichts von selbst zugeordnet.
-          Im nächsten Schritt sehen Sie beide Zuordnungen und tragen den Grund ein.</p>
+        ${nachweiszeile}
+        <label>Mitarbeiter suchen
+          <input type="search" data-zuordnung-suche value="${h(s.suche || "")}"
+            placeholder="Name oder Kennung"></label>
+        ${treffer.length ? `<div class="wahlraster">
+          ${treffer.map((m) => `<button class="wahlkarte" type="button"
+            data-tun="vg-zuordnung-person:${h(v.id)}|${h(m.id)}"
+            aria-pressed="${s.person === m.id}">
+            <strong>${h(m.name)}</strong>
+            <span>${h(m.id)}${m.id === v.betrifft.id ? " · bisherige Zuordnung" : ""}</span>
+          </button>`).join("")}
+        </div>`
+        : R.zustandsKasten("leer", "Kein Mitarbeiter passt zur Suche",
+            "Ändern Sie die Suche. Eine freie Eingabe ist nicht möglich — gewählt wird aus dem Bestand.")}
+        <p class="schritt-hinweis">Die bisherige Person steht mit zur Wahl: Ein Nachweis kann
+          zur richtigen Person gehören und trotzdem am falschen Vorgang hängen.</p>
+        <p class="schritt-hinweis">Es wird nichts gelöscht und nichts von selbst zugeordnet.</p>
       </div>
       <footer class="dialog-fuss">
         <button class="knopf" type="button" data-tun="vg-zuordnung-ab">Abbrechen</button>
@@ -1871,14 +1977,23 @@
         if (!v || !vertraulichSichtbar(v) || !R.darf("personnel.read")) return;
         const nw = aktuellerNachweis(v);
         if (!nw || !nw.zuordnungUngeklaert) return;
-        stand.zuordnung = { id: wert, ziel: "", grund: "", fehler: "", stufe: "wahl" };
+        stand.zuordnung = {
+          id: wert, person: "", vorgang: "", suche: "",
+          neuVon: v.daten.von || "", neuBis: v.daten.bis || "",
+          grund: "", fehler: "", stufe: "person"
+        };
         R.dialogOeffnen(zuordnungDialog());
         return;
       }
-      case "vg-zuordnung-ziel": {
-        const [id, ziel] = wert.split("|");
+
+      /* Stufe 1: Person. Die bisherige ist ausdruecklich erlaubt. */
+      case "vg-zuordnung-person": {
+        const [id, mid] = wert.split("|");
         if (!stand.zuordnung || stand.zuordnung.id !== id) return;
-        stand.zuordnung.ziel = ziel;
+        if (!D.mitarbeiter.some((m) => m.id === mid)) return;
+        stand.zuordnung.person = mid;
+        /* Die Vorgangswahl haengt an der Person - sie faellt zurueck. */
+        stand.zuordnung.vorgang = "";
         stand.zuordnung.fehler = "";
         R.dialogOeffnen(zuordnungDialog());
         return;
@@ -1886,8 +2001,35 @@
       case "vg-zuordnung-weiter": {
         const s = stand.zuordnung;
         if (!s) return;
-        if (!s.ziel) {
+        if (!s.person) {
           s.fehler = "Bitte zuerst auswählen, zu wem der Nachweis gehört.";
+          R.dialogOeffnen(zuordnungDialog());
+          return;
+        }
+        s.stufe = "vorgang";
+        s.fehler = "";
+        R.dialogOeffnen(zuordnungDialog());
+        return;
+      }
+
+      /* Stufe 2: Zielvorgang. Der aktuelle ist ausgeschlossen. */
+      case "vg-zuordnung-vorgang": {
+        const [id, zid] = wert.split("|");
+        const s = stand.zuordnung;
+        if (!s || s.id !== id) return;
+        /* Der aktuelle Vorgang darf nie Ziel sein. */
+        if (zid === id) return;
+        if (!zielVorgaenge(s.person, id).some((x) => x.id === zid)) return;
+        s.vorgang = zid;
+        s.fehler = "";
+        R.dialogOeffnen(zuordnungDialog());
+        return;
+      }
+      case "vg-zuordnung-weiter2": {
+        const s = stand.zuordnung;
+        if (!s) return;
+        if (!s.vorgang) {
+          s.fehler = "Bitte einen Zielvorgang wählen — oder einen neuen anlegen.";
           R.dialogOeffnen(zuordnungDialog());
           return;
         }
@@ -1896,19 +2038,59 @@
         R.dialogOeffnen(zuordnungDialog());
         return;
       }
-      case "vg-zuordnung-zurueck":
-        if (!stand.zuordnung) return;
-        stand.zuordnung.stufe = "wahl";
-        stand.zuordnung.fehler = "";
+
+      /* Stufe 3: neuen Vorgang anlegen - erst nach Pruefung des
+         Zeitraums. Abgeleitet wird nichts. */
+      case "vg-zuordnung-neu": {
+        const s = stand.zuordnung;
+        if (!s || !s.person) return;
+        s.vorgang = "";
+        s.stufe = "neu";
+        s.fehler = "";
         R.dialogOeffnen(zuordnungDialog());
         return;
+      }
+      case "vg-zuordnung-neu-weiter": {
+        const s = stand.zuordnung;
+        if (!s) return;
+        if (!s.neuVon || !s.neuBis) {
+          s.fehler = "Bitte den Zeitraum vollständig eintragen.";
+          R.dialogOeffnen(zuordnungDialog());
+          return;
+        }
+        if (s.neuBis < s.neuVon) {
+          s.fehler = "Das Ende liegt vor dem Beginn.";
+          R.dialogOeffnen(zuordnungDialog());
+          return;
+        }
+        s.vorgang = "";
+        s.stufe = "pruefen";
+        s.fehler = "";
+        R.dialogOeffnen(zuordnungDialog());
+        return;
+      }
+
+      /* Eine Stufe zurueck - nicht ganz heraus. */
+      case "vg-zuordnung-zurueck": {
+        const s = stand.zuordnung;
+        if (!s) return;
+        if (s.stufe === "pruefen") s.stufe = s.vorgang ? "vorgang" : "neu";
+        else if (s.stufe === "neu") s.stufe = "vorgang";
+        else s.stufe = "person";
+        s.fehler = "";
+        R.dialogOeffnen(zuordnungDialog());
+        return;
+      }
       case "vg-zuordnung-ab":
         stand.zuordnung = null;
         R.dialogSchliessen(true);
         return;
+
+      /* Stufe 4: speichern. */
       case "vg-zuordnung-ja": {
         const s = stand.zuordnung;
         if (!s || !R.darf("personnel.read")) return;
+        if (s.stufe !== "pruefen") return;
         const feld = document.querySelector("[data-zuordnung-grund]");
         s.grund = feld ? feld.value.trim() : "";
         if (s.grund.length < 3) {
@@ -1920,25 +2102,29 @@
         }
         const alt = vorgangFinden(s.id);
         const nw = aktuellerNachweis(alt);
-        const ziel = D.mitarbeiter.find((m) => m.id === s.ziel);
-        if (!nw || !ziel) return;
+        const person = D.mitarbeiter.find((m) => m.id === s.person);
+        if (!nw || !person) return;
 
-        /* Der Zielvorgang: ein offener Krankheitsvorgang dieser Person,
-           sonst ein neuer, der auf den alten verweist. */
-        let zielVorgang = D.vorgaenge.find((x) => x.thema === "krankheit"
-          && x.betrifft.id === ziel.id && gesamtstand(x) !== "erledigt" && x.id !== alt.id);
+        let zielVorgang = s.vorgang ? vorgangFinden(s.vorgang) : null;
+        /* Ein gewaehltes Ziel muss immer noch gueltig sein. */
+        if (s.vorgang && (!zielVorgang || zielVorgang.id === alt.id
+          || zielVorgang.betrifft.id !== person.id)) return;
         const neuAngelegt = !zielVorgang;
         if (!zielVorgang) {
           zielVorgang = D.vorgangAnlegen({
             art: "aufgabe", thema: "krankheit",
-            titel: "Krankmeldung – Nachweis neu zugeordnet – " + ziel.name,
-            betrifft: { art: "mitarbeiter", id: ziel.id, name: ziel.name },
-            sichtbar: ["operations.read", "personnel.read"], vertraulich: ["personnel.read"],
+            titel: "Krankmeldung – Nachweis neu zugeordnet – " + person.name,
+            betrifft: { art: "mitarbeiter", id: person.id, name: person.name },
+            sichtbar: ["operations.read", "personnel.read"],
+            vertraulich: ["personnel.read"],
             /* Mit Teilschritten, also auch mit der Pruefsperre: Beim
                neuen Vorgang beginnt die Dokumentpruefung wirklich von
                vorn und laesst sich nicht ueberspringen. */
             teile: D.krankheitsTeile(),
-            daten: { von: alt.daten.von, bis: alt.daten.bis, bezugAuf: alt.id, nachweise: [], klaerungen: [] }
+            daten: {
+              von: s.neuVon, bis: s.neuBis, bezugAuf: alt.id,
+              nachweise: [], klaerungen: []
+            }
           });
         }
         if (!zielVorgang.daten.nachweise) zielVorgang.daten.nachweise = [];
@@ -1972,7 +2158,7 @@
           betrifft: alt.titel + " · Nachweis Nr. " + nw.nr + " · " + nw.datei,
           was: "Nachweis neu zugeordnet",
           vorher: alt.betrifft.name + " (Vorgang " + alt.id + ")",
-          nachher: ziel.name + " (Vorgang " + zielVorgang.id
+          nachher: person.name + " (Vorgang " + zielVorgang.id
             + (neuAngelegt ? ", neu angelegt" : "") + "), Prüfung beginnt dort bei Schritt 1",
           grund: s.grund
         });
@@ -2233,6 +2419,36 @@
   function geaendert(feld) {
     if (feld.matches("[data-vg-thema]")) { stand.thema = feld.value; R.zeichnen(); return true; }
     if (feld.matches("[data-vg-suche]")) { stand.suche = feld.value; R.zeichnen(); return true; }
+    /* Die Felder der Neuzuordnung aendern nur den Dialogzustand -
+       nichts davon wird gespeichert. */
+    if (feld.matches("[data-zuordnung-suche]") && stand.zuordnung) {
+      /*
+        Nur zeichnen, wenn sich wirklich etwas geaendert hat.
+
+        Beim Klick auf eine Auswahlkarte verlaesst der Zeiger zuerst
+        das Suchfeld. Zeichnete das noch einmal neu, wuerde die Karte
+        unter dem Mauszeiger ausgetauscht und der Klick ginge
+        verloren - genau das ist im manuellen Test passiert.
+      */
+      if (stand.zuordnung.suche === feld.value) return true;
+      const stelle = feld.selectionStart;
+      stand.zuordnung.suche = feld.value;
+      R.dialogOeffnen(zuordnungDialog());
+      const neu = document.querySelector("[data-zuordnung-suche]");
+      if (neu) {
+        neu.focus();
+        try { neu.setSelectionRange(stelle, stelle); } catch { /* manche Felder mögen das nicht */ }
+      }
+      return true;
+    }
+    if (feld.matches("[data-zuordnung-von]") && stand.zuordnung) {
+      stand.zuordnung.neuVon = feld.value;
+      return true;
+    }
+    if (feld.matches("[data-zuordnung-bis]") && stand.zuordnung) {
+      stand.zuordnung.neuBis = feld.value;
+      return true;
+    }
     if (feld.matches("[data-vg-von]")) { stand.vonDatum = feld.value; R.zeichnen(); return true; }
     if (feld.matches("[data-vg-bis]")) { stand.bisDatum = feld.value; R.zeichnen(); return true; }
     return false;
