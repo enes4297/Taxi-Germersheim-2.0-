@@ -322,7 +322,7 @@
      ============================================================ */
   function zeichne() {
     const e = P.planEntwurf();
-    const tag = D.tagAls(R.zustand.planTag);
+    const tag = new Date(P.planEntwurf().iso + "T00:00:00");
     const kopf = `
       <div class="bereichskopf">
         <div>
@@ -333,9 +333,13 @@
       </div>
       <div class="flaeche">
         <div class="tagleiste">
-          <div class="tagumschalter" role="group" aria-label="Tag wählen">
-            <button type="button" data-tun="plan-tag:0" aria-pressed="${R.zustand.planTag === 0}">Heute</button>
-            <button type="button" data-tun="plan-tag:1" aria-pressed="${R.zustand.planTag === 1}">Morgen</button>
+          <div class="tageswahl">
+            <button class="knopf klein" type="button" data-tun="plan-zurueck" aria-label="Ein Tag zurück">‹ Zurück</button>
+            <button class="knopf klein" type="button" data-tun="plan-heute">Heute</button>
+            <button class="knopf klein" type="button" data-tun="plan-morgen">Morgen</button>
+            <label class="tagfeld">Datum
+              <input type="date" data-plan-datum value="${h(P.planEntwurf().iso)}"></label>
+            <button class="knopf klein" type="button" data-tun="plan-vor" aria-label="Ein Tag vor">Vor ›</button>
           </div>
           <span class="tagdatum">${h(D.alsText(tag))}</span>
         </div>
@@ -500,7 +504,7 @@
       <div><dt>Dateiname</dt><dd>${h(bezeichnung)}</dd></div>
       <div><dt>Neue Version</dt><dd>${h(neueVersion)}</dd></div>
       <div><dt>Vorherige Version</dt><dd>${vorhanden ? h(vorhanden.version) : "keine"}</dd></div>
-      <div><dt>Bereitgestellt von</dt><dd>${h(R.ROLLENNAMEN[R.zustand.rolle])}</dd></div>
+      <div><dt>Bereitgestellt von</dt><dd>${h(R.benutzerText())}</dd></div>
       <div><dt>Datum und Uhrzeit</dt><dd>${h(jetzt)} Uhr</dd></div>
       ${vorhanden ? `<div><dt>Grund</dt><dd>${h(s.grund || "— noch nicht eingetragen")}</dd></div>` : ""}
       <div><dt>Sichtbar für</dt><dd>nur ${h(m ? m.name : "den Mitarbeiter")}</dd></div>
@@ -761,7 +765,7 @@
       <div><dt>Bisher</dt><dd>${h(D.FAHRZEUG_ZUSTAENDE[f.zustand])}</dd></div>
       <div><dt>Neu</dt><dd>${h(zielName)}</dd></div>
       ${pruefung && brauchtGrund ? `<div><dt>Grund</dt><dd>${h(s.grund)}</dd></div>` : ""}
-      ${pruefung ? `<div><dt>Geändert von</dt><dd>${h(R.ROLLENNAMEN[R.zustand.rolle])}</dd></div>` : ""}
+      ${pruefung ? `<div><dt>Geändert von</dt><dd>${h(R.benutzerText())}</dd></div>` : ""}
       ${pruefung && belegt ? `<div><dt>Zuweisung</dt><dd>wird gelöst (${h(belegt.mitarbeiter.name)})</dd></div>` : ""}
     </dl>`;
 
@@ -885,7 +889,7 @@
         z.fahrzeugId = fahrzeugId || null;
         const nachher = z.fahrzeugId ? fahrzeugVon(z.fahrzeugId) : null;
         const eintrag = {
-          wer: R.ROLLENNAMEN[R.zustand.rolle],
+          wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle,
           zeit: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
           betrifft: m ? m.name : mitarbeiterId,
           was: "Fahrzeug zugewiesen",
@@ -907,7 +911,7 @@
         const f = fahrzeugVon(wert);
         belegt.zeile.fahrzeugId = null;
         const eintrag = {
-          wer: R.ROLLENNAMEN[R.zustand.rolle],
+          wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle,
           zeit: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
           betrifft: belegt.mitarbeiter ? belegt.mitarbeiter.name : belegt.zeile.mitarbeiterId,
           was: "Zuweisung gelöst",
@@ -980,7 +984,7 @@
         f.zustand = s.ziel;
         f.sperrgrund = s.ziel === "gesperrt" ? grund : "";
         const eintrag = {
-          wer: R.ROLLENNAMEN[R.zustand.rolle],
+          wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle,
           zeit: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
           betrifft: f.name,
           was: "Zustand geändert",
@@ -997,7 +1001,7 @@
       case "team-stammdaten":
         R.dialogOeffnen(protokollDialog("Stammdaten bearbeiten",
           {
-            wer: R.ROLLENNAMEN[R.zustand.rolle],
+            wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle,
             zeit: "beim Speichern",
             betrifft: (fahrzeugVon(wert) || {}).name || wert,
             vorher: "bisherige Stammdaten",
@@ -1054,7 +1058,7 @@
         if (!darfLohnPflegen()) return;
         const { m, vorhanden, neueVersion, bezeichnung } = lohnAngaben(s);
         const eintrag = {
-          wer: R.ROLLENNAMEN[R.zustand.rolle],
+          wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle,
           zeit: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
           betrifft: m ? m.name : s.mitarbeiterId,
           was: "Lohnabrechnung bereitgestellt",

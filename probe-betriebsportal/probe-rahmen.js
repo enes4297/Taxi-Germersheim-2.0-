@@ -26,6 +26,28 @@
     employee:   ["self.read"]
   };
 
+  /*
+    Testkonten der Probe. Ausschliesslich Testpersonen - keine echten
+    Namen. Die Kennung ist unveraenderlich und gehoert ins Protokoll,
+    damit spaeter nachvollziehbar bleibt, WER gehandelt hat und nicht
+    nur, welche Rolle.
+  */
+  const BENUTZER = {
+    admin:      { kennung: "U-ADM-01", name: "Testleitung 01",      rolle: "Administration" },
+    dispatcher: { kennung: "U-DIS-01", name: "Testdisposition 01",  rolle: "Disposition" },
+    personal:   { kennung: "U-PER-01", name: "Testpersonal 01",     rolle: "Personal" },
+    accounting: { kennung: "U-BUC-01", name: "Testbuchhaltung 01",  rolle: "Buchhaltung" },
+    employee:   { kennung: "U-MIT-01", name: "Testmitarbeiter 01",  rolle: "Mitarbeiter" }
+  };
+
+  /* Das handelnde Konto. Die Administration handelt als sie selbst -
+     sie kann sich nicht als Personal ausgeben. */
+  const benutzer = () => BENUTZER[zustand.rolle] || BENUTZER.employee;
+  const benutzerText = () => {
+    const b = benutzer();
+    return b.name + " – " + b.rolle;
+  };
+
   const ROLLENNAMEN = {
     admin: "Administration", dispatcher: "Disposition", personal: "Personal",
     accounting: "Buchhaltung", employee: "Mitarbeiter"
@@ -33,6 +55,7 @@
 
   /* ---- Strichsymbole. Inline, currentColor, keine Emojis, kein CDN. ---- */
   const SYMBOLE = {
+    kalender: "M3 5h18v16H3zM3 9h18M8 3v4M16 3v4",
     uebersicht: "M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
     fahrten:    "M5 16V9l2-4h10l2 4v7M5 16h14M5 16v2.5M19 16v2.5M8 12.5h.01M16 12.5h.01",
     planung:    "M4 6h16M4 6v14h16V6M4 6V4m16 2V4M8 10h3m-3 4h8",
@@ -58,6 +81,7 @@
     { id: "fahrten",    name: "Fahrten",            kurz: "Fahrten",   symbol: "fahrten",    braucht: "operations.read" },
     { id: "planung",    name: "Planung",            kurz: "Planung",   symbol: "planung",    braucht: "operations.read" },
     { id: "team",       name: "Fahrer & Fahrzeuge", kurz: "Team",      symbol: "team",       braucht: ["operations.read", "personnel.read", "fleet.read"] },
+    { id: "kalender",   name: "Kalender",           kurz: "Kalender",  symbol: "kalender",   braucht: ["operations.read", "personnel.read", "fleet.read"] },
     { id: "meldungen",  name: "Meldungen",          kurz: "Meldungen", symbol: "meldungen",  braucht: "self.read" },
     { id: "kunden",     name: "Kunden",             kurz: "Kunden",    symbol: "kunden",     braucht: "customers.read" },
     { id: "personal",   name: "Personal",           kurz: "Personal",  symbol: "personal",   braucht: "personnel.read" },
@@ -76,7 +100,9 @@
     zusatz: [],
     bereich: "uebersicht",
     fahrtFilter: "alle",
-    planTag: 0,
+    /* Der Tag der Planung als Datum - nicht mehr nur heute/morgen.
+       Wird beim ersten Zeichnen auf den heutigen Tag gesetzt. */
+    planDatum: "",
     planEntwurf: null,
     klicks: 0
   };
@@ -290,7 +316,7 @@
   function portalkopf() {
     const offen = window.ProbeVorgaenge ? window.ProbeVorgaenge.ungesehen() : [];
     return `<div class="portal-kopf">
-      <span class="pk-rolle">Angemeldet als <strong>${h(ROLLENNAMEN[zustand.rolle])}</strong></span>
+      <span class="pk-rolle">Angemeldet als <strong>${h(benutzerText())}</strong></span>
       <button class="pk-glocke${offen.length ? " hat-neue" : ""}" type="button" data-glocke
         aria-label="Neue Ereignisse: ${offen.length}">
         ${symbol("meldungen")}
@@ -389,6 +415,7 @@
     zustand, darf, h, symbol, marke, kennzahl,
     zustandsKasten, kastenLeer, kastenFehler, kastenKeinRecht, kastenVorbereitet,
     dialogOeffnen, dialogSchliessen, dialogOffen, dialogSchutzSetzen, zeichnen, geheZu,
+    BENUTZER, benutzer, benutzerText,
     ROLLENNAMEN, BEREICHE
   };
 

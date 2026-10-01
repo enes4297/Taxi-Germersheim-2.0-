@@ -678,7 +678,7 @@ console.log("\n── 14. Krankheit und Urlaub bestimmen den Status ──");
 console.log("\n── 15. Beantragter Urlaub bleibt planbar ──");
 {
   const { ctx, page } = await seite();
-  await page.click('[data-tun="plan-tag:1"]');
+  await page.click('[data-tun="plan-morgen"]');
   await page.waitForTimeout(400);
 
   const m04 = await zeileText(page, "M04");
@@ -698,7 +698,7 @@ console.log("\n── 15. Beantragter Urlaub bleibt planbar ──");
 console.log("\n── 16. Widerspruch in den Abwesenheiten ──");
 {
   const { ctx, page } = await seite();
-  await page.click('[data-tun="plan-tag:1"]');
+  await page.click('[data-tun="plan-morgen"]');
   await page.waitForTimeout(400);
 
   const m03 = await zeileText(page, "M03");
@@ -860,14 +860,14 @@ console.log("\n── 19. Wechsel heute/morgen ──");
   pruefe(heuteM06 === "urlaub", `heute ist M06 im Urlaub (${heuteM06})`);
   pruefe(heuteM03 === "dienst", `und M03 im Dienst (${heuteM03})`);
 
-  await page.click('[data-tun="plan-tag:1"]');
+  await page.click('[data-tun="plan-morgen"]');
   await page.waitForTimeout(450);
   const morgenM03 = await page.$eval('.plan-zeile[data-mitarbeiter="M03"]', (el) => el.dataset.status);
   const morgenM04 = await page.$eval('.plan-zeile[data-mitarbeiter="M04"]', (el) => el.dataset.status);
   pruefe(morgenM03 === "krank", `morgen ist M03 krank (${morgenM03})`);
   pruefe(morgenM04 !== "urlaub", `und M04 trotz Antrag planbar (${morgenM04})`);
 
-  await page.click('[data-tun="plan-tag:0"]');
+  await page.click('[data-tun="plan-heute"]');
   await page.waitForTimeout(450);
   const zurueckM03 = await page.$eval('.plan-zeile[data-mitarbeiter="M03"]', (el) => el.dataset.status);
   pruefe(zurueckM03 === "dienst", `zurueck auf heute ist M03 wieder im Dienst (${zurueckM03})`);
@@ -882,7 +882,7 @@ console.log("\n── 20. Abwesenheit deckt nur einen Teil der Schicht ──");
   /* M02 ist heute bis uebermorgen krank - eine Nachtschicht waere
      ganz abgedeckt. M06 hat Urlaub nur BIS morgen; eine Nachtschicht
      morgen reicht in den uebernaechsten Tag hinein. */
-  await page.click('[data-tun="plan-tag:1"]');
+  await page.click('[data-tun="plan-morgen"]');
   await page.waitForTimeout(400);
   await page.selectOption(feld("M06", "dienst"), "ja");
   await page.waitForTimeout(400);

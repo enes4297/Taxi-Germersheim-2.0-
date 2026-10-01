@@ -824,7 +824,8 @@ Supabase-Daten berührt.**
 ### 18.1 Eine Wahrheit, zwei Ansichten
 
 Der Bereich arbeitet auf **demselben Tagesentwurf wie die Planung**. Er
-hat denselben Umschalter Heute/Morgen, und eine Zuweisung hier steht
+hat dieselbe Tageswahl (siehe 21.4: Zurück, Heute, Morgen, Vor und
+freies Datum), und eine Zuweisung hier steht
 dort sofort genauso — der Prüflauf weist das nach, indem er nach einer
 Zuweisung in die Planung wechselt und denselben Konflikt vorfindet.
 
@@ -1190,10 +1191,23 @@ ohne ihr die ganze Personalrolle zu geben.
 | Buchhaltung | — | — | — | — |
 
 Die Disposition hinterlässt „Aus Planungssicht möglich" oder „Ersatz
-erforderlich". Ein Schalter in der Probe führt vor, wie ihr
-`absence.decide` **einzeln** gegeben würde — der Prüflauf weist nach,
-dass die Rolle dabei „dispatcher" bleibt und nur diese eine Fähigkeit
-dazukommt.
+erforderlich".
+
+**Korrektur nach dem manuellen Test vom 30.09.2026.** Eine frühere
+Fassung dieser Probe hatte an dieser Stelle einen Schalter, mit dem sich
+die Disposition `absence.decide` **selbst** geben konnte, um vorzuführen,
+dass eine Fähigkeit einzeln vergeben werden kann. Das war fachlich und
+sicherheitstechnisch falsch: Niemand erweitert seine eigenen Rechte. Der
+Schalter ist **ersatzlos entfernt**. An seiner Stelle steht ein Hinweis,
+dass eine zusätzliche Fähigkeit ausschließlich die Administration in der
+Benutzer- und Rechteverwaltung vergibt. Der Prüflauf
+`tools/pruefe-probe-vorgaenge.mjs` weist jetzt das Gegenteil nach: Es
+gibt keinen solchen Schalter, und die Disposition hat
+`absence.decide` nicht.
+
+Dass eine Fähigkeit einzeln vergeben werden **kann**, bleibt richtig —
+das ist die Eigenschaft des Modells aus `012_rollen_und_faehigkeiten.sql`.
+Nur vorgeführt wird es nicht mehr an der falschen Stelle.
 
 Der Ablauf: Antrag öffnen → Zeitraum, Arbeitstage und Auswirkung auf
 veröffentlichte Schichten → Genehmigen, Ablehnen oder Rückfrage →
@@ -1304,3 +1318,186 @@ Alle vollständig beendet, **null Netzwerkaufrufe**.
 
 > **Einordnung unverändert:** Designprobe ohne Datenquelle. Der Lauf
 > sagt nichts über die produktive Instanz.
+
+---
+
+## 21. Sechs Befunde des manuellen Tests — und die Ergänzung zur Administration
+
+Der Nutzer hat „Meldungen & Aufgaben" vollständig von Hand geprüft und
+sechs echte Lücken gefunden. Dazu kam eine Ergänzung zur übergeordneten
+Berechtigung der Administration. Alles Folgende ist in der Designprobe
+umgesetzt — **kein produktiver Umbau, keine Migration, keine
+Supabase-Daten.**
+
+### 21.1 Ein Vorgang, zwei Verantwortungen
+
+**Der Befund:** Die Disposition konnte einen Krankheitsvorgang komplett
+auf „Erledigt" setzen. Danach kam das Personal nicht mehr an seinen
+Dokumentprüfauftrag.
+
+**Die Ursache:** Der Vorgang hatte genau einen Zustand. Wer ihn setzen
+durfte, setzte ihn für alle.
+
+**Die Änderung:** Ein Krankheitsvorgang zerfällt in zwei Teilschritte
+mit je eigenem Zustand, eigenem Verantwortlichen und eigener Fähigkeit.
+
+| Teilschritt | braucht | Hauptaktion | vertraulich |
+|---|---|---|:-:|
+| Planung | `operations.write` | „Planung bearbeitet" | — |
+| Personalprüfung | `personnel.read` | „Dokumentprüfung abgeschlossen" | ✔ |
+
+Der **Gesamtstand wird berechnet, nicht gespeichert**: erledigt ist der
+Vorgang erst, wenn jeder Pflichtteil fertig ist. Damit kann ihn niemand
+durch seinen eigenen Schritt schließen.
+
+Wer einen Teilschritt nicht bearbeiten darf, sieht **den Stand, nicht
+den Inhalt** — die Disposition weiß, dass die Personalprüfung noch
+offen ist, ohne die Bescheinigung zu sehen.
+
+### 21.2 Erledigt, Archiv, Wiedereröffnung
+
+- „Erledigt" und „Archiv" sind **zwei Reiter**. Nach 90 Tagen wandert
+  ein abgeschlossener Vorgang vom einen in den anderen.
+- **Gelöscht wird nichts.** Das steht auch so in der Ansicht. Eine
+  echte spätere Löschung wäre eine eigene Aufbewahrungsregel und nicht
+  Sache dieser Oberfläche.
+- Durchsuchbar nach **Vorgangsnummer, Mitarbeiter, Thema und
+  Zeitraum**. Der Zeitraum greift auf das Abschlussdatum, ersatzweise
+  auf den Eingang.
+- **Abschlussdatum und vorgesehenes Archivdatum** stehen im Vorgang.
+- Eine **Wiedereröffnung verlangt einen Grund**, setzt Abschluss- und
+  Archivdatum zurück und erzeugt einen eigenen Protokolleintrag. Ohne
+  Grund geschieht nichts. Der bisherige Abschluss bleibt im Protokoll.
+
+### 21.3 Kein Selbstberechtigungsschalter
+
+Siehe 20.4. Der Schalter ist **ersatzlos entfernt**; an seiner Stelle
+steht, wer eine Fähigkeit vergeben darf. Der Prüflauf weist das
+Gegenteil nach.
+
+### 21.4 Die Planung erreicht jeden Tag
+
+Statt „heute / morgen" gibt es **Zurück, Heute, Morgen, Vor und ein
+freies Datumsfeld**. Für einen Tag ohne gespeicherten Plan entsteht ein
+leerer, bearbeitbarer Plan — sonst ließe sich ein Urlaub in drei Wochen
+gar nicht nachsehen.
+
+Dabei wurde ein Zeitzonenfehler gefunden und behoben: `alsIso()` ging
+über `toISOString()` und machte aus lokaler Mitternacht den Vortag.
+Aufgefallen wäre das erst nachts bei der Planung einer Nachtschicht.
+
+### 21.5 Der Kalender
+
+Ein neuer Bereich `probe-kalender.js` mit **Tag-, Wochen- und
+Monatssicht**, freier Datumswahl, Heute und Blättern. Ein Klick auf
+einen Tag öffnet dessen Tagesansicht; von dort führt jeder Eintrag in
+den Bereich, der ihn verantwortet.
+
+Der Kalender **ändert nichts**:
+
+- Er liest den **gespeicherten** Plan, nicht den Tagesentwurf der
+  Planung. Blättern im Kalender schaltet den Entwurf nicht um — sonst
+  verlöre die Planung beim bloßen Nachsehen ihre offenen Eingaben. Der
+  Prüflauf weist das eigens nach.
+- Die Filter sind **reine Anzeigefilter**. Das ist auch ausgeschrieben.
+
+Der Inhalt hängt an Fähigkeiten, nicht an ausgeblendeten Knöpfen:
+
+| Inhalt | braucht |
+|---|---|
+| Fahrten | `operations.read` |
+| Schichten | `operations.read` |
+| Abwesenheiten | `operations.read` oder `personnel.read` |
+| Fahrzeugtermine (TÜV, Service, Versicherung) | `fleet.read` |
+| Dokumentfristen | `personnel.read` |
+
+**Im Kalender steht nie eine Diagnose, eine Bescheinigung oder eine
+sonstige medizinische Angabe** — nur „Krank" als Tatsache der
+Einsatzplanung, und das auch nur für Rollen, die den Einsatz planen.
+Die Buchhaltung bekommt den Kalender gar nicht erst angeboten.
+
+### 21.6 Administration als übergeordnete Berechtigung
+
+Die Administration darf auch Aufgaben des Personals bearbeiten. Dabei
+gilt:
+
+- **Sie handelt immer als sie selbst.** Protokolliert werden Konto,
+  unveränderliche Kennung, Rolle, Datum und Uhrzeit — zum Beispiel
+  „Testleitung 01 – Administration". Nie nur „bearbeitet von Admin",
+  und **nie unter fremdem Namen**.
+- **Bereits zugewiesene oder begonnene Aufgaben müssen ausdrücklich
+  übernommen werden.** Die Übernahme einer begonnenen oder
+  vertraulichen Aufgabe **verlangt einen Grund**.
+- **Die bisherige Bearbeitung bleibt sichtbar.** „Aktuell
+  verantwortlich" und „zuletzt bearbeitet" sind zwei getrennte Felder.
+  Personal sieht, wer übernommen hat.
+- Wer **mehrere** Teilschritte bearbeiten darf — und das ist bei der
+  Administration der Regelfall — bekommt **keine mehrdeutige
+  Hauptaktion**, sondern je einen Knopf am Teilschritt. Sie muss sagen,
+  welchen Schritt sie meint.
+
+Alle Konten der Probe sind Testpersonen: `Testleitung 01`,
+`Testdisposition 01`, `Testpersonal 01`, `Testbuchhaltung 01`,
+`Testmitarbeiter 01`. **Keine echten Namen.**
+
+### 21.7 Was dabei zu korrigieren war
+
+1. **Der Fall `vg-weitergeben` war beim Umbau mit herausgefallen** —
+   ein früherer Zeilenersatz hatte ihn mitgenommen. Gefunden, weil das
+   Änderungsskript „FEHLT" meldete, nicht weil ein Test fehlschlug.
+2. **Die Übernahme durch die Administration griff auf den falschen
+   Teilschritt.** `meinTeil()` liefert den *ersten* erlaubten Teil; die
+   Administration darf beide. Das war keine Testschwäche, sondern eine
+   echte Lücke im Entwurf — behoben durch Aktionen, die den
+   Teilschritt ausdrücklich benennen.
+3. **Der Kalender hätte den Tagesentwurf der Planung umgeschaltet**,
+   weil `planEntwurf()` auf `zustand.planDatum` arbeitet. Er liest
+   jetzt `D.planung[tag]` direkt.
+
+### 21.8 Zwei Befunde aus dem Gegenlauf
+
+Die vollständigen Läufe der schon freigegebenen Bereiche haben zwei
+Folgen dieser Arbeit aufgedeckt, die im neuen Prüflauf nicht auffielen:
+
+1. **Ein echter Darstellungsfehler.** Das neue Datumsfeld `.tagfeld input`
+   stand auf 14 px. Unter 16 px zoomt iOS beim Hineintippen in das Feld
+   und verschiebt die ganze Ansicht. Gefunden von
+   `probe-planung-pruefen` und `probe-team-pruefen`, die jede
+   Eingabefläche nachmessen — **nicht** vom neuen Lauf, der auf die
+   Fachlogik sah. Behoben auf 16 px.
+2. **Zwei Zählungen, die nachzuziehen waren.** `probe-portal-pruefen`
+   prüfte „Disposition sieht fünf Bereiche" und „Administration sieht
+   elf". Mit dem Kalender sind es sechs und zwölf. Das ist **kein
+   Fehler, sondern die Folge einer gewollten Änderung** — die beiden
+   Zusicherungen wurden angepasst und die Änderung hier benannt, statt
+   sie stillschweigend zu verschieben.
+
+3. **Ein umbenanntes Bedienelement.** Der alte Tagesumschalter hieß
+   `plan-tag:0` / `plan-tag:1`. Mit der freien Tageswahl heißt er
+   `plan-heute` / `plan-morgen`. Sechs Stellen in
+   `probe-planung-pruefen` und `probe-portal-pruefen` zeigten noch auf den
+   alten Namen und liefen dort in eine Zeitüberschreitung — die Läufe
+   brachen **ab**, ohne eine Zusammenfassung zu drucken. Ein Lauf, der
+   keine Bilanz ausgibt, ist kein bestandener Lauf; das ist der
+   Unterschied zwischen `code=1` mit Befund und `code=1` mit Absturz.
+
+### 21.9 Prüfstand
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-teilung-pruefen` (10 Blöcke, neu) | **97 bestanden, 0 offen** |
+| `probe-vorgaenge-pruefen` | 137 bestanden, 0 offen |
+| `probe-team-pruefen` | 197 bestanden, 0 offen |
+| `probe-planung-pruefen` | 171 bestanden, 0 offen |
+| `probe-fahrt-pruefen` | 168 bestanden, 0 offen |
+| `probe-portal-pruefen` | 107 bestanden, 0 offen |
+
+Zusammen **877 Zusicherungen, 0 offen**. Alle sechs Läufe vollständig
+beendet — jeder mit einer gedruckten Bilanz, keiner abgebrochen.
+**Null Netzwerkaufrufe** in jedem Lauf.
+
+> **Einordnung unverändert:** Designprobe ohne Datenquelle, ohne Upload,
+> ohne Versand. Diese Läufe sagen **nichts** über die produktive
+> Instanz. Was hier „bestanden" heißt, ist eine Aussage über die
+> Oberfläche der Probe — nicht über RLS, nicht über Storage, nicht über
+> echte Rollen.

@@ -97,7 +97,7 @@ console.log("\n── 1. Der Eingang steht ──");
     "jede Art ist im Klartext bezeichnet, nicht nur farblich");
 
   const erste = await page.textContent(".vorgang");
-  for (const feld of ["Betrifft", "Eingang", "Zuständig", "Stand"]) {
+  for (const feld of ["Betrifft", "Eingang", "Verantwortlich", "Gesamtstand"]) {
     pruefe(erste.includes(feld), `jeder Eintrag nennt ${feld}`);
   }
   pruefe(Boolean(await page.$(".vorgang .haupt-knopf")), "und hat genau eine Hauptaktion");
@@ -161,18 +161,20 @@ console.log("\n── 3. Urlaub aus Sicht der Disposition ──");
   await page.click("button[data-dialog-zu]");
   await page.waitForTimeout(300);
 
-  /* Die Faehigkeit laesst sich einzeln vergeben - ohne die Rolle zu erweitern. */
-  pruefe(Boolean(await page.$('[data-tun="vg-zusatz"]')),
-    "die Probe zeigt, wie die Faehigkeit einzeln vergeben wuerde");
-  await page.click('[data-tun="vg-zusatz"]');
-  await page.waitForTimeout(400);
-  const rolleNachher = await page.evaluate(() => window.ProbeRahmen.zustand.rolle);
-  const zusatz = await page.evaluate(() => window.ProbeRahmen.zustand.zusatz);
-  pruefe(rolleNachher === "dispatcher", "die Rolle bleibt Disposition");
-  pruefe(zusatz.includes("absence.decide"), "nur die eine Faehigkeit kommt dazu");
-  await oeffnen(page, "V0001");
-  pruefe(Boolean(await page.$('[data-tun^="vg-entscheiden"]')),
-    "und danach darf entschieden werden");
+  /*
+    Es gibt KEINEN Schalter, mit dem sich die Disposition die
+    Entscheidungsfaehigkeit selbst gibt. Niemand erweitert seine
+    eigenen Rechte - das vergibt allein die Administration in der
+    Benutzer- und Rechteverwaltung.
+  */
+  pruefe(!(await page.$('[data-tun="vg-zusatz"]')),
+    "es gibt keinen Selbstberechtigungsschalter");
+  const hinweis = await page.textContent(".flaeche");
+  pruefe(/Administration/.test(hinweis) && /Rechteverwaltung/.test(hinweis),
+    "stattdessen steht da, wer die Faehigkeit vergeben darf");
+  const zusatzStand = await page.evaluate(() => window.ProbeRahmen.zustand.zusatz);
+  pruefe(!zusatzStand.includes("absence.decide"),
+    "die Disposition hat die Entscheidungsfaehigkeit nicht");
   await ctx.close();
 }
 

@@ -130,7 +130,7 @@ console.log("\n── 3. Die Navigation richtet sich nach der Rolle ──");
 
   await rolleSetzen(page, "dispatcher");
   let nav = await navTexte(page);
-  pruefe(nav.length === 5, `Disposition sieht fuenf Bereiche (${nav.length})`);
+  pruefe(nav.length === 6, `Disposition sieht sechs Bereiche (${nav.length})`);
   pruefe(!nav.includes("Lohn") && !nav.includes("Personal"),
     "Disposition sieht weder Lohn noch Personal");
   pruefe(!nav.includes("Finanzen") && !nav.includes("Rewards"),
@@ -138,7 +138,7 @@ console.log("\n── 3. Die Navigation richtet sich nach der Rolle ──");
 
   await rolleSetzen(page, "admin");
   nav = await navTexte(page);
-  pruefe(nav.length === 11, `Administration sieht alle elf Bereiche (${nav.length})`);
+  pruefe(nav.length === 12, `Administration sieht alle zwoelf Bereiche (${nav.length})`);
 
   await rolleSetzen(page, "personal");
   nav = await navTexte(page);
@@ -279,7 +279,7 @@ console.log("\n── 7. Kein Tag wird versehentlich veroeffentlicht ──");
   const { ctx, page } = await seite();
   await page.click('[data-bereich="planung"]');
   await page.waitForTimeout(250);
-  await page.click('[data-tun="plan-tag:1"]');
+  await page.click('[data-tun="plan-morgen"]');
   await page.waitForTimeout(250);
   await page.click('[data-tun="plan-veroeffentlichen"]');
   await page.waitForTimeout(250);

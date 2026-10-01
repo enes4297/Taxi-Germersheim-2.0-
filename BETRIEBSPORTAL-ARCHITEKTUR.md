@@ -8,10 +8,10 @@ Entwurf für den Haltepunkt. **Kein bestehender Portalcode ist verändert.**
 
 ---
 
-## 1. Von 61 Seiten auf 11 Bereiche
+## 1. Von 61 Seiten auf 12 Bereiche
 
 Heute: 61 Seiten, davon 49 über die Navigation nicht erreichbar, 48 ohne
-Serverdatenquelle. Das neue Portal hat **elf Bereiche**, und was ein
+Serverdatenquelle. Das neue Portal hat **zwölf Bereiche**, und was ein
 Dispatcher täglich braucht, liegt in den ersten fünf.
 
 ### Für alle internen Rollen sichtbar, je nach Fähigkeit
@@ -20,23 +20,24 @@ Dispatcher täglich braucht, liegt in den ersten fünf.
 |---|---|---|---|
 | 1 | **Übersicht** | `self.read` | Was ist jetzt wichtig? Kennzahlen, Tagesverlauf, Schnellaktionen |
 | 2 | **Fahrten** | `operations.read` | Eingang, ungeplant, geplant, unterwegs, abgeschlossen, storniert, Klärung |
-| 3 | **Planung** | `operations.read` | Heute / Morgen, eine Zeile je Mitarbeiter |
+| 3 | **Planung** | `operations.read` | Ein frei wählbarer Tag, eine Zeile je Mitarbeiter |
 | 4 | **Fahrer & Fahrzeuge** | `operations.read`, `fleet.read` | Wer ist da, was fährt, was steht |
-| 5 | **Meldungen** | `operations.read` | Betriebliche Meldungen, rollenabhängig |
-| 6 | **Kunden** | `customers.read` | Suche, Kontakt, Fahrten, Hinweise |
-| 7 | **Personal** | `personnel.read` | Mitarbeiter, Urlaub, Krankheit, Dokumente, Fristen |
-| 8 | **Lohn** | `payroll.read` | Lohnabrechnungen bereitstellen |
-| 9 | **Finanzen** | `finance.read` | Rechnungen, Zahlungen, Mahnwesen |
-| 10 | **Rewards** | `rewards.read` | Regeln, Punkte, Gutscheine, Glücksrad |
-| 11 | **Analyse** | `analytics.read` | Webseite und Betrieb |
+| 5 | **Kalender** | `operations.read`, `personnel.read` oder `fleet.read` | Tag, Woche, Monat — zeigt nur, entscheidet nichts |
+| 6 | **Meldungen** | `operations.read` | Betriebliche Meldungen, rollenabhängig |
+| 7 | **Kunden** | `customers.read` | Suche, Kontakt, Fahrten, Hinweise |
+| 8 | **Personal** | `personnel.read` | Mitarbeiter, Urlaub, Krankheit, Dokumente, Fristen |
+| 9 | **Lohn** | `payroll.read` | Lohnabrechnungen bereitstellen |
+| 10 | **Finanzen** | `finance.read` | Rechnungen, Zahlungen, Mahnwesen |
+| 11 | **Rewards** | `rewards.read` | Regeln, Punkte, Gutscheine, Glücksrad |
+| 12 | **Analyse** | `analytics.read` | Webseite und Betrieb |
 
 **Einstellungen** hängt an `security.read` und sitzt nicht in der
 Hauptnavigation, sondern beim Benutzerkonto — dort wird sie gesucht.
 
 ### Was ein Dispatcher tatsächlich sieht
 
-Fünf Einträge: Übersicht, Fahrten, Planung, Fahrer & Fahrzeuge,
-Meldungen. Nicht elf. Die Navigation wird nicht ausgegraut, sondern
+Sechs Einträge: Übersicht, Fahrten, Planung, Fahrer & Fahrzeuge,
+Kalender, Meldungen. Nicht zwölf. Die Navigation wird nicht ausgegraut, sondern
 enthält schlicht nicht, was die Rolle nicht darf — und das ist
 **Bequemlichkeit, kein Schutz**. Der Schutz liegt bei RLS.
 

@@ -41,7 +41,8 @@
     "probe-fahrt-pruefen": "node tools/pruefe-probe-fahrtaufnahme.mjs",
     "probe-planung-pruefen": "node tools/pruefe-probe-planung.mjs",
     "probe-team-pruefen": "node tools/pruefe-probe-team.mjs",
-    "probe-vorgaenge-pruefen": "node tools/pruefe-probe-vorgaenge.mjs"
+    "probe-vorgaenge-pruefen": "node tools/pruefe-probe-vorgaenge.mjs",
+    "probe-teilung-pruefen": "node tools/pruefe-probe-teilung.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.0",

@@ -1232,3 +1232,184 @@ textarea {
   .portal-kopf { flex-wrap: wrap; }
   .pk-glocke { margin-left: auto; }
 }
+
+/* ============================================================
+   Freie Tageswahl der Planung
+   ============================================================ */
+.tageswahl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 10px;
+  margin-bottom: 14px;
+}
+.tageswahl .knopf { flex: 0 0 auto; }
+.tageswahl .knopf[aria-pressed="true"] {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.tagfeld {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+  min-width: 0;
+}
+.tagfeld input {
+  min-width: 0;
+  /* Mindestens 16px: darunter zoomt iOS beim Fokus in das Feld
+     hinein und verschiebt die ganze Ansicht. */
+  font-size: 16px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* ============================================================
+   Teilschritte eines Vorgangs
+   ============================================================ */
+.vg-teile {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.vg-teile li {
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, .02);
+  display: grid;
+  gap: 3px;
+}
+.vg-teile li.ist-erledigt { border-left-color: #5c8f63; }
+.vg-teile li.ist-offen { border-left-color: var(--gold); }
+.vg-teile li.meiner { background: rgba(200, 169, 110, .07); }
+.vg-teile strong { font-size: 14px; }
+.vg-teile span {
+  font-size: 13px;
+  color: var(--gedaempft);
+}
+.vg-teile .teil-schritte,
+.vg-teile .teil-letzter { font-size: 12px; }
+.vg-teile.breit li { padding: 10px 14px; }
+
+@media (max-width: 520px) {
+  .tageswahl .knopf,
+  .tagfeld { flex: 1 1 100%; }
+  .tageswahl { gap: 8px; }
+}
+
+/* ============================================================
+   Kalender
+   ============================================================ */
+.kal-kopfzeile {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin: 6px 0 4px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+  text-align: center;
+}
+.kal-monat,
+.kal-woche {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.kal-tag {
+  min-height: 78px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .02);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.kal-tag:hover { border-color: var(--gold); }
+.kal-tag:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.kal-tag.fremd { opacity: .45; }
+.kal-tag.heute { border-color: var(--gold); }
+.kal-tag.gewaehlt { background: rgba(200, 169, 110, .1); }
+.kal-zahl { font-size: 15px; font-weight: 600; }
+.kal-punkte { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+.kal-punkte i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gedaempft);
+}
+.kal-punkte i.art-fahrt       { background: var(--gold); }
+.kal-punkte i.art-schicht     { background: #6f87a8; }
+.kal-punkte i.art-abwesenheit { background: #b6764e; }
+.kal-punkte i.art-fahrzeug    { background: #5c8f63; }
+.kal-punkte i.art-dokument    { background: #a8607a; }
+.kal-punkte em { font-size: 11px; font-style: normal; color: var(--gedaempft); }
+.kal-erst {
+  font-size: 11px;
+  color: var(--gedaempft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.kal-tagesliste {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.kal-tagesliste li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.kal-tagesliste strong { font-size: 14px; }
+.kal-tagesliste span { font-size: 13px; color: var(--gedaempft); }
+.kal-tagesliste .knopf { margin-left: auto; }
+
+@media (max-width: 560px) {
+  /* Auf schmalen Geraeten wird die Woche zur Liste - sieben Spalten
+     auf 320px waeren unlesbar und nicht treffsicher zu tippen. */
+  .kal-woche { grid-template-columns: 1fr; }
+  /* Nur die Wochenueberschrift entfaellt - im Monat bleiben die
+     Wochentage stehen, sonst ist das Raster nicht zu lesen. */
+  .kal-kopfzeile.fuer-woche { display: none; }
+  .kal-kopfzeile { font-size: 10px; gap: 3px; }
+  .kal-woche .kal-tag { min-height: 0; flex-direction: row; align-items: center; }
+  .kal-monat { gap: 3px; }
+  .kal-tag { min-height: 58px; padding: 5px; }
+  .kal-erst { display: none; }
+  .kal-tagesliste .knopf { margin-left: 0; width: 100%; }
+}
+
+/* Aktionen am einzelnen Teilschritt. */
+.teil-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+@media (max-width: 520px) {
+  .teil-aktionen .knopf { flex: 1 1 100%; }
+}

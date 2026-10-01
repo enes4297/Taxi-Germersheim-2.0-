@@ -36,9 +36,12 @@
     reiter: "neu",
     thema: "alle",
     suche: "",
+    vonDatum: "",
+    bisDatum: "",
     offen: "",          // offener Vorgang
     entscheidung: null, // { id, art, grund, stufe, fehler }
     uebernahme: null,
+    wiedereroeffnen: null,
     /* Fuer die Vorfuehrung der Paralleländerung. */
     fremdstand: {}
   };
@@ -49,6 +52,7 @@
     { id: "bearbeitung", name: "In Bearbeitung" },
     { id: "warten",      name: "Wartet auf Rückmeldung" },
     { id: "erledigt",    name: "Erledigt" },
+    { id: "archiv",      name: "Archiv" },
     { id: "alle",        name: "Alle" }
   ];
 
@@ -65,6 +69,50 @@
   ];
 
   const meineRolle = () => R.ROLLENNAMEN[R.zustand.rolle];
+  const meinKonto = () => R.benutzer();
+  const meinName = () => R.benutzerText();
+  const kontoText = (k) => (k ? k.name + " – " + k.rolle : "");
+
+  /*
+    Der Gesamtstand eines Vorgangs mit Teilschritten wird BERECHNET,
+    nicht gespeichert. Erledigt ist er erst, wenn jeder Pflichtteil
+    abgeschlossen ist. Damit kann niemand den ganzen Vorgang
+    schliessen, indem er nur seinen eigenen Teil bearbeitet.
+  */
+  function gesamtstand(v) {
+    if (!v.teile) return v.zustand;
+    const teile = Object.values(v.teile);
+    if (teile.every((x) => x.zustand === "erledigt")) return "erledigt";
+    if (teile.some((x) => x.zustand === "erledigt" || x.verantwortlich)) return "bearbeitung";
+    return "neu";
+  }
+
+  /* Alle Teilschritte, die diese Rolle bearbeiten darf. Die
+     Administration hat mehrere - deshalb handelt sie ueber die
+     Knoepfe am Teilschritt und nicht ueber eine mehrdeutige
+     Hauptaktion. */
+  function meineTeile(v) {
+    if (!v.teile) return [];
+    return Object.entries(v.teile)
+      .filter(([, x]) => R.darf(x.braucht))
+      .map(([schluessel, x]) => ({ schluessel, ...x }));
+  }
+
+  /* Der Teilschritt, den DIESE Rolle bearbeiten darf. */
+  function meinTeil(v) {
+    if (!v.teile) return null;
+    const treffer = Object.entries(v.teile).find(([, x]) => R.darf(x.braucht));
+    return treffer ? { schluessel: treffer[0], ...treffer[1] } : null;
+  }
+
+  /* Braucht die Uebernahme einen Grund? Ja, wenn schon jemand
+     anderes daran arbeitet oder der Teil vertraulich ist. */
+  function uebernahmeBrauchtGrund(v, teil) {
+    const schon = teil ? teil.verantwortlich : v.verantwortlich;
+    const vertraulich = teil ? teil.vertraulich : Boolean(v.vertraulich.length);
+    if (schon && schon.kennung !== meinKonto().kennung) return true;
+    return vertraulich && Boolean(schon);
+  }
   const jetzt = () => new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr";
   const datumText = (iso) => iso
     ? new Date(iso + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
@@ -105,7 +153,7 @@
           id, art: "warnung", thema: "dokument", abgeleitet: true,
           titel: `${e.art}: ${D.DOKUMENT_LAGE[e.lage]} – ${m.name}`,
           betrifft: { art: "mitarbeiter", id: m.id, name: m.name },
-          eingang: "laufend",
+          eingang: "laufend", eingangIso: D.alsIso(D.heute),
           dringlichkeit: e.lage === "fehlt" || e.lage === "abgelaufen" ? "hoch" : "normal",
           sichtbar: ["operations.read", "personnel.read"],
           /* Den Dateiinhalt sehen nur Personal und Administration. */
@@ -125,7 +173,7 @@
         abgeleitet: true,
         titel: `${k.kurz} – Planung`,
         betrifft: { art: "mitarbeiter", id: k.kennung, name: (D.mitarbeiter.find((m) => m.id === k.kennung) || {}).name || k.kennung },
-        eingang: "laufend",
+        eingang: "laufend", eingangIso: D.alsIso(D.heute),
         dringlichkeit: k.art === "technisch" ? "hoch" : "normal",
         sichtbar: ["operations.read"], vertraulich: [],
         daten: { text: k.text },
@@ -139,6 +187,23 @@
 
   const alleVorgaenge = () => D.vorgaenge.concat(abgeleiteteWarnungen());
 
+  /* 90 Tage nach dem Abschluss wechselt ein Vorgang ins Archiv. Er
+     bleibt dort vollstaendig auffindbar; geloescht wird in dieser
+     Probe nichts. Eine spaetere echte Loeschung waere eine eigene
+     Aufbewahrungsregel und nicht Sache dieser Ansicht. */
+  const ARCHIV_NACH_TAGEN = 90;
+  function imArchiv(v) {
+    if (gesamtstand(v) !== "erledigt") return false;
+    if (v.zustand === "archiviert") return true;
+    if (!v.archivAb) return false;
+    return D.alsIso(D.heute) >= v.archivAb;
+  }
+  function archivDatum(abschlussIso) {
+    const d = new Date(abschlussIso + "T00:00:00");
+    d.setDate(d.getDate() + ARCHIV_NACH_TAGEN);
+    return D.alsIso(d);
+  }
+
   const sichtbarFuerMich = (v) => R.darf(v.sichtbar);
   const vertraulichSichtbar = (v) => !v.vertraulich.length || R.darf(v.vertraulich);
 
@@ -147,14 +212,46 @@
   /* ============================================================
      Liste
      ============================================================ */
+  /* Mir zugewiesen heisst: mein Konto ist verantwortlich - fuer den
+     ganzen Vorgang oder fuer einen seiner Teilschritte. */
+  function mirZugewiesen(v) {
+    if (gesamtstand(v) === "erledigt") return false;
+    const meine = meinKonto().kennung;
+    if (v.verantwortlich && v.verantwortlich.kennung === meine) return true;
+    if (v.teile) {
+      return Object.values(v.teile).some((x) => x.verantwortlich && x.verantwortlich.kennung === meine);
+    }
+    return v.zustaendig === meinName();
+  }
+
+  /* Der Zeitraum hilft nur dort, wo viele abgeschlossene Vorgaenge
+     liegen - in "Erledigt", "Archiv" und "Alle". */
+  const zeitraumSichtbar = () =>
+    stand.reiter === "archiv" || stand.reiter === "erledigt" || stand.reiter === "alle";
+
   function gefiltert() {
     let liste = alleVorgaenge().filter(sichtbarFuerMich);
-    if (stand.reiter === "neu") liste = liste.filter((v) => v.zustand === "neu");
-    if (stand.reiter === "zugewiesen") liste = liste.filter((v) => v.zustaendig === meineRolle() && v.zustand !== "erledigt");
-    if (stand.reiter === "bearbeitung") liste = liste.filter((v) => v.zustand === "bearbeitung");
-    if (stand.reiter === "warten") liste = liste.filter((v) => v.zustand === "warten");
-    if (stand.reiter === "erledigt") liste = liste.filter((v) => v.zustand === "erledigt" || v.zustand === "archiviert");
+    if (stand.reiter === "neu") liste = liste.filter((v) => gesamtstand(v) === "neu");
+    if (stand.reiter === "zugewiesen") liste = liste.filter(mirZugewiesen);
+    if (stand.reiter === "bearbeitung") liste = liste.filter((v) => gesamtstand(v) === "bearbeitung");
+    if (stand.reiter === "warten") liste = liste.filter((v) => gesamtstand(v) === "warten");
+    /* Erledigt bleibt 90 Tage sichtbar, danach steht der Vorgang im
+       Archiv. Geloescht wird nichts - weder hier noch dort. */
+    if (stand.reiter === "erledigt") liste = liste.filter((v) => gesamtstand(v) === "erledigt" && !imArchiv(v));
+    if (stand.reiter === "archiv") liste = liste.filter((v) => imArchiv(v));
     if (stand.thema !== "alle") liste = liste.filter((v) => v.thema === stand.thema);
+    /* Zeitraum. Gesucht wird nach dem Abschlussdatum, solange es eines
+       gibt - sonst nach dem Eingang. Damit findet man im Archiv
+       sowohl "wann kam das rein" als auch "wann war das erledigt". */
+    if (stand.vonDatum || stand.bisDatum) {
+      liste = liste.filter((v) => {
+        const tag = v.abgeschlossenAm || v.eingangIso || "";
+        if (!tag) return false;
+        if (stand.vonDatum && tag < stand.vonDatum) return false;
+        if (stand.bisDatum && tag > stand.bisDatum) return false;
+        return true;
+      });
+    }
     if (stand.suche) {
       const s = stand.suche.toLowerCase();
       liste = liste.filter((v) =>
@@ -173,13 +270,27 @@
   };
 
   function hauptaktion(v) {
-    if (v.zustand === "erledigt" || v.zustand === "archiviert") return { name: "Ansehen", tun: `vg-oeffnen:${v.id}` };
+    if (gesamtstand(v) === "erledigt") return { name: "Ansehen", tun: `vg-oeffnen:${v.id}` };
+    /* Bei geteilten Vorgaengen heisst die Hauptaktion nach dem
+       eigenen Teilschritt - nicht "Erledigt". Niemand schliesst
+       damit den ganzen Vorgang. */
+    const teil = meinTeil(v);
+    if (teil && teil.zustand === "offen") return { name: teil.aktion, tun: `vg-oeffnen:${v.id}` };
     if (v.thema === "urlaub" && v.art === "aufgabe") return { name: "Antrag öffnen", tun: `vg-oeffnen:${v.id}` };
     if (v.thema === "krankheit") return { name: "Krankmeldung öffnen", tun: `vg-oeffnen:${v.id}` };
     if (v.thema === "fahrt") return { name: "Zur Fahrt", tun: `vg-oeffnen:${v.id}` };
     if (v.thema === "dokument") return { name: "Dokument prüfen", tun: `vg-oeffnen:${v.id}` };
     return { name: "Öffnen", tun: `vg-oeffnen:${v.id}` };
   }
+
+  const verantwortlichText = (v) => {
+    if (v.verantwortlich) return h(kontoText(v.verantwortlich));
+    if (v.teile) {
+      const mit = Object.values(v.teile).filter((x) => x.verantwortlich);
+      if (mit.length) return mit.map((x) => h(kontoText(x.verantwortlich))).join(", ");
+    }
+    return v.zustaendig ? h(v.zustaendig) : "noch niemand";
+  };
 
   function zeile(v) {
     const marke = ARTMARKE[v.art];
@@ -196,14 +307,23 @@
       <dl class="vg-daten">
         <div><dt>Betrifft</dt><dd>${h(v.betrifft.name || "—")}</dd></div>
         <div><dt>Eingang</dt><dd>${h(v.eingang)}</dd></div>
-        <div><dt>Zuständig</dt><dd>${v.zustaendig ? h(v.zustaendig) : "noch niemand"}</dd></div>
-        <div><dt>Stand</dt><dd>${h(D.VORGANG_ZUSTAENDE[v.zustand])}</dd></div>
+        <div><dt>Verantwortlich</dt><dd>${verantwortlichText(v)}</dd></div>
+        ${v.letzterBearbeiter ? `<div><dt>Zuletzt bearbeitet</dt><dd>${h(kontoText(v.letzterBearbeiter))} · ${h(v.letzterBearbeiter.zeit)}</dd></div>` : ""}
+        <div><dt>Gesamtstand</dt><dd>${h(D.VORGANG_ZUSTAENDE[gesamtstand(v)])}</dd></div>
+        ${v.abgeschlossenAm ? `<div><dt>Abgeschlossen</dt><dd>${h(datumText(v.abgeschlossenAm))}</dd></div>
+          <div><dt>Archiv ab</dt><dd>${h(datumText(v.archivAb))}</dd></div>` : ""}
       </dl>
+      ${v.teile ? `<ul class="vg-teile">
+        ${Object.values(v.teile).map((x) => `<li class="ist-${x.zustand}">
+          <strong>${h(x.name)}</strong>
+          <span>${x.zustand === "erledigt" ? "erledigt" : "offen"}${x.verantwortlich ? " · " + h(kontoText(x.verantwortlich)) : ""}</span>
+        </li>`).join("")}
+      </ul>` : ""}
       <div class="vg-aktionen">
         <button class="knopf klein haupt-knopf" type="button" data-tun="${h(aktion.tun)}">${h(aktion.name)}</button>
-        ${!v.zustaendig && v.zustand !== "erledigt"
+        ${gesamtstand(v) !== "erledigt"
           ? `<button class="knopf klein" type="button" data-tun="vg-uebernehmen:${h(v.id)}">Übernehmen</button>` : ""}
-        ${v.zustaendig && v.zustand !== "erledigt"
+        ${(v.verantwortlich || (v.teile && meinTeil(v) && meinTeil(v).verantwortlich)) && gesamtstand(v) !== "erledigt"
           ? `<button class="knopf klein" type="button" data-tun="vg-weitergeben:${h(v.id)}">Weitergeben</button>` : ""}
       </div>
     </article>`;
@@ -214,9 +334,10 @@
     const liste = gefiltert();
     const zaehler = (id) => {
       if (id === "alle") return alle.length;
-      if (id === "zugewiesen") return alle.filter((v) => v.zustaendig === meineRolle() && v.zustand !== "erledigt").length;
-      if (id === "erledigt") return alle.filter((v) => v.zustand === "erledigt" || v.zustand === "archiviert").length;
-      return alle.filter((v) => v.zustand === id).length;
+      if (id === "zugewiesen") return alle.filter((v) => mirZugewiesen(v)).length;
+      if (id === "erledigt") return alle.filter((v) => gesamtstand(v) === "erledigt" && !imArchiv(v)).length;
+      if (id === "archiv") return alle.filter(imArchiv).length;
+      return alle.filter((v) => gesamtstand(v) === id).length;
     };
 
     const inhalt = liste.length
@@ -247,28 +368,42 @@
             <select data-vg-thema>
               ${THEMEN.map((x) => `<option value="${h(x.id)}" ${stand.thema === x.id ? "selected" : ""}>${h(x.name)}</option>`).join("")}
             </select></label>
-          <label style="min-width:220px">Suche nach Vorgang oder Person
+          <label style="min-width:220px">Suche nach Vorgang, Person oder Nummer
             <input type="search" data-vg-suche value="${h(stand.suche)}" placeholder="Testfahrer, V0001 …"></label>
+          ${zeitraumSichtbar() ? `
+            <label class="tagfeld">Zeitraum von
+              <input type="date" data-vg-von value="${h(stand.vonDatum)}"></label>
+            <label class="tagfeld">bis
+              <input type="date" data-vg-bis value="${h(stand.bisDatum)}"></label>
+            ${stand.vonDatum || stand.bisDatum
+              ? `<button class="knopf klein" type="button" data-tun="vg-zeitraum-weg">Zeitraum aufheben</button>` : ""}` : ""}
         </div>
-        ${darfEntscheiden() || !R.darf("operations.write") ? "" : zusatzSchalter()}
+        ${stand.reiter === "archiv" ? `<p class="schritt-hinweis">Das Archiv enthält
+          abgeschlossene Vorgänge ab 90 Tagen nach dem Abschluss. Sie bleiben vollständig
+          durchsuchbar — nach Vorgangsnummer, Mitarbeiter, Thema und Zeitraum. Gelöscht
+          wird hier nichts.</p>` : ""}
+        ${darfEntscheiden() || !R.darf("operations.write") ? "" : keinZugriffHinweis()}
         <div style="margin-top:14px">${inhalt}</div>
       </div>`;
   }
 
   /*
-    Vorfuehrung: So bekaeme eine Dispositionsperson die Fähigkeit zur
-    Urlaubsentscheidung einzeln - ohne dass die ganze Rolle erweitert
-    wird. Im echten Portal kaeme das aus der Rollenverwaltung.
+    Hier stand ein Schalter, mit dem sich die Disposition die
+    Faehigkeit zur Urlaubsentscheidung selbst geben konnte. Das war
+    fachlich und sicherheitstechnisch falsch und ist ersatzlos
+    entfernt. Zusaetzliche Faehigkeiten vergibt ausschliesslich die
+    Administration in der Benutzer- und Rechteverwaltung - niemand
+    erweitert seine eigenen Rechte.
   */
-  function zusatzSchalter() {
+  function keinZugriffHinweis() {
     return `<div class="zusatz-schalter">
       <div>
         <strong>Urlaubsentscheidung ist Ihrer Rolle nicht zugeordnet</strong>
         <span>Sie sehen den Antrag und seine Planungswirkung und können eine betriebliche
-          Empfehlung hinterlassen — entscheiden dürfen Administration und Personal.</span>
+          Empfehlung hinterlassen. Entscheiden dürfen Administration und Personal.
+          Eine zusätzliche Fähigkeit kann ausschließlich die Administration in der
+          Benutzer- und Rechteverwaltung vergeben.</span>
       </div>
-      <button class="knopf klein" type="button" data-tun="vg-zusatz">
-        Vorführen: Fähigkeit „absence.decide“ einzeln vergeben</button>
     </div>`;
   }
 
@@ -393,6 +528,47 @@
     </div>`;
   }
 
+  /*
+    Teilschritte im Dialog. Jeder Teil zeigt seinen eigenen Stand und
+    seinen eigenen Verantwortlichen. Wer einen Teil nicht bearbeiten
+    darf, sieht ihn trotzdem als Stand - aber ohne Inhalt und ohne
+    Knopf. So weiss die Disposition, dass die Personalpruefung noch
+    offen ist, ohne die Bescheinigung zu sehen.
+  */
+  function teileBlock(v) {
+    const meins = meinTeil(v);
+    return `<div class="dialog-schritt">
+      <h3>Teilschritte</h3>
+      <ul class="vg-teile breit">
+        ${Object.entries(v.teile).map(([schluessel, x]) => {
+          const darf = R.darf(x.braucht);
+          const meiner = meins && meins.schluessel === schluessel;
+          return `<li class="ist-${x.zustand}${meiner ? " meiner" : ""}">
+            <strong>${h(x.name)}${meiner ? ` <span class="band-gold">Ihr Teilschritt</span>` : ""}</strong>
+            <span>${x.zustand === "erledigt" ? "erledigt" : "offen"}
+              · ${x.verantwortlich ? h(kontoText(x.verantwortlich)) : "noch niemand verantwortlich"}</span>
+            ${darf ? `<span class="teil-schritte">${h(x.schritte)}</span>` : ""}
+            ${x.letzter ? `<span class="teil-letzter">Zuletzt bearbeitet: ${h(kontoText(x.letzter))} · ${h(x.letzter.zeit)}</span>` : ""}
+            ${!darf ? `<span class="teil-schritte">Dieser Teilschritt gehört einer anderen Rolle. Sie sehen den Stand, nicht den Inhalt.</span>` : ""}
+            ${darf && x.zustand !== "erledigt" ? `<span class="teil-aktionen">
+              ${!x.verantwortlich || x.verantwortlich.kennung !== meinKonto().kennung
+                ? `<button class="knopf klein" type="button"
+                    data-tun="vg-teil-uebernehmen:${h(v.id)}|${h(schluessel)}">Übernehmen</button>` : ""}
+              ${x.verantwortlich && x.verantwortlich.kennung === meinKonto().kennung
+                ? `<button class="knopf klein" type="button"
+                    data-tun="vg-teil-weitergeben:${h(v.id)}|${h(schluessel)}">Weitergeben</button>` : ""}
+              <button class="knopf klein haupt-knopf" type="button"
+                data-tun="vg-teil-erledigen:${h(v.id)}|${h(schluessel)}">${h(x.aktion)}</button>
+            </span>` : ""}
+          </li>`;
+        }).join("")}
+      </ul>
+      <p class="schritt-hinweis">Der Gesamtvorgang ist erst erledigt, wenn jeder
+        Teilschritt abgeschlossen ist. Niemand schließt mit seinem eigenen
+        Schritt den Vorgang der anderen Rolle.</p>
+    </div>`;
+  }
+
   function vorgangDialog() {
     const v = vorgangFinden(stand.offen);
     if (!v) return "";
@@ -414,7 +590,9 @@
     }[v.thema];
 
     const marke = ARTMARKE[v.art];
-    const erledigt = v.zustand === "erledigt" || v.zustand === "archiviert";
+    /* Erledigt heisst: JEDER Pflichtteil ist fertig - nicht nur meiner. */
+    const erledigt = gesamtstand(v) === "erledigt";
+    const teil = meinTeil(v);
     const fremd = stand.fremdstand[v.id] && stand.fremdstand[v.id] !== v.version;
 
     return `
@@ -434,9 +612,14 @@
             <div><dt>Vorgang</dt><dd>${h(v.id)}</dd></div>
             <div><dt>Art</dt><dd>${h(D.VORGANG_ARTEN[v.art])}</dd></div>
             <div><dt>Thema</dt><dd>${h(D.VORGANG_THEMEN[v.thema] || v.thema)}</dd></div>
-            <div><dt>Stand</dt><dd>${h(D.VORGANG_ZUSTAENDE[v.zustand])}</dd></div>
-            <div><dt>Zuständig</dt><dd>${v.zustaendig ? h(v.zustaendig) : "noch niemand"}</dd></div>
+            <div><dt>Gesamtstand</dt><dd>${h(D.VORGANG_ZUSTAENDE[gesamtstand(v)])}</dd></div>
+            <div><dt>Verantwortlich</dt><dd>${verantwortlichText(v)}</dd></div>
+            ${v.letzterBearbeiter ? `<div><dt>Zuletzt bearbeitet</dt><dd>${h(kontoText(v.letzterBearbeiter))} · ${h(v.letzterBearbeiter.zeit)}</dd></div>` : ""}
+            ${v.abgeschlossenAm ? `<div><dt>Abgeschlossen</dt><dd>${h(datumText(v.abgeschlossenAm))}</dd></div>
+              <div><dt>Archiv ab</dt><dd>${h(datumText(v.archivAb))}</dd></div>` : ""}
           </dl>
+
+          ${v.teile ? teileBlock(v) : ""}
 
           ${detail ? detail(v) : `<div class="dialog-schritt">
             <p>${h(v.daten.text || "")}</p></div>`}
@@ -481,7 +664,11 @@
             <button class="knopf" type="button" data-tun="vg-rueckfrage:${h(v.id)}">Rückfrage</button>
             <button class="knopf leise" type="button" data-tun="vg-entscheiden:${h(v.id)}|ablehnen">Ablehnen</button>
             <button class="knopf haupt-knopf" type="button" data-tun="vg-entscheiden:${h(v.id)}|genehmigen">Genehmigen</button>` : ""}
-          ${!erledigt && v.thema !== "urlaub"
+          ${erledigt && !v.abgeleitet
+            ? `<button class="knopf" type="button" data-tun="vg-wiedereroeffnen:${h(v.id)}">Wiedereröffnen</button>` : ""}
+          ${!erledigt && v.thema !== "urlaub" && teil && teil.zustand === "offen" && meineTeile(v).length === 1
+            ? `<button class="knopf haupt-knopf" type="button" data-tun="vg-erledigen:${h(v.id)}">${h(teil.aktion)}</button>` : ""}
+          ${!erledigt && v.thema !== "urlaub" && !v.teile
             ? `<button class="knopf haupt-knopf" type="button" data-tun="vg-erledigen:${h(v.id)}">Erledigt</button>` : ""}
         </footer>
       </div>`;
@@ -502,7 +689,7 @@
       <div><dt>Zeitraum</dt><dd>${h(datumText(v.daten.von))} bis ${h(datumText(v.daten.bis))}</dd></div>
       <div><dt>Arbeitstage</dt><dd>${h(w ? w.tage : "—")}</dd></div>
       <div><dt>Entscheidung</dt><dd>${ablehnen ? "Ablehnen" : "Genehmigen"}</dd></div>
-      <div><dt>Entschieden von</dt><dd>${h(meineRolle())}</dd></div>
+      <div><dt>Entschieden von</dt><dd>${h(R.benutzerText())}</dd></div>
       ${ablehnen ? `<div><dt>Grund</dt><dd>${h(s.grund || "— noch nicht eingetragen")}</dd></div>` : ""}
       ${v.empfehlung ? `<div><dt>Empfehlung</dt><dd>${h(v.empfehlung)}</dd></div>` : ""}
     </dl>`;
@@ -584,14 +771,127 @@
     }
   }
 
+  /* Uebernahme eines benannten Teilschritts. Der bisherige
+     Verantwortliche rutscht nach "zuletzt bearbeitet" und
+     verschwindet nicht. */
+  function teilUebernehmen(v, schluessel, grund) {
+    const x = v.teile[schluessel];
+    const vorher = x.verantwortlich ? kontoText(x.verantwortlich) : "noch niemand";
+    if (x.verantwortlich) x.letzter = { ...x.verantwortlich, zeit: jetzt() };
+    x.verantwortlich = { ...meinKonto() };
+    v.version += 1;
+    D.protokollieren({
+      betrifft: v.titel + " · " + x.name, was: "Aufgabe übernommen",
+      vorher, nachher: meinName(), grund
+    });
+  }
+
+  /* Uebernahme ausfuehren - mit Person, nicht mit Rollennamen. */
+  function uebernehmen(v, grund) {
+    const konto = meinKonto();
+    const teil = meinTeil(v);
+    const vorher = teil
+      ? (teil.verantwortlich ? kontoText(teil.verantwortlich) : "noch niemand")
+      : (v.verantwortlich ? kontoText(v.verantwortlich) : "noch niemand");
+
+    if (teil) {
+      const echt = v.teile[teil.schluessel];
+      if (echt.verantwortlich) echt.letzter = { ...echt.verantwortlich, zeit: jetzt() };
+      echt.verantwortlich = { ...konto };
+    } else if (v.abgeleitet) {
+      handhabungSetzen(v, { zustaendig: meinName(), zustand: "bearbeitung", gesehen: true });
+    } else {
+      if (v.verantwortlich) v.letzterBearbeiter = { ...v.verantwortlich, zeit: jetzt() };
+      v.verantwortlich = { ...konto };
+      v.zustaendig = meinName();
+      if (v.zustand === "neu") v.zustand = "bearbeitung";
+    }
+    if (!v.abgeleitet) v.version += 1;
+
+    D.protokollieren({
+      betrifft: v.titel + (teil ? " · " + teil.name : ""),
+      was: "Aufgabe übernommen",
+      vorher, nachher: meinName(), grund
+    });
+  }
+
+  function wiedereroeffnenDialog() {
+    const s = stand.wiedereroeffnen;
+    const v = vorgangFinden(s.id);
+    return `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="wiTitel">
+        <header class="dialog-kopf">
+          <h2 id="wiTitel">Vorgang wiedereröffnen</h2>
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>
+        <div class="dialog-rumpf">
+          ${s.fehler ? `<div class="feldfehler" role="alert">${h(s.fehler)}</div>` : ""}
+          ${R.zustandsKasten("keinrecht", "Ein erledigter Vorgang wird nicht still zurückgesetzt",
+            "Die Wiedereröffnung braucht einen Grund und erzeugt einen eigenen Protokolleintrag. Der bisherige Abschluss bleibt im Protokoll stehen.")}
+          <dl class="zusammenfassung">
+            <div><dt>Vorgang</dt><dd>${h(v.titel)}</dd></div>
+            <div><dt>Abgeschlossen</dt><dd>${h(datumText(v.abgeschlossenAm))}</dd></div>
+            <div><dt>Wiedereröffnet von</dt><dd>${h(meinName())}</dd></div>
+          </dl>
+          <label>Grund <span class="band-warnung">Pflichtfeld</span>
+            <textarea data-wieder-grund rows="2"
+              placeholder="Zum Beispiel: versehentlich abgeschlossen.">${h(s.grund)}</textarea></label>
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf" type="button" data-tun="vg-wieder-ab">Abbrechen</button>
+          <button class="knopf haupt-knopf" type="button" data-tun="vg-wieder-ja">Verbindlich wiedereröffnen</button>
+        </footer>
+      </div>`;
+  }
+
+  function uebernahmeDialog() {
+    const s = stand.uebernahme;
+    const v = vorgangFinden(s.id);
+    /* Ist ein Teil ausdruecklich benannt, gilt genau der. */
+    const teil = s.teil && v.teile
+      ? { schluessel: s.teil, ...v.teile[s.teil] }
+      : meinTeil(v);
+    const bisher = teil ? teil.verantwortlich : v.verantwortlich;
+    return `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="ubTitel">
+        <header class="dialog-kopf">
+          <h2 id="ubTitel">Aufgabe übernehmen</h2>
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>
+        <div class="dialog-rumpf">
+          ${s.fehler ? `<div class="feldfehler" role="alert">${h(s.fehler)}</div>` : ""}
+          ${R.zustandsKasten("keinrecht", "An dieser Aufgabe wird bereits gearbeitet",
+            `${bisher ? kontoText(bisher) : "Jemand"} ist derzeit verantwortlich${teil ? " für den Teilschritt " + teil.name : ""}. Eine Übernahme ist möglich, braucht aber einen Grund. Die bisherige Bearbeitung bleibt sichtbar.`)}
+          <dl class="zusammenfassung">
+            <div><dt>Vorgang</dt><dd>${h(v.titel)}</dd></div>
+            ${teil ? `<div><dt>Teilschritt</dt><dd>${h(teil.name)}</dd></div>` : ""}
+            <div><dt>Bisher verantwortlich</dt><dd>${h(bisher ? kontoText(bisher) : "noch niemand")}</dd></div>
+            <div><dt>Übernimmt</dt><dd>${h(meinName())}</dd></div>
+          </dl>
+          <label>Grund für die Übernahme <span class="band-warnung">Pflichtfeld</span>
+            <textarea data-uebernahme-grund rows="2"
+              placeholder="Zum Beispiel: Personal ist heute nicht im Haus.">${h(s.grund)}</textarea></label>
+          <p class="schritt-hinweis">Die Administration handelt dabei als sie selbst und nie
+            unter fremdem Namen. Protokolliert werden Konto, Kennung, Rolle, Datum, Uhrzeit
+            und der Grund.</p>
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf" type="button" data-tun="vg-uebernahme-ab">Abbrechen</button>
+          <button class="knopf haupt-knopf" type="button" data-tun="vg-uebernahme-ja">Verbindlich übernehmen</button>
+        </footer>
+      </div>`;
+  }
+
   function tun(name, wert) {
     switch (name) {
-      case "vg-reiter": stand.reiter = wert; R.zeichnen(); return;
-      case "vg-zusatz":
-        /* Vorfuehrung: die Faehigkeit einzeln vergeben. */
-        if (!R.zustand.zusatz.includes("absence.decide")) R.zustand.zusatz.push("absence.decide");
+      case "vg-zeitraum-weg":
+        stand.vonDatum = "";
+        stand.bisDatum = "";
         R.zeichnen();
         return;
+      case "vg-reiter": stand.reiter = wert; R.zeichnen(); return;
 
       case "vg-oeffnen": {
         const v = vorgangFinden(wert);
@@ -604,33 +904,143 @@
         return;
       }
 
+      /*
+        Uebernehmen. Ist schon jemand anderes verantwortlich oder
+        ist der Teil vertraulich, braucht die Uebernahme einen Grund.
+        Die bisherige Bearbeitung bleibt sichtbar - "letzter
+        Bearbeiter" und "aktueller Verantwortlicher" sind getrennte
+        Angaben.
+      */
       case "vg-uebernehmen": {
         const v = vorgangFinden(wert);
         if (!v) return;
-        handhabungSetzen(v, {
-          zustaendig: meineRolle(),
-          zustand: v.zustand === "neu" ? "bearbeitung" : v.zustand,
-          gesehen: true
-        });
-        if (!v.abgeleitet) v.version += 1;
+        const teil = meinTeil(v);
+        if (uebernahmeBrauchtGrund(v, teil)) {
+          stand.uebernahme = { id: wert, grund: "", fehler: "" };
+          R.dialogOeffnen(uebernahmeDialog());
+          return;
+        }
+        uebernehmen(v, "");
+        R.zeichnen();
+        return;
+      }
+      case "vg-uebernahme-ab":
+        stand.uebernahme = null;
+        R.dialogSchliessen(true);
+        return;
+      case "vg-uebernahme-ja": {
+        const s = stand.uebernahme;
+        const feld = document.querySelector("[data-uebernahme-grund]");
+        s.grund = feld ? feld.value.trim() : "";
+        if (s.grund.length < 3) {
+          s.fehler = "Bitte einen Grund eintragen. Die bisherige Bearbeitung bleibt sichtbar.";
+          R.dialogOeffnen(uebernahmeDialog());
+          const neuF = document.querySelector("[data-uebernahme-grund]");
+          if (neuF) neuF.focus();
+          return;
+        }
+        const v = vorgangFinden(s.id);
+        if (s.teil) teilUebernehmen(v, s.teil, s.grund); else uebernehmen(v, s.grund);
+        stand.uebernahme = null;
+        R.dialogSchliessen(true);
+        R.zeichnen();
+        return;
+      }
+
+      /*
+        Weitergeben legt die Aufgabe zurueck in den offenen Bestand.
+        Die bisherige Bearbeitung verschwindet dabei nicht - sie
+        rutscht in "zuletzt bearbeitet".
+      */
+      case "vg-weitergeben": {
+        const v = vorgangFinden(wert);
+        if (!v) return;
+        const teil = meinTeil(v);
+        const vorher = teil
+          ? (teil.verantwortlich ? kontoText(teil.verantwortlich) : "noch niemand")
+          : (v.verantwortlich ? kontoText(v.verantwortlich) : "noch niemand");
+        if (teil) {
+          const echt = v.teile[teil.schluessel];
+          if (echt.verantwortlich) echt.letzter = { ...echt.verantwortlich, zeit: jetzt() };
+          echt.verantwortlich = null;
+          v.version += 1;
+        } else if (v.abgeleitet) {
+          handhabungSetzen(v, { zustaendig: "", zustand: "neu" });
+        } else {
+          if (v.verantwortlich) v.letzterBearbeiter = { ...v.verantwortlich, zeit: jetzt() };
+          v.verantwortlich = null;
+          v.zustaendig = "";
+          v.zustand = "neu";
+          v.version += 1;
+        }
         D.protokollieren({
-          wer: meineRolle(), zeit: jetzt(), betrifft: v.titel,
-          was: "Aufgabe übernommen", vorher: "noch niemand", nachher: meineRolle(), grund: ""
+          betrifft: v.titel + (teil ? " · " + teil.name : ""),
+          was: "Aufgabe weitergegeben",
+          vorher, nachher: "wieder offen", grund: ""
         });
         R.zeichnen();
         return;
       }
 
-      case "vg-weitergeben": {
-        const v = vorgangFinden(wert);
-        if (!v) return;
-        const vorher = v.zustaendig || "noch niemand";
-        handhabungSetzen(v, { zustaendig: "", zustand: "neu" });
-        if (!v.abgeleitet) v.version += 1;
+      /* ---- Aktionen an einem einzelnen Teilschritt ----
+         Sie nennen den Teil ausdruecklich. Damit schliesst niemand
+         versehentlich den Schritt einer anderen Rolle, und die
+         Administration muss sagen, welchen Teil sie meint. */
+      case "vg-teil-uebernehmen": {
+        const [id, schluessel] = wert.split("|");
+        const v = vorgangFinden(id);
+        if (!v || !v.teile || !v.teile[schluessel]) return;
+        const x = v.teile[schluessel];
+        if (!R.darf(x.braucht)) return;
+        const fremd = x.verantwortlich && x.verantwortlich.kennung !== meinKonto().kennung;
+        if (fremd || (x.vertraulich && x.verantwortlich)) {
+          stand.uebernahme = { id, teil: schluessel, grund: "", fehler: "" };
+          R.dialogOeffnen(uebernahmeDialog());
+          return;
+        }
+        teilUebernehmen(v, schluessel, "");
+        R.dialogOeffnen(vorgangDialog());
+        R.zeichnen();
+        return;
+      }
+      case "vg-teil-weitergeben": {
+        const [id, schluessel] = wert.split("|");
+        const v = vorgangFinden(id);
+        if (!v || !v.teile || !v.teile[schluessel]) return;
+        const x = v.teile[schluessel];
+        if (!R.darf(x.braucht)) return;
+        const vorher = x.verantwortlich ? kontoText(x.verantwortlich) : "noch niemand";
+        if (x.verantwortlich) x.letzter = { ...x.verantwortlich, zeit: jetzt() };
+        x.verantwortlich = null;
+        v.version += 1;
         D.protokollieren({
-          wer: meineRolle(), zeit: jetzt(), betrifft: v.titel,
-          was: "Aufgabe weitergegeben", vorher, nachher: "wieder offen", grund: ""
+          betrifft: v.titel + " · " + x.name, was: "Aufgabe weitergegeben",
+          vorher, nachher: "wieder offen", grund: ""
         });
+        R.dialogOeffnen(vorgangDialog());
+        R.zeichnen();
+        return;
+      }
+      case "vg-teil-erledigen": {
+        const [id, schluessel] = wert.split("|");
+        const v = vorgangFinden(id);
+        if (!v || !v.teile || !v.teile[schluessel]) return;
+        const x = v.teile[schluessel];
+        if (!R.darf(x.braucht) || x.zustand === "erledigt") return;
+        x.zustand = "erledigt";
+        x.letzter = { ...meinKonto(), zeit: jetzt() };
+        if (!x.verantwortlich) x.verantwortlich = { ...meinKonto() };
+        v.version += 1;
+        D.protokollieren({
+          betrifft: v.titel + " · " + x.name, was: "Teilschritt abgeschlossen",
+          vorher: "offen", nachher: "erledigt", grund: ""
+        });
+        if (gesamtstand(v) === "erledigt" && !v.abgeschlossenAm) {
+          v.abgeschlossenAm = D.alsIso(D.heute);
+          v.archivAb = archivDatum(v.abgeschlossenAm);
+        }
+        stand.offen = v.id;
+        R.dialogOeffnen(vorgangDialog());
         R.zeichnen();
         return;
       }
@@ -642,7 +1052,7 @@
         v.empfehlung = text;
         v.version += 1;
         D.protokollieren({
-          wer: meineRolle(), zeit: jetzt(), betrifft: v.titel,
+          wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle, zeit: jetzt(), betrifft: v.titel,
           was: "Betriebliche Empfehlung", vorher: "keine", nachher: text, grund: ""
         });
         R.dialogOeffnen(vorgangDialog());
@@ -707,7 +1117,7 @@
         v.version += 1;
 
         const eintrag = {
-          wer: meineRolle(), zeit: jetzt(), betrifft: v.titel,
+          wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle, zeit: jetzt(), betrifft: v.titel,
           was: "Urlaub entschieden", vorher,
           nachher: genehmigt ? "genehmigt" : "abgelehnt",
           grund: s.grund
@@ -732,7 +1142,7 @@
         v.antwort = "Zu Ihrem Urlaubsantrag gibt es eine Rückfrage. Bitte melden Sie sich in der Zentrale.";
         v.version += 1;
         D.protokollieren({
-          wer: meineRolle(), zeit: jetzt(), betrifft: v.titel,
+          wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle, zeit: jetzt(), betrifft: v.titel,
           was: "Rückfrage gestellt", vorher: "Neu", nachher: "Wartet auf Rückmeldung", grund: ""
         });
         stand.offen = v.id;
@@ -741,15 +1151,96 @@
         return;
       }
 
+      /*
+        Abschliessen. Bei geteilten Vorgaengen schliesst das NUR den
+        eigenen Teilschritt. Der Gesamtvorgang gilt erst als
+        erledigt, wenn jeder Pflichtteil fertig ist - der manuelle
+        Test hatte gezeigt, dass die Disposition sonst dem Personal
+        den Zugriff auf die Bescheinigung nimmt.
+      */
       case "vg-erledigen": {
         const v = vorgangFinden(wert);
         if (!v) return;
-        const vorher = D.VORGANG_ZUSTAENDE[v.zustand];
-        handhabungSetzen(v, { zustand: "erledigt", zustaendig: v.zustaendig || meineRolle() });
+        const teil = meinTeil(v);
+        const vorherGesamt = D.VORGANG_ZUSTAENDE[gesamtstand(v)];
+
+        if (teil) {
+          const echt = v.teile[teil.schluessel];
+          if (echt.zustand === "erledigt") return;
+          echt.zustand = "erledigt";
+          echt.letzter = { ...meinKonto(), zeit: jetzt() };
+          if (!echt.verantwortlich) echt.verantwortlich = { ...meinKonto() };
+          v.version += 1;
+          D.protokollieren({
+            betrifft: v.titel + " · " + teil.name,
+            was: "Teilschritt abgeschlossen",
+            vorher: "offen", nachher: "erledigt", grund: ""
+          });
+        } else {
+          handhabungSetzen(v, { zustand: "erledigt" });
+          if (!v.abgeleitet) {
+            v.letzterBearbeiter = { ...meinKonto(), zeit: jetzt() };
+            if (!v.verantwortlich) v.verantwortlich = { ...meinKonto() };
+          }
+          D.protokollieren({
+            betrifft: v.titel, was: "Vorgang erledigt",
+            vorher: vorherGesamt, nachher: "Erledigt", grund: ""
+          });
+        }
+
+        /* Abschluss- und Archivdatum erst, wenn wirklich alles fertig ist. */
+        if (gesamtstand(v) === "erledigt" && !v.abgeleitet && !v.abgeschlossenAm) {
+          v.abgeschlossenAm = D.alsIso(D.heute);
+          v.archivAb = archivDatum(v.abgeschlossenAm);
+        }
+
+        stand.offen = v.id;
+        R.dialogOeffnen(vorgangDialog());
+        R.zeichnen();
+        return;
+      }
+
+      /*
+        Wiedereroeffnen. Ein versehentlich erledigter Vorgang wird
+        nicht still zurueckgesetzt: Es braucht einen Grund, und es
+        entsteht ein eigener Protokolleintrag.
+      */
+      case "vg-wiedereroeffnen": {
+        stand.wiedereroeffnen = { id: wert, grund: "", fehler: "" };
+        R.dialogOeffnen(wiedereroeffnenDialog());
+        return;
+      }
+      case "vg-wieder-ab":
+        stand.wiedereroeffnen = null;
+        R.dialogSchliessen(true);
+        return;
+      case "vg-wieder-ja": {
+        const s = stand.wiedereroeffnen;
+        const feld = document.querySelector("[data-wieder-grund]");
+        s.grund = feld ? feld.value.trim() : "";
+        if (s.grund.length < 3) {
+          s.fehler = "Bitte einen Grund eintragen. Ohne Grund bleibt der Vorgang erledigt.";
+          R.dialogOeffnen(wiedereroeffnenDialog());
+          const neuF = document.querySelector("[data-wieder-grund]");
+          if (neuF) neuF.focus();
+          return;
+        }
+        const v = vorgangFinden(s.id);
+        if (v.teile) {
+          Object.values(v.teile).forEach((x) => { x.zustand = "offen"; });
+        }
+        handhabungSetzen(v, { zustand: "bearbeitung" });
+        if (!v.abgeleitet) {
+          v.abgeschlossenAm = "";
+          v.archivAb = "";
+          v.letzterBearbeiter = { ...meinKonto(), zeit: jetzt() };
+          v.version += 1;
+        }
         D.protokollieren({
-          wer: meineRolle(), zeit: jetzt(), betrifft: v.titel,
-          was: "Vorgang erledigt", vorher, nachher: "Erledigt", grund: ""
+          betrifft: v.titel, was: "Vorgang wiedereröffnet",
+          vorher: "Erledigt", nachher: "In Bearbeitung", grund: s.grund
         });
+        stand.wiedereroeffnen = null;
         R.dialogSchliessen(true);
         R.zeichnen();
         return;
@@ -757,7 +1248,7 @@
 
       case "vg-datei":
         R.dialogOeffnen(quittung("Datei sicher prüfen", {
-          wer: meineRolle(), zeit: jetzt(), betrifft: wert,
+          wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle, zeit: jetzt(), betrifft: wert,
           vorher: "nicht geöffnet", nachher: "über signierte Adresse geöffnet", grund: ""
         }, "Im echten Portal entstünde jetzt eine kurz gültige, signierte Adresse. Es gibt keine öffentliche Adresse und keinen Anhang per E-Mail. In dieser Probe gibt es keine Datei."));
         return;
@@ -769,7 +1260,7 @@
         v.daten.folge.push({ datei: `Testbescheinigung-${v.betrifft.id}-0${v.daten.folge.length + 2}.pdf`, zeit: jetzt() });
         v.version += 1;
         D.protokollieren({
-          wer: meineRolle(), zeit: jetzt(), betrifft: v.titel,
+          wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle, zeit: jetzt(), betrifft: v.titel,
           was: "Folgebescheinigung zugeordnet", vorher: `${v.daten.folge.length} Nachweis(e)`,
           nachher: `${v.daten.folge.length + 1} Nachweis(e)`, grund: ""
         });
@@ -798,7 +1289,7 @@
           zustaendig: meineRolle(), zustand: "bearbeitung"
         });
         const eintrag = {
-          wer: meineRolle(), zeit: jetzt(), betrifft: alt.titel,
+          wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle, zeit: jetzt(), betrifft: alt.titel,
           was: "Zeitraum korrigiert",
           vorher: `${datumText(alt.daten.von)} bis ${datumText(alt.daten.bis)}`,
           nachher: `${datumText(neuVon)} bis ${datumText(neuBis)} (neuer Vorgang ${neu.id})`,
@@ -870,11 +1361,13 @@
   function geaendert(feld) {
     if (feld.matches("[data-vg-thema]")) { stand.thema = feld.value; R.zeichnen(); return true; }
     if (feld.matches("[data-vg-suche]")) { stand.suche = feld.value; R.zeichnen(); return true; }
+    if (feld.matches("[data-vg-von]")) { stand.vonDatum = feld.value; R.zeichnen(); return true; }
+    if (feld.matches("[data-vg-bis]")) { stand.bisDatum = feld.value; R.zeichnen(); return true; }
     return false;
   }
 
   const offeneEingabe = () => {
-    const g = document.querySelector("[data-vg-grund]");
+    const g = document.querySelector("[data-vg-grund], [data-uebernahme-grund], [data-wieder-grund]");
     return Boolean(g && g.value.trim().length > 0);
   };
 

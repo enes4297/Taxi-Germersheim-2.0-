@@ -136,9 +136,11 @@
      Tokens, medizinische Inhalte und Lohnbetraege. In der Designprobe
      lebt diese Liste nur in der laufenden Sitzung. */
   const protokoll = [
-    { zeit: "gestern 17:42", wer: "Administration", betrifft: "Testwagen 04",
+    { zeit: "gestern 17:42", datum: "gestern", wer: "Testleitung 01 – Administration",
+      kennung: "U-ADM-01", rolle: "Administration", betrifft: "Testwagen 04",
       was: "Zustand geändert", vorher: "Frei", nachher: "Werkstatt", grund: "Bremsen prüfen" },
-    { zeit: "gestern 16:10", wer: "Disposition", betrifft: "Testfahrer 01",
+    { zeit: "gestern 16:10", datum: "gestern", wer: "Testdisposition 01 – Disposition",
+      kennung: "U-DIS-01", rolle: "Disposition", betrifft: "Testfahrer 01",
       was: "Fahrzeug zugewiesen", vorher: "kein Fahrzeug", nachher: "GER-TEST 001", grund: "" }
   ].map((x) => Object.freeze(x));
 
@@ -150,8 +152,17 @@
     eigenem Eintrag.
   */
   function protokollieren(eintrag) {
+    /* Wer gehandelt hat, steht als Person MIT Kennung und Rolle im
+       Eintrag - nie nur als Rollenname. Datum und Uhrzeit kommen
+       immer dazu. */
+    const konto = window.ProbeRahmen ? window.ProbeRahmen.benutzer() : null;
+    const jetzt = new Date();
     const fertig = Object.freeze({
-      zeit: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
+      wer: konto ? konto.name + " – " + konto.rolle : "unbekannt",
+      kennung: konto ? konto.kennung : "",
+      rolle: konto ? konto.rolle : "",
+      datum: jetzt.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }),
+      zeit: jetzt.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
       grund: "",
       ...eintrag
     });
@@ -378,7 +389,7 @@
       id: "V0001", art: "aufgabe", thema: "urlaub",
       titel: "Neuer Urlaubsantrag – Testfahrer 03",
       betrifft: { art: "mitarbeiter", id: "M03", name: "Testfahrer 03" },
-      eingang: "heute 07:48", dringlichkeit: "normal",
+      eingang: "heute 07:48", eingangIso: alsIso(heute), dringlichkeit: "normal",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
       sichtbar: ["operations.read", "personnel.read"],
       vertraulich: [],
@@ -389,7 +400,7 @@
       id: "V0002", art: "aufgabe", thema: "krankheit",
       titel: "Krankmeldung eingegangen – Testfahrer 02",
       betrifft: { art: "mitarbeiter", id: "M02", name: "Testfahrer 02" },
-      eingang: "heute 06:05", dringlichkeit: "hoch",
+      eingang: "heute 06:05", eingangIso: alsIso(heute), dringlichkeit: "hoch",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
       sichtbar: ["operations.read", "personnel.read"],
       /* Die Bescheinigung sehen nur Personal und Administration. */
@@ -399,13 +410,37 @@
         datei: "Testbescheinigung-M02-01.pdf",
         folge: []
       },
+      /*
+        Zwei getrennte Arbeitsschritte. Der manuelle Test hat gezeigt,
+        warum: Die Disposition konnte den ganzen Vorgang auf
+        "Erledigt" setzen, und danach kam das Personal nicht mehr an
+        die Bescheinigung. Jeder Teil hat jetzt seinen eigenen
+        Zustand, seinen eigenen Verantwortlichen und seine eigene
+        Faehigkeit.
+      */
+      teile: {
+        planung: {
+          name: "Planung", zustand: "offen",
+          braucht: ["operations.write"],
+          aktion: "Planung bearbeitet",
+          schritte: "Planung geprüft · Ersatz erforderlich · Ersatz organisiert",
+          verantwortlich: null, letzter: null, vertraulich: false
+        },
+        personal: {
+          name: "Personalprüfung", zustand: "offen",
+          braucht: ["personnel.read"],
+          aktion: "Dokumentprüfung abgeschlossen",
+          schritte: "Bescheinigung eingegangen · Dokument geprüft · Zeitraum geprüft",
+          verantwortlich: null, letzter: null, vertraulich: true
+        }
+      },
       empfehlung: "", antwort: "", notizen: []
     },
     {
       id: "V0003", art: "aufgabe", thema: "fahrt",
       titel: "Neue Fahrtanfrage von der Webseite",
       betrifft: { art: "fahrt", id: "FA-0001", name: "FA-0001" },
-      eingang: "heute 10:40", dringlichkeit: "hoch",
+      eingang: "heute 10:40", eingangIso: alsIso(heute), dringlichkeit: "hoch",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
       sichtbar: ["operations.read"], vertraulich: [],
       daten: { hinweis: "über das Formular aufgenommen" },
@@ -415,8 +450,8 @@
       id: "V0004", art: "aufgabe", thema: "fahrt",
       titel: "Kunde bittet um Änderung der Abholzeit",
       betrifft: { art: "fahrt", id: "FA-0005", name: "FA-0005" },
-      eingang: "heute 09:20", dringlichkeit: "normal",
-      zustaendig: "Disposition", zustand: "bearbeitung", gesehen: true, version: 1,
+      eingang: "heute 09:20", eingangIso: alsIso(heute), dringlichkeit: "normal",
+      zustaendig: "Testdisposition 01 – Disposition", zustand: "bearbeitung", gesehen: true, version: 1,
       sichtbar: ["operations.read"], vertraulich: [],
       daten: { hinweis: "Rückruf vereinbart" },
       empfehlung: "", antwort: "", notizen: []
@@ -425,8 +460,9 @@
       id: "V0005", art: "nachricht", thema: "nachricht",
       titel: "Betriebsversammlung am Freitag",
       betrifft: { art: "alle", id: "", name: "alle Mitarbeiter" },
-      eingang: "gestern 16:30", dringlichkeit: "niedrig",
-      zustaendig: "Administration", zustand: "erledigt", gesehen: true, version: 1,
+      eingang: "gestern 16:30", eingangIso: alsIso(tagAls(-1)), dringlichkeit: "niedrig",
+      zustaendig: "Testleitung 01 – Administration", zustand: "erledigt", gesehen: true, version: 1,
+      abgeschlossenAm: alsIso(tagAls(-1)), archivAb: alsIso(tagAls(89)),
       sichtbar: ["self.read"], vertraulich: [],
       daten: { text: "Die Betriebsversammlung findet am Freitag um 14:00 Uhr statt." },
       empfehlung: "", antwort: "", notizen: []
@@ -435,7 +471,7 @@
       id: "V0006", art: "meldung", thema: "system",
       titel: "PAJ GPS ist nicht angebunden",
       betrifft: { art: "system", id: "", name: "Integration" },
-      eingang: "dauerhaft", dringlichkeit: "niedrig",
+      eingang: "dauerhaft", eingangIso: alsIso(heute), dringlichkeit: "niedrig",
       zustaendig: "", zustand: "neu", gesehen: true, version: 1,
       sichtbar: ["operations.read"], vertraulich: [],
       daten: { text: "Es werden keine Positionen angezeigt und keine erfunden." },
@@ -445,8 +481,9 @@
       id: "V0007", art: "aufgabe", thema: "urlaub",
       titel: "Urlaubsantrag entschieden – Testfahrer 06",
       betrifft: { art: "mitarbeiter", id: "M06", name: "Testfahrer 06" },
-      eingang: "vor 3 Tagen", dringlichkeit: "normal",
-      zustaendig: "Personal", zustand: "erledigt", gesehen: true, version: 2,
+      eingang: "vor 3 Tagen", eingangIso: alsIso(tagAls(-3)), dringlichkeit: "normal",
+      zustaendig: "Testpersonal 01 – Personal", zustand: "erledigt", gesehen: true, version: 2,
+      abgeschlossenAm: alsIso(tagAls(-3)), archivAb: alsIso(tagAls(87)),
       sichtbar: ["operations.read", "personnel.read"], vertraulich: [],
       daten: { von: alsIso(tagAls(-1)), bis: alsIso(tagAls(1)), entscheidung: "genehmigt" },
       empfehlung: "Aus Planungssicht möglich",
@@ -475,6 +512,9 @@
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
       sichtbar: ["operations.read"], vertraulich: [],
       daten: {}, empfehlung: "", antwort: "", notizen: [],
+      teile: null, abgeschlossenAm: "", archivAb: "",
+      verantwortlich: null, letzterBearbeiter: null,
+      eingangIso: alsIso(heute),
       eingang: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr",
       ...neu
     };

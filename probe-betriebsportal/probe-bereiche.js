@@ -26,11 +26,38 @@
      zu der es gehoert. Ein Klick bei Mitarbeiter A kann Mitarbeiter B
      nicht mehr erreichen.
      ============================================================ */
-  function planTagIso() { return D.alsIso(D.tagAls(R.zustand.planTag)); }
+  /* Der gewaehlte Tag als ISO-Datum. Ohne Wahl ist es heute. */
+  function planTagIso() {
+    if (!R.zustand.planDatum) R.zustand.planDatum = D.alsIso(D.heute);
+    return R.zustand.planDatum;
+  }
+  const planDatumObjekt = () => new Date(planTagIso() + "T00:00:00");
+  const istHeute = () => planTagIso() === D.alsIso(D.heute);
+  const istMorgen = () => planTagIso() === D.alsIso(D.tagAls(1));
+  const tagWort = () => istHeute() ? "heute" : istMorgen() ? "morgen" : "diesen Tag";
+  const tagWortGross = () => istHeute() ? "Heute" : istMorgen() ? "Morgen" : D.alsText(planDatumObjekt());
+  /* Datum verschieben - in Tagen. */
+  function planDatumVerschieben(tage) {
+    const d = planDatumObjekt();
+    d.setDate(d.getDate() + tage);
+    R.zustand.planDatum = D.alsIso(d);
+    R.zustand.planEntwurf = null;
+  }
 
   function planEntwurf() {
     const iso = planTagIso();
     if (!R.zustand.planEntwurf || R.zustand.planEntwurf.iso !== iso) {
+      /* Fuer Tage ohne gespeicherten Plan entsteht ein leerer - sonst
+         liesse sich ein Urlaub in zwei Wochen gar nicht nachsehen. */
+      if (!D.planung[iso]) {
+        D.planung[iso] = {
+          veroeffentlicht: false, veroeffentlichtUm: null, geaendertSeitdem: false,
+          zeilen: D.mitarbeiter.map((m) => ({
+            mitarbeiterId: m.id, imDienst: false, vorlage: null,
+            von: "", bis: "", fahrzeugId: null
+          }))
+        };
+      }
       const quelle = D.planung[iso];
       R.zustand.planEntwurf = {
         iso,
@@ -494,7 +521,7 @@
 
   function planung() {
     const e = planEntwurf();
-    const tag = D.tagAls(R.zustand.planTag);
+    const tag = planDatumObjekt();
     const quelle = D.planung[e.iso];
     const konflikte = konflikteVon(e);
     const betroffen = betroffene(konflikte);
@@ -561,9 +588,17 @@
 
       <div class="flaeche">
         <div class="tagleiste">
-          <div class="tagumschalter" role="group" aria-label="Tag wählen">
-            <button type="button" data-tun="plan-tag:0" aria-pressed="${R.zustand.planTag === 0}">Heute</button>
-            <button type="button" data-tun="plan-tag:1" aria-pressed="${R.zustand.planTag === 1}">Morgen</button>
+          <!-- Freie Datumswahl statt nur heute/morgen. Ein genehmigter
+               Urlaub in zwei Wochen liess sich vorher gar nicht
+               nachsehen - eine echte Bedienluecke aus dem manuellen
+               Test. -->
+          <div class="tageswahl">
+            <button class="knopf klein" type="button" data-tun="plan-zurueck" aria-label="Ein Tag zurück">‹ Zurück</button>
+            <button class="knopf klein" type="button" data-tun="plan-heute" aria-pressed="${istHeute()}">Heute</button>
+            <button class="knopf klein" type="button" data-tun="plan-morgen" aria-pressed="${istMorgen()}">Morgen</button>
+            <label class="tagfeld">Datum
+              <input type="date" data-plan-datum value="${h(planTagIso())}"></label>
+            <button class="knopf klein" type="button" data-tun="plan-vor" aria-label="Ein Tag vor">Vor ›</button>
           </div>
           <span class="tagdatum">${h(D.alsText(tag))}</span>
           ${stand}
@@ -602,7 +637,7 @@
             ? `${geaendert} Änderung${geaendert === 1 ? "" : "en"} noch nicht gespeichert`
             : "Keine ungespeicherten Änderungen"}</span>
           <button class="knopf haupt-knopf" type="button" data-tun="plan-veroeffentlichen">
-            Plan für ${R.zustand.planTag === 0 ? "heute" : "morgen"} veröffentlichen</button>
+            Plan für ${tagWort()} veröffentlichen</button>
         </div>
       </div>`;
   }
@@ -756,6 +791,14 @@
      Liste, mit demselben gemeinsamen Zustand wie Planung und
      "Fahrer & Fahrzeuge". */
   function meldungen() { return window.ProbeVorgaenge.zeichne(); }
+
+  /* ============================================================
+     5b. Kalender
+     ============================================================ */
+  /* Der Kalender steht in probe-kalender.js. Er liest denselben
+     Tagesentwurf wie Planung und "Fahrer & Fahrzeuge" - deshalb
+     bekommt er dieselben Helfer und baut keine eigene Wahrheit. */
+  function kalender() { return window.ProbeKalender.zeichne(); }
 
   /* ============================================================
      6. Kunden
@@ -1080,7 +1123,7 @@
     const satz = art === "krank"
       ? "Fahrer ist krank"
       : "Fahrer hat genehmigten Urlaub";
-    const tagText = D.alsText(D.tagAls(R.zustand.planTag));
+    const tagText = D.alsText(planDatumObjekt());
 
     const rumpf = s.stufe === "pruefung"
       ? `
@@ -1092,7 +1135,7 @@
           <div><dt>Abwesenheit</dt><dd>${h(art === "krank" ? "krank gemeldet" : "genehmigter Urlaub")} · ${h(D.zeitraumText(abw.wirksam))}</dd></div>
           <div><dt>Neuer Status</dt><dd>Im Dienst (Ausnahme)</dd></div>
           <div><dt>Grund</dt><dd>${h(s.grund)}</dd></div>
-          <div><dt>Entschieden von</dt><dd>${h(R.ROLLENNAMEN[R.zustand.rolle])}</dd></div>
+          <div><dt>Entschieden von</dt><dd>${h(R.benutzerText())}</dd></div>
         </dl>
         <p class="schritt-hinweis">Die eingetragene Abwesenheit bleibt unverändert bestehen.</p>`
       : s.grundSichtbar
@@ -1163,14 +1206,14 @@
     const liste = konflikteVon(e);
     const technisch = liste.filter((k) => k.art === "technisch");
     const betrieblich = liste.filter((k) => k.art === "betrieblich");
-    const tag = D.tagAls(R.zustand.planTag);
+    const tag = planDatumObjekt();
     const imDienst = e.zeilen.filter((z) => arbeitetAmTag(e, z)).length;
     const ohneFahrzeug = e.zeilen.filter((z) => arbeitetAmTag(e, z) && !z.fahrzeugId).length;
     const krank = e.zeilen.filter((z) => tagesstatus(e, z) === "krank").length;
     const urlaub = e.zeilen.filter((z) => tagesstatus(e, z) === "urlaub").length;
 
     const kopf = `<dl class="zusammenfassung">
-      <div><dt>Tag</dt><dd>${R.zustand.planTag === 0 ? "Heute" : "Morgen"}</dd></div>
+      <div><dt>Tag</dt><dd>${tagWortGross()}</dd></div>
       <div><dt>Datum</dt><dd>${h(D.alsText(tag))}</dd></div>
       <div><dt>Eingeplant</dt><dd>${h(imDienst)} Mitarbeiter</dd></div>
       <div><dt>Ohne Fahrzeug</dt><dd>${h(ohneFahrzeug)}</dd></div>
@@ -1206,7 +1249,7 @@
       fuss = `
         <button class="knopf" type="button" data-tun="plan-zurueck-zur-planung">Abbrechen</button>
         <button class="knopf haupt-knopf" type="button" data-tun="plan-veroeffentlichen-ja">
-          Ja, für ${R.zustand.planTag === 0 ? "heute" : "morgen"} veröffentlichen</button>`;
+          Ja, für ${tagWort()} veröffentlichen</button>`;
     }
 
     return `
@@ -1225,7 +1268,7 @@
   function trotzdemDialog(fehler) {
     const e = planEntwurf();
     const liste = konflikteVon(e).filter((k) => k.art === "betrieblich");
-    const tag = D.tagAls(R.zustand.planTag);
+    const tag = planDatumObjekt();
     return `
       <div class="dialog-hinter" data-dialog-zu></div>
       <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="trotzTitel">
@@ -1235,7 +1278,7 @@
         </header>
         <div class="dialog-rumpf">
           <dl class="zusammenfassung">
-            <div><dt>Tag</dt><dd>${R.zustand.planTag === 0 ? "Heute" : "Morgen"}</dd></div>
+            <div><dt>Tag</dt><dd>${tagWortGross()}</dd></div>
             <div><dt>Datum</dt><dd>${h(D.alsText(tag))}</dd></div>
             <div><dt>Offene Konflikte</dt><dd>${h(liste.length)}</dd></div>
           </dl>
@@ -1246,7 +1289,7 @@
                  "Noch ist nichts veröffentlicht. Erst „Trotz Konflikten verbindlich veröffentlichen“ schließt den Vorgang ab.")}
                <dl class="zusammenfassung">
                  <div><dt>Grund</dt><dd>${h(veroeffentlichungsGrund)}</dd></div>
-                 <div><dt>Veröffentlicht von</dt><dd>${h(R.ROLLENNAMEN[R.zustand.rolle])}</dd></div>
+                 <div><dt>Veröffentlicht von</dt><dd>${h(R.benutzerText())}</dd></div>
                </dl>`
             : `<label>Grund für die Veröffentlichung <span class="band-warnung">Pflichtfeld</span>
               <textarea data-grund rows="3"
@@ -1275,7 +1318,7 @@
     e.urzeilen = e.zeilen.map((z) => ({ ...z }));
     e.verlauf = [];
 
-    const tag = D.tagAls(R.zustand.planTag);
+    const tag = planDatumObjekt();
 
     /* Die begruendeten Ausnahmen dieses Tages - sie gehoeren ins
        Protokoll und in die Mitarbeitervorschau. */
@@ -1316,7 +1359,7 @@
     const protokoll = mitGrund
       ? `<h4 class="unterueberschrift">Was protokolliert würde</h4>
          <dl class="zusammenfassung">
-           <div><dt>Wer</dt><dd>${h(R.ROLLENNAMEN[R.zustand.rolle])} (angemeldete Person)</dd></div>
+           <div><dt>Wer</dt><dd>${h(R.benutzerText())}</dd></div>
            <div><dt>Wann</dt><dd>${h(quelle.veroeffentlichtUm)} Uhr</dd></div>
            <div><dt>Tag</dt><dd>${h(D.alsText(tag))}</dd></div>
            <div><dt>Konflikte</dt><dd>${h(liste.length)}</dd></div>
@@ -1360,6 +1403,7 @@
     if (name.startsWith("team-")) { window.ProbeTeam.tun(name, wert); return; }
     /* Und alles rund um Meldungen und Aufgaben. */
     if (name.startsWith("vg-")) { window.ProbeVorgaenge.tun(name, wert); return; }
+    if (name.startsWith("kal-")) { window.ProbeKalender.tun(name, wert); return; }
 
     switch (name) {
       case "neue-fahrt": window.ProbeFahrtassistent.starten(); return;
@@ -1378,7 +1422,16 @@
           "Ein Fenster mit genau einer Auswahl: die verfügbaren Fahrer beziehungsweise Fahrzeuge als Karten, gold markiert. Kein zweites Fenster darüber.", "leer"));
         return;
 
-      case "plan-tag":     R.zustand.planTag = Number(wert); R.zustand.planEntwurf = null; R.zeichnen(); return;
+      case "plan-heute":
+        R.zustand.planDatum = D.alsIso(D.heute); R.zustand.planEntwurf = null; R.zeichnen(); return;
+      case "plan-morgen":
+        R.zustand.planDatum = D.alsIso(D.tagAls(1)); R.zustand.planEntwurf = null; R.zeichnen(); return;
+      case "plan-zurueck": planDatumVerschieben(-1); R.zeichnen(); return;
+      case "plan-vor":     planDatumVerschieben(1);  R.zeichnen(); return;
+      /* Aus dem Kalender heraus: einen bestimmten Tag oeffnen. */
+      case "plan-datum":
+        R.zustand.planDatum = wert; R.zustand.planEntwurf = null;
+        R.geheZu("planung"); return;
       case "plan-filter":  e.filter = wert; R.zeichnen(); return;
       case "plan-suche-leeren": e.suche = ""; R.zeichnen(); return;
       case "plan-rueckgaengig": {
@@ -1596,12 +1649,18 @@
       R.zeichnen();
       return true;
     }
+    if (feld.matches("[data-plan-datum]")) {
+      if (feld.value) { R.zustand.planDatum = feld.value; R.zustand.planEntwurf = null; }
+      R.zeichnen();
+      return true;
+    }
     if (feld.matches("[data-plan-suche]")) {
       planEntwurf().suche = feld.value; R.zeichnen(); return true;
     }
     if (feld.matches("[data-lohn]")) { lohnStand[feld.dataset.lohn] = feld.value; R.dialogOeffnen(lohnDialog()); return true; }
     if (window.ProbeTeam.geaendert(feld)) return true;
     if (window.ProbeVorgaenge.geaendert(feld)) return true;
+    if (window.ProbeKalender.geaendert(feld)) return true;
     return false;
   }
 
@@ -1633,7 +1692,7 @@
     R.zeichnen();
   }
 
-  const bereiche = { uebersicht, fahrten, planung, team, meldungen, kunden, personal, lohn, finanzen, rewards, analyse };
+  const bereiche = { uebersicht, fahrten, planung, team, kalender, meldungen, kunden, personal, lohn, finanzen, rewards, analyse };
 
   /* ============================================================
      Zeitfelder anmelden
@@ -1650,6 +1709,7 @@
   };
   window.ProbeTeam.anmelden(planungsHelfer);
   window.ProbeVorgaenge.anmelden(planungsHelfer);
+  window.ProbeKalender.anmelden(planungsHelfer);
 
   window.ProbeZeit.anmelden({
     uebernehmen(kennung, teil, ergebnis, feld) {
