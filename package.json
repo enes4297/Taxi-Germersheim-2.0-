@@ -46,7 +46,8 @@
     "probe-dokument-pruefen": "node tools/pruefe-probe-dokumentpruefung.mjs",
     "probe-regeln-pruefen": "node tools/pruefe-probe-pruefregeln.mjs",
     "probe-zuordnung-pruefen": "node tools/pruefe-probe-zuordnung.mjs",
-    "probe-karten-pruefen": "node tools/pruefe-probe-karten.mjs"
+    "probe-karten-pruefen": "node tools/pruefe-probe-karten.mjs",
+    "probe-wahrheit-pruefen": "node tools/pruefe-probe-einewahrheit.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.0",

@@ -1511,3 +1511,17 @@ textarea {
   .dialog-kopf h2 + .knopf { margin-left: 0; }
   .dialog-kopf .knopf { flex: 1 1 auto; }
 }
+
+/* ============================================================
+   Abschnitt fuer Fahrten ohne geklaerte Zeit
+   ============================================================
+   Sie stehen bewusst NICHT zwischen den Uhrzeiten - eine Reihenfolge
+   waere dort erfunden. Der eigene Abschnitt sagt das auch. */
+.abschnitt-offen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+}

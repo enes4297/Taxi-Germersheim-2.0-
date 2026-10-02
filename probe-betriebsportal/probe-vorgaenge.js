@@ -57,6 +57,7 @@
     { id: "zugewiesen",  name: "Mir zugewiesen" },
     { id: "bearbeitung", name: "In Bearbeitung" },
     { id: "warten",      name: "Wartet auf Rückmeldung" },
+    { id: "warnungen",   name: "Offene Warnungen" },
     { id: "erledigt",    name: "Erledigt" },
     { id: "archiv",      name: "Archiv" },
     { id: "alle",        name: "Alle" }
@@ -312,6 +313,39 @@
      bleibt dort vollstaendig auffindbar; geloescht wird in dieser
      Probe nichts. Eine spaetere echte Loeschung waere eine eigene
      Aufbewahrungsregel und nicht Sache dieser Ansicht. */
+  /*
+    VIER Zustaende, die oft verwechselt werden. Sie sind hier
+    ausdruecklich getrennt benannt, weil der Rundgang gezeigt hat,
+    dass "weg aus meiner Liste" und "geloescht" leicht dasselbe zu
+    sein scheinen:
+
+      fachlich erledigt  jeder Pflichtteil ist abgeschlossen.
+                         Berechnet aus den Teilschritten.
+
+      ausgeblendet       ein Mensch hat den Vorgang aus seiner
+                         taeglichen Arbeitsliste genommen. Eine
+                         Entscheidung ueber die ANSICHT, nicht ueber
+                         die Daten. Nichts wird geloescht.
+
+      archiviert         90 Tage nach dem Abschluss, automatisch.
+                         Eine Entscheidung der Zeit, nicht eines
+                         Menschen.
+
+      wiedereroeffnet    der Abschluss ist zurueckgenommen. Dabei
+                         wird auch eine Ausblendung aufgehoben -
+                         sonst waere der Vorgang wieder zu tun und
+                         trotzdem unsichtbar.
+
+    Ausgeblendete und archivierte Vorgaenge stehen gemeinsam im
+    Reiter "Archiv". Beide sind vollstaendig auffindbar; die Ansicht
+    sagt jeweils, warum sie dort stehen.
+  */
+  const LISTENSTAENDE = {
+    sichtbar:     "in der Arbeitsliste",
+    ausgeblendet: "aus der Arbeitsliste entfernt"
+  };
+  const istAusgeblendet = (v) => Boolean(v.ausListe);
+
   const ARCHIV_NACH_TAGEN = 90;
   function imArchiv(v) {
     if (gesamtstand(v) !== "erledigt") return false;
@@ -327,6 +361,18 @@
 
   const sichtbarFuerMich = (v) => R.darf(v.sichtbar);
   const vertraulichSichtbar = (v) => !v.vertraulich.length || R.darf(v.vertraulich);
+
+  /*
+    Die offenen Warnungen. EINE Definition fuer die Kennzahl der
+    Uebersicht, den Reiter und den Navigationszaehler.
+
+    Enthalten ist, was dringend ist oder als Warnung entstanden ist -
+    und was noch nicht erledigt ist. Erledigte gehoeren nie dazu.
+  */
+  const offeneWarnungen = () => alleVorgaenge()
+    .filter(sichtbarFuerMich)
+    .filter((v) => gesamtstand(v) !== "erledigt")
+    .filter((v) => v.art === "warnung" || v.dringlichkeit === "hoch");
 
   const ungesehen = () => alleVorgaenge().filter((v) => sichtbarFuerMich(v) && !v.gesehen);
 
@@ -352,14 +398,27 @@
 
   function gefiltert() {
     let liste = alleVorgaenge().filter(sichtbarFuerMich);
+    /*
+      Die offenen Warnungen - genau die Menge, deren Zahl auf der
+      Uebersicht steht. Vorher sprang die Kennzahl in den zuletzt
+      gewaehlten Reiter; im Rundgang war das "Erledigt (3)".
+    */
+    if (stand.reiter === "warnungen") liste = offeneWarnungen();
     if (stand.reiter === "neu") liste = liste.filter((v) => gesamtstand(v) === "neu");
     if (stand.reiter === "zugewiesen") liste = liste.filter(mirZugewiesen);
     if (stand.reiter === "bearbeitung") liste = liste.filter((v) => gesamtstand(v) === "bearbeitung");
     if (stand.reiter === "warten") liste = liste.filter((v) => gesamtstand(v) === "warten");
     /* Erledigt bleibt 90 Tage sichtbar, danach steht der Vorgang im
        Archiv. Geloescht wird nichts - weder hier noch dort. */
-    if (stand.reiter === "erledigt") liste = liste.filter((v) => gesamtstand(v) === "erledigt" && !imArchiv(v));
-    if (stand.reiter === "archiv") liste = liste.filter((v) => imArchiv(v));
+    /* Erledigt zeigt die Arbeitsliste: fachlich fertig, noch nicht
+       archiviert und nicht ausgeblendet. */
+    if (stand.reiter === "erledigt") {
+      liste = liste.filter((v) => gesamtstand(v) === "erledigt"
+        && !imArchiv(v) && !istAusgeblendet(v));
+    }
+    /* Archiv zeigt beides: automatisch archiviert UND von Hand
+       ausgeblendet. Nichts verschwindet. */
+    if (stand.reiter === "archiv") liste = liste.filter((v) => imArchiv(v) || istAusgeblendet(v));
     if (stand.thema !== "alle") liste = liste.filter((v) => v.thema === stand.thema);
     /* Zeitraum. Gesucht wird nach dem Abschlussdatum, solange es eines
        gibt - sonst nach dem Eingang. Damit findet man im Archiv
@@ -512,6 +571,9 @@
         <div><dt>Gesamtstand</dt><dd>${h(D.VORGANG_ZUSTAENDE[gesamtstand(v)])}</dd></div>
         ${v.abgeschlossenAm ? `<div><dt>Abgeschlossen</dt><dd>${h(datumText(v.abgeschlossenAm))}</dd></div>
           <div><dt>Archiv ab</dt><dd>${h(datumText(v.archivAb))}</dd></div>` : ""}
+        ${istAusgeblendet(v) ? `<div><dt>Arbeitsliste</dt>
+          <dd>${h(LISTENSTAENDE.ausgeblendet)} am ${h(v.ausListeAm)}
+            ${v.ausListeVon ? " von " + h(kontoText(v.ausListeVon)) : ""}</dd></div>` : ""}
       </dl>
       ${v.teile ? `<ul class="vg-teile">
         ${Object.values(v.teile).map((x) => `<li class="ist-${x.zustand}">
@@ -543,10 +605,23 @@
     const lage = kartenlage(v);
 
     if (lage.fertig) {
-      return v.abgeleitet || !R.darf("personnel.read")
-        ? ""
+      if (v.abgeleitet) return "";
+      const wieder = R.darf("personnel.read")
+        ? `<button class="knopf klein" type="button"
+            data-tun="vg-wiedereroeffnen:${h(v.id)}">Wiedereröffnen</button>`
+        : "";
+      /*
+        Aus der Arbeitsliste nehmen - KEIN Loeschen. Der Vorgang
+        bleibt vollstaendig erhalten und steht danach im Archiv.
+        Deshalb heisst der Knopf auch nicht "Entfernen", sondern
+        sagt, woraus etwas entfernt wird.
+      */
+      const raus = istAusgeblendet(v)
+        ? `<button class="knopf klein" type="button"
+            data-tun="vg-in-liste:${h(v.id)}">Zurück in die Arbeitsliste</button>`
         : `<button class="knopf klein" type="button"
-            data-tun="vg-wiedereroeffnen:${h(v.id)}">Wiedereröffnen</button>`;
+            data-tun="vg-aus-liste:${h(v.id)}">Aus Erledigt-Liste entfernen</button>`;
+      return raus + wieder;
     }
 
     /* Vorgang ohne Teilschritte - er ist selbst die Einheit. */
@@ -588,8 +663,12 @@
     const zaehler = (id) => {
       if (id === "alle") return alle.length;
       if (id === "zugewiesen") return alle.filter((v) => mirZugewiesen(v)).length;
-      if (id === "erledigt") return alle.filter((v) => gesamtstand(v) === "erledigt" && !imArchiv(v)).length;
-      if (id === "archiv") return alle.filter(imArchiv).length;
+      if (id === "erledigt") {
+        return alle.filter((v) => gesamtstand(v) === "erledigt"
+          && !imArchiv(v) && !istAusgeblendet(v)).length;
+      }
+      if (id === "archiv") return alle.filter((v) => imArchiv(v) || istAusgeblendet(v)).length;
+      if (id === "warnungen") return offeneWarnungen().length;
       return alle.filter((v) => gesamtstand(v) === id).length;
     };
 
@@ -632,9 +711,11 @@
               ? `<button class="knopf klein" type="button" data-tun="vg-zeitraum-weg">Zeitraum aufheben</button>` : ""}` : ""}
         </div>
         ${stand.reiter === "archiv" ? `<p class="schritt-hinweis">Das Archiv enthält
-          abgeschlossene Vorgänge ab 90 Tagen nach dem Abschluss. Sie bleiben vollständig
-          durchsuchbar — nach Vorgangsnummer, Mitarbeiter, Thema und Zeitraum. Gelöscht
-          wird hier nichts.</p>` : ""}
+          abgeschlossene Vorgänge ab 90 Tagen nach dem Abschluss — und solche, die
+          jemand aus der Erledigt-Liste entfernt hat. Beides ist kein Löschen: Inhalt,
+          Teilschritte, Verantwortliche, Abschlussdatum, Protokoll und Dokumentverweise
+          bleiben vollständig erhalten und durchsuchbar — nach Vorgangsnummer,
+          Mitarbeiter, Thema und Zeitraum. Gelöscht wird hier nichts.</p>` : ""}
         ${darfEntscheiden() || !R.darf("operations.write") ? "" : keinZugriffHinweis()}
         <div style="margin-top:14px">${inhalt}</div>
       </div>`;
@@ -1964,6 +2045,50 @@
         nicht still zurueckgesetzt: Es braucht einen Grund, und es
         entsteht ein eigener Protokolleintrag.
       */
+      /*
+        Aus der Arbeitsliste nehmen.
+
+        Das ist KEIN Loeschen: Inhalt, Teilschritte, Verantwortliche,
+        Abschlussdatum, Protokoll und Dokumentverweise bleiben
+        unberuehrt. Es aendert sich allein, in welcher Liste der
+        Vorgang erscheint - und auch das wird protokolliert.
+      */
+      case "vg-aus-liste": {
+        const v = vorgangFinden(wert);
+        if (!v || v.abgeleitet) return;
+        /* Nur ein fachlich erledigter Vorgang verlaesst die Liste. */
+        if (gesamtstand(v) !== "erledigt") return;
+        if (istAusgeblendet(v)) return;
+        v.ausListe = true;
+        v.ausListeAm = D.alsText(D.heute) + " " + jetzt();
+        v.ausListeVon = { ...meinKonto() };
+        v.version += 1;
+        D.protokollieren({
+          betrifft: v.titel + " (" + v.id + ")",
+          was: "Aus der Erledigt-Liste entfernt",
+          vorher: LISTENSTAENDE.sichtbar,
+          nachher: LISTENSTAENDE.ausgeblendet + " · im Archiv weiter auffindbar",
+          grund: ""
+        });
+        R.zeichnen();
+        return;
+      }
+      case "vg-in-liste": {
+        const v = vorgangFinden(wert);
+        if (!v || v.abgeleitet || !istAusgeblendet(v)) return;
+        v.ausListe = false;
+        v.version += 1;
+        D.protokollieren({
+          betrifft: v.titel + " (" + v.id + ")",
+          was: "Zurück in die Arbeitsliste",
+          vorher: LISTENSTAENDE.ausgeblendet,
+          nachher: LISTENSTAENDE.sichtbar,
+          grund: ""
+        });
+        R.zeichnen();
+        return;
+      }
+
       case "vg-wiedereroeffnen": {
         stand.wiedereroeffnen = { id: wert, grund: "", fehler: "" };
         R.dialogOeffnen(wiedereroeffnenDialog());
@@ -1992,6 +2117,20 @@
         if (!v.abgeleitet) {
           v.abgeschlossenAm = "";
           v.archivAb = "";
+          /*
+            Eine Ausblendung wird dabei aufgehoben. Sonst waere der
+            Vorgang wieder zu tun - und trotzdem aus der
+            Arbeitsliste verschwunden.
+          */
+          if (istAusgeblendet(v)) {
+            v.ausListe = false;
+            D.protokollieren({
+              betrifft: v.titel + " (" + v.id + ")",
+              was: "Zurück in die Arbeitsliste (durch Wiedereröffnung)",
+              vorher: LISTENSTAENDE.ausgeblendet,
+              nachher: LISTENSTAENDE.sichtbar, grund: s.grund
+            });
+          }
           v.letzterBearbeiter = { ...meinKonto(), zeit: jetzt() };
           v.version += 1;
         }
@@ -2727,7 +2866,23 @@
   const offeneFuerMich = () => alleVorgaenge()
     .filter((x) => sichtbarFuerMich(x) && x.zustand !== "erledigt" && x.zustand !== "archiviert");
 
+  /*
+    Ein Sprung von einer Kennzahl. Der Reiter wird VOR dem Zeichnen
+    gesetzt, damit die Zielliste genau die Menge zeigt, deren Zahl auf
+    der Karte stand - und nicht den zuletzt gewaehlten Reiter.
+  */
+  function sprungziel(zusatz) {
+    if (REITER.some((x) => x.id === zusatz)) {
+      stand.reiter = zusatz;
+      stand.suche = "";
+      stand.thema = "alle";
+      stand.vonDatum = "";
+      stand.bisDatum = "";
+    }
+  }
+
   window.ProbeVorgaenge = {
+    offeneWarnungen, sprungziel,
     anmelden, zeichne, tun, geaendert, glocke, ungesehen, offeneEingabe, offeneFuerMich
   };
 })();

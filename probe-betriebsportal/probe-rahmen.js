@@ -362,8 +362,18 @@
       const ziel = e.target.closest("[data-ziel]");
       if (ziel && ziel.dataset.ziel) {
         zustand.klicks += 1;
-        const [bereichId, filter] = ziel.dataset.ziel.split(":");
-        if (filter) zustand.fahrtFilter = filter;
+        const [bereichId, zusatz] = ziel.dataset.ziel.split(":");
+        /*
+          Der Zusatz gehoert dem Zielbereich, nicht pauschal den
+          Fahrten. Das Zielmodul entscheidet, was damit zu tun ist -
+          sonst setzt ein Sprung in die Meldungen den Fahrtfilter.
+        */
+        if (zusatz) {
+          if (bereichId === "fahrten") zustand.fahrtFilter = zusatz;
+          else if (window.ProbeBereiche && window.ProbeBereiche.sprungziel) {
+            window.ProbeBereiche.sprungziel(bereichId, zusatz);
+          }
+        }
         geheZu(bereichId);
         return;
       }

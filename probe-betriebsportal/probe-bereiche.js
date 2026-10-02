@@ -325,28 +325,43 @@
     const imDienst = plan.zeilen.filter((z) => z.imDienst).length;
     const ohneFahrzeug = plan.zeilen.filter((z) => z.imDienst && !z.fahrzeugId).length;
     const frei = D.fahrzeuge.filter((f) => f.zustand === "verfuegbar").length;
-    const ungeplant = D.fahrten.filter((f) => f.zustand === "ungeplant").length;
-    const eingang = D.fahrten.filter((f) => f.zustand === "eingang").length;
-    const unterwegs = D.fahrten.filter((f) => f.zustand === "unterwegs").length;
-    const heuteAlle = D.fahrten.filter((f) => !["storniert"].includes(f.zustand)).length;
+    /*
+      Keine eigene Rechnung mehr. Die Uebersicht zaehlte "Fahrten
+      heute" ohne stornierte und zeigte damit 9, wo Kalender und
+      Fahrtenliste 10 zeigten. Und sie rechnete "ungeplant + eingang"
+      = 4, sprang aber in den Filter "ungeplant" mit 2.
+
+      Jetzt kommt jede Zahl aus derselben Definition in probe-daten.js.
+    */
+    const alleHeute = D.fahrtenHeute();
+    const heuteAlle = alleHeute.length;
+    const offeneZuweisung = D.nichtZugewiesen().length;
+    const eingang = alleHeute.filter((f) => f.zustand === "eingang").length;
+    const unterwegs = alleHeute.filter((f) => f.zustand === "unterwegs").length;
     /* Aus demselben Bestand wie "Meldungen & Aufgaben" - nicht aus
        einer zweiten Liste. Sonst zeigten Uebersicht und Eingang
        verschiedene Zahlen. */
     const meldungen = window.ProbeVorgaenge.offeneFuerMich();
-    const warnungen = meldungen.filter((v) => v.dringlichkeit === "hoch" || v.art === "warnung").length;
+    /*
+      Die Warnungen kommen aus demselben Modul, das sie auch anzeigt -
+      sonst zaehlt die Uebersicht neun und der Reiter zeigt drei
+      erledigte. Genau das ist im Rundgang passiert.
+    */
+    const warnungen = window.ProbeVorgaenge.offeneWarnungen().length;
 
-    const naechste = D.fahrten
-      .filter((f) => ["geplant", "unterwegs", "ungeplant"].includes(f.zustand))
-      .sort((a, b) => a.zeit.localeCompare(b.zeit))
-      .slice(0, 6);
+    /* Derselbe Sortierer wie in der Fahrtenliste und im Kalender.
+       Fahrten ohne geklaerte Zeit stehen hinten, nicht dazwischen. */
+    const naechste = D.nachZeit(
+      alleHeute.filter((f) => ["geplant", "unterwegs", "ungeplant"].includes(f.zustand))
+    ).slice(0, 6);
 
     return `
       <div class="bereichskopf">
         <div>
           <h1>Übersicht</h1>
           <p class="wichtig">${h(D.alsText(D.heute))} · ${h(imDienst)} im Dienst · ${
-            ungeplant + eingang > 0
-              ? `${ungeplant + eingang} Fahrten warten auf eine Zuweisung`
+            offeneZuweisung > 0
+              ? `${offeneZuweisung} ${offeneZuweisung === 1 ? "Fahrt wartet" : "Fahrten warten"} auf eine Zuweisung`
               : "alle Fahrten sind zugewiesen"}</p>
         </div>
         <div class="hauptaktion">
@@ -358,12 +373,12 @@
         <h2>Jetzt wichtig <span class="offen">Zahlen sind anklickbar</span></h2>
         <div class="kennzahlen">
           ${R.kennzahl(heuteAlle, "Fahrten heute", "", "fahrten:alle")}
-          ${R.kennzahl(ungeplant + eingang, "noch nicht zugewiesen", ungeplant + eingang ? "warnung" : "gut", "fahrten:ungeplant")}
+          ${R.kennzahl(offeneZuweisung, "noch nicht zugewiesen", offeneZuweisung ? "warnung" : "gut", "fahrten:offen")}
           ${R.kennzahl(unterwegs, "gerade unterwegs", "marke", "fahrten:unterwegs")}
           ${R.kennzahl(imDienst, "Fahrer im Dienst", "gut", "planung")}
           ${R.kennzahl(frei, "Fahrzeuge verfügbar", "gut", "team")}
           ${R.kennzahl(ohneFahrzeug, "im Dienst ohne Fahrzeug", ohneFahrzeug ? "warnung" : "gut", "planung")}
-          ${R.kennzahl(warnungen, "Warnungen", warnungen ? "warnung" : "gut", "meldungen")}
+          ${R.kennzahl(warnungen, "Warnungen", warnungen ? "warnung" : "gut", "meldungen:warnungen")}
         </div>
       </div>
 
@@ -380,7 +395,7 @@
                 const fa = mitarbeiterVon(f.fahrerId);
                 const fz = fahrzeugVon(f.fahrzeugId);
                 return `<tr>
-                  <td><strong>${h(f.zeit)}</strong></td>
+                  <td>${f.zeit ? `<strong>${h(f.zeit)}</strong>` : R.marke("warnung", "Zeit offen")}</td>
                   <td>${h(f.kunde)}</td>
                   <td>${h(f.von)}</td>
                   <td>${h(f.nach)}</td>
@@ -431,8 +446,23 @@
     const filter = R.zustand.fahrtFilter;
     const vorfuehrung = R.zustand.fahrtenZustand || "geladen";
 
-    const zaehler = (id) => D.fahrten.filter((f) => f.zustand === id).length;
-    const liste = filter === "alle" ? D.fahrten : D.fahrten.filter((f) => f.zustand === filter);
+    const alleHeute = D.fahrtenHeute();
+    const zaehler = (id) => (id === "offen"
+      ? D.nichtZugewiesen().length
+      : alleHeute.filter((f) => f.zustand === id).length);
+    /*
+      "offen" ist der Filter hinter der Kennzahl "noch nicht
+      zugewiesen". Er zeigt genau die Menge, deren Zahl auf der Karte
+      steht - vorher sprang die Karte in "ungeplant" und zeigte
+      weniger.
+    */
+    const roh = filter === "alle" ? alleHeute
+      : filter === "offen" ? D.nichtZugewiesen()
+      : alleHeute.filter((f) => f.zustand === filter);
+    /* Chronologisch, mit getrenntem Abschnitt fuer offene Zeiten. */
+    const mitZeit = D.mitZeit(roh);
+    const ohneZeit = D.ohneZeit(roh);
+    const liste = mitZeit.concat(ohneZeit);
 
     let rumpf;
     if (vorfuehrung === "laedt") {
@@ -442,17 +472,23 @@
     } else if (vorfuehrung === "leer" || !liste.length) {
       rumpf = R.kastenLeer("Fahrten in dieser Ansicht");
     } else {
-      rumpf = `<div class="tabelle-huelle"><table class="liste">
+      /*
+        Zwei Abschnitte statt einer Liste. Fahrten ohne geklaerte
+        Abholzeit werden nicht zwischen Uhrzeiten einsortiert - das
+        waere eine behauptete Reihenfolge. Sie stehen in einem
+        eigenen Abschnitt darunter.
+      */
+      const tabelle = (reihen) => `<div class="tabelle-huelle"><table class="liste">
         <thead><tr>
           <th>Nummer</th><th>Zeit</th><th>Kunde</th><th>Von</th><th>Nach</th>
           <th>Fahrer</th><th>Fahrzeug</th><th>Zustand</th><th></th>
         </tr></thead>
-        <tbody>${liste.map((f) => {
+        <tbody>${reihen.map((f) => {
           const fa = mitarbeiterVon(f.fahrerId);
           const fz = fahrzeugVon(f.fahrzeugId);
           return `<tr>
             <td>${h(f.id)}</td>
-            <td><strong>${h(f.zeit)}</strong></td>
+            <td>${f.zeit ? `<strong>${h(f.zeit)}</strong>` : R.marke("warnung", "Zeit offen")}</td>
             <td>${h(f.kunde)}</td>
             <td>${h(f.von)}</td>
             <td>${h(f.nach)}</td>
@@ -464,6 +500,13 @@
             <td><button class="knopf klein" type="button" data-tun="fahrt-oeffnen:${h(f.id)}">Öffnen</button></td>
           </tr>`;
         }).join("")}</tbody></table></div>`;
+
+      rumpf = (mitZeit.length ? tabelle(mitZeit) : "")
+        + (ohneZeit.length ? `<h3 class="abschnitt-offen">Zeit noch nicht geklärt
+            <span class="band-warnung">${ohneZeit.length}</span></h3>
+          <p class="schritt-hinweis">Diese Fahrten haben keine verbindliche Abholzeit. Sie
+            stehen bewusst nicht zwischen den Uhrzeiten — die Reihenfolge wäre erfunden.</p>
+          ${tabelle(ohneZeit)}` : "");
     }
 
     return `
@@ -481,7 +524,9 @@
         <h2>Ansicht</h2>
         <div class="wahlraster">
           <button class="wahlkarte" type="button" data-tun="fahrt-filter:alle" aria-pressed="${filter === "alle"}">
-            <strong>Alle</strong><span>${h(D.fahrten.length)} Fahrten</span></button>
+            <strong>Alle</strong><span>${h(alleHeute.length)} Fahrten</span></button>
+          <button class="wahlkarte" type="button" data-tun="fahrt-filter:offen" aria-pressed="${filter === "offen"}">
+            <strong>Noch nicht zugewiesen</strong><span>${h(zaehler("offen"))} Fahrten</span></button>
           ${D.fahrtZustaende.map((z) => `
             <button class="wahlkarte" type="button" data-tun="fahrt-filter:${h(z.id)}" aria-pressed="${filter === z.id}">
               <strong>${h(z.name)}</strong><span>${h(zaehler(z.id))} Fahrten</span></button>`).join("")}
@@ -1724,6 +1769,19 @@
   window.ProbeZeit.binden();
 
   window.ProbeBereiche = {
+    /*
+      Ein Sprung von einer Kennzahl mit Zusatz. Das Zielmodul stellt
+      sich darauf ein, BEVOR gezeichnet wird - damit die Zielliste
+      genau die Menge zeigt, deren Zahl auf der Karte stand.
+    */
+    sprungziel: (bereichId, zusatz) => {
+      if (bereichId === "meldungen" && window.ProbeVorgaenge.sprungziel) {
+        window.ProbeVorgaenge.sprungziel(zusatz);
+      }
+      if (bereichId === "team" && window.ProbeTeam.sprungziel) {
+        window.ProbeTeam.sprungziel(zusatz);
+      }
+    },
     zeichne: (id) => (bereiche[id] ? bereiche[id]() : R.kastenLeer("Inhalte")),
     tun, geaendert,
     taste: (e) => window.ProbeFahrtassistent.taste(e),

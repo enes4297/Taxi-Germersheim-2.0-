@@ -68,6 +68,59 @@
       sperrgrund: "Unfallschaden, Gutachten steht aus" }
   ];
 
+  /*
+    "Fahrten heute" - eine Definition fuer alle Ansichten.
+
+    Enthalten sind ALLE Fahrten des Tages, auch stornierte. Eine
+    stornierte Fahrt ist am Tag passiert und gehoert in die
+    Tagesmenge; wer nur die aktiven sehen will, filtert. Vorher hat
+    die Uebersicht sie herausgerechnet und damit 9 statt 10 gezeigt.
+
+    In der Probe gibt es nur den laufenden Tag. Sobald Fahrten ein
+    Datum tragen, kommt hier der Tagesvergleich hinein - an EINER
+    Stelle.
+  */
+  const fahrtenHeute = () => fahrten.slice();
+
+  /*
+    "Noch nicht zugewiesen" - eine Definition.
+
+    Eine Fahrt ist nicht zugewiesen, wenn sie im Eingang oder
+    ungeplant ist UND kein Fahrer darauf steht. Der Zustand allein
+    genuegt nicht: Eine ungeplante Fahrt mit Fahrer waere sonst
+    mitgezaehlt.
+
+    Vorher rechnete die Uebersicht "ungeplant + eingang" und sprang
+    dann in den Filter "ungeplant" - die Karte sagte 4, die Liste
+    zeigte 2.
+  */
+  const NICHT_ZUGEWIESEN_ZUSTAENDE = ["eingang", "ungeplant"];
+  const istNichtZugewiesen = (f) =>
+    NICHT_ZUGEWIESEN_ZUSTAENDE.includes(f.zustand) && !f.fahrerId;
+  const nichtZugewiesen = () => fahrtenHeute().filter(istNichtZugewiesen);
+
+  /*
+    Chronologische Sortierung einer Fahrtenliste.
+
+    Aufsteigend nach Abholzeit. Fahrten OHNE gueltige Zeit werden
+    nicht zwischen Uhrzeiten eingeordnet, sondern hinten angestellt -
+    die Ansicht zeigt sie in einem eigenen Abschnitt. Bei gleicher
+    Uhrzeit entscheidet die Vorgangsnummer; damit ist die Reihenfolge
+    stabil und nicht von der Eingabereihenfolge abhaengig.
+  */
+  const ZEITMUSTER = /^([01]\d|2[0-3]):[0-5]\d$/;
+  const hatZeit = (f) => ZEITMUSTER.test(String(f.zeit || "").trim());
+  const nachZeit = (liste) => liste.slice().sort((a, b) => {
+    const az = hatZeit(a);
+    const bz = hatZeit(b);
+    if (az !== bz) return az ? -1 : 1;
+    if (az && a.zeit !== b.zeit) return a.zeit < b.zeit ? -1 : 1;
+    return String(a.id).localeCompare(String(b.id), "de");
+  });
+  /* Nur die mit Zeit, nur die ohne - fuer die getrennten Abschnitte. */
+  const mitZeit = (liste) => nachZeit(liste.filter(hatZeit));
+  const ohneZeit = (liste) => nachZeit(liste.filter((f) => !hatZeit(f)));
+
   const FAHRZEUG_ZUSTAENDE = {
     verfuegbar:  "Frei",
     zugewiesen:  "Zugewiesen",
@@ -391,7 +444,10 @@
   /* ---- Fahrten. Nur Testkunden, keine Gesundheitsangaben. ---- */
   const fahrten = [
     { id: "FA-0001", zustand: "eingang",      zeit: "10:40", kunde: "Testkunde 01", von: "Teststrasse 1, Germersheim", nach: "Testziel A", fahrerId: null,  fahrzeugId: null,  hinweis: "über Telefon aufgenommen" },
-    { id: "FA-0002", zustand: "eingang",      zeit: "11:15", kunde: "Gastfahrt",    von: "Testplatz 2, Germersheim",   nach: "Testziel B", fahrerId: null,  fahrzeugId: null,  hinweis: "Rückfrage zur Uhrzeit offen" },
+    /* Diese Anfrage hat KEINE geklaerte Abholzeit. Sie darf nicht
+       zwischen Uhrzeiten einsortiert werden - sonst behauptet die
+       Liste eine Reihenfolge, die es nicht gibt. */
+    { id: "FA-0002", zustand: "eingang",      zeit: "",      kunde: "Gastfahrt",    von: "Testplatz 2, Germersheim",   nach: "Testziel B", fahrerId: null,  fahrzeugId: null,  hinweis: "Rückfrage zur Uhrzeit offen" },
     { id: "FA-0003", zustand: "ungeplant",    zeit: "12:00", kunde: "Testkunde 02", von: "Testweg 3",                  nach: "Testziel C", fahrerId: null,  fahrzeugId: null,  hinweis: "" },
     { id: "FA-0004", zustand: "ungeplant",    zeit: "12:30", kunde: "Testkunde 03", von: "Testallee 4",                nach: "Testziel A", fahrerId: null,  fahrzeugId: null,  hinweis: "8 Plätze nötig" },
     { id: "FA-0005", zustand: "geplant",      zeit: "13:00", kunde: "Testkunde 01", von: "Teststrasse 1",              nach: "Testziel D", fahrerId: "M02", fahrzeugId: "F02", hinweis: "" },
@@ -466,6 +522,7 @@
       betrifft: { art: "mitarbeiter", id: "M03", name: "Testfahrer 03" },
       eingang: "heute 07:48", eingangIso: alsIso(heute), dringlichkeit: "normal",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
+      ausListe: false, ausListeAm: "", ausListeVon: null,
       sichtbar: ["operations.read", "personnel.read"],
       vertraulich: [],
       daten: { von: alsIso(tagAls(6)), bis: alsIso(tagAls(12)) },
@@ -477,6 +534,7 @@
       betrifft: { art: "mitarbeiter", id: "M02", name: "Testfahrer 02" },
       eingang: "heute 06:05", eingangIso: alsIso(heute), dringlichkeit: "hoch",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
+      ausListe: false, ausListeAm: "", ausListeVon: null,
       sichtbar: ["operations.read", "personnel.read"],
       /* Die Bescheinigung sehen nur Personal und Administration. */
       vertraulich: ["personnel.read"],
@@ -542,6 +600,7 @@
       betrifft: { art: "fahrt", id: "FA-0001", name: "FA-0001" },
       eingang: "heute 10:40", eingangIso: alsIso(heute), dringlichkeit: "hoch",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
+      ausListe: false, ausListeAm: "", ausListeVon: null,
       sichtbar: ["operations.read"], vertraulich: [],
       daten: { hinweis: "über das Formular aufgenommen" },
       empfehlung: "", antwort: "", notizen: []
@@ -552,6 +611,7 @@
       betrifft: { art: "fahrt", id: "FA-0005", name: "FA-0005" },
       eingang: "heute 09:20", eingangIso: alsIso(heute), dringlichkeit: "normal",
       zustaendig: "Testdisposition 01 – Disposition", zustand: "bearbeitung", gesehen: true, version: 1,
+      ausListe: false, ausListeAm: "", ausListeVon: null,
       sichtbar: ["operations.read"], vertraulich: [],
       daten: { hinweis: "Rückruf vereinbart" },
       empfehlung: "", antwort: "", notizen: []
@@ -563,6 +623,7 @@
       eingang: "gestern 16:30", eingangIso: alsIso(tagAls(-1)), dringlichkeit: "niedrig",
       zustaendig: "Testleitung 01 – Administration", zustand: "erledigt", gesehen: true, version: 1,
       abgeschlossenAm: alsIso(tagAls(-1)), archivAb: alsIso(tagAls(89)),
+      ausListe: false, ausListeAm: "", ausListeVon: null,
       sichtbar: ["self.read"], vertraulich: [],
       daten: { text: "Die Betriebsversammlung findet am Freitag um 14:00 Uhr statt." },
       empfehlung: "", antwort: "", notizen: []
@@ -573,6 +634,7 @@
       betrifft: { art: "system", id: "", name: "Integration" },
       eingang: "dauerhaft", eingangIso: alsIso(heute), dringlichkeit: "niedrig",
       zustaendig: "", zustand: "neu", gesehen: true, version: 1,
+      ausListe: false, ausListeAm: "", ausListeVon: null,
       sichtbar: ["operations.read"], vertraulich: [],
       daten: { text: "Es werden keine Positionen angezeigt und keine erfunden." },
       empfehlung: "", antwort: "", notizen: []
@@ -584,6 +646,7 @@
       eingang: "vor 3 Tagen", eingangIso: alsIso(tagAls(-3)), dringlichkeit: "normal",
       zustaendig: "Testpersonal 01 – Personal", zustand: "erledigt", gesehen: true, version: 2,
       abgeschlossenAm: alsIso(tagAls(-3)), archivAb: alsIso(tagAls(87)),
+      ausListe: false, ausListeAm: "", ausListeVon: null,
       sichtbar: ["operations.read", "personnel.read"], vertraulich: [],
       daten: { von: alsIso(tagAls(-1)), bis: alsIso(tagAls(1)), entscheidung: "genehmigt" },
       empfehlung: "Aus Planungssicht möglich",
@@ -605,6 +668,7 @@
       betrifft: { art: "mitarbeiter", id: "M02", name: "Testfahrer 02" },
       eingang: "vor 10 Tagen", eingangIso: alsIso(tagAls(-10)), dringlichkeit: "normal",
       zustaendig: "", zustand: "bearbeitung", gesehen: true, version: 1,
+      ausListe: false, ausListeAm: "", ausListeVon: null,
       sichtbar: ["operations.read", "personnel.read"],
       vertraulich: ["personnel.read"],
       daten: {
@@ -643,10 +707,15 @@
       id: "V0" + vorgangZaehler,
       art: "aufgabe", thema: "system", dringlichkeit: "normal",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
+      ausListe: false, ausListeAm: "", ausListeVon: null,
       sichtbar: ["operations.read"], vertraulich: [],
       daten: {}, empfehlung: "", antwort: "", notizen: [],
       teile: null, abgeschlossenAm: "", archivAb: "",
       nachweise: null, klaerungen: null,
+      /* Aus der Arbeitsliste genommen? Eine Entscheidung ueber die
+         ANSICHT, nicht ueber die Daten. Siehe LISTENSTAENDE in
+         probe-vorgaenge.js. */
+      ausListe: false, ausListeAm: "", ausListeVon: null,
       einsicht: null, ergebnis: "",
       verantwortlich: null, letzterBearbeiter: null,
       eingangIso: alsIso(heute),
@@ -926,6 +995,9 @@
     heute, tagAls, alsIso, alsText, tageZurueck,
     mitarbeiter, fahrzeuge, vorlagen, planung,
     fahrten, fahrtZustaende,
+    fahrtenHeute, nichtZugewiesen, istNichtZugewiesen,
+    NICHT_ZUGEWIESEN_ZUSTAENDE,
+    nachZeit, mitZeit, ohneZeit, hatZeit,
     personal, lohn, rewards, kunden, rechnungen, analyse,
     standardadresse, letzteKunden, kundenSuche, haeufigeZiele,
     abwesenheiten, abwesenheitFuer, abwesenheitenAmTag, istWirksam,

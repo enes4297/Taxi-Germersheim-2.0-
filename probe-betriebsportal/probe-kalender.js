@@ -88,13 +88,21 @@
 
     /* --- Fahrten. Nur der laufende Tag hat in dieser Probe Fahrten;
            fuer andere Tage wird nichts behauptet. --- */
-    if (R.darf("operations.read") && isoTag === heuteIso && D.fahrten.length) {
-      const offen = D.fahrten.filter((f) => f.zustand === "eingang").length;
+    if (R.darf("operations.read") && isoTag === heuteIso && D.fahrtenHeute().length) {
+      /*
+        Dieselbe Definition wie Uebersicht und Fahrtenliste. Vorher
+        zaehlte jede Stelle selbst, und am selben Tag standen 10, 10
+        und 9 nebeneinander.
+      */
+      const alle = D.fahrtenHeute();
+      const offen = D.nichtZugewiesen().length;
       liste.push({
         art: "fahrt", marke: "aktiv",
-        titel: D.fahrten.length + " Fahrten",
-        zusatz: offen ? offen + " noch nicht zugeteilt" : "alle zugeteilt",
-        ziel: "fahrten"
+        titel: alle.length + (alle.length === 1 ? " Fahrt" : " Fahrten"),
+        zusatz: offen
+          ? offen + (offen === 1 ? " noch nicht zugewiesen" : " noch nicht zugewiesen")
+          : "alle zugewiesen",
+        ziel: offen ? "fahrten:offen" : "fahrten:alle"
       });
     }
 
@@ -356,10 +364,19 @@
         return;
       case "kal-ziel": {
         const [ziel, tag] = wert.split("|");
+        /* Das Ziel darf einen Zusatz tragen - "fahrten:offen" fuehrt
+           in genau die Liste, deren Zahl im Kalender stand. */
+        const [bereich, zusatz] = ziel.split(":");
         /* Die Planung uebernimmt den gewaehlten Tag, damit der Klick
            nicht in einer anderen Woche landet. */
-        if (ziel === "planung" && tag) R.zustand.planDatum = tag;
-        R.geheZu(ziel);
+        if (bereich === "planung" && tag) R.zustand.planDatum = tag;
+        if (zusatz) {
+          if (bereich === "fahrten") R.zustand.fahrtFilter = zusatz;
+          else if (window.ProbeBereiche.sprungziel) {
+            window.ProbeBereiche.sprungziel(bereich, zusatz);
+          }
+        }
+        R.geheZu(bereich);
         return;
       }
       default:

@@ -4354,3 +4354,184 @@ durchgegangen.
 
 > **Einordnung:** Designprobe ohne Datenquelle. Der Lauf sagt nichts
 > über die produktive Instanz.
+
+---
+
+## 28. Der vollständige Rundgang — Teil 1: eine Datenwahrheit
+
+Der Nutzer hat die ganze Designprobe durchlaufen und sechzehn
+Befunde gemeldet. Dieser Abschnitt behandelt die vier, bei denen
+**dieselbe Sache verschiedene Zahlen hatte**. Die übrigen folgen in
+eigenen Abschnitten.
+
+Alles nur in der Designprobe: keine produktive Adminseite ersetzt,
+keine Migration, keine Supabase-Daten, kein Push, Merge oder
+Deployment.
+
+### 28.1 Drei Zahlen für einen Tag
+
+**Gemessen.** Am selben Tag, ohne eine Fahrt zu ändern:
+Kalender 10, Fahrtenliste „Alle" 10, **Übersicht 9**.
+
+**Ursache im Code.** Jede Ansicht rechnete selbst:
+
+| Stelle | Rechnung |
+|---|---|
+| `uebersicht()` | `D.fahrten.filter(f => !["storniert"].includes(f.zustand))` |
+| `fahrten()` | `D.fahrten` ungefiltert |
+| `probe-kalender.js` | `D.fahrten.length` |
+
+Die Übersicht rechnete eine stornierte Fahrt heraus, die anderen
+nicht. Drei Stellen, drei Rechnungen, drei Wahrheiten.
+
+**Geändert.** In `probe-daten.js` steht jetzt je Begriff **eine**
+Funktion. Wer eine Zahl braucht, ruft sie; niemand filtert mehr
+selbst:
+
+| Funktion | Definition |
+|---|---|
+| `fahrtenHeute()` | alle Fahrten des Tages, **storniert eingeschlossen** |
+| `nichtZugewiesen()` | Eingang oder ungeplant **und** kein Fahrer |
+| `nachZeit()` | aufsteigend, fehlende Zeit hinten, bei Gleichstand nach Nummer |
+| `mitZeit()` / `ohneZeit()` | die beiden Abschnitte getrennt |
+
+Dass storniert **enthalten** ist, ist eine Festlegung und keine
+Nebensache: Eine stornierte Fahrt ist am Tag passiert und gehört in
+die Tagesmenge. Wer nur die aktiven sehen will, filtert. In der Probe
+gibt es nur den laufenden Tag; sobald Fahrten ein Datum tragen, kommt
+der Tagesvergleich an **diese** Stelle und an keine andere.
+
+### 28.2 Die Karte sagte vier, die Liste zeigte zwei
+
+**Gemessen.** „4 noch nicht zugewiesen" öffnete den Filter
+„Ungeplant" mit 2 Fahrten.
+
+**Ursache.** Die Karte rechnete `ungeplant + eingang`, ihr Sprungziel
+war aber der **Zustandsfilter** `fahrten:ungeplant`. Zwei
+verschiedene Mengen, eine Zahl.
+
+**Geändert.** Es gibt den Filter **„Noch nicht zugewiesen"**
+(`fahrten:offen`), der genau `nichtZugewiesen()` zeigt. Die
+Definition enthält bewusst auch „kein Fahrer": Eine ungeplante Fahrt,
+auf der schon jemand steht, ist zugewiesen. Der Prüflauf setzt bei
+einer ungeplanten Fahrt einen Fahrer und weist nach, dass sie
+herausfällt.
+
+### 28.3 Neun Warnungen, Reiter „Erledigt"
+
+**Gemessen.** „9 Warnungen" öffnete Meldungen im Reiter
+„Erledigt (3)".
+
+**Zwei Ursachen.** Erstens setzte der Sprung **keinen Reiter** — es
+blieb der zuletzt gewählte stehen. Zweitens, und schlimmer: Im
+Rahmen stand
+
+```js
+const [bereichId, filter] = ziel.dataset.ziel.split(":");
+if (filter) zustand.fahrtFilter = filter;
+```
+
+**Jeder** Sprung mit Zusatz setzte den **Fahrtfilter** — auch einer in
+die Meldungen. Der Zusatz gehörte niemandem.
+
+**Geändert.** Der Zusatz gehört dem Zielbereich. Der Rahmen gibt ihn
+über `ProbeBereiche.sprungziel(bereich, zusatz)` an das Zielmodul
+weiter, **bevor** gezeichnet wird. Die Meldungen haben einen Reiter
+„Offene Warnungen", gespeist aus `offeneWarnungen()` — derselben
+Funktion, aus der die Kennzahl ihre Zahl nimmt. Kennzahl,
+Reiterzähler und Zielliste sind damit dieselbe Menge.
+
+Der Prüflauf wählt eigens vorher einen anderen Reiter und springt
+dann — das war der eigentliche Befund.
+
+### 28.4 Fahrten standen unsortiert
+
+**Ursache.** `fahrten()` sortierte nicht; der Tagesverlauf sortierte
+mit `a.zeit.localeCompare(b.zeit)` eigenständig.
+
+**Geändert.** Alle Listen nehmen `D.nachZeit()`. Bei gleicher
+Uhrzeit entscheidet die Vorgangsnummer — damit ist die Reihenfolge
+stabil und nicht von der Eingabereihenfolge abhängig; der Prüflauf
+sortiert dieselben zwei Fahrten in beiden Richtungen und vergleicht.
+
+Fahrten **ohne geklärte Zeit** stehen in einem eigenen, benannten
+Abschnitt „Zeit noch nicht geklärt" — nicht zwischen den Uhrzeiten.
+Dort steht auch, warum: *die Reihenfolge wäre erfunden.*
+
+Damit das überhaupt prüfbar ist, hat eine Fahrt im Bestand jetzt
+bewusst keine Zeit (`FA-0002`, „Rückfrage zur Uhrzeit offen"). Vorher
+trug sie 11:15 und widersprach damit ihrem eigenen Hinweis.
+
+### 28.5 Erledigt, ausgeblendet, archiviert, wiedereröffnet
+
+**Der Wunsch.** Erledigte Vorgänge sollen aus der täglichen
+Arbeitsliste verschwinden können — **ohne Daten zu löschen**.
+
+**Ursache.** Zwischen „fachlich erledigt" und „nach 90 Tagen
+archiviert" gab es keinen Zustand. Wer seine Liste leer haben wollte,
+hatte keine Wahl.
+
+**Vier Zustände, ausdrücklich getrennt benannt:**
+
+| Zustand | Wer entscheidet | Wirkung |
+|---|---|---|
+| **fachlich erledigt** | berechnet aus den Teilschritten | steht in „Erledigt" |
+| **ausgeblendet** | ein Mensch, über die Ansicht | steht im Archiv, nicht in „Erledigt" |
+| **archiviert** | die Zeit, 90 Tage nach Abschluss | steht im Archiv |
+| **wiedereröffnet** | ein Mensch, mit Pflichtgrund | zurück in die Arbeit, Ausblendung aufgehoben |
+
+Die Trennung steht als `LISTENSTAENDE` im Code, nicht nur im
+Oberflächentext — der Prüflauf liest beides nach.
+
+**„Aus Erledigt-Liste entfernen"** ändert allein `v.ausListe`. Der
+Prüflauf vergleicht Titel, Teilschritte, Daten, Zustand,
+Verantwortliche, Abschlussdatum, Archivdatum und Notizen **vor und
+nach** der Aktion als Ganzes und besteht nur, wenn sie Zeichen für
+Zeichen gleich sind. Der Vorgang steht danach im Archiv, ist über die
+Suche auffindbar, und die Zeile sagt, **warum** er dort steht.
+
+Protokolliert werden Person, Kennung, Rolle, Datum, Uhrzeit,
+betroffener Vorgang, **vorheriger und nachheriger Listenstatus** —
+und dass er auffindbar bleibt.
+
+Der Weg **zurück** in die Arbeitsliste ist da. Und eine
+**Wiedereröffnung hebt die Ausblendung auf**: Sonst wäre der Vorgang
+wieder zu tun und trotzdem unsichtbar. Das ist kein Nebeneffekt,
+sondern eigens so gebaut und eigens geprüft.
+
+Das Archiv erklärt jetzt **beide** Wege hinein und wiederholt, dass
+keiner davon ein Löschen ist. Die 90-Tage-Regel bleibt unverändert;
+die Ausblendung tritt nicht an ihre Stelle, sondern daneben.
+
+### 28.6 Was offen bleibt
+
+- **Keine Löschung, auch keine spätere.** Die Aufbewahrungsfrist ist
+  weiterhin eine offene rechtliche Entscheidung (Abschnitt 23.5). Die
+  Ausblendung ändert daran nichts — sie ist ausdrücklich keine
+  Löschung und auch kein Ersatz dafür.
+- **Ein Tag.** Die Probe kennt nur den laufenden Tag. Ob „Fahrten
+  heute" später den Kalendertag der Abholung oder der Anlage meint,
+  ist eine Festlegung, die mit echten Daten zu treffen ist. Die
+  Stelle dafür ist `fahrtenHeute()` und nur sie.
+
+### 28.7 Ein eigener Fehler im Prüflauf
+
+Die Zusicherung „der Abschnitt sagt, warum nicht einsortiert wird"
+las `page.textContent(".flaeche")`. Davon gibt es mehrere, und
+`textContent` nimmt nur die erste — den Filterblock. Der Hinweis
+steht in der zweiten. Behoben durch Lesen des ganzen Hauptbereichs.
+
+Kein Produktfehler: Der Satz stand von Anfang an da, die Prüfung
+schaute an die falsche Stelle.
+
+### 28.8 Prüfstand Teil 1
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-wahrheit-pruefen` (7 Blöcke, neu) | **78 bestanden, 0 offen** |
+
+Die übrigen Läufe folgen, wenn alle sechzehn Befunde umgesetzt sind —
+ein Gegenlauf auf halbem Weg sagt wenig.
+
+> **Einordnung:** Designprobe ohne Datenquelle. Der Lauf sagt nichts
+> über die produktive Instanz.
