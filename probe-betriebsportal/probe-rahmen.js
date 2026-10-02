@@ -408,8 +408,14 @@
 
     /* Tastatur: Escape schliesst, Tab bleibt im Dialog. */
     document.addEventListener("keydown", (e) => {
-      if (!dialogOffen()) return;
+      /*
+        Die Bereiche werden ZUERST gefragt, und zwar auch ohne offenen
+        Dialog. Vorher lief dieser Handler nur bei offenem Fenster -
+        damit kam Enter in einem Suchfeld der Flaeche nie an. Im
+        manuellen Rundgang sah das aus wie "Enter bewirkt nichts".
+      */
       if (window.ProbeBereiche.taste && window.ProbeBereiche.taste(e) === true) return;
+      if (!dialogOffen()) return;
       if (e.key === "Escape") { e.preventDefault(); dialogSchliessen(); return; }
       if (e.key !== "Tab") return;
       const kasten = document.querySelector(".dialog-kasten");

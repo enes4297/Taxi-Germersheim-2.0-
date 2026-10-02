@@ -110,7 +110,41 @@ console.log("\n── 2. Nur offensichtlich fiktive Daten ──");
   pruefe(!/Mustermann|Musterfrau|Herr Müller|Frau Schmidt|Herr Cakir/.test(text),
     "keine erfundenen Personennamen aus dem Bestand");
   pruefe(!/\b01[5-7][0-9]\s?\d{6,}/.test(text), "keine erfundenen Telefonnummern");
-  pruefe(!/Dialyse|Strahlentherapie|Chemotherapie/.test(textOhneKommentar), "keine Gesundheitsangaben");
+  /*
+    GEAENDERTE ERWARTUNG - eng begrenzt.
+
+    Alt: Das Wort "Dialyse" durfte im Quelltext ausserhalb von
+    Kommentaren nirgends stehen.
+
+    Weshalb das so nicht mehr gilt: Der Geschaeftsfuehrer hat als
+    Rewardsregel genannt, dass Krankenfahrten, Dialyse und
+    Flughafenfahrten keine Punkte geben. Diese Liste ist eine
+    KATEGORIEREGEL ohne Person. Wuerde ich das Wort streichen, waere
+    die Geschaeftsregel falsch wiedergegeben.
+
+    Neu, und strenger als vorher: Verboten bleibt jede Nennung einer
+    Behandlungsart in Daten, die an einen Menschen haengen -
+    Protokolleintraege, Rechnungsposten, Kundenhinweise, Vorgaenge.
+    Erlaubt ist allein die abstrakte Ausschlussliste. Geprueft wird
+    das, indem genau diese eine Zeile ausgenommen und danach
+    unveraendert streng gesucht wird. Zwei Verletzungen wurden dabei
+    gefunden und behoben: ein Rewardsprotokoll mit "Dialysefahrt" und
+    ein Rechnungsposten mit "Dialysefahrt Testklinik 02".
+  */
+  const ANFANG = "const REWARDS_AUSSCHLUSS";
+  const beginn = textOhneKommentar.indexOf(ANFANG);
+  const ende = beginn < 0 ? -1 : textOhneKommentar.indexOf(";", beginn);
+  pruefe(beginn >= 0 && ende > beginn,
+    "die abstrakte Ausschlussliste der Rewardsregeln ist vorhanden");
+  const regelliste = beginn < 0 ? "" : textOhneKommentar.slice(beginn, ende + 1);
+  pruefe(regelliste.split("\n").length === 1,
+    "sie steht in genau einer Zeile - es wird nicht mehr ausgenommen als diese");
+  pruefe(/Dialyse/.test(regelliste),
+    "und sie ist die Zeile, um die es geht");
+  const ohneRegelliste = beginn < 0 ? textOhneKommentar
+    : textOhneKommentar.slice(0, beginn) + " " + textOhneKommentar.slice(ende + 1);
+  pruefe(!/Dialyse|Strahlentherapie|Chemotherapie/.test(ohneRegelliste),
+    "keine Gesundheitsangaben ausserhalb der abstrakten Kategorieregel");
   pruefe(/Testkunde 01/.test(text) && /Testfahrer 01/.test(text) && /GER-TEST 001/.test(text),
     "stattdessen ausdruecklich benannte Testdaten");
   /* Kommentare erst entfernen: Die Probe SPRICHT ueber Supabase
@@ -174,13 +208,51 @@ console.log("\n── 4. Die Uebersicht zeigt das Wichtige zuerst ──");
   const anklickbar = await page.$$eval(".kennzahl[data-ziel]", (n) => n.filter((x) => x.dataset.ziel).length);
   pruefe(anklickbar >= 5, `Kennzahlen fuehren zur Liste (${anklickbar})`);
 
-  /* Eine Kennzahl anklicken fuehrt wirklich in die gefilterte Liste. */
-  await page.click('.kennzahl[data-ziel="fahrten:ungeplant"]');
+  /*
+    Eine Kennzahl anklicken fuehrt wirklich in die gefilterte Liste.
+
+    GEAENDERTE ERWARTUNG.
+
+    Alt: Die Kennzahl trug data-ziel="fahrten:ungeplant" und sprang in
+    den Filter "ungeplant".
+
+    Weshalb das fachlich nicht mehr gilt: Der manuelle Rundgang hat
+    gemessen, dass die Uebersicht "4 nicht zugewiesen" zeigte, der
+    Filter danach aber 2 Fahrten. Ursache: Die Kennzahl zaehlte
+    Fahrten ohne Fahrer, der Filter zeigte nur zustand === "ungeplant".
+    Eine Fahrt im Eingang ohne Fahrer ist ebenfalls nicht zugewiesen -
+    sie fiel aus dem Filter heraus. Die alte Erwartung hat also genau
+    jene Abweichung festgeschrieben, die als Fehler gemeldet wurde.
+
+    Neu: "nicht zugewiesen" ist in probe-daten.js einmal definiert
+    (istNichtZugewiesen: zustand in {eingang, ungeplant} UND kein
+    Fahrer). Die Kennzahl zielt auf "fahrten:offen", und der Filter
+    "offen" zeigt D.nichtZugewiesen() - dieselbe Funktion, aus der
+    auch die Zahl auf der Karte kommt.
+
+    Belegt wird deshalb nicht nur, dass der Filter gedrueckt ist,
+    sondern dass die Zahl auf der Karte und die Laenge der Liste
+    uebereinstimmen. Der Filter "ungeplant" bleibt daneben bestehen -
+    er wird weiterhin geprueft, nur nicht mehr als Ziel der Kennzahl.
+  */
+  const kartenzahl = await page.$eval('.kennzahl[data-ziel="fahrten:offen"]',
+    (el) => el.querySelector(".wert").textContent.trim());
+  await page.click('.kennzahl[data-ziel="fahrten:offen"]');
   await page.waitForTimeout(250);
   const titel = await page.textContent(".bereichskopf h1");
   pruefe(titel.trim() === "Fahrten", "ein Klick auf die Kennzahl landet bei den Fahrten");
-  const gewaehlt = await page.$eval('[data-tun="fahrt-filter:ungeplant"]', (el) => el.getAttribute("aria-pressed"));
+  const gewaehlt = await page.$eval('[data-tun="fahrt-filter:offen"]', (el) => el.getAttribute("aria-pressed"));
   pruefe(gewaehlt === "true", "und zwar im richtigen Filter");
+  const zeilen = await page.$$eval("table.liste tbody tr", (n) => n.length);
+  pruefe(String(zeilen) === kartenzahl,
+    `die Liste zeigt genau die Menge der Kennzahl (Karte ${kartenzahl}, Liste ${zeilen})`);
+  /* Der Filter "ungeplant" existiert weiterhin und wirkt. */
+  await page.click('[data-tun="fahrt-filter:ungeplant"]');
+  await page.waitForTimeout(250);
+  const ungeplant = await page.$eval('[data-tun="fahrt-filter:ungeplant"]', (el) => el.getAttribute("aria-pressed"));
+  pruefe(ungeplant === "true", "der Filter \"ungeplant\" ist weiterhin vorhanden und waehlbar");
+  await page.click('[data-tun="fahrt-filter:offen"]');
+  await page.waitForTimeout(250);
 
   const seitentext = await page.textContent(".haupt");
   pruefe(!/km\b|Minuten Fahrzeit|Entfernung: \d/.test(seitentext),

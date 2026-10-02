@@ -1539,3 +1539,109 @@ textarea {
 @media (max-width: 560px) {
   .kal-kein-ziel { margin-left: 0; text-align: left; max-width: 100%; }
 }
+
+/* ============================================================
+   Aktenlisten - Zeilen, die wirklich bedienbar sind
+   ============================================================
+   Der manuelle Rundgang hat in vier Bereichen denselben Befund
+   ergeben: Die Zeilen leuchten beim Darueberfahren, lassen sich aber
+   nicht anklicken. Deshalb sind diese Zeilen <button> und keine
+   Tabellenzeilen mit Klickhorcher - Tastatur, Fokus und Enter kommen
+   damit von selbst.
+
+   Umgekehrt gilt: Was NICHT bedienbar ist, bekommt hier auch keine
+   Hover-Optik. */
+.aktenliste {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+}
+.az-kopf,
+.aktenzeile {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.6fr) repeat(5, minmax(90px, 1fr)) minmax(100px, 1.2fr);
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  padding: 10px 12px;
+}
+.az-kopf {
+  font-size: 11px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+  padding-bottom: 2px;
+}
+.aktenzeile {
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .02);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  min-height: 44px;
+}
+.aktenzeile:hover { border-color: var(--gold); background: rgba(200, 169, 110, .06); }
+.aktenzeile:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.az-feld {
+  font-size: 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.az-feld strong { font-size: 14px; }
+
+@media (max-width: 900px) {
+  /* Auf schmalen Geraeten wird die Zeile zum Block. Sieben Spalten auf
+     320px waeren unlesbar. */
+  .az-kopf { display: none; }
+  .aktenzeile {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    padding: 12px;
+  }
+  .az-feld { white-space: normal; }
+}
+
+/* Eine Anzeigezeile ist KEINE Schaltflaeche. Sie erbt das Raster der
+   Aktenzeile, aber nicht deren Klickoptik - genau das war der Befund
+   des Rundgangs an vier Stellen. */
+.aktenzeile.ist-anzeige {
+  cursor: default;
+  background: none;
+}
+.aktenzeile.ist-anzeige:hover {
+  border-color: var(--linie);
+  background: none;
+}
+
+/* ============================================================
+   Analyse: Anzeigekachel und Balken
+   ============================================================
+   .kennzahl ist als Schaltflaeche gebaut - cursor: pointer und
+   Hover. In der Analyse fuehrt keine Kachel irgendwohin, also darf
+   sie auch nicht so aussehen. Das ist dieselbe Regel wie bei
+   .aktenzeile.ist-anzeige. */
+.kennzahl.ist-anzeige { cursor: default; }
+.kennzahl.ist-anzeige:hover { background: var(--flaeche); }
+
+.balken { display: grid; gap: 8px; }
+.balkenzeile {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 2fr auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 15px;
+}
+.balkenstab {
+  height: 8px;
+  border-radius: 2px;
+  background: var(--flaeche-2);
+  overflow: hidden;
+}
+.balkenstab i { display: block; height: 100%; border-radius: 2px; background: var(--gold); }
+.balkenwert { font-weight: 700; }
+@media (max-width: 560px) {
+  .balkenzeile { grid-template-columns: 1fr auto; }
+  .balkenstab { grid-column: 1 / -1; }
+}

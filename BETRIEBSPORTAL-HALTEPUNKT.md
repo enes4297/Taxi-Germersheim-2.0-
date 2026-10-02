@@ -1,7 +1,7 @@
 # Betriebsportal — Bericht am verbindlichen Haltepunkt
 
 **Branch:** `feature/030-betriebsportal-neu`
-**Stand:** 29.09.2026
+**Stand:** 02.10.2026
 **Phasen abgeschlossen:** 0, 1, 2, 3, 4, 19, 21
 **Kein echter Betriebsportalcode ist verändert.**
 
@@ -4675,3 +4675,532 @@ Manuell bestanden und jetzt als Regression festgehalten:
 
 > **Einordnung:** Designprobe ohne Datenquelle. Der Lauf sagt nichts
 > über die produktive Instanz.
+
+---
+
+## 30. Der Rundgang — Teil 3: vier Bereiche, die nur aussahen wie Bereiche
+
+### Der gemessene Ausgangszustand
+
+Im vollständigen manuellen Rundgang waren vier Bereiche **sichtbar, aber
+nicht bedienbar**. Das ist genau die Art Befund, die eine Designprobe
+liefern soll: Die Fläche war da, die Bedienung nicht.
+
+| Bereich | Was der Rundgang gemessen hat |
+|---|---|
+| Kunden | Suchfeld ohne Wirkung, Zeilen ohne Ziel, kein Anlegen |
+| Personal | Liste ohne Akte, zweite Mitarbeiterwahrheit neben `mitarbeiter[]` |
+| Finanzen | Rechnungen ohne Akte, keine Zahlung, keine Mahnung, keine Korrektur |
+| Rewards | Fünf Stufen als Text, kein Konto, keine Korrektur |
+
+### Die Ursachen im Code
+
+**Kunden.** `kunden()` in `probe-bereiche.js` gab eine Tabelle aus
+`D.kunden` aus. Es gab kein Zustandsfeld für die Suche, also konnte das
+Feld nichts filtern, und keine Zeile trug ein `data-tun` — damit gab es
+nichts, was ein Klick hätte auslösen können. Der Fahrtassistent führte
+zudem eine **eigene** Kundenliste; ein dort neu angelegter Kunde
+existierte im Kundenbereich nicht.
+
+**Personal.** Neben `mitarbeiter[]` stand ein zweites Feld `personal[]`
+mit eigenen Namen und eigenen Angaben. Zwei Listen über dieselben
+Menschen laufen auseinander, sobald eine gepflegt wird und die andere
+nicht — und niemand merkt, welche gerade stimmt.
+
+**Finanzen.** `rechnungen[]` kannte Nummer, Betrag und Zustand, aber
+keinen Kunden, keine Positionen, keine Zahlungen und keine Version. Ohne
+Version ist keine Korrektur möglich, die den alten Stand nicht
+überschreibt.
+
+**Rewards.** Die Stufen standen als Fließtext in der Ansicht. Es gab
+keine Konten, keine qualifizierenden Fahrten und keinen Verlauf.
+
+### Was geändert wurde
+
+**Eine Quelle je Sache.** `personal` ist jetzt eine **Sicht** auf
+`mitarbeiter[]`: `personal = mitarbeiter.map((m) => personalVon(m.id))`.
+Die zusätzlichen Angaben liegen getrennt in `personalZusatz`, verschlüsselt
+über dieselbe Kennung. Eine zweite Wahrheit ist damit nicht mehr
+konstruierbar, nicht weil jemand aufpasst, sondern weil es nur eine Liste
+gibt. Ebenso beim Kundenbestand: Der Fahrtassistent legt über
+`D.kundeAnlegen()` in **denselben** Bestand an, den der Kundenbereich
+zeigt, und schreibt die Kennung an die Fahrt.
+
+**Neu: `probe-akten.js` (959 Zeilen).** Ein eigenes Modul für Akten und
+Aktionen, eingeordnet zwischen `probe-vorgaenge` und `probe-kalender`.
+Darin: Kundenakte, Personalakte, Rechnungsakte, Rewardskonto, Neuanlage
+eines Kunden in zwei Schritten mit Pflichtfeldern, Buchungsdialog,
+Zahlung, Mahnung, Rechnungskorrektur als neue Version und manuelle
+Rewardskorrektur.
+
+**Die Aktenzeile.** Jede Zeile einer Liste ist jetzt eine echte
+`<button class="aktenzeile" data-tun aria-label>`. Keine Zeile sieht
+anklickbar aus, ohne es zu sein; Zeilen, die nur anzeigen, tragen
+`ist-anzeige` und haben keine Klickoptik.
+
+**Korrektur statt Überschreiben.** Eine Rechnungskorrektur erzeugt eine
+**neue Version** mit Pflichtgrund. Die alte Version bleibt. Protokolliert
+werden handelndes Konto, Rolle, Zeitpunkt, vorheriger Zustand, neuer
+Zustand und Grund. Die Einträge sind `Object.freeze` — ein späterer Zugriff
+kann sie nicht mehr ändern.
+
+**Die manuelle Rewardskorrektur** verlangt `rewards.write` **und**
+`security.read`. Nach der Rollenverteilung dieser Probe trifft das nur auf
+die Administration zu. Die Prüfung steht in der Aktion selbst, nicht nur in
+der Anzeige — der direkte Aufruf wird ebenso abgewiesen.
+
+### Offene Geschäftsregeln — ausdrücklich nicht erfunden
+
+Diese Punkte sind in der Oberfläche als offen gekennzeichnet und mit
+**keiner** Zahl gefüllt:
+
+- die Punktzahlen der Rewardsstufen unterhalb von VIP
+- die Mahnstufen und Mahngebühren
+- die Zahlungsfrist einer Rechnung
+- die Aufbewahrungsfrist für Krankheitsnachweise (rechtliche Entscheidung)
+- ob eine Rechnungskorrektur eine Gutschrift oder eine Neuausstellung ist
+
+Festgelegt sind nur die Regeln, die der Geschäftsführer genannt hat:
+VIP ab 100 qualifizierenden Fahrten, 200 Geburtstagspunkte, keine Punkte
+für Krankenfahrten, Dialyse und Flughafen, Glücksrad 5 bis 50 Punkte,
+20-€-Gutschein, Yumaks Box gesperrt.
+
+### Zwei eigene Fehler, getrennt benannt
+
+1. **Ich habe meine eigene Regel gebrochen.** Die Anzeigezeilen trugen die
+   Klasse `aktenzeile` und erbten damit `cursor: pointer` und den
+   Hover-Effekt — genau die Klickoptik ohne Bedienbarkeit, die Block 16
+   verbietet. Der eigene Prüflauf hat es gefunden, nicht ich. Behoben mit
+   `.aktenzeile.ist-anzeige { cursor: default; background: none; }`.
+   Derselbe Fehler stak später in `.kennzahl` der Analyse und wurde dort
+   gleich mit erledigt.
+2. **Ein widersprüchlicher Testwert.** Mein Arbeitszeitmodell gab M02
+   „Vollzeit · 40 Std." bei einer Teilzeitbeschäftigung. Die Modelle
+   richten sich jetzt nach `mitarbeiter[]`.
+
+### Ein Fehlalarm, getrennt benannt
+
+Mein Prüflauf behauptete, die Buchhaltung habe kein `customers.write` und
+dürfe deshalb keinen Kunden anlegen. Die Buchhaltung **hat** dieses Recht.
+Nicht die Oberfläche war falsch, sondern meine Annahme. Die Prüfung nimmt
+jetzt die Disposition, die wirklich keine Kundenrechte hat, und prüft den
+direkten Aufruf.
+
+---
+
+## 31. Der Rundgang — Teil 4: ein Zeitraum, der etwas bewirkt
+
+### Der gemessene Ausgangsfehler
+
+Im Analysebereich stand im Kopf: **„Zeitraum: letzte 7 Tage"**. Kein
+Knopf, kein Hover, keine andere Wahl. Daneben standen Zahlen, die zu
+keinem Zeitraum gehörten.
+
+### Die Ursache im Code
+
+In `probe-daten.js`:
+
+```js
+const analyse = {
+  zeitraum: "letzte 7 Tage",
+  kennzahlen: [ { name: "Besuche", wert: "1.284", ... }, ... ],
+  aktionen: [...],
+  seiten: [...]
+};
+```
+
+und in `probe-bereiche.js` nur `<p>Zeitraum: ${h(a.zeitraum)}</p>`.
+
+Es gab **nichts zu wählen, weil es nichts zu rechnen gab.** Die Zahlen
+waren einzeln hingeschrieben. Ein Zeitraumknopf hätte sie nicht ändern
+können — er hätte nur die Beschriftung getauscht und damit eine
+Auswertung behauptet, die nicht existiert.
+
+### Was geändert wurde
+
+**Tageswerte statt Endzahlen.** Es liegen jetzt **400 Tage** Testwerte
+vor, je Tag und je Ereignis. Jede Kennzahl der Seite wird über den
+gewählten Bereich **summiert**.
+
+Das ist der entscheidende Punkt gegen die Anforderung „keine zufällig
+voneinander abweichenden Zeiträume": Die Kennzahlen reagieren nicht
+gemeinsam, weil jemand sie gemeinsam aktualisiert, sondern weil sie aus
+**einer einzigen Rechnung** kommen. `analyseAuswertung(von, bis)` ist die
+einzige Stelle, an der eine Zahl dieser Seite entsteht. Zwei verschiedene
+Zeiträume auf einer Seite sind damit nicht konfigurierbar, sondern
+strukturell ausgeschlossen.
+
+**Die Tageswerte sind nicht zufällig.** Sie entstehen aus dem Tagesabstand
+(`analyseTagwert`), mit einem niedrigeren Wochenendwert. Ein `Math.random`
+hätte bei jedem Zeichnen andere Zahlen ergeben — damit wäre kein Prüflauf
+möglich und keine Anzeige wiederholbar. Der Prüflauf prüft ausdrücklich,
+dass kein `Math.random` in der Anzeige steht.
+
+**Sieben Zeiträume**, jeder eine echte Schaltfläche mit `aria-pressed`:
+Heute, Gestern, Letzte 7 Tage, Letzte 30 Tage, Dieser Monat, Letzter
+Monat, Eigener Zeitraum. Der gewählte Zeitraum bleibt im Kopf sichtbar,
+mit Von, Bis und Tageszahl — „1 Tag", nicht „1 Tage".
+
+**Eigener Zeitraum.** Zwei `type="date"`-Felder, übernommen bei
+`change`, also wenn das Datum vollständig ist. Mit nur einem gefüllten
+Feld wird **keine Zahl gezeigt**, sondern um die Eingabe gebeten: Eine
+halbe Auswahl ergibt keine Auswertung, und eine Zahl ohne Zeitraum wäre
+eine Behauptung. Eine verdrehte Eingabe (bis vor von) wird gedreht, nicht
+als leer gewertet.
+
+**Schätzung heißt Schätzung.** Jede Kachel sagt, woher ihre Zahl kommt:
+
+| Kennzahl | Art |
+|---|---|
+| Seitenaufrufe, Besuche | gezählt |
+| Besucher, wiederkehrend | **Schätzung**, mit Tilde: `~` |
+| die drei Quoten | gerechnet, aus denselben Tagen |
+
+Der Grund steht in der Ansicht: Ein Mensch mit Handy und Rechner zählt
+doppelt, wer Speicherfunktionen blockiert, gar nicht. Deshalb ist
+„Besucher" keine Zählung und wird auch nicht als eine ausgegeben.
+
+**Was hier nicht passiert** — als eigener Abschnitt in der Ansicht: keine
+Einzelverfolgung, keine Nutzer- oder Gerätekennung, keine IP in den
+Zahlen, kein fremder Trackingdienst, kein Aufruf nach außen. Die
+Mitarbeiter- und Adminnutzung zählt nicht als Besuch.
+
+### Ein eigener Fehler, getrennt benannt
+
+Die Kacheln nutzen `.kennzahl`, und diese Klasse ist als Schaltfläche
+gebaut — `cursor: pointer` und Hover. In der Analyse führt keine Kachel
+irgendwohin. Das war wieder Klickoptik ohne Bedienbarkeit, derselbe Fehler
+wie bei der Aktenzeile. Behoben mit `.kennzahl.ist-anzeige`, und der
+Prüflauf sucht jetzt gezielt nach Kacheln mit Zeiger ohne Schaltfläche.
+
+### Was dieser Lauf nicht sagt
+
+Es findet **heute keine Besuchermessung statt.** Es ist kein Trackingdienst
+angebunden, und es gibt keine Datenquelle. Alle Zahlen sind erfundene
+Testwerte der Designprobe, in der Ansicht auch so gekennzeichnet. Im
+produktiven Portal bleibt der Bereich leer, bis eine datensparsame
+Ereigniserfassung eingerichtet und rechtlich geprüft ist. Diese Prüfung
+steht aus — **welche Ereignisse überhaupt erhoben werden dürfen, ist eine
+offene rechtliche Entscheidung**, keine technische.
+
+---
+
+## 32. Was die Gegenläufe an meiner eigenen Arbeit gefunden haben
+
+Die bestehenden Prüfläufe sind beim vollständigen Durchlauf über die
+Blöcke 1 bis 16 **viermal** auf Fehler gestoßen, die ich selbst eingebaut
+hatte. Sie stehen hier getrennt, weil sie nichts mit den gemeldeten
+Befunden des Rundgangs zu tun haben.
+
+### 32.1 Der Kunde wurde beim Zeichnen angelegt — ein ernster Fehler
+
+Block 8 verlangte einen gemeinsamen Kundenbestand: Ein im Fahrtassistenten
+neu eingegebener Kunde muss auch im Kundenbereich auftauchen. Ich habe den
+Aufruf `D.kundeAnlegen(...)` dafür in `schrittPruefen()` gesetzt — und
+`schrittPruefen()` ist die **Zeichenfunktion** von Schritt 5, nicht die
+Speicherfunktion.
+
+Folge: Jedes Neuzeichnen von Schritt 5 hätte einen weiteren Kunden angelegt
+und einen weiteren Protokolleintrag geschrieben. Ein Schritt zurück und
+wieder vor hätte Doppelgänger erzeugt. Zusätzlich griff `speichern()` auf
+die dortige lokale Variable `angelegt` zu, die in seinem Geltungsbereich
+nicht existiert.
+
+Behoben: Das Anlegen steht jetzt in `speichern()` und läuft genau einmal.
+Die Prüfansicht **zeigt** nur an, was passieren wird — „Kundenbestand:
+wird mit dem Speichern neu angelegt". Gefunden hat das
+`probe-fahrt-pruefen`, nicht ich.
+
+Die Regel dahinter, für künftige Arbeit: **Eine Zeichenfunktion verändert
+keine Daten.** Sie kann beliebig oft laufen; alles, was sie verändert,
+verändert sie beliebig oft.
+
+### 32.2 Ich hatte den Zwei-Zeichen-Schutz gestrichen
+
+Die Kundensuche gab bei weniger als zwei Zeichen den Hinweis „Mindestens
+zwei Zeichen eingeben. Der Bestand hat N Kunden — es werden nie alle
+gezeigt." Beim Ausbau der Suche auf Firma, Anschrift und E-Mail habe ich
+diese Schwelle entfernt.
+
+Das war **keine Forderung aus Block 8.** Dort stand: Suche beim Tippen,
+auch über Adresse und E-Mail, und Enter bei genau einem Treffer. Von einer
+niedrigeren Schwelle war nicht die Rede. Bei einem Zeichen trifft die
+Suche einen großen Teil von über zweitausend Einträgen — das ist keine
+Suche, sondern eine Liste.
+
+Die Schwelle ist wieder da, und der Kundenbereich hält sie jetzt ebenso
+ein wie der Fahrtassistent: eine Suchfunktion, zwei Oberflächen, eine
+Regel. Die Suche beim Tippen und die zusätzlichen Suchfelder bleiben.
+
+### 32.3 Zwei Gesundheitsangaben in meinen Testdaten
+
+Der Portallauf prüft, dass im Quelltext keine Behandlungsart steht. Er hat
+zwei Stellen gefunden, die ich geschrieben hatte:
+
+- ein Rewardsprotokoll-Eintrag eines benannten Testkunden mit dem Grund
+  `"Dialysefahrt — ausgeschlossen"`
+- ein Rechnungsposten `"Dialysefahrt Testklinik 02"`, dazu ein
+  `"Rollstuhlzuschlag"`
+
+Beides hängt eine Behandlungsart an einen Kunden. Dass es Testdaten sind,
+ändert daran nichts — die Projektregel verbietet erfundene
+Gesundheitsangaben ausdrücklich. Ersetzt durch `"Fahrt einer
+ausgeschlossenen Kategorie"`, `"Vertragsfahrt Testklinik 02"` und
+`"Wartezeitzuschlag"`.
+
+**Die Unterscheidung, die hier getroffen wird**, und zwar bewusst:
+
+| Angabe | Bewertung |
+|---|---|
+| `REWARDS_AUSSCHLUSS = ["Krankenfahrten", "Dialyse", "Flughafenfahrten"]` | **erlaubt** — abstrakte Kategorieregel, keine Person; vom Geschäftsführer so genannt |
+| „Dialysefahrt" im Protokoll eines Kunden | **verboten** — Behandlungsart an einem Menschen |
+| „Bleibt im Rollstuhl" als Fahrzeugbedarf | **erlaubt** — betrieblich notwendig, um ein Fahrzeug zu wählen; keine Diagnose |
+
+Der Prüflauf nimmt jetzt genau die eine Regelzeile aus und sucht danach
+unverändert streng weiter. Er ist damit nicht schwächer, sondern genauer.
+
+### 32.4 Eine Erwartung, die den gemeldeten Fehler festgeschrieben hatte
+
+Der Portallauf erwartete, dass die Übersichtskennzahl „noch nicht
+zugewiesen" in den Filter `ungeplant` springt.
+
+**Genau das war der gemeldete Fehler aus Block 14:** Die Übersicht zeigte
+„4 nicht zugewiesen", der Filter danach 2 Fahrten. Eine Fahrt im Eingang
+ohne Fahrer ist ebenfalls nicht zugewiesen, fiel aber aus dem Filter
+`ungeplant` heraus. Die alte Erwartung hat diese Abweichung also
+festgehalten, statt sie zu verhindern.
+
+Neue Erwartung, strenger belegt: Die Kennzahl zielt auf `fahrten:offen`,
+der Filter `offen` zeigt `D.nichtZugewiesen()` — dieselbe Funktion, aus
+der auch die Zahl auf der Karte kommt. Geprüft wird nicht nur, dass der
+Filter gedrückt ist, sondern dass **die Zahl auf der Karte und die Anzahl
+der Zeilen in der Liste übereinstimmen**. Der Filter `ungeplant` bleibt
+daneben bestehen und wird weiterhin geprüft — nur nicht mehr als Ziel der
+Kennzahl.
+
+---
+
+## 33. Zwei Anforderungen, die sich widersprachen
+
+Das muss offen stehen, weil hier eine frühere Festlegung geändert wurde.
+
+**Die frühere Anforderung** (nach der fachlichen Freigabe der
+Krankmeldung): „gesamter Vorgang erledigt → ausschließlich ‚Ansehen' und —
+falls berechtigt — ‚Wiedereröffnen'." Der Prüflauf `probe-karten-pruefen`
+hat das als Knopfzahl festgehalten: genau einer beziehungsweise genau zwei.
+
+**Die spätere Anforderung** (Block 1 des vollständigen Rundgangs):
+„Erledigte Vorgänge aus der Arbeitsliste entfernen" — ohne zu löschen.
+Dafür braucht die Karte einen dritten Knopf.
+
+**Beide zugleich sind nicht erfüllbar.** Ich habe die spätere umgesetzt und
+die Erwartung des Prüflaufs angepasst, aber nicht aufgeweicht:
+
+Der Sinn der früheren Regel war, dass an einem erledigten Vorgang **keine
+Bearbeitung** mehr angeboten wird — kein Übernehmen, kein Weitergeben, kein
+Abschluss. Genau das wird jetzt geprüft, und zwar über zwei Wege statt über
+eine Zahl:
+
+1. Jede Beschriftung muss aus einer festen erlaubten Menge stammen:
+   `Ansehen`, `Aus Erledigt-Liste entfernen`, `Zurück in die Arbeitsliste`,
+   `Wiedereröffnen`. Ein vierter Knopf mit beliebigem Text fällt weiterhin
+   auf.
+2. **Keine** Aktion hinter einem Knopf darf `uebernehmen`, `weitergeben`,
+   `erledigen` oder `abschliessen` heißen — geprüft an `data-tun`, nicht an
+   der Beschriftung.
+
+Zusätzlich wird jetzt belegt, dass „Aus Erledigt-Liste entfernen"
+**nichts löscht**: Die Anzahl der Vorgänge bleibt gleich, und der Vorgang
+ist danach weiterhin über `vorgangVon()` erreichbar. Das war vorher nicht
+geprüft.
+
+**Falls der Geschäftsführer die frühere Festlegung so gemeint hat, dass
+auch kein Listenknopf erscheinen darf**, muss Block 1 anders gelöst werden
+— etwa über eine Aktion im geöffneten Vorgang statt auf der Karte. Das ist
+eine Entscheidung, die ich nicht treffe.
+
+### Ein Fehlalarm desselben Laufs, getrennt benannt
+
+Derselbe Lauf meldete „Aus Erledigt-Liste entfernen" als
+Abschlussbeschriftung, weil das Suchmuster das Wort `erledigt` enthält. Die
+Beschriftung behauptet aber keinen Abschluss — sie nennt die **Liste**, aus
+der etwas entfernt wird. Herausgenommen wird deshalb ausschließlich der
+Listenname `Erledigt-Liste`; alles andere wird unverändert streng geprüft.
+Damit die Ausnahme das Muster nicht stumpf macht, prüft der Lauf jetzt
+zusätzlich, dass „Als erledigt markieren" und „Dokumentprüfung
+abgeschlossen" weiterhin anschlagen.
+
+---
+
+## 34. Alle Prüfläufe, vollständig gefahren
+
+Stand 02.10.2026. Jeder Lauf wurde bis zur gedruckten Abschlussbilanz
+gefahren. Ein Lauf ohne Bilanz gilt nicht als bestanden.
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-portal-pruefen` | **112 bestanden, 0 offen** |
+| `probe-fahrt-pruefen` | **170 bestanden, 0 offen** |
+| `probe-planung-pruefen` | **171 bestanden, 0 offen** |
+| `probe-team-pruefen` | **197 bestanden, 0 offen** |
+| `probe-vorgaenge-pruefen` | **138 bestanden, 0 offen** |
+| `probe-teilung-pruefen` | **100 bestanden, 0 offen** |
+| `probe-dokument-pruefen` | **93 bestanden, 0 offen** |
+| `probe-regeln-pruefen` | **123 bestanden, 0 offen** |
+| `probe-zuordnung-pruefen` | **125 bestanden, 0 offen** |
+| `probe-karten-pruefen` | **88 bestanden, 0 offen** |
+| `probe-wahrheit-pruefen` | **78 bestanden, 0 offen** |
+| `probe-kalenderwege-pruefen` | **88 bestanden, 0 offen** |
+| `probe-akten-pruefen` (neu) | **240 bestanden, 0 offen** |
+| `probe-analyse-pruefen` (neu) | **113 bestanden, 0 offen** |
+| **Summe** | **1 836 bestanden, 0 offen** |
+
+In allen vierzehn Läufen: **null Anfragen nach außen.** Jeder Browserkontext
+bricht jede Verbindung ab, die nicht auf den eigenen Testserver zeigt, und
+zählt sie. Die Zähler stehen am Ende jedes Laufs bei 0.
+
+### Was diese Zahlen nicht sagen
+
+- Es ist **keine Datenquelle** angebunden. Alles steht im Speicher des
+  Browsers und ist nach dem Neuladen weg.
+- **Kein Lauf** sagt etwas über die produktive Supabase-Instanz: nicht über
+  RLS, nicht über Grants, nicht über das Verhalten der Storage-API.
+- Die echte **Storage-API ist lokal nicht verfügbar.** Der
+  Bescheinigungsablauf ist vollständig nachgebildet; dass er gegen den
+  echten Speicher ebenso läuft, ist damit **nicht** gezeigt.
+- Es wurde **keine E-Mail** versendet, **keine PDF** erzeugt, **keine
+  PAJ-Anfrage** gestellt.
+- Die Läufe prüfen die Designprobe. Der produktive Verwaltungsbereich unter
+  `admin/` ist **unverändert** und von all dem nicht berührt.
+
+---
+
+## 35. Was jetzt wo steht
+
+### Umgesetzt in der Designprobe
+
+Alle sechzehn Punkte des Rundgangs. Die Blöcke 7 und 11 waren
+Regressionsschutz und wurden gesichert, nicht verändert.
+
+| Block | Umgesetzt |
+|---|---|
+| 1 | Erledigte aus der Arbeitsliste nehmen, ohne Löschen; Archiv; Wiedereröffnen; Protokoll mit vorherigem und neuem Listenstand |
+| 2 | Chronologische Sortierung, eigener Abschnitt „Zeit noch nicht geklärt", stabile Zweitsortierung über die Kennung |
+| 3 | Krankheit und Urlaub im Kalender führen zum konkreten Vorgang; mehrere Treffer → Auswahl; keiner → ehrlicher Hinweis |
+| 4 | Fahrzeugtermine führen über die Fahrzeugkennung zur Akte, nicht über das Kennzeichen |
+| 5 | Schichten einzeln mit Name, Zeit, Fahrzeug, Zustand, Planstatus |
+| 6 | Ungültige Schichten als Konflikt, gleiche Zahl in Kalender, Planung und Übersicht |
+| 7 | Kalenderfilter unverändert, als Regression gesichert |
+| 8 | Kundenbereich vollständig bedienbar, ein gemeinsamer Bestand mit dem Fahrtassistenten |
+| 9 | Personalbereich mit Akte; `personal` ist jetzt eine Sicht auf `mitarbeiter[]` |
+| 10 | Finanzbereich mit Akte, Zahlung, Mahnung, Korrektur als neue Version |
+| 11 | Lohnbereich unverändert, als Regression gesichert |
+| 12 | Rewards mit Konten, Stufen, Glücksrad, manueller Korrektur |
+| 13 | Analyse mit echter Zeitraumauswahl über Tageswerte |
+| 14 | Eine Datenwahrheit für „Fahrten heute" und „noch nicht zugewiesen" |
+| 15 | Warnungen richtig verknüpft, gleiche Zahl an drei Stellen |
+| 16 | Bedienoptik nur bei echter Bedienbarkeit, Tastatur, Fokus, Beschriftung |
+
+### Offene Geschäftsentscheidungen — nicht erfunden
+
+1. Die Punktzahlen der Rewardsstufen unterhalb von VIP.
+2. Mahnstufen, Mahngebühren und Zahlungsfrist.
+3. Aufbewahrungs- und Löschfrist für Krankheitsnachweise — **rechtliche**
+   Entscheidung.
+4. Ob eine Rechnungskorrektur eine Gutschrift oder eine Neuausstellung ist.
+5. Welche Ereignisse die Analyse überhaupt erheben darf — **rechtliche**
+   Entscheidung; ohne sie bleibt der Bereich produktiv leer.
+6. Ob auf der Karte eines erledigten Vorgangs ein Listenknopf stehen darf
+   (siehe Abschnitt 33).
+
+### Noch nicht im produktiven Portal vorhanden
+
+Nichts davon. Es ist ausschließlich die Designprobe unter
+`probe-betriebsportal/`. Der produktive Bereich `admin/` ist unverändert.
+
+### Noch nicht gegen Supabase geprüft
+
+- ob RLS fremde Daten tatsächlich abweist
+- Verhalten der Storage-API für Bescheinigungen und Lohn-PDF
+- die echten Rollen und Grants der produktiven Instanz
+- Passwort-Zurücksetzen für Kunden
+- SMTP mit SPF, DKIM und DMARC
+- das ovale Glücksrad auf dem iPhone
+
+---
+
+## 36. Manueller Testweg
+
+Vorschau: `npm run probe-portal`, dann im Browser die genannte Adresse.
+Die Rolle wird oben rechts umgeschaltet. **Nichts davon verlässt den
+Browser.**
+
+### A. Analyse — der Zeitraum (Block 13)
+
+1. Rolle **Testleitung 01 – Administration**, Bereich **Analyse**.
+2. Oben steht der Kasten „Alle Zahlen hier sind erfunden". Lesen.
+3. Im Abschnitt **Zeitraum** stehen sieben Knöpfe. „Letzte 7 Tage" ist
+   gedrückt, und im Kopf steht der Zeitraum mit Von, Bis und Tageszahl.
+4. Auf **Heute** klicken. Erwartung: Der Kopf nennt „Heute · 1 Tag", und
+   **jede** Zahl auf der Seite wird kleiner — auch die Balken, auch die
+   Quoten. Keine Zahl bleibt stehen.
+5. Auf **Letzte 30 Tage**. Alle Zahlen steigen gemeinsam.
+6. **Letzter Monat** wählen. Der Kopf nennt den vollen Vormonat.
+7. **Eigener Zeitraum** wählen. Zwei Datumsfelder erscheinen. Erwartung:
+   **Solange nur eines gefüllt ist, steht keine einzige Kennzahl da**,
+   sondern die Bitte, beide Felder zu füllen.
+8. Beide füllen, das Bis-Datum **vor** das Von-Datum setzen. Erwartung:
+   Der Zeitraum wird gedreht, nicht als leer gewertet.
+9. Beide auf denselben Tag setzen. Erwartung: „1 Tag", nicht „1 Tage".
+10. Mit der **Tabulatortaste** auf einen Zeitraumknopf, mit **Enter**
+    auslösen. Erwartung: wirkt wie ein Klick.
+11. Mit der Maus über eine Kennzahlkachel fahren. Erwartung: **kein**
+    Zeiger, **keine** Hervorhebung — sie führt nirgendwohin.
+12. Prüfen, dass „Besucher" und „wiederkehrend" mit `~` und dem Wort
+    **Schätzung** stehen, „Seitenaufrufe" und „Besuche" mit **gezählt**.
+
+### B. Kunden (Block 8)
+
+1. Bereich **Kunden**. Ein Zeichen eintippen. Erwartung: Hinweis
+   „Mindestens zwei Zeichen eingeben".
+2. `Testallee` eintippen. Erwartung: Treffer schon beim Tippen — gesucht
+   wird auch in der **Anschrift**.
+3. `testkunde03@example.invalid` eintippen. Erwartung: Treffer über die
+   **E-Mail**.
+4. Eine Suche eingeben, die **genau einen** Treffer hat, und **Enter**
+   drücken. Erwartung: Die Kundenakte öffnet sich.
+5. In der Akte: Anschrift, Kontostand, Fahrten, Rechnungen, Rewards. Eine
+   Fahrt anklicken. Erwartung: Sie führt zum Vorgang.
+6. **Neuen Kunden anlegen**. Zwei Schritte, Pflichtfelder Name und
+   Telefon. Nach dem Speichern: Der Kunde steht in der Liste mit der
+   Marke „neu in der Probe".
+7. Jetzt **Neue Fahrt aufnehmen**, einen Kunden **neu** eingeben, bis
+   Schritt 5 gehen. Erwartung: Dort steht „Kundenbestand: wird mit dem
+   Speichern neu angelegt" — **noch nicht angelegt**.
+8. Einen Schritt **zurück** und wieder **vor**, mehrfach. Dann speichern.
+   Anschließend im Kundenbereich suchen. Erwartung: Der Kunde steht
+   **genau einmal** da, nicht mehrfach.
+
+### C. Personal, Finanzen, Rewards (Blöcke 9, 10, 12)
+
+1. Rolle **Testpersonal 01**, Bereich **Personal**. Eine Zeile anklicken:
+   Personalakte mit Beschäftigung, Vertrag, Urlaub, Schichten.
+2. Erwartung: **keine** medizinische Angabe in der Akte und in der Liste.
+3. Rolle **Testbuchhaltung 01**, Bereich **Finanzen**. Eine Rechnung
+   anklicken: Posten, Zahlungen, Verlauf, PDF-Platzhalter.
+4. **Zahlung erfassen**, dann **Mahnung**, dann **Korrektur**. Erwartung:
+   Die Korrektur verlangt einen **Pflichtgrund** und erzeugt eine
+   **neue Version**; die alte bleibt im Verlauf stehen.
+5. Bereich **Rewards**: fünf Stufen, VIP ab 100 qualifizierenden Fahrten,
+   200 Geburtstagspunkte. Die Ausschlüsse stehen als Kategorien da.
+   Erwartung: Die Punktzahlen unterhalb von VIP sind **ausdrücklich als
+   offen** gekennzeichnet, nicht mit einer Zahl gefüllt.
+6. Als Buchhaltung eine **manuelle Rewardskorrektur** versuchen.
+   Erwartung: nicht möglich. Als Administration: möglich, mit
+   Pflichtgrund und Protokoll.
+
+### D. Gegenprobe Disposition
+
+Rolle **Testdisposition 01**. Erwartung: Die Bereiche Kunden, Personal,
+Finanzen, Lohn, Rewards und Analyse sind **nicht** sichtbar. Eine
+Krankmeldung öffnen: weder Dateiname noch Datei noch Prüfergebnis.

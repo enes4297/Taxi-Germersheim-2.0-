@@ -32,6 +32,16 @@
     const tag = String(d.getDate()).padStart(2, "0");
     return `${jahr}-${monat}-${tag}`;
   };
+
+  /* Ein Datum als Text, n Tage zurueck. Steht hier oben, weil die
+     Testdaten es brauchen - weiter unten waere es eine Ladefalle:
+     const faellt erst beim Laden auf, und dann laedt die ganze Datei
+     nicht mehr. */
+  const tageZurueck = (n) => {
+    const d = new Date(heute);
+    d.setDate(d.getDate() - n);
+    return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  };
   const alsText = (d) => d.toLocaleDateString("de-DE", {
     weekday: "long", day: "2-digit", month: "2-digit", year: "numeric"
   });
@@ -829,17 +839,71 @@
      denselben Bestand. */
 
   /* ---- Personal ---- */
-  const personal = mitarbeiter.map((m, i) => ({
-    ...m,
-    status: ["aktiv", "aktiv", "aktiv", "krank", "aktiv", "Urlaub"][i],
-    eintritt: "01.01.2025",
-    konto: i < 5 ? "verknüpft" : "nicht verknüpft",
-    rollen: i === 0 ? ["employee"] : ["employee"],
-    fristen: [
-      { was: "Führerschein", bis: i === 1 ? "in 14 Tagen" : "gültig" },
-      { was: "Personenbeförderungsschein", bis: i === 3 ? "abgelaufen" : "gültig" }
-    ]
-  }));
+  /*
+    Die Personalzusaetze - verknuepft ueber die Mitarbeiterkennung.
+    Stammdaten (Name, Beschaeftigung) stehen NICHT hier, sondern nur
+    in mitarbeiter[]. Sonst gaebe es zwei Wahrheiten.
+
+    Vertrag, Arbeitszeitmodell und Urlaubsanspruch sind Testwerte der
+    Designprobe. Welche Modelle der Betrieb tatsaechlich fuehrt und
+    wie viel Urlaub wem zusteht, ist NICHT festgelegt - das steht in
+    der Akte auch so da.
+  */
+  const personalZusatz = {
+    /* Das Modell passt zur Beschaeftigung aus mitarbeiter[]. Eine
+       Teilzeitkraft mit "Vollzeit 40 Std." waere ein Widerspruch in
+       den eigenen Testdaten. */
+    M01: { status: "aktiv",  eintritt: "01.01.2025", konto: "verknüpft",
+           vertrag: "unbefristet", modell: "Vollzeit · 40 Std./Woche",
+           urlaubAnspruch: 28, urlaubGenommen: 9 },
+    M02: { status: "krank",  eintritt: "01.03.2025", konto: "verknüpft",
+           vertrag: "unbefristet", modell: "Teilzeit · 25 Std./Woche",
+           urlaubAnspruch: 20, urlaubGenommen: 4 },
+    M03: { status: "aktiv",  eintritt: "15.04.2025", konto: "verknüpft",
+           vertrag: "befristet bis 31.12.2026", modell: "Aushilfe · auf Abruf",
+           urlaubAnspruch: 10, urlaubGenommen: 6 },
+    M04: { status: "aktiv",  eintritt: "01.06.2025", konto: "verknüpft",
+           vertrag: "unbefristet", modell: "Vollzeit · 40 Std./Woche",
+           urlaubAnspruch: 28, urlaubGenommen: 0 },
+    M05: { status: "aktiv",  eintritt: "01.08.2025", konto: "verknüpft",
+           vertrag: "unbefristet", modell: "Vollzeit · 40 Std./Woche",
+           urlaubAnspruch: 28, urlaubGenommen: 2 },
+    M06: { status: "Urlaub", eintritt: "01.10.2025", konto: "nicht verknüpft",
+           vertrag: "unbefristet", modell: "Teilzeit · 30 Std./Woche",
+           urlaubAnspruch: 22, urlaubGenommen: 15 }
+  };
+
+  /* Der Aenderungsverlauf je Mitarbeiter. */
+  const personalVerlauf = {};
+
+  /*
+    EINE Sicht auf einen Mitarbeiter: Stammdaten aus mitarbeiter[],
+    Zusaetze aus personalZusatz, Dokumente und Abwesenheiten aus den
+    gemeinsamen Listen. "Fahrer & Fahrzeuge" und "Personal" zeigen
+    damit denselben Datensatz.
+  */
+  function personalVon(id) {
+    const m = mitarbeiter.find((x) => x.id === id);
+    if (!m) return null;
+    const z = personalZusatz[id] || {};
+    return {
+      ...m,
+      status: z.status || "aktiv",
+      eintritt: z.eintritt || "",
+      konto: z.konto || "nicht verknüpft",
+      vertrag: z.vertrag || "",
+      modell: z.modell || "",
+      urlaubAnspruch: z.urlaubAnspruch,
+      urlaubGenommen: z.urlaubGenommen,
+      dokumente: fahrerDokumente.filter((d) => d.mitarbeiterId === id),
+      dokumentstand: dokumentstand(id),
+      abwesenheiten: abwesenheiten.filter((a) => a.mitarbeiterId === id),
+      verlauf: personalVerlauf[id] || []
+    };
+  }
+
+  /* Die Liste - aus derselben Sicht, nicht aus einer zweiten Kopie. */
+  const personal = mitarbeiter.map((m) => personalVon(m.id));
 
   /* ---- Lohnabrechnungen ---- */
   const lohn = [
@@ -849,23 +913,94 @@
   ];
 
   /* ---- Rewards ---- */
+  /*
+    Rewards.
+
+    Die Stufen, das VIP-Ziel, die Geburtstagspunkte, die Ausschluesse
+    und die Gewinne des Gluecksrads sind VORGABEN des
+    Geschaeftsfuehrers. Was dort als "offene Geschaeftsentscheidung"
+    steht, ist NICHT mit einer Zahl gefuellt - eine erfundene Schwelle
+    waere schlimmer als eine fehlende.
+
+    Die Schwellen fuer Silber und Gold standen schon vorher in der
+    Probe und bleiben; Bronze ist der Einstieg. Platin ist offen, und
+    VIP hat ein Ziel in FAHRTEN, nicht in Punkten.
+  */
+  const REWARDS_STUFEN = [
+    { name: "Bronze", marke: "ruhig", schwelle: "Einstieg, ab 0 Punkten", festgelegt: true },
+    { name: "Silber", marke: "ruhig", schwelle: "ab 250 Punkten", festgelegt: true },
+    { name: "Gold", marke: "gut", schwelle: "ab 750 Punkten", festgelegt: true },
+    { name: "Platin", marke: "aktiv", schwelle: "Schwelle noch nicht festgelegt", festgelegt: false },
+    { name: "VIP", marke: "aktiv", schwelle: "100 qualifizierende Fahrten", festgelegt: true }
+  ];
+
+  const REWARDS_REGELN = [
+    "Punkte je qualifizierender Fahrt: 10",
+    "Geburtstag: 200 Bonuspunkte",
+    "VIP-Ziel: 100 qualifizierende Fahrten",
+    "Gutschein gültig: 90 Tage",
+    "Der Gewinn des Glücksrads wird serverseitig bestimmt, nicht im Browser",
+    "Ein abgebrochener Dreh vernichtet keinen Anspruch",
+    "Eine manuelle Korrektur darf nur die Administration, mit Pflichtgrund"
+  ];
+
+  const REWARDS_AUSSCHLUSS = ["Krankenfahrten", "Dialyse", "Flughafenfahrten"];
+
+  const REWARDS_GLUECKSRAD = [
+    { gewinn: "5 bis 50 Punkte", gesperrt: false, hinweis: "Spanne vereinbart" },
+    { gewinn: "20-Euro-Gutschein", gesperrt: false, hinweis: "90 Tage gültig" },
+    { gewinn: "Yumaks Box", gesperrt: true, hinweis: "bis zur fachlichen Freigabe gesperrt" }
+  ];
+
   const rewards = {
-    regeln: [
-      { name: "Punkte je qualifizierender Fahrt", wert: "10" },
-      { name: "Stufe Silber ab", wert: "250 Punkte" },
-      { name: "Stufe Gold ab", wert: "750 Punkte" },
-      { name: "Gutschein gültig", wert: "90 Tage" }
-    ],
     konten: [
-      { kunde: "Testkunde 01", punkte: 340, stufe: "Silber", drehs: 1 },
-      { kunde: "Testkunde 02", punkte: 120, stufe: "Basis",  drehs: 0 },
-      { kunde: "Testkunde 03", punkte: 810, stufe: "Gold",   drehs: 2 }
+      {
+        kundeId: "K0001", kunde: "Testkunde 01", punkte: 340, stufe: "Silber",
+        drehs: 1, qualifizierteFahrten: 34, geburtstagGutgeschrieben: "2026",
+        gutscheine: [
+          { was: "20-Euro-Gutschein", bis: "30.12.2026", zustand: "offen" }
+        ],
+        verlauf: [
+          { zeit: "heute 08:02", was: "Dreh abgebrochen", punkte: 0,
+            grund: "Anspruch erhalten — ein abgebrochener Dreh vernichtet nichts" },
+          { zeit: tageZurueck(3) + " · 10:15 Uhr", was: "Punkte gutgeschrieben", punkte: 10,
+            grund: "qualifizierende Fahrt FA-T001" },
+          { zeit: tageZurueck(40) + " · 07:00 Uhr", was: "Geburtstagsbonus", punkte: 200,
+            grund: "Geburtstag 2026" }
+        ]
+      },
+      {
+        kundeId: "K0002", kunde: "Testkunde 02", punkte: 120, stufe: "Bronze",
+        drehs: 0, qualifizierteFahrten: 12, geburtstagGutgeschrieben: "",
+        gutscheine: [],
+        verlauf: [
+          { zeit: tageZurueck(1) + " · 16:40 Uhr", was: "Punkte gutgeschrieben", punkte: 10,
+            grund: "qualifizierende Fahrt FA-T002" },
+          { zeit: tageZurueck(6) + " · 09:05 Uhr", was: "Keine Punkte", punkte: 0,
+            grund: "Krankenfahrt — ausgeschlossen" }
+        ]
+      },
+      {
+        kundeId: "K0003", kunde: "Testkunde 03", punkte: 810, stufe: "Gold",
+        drehs: 2, qualifizierteFahrten: 81, geburtstagGutgeschrieben: "2026",
+        gutscheine: [
+          { was: "20-Euro-Gutschein", bis: tageZurueck(-20), zustand: "offen" },
+          { was: "20-Euro-Gutschein", bis: tageZurueck(30), zustand: "eingelöst" }
+        ],
+        verlauf: [
+          { zeit: "heute 09:14", was: "Dreh eingelöst", punkte: 0,
+            grund: "Gewinn: 20-Euro-Gutschein" },
+          { zeit: tageZurueck(2) + " · 11:30 Uhr", was: "Keine Punkte", punkte: 0,
+            grund: "Fahrt einer ausgeschlossenen Kategorie" },
+          { zeit: tageZurueck(9) + " · 08:20 Uhr", was: "Keine Punkte", punkte: 0,
+            grund: "Fahrt einer ausgeschlossenen Kategorie" }
+        ]
+      }
     ],
-    vorgaenge: [
-      { zeit: "heute 09:14", was: "Dreh eingelöst", kunde: "Testkunde 03", ergebnis: "Gutschein 5 €", zustand: "gut" },
-      { zeit: "heute 08:02", was: "Dreh abgebrochen", kunde: "Testkunde 01", ergebnis: "Anspruch erhalten", zustand: "ruhig" },
-      { zeit: "gestern",     was: "Punkte gutgeschrieben", kunde: "Testkunde 02", ergebnis: "+10", zustand: "gut" }
-    ]
+    /* Die alte Regelliste bleibt als Verweis, damit nichts ins Leere
+       zeigt - gezeigt wird REWARDS_REGELN. */
+    regeln: REWARDS_REGELN.map((x) => ({ name: x, wert: "" })),
+    vorgaenge: []
   };
 
   /* ---- Kunden ----
@@ -875,11 +1010,6 @@
      durchnummerierte Testnamen - keine erfundenen Personen.
      Die Vorschlaege aus alten Fahrten nennen NIE einen Behandlungsgrund;
      ein Ziel heisst "Testklinik 01", nicht "Dialyse". */
-  const tageZurueck = (n) => {
-    const d = new Date(heute);
-    d.setDate(d.getDate() - n);
-    return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
-  };
 
   const kunden = [
     {
@@ -887,7 +1017,14 @@
       vorname: "Test", nachname: "Kunde 01", firma: "",
       telefon: "Testnummer 0001", kundennummer: "KD-0001",
       strasse: "Teststrasse", hausnummer: "1", plz: "76726", ort: "Germersheim",
+      email: "testkunde01@example.invalid",
       konto: "verknüpft", fahrten: 12, hinweis: "",
+      /* Aenderungen am Kundendatensatz. In der Probe vorbelegt,
+         damit die Akte etwas zu zeigen hat. */
+      verlauf: [
+        { zeit: tageZurueck(30) + " · 09:12 Uhr", wer: "Testleitung 01 – Administration",
+          was: "Kunde angelegt", vorher: "—", nachher: "Testkunde 01", grund: "" }
+      ],
       letzteFahrten: [
         { datum: tageZurueck(2),  von: "Teststrasse 1, 76726 Germersheim", nach: "Testklinik 01, Speyer" },
         { datum: tageZurueck(9),  von: "Teststrasse 1, 76726 Germersheim", nach: "Testklinik 01, Speyer" },
@@ -900,7 +1037,7 @@
       vorname: "Test", nachname: "Kunde 02", firma: "",
       telefon: "Testnummer 0002", kundennummer: "KD-0002",
       strasse: "Testweg", hausnummer: "3", plz: "67360", ort: "Lingenfeld",
-      konto: "nicht verknüpft", fahrten: 3, hinweis: "",
+      email: "", konto: "nicht verknüpft", fahrten: 3, hinweis: "", verlauf: [],
       letzteFahrten: [
         { datum: tageZurueck(5),  von: "Testweg 3, 67360 Lingenfeld", nach: "Testzentrum Karlsruhe" }
       ]
@@ -910,7 +1047,8 @@
       vorname: "Test", nachname: "Kunde 03", firma: "",
       telefon: "Testnummer 0003", kundennummer: "KD-0003",
       strasse: "Testallee", hausnummer: "4a", plz: "76756", ort: "Bellheim",
-      konto: "verknüpft", fahrten: 27, hinweis: "Rollstuhlfahrzeug erforderlich",
+      email: "testkunde03@example.invalid",
+      konto: "verknüpft", fahrten: 27, hinweis: "Rollstuhlfahrzeug erforderlich", verlauf: [],
       letzteFahrten: [
         { datum: tageZurueck(1),  von: "Testallee 4a, 76756 Bellheim", nach: "Testklinik 02, Landau" },
         { datum: tageZurueck(4),  von: "Testallee 4a, 76756 Bellheim", nach: "Testklinik 02, Landau" },
@@ -923,7 +1061,8 @@
       vorname: "", nachname: "", firma: "Testfirma 04 GmbH",
       telefon: "Testnummer 0004", kundennummer: "KD-0004",
       strasse: "Testring", hausnummer: "5", plz: "76726", ort: "Germersheim",
-      konto: "nicht verknüpft", fahrten: 8, hinweis: "Rechnung monatlich",
+      email: "buchhaltung@testfirma04.invalid",
+      konto: "nicht verknüpft", fahrten: 8, hinweis: "Rechnung monatlich", verlauf: [],
       letzteFahrten: [
         { datum: tageZurueck(3), von: "Testring 5, 76726 Germersheim", nach: "Testflughafen" },
         { datum: tageZurueck(7), von: "Testring 5, 76726 Germersheim", nach: "Testbahnhof Germersheim" }
@@ -934,7 +1073,7 @@
       vorname: "Test", nachname: "Kunde 05", firma: "",
       telefon: "Testnummer 0005", kundennummer: "KD-0005",
       strasse: "Testplatz", hausnummer: "2", plz: "76726", ort: "Germersheim",
-      konto: "verknüpft", fahrten: 5, hinweis: "",
+      email: "", konto: "verknüpft", fahrten: 5, hinweis: "", verlauf: [],
       letzteFahrten: [
         { datum: tageZurueck(6), von: "Testplatz 2, 76726 Germersheim", nach: "Testziel A" }
       ]
@@ -944,7 +1083,7 @@
       vorname: "Test", nachname: "Kunde 06", firma: "",
       telefon: "Testnummer 0006", kundennummer: "KD-0006",
       strasse: "Testort", hausnummer: "6", plz: "76761", ort: "Rülzheim",
-      konto: "nicht verknüpft", fahrten: 1, hinweis: "",
+      email: "", konto: "nicht verknüpft", fahrten: 1, hinweis: "", verlauf: [],
       letzteFahrten: []
     }
   ];
@@ -979,21 +1118,99 @@
 
   /* Suche mit harter Begrenzung. Die Oberflaeche darf nie den ganzen
      Bestand zeichnen. */
+  /*
+    Kundensuche. Teiltreffer in Name, Telefonnummer, Kundennummer,
+    Firma, Anschrift und E-Mail.
+
+    Der manuelle Rundgang hat gezeigt, dass eine Suche nur ueber Name,
+    Telefon und Nummer zu wenig ist: Wer eine Strasse im Kopf hat,
+    findet damit nichts.
+
+    Ab EINEM Zeichen wird gesucht. Vorher waren zwei verlangt - das
+    liess "Eingabe filtert nicht" aussehen, obwohl es nur zu kurz war.
+  */
+  const kundenText = (k) => [
+    k.name, k.telefon, k.kundennummer, k.firma || "",
+    k.strasse || "", k.hausnummer || "", k.plz || "", k.ort || "",
+    k.email || ""
+  ].join(" ").toLowerCase();
+
+  /*
+    Einen Kunden anlegen - der EINE Weg dafuer.
+
+    Der Fahrtassistent und der Kundenbereich rufen dieselbe Funktion.
+    Sonst gaebe es zwei Bestaende: einen im Assistenten angelegten,
+    der in der Kundenliste fehlt. Der manuelle Rundgang hat eigens
+    danach gefragt.
+
+    "quelle" haelt fest, wo er entstanden ist - nicht als Zierde,
+    sondern damit im Verlauf steht, auf welchem Weg.
+  */
+  let kundenZaehler = 9000;
+  function kundeAnlegen(neu) {
+    kundenZaehler += 1;
+    const nummer = "KD-" + kundenZaehler;
+    const name = String(neu.name || "").trim();
+    const k = {
+      id: "K" + kundenZaehler,
+      name: name || nummer,
+      art: neu.art === "firma" ? "firma" : "privat",
+      vorname: "", nachname: "",
+      firma: neu.art === "firma" ? name : "",
+      telefon: String(neu.telefon || "").trim(),
+      kundennummer: nummer,
+      email: String(neu.email || "").trim(),
+      strasse: String(neu.strasse || "").trim(),
+      hausnummer: String(neu.hausnummer || "").trim(),
+      plz: String(neu.plz || "").trim(),
+      ort: String(neu.ort || "").trim(),
+      konto: "nicht verknüpft",
+      fahrten: 0,
+      hinweis: String(neu.hinweis || "").trim(),
+      letzteFahrten: [],
+      /* Nur in der Designprobe entstanden - das wird gezeigt und
+         nicht verschwiegen. */
+      nurProbe: true,
+      quelle: neu.quelle || "",
+      verlauf: []
+    };
+    /* Vorn einfuegen, damit ein neuer Kunde ohne Suche zu sehen ist. */
+    kunden.unshift(k);
+    return k;
+  }
+
   function kundenSuche(begriff, grenze = 8) {
+    /*
+      Ab ZWEI Zeichen. Ich hatte diese Grenze beim Ausbau der Suche
+      auf Anschrift und E-Mail gestrichen - ohne Grund. Block 8
+      verlangte eine Suche beim Tippen und mehr Suchfelder, nicht
+      eine niedrigere Schwelle. Bei einem Zeichen traefe die Suche
+      einen grossen Teil von ueber zweitausend Eintraegen; das ist
+      keine Suche, sondern eine Liste. Vom Prueflauf gefunden.
+    */
     const b = String(begriff || "").trim().toLowerCase();
     if (b.length < 2) return { treffer: [], gesamt: 0, zuKurz: true };
     const alle = [];
     for (const k of kunden) {
-      if (k.name.toLowerCase().includes(b)
-        || k.telefon.toLowerCase().includes(b)
-        || k.kundennummer.toLowerCase().includes(b)
-        || (k.firma && k.firma.toLowerCase().includes(b))) {
+      if (kundenText(k).includes(b)) {
         alle.push(k);
         if (alle.length > 500) break;
       }
     }
     return { treffer: alle.slice(0, grenze), gesamt: alle.length, zuKurz: false };
   }
+
+  const kundeVon = (id) => kunden.find((k) => k.id === id) || null;
+
+  /*
+    Die Fahrten eines Kunden aus dem GEMEINSAMEN Fahrtenbestand -
+    nicht aus einer zweiten Liste am Kunden. "letzteFahrten" sind
+    Vergangenheitsdaten der Probe; offene Fahrten stehen in fahrten[].
+  */
+  const fahrtenVonKunde = (k) => k
+    ? fahrten.filter((f) => f.kunde === k.name)
+    : [];
+
 
   /* Haeufigste Ziele eines Kunden - aus seinen letzten Fahrten gezaehlt. */
   function haeufigeZiele(kunde) {
@@ -1006,39 +1223,231 @@
   }
 
   /* ---- Finanzen ---- */
+  /*
+    Rechnungen. Alle Betraege sind Testwerte der Designprobe.
+
+    "kundeId" ist die belastbare Verknuepfung; der Name steht daneben,
+    weil die Oberflaeche ihn zeigt. Welche Steuersaetze, Zahlungsziele
+    und Mahnstufen der Betrieb tatsaechlich fuehrt, ist NICHT
+    festgelegt - es wird hier auch nichts dazu erfunden.
+  */
   const rechnungen = [
-    { nr: "RE-2026-0001", kunde: "Testkunde 01", zeitraum: "08/2026", betrag: "184,00 €", faellig: "15.09.2026", zustand: "bezahlt" },
-    { nr: "RE-2026-0002", kunde: "Testkunde 03", zeitraum: "08/2026", betrag: "412,50 €", faellig: "15.09.2026", zustand: "offen" },
-    { nr: "RE-2026-0003", kunde: "Testkunde 02", zeitraum: "07/2026", betrag: "96,00 €",  faellig: "15.08.2026", zustand: "überfällig" },
-    { nr: "RE-2026-0004", kunde: "Testkunde 04", zeitraum: "09/2026", betrag: "—",        faellig: "—",          zustand: "Entwurf" }
+    {
+      nr: "RE-2026-0001", kundeId: "K0001", kunde: "Testkunde 01",
+      zeitraum: "08/2026", betrag: "184,00 €", faellig: "15.09.2026",
+      zustand: "bezahlt", version: 1,
+      fahrten: ["FA-T101", "FA-T102", "FA-T103"],
+      posten: [
+        { was: "Krankenfahrt Testklinik 01", menge: 4, einzel: "38,00 €", summe: "152,00 €" },
+        { was: "Wartezeit", menge: 2, einzel: "16,00 €", summe: "32,00 €" }
+      ],
+      zahlungen: [
+        { betrag: "184,00 €", datum: "12.09.2026", art: "Überweisung",
+          wer: "Testbuchhaltung 01 – Buchhaltung" }
+      ],
+      verlauf: []
+    },
+    {
+      nr: "RE-2026-0002", kundeId: "K0003", kunde: "Testkunde 03",
+      zeitraum: "08/2026", betrag: "412,50 €", faellig: "15.09.2026",
+      zustand: "offen", version: 1,
+      fahrten: ["FA-T201", "FA-T202"],
+      posten: [
+        /* Neutrale Positionen. Die Behandlungsart eines Kunden gehoert
+           nicht in erfundene Testdaten - auch nicht als Rechnungsposten. */
+        { was: "Vertragsfahrt Testklinik 02", menge: 9, einzel: "41,00 €", summe: "369,00 €" },
+        { was: "Wartezeitzuschlag", menge: 9, einzel: "4,83 €", summe: "43,50 €" }
+      ],
+      zahlungen: [],
+      verlauf: []
+    },
+    {
+      nr: "RE-2026-0003", kundeId: "K0002", kunde: "Testkunde 02",
+      zeitraum: "07/2026", betrag: "96,00 €", faellig: "15.08.2026",
+      zustand: "überfällig", version: 1,
+      fahrten: ["FA-T301"],
+      posten: [
+        { was: "Fahrt Testzentrum Karlsruhe", menge: 2, einzel: "48,00 €", summe: "96,00 €" }
+      ],
+      zahlungen: [],
+      verlauf: []
+    },
+    {
+      nr: "RE-2026-0004", kundeId: "K0004", kunde: "Testfirma 04",
+      zeitraum: "09/2026", betrag: "—", faellig: "—",
+      zustand: "Entwurf", version: 1,
+      fahrten: [], posten: [], zahlungen: [], verlauf: []
+    }
   ];
 
+  /*
+    Rechnungen eines Kunden. Verknuepft wird ueber die Kundennummer,
+    sobald sie am Beleg steht - sonst ueber den Namen. Dass der Name
+    die schwaechere Verknuepfung ist, steht in der Akte.
+  */
+  const rechnungenVonKunde = (k) => k
+    ? rechnungen.filter((r) => r.kundeId === k.id || r.kunde === k.name)
+    : [];
+
+  /* Das Rewards-Konto eines Kunden, falls es eines gibt. */
+  const rewardsVonKunde = (k) => k
+    ? (rewards.konten.find((x) => x.kundeId === k.id || x.kunde === k.name) || null)
+    : null;
+
   /* ---- Analyse. Ausdruecklich simulierte Werte. ---- */
+  /*
+    Analyse.
+
+    Gemessener Fehler: "Letzte 7 Tage" war ein fester Text, und alle
+    Zahlen standen fest daneben. Ein Zeitraum, der nichts aendert,
+    behauptet eine Auswertung, die es nicht gibt.
+
+    Jetzt liegen TAGESWERTE vor, und jede Kennzahl wird ueber den
+    gewaehlten Bereich SUMMIERT. Damit reagieren alle gemeinsam - nicht
+    weil es jemand so programmiert hat, sondern weil sie aus derselben
+    Rechnung kommen. Abweichende Zeitraeume sind damit ausgeschlossen.
+
+    Die Tageswerte selbst sind ausdruecklich erfundene Testwerte der
+    Designprobe. Es findet keine Besuchermessung statt, es ist kein
+    Trackingdienst angebunden, und es wird nichts nach aussen
+    gesendet.
+
+    Erzeugt werden sie aus dem Tagesabstand, nicht aus Zufall - sonst
+    waere kein Prueflauf moeglich und jede Anzeige eine andere.
+  */
+  const ANALYSE_EREIGNISSE = [
+    { id: "aufrufe",      name: "Seitenaufrufe",                art: "gezaehlt" },
+    { id: "besuche",      name: "Besuche",                      art: "gezaehlt" },
+    { id: "telefon",      name: "Klick auf Telefonnummer",      art: "gezaehlt" },
+    { id: "whatsapp",     name: "Klick auf WhatsApp",           art: "gezaehlt" },
+    { id: "regBegonnen",  name: "Registrierung begonnen",       art: "gezaehlt" },
+    { id: "regFertig",    name: "Registrierung abgeschlossen",  art: "gezaehlt" },
+    { id: "anmeldung",    name: "Anmeldung erfolgreich",        art: "gezaehlt" },
+    { id: "rush",         name: "Taxi Rush gestartet",          art: "gezaehlt" },
+    { id: "radOffen",     name: "Glücksradseite geöffnet",      art: "gezaehlt" },
+    { id: "drehAngefragt", name: "Dreh angefordert",            art: "gezaehlt" },
+    { id: "anfrage",      name: "Fahrtanfrage abgeschickt",     art: "gezaehlt" },
+    { id: "buchung",      name: "Buchung abgeschlossen",        art: "gezaehlt" }
+  ];
+
+  const ANALYSE_SEITEN = ["Startseite", "Flotte", "Rewards", "Hilfe & Kontakt", "Impressum"];
+
+  /* Ein gleichmaessiger, wiederholbarer Wert je Tag und Ereignis. */
+  function analyseTagwert(abstand, grund, schwankung) {
+    const wochentag = (abstand + 3) % 7;
+    const wochenende = wochentag === 5 || wochentag === 6;
+    const basis = grund * (wochenende ? 0.6 : 1);
+    return Math.max(0, Math.round(basis + (abstand % 5) * schwankung));
+  }
+
+  /* 400 Tage Testwerte - genug fuer jeden waehlbaren Zeitraum. */
+  const analyseTage = [];
+  for (let abstand = 0; abstand < 400; abstand += 1) {
+    const d = tagAls(-abstand);
+    const tag = { iso: alsIso(d), seiten: {} };
+    const grund = {
+      aufrufe: 180, besuche: 70, telefon: 9, whatsapp: 6,
+      regBegonnen: 3, regFertig: 2, anmeldung: 11, rush: 8,
+      radOffen: 5, drehAngefragt: 3, anfrage: 4, buchung: 2
+    };
+    for (const e of ANALYSE_EREIGNISSE) {
+      tag[e.id] = analyseTagwert(abstand, grund[e.id], grund[e.id] / 12);
+    }
+    ANALYSE_SEITEN.forEach((name, i) => {
+      tag.seiten[name] = analyseTagwert(abstand, [74, 27, 20, 14, 6][i], 1);
+    });
+    analyseTage.push(tag);
+  }
+
+  /*
+    Die waehlbaren Zeitraeume. "eigen" wird mit zwei Datumsfeldern
+    gefuellt; alle anderen rechnen sich aus dem heutigen Tag.
+  */
+  const ANALYSE_ZEITRAEUME = [
+    { id: "heute",        name: "Heute" },
+    { id: "gestern",      name: "Gestern" },
+    { id: "tage7",        name: "Letzte 7 Tage" },
+    { id: "tage30",       name: "Letzte 30 Tage" },
+    { id: "monat",        name: "Dieser Monat" },
+    { id: "monatVorher",  name: "Letzter Monat" },
+    { id: "eigen",        name: "Eigener Zeitraum" }
+  ];
+
+  /* Welcher Bereich gehoert zu einer Auswahl? Gibt von/bis als ISO. */
+  function analyseBereich(id, eigenVon, eigenBis) {
+    const heuteIso = alsIso(heute);
+    if (id === "heute") return { von: heuteIso, bis: heuteIso };
+    if (id === "gestern") {
+      const g = alsIso(tagAls(-1));
+      return { von: g, bis: g };
+    }
+    if (id === "tage7") return { von: alsIso(tagAls(-6)), bis: heuteIso };
+    if (id === "tage30") return { von: alsIso(tagAls(-29)), bis: heuteIso };
+    if (id === "monat") {
+      const erster = new Date(heute.getFullYear(), heute.getMonth(), 1);
+      return { von: alsIso(erster), bis: heuteIso };
+    }
+    if (id === "monatVorher") {
+      const erster = new Date(heute.getFullYear(), heute.getMonth() - 1, 1);
+      const letzter = new Date(heute.getFullYear(), heute.getMonth(), 0);
+      return { von: alsIso(erster), bis: alsIso(letzter) };
+    }
+    /* eigen */
+    if (eigenVon && eigenBis) {
+      return eigenBis < eigenVon
+        ? { von: eigenBis, bis: eigenVon }
+        : { von: eigenVon, bis: eigenBis };
+    }
+    return { von: "", bis: "" };
+  }
+
+  /*
+    Die Auswertung eines Bereichs. ALLE Kennzahlen entstehen hier, aus
+    denselben Tagen - deshalb koennen sie nicht auseinanderlaufen.
+
+    "besucher" und "wiederkehrend" sind SCHAETZUNGEN aus den Besuchen.
+    Das ist keine Nachlaessigkeit: Ein Mensch mit Handy und Rechner
+    zaehlt doppelt, wer Speicherfunktionen blockiert gar nicht. Sie
+    werden deshalb als Schaetzung gekennzeichnet und nie als gezaehlt
+    ausgegeben.
+  */
+  function analyseAuswertung(von, bis) {
+    const tage = (!von || !bis) ? [] : analyseTage.filter((x) => x.iso >= von && x.iso <= bis);
+    const summe = (feld) => tage.reduce((s, x) => s + (x[feld] || 0), 0);
+
+    const besuche = summe("besuche");
+    const seiten = ANALYSE_SEITEN.map((name) => ({
+      name,
+      wert: tage.reduce((s, x) => s + (x.seiten[name] || 0), 0)
+    })).sort((a, b) => b.wert - a.wert);
+
+    const ereignisse = ANALYSE_EREIGNISSE.map((e) => ({
+      id: e.id, name: e.name, art: e.art, wert: summe(e.id)
+    }));
+
+    const anfragen = summe("anfrage");
+    const buchungen = summe("buchung");
+
+    return {
+      tage: tage.length,
+      von, bis,
+      ereignisse,
+      seiten,
+      /* Schaetzungen - ausdruecklich als solche. */
+      besucherSchaetzung: Math.round(besuche * 0.64),
+      wiederkehrendSchaetzung: Math.round(besuche * 0.18),
+      /* Konversionen, gerechnet aus gezaehlten Werten. */
+      anfragequote: besuche ? Math.round((anfragen / besuche) * 1000) / 10 : 0,
+      buchungsquote: anfragen ? Math.round((buchungen / anfragen) * 1000) / 10 : 0,
+      registrierquote: summe("regBegonnen")
+        ? Math.round((summe("regFertig") / summe("regBegonnen")) * 1000) / 10 : 0
+    };
+  }
+
   const analyse = {
-    zeitraum: "letzte 7 Tage",
-    kennzahlen: [
-      { name: "Seitenaufrufe",   wert: "1 248", hinweis: "gezählt" },
-      { name: "Besuche",         wert: "486",   hinweis: "gezählt" },
-      { name: "Besucher",        wert: "~310",  hinweis: "Schätzung" },
-      { name: "wiederkehrend",   wert: "~88",   hinweis: "Schätzung" }
-    ],
-    aktionen: [
-      { name: "Klick auf Telefonnummer", wert: 64 },
-      { name: "Klick auf WhatsApp",      wert: 41 },
-      { name: "Registrierung begonnen",  wert: 18 },
-      { name: "Registrierung abgeschlossen", wert: 11 },
-      { name: "Anmeldung erfolgreich",   wert: 73 },
-      { name: "Taxi Rush gestartet",     wert: 52 },
-      { name: "Glücksradseite geöffnet", wert: 37 },
-      { name: "Dreh angefordert",        wert: 21 }
-    ],
-    seiten: [
-      { name: "Startseite",  wert: 512 },
-      { name: "Flotte",      wert: 188 },
-      { name: "Rewards",     wert: 141 },
-      { name: "Hilfe & Kontakt", wert: 96 },
-      { name: "Impressum",   wert: 44 }
-    ]
+    /* Bleibt fuer die alte Ansicht erhalten, wird aber nicht mehr
+       gezeigt - die Zahlen kommen aus analyseAuswertung(). */
+    zeitraum: "wird gewählt"
   };
 
   /* ---- Auswahlwerte des Fahrtassistenten ---- */
@@ -1093,8 +1502,13 @@
     fahrtenHeute, nichtZugewiesen, istNichtZugewiesen,
     NICHT_ZUGEWIESEN_ZUSTAENDE,
     nachZeit, mitZeit, ohneZeit, hatZeit,
-    personal, lohn, rewards, kunden, rechnungen, analyse,
+    personal, personalVon, personalZusatz, personalVerlauf,
+    ANALYSE_ZEITRAEUME, ANALYSE_EREIGNISSE, ANALYSE_SEITEN,
+    analyseBereich, analyseAuswertung, analyseTage,
+    REWARDS_STUFEN, REWARDS_REGELN, REWARDS_AUSSCHLUSS, REWARDS_GLUECKSRAD,
+    lohn, rewards, kunden, rechnungen, analyse,
     standardadresse, letzteKunden, kundenSuche, haeufigeZiele,
+    kundeVon, kundeAnlegen, fahrtenVonKunde, rechnungenVonKunde, rewardsVonKunde,
     abwesenheiten, abwesenheitFuer, abwesenheitenAmTag, istWirksam,
     schichtbefund, schichtenAmTag, STATUS_IM_KALENDER,
     vorgaengeZuAbwesenheit,

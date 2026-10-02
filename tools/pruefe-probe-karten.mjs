@@ -139,6 +139,24 @@ const sperrgrund = async (page) =>
 */
 const ABSCHLUSSWORT = /abgeschlossen|erledigt|bearbeitet|gespeichert|bestätigt|genehmigt|verbindlich/i;
 
+/*
+  FEHLALARM, benannt und eng begrenzt behoben.
+
+  Dieser Lauf hat „Aus Erledigt-Liste entfernen" als
+  Abschlussbeschriftung gemeldet, weil darin das Wort „Erledigt"
+  steht. Die Beschriftung behauptet aber keinen Abschluss - sie nennt
+  die LISTE, aus der etwas entfernt wird, und sagt genau das, was der
+  Knopf tut. Der Vorgang ist zu diesem Zeitpunkt bereits fachlich
+  erledigt; das Entfernen aendert daran nichts.
+
+  Herausgenommen wird deshalb ausschliesslich der Listenname
+  „Erledigt-Liste". Alles andere wird unveraendert streng geprueft -
+  ein Knopf „Als erledigt markieren" auf einer Listenkarte wuerde
+  weiterhin auffallen.
+*/
+const LISTENNAME = /Erledigt-Liste/g;
+const istAbschlussbehauptung = (text) => ABSCHLUSSWORT.test(text.replace(LISTENNAME, "L"));
+
 /* ═══ 1. Keine Karte verspricht einen Abschluss ═════════════════ */
 console.log("\n── 1. Listenkarten in allen Rollen und Reitern ──");
 {
@@ -157,7 +175,7 @@ console.log("\n── 1. Listenkarten in allen Rollen und Reitern ──");
       for (const k of karten) {
         gepruefteKarten += k.knoepfe.length;
         for (const b of k.knoepfe) {
-          if (ABSCHLUSSWORT.test(b)) verdaechtig.push(`${rolle}/${r}/${k.id}: „${b}“`);
+          if (istAbschlussbehauptung(b)) verdaechtig.push(`${rolle}/${r}/${k.id}: „${b}“`);
         }
       }
     }
@@ -165,6 +183,13 @@ console.log("\n── 1. Listenkarten in allen Rollen und Reitern ──");
     await ctx.close();
   }
   pruefe(gepruefteKarten > 50, `es wurden genug Kartenknöpfe geprüft (${gepruefteKarten})`);
+  /* Gegenprobe: die Ausnahme darf das Muster nicht stumpf machen. */
+  pruefe(istAbschlussbehauptung("Als erledigt markieren"),
+    "das Muster greift weiterhin bei einer echten Abschlussbehauptung");
+  pruefe(istAbschlussbehauptung("Dokumentprüfung abgeschlossen"),
+    "und bei der Beschriftung, um die es ursprünglich ging");
+  pruefe(!istAbschlussbehauptung("Aus Erledigt-Liste entfernen"),
+    "aber nicht beim blossen Listennamen");
   pruefe(verdaechtig.length === 0,
     `keine einzige Listenkarte verspricht einen Abschluss${verdaechtig.length ? " (" + verdaechtig[0] + ")" : ""}`);
   if (verdaechtig.length) for (const x of verdaechtig) console.log("     " + x);
@@ -514,18 +539,65 @@ console.log("\n── 7. Übernehmen und Weitergeben nur, wo es etwas zu tun gib
   await page.click('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|planung"]');
   await page.waitForTimeout(450);
   await zu(page);
-  const dNamen = await kartenNamen(page);
-  pruefe(dNamen.length === 1 && dNamen[0] === "Ansehen",
-    `erledigt, ohne Recht zur Wiedereröffnung: nur „Ansehen“ (${dNamen.join(" | ")})`);
+  /*
+    GEAENDERTE ERWARTUNG.
+
+    Alt: Ein erledigter Vorgang zeigt genau einen Knopf, „Ansehen",
+    und ohne Recht zur Wiedereroeffnung sonst nichts.
+
+    Weshalb das so nicht mehr gilt: Der Geschaeftsfuehrer hat danach
+    ausdruecklich verlangt, erledigte Vorgaenge aus der Arbeitsliste
+    nehmen zu koennen, ohne sie zu loeschen. Dafuer braucht die Karte
+    einen Knopf. Die alte Erwartung schliesst diese Anforderung aus;
+    beide zugleich sind nicht erfuellbar.
+
+    Weshalb die neue Erwartung die alte Absicht nicht aufgibt: Der
+    Sinn der alten Regel war, dass an einem erledigten Vorgang keine
+    BEARBEITUNG mehr angeboten wird - kein Uebernehmen, kein
+    Weitergeben, kein Abschluss. Genau das wird jetzt geprueft, und
+    zwar strenger als vorher: nicht mehr ueber eine Knopfzahl, sondern
+    ueber die erlaubte Menge von Beschriftungen UND die dahinter
+    liegenden Aktionen. "Aus Erledigt-Liste entfernen" ist keine
+    Bearbeitung des Vorgangs, sondern Listenpflege; der Vorgang bleibt
+    vollstaendig erhalten und steht danach im Archiv.
+  */
+  const BEARBEITUNG = /^(vg-teil-)?(uebernehmen|weitergeben|erledigen|abschliessen)/;
+  const ERLAUBT_ERLEDIGT = ["Ansehen", "Aus Erledigt-Liste entfernen",
+    "Zurück in die Arbeitsliste", "Wiedereröffnen"];
+
+  const dKnoepfe = await kartenknoepfe(page);
+  const dNamen = dKnoepfe.map((x) => x.text);
+  pruefe(dNamen.includes("Ansehen"), `erledigt: „Ansehen“ (${dNamen.join(" | ")})`);
+  pruefe(!dNamen.includes("Wiedereröffnen"),
+    "ohne Recht zur Wiedereröffnung fehlt dieser Knopf");
+  pruefe(dNamen.every((x) => ERLAUBT_ERLEDIGT.includes(x)),
+    `und sonst nur Listenpflege (${dNamen.join(" | ")})`);
+  pruefe(!dKnoepfe.some((x) => BEARBEITUNG.test(x.tun.split(":")[0])),
+    `keine Bearbeitungsaktion mehr an einem erledigten Vorgang (${dKnoepfe.map((x) => x.tun).join(" | ")})`);
 
   await page.selectOption("[data-rolle]", "personal");
   await page.waitForTimeout(400);
   await page.click('[data-tun="vg-reiter:alle"]');
   await page.waitForTimeout(300);
-  const pNamen = await kartenNamen(page);
+  const pKnoepfe = await kartenknoepfe(page);
+  const pNamen = pKnoepfe.map((x) => x.text);
   pruefe(pNamen.includes("Ansehen"), "erledigt: „Ansehen“");
   pruefe(pNamen.includes("Wiedereröffnen"), "und — weil berechtigt — „Wiedereröffnen“");
-  pruefe(pNamen.length === 2, `und sonst nichts (${pNamen.join(" | ")})`);
+  pruefe(pNamen.every((x) => ERLAUBT_ERLEDIGT.includes(x)),
+    `und sonst nur Listenpflege (${pNamen.join(" | ")})`);
+  pruefe(!pKnoepfe.some((x) => BEARBEITUNG.test(x.tun.split(":")[0])),
+    `auch hier keine Bearbeitungsaktion (${pKnoepfe.map((x) => x.tun).join(" | ")})`);
+  /* Und der Knopf loescht nichts - der Vorgang bleibt. */
+  {
+    const vorher = await page.evaluate(() => window.ProbeDaten.vorgaenge.length);
+    await page.click('.vorgang[data-vorgang="V0002"] [data-tun="vg-aus-liste:V0002"]');
+    await page.waitForTimeout(400);
+    const nachher = await page.evaluate(() => window.ProbeDaten.vorgaenge.length);
+    pruefe(vorher === nachher,
+      `aus der Liste nehmen löscht nichts (${vorher} → ${nachher})`);
+    pruefe(await page.evaluate(() => Boolean(window.ProbeDaten.vorgangVon("V0002"))),
+      "der Vorgang ist weiterhin vorhanden");
+  }
   await ctx.close();
 }
 

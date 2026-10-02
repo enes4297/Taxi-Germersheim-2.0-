@@ -480,10 +480,22 @@
   function schrittPruefen() {
     const k = aktuellerKunde();
     const n = stand.neuerKunde;
+
+    /*
+      Hier wird NICHTS angelegt. Diese Funktion zeichnet nur.
+
+      Ich hatte das Anlegen zuerst an diese Stelle gesetzt - ein
+      ernster Fehler: Die Zeichenfunktion laeuft bei jedem
+      Neuzeichnen, also haette ein Schritt vor und zurueck jedes Mal
+      einen weiteren Kunden angelegt. Angelegt wird in speichern(),
+      genau einmal. Vom Prueflauf gefunden.
+    */
+    const wirdAngelegt = !k && !stand.gast;
+
     const kundeName = k ? k.name
       : stand.gast ? "Gastfahrt"
       : n.art === "firma" ? n.firma
-      : `${n.vorname} ${n.nachname}`.trim();
+      : (n.vorname + " " + n.nachname).trim();
     const telefon = k ? k.telefon : (stand.gast ? "" : n.telefon);
 
     const medizinisch = istMedizinisch() && darfMedizinisches();
@@ -494,7 +506,10 @@
         ["Name", kundeName],
         ["Telefon", telefon],
         ["Kundennummer", k ? k.kundennummer : ""],
-        ["Hinweis zum Kunden", k ? k.hinweis : ""]
+        ["Hinweis zum Kunden", k ? k.hinweis : ""],
+        ["Kundenbestand", wirdAngelegt
+          ? "wird mit dem Speichern neu angelegt"
+          : (stand.gast ? "Gastfahrt — kein Kundenbezug" : "bereits im Bestand")]
       ])}
       ${abschnitt("Abholung", 2, [["Adresse", stand.abholung]])}
       ${abschnitt("Ziel", 3, [["Adresse", stand.ziel]])}
@@ -664,8 +679,37 @@
 
     const k = aktuellerKunde();
     const n = stand.neuerKunde;
+
+    /*
+      Jetzt - und nur jetzt - wird ein neuer Kunde in den Bestand
+      aufgenommen, ueber dieselbe Funktion, die der Kundenbereich
+      benutzt. Vorher blieb von ihm nur ein Name auf der Fahrt, und
+      im Kundenbereich war er nicht zu finden.
+
+      Eine Gastfahrt legt keinen Kunden an: Sie ist ausdruecklich
+      ohne Kundenbezug.
+    */
+    let angelegt = null;
+    if (!k && !stand.gast) {
+      const name = n.art === "firma" ? n.firma : (n.vorname + " " + n.nachname).trim();
+      angelegt = D.kundeAnlegen({
+        art: n.art, name,
+        telefon: n.telefon,
+        strasse: n.strasse, hausnummer: n.hausnummer,
+        plz: n.plz, ort: n.ort,
+        quelle: "Fahrtaufnahme"
+      });
+      D.protokollieren({
+        betrifft: angelegt.name + " (" + angelegt.kundennummer + ")",
+        was: "Kunde angelegt",
+        vorher: "nicht im Bestand",
+        nachher: "angelegt über die Fahrtaufnahme", grund: ""
+      });
+    }
+
     const kundeName = k ? k.name
       : stand.gast ? "Gastfahrt"
+      : angelegt ? angelegt.name
       : n.art === "firma" ? n.firma
       : `${n.vorname} ${n.nachname}`.trim();
 
@@ -675,6 +719,9 @@
       zustand: "ungeplant",
       zeit: stand.zeit,
       kunde: kundeName,
+      /* Die Kennung, nicht nur der Name - ein Name ist keine
+         Verknuepfung. */
+      kundeId: k ? k.id : (angelegt ? angelegt.id : ""),
       von: stand.abholung,
       nach: stand.ziel,
       fahrerId: null,
@@ -690,7 +737,7 @@
        normal geschlossen werden. Ohne diese Zeile wuerde die
        Sicherheitsabfrage des Assistenten dort weiterwirken. */
     R.dialogSchutzSetzen(null);
-    const gespeichert = { nummer, kundeName };
+    const gespeichert = { nummer, kundeName, angelegt: angelegt ? angelegt.kundennummer : "" };
     stand = leererStand();
 
     R.dialogOeffnen(`
@@ -730,7 +777,7 @@
   /* ============================================================
      Aussenschnittstelle
      ============================================================ */
-  function starten() {
+  function starten(vorgewaehlt) {
     const entwurf = entwurfLesen();
     if (entwurf) {
       const alter = Math.round((Date.now() - entwurf.zeit) / 60000);
@@ -750,6 +797,17 @@
       return;
     }
     stand = leererStand();
+    /*
+      Aus einer Kundenakte heraus ist der Kunde schon bekannt. Dann
+      wird er vorbelegt - und mit ihm seine gespeicherte
+      Abholadresse, wie beim Waehlen in der Suche. Sonst muesste man
+      ihn zweimal suchen.
+    */
+    if (vorgewaehlt && vorgewaehlt.id) {
+      kundeWaehlen(vorgewaehlt.id);
+      R.dialogSchutzSetzen(() => { abbrechenVersuch(); return false; });
+      return;
+    }
     R.dialogSchutzSetzen(() => { abbrechenVersuch(); return false; });
     zeichnen();
   }

@@ -848,31 +848,88 @@
   /* ============================================================
      6. Kunden
      ============================================================ */
+  /*
+    Der Kundenbereich war eine unbewegliche Anzeige: ein Suchfeld ohne
+    Horcher, Zeilen ohne Aktion, kein Knopf zum Anlegen. Der manuelle
+    Rundgang nennt ihn zu Recht "faktisch eine Anzeige".
+
+    Jetzt: Suche beim Tippen, jede Zeile eine echte Schaltflaeche,
+    Enter oeffnet bei genau einem Treffer, und ein Knopf legt an.
+  */
+  const kundenStand = { suche: "" };
+
   function kunden() {
-    /* Gezeigt werden hoechstens 25 Zeilen. Der Bestand hat ueber
-       zweitausend Eintraege - die Oberflaeche zeichnet ihn nie ganz. */
-    const gezeigt = D.kunden.slice(0, 25);
+    const suche = kundenStand.suche.trim();
+    const ergebnis = suche ? D.kundenSuche(suche, 25) : null;
+    /* Ohne Suche die ersten 25 - der Bestand hat ueber zweitausend
+       Eintraege und wird nie ganz gezeichnet. */
+    const liste = ergebnis ? ergebnis.treffer : D.kunden.slice(0, 25);
+    const darfAnlegen = R.darf("customers.write");
+
+    const zeile = (k) => {
+      const ort = [k.plz, k.ort].filter(Boolean).join(" ");
+      return window.ProbeAkten.aktenzeile(
+        `ak-kunde:${k.id}`,
+        k.name + ", " + k.kundennummer + ", " + k.telefon
+          + (ort ? ", " + ort : "") + ". Kundenakte öffnen.",
+        [
+          `<strong>${h(k.name)}</strong>${k.nurProbe ? " " + R.marke("aktiv", "neu in der Probe") : ""}`,
+          h(k.kundennummer),
+          h(k.telefon),
+          h(ort) || "—",
+          k.konto === "verknüpft" ? R.marke("gut", "verknüpft") : R.marke("ruhig", "nicht verknüpft"),
+          h(k.fahrten) + " Fahrten",
+          k.hinweis ? h(k.hinweis) : "—"
+        ]
+      );
+    };
+
+    let rumpf;
+    if (ergebnis && ergebnis.zuKurz) {
+      /* Dieselbe Schwelle wie im Fahrtassistenten - eine Suche,
+         zwei Oberflaechen, eine Regel. */
+      rumpf = R.zustandsKasten("leer", "Mindestens zwei Zeichen eingeben",
+        `Der Bestand hat ${h(D.kunden.length)} Kunden — es werden nie alle gezeigt. Gesucht wird in Name, Telefonnummer, Kundennummer, Firma, Anschrift und E-Mail.`);
+    } else if (ergebnis && !liste.length) {
+      rumpf = R.zustandsKasten("leer", "Kein Kunde gefunden",
+        `Zu „${h(suche)}“ passt kein Eintrag. Gesucht wird in Name, Telefonnummer, Kundennummer, Firma, Anschrift und E-Mail.`);
+    } else {
+      rumpf = `<div class="aktenliste" role="list">
+        <div class="az-kopf" aria-hidden="true">
+          <span>Name</span><span>Kundennummer</span><span>Telefon</span>
+          <span>Ort</span><span>Kundenkonto</span><span>Fahrten</span><span>Hinweis</span>
+        </div>
+        ${liste.map(zeile).join("")}
+      </div>`;
+    }
+
     return `
-      <div class="bereichskopf"><div>
-        <h1>Kunden</h1>
-        <p class="wichtig">${h(D.kunden.length)} Testkunden im Bestand</p>
-      </div></div>
-      <div class="flaeche">
-        <h2>Suche</h2>
-        <label style="max-width:420px">Name, Telefonnummer oder Kundennummer
-          <input type="search" placeholder="Testkunde …"></label>
+      <div class="bereichskopf">
+        <div>
+          <h1>Kunden</h1>
+          <p class="wichtig">${h(D.kunden.length)} Testkunden im Bestand · jede Zeile öffnet die Akte</p>
+        </div>
+        ${darfAnlegen ? `<div class="hauptaktion">
+          <button class="knopf haupt-knopf" type="button" data-tun="ak-kunde-neu">
+            Neuen Kunden anlegen</button>
+        </div>` : ""}
       </div>
       <div class="flaeche">
-        <h2>Liste <span class="offen">die ersten ${h(gezeigt.length)} von ${h(D.kunden.length)}</span></h2>
-        <div class="tabelle-huelle"><table class="liste">
-          <thead><tr><th>Name</th><th>Kontakt</th><th>Kundenkonto</th><th>Fahrten</th><th>Hinweis</th></tr></thead>
-          <tbody>${gezeigt.map((k) => `<tr>
-            <td><strong>${h(k.name)}</strong></td>
-            <td>${h(k.telefon)}</td>
-            <td>${k.konto === "verknüpft" ? R.marke("gut", "verknüpft") : R.marke("ruhig", "nicht verknüpft")}</td>
-            <td>${h(k.fahrten)}</td>
-            <td>${h(k.hinweis) || "—"}</td>
-          </tr>`).join("")}</tbody></table></div>
+        <h2>Suche</h2>
+        <label style="max-width:460px">Name, Telefon, Kundennummer, Anschrift oder E-Mail
+          <input type="search" data-kundensuche value="${h(kundenStand.suche)}"
+            placeholder="Testkunde 03, Testallee, KD-0003 …"></label>
+        <p class="schritt-hinweis">Es wird beim Tippen gefiltert. Bei genau einem Treffer
+          öffnet Enter die Kundenakte.</p>
+        ${ergebnis ? `<p class="wichtig" style="font-size:14px">
+          ${h(ergebnis.gesamt)} ${ergebnis.gesamt === 1 ? "Treffer" : "Treffer"}${ergebnis.gesamt > liste.length
+            ? `, gezeigt werden die ersten ${h(liste.length)}` : ""}</p>` : ""}
+      </div>
+      <div class="flaeche">
+        <h2>${ergebnis ? "Treffer" : "Liste"}
+          <span class="offen">${ergebnis ? h(liste.length) + " angezeigt"
+            : `die ersten ${h(liste.length)} von ${h(D.kunden.length)}`}</span></h2>
+        ${rumpf}
         <p class="wichtig" style="font-size:14px;margin-top:10px;">
           Die Disposition hat keinen Zugriff auf diese Liste. Sie sieht Kontaktangaben nur an einer konkreten Fahrt.
         </p>
@@ -882,31 +939,58 @@
   /* ============================================================
      7. Personal
      ============================================================ */
+  /*
+    Die Mitarbeiterzeilen leuchteten, liessen sich aber nicht
+    anklicken - weder als Administration noch als Personal. Jetzt ist
+    jede Zeile eine echte Schaltflaeche.
+  */
   function personal() {
+    const darfSehen = R.darf("personnel.read");
+    if (!darfSehen) return R.kastenKeinRecht("Personal");
+
+    const liste = D.mitarbeiter.map((m) => D.personalVon(m.id));
+    const offeneKrank = D.abwesenheiten.filter((a) => a.art === "krank").length;
+    const fristKritisch = liste.filter((pz) =>
+      pz.dokumentstand.lage !== "gueltig").length;
+
+    const zeile = (pz) => window.ProbeAkten.aktenzeile(
+      `ak-person:${pz.id}`,
+      pz.name + ", " + pz.id + ", " + pz.status + ", " + pz.beschaeftigung
+        + ". Personalakte öffnen.",
+      [
+        `<strong>${h(pz.name)}</strong>`,
+        h(pz.id),
+        pz.status === "aktiv" ? R.marke("gut", "aktiv")
+          : pz.status === "krank" ? R.marke("warnung", "krank")
+          : R.marke("ruhig", pz.status),
+        h(pz.beschaeftigung),
+        h(pz.eintritt),
+        pz.konto === "verknüpft" ? R.marke("gut", "verknüpft") : R.marke("ruhig", "nicht verknüpft"),
+        pz.dokumentstand.lage === "gueltig"
+          ? R.marke("gut", "alle gültig")
+          : R.marke("warnung", D.DOKUMENT_LAGE[pz.dokumentstand.lage] || "prüfen")
+      ]
+    );
+
     return `
       <div class="bereichskopf"><div>
         <h1>Personal</h1>
-        <p class="wichtig">${h(D.personal.length)} Mitarbeiter · 1 Krankmeldung offen · 1 Frist läuft ab</p>
+        <p class="wichtig">${h(liste.length)} Mitarbeiter · ${h(offeneKrank)} Krankmeldung${offeneKrank === 1 ? "" : "en"}
+          · ${h(fristKritisch)} Dokumentstand zu prüfen · jede Zeile öffnet die Akte</p>
       </div></div>
       <div class="flaeche">
         <h2>Mitarbeiter</h2>
-        <div class="tabelle-huelle"><table class="liste">
-          <thead><tr><th>Name</th><th>Status</th><th>Beschäftigung</th><th>Eintritt</th><th>Konto</th><th>Fristen</th></tr></thead>
-          <tbody>${D.personal.map((p) => {
-            const kritisch = p.fristen.find((f) => f.bis !== "gültig");
-            return `<tr>
-              <td><strong>${h(p.name)}</strong></td>
-              <td>${p.status === "aktiv" ? R.marke("gut", "aktiv")
-                  : p.status === "krank" ? R.marke("warnung", "krank")
-                  : R.marke("ruhig", p.status)}</td>
-              <td>${h(p.beschaeftigung)}</td>
-              <td>${h(p.eintritt)}</td>
-              <td>${p.konto === "verknüpft" ? R.marke("gut", "verknüpft") : R.marke("ruhig", "nicht verknüpft")}</td>
-              <td>${kritisch ? R.marke("warnung", `${kritisch.was}: ${kritisch.bis}`) : R.marke("gut", "alle gültig")}</td>
-            </tr>`;
-          }).join("")}</tbody></table></div>
+        <div class="aktenliste" role="list">
+          <div class="az-kopf" aria-hidden="true">
+            <span>Name</span><span>Kennung</span><span>Status</span>
+            <span>Beschäftigung</span><span>Eintritt</span><span>Konto</span><span>Dokumente</span>
+          </div>
+          ${liste.map(zeile).join("")}
+        </div>
         <p class="wichtig" style="font-size:14px;margin-top:10px;">
           Persönliche Daten stehen nicht in der Übersicht, sondern erst in der einzelnen Akte.
+          „Fahrer &amp; Fahrzeuge“ und „Personal“ zeigen denselben Datensatz — die Stammdaten
+          liegen nur an einer Stelle.
         </p>
       </div>`;
   }
@@ -1017,119 +1101,293 @@
   /* ============================================================
      9. Finanzen
      ============================================================ */
+  /*
+    Die Rechnungszeilen leuchteten, oeffneten aber nichts - als
+    Administration wie als Buchhaltung. Jetzt oeffnet jede Zeile die
+    Rechnung.
+  */
   function finanzen() {
-    const zahl = (z) => D.rechnungen.filter((r) => r.zustand === z).length;
+    if (!R.darf("finance.read")) return R.kastenKeinRecht("Finanzen");
+
+    const liste = D.rechnungen;
+    const offen = liste.filter((r) => r.zustand === "offen").length;
+    const faellig = liste.filter((r) => r.zustand === "überfällig").length;
+
+    const zeile = (r) => window.ProbeAkten.aktenzeile(
+      `ak-rechnung:${r.nr}`,
+      r.nr + ", " + r.kunde + ", " + r.zeitraum + ", " + r.betrag + ", " + r.zustand
+        + ". Rechnung öffnen.",
+      [
+        `<strong>${h(r.nr)}</strong>`,
+        h(r.kunde),
+        h(r.zeitraum),
+        h(r.betrag),
+        h(r.faellig),
+        r.zustand === "bezahlt" ? R.marke("gut", "bezahlt")
+          : r.zustand === "überfällig" ? R.marke("warnung", "überfällig")
+          : r.zustand === "Entwurf" ? R.marke("ruhig", "Entwurf")
+          : R.marke("aktiv", "offen"),
+        h((r.zahlungen || []).length) + " Zahlung(en)"
+      ]
+    );
+
     return `
       <div class="bereichskopf"><div>
         <h1>Finanzen</h1>
-        <p class="wichtig">${h(zahl("offen"))} offen · ${h(zahl("überfällig"))} überfällig · ${h(zahl("Entwurf"))} Entwurf</p>
+        <p class="wichtig">${h(liste.length)} Rechnungen · ${h(offen)} offen · ${h(faellig)} überfällig
+          · jede Zeile öffnet die Rechnung</p>
       </div></div>
       <div class="flaeche">
         <h2>Rechnungen</h2>
-        <div class="tabelle-huelle"><table class="liste">
-          <thead><tr><th>Nummer</th><th>Kunde</th><th>Zeitraum</th><th>Betrag</th><th>Fällig</th><th>Zustand</th></tr></thead>
-          <tbody>${D.rechnungen.map((r) => `<tr>
-            <td>${h(r.nr)}</td><td>${h(r.kunde)}</td><td>${h(r.zeitraum)}</td>
-            <td><strong>${h(r.betrag)}</strong></td><td>${h(r.faellig)}</td>
-            <td>${r.zustand === "bezahlt" ? R.marke("gut", "bezahlt")
-                : r.zustand === "überfällig" ? R.marke("warnung", "überfällig")
-                : R.marke("ruhig", r.zustand)}</td>
-          </tr>`).join("")}</tbody></table></div>
+        <div class="aktenliste" role="list">
+          <div class="az-kopf" aria-hidden="true">
+            <span>Nummer</span><span>Kunde</span><span>Zeitraum</span>
+            <span>Betrag</span><span>Fällig</span><span>Zustand</span><span>Zahlungen</span>
+          </div>
+          ${liste.map(zeile).join("")}
+        </div>
       </div>
       <div class="flaeche">
-        <h2>Versand und Buchhaltung</h2>
-        ${R.zustandsKasten("vorbereitet", "Rechnungsversand — nicht eingerichtet",
-          "Es ist kein geprüfter Mailversand angebunden. Deshalb wird hier kein Versand angeboten und keiner simuliert. Nötig sind: Absender, SMTP mit SPF/DKIM/DMARC und eine Protokollierung.")}
+        <h2>Was die Probe nicht hat</h2>
+        <p class="wichtig" style="font-size:15px">
+          Der Rechnungsversand ist <strong>nicht eingerichtet</strong>. Es wird keine Mail
+          erzeugt und keine Datei hochgeladen. Eine Rechnungs-PDF liegt nicht vor; die Akte
+          zeigt an ihrer Stelle einen Platzhalter, wie im Lohnbereich.</p>
       </div>`;
   }
 
   /* ============================================================
      10. Rewards
      ============================================================ */
+  /*
+    Die Kundenzeilen leuchteten, oeffneten aber kein Konto. Und das
+    gezeigte Regelwerk war unvollstaendig: Es nannte vier Zeilen,
+    waehrend fuenf Stufen, Ausschluesse und Geburtstagspunkte
+    vereinbart sind.
+  */
   function rewards() {
-    const w = D.rewards;
+    if (!R.darf("rewards.read")) return R.kastenKeinRecht("Rewards");
+
+    const zeile = (konto) => {
+      const k = D.kunden.find((x) => x.id === konto.kundeId || x.name === konto.kunde);
+      const stufe = D.REWARDS_STUFEN.find((s) => s.name === konto.stufe);
+      return window.ProbeAkten.aktenzeile(
+        `ak-rewards-konto:${konto.kunde}`,
+        konto.kunde + ", " + konto.punkte + " Punkte, Stufe " + konto.stufe
+          + ". Rewards-Konto öffnen.",
+        [
+          `<strong>${h(konto.kunde)}</strong>`,
+          k ? h(k.kundennummer) : "—",
+          h(konto.punkte) + " Punkte",
+          R.marke(stufe ? stufe.marke : "ruhig", konto.stufe),
+          h(konto.qualifizierteFahrten !== undefined ? konto.qualifizierteFahrten : "—")
+            + " qual. Fahrten",
+          h(konto.drehs) + " offene Drehs",
+          h((konto.verlauf || []).length) + " Einträge"
+        ]
+      );
+    };
+
     return `
       <div class="bereichskopf"><div>
         <h1>Rewards</h1>
-        <p class="wichtig">Nur Administration. Die Disposition hat keinen Verwaltungszugriff.</p>
+        <p class="wichtig">${h(D.rewards.konten.length)} Testkonten · jede Zeile öffnet das Konto</p>
       </div></div>
+
+      <div class="flaeche">
+        <h2>Stufen</h2>
+        <div class="aktenliste" role="list">
+          <div class="az-kopf" aria-hidden="true">
+            <span>Stufe</span><span>Schwelle</span><span>Festgelegt?</span>
+          </div>
+          ${D.REWARDS_STUFEN.map((s) => `<div class="aktenzeile ist-anzeige" role="listitem">
+            <span class="az-feld"><strong>${h(s.name)}</strong></span>
+            <span class="az-feld">${h(s.schwelle)}</span>
+            <span class="az-feld">${s.festgelegt
+              ? R.marke("gut", "vereinbart")
+              : R.marke("warnung", "offene Geschäftsentscheidung")}</span>
+          </div>`).join("")}
+        </div>
+        <p class="schritt-hinweis">Was als „offene Geschäftsentscheidung“ steht, ist
+          <strong>nicht</strong> mit einer Zahl gefüllt worden. Eine erfundene Schwelle wäre
+          schlimmer als eine fehlende.</p>
+      </div>
+
       <div class="flaeche">
         <h2>Regeln</h2>
-        <div class="kennzahlen">${w.regeln.map((r) =>
-          `<div class="kennzahl" style="cursor:default"><span class="wert" style="font-size:20px">${h(r.wert)}</span>
-           <span class="name">${h(r.name)}</span></div>`).join("")}</div>
+        <ul style="margin:0;padding-left:20px;color:var(--gedaempft);font-size:15px;line-height:1.7">
+          ${D.REWARDS_REGELN.map((r) => `<li>${h(r)}</li>`).join("")}
+        </ul>
       </div>
+
+      <div class="flaeche">
+        <h2>Keine Punkte für</h2>
+        <div class="wahlraster">
+          ${D.REWARDS_AUSSCHLUSS.map((a) => `<div class="wahlkarte ist-anzeige">
+            <strong>${h(a)}</strong></div>`).join("")}
+        </div>
+        <p class="schritt-hinweis">Diese Fahrtarten erzeugen keine Punkte. Das ist eine
+          Vorgabe, keine Annahme der Probe.</p>
+      </div>
+
+      <div class="flaeche">
+        <h2>Glücksrad</h2>
+        <div class="aktenliste" role="list">
+          ${D.REWARDS_GLUECKSRAD.map((g) => `<div class="aktenzeile ist-anzeige" role="listitem">
+            <span class="az-feld"><strong>${h(g.gewinn)}</strong></span>
+            <span class="az-feld">${g.gesperrt
+              ? R.marke("warnung", "bis zur Freigabe gesperrt")
+              : R.marke("gut", "freigegeben")}</span>
+            <span class="az-feld">${h(g.hinweis)}</span>
+          </div>`).join("")}
+        </div>
+        <p class="schritt-hinweis">Der Gewinn wird <strong>serverseitig</strong> bestimmt, nicht
+          im Browser. Ein abgebrochener Dreh vernichtet keinen Anspruch. In dieser Probe
+          wird nicht gedreht und nichts ausgespielt.</p>
+      </div>
+
       <div class="flaeche">
         <h2>Konten</h2>
-        <div class="tabelle-huelle"><table class="liste">
-          <thead><tr><th>Kunde</th><th>Punkte</th><th>Stufe</th><th>Offene Drehs</th></tr></thead>
-          <tbody>${w.konten.map((k) => `<tr>
-            <td><strong>${h(k.kunde)}</strong></td><td>${h(k.punkte)}</td>
-            <td>${R.marke("aktiv", k.stufe)}</td><td>${h(k.drehs)}</td></tr>`).join("")}</tbody>
-        </table></div>
-      </div>
-      <div class="flaeche">
-        <h2>Vorgänge</h2>
-        <div class="tabelle-huelle"><table class="liste">
-          <thead><tr><th>Wann</th><th>Was</th><th>Kunde</th><th>Ergebnis</th></tr></thead>
-          <tbody>${w.vorgaenge.map((v) => `<tr>
-            <td>${h(v.zeit)}</td><td>${h(v.was)}</td><td>${h(v.kunde)}</td>
-            <td>${R.marke(v.zustand, v.ergebnis)}</td></tr>`).join("")}</tbody>
-        </table></div>
-        <p class="wichtig" style="font-size:14px;margin-top:10px;">
-          Der Gewinn wird nie im Browser bestimmt — maßgeblich bleibt die Serverfunktion.
-          Ein abgebrochener Dreh vernichtet keinen Anspruch. Yumaks Box bleibt bis zur fachlichen Freigabe gesperrt.
-        </p>
+        <div class="aktenliste" role="list">
+          <div class="az-kopf" aria-hidden="true">
+            <span>Kunde</span><span>Kundennummer</span><span>Punkte</span>
+            <span>Stufe</span><span>Qual. Fahrten</span><span>Drehs</span><span>Verlauf</span>
+          </div>
+          ${D.rewards.konten.map(zeile).join("")}
+        </div>
       </div>`;
   }
 
   /* ============================================================
      11. Analyse
      ============================================================ */
+  /*
+    Analyse mit echter Zeitraumauswahl.
+
+    Gemessener Fehler: "Letzte 7 Tage" war ein fester Text - nicht
+    anklickbar, kein Hover, keine andere Wahl. Ein Zeitraum, der nichts
+    aendert, behauptet eine Auswertung, die es nicht gibt.
+
+    Jede Kennzahl kommt jetzt aus D.analyseAuswertung() ueber denselben
+    Tagesbereich. Sie koennen deshalb nicht auseinanderlaufen - es gibt
+    nur eine Rechnung.
+  */
+  const analyseStand = { zeitraum: "tage7", von: "", bis: "", fehler: "" };
+
   function analyse() {
-    const a = D.analyse;
-    const groesster = Math.max(...a.aktionen.map((x) => x.wert));
+    if (!R.darf("analytics.read")) return R.kastenKeinRecht("Analyse");
+
+    const gewaehlt = D.ANALYSE_ZEITRAEUME.find((z) => z.id === analyseStand.zeitraum)
+      || D.ANALYSE_ZEITRAEUME[2];
+    const bereich = D.analyseBereich(gewaehlt.id, analyseStand.von, analyseStand.bis);
+    const a = D.analyseAuswertung(bereich.von, bereich.bis);
+    const alsTag = (iso) => (iso ? D.alsText(new Date(iso + "T00:00:00")) : "—");
+    const groesster = Math.max(1, ...a.ereignisse.map((x) => x.wert));
+    const groessteSeite = Math.max(1, ...a.seiten.map((x) => x.wert));
+
+    /* Ohne vollstaendigen eigenen Zeitraum wird nichts behauptet. */
+    const unvollstaendig = gewaehlt.id === "eigen" && (!bereich.von || !bereich.bis);
+
     return `
       <div class="bereichskopf"><div>
         <h1>Analyse</h1>
-        <p class="wichtig">Zeitraum: ${h(a.zeitraum)}</p>
+        <p class="wichtig">Zeitraum: <strong>${h(gewaehlt.name)}</strong>${
+          unvollstaendig ? "" : ` · ${h(alsTag(bereich.von))} bis ${h(alsTag(bereich.bis))}
+            · ${h(a.tage)} ${a.tage === 1 ? "Tag" : "Tage"}`}</p>
       </div></div>
 
       ${R.zustandsKasten("vorbereitet", "Alle Zahlen hier sind erfunden",
-        "Es findet heute keinerlei Besuchermessung statt. Diese Ansicht zeigt nur, wie die Auswertung später aussehen würde. Im produktiven Portal bleibt der Bereich leer, bis eine datensparsame Ereigniserfassung eingerichtet und rechtlich geprüft ist.")}
+        "Es findet heute keinerlei Besuchermessung statt, und es ist kein Trackingdienst angebunden. Diese Ansicht zeigt nur, wie die Auswertung später aussehen würde. Im produktiven Portal bleibt der Bereich leer, bis eine datensparsame Ereigniserfassung eingerichtet und rechtlich geprüft ist.")}
 
       <div class="flaeche">
-        <h2>Kennzahlen</h2>
-        <div class="kennzahlen">${a.kennzahlen.map((k) =>
-          `<div class="kennzahl" style="cursor:default">
-             <span class="wert">${h(k.wert)}</span>
-             <span class="name">${h(k.name)} · ${h(k.hinweis)}</span></div>`).join("")}</div>
+        <h2>Zeitraum</h2>
+        <div class="filterzeile" role="group" aria-label="Zeitraum wählen">
+          ${D.ANALYSE_ZEITRAEUME.map((z) => `<button class="filterchip" type="button"
+            data-tun="an-zeitraum:${h(z.id)}" aria-pressed="${gewaehlt.id === z.id}">
+            ${h(z.name)}</button>`).join("")}
+        </div>
+        ${gewaehlt.id === "eigen" ? `<div class="tageswahl">
+          <label class="tagfeld">von <input type="date" data-an-von value="${h(analyseStand.von)}"></label>
+          <label class="tagfeld">bis <input type="date" data-an-bis value="${h(analyseStand.bis)}"></label>
+        </div>` : ""}
+        <p class="schritt-hinweis">Der gewählte Zeitraum gilt für <strong>alle</strong>
+          Kennzahlen dieser Seite. Sie werden aus denselben Tageswerten summiert — zwei
+          verschiedene Zeiträume auf einer Seite sind damit ausgeschlossen.</p>
+      </div>
+
+      ${unvollstaendig
+        ? R.zustandsKasten("leer", "Bitte beide Datumsfelder füllen",
+            "Ohne vollständigen Zeitraum wird keine Zahl gezeigt — eine halbe Auswahl ergibt keine Auswertung.")
+        : `
+      <div class="flaeche">
+        <h2>Reichweite</h2>
+        <div class="kennzahlen">
+          <div class="kennzahl ist-anzeige"><span class="wert">${h(a.ereignisse.find((x) => x.id === "aufrufe").wert.toLocaleString("de-DE"))}</span>
+            <span class="name">Seitenaufrufe · gezählt</span></div>
+          <div class="kennzahl ist-anzeige"><span class="wert">${h(a.ereignisse.find((x) => x.id === "besuche").wert.toLocaleString("de-DE"))}</span>
+            <span class="name">Besuche · gezählt</span></div>
+          <div class="kennzahl ist-anzeige"><span class="wert">~${h(a.besucherSchaetzung.toLocaleString("de-DE"))}</span>
+            <span class="name">Besucher · Schätzung</span></div>
+          <div class="kennzahl ist-anzeige"><span class="wert">~${h(a.wiederkehrendSchaetzung.toLocaleString("de-DE"))}</span>
+            <span class="name">wiederkehrend · Schätzung</span></div>
+        </div>
         <p class="wichtig" style="font-size:14px;margin-top:10px;">
-          <strong>Besucher</strong> ist immer eine Schätzung: ein Mensch mit Handy und Rechner zählt doppelt,
-          wer Speicherfunktionen blockiert, gar nicht. <strong>Besuche</strong> und <strong>Seitenaufrufe</strong>
-          werden dagegen gezählt. Mitarbeiter- und Adminnutzung wird nicht als Besuch gewertet.
+          <strong>Besucher</strong> und <strong>wiederkehrend</strong> sind immer
+          <strong>Schätzungen</strong>: Ein Mensch mit Handy und Rechner zählt doppelt, wer
+          Speicherfunktionen blockiert, gar nicht. <strong>Besuche</strong> und
+          <strong>Seitenaufrufe</strong> werden dagegen gezählt. Mitarbeiter- und
+          Adminnutzung wird nicht als Besuch gewertet.
         </p>
       </div>
 
       <div class="flaeche">
-        <h2>Aktionen</h2>
-        <div style="display:grid;gap:8px">${a.aktionen.map((x) => `
-          <div style="display:grid;grid-template-columns:minmax(150px,1fr) 2fr auto;gap:10px;align-items:center;font-size:15px">
-            <span>${h(x.name)}</span>
-            <span style="height:8px;border-radius:2px;background:var(--flaeche-2)">
-              <span style="display:block;height:100%;border-radius:2px;background:var(--gold);width:${Math.round(x.wert / groesster * 100)}%"></span>
-            </span>
-            <strong>${h(x.wert)}</strong>
-          </div>`).join("")}</div>
+        <h2>Ereignisse im Zeitraum</h2>
+        <div class="balken">
+          ${a.ereignisse.filter((x) => x.id !== "aufrufe" && x.id !== "besuche").map((x) => `
+            <div class="balkenzeile">
+              <span class="balkenname">${h(x.name)}</span>
+              <span class="balkenstab"><i style="width:${Math.round((x.wert / groesster) * 100)}%"></i></span>
+              <span class="balkenwert">${h(x.wert.toLocaleString("de-DE"))}</span>
+            </div>`).join("")}
+        </div>
+        <p class="schritt-hinweis">Alle gezählt, keine Schätzung. Es wird kein einzelner
+          Mensch verfolgt — es gibt keine Nutzerkennung in diesen Zahlen.</p>
+      </div>
+
+      <div class="flaeche">
+        <h2>Konversionen</h2>
+        <div class="kennzahlen">
+          <div class="kennzahl ist-anzeige"><span class="wert">${h(a.anfragequote)} %</span>
+            <span class="name">Besuch → Fahrtanfrage · gerechnet</span></div>
+          <div class="kennzahl ist-anzeige"><span class="wert">${h(a.buchungsquote)} %</span>
+            <span class="name">Anfrage → Buchung · gerechnet</span></div>
+          <div class="kennzahl ist-anzeige"><span class="wert">${h(a.registrierquote)} %</span>
+            <span class="name">Registrierung begonnen → fertig · gerechnet</span></div>
+        </div>
+        <p class="schritt-hinweis">Gerechnet aus den gezählten Werten desselben Zeitraums.</p>
       </div>
 
       <div class="flaeche">
         <h2>Beliebteste Seiten</h2>
-        <div class="tabelle-huelle"><table class="liste">
-          <thead><tr><th>Seite</th><th>Aufrufe</th></tr></thead>
-          <tbody>${a.seiten.map((s) => `<tr><td>${h(s.name)}</td><td><strong>${h(s.wert)}</strong></td></tr>`).join("")}</tbody>
-        </table></div>
-      </div>`;
+        <div class="balken">
+          ${a.seiten.map((s) => `<div class="balkenzeile">
+            <span class="balkenname">${h(s.name)}</span>
+            <span class="balkenstab"><i style="width:${Math.round((s.wert / groessteSeite) * 100)}%"></i></span>
+            <span class="balkenwert">${h(s.wert.toLocaleString("de-DE"))}</span>
+          </div>`).join("")}
+        </div>
+      </div>
+
+      <div class="flaeche">
+        <h2>Was hier nicht passiert</h2>
+        <ul style="margin:0;padding-left:20px;color:var(--gedaempft);font-size:15px;line-height:1.7">
+          <li>keine Einzelverfolgung von Personen</li>
+          <li>keine Nutzerkennung, keine Gerätekennung, keine IP in den Zahlen</li>
+          <li>kein fremder Trackingdienst, kein Aufruf nach außen</li>
+          <li>Mitarbeiter- und Adminnutzung zählt nicht als Besuch</li>
+          <li>Schätzungen sind als Schätzung gekennzeichnet und nie als gezählt</li>
+        </ul>
+      </div>`}`;
   }
 
   /* ============================================================
@@ -1449,11 +1707,18 @@
     /* Und alles rund um Meldungen und Aufgaben. */
     if (name.startsWith("vg-")) { window.ProbeVorgaenge.tun(name, wert); return; }
     if (name.startsWith("kal-")) { window.ProbeKalender.tun(name, wert); return; }
+    if (name.startsWith("ak-")) { window.ProbeAkten.tun(name, wert); return; }
 
     switch (name) {
       case "neue-fahrt": window.ProbeFahrtassistent.starten(); return;
 
       case "fahrt-filter":  R.zustand.fahrtFilter = wert; R.zeichnen(); return;
+      case "an-zeitraum":
+        if (!D.ANALYSE_ZEITRAEUME.some((z) => z.id === wert)) return;
+        analyseStand.zeitraum = wert;
+        analyseStand.fehler = "";
+        R.zeichnen();
+        return;
       case "fahrt-zustand": R.zustand.fahrtenZustand = wert; R.zeichnen(); return;
       case "fahrt-oeffnen":
         R.dialogOeffnen(hinweisDialog(`Fahrt ${wert}`,
@@ -1706,6 +1971,19 @@
     if (window.ProbeTeam.geaendert(feld)) return true;
     if (window.ProbeVorgaenge.geaendert(feld)) return true;
     if (window.ProbeKalender.geaendert(feld)) return true;
+    if (window.ProbeAkten.geaendert(feld)) return true;
+    /* Eigener Zeitraum der Analyse. Uebernommen wird bei "change",
+       also wenn das Datum vollstaendig ist - nicht bei jeder Ziffer. */
+    if (feld.matches("[data-an-von]")) { analyseStand.von = feld.value; R.zeichnen(); return true; }
+    if (feld.matches("[data-an-bis]")) { analyseStand.bis = feld.value; R.zeichnen(); return true; }
+    /* Kundensuche filtert beim Tippen. Der Schreibzeiger bleibt,
+       weil zeichnen() ihn wiederherstellt. */
+    if (feld.matches("[data-kundensuche]")) {
+      if (kundenStand.suche === feld.value) return true;
+      kundenStand.suche = feld.value;
+      R.zeichnen();
+      return true;
+    }
     return false;
   }
 
@@ -1785,14 +2063,31 @@
     nachZeichnen: () => {
       if (window.ProbeVorgaenge.nachZeichnen) window.ProbeVorgaenge.nachZeichnen();
       if (window.ProbeTeam.nachZeichnen) window.ProbeTeam.nachZeichnen();
+      if (window.ProbeAkten.nachZeichnen) window.ProbeAkten.nachZeichnen();
     },
     zeichne: (id) => (bereiche[id] ? bereiche[id]() : R.kastenLeer("Inhalte")),
     tun, geaendert,
-    taste: (e) => window.ProbeFahrtassistent.taste(e),
+    taste: (e) => {
+      /*
+        Enter in der Kundensuche oeffnet bei genau EINEM Treffer die
+        Akte. Bei mehreren oder keinem passiert nichts - geraten wird
+        nicht.
+      */
+      const ziel = e.target;
+      if (e.key === "Enter" && ziel && ziel.matches && ziel.matches("[data-kundensuche]")) {
+        e.preventDefault();
+        const s = kundenStand.suche.trim();
+        if (!s) return true;
+        const erg = D.kundenSuche(s, 25);
+        if (!erg.zuKurz && erg.gesamt === 1) window.ProbeAkten.tun("ak-kunde", erg.treffer[0].id);
+        return true;
+      }
+      return window.ProbeFahrtassistent.taste(e);
+    },
     eingabe: (feld) => {
       /* Suchfelder filtern beim Tippen. Der Fokus bleibt, weil
          zeichnen() ihn samt Schreibzeiger wiederherstellt. */
-      if (feld && feld.matches && feld.matches("[data-plan-suche], [data-team-fahrersuche], [data-team-fahrzeugsuche], [data-vg-suche], [data-zuordnung-suche]")) {
+      if (feld && feld.matches && feld.matches("[data-plan-suche], [data-team-fahrersuche], [data-team-fahrzeugsuche], [data-vg-suche], [data-zuordnung-suche], [data-kundensuche]")) {
         return geaendert(feld);
       }
       return window.ProbeFahrtassistent.eingabe(feld);

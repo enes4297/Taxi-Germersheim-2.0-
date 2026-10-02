@@ -826,7 +826,28 @@ pruefe(fremdeAnfragen.length === 0,
   const daten = (await readFile(join(PROBE, "probe-daten.js"), "utf8"))
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/^\s*\/\/.*$/gm, " ");
-  pruefe(!/Dialyse|Strahlentherapie|Chemotherapie/.test(daten),
+  /*
+    Eine eng begrenzte Ausnahme, genau wie im Portallauf: Die
+    ABSTRAKTE Ausschlussliste der Rewardsregeln nennt "Dialyse" als
+    Fahrtkategorie, ohne Bezug zu einer Person. Das ist eine vom
+    Geschaeftsfuehrer genannte Geschaeftsregel; wuerde ich das Wort
+    streichen, waere die Regel falsch wiedergegeben.
+
+    Verboten bleibt jede Behandlungsart, die an einen Menschen
+    haengt. Dafuer wird nach dem Ausschneiden dieser einen Zeile
+    unveraendert streng gesucht.
+  */
+  const ANFANG = "const REWARDS_AUSSCHLUSS";
+  const beginn = daten.indexOf(ANFANG);
+  const ende = beginn < 0 ? -1 : daten.indexOf(";", beginn);
+  pruefe(beginn >= 0 && ende > beginn,
+    "die abstrakte Ausschlussliste der Rewardsregeln ist vorhanden");
+  const regelliste = beginn < 0 ? "" : daten.slice(beginn, ende + 1);
+  pruefe(regelliste.split("\n").length === 1,
+    "sie steht in genau einer Zeile - mehr wird nicht ausgenommen");
+  const ohneRegel = beginn < 0 ? daten
+    : daten.slice(0, beginn) + " " + daten.slice(ende + 1);
+  pruefe(!/Dialyse|Strahlentherapie|Chemotherapie/.test(ohneRegel),
     "keine Gesundheitsangaben in den Testdaten");
 }
 
