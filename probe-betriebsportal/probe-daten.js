@@ -375,6 +375,101 @@
 
   const imZeitraum = (iso, von, bis) => iso >= von && iso <= bis;
 
+  /*
+    Welche Vorgaenge gehoeren zu dieser Abwesenheit?
+
+    Gesucht wird ueber die MITARBEITERKENNUNG und den Zeitraum, nicht
+    ueber den Namen - ein Name ist keine Kennung. Ein Vorgang passt,
+    wenn er dieselbe Person betrifft, zum Thema gehoert und sein
+    gemeldeter Zeitraum den Tag umfasst.
+
+    Erledigte Vorgaenge zaehlen mit: Wer im Kalender auf eine
+    abgeschlossene Krankmeldung klickt, will sie ansehen.
+  */
+  function vorgaengeZuAbwesenheit(mitarbeiterId, iso, art) {
+    const thema = art === "krank" ? "krankheit" : "urlaub";
+    return vorgaenge.filter((v) => v.thema === thema
+      && v.betrifft && v.betrifft.id === mitarbeiterId
+      && v.daten && v.daten.von && v.daten.bis
+      && imZeitraum(iso, v.daten.von, v.daten.bis));
+  }
+
+  /*
+    Was gilt fuer EINE Schichtzeile an EINEM Tag?
+
+    Rueckgabe:
+      status    "dienst" | "frei" | "krank" | "urlaub"
+      hatZeit   steht ueberhaupt eine Zeit drin?
+      gueltig   zaehlt das als normale Schicht?
+      konflikt  wenn nicht: was ist der Befund, im Klartext?
+      ausnahme  bewusst trotz Abwesenheit eingeplant?
+
+    Gueltig ist eine Schicht nur, wenn eine Zeit steht UND der
+    Mitarbeiter wirksam im Dienst ist. Eine bestaetigte Ausnahme
+    ("trotz Abwesenheit eingeplant") gilt als Dienst - sie ist eine
+    Entscheidung, die jemand getroffen und begruendet hat.
+
+    Eine Schicht, die nicht gueltig ist, verschwindet NICHT. Sie wird
+    als Konflikt benannt. Stilles Weglassen waere genauso falsch wie
+    stilles Mitzaehlen.
+  */
+  /* Dieselben Namen wie in der Planung - eine Benennung. */
+  const STATUS_IM_KALENDER = {
+    dienst: "Im Dienst", frei: "Frei", krank: "Krank", urlaub: "Urlaub"
+  };
+
+  function schichtbefund(zeile, iso) {
+    const zeit = Boolean(zeile && zeile.von && zeile.bis);
+    const abw = abwesenheitFuer(zeile.mitarbeiterId, iso);
+    const ausnahme = Boolean(zeile.ausnahme);
+    const status = abw.wirksam && !ausnahme
+      ? abw.wirksam.art
+      : (zeile.imDienst ? "dienst" : "frei");
+
+    if (!zeit) {
+      return { status, hatZeit: false, gueltig: false, ausnahme, konflikt: "" };
+    }
+    if (status === "dienst") {
+      return {
+        status, hatZeit: true, gueltig: true, ausnahme,
+        konflikt: ausnahme
+          ? "Trotz Abwesenheit eingeplant – bestätigte Ausnahme"
+          : ""
+      };
+    }
+    /* Zeit steht, Dienst nicht. Das ist ein Befund, keine Schicht. */
+    const text = {
+      krank:  "Ungültige Schicht – Mitarbeiter ist krank",
+      urlaub: "Ungültige Schicht – Mitarbeiter hat genehmigten Urlaub",
+      frei:   "Schicht vorhanden, Mitarbeiter steht auf Frei"
+    };
+    return {
+      status, hatZeit: true, gueltig: false, ausnahme,
+      konflikt: text[status] || "Ungültige Schicht"
+    };
+  }
+
+  /*
+    Die Schichten eines Tages, bewertet. Liest den GESPEICHERTEN Plan
+    und fasst keinen Entwurf an - der Kalender darf die Planung nicht
+    umschalten.
+  */
+  function schichtenAmTag(iso) {
+    const plan = planung[iso];
+    if (!plan) return [];
+    return plan.zeilen
+      .map((z) => {
+        const m = mitarbeiter.find((x) => x.id === z.mitarbeiterId);
+        const f = z.fahrzeugId ? fahrzeuge.find((x) => x.id === z.fahrzeugId) : null;
+        return { zeile: z, mitarbeiter: m, fahrzeug: f, befund: schichtbefund(z, iso) };
+      })
+      /* Nur Zeilen, die ueberhaupt etwas zu sagen haben: eine Zeit
+         oder einen Befund. Eine leere Zeile ist keine Schicht und
+         kein Konflikt. */
+      .filter((x) => x.befund.hatZeit)
+      .sort((a, b) => String(a.zeile.von).localeCompare(String(b.zeile.von)));
+  }
+
   /* Alle Eintraege eines Mitarbeiters an einem Tag. */
   const abwesenheitenAmTag = (mitarbeiterId, iso) =>
     abwesenheiten.filter((a) => a.mitarbeiterId === mitarbeiterId && imZeitraum(iso, a.von, a.bis));
@@ -1001,6 +1096,8 @@
     personal, lohn, rewards, kunden, rechnungen, analyse,
     standardadresse, letzteKunden, kundenSuche, haeufigeZiele,
     abwesenheiten, abwesenheitFuer, abwesenheitenAmTag, istWirksam,
+    schichtbefund, schichtenAmTag, STATUS_IM_KALENDER,
+    vorgaengeZuAbwesenheit,
     FAHRZEUG_ZUSTAENDE, istEinsatzbereit,
     fahrerDokumente, dokumentstand, DOKUMENT_LAGE, DOKUMENT_PFLICHT,
     protokoll, protokollieren, letzteAenderung, lohnProbe,

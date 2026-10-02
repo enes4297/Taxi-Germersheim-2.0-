@@ -1525,3 +1525,17 @@ textarea {
   font-size: 15px;
   font-weight: 600;
 }
+
+/* Kein zugehoeriger Vorgang - ehrlich gesagt statt irgendwohin
+   gesprungen. */
+.kal-kein-ziel {
+  font-size: 12px;
+  color: var(--gedaempft);
+  font-style: italic;
+  margin-left: auto;
+  max-width: 34ch;
+  text-align: right;
+}
+@media (max-width: 560px) {
+  .kal-kein-ziel { margin-left: 0; text-align: left; max-width: 100%; }
+}

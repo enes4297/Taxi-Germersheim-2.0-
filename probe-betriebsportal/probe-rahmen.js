@@ -336,6 +336,9 @@
       return;
     }
     ziel.innerHTML = portalkopf() + window.ProbeBereiche.zeichne(zustand.bereich);
+    /* Ein Sprung kann einen Dialog angefordert haben. Das geht erst
+       jetzt, wo die Flaeche steht. */
+    if (window.ProbeBereiche.nachZeichnen) window.ProbeBereiche.nachZeichnen();
     fokusWiederherstellen(merker);
     if (!merker) { ziel.scrollTop = 0; window.scrollTo(0, 0); }
   }

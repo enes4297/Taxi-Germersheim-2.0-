@@ -36,7 +36,7 @@
     sicht: "monat",          /* tag | woche | monat */
     datum: "",               /* ISO des Bezugstages */
     arten: {                 /* reine Anzeigefilter */
-      fahrt: true, schicht: true, abwesenheit: true,
+      fahrt: true, schicht: true, konflikt: true, abwesenheit: true,
       fahrzeug: true, dokument: true
     }
   };
@@ -72,7 +72,7 @@
 
   const ART_NAMEN = {
     fahrt: "Fahrten", schicht: "Schicht", abwesenheit: "Abwesenheit",
-    fahrzeug: "Fahrzeug", dokument: "Dokument"
+    fahrzeug: "Fahrzeug", dokument: "Dokument", konflikt: "Konflikt"
   };
 
   /* ============================================================
@@ -106,19 +106,44 @@
       });
     }
 
-    /* --- Schichten. Gelesen wird der GESPEICHERTE Plan, nicht der
-           Tagesentwurf der Planung. Der Kalender darf den Entwurf
-           weder umschalten noch anlegen - sonst verlore die Planung
-           beim blossen Blaettern ihre unbestaetigten Eingaben. --- */
+    /* --- Schichten, EINZELN.
+
+           Gelesen wird der GESPEICHERTE Plan, nicht der Tagesentwurf
+           der Planung. Der Kalender darf den Entwurf weder umschalten
+           noch anlegen - sonst verlore die Planung beim blossen
+           Blaettern ihre unbestaetigten Eingaben.
+
+           Vorher stand hier nur "1 Schicht" oder "4 Schichten". Man
+           sah nicht, wer gemeint war - und die Zahl zaehlte jede
+           Zeile mit einer Zeit, auch wenn der Mitarbeiter krank war.
+           An einem Tag mit sechs abwesenden Mitarbeitern stand
+           deshalb "1 Schicht".
+
+           Jetzt kommt jede Schicht einzeln, mit Namen, Zeit,
+           Fahrzeug, Zustand und Planstatus. Ungueltige erscheinen
+           als Konflikt - nicht als Schicht und nicht gar nicht. --- */
     if (R.darf("operations.read")) {
       const plan = D.planung[isoTag];
-      if (plan) {
-        const besetzt = plan.zeilen.filter((z) => z.von && z.bis).length;
-        if (besetzt) {
+      const schichten = D.schichtenAmTag(isoTag);
+      const planStatus = plan && plan.veroeffentlicht ? "veröffentlicht" : "Entwurf";
+      for (const s of schichten) {
+        const name = s.mitarbeiter ? s.mitarbeiter.name : s.zeile.mitarbeiterId;
+        const wagen = s.fahrzeug ? s.fahrzeug.kennzeichen : "kein Fahrzeug";
+        const zeit = s.zeile.von + "–" + s.zeile.bis;
+        const zustand = D.STATUS_IM_KALENDER[s.befund.status] || s.befund.status;
+        if (s.befund.gueltig) {
           liste.push({
-            art: "schicht", marke: plan.veroeffentlicht ? "gut" : "ruhig",
-            titel: besetzt + (besetzt === 1 ? " Schicht" : " Schichten"),
-            zusatz: plan.veroeffentlicht ? "veröffentlicht" : "Entwurf",
+            art: "schicht",
+            marke: plan && plan.veroeffentlicht ? "gut" : "ruhig",
+            titel: name,
+            zusatz: zeit + " · " + wagen + " · " + zustand + " · " + planStatus
+              + (s.befund.ausnahme ? " · bestätigte Ausnahme" : ""),
+            ziel: "planung", tag: isoTag
+          });
+        } else {
+          liste.push({
+            art: "konflikt", marke: "warnung", titel: name,
+            zusatz: s.befund.konflikt + " · " + zeit + " · " + wagen,
             ziel: "planung", tag: isoTag
           });
         }
@@ -126,40 +151,66 @@
     }
 
     /* --- Abwesenheiten. Nur die Tatsache, nie der Grund. --- */
+    /* --- Abwesenheiten. Nur die Tatsache, nie der Grund.
+
+           Der Klick fuehrt zum KONKRETEN Vorgang, nicht in den
+           Bereich "Fahrer & Fahrzeuge". Vorher oeffneten "Krank" und
+           "Urlaub" beide dieselbe Seite - der Nutzer musste den
+           Vorgang selbst suchen. --- */
     if (R.darf(["operations.read", "personnel.read"])) {
       D.mitarbeiter.forEach((m) => {
         const a = D.abwesenheitFuer(m.id, isoTag);
-        if (a.wirksam) {
-          liste.push({
-            art: "abwesenheit",
-            marke: a.wirksam.art === "krank" ? "warnung" : "ruhig",
-            titel: m.name,
-            zusatz: D.ABWESENHEIT_NAMEN[a.wirksam.art],
-            ziel: "team"
-          });
-        } else if (a.beantragt) {
-          liste.push({
-            art: "abwesenheit", marke: "ruhig", titel: m.name,
-            zusatz: "Urlaub beantragt", ziel: "meldungen"
-          });
-        }
+        const eintrag = a.wirksam || a.beantragt;
+        if (!eintrag) return;
+        const art = a.wirksam ? a.wirksam.art : "urlaub";
+        const treffer = D.vorgaengeZuAbwesenheit(m.id, isoTag, art);
+        liste.push({
+          art: "abwesenheit",
+          marke: art === "krank" ? "warnung" : "ruhig",
+          titel: m.name,
+          zusatz: a.wirksam
+            ? D.ABWESENHEIT_NAMEN[art]
+            : "Urlaub beantragt",
+          /* Genau ein Vorgang: direkt oeffnen. Mehrere: Auswahl, nicht
+             raten. Keiner: ehrlicher Hinweis statt Sprung auf eine
+             beliebige Seite. */
+          ziel: treffer.length === 1
+            ? "meldungen:vorgang-" + treffer[0].id
+            : treffer.length > 1
+              ? "meldungen:auswahl-" + m.id + "-" + art + "-" + isoTag
+              : "",
+          leerhinweis: treffer.length ? "" : (art === "krank"
+            ? "Zu dieser Krankmeldung gibt es in der Designprobe keinen Vorgang."
+            : "Zu diesem Urlaub gibt es in der Designprobe keinen Vorgang.")
+        });
       });
     }
 
     /* --- Fahrzeugtermine. --- */
+    /* --- Fahrzeugtermine.
+
+           Der Klick oeffnet die Akte DES Fahrzeugs, nicht die
+           Gesamtuebersicht. Verknuepft wird ueber die stabile
+           Fahrzeugkennung, nicht ueber das Kennzeichen - ein
+           Kennzeichen kann wechseln. --- */
     if (R.darf("fleet.read")) {
+      const TERMINE = [
+        ["tuev", "TÜV fällig", "warnung"],
+        ["service", "Service fällig", "ruhig"],
+        ["versicherung", "Versicherung läuft ab", "ruhig"]
+      ];
       D.fahrzeuge.forEach((f) => {
-        if (f.tuev === isoTag) {
-          liste.push({ art: "fahrzeug", marke: "warnung", titel: f.kennzeichen,
-            zusatz: "TÜV fällig", ziel: "team" });
-        }
-        if (f.service === isoTag) {
-          liste.push({ art: "fahrzeug", marke: "ruhig", titel: f.kennzeichen,
-            zusatz: "Service fällig", ziel: "team" });
-        }
-        if (f.versicherung === isoTag) {
-          liste.push({ art: "fahrzeug", marke: "ruhig", titel: f.kennzeichen,
-            zusatz: "Versicherung läuft ab", ziel: "team" });
+        for (const [feld, text, marke] of TERMINE) {
+          if (f[feld] !== isoTag) continue;
+          liste.push({
+            art: "fahrzeug", marke,
+            titel: f.name + " · " + f.kennzeichen,
+            zusatz: text + " · " + D.FAHRZEUG_ZUSTAENDE[f.zustand]
+              + (f.sperrgrund ? " · " + f.sperrgrund : ""),
+            /* Stabile Kennung, nicht das Kennzeichen. */
+            ziel: f.id ? "team:fahrzeug-" + f.id + "-" + feld : "",
+            leerhinweis: f.id ? "" : "Zu diesem Termin fehlt die Fahrzeugkennung."
+          });
         }
       });
     }
@@ -192,6 +243,7 @@
   const ARTEN = [
     { id: "fahrt",       name: "Fahrten",         braucht: "operations.read" },
     { id: "schicht",     name: "Schichten",       braucht: "operations.read" },
+    { id: "konflikt",    name: "Konflikte",       braucht: "operations.read" },
     { id: "abwesenheit", name: "Abwesenheiten",   braucht: ["operations.read", "personnel.read"] },
     { id: "fahrzeug",    name: "Fahrzeuge",       braucht: "fleet.read" },
     { id: "dokument",    name: "Dokumentfristen", braucht: "personnel.read" }
@@ -238,8 +290,13 @@
             ${R.marke(e.marke, ART_NAMEN[e.art])}
             <strong>${h(e.titel)}</strong>
             <span>${h(e.zusatz)}</span>
-            <button class="knopf klein" type="button"
-              data-tun="kal-ziel:${h(e.ziel)}|${h(e.tag || b)}">Öffnen</button>
+            ${e.ziel
+              ? `<button class="knopf klein" type="button"
+                  data-tun="kal-ziel:${h(e.ziel)}|${h(e.tag || b)}">Öffnen</button>`
+              /* Kein Ziel heisst: es gibt keinen Vorgang dazu. Dann
+                 wird das gesagt und nicht auf eine beliebige Seite
+                 gesprungen. */
+              : `<span class="kal-kein-ziel">${h(e.leerhinweis || "Kein zugehöriger Vorgang.")}</span>`}
           </li>`).join("")}
         </ul>` : R.zustandsKasten("leer", "Für diesen Tag liegt nichts vor",
           "Das heißt nicht, dass nichts geplant ist — es heißt, dass zu diesem Tag in der Designprobe keine Testdaten hinterlegt sind.")}

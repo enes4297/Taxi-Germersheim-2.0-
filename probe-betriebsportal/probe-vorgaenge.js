@@ -48,6 +48,8 @@
     verlassenGefragt: false,
     pruefkorrektur: null,
     zuordnung: null,
+    auswahl: null,
+    oeffneNachZeichnen: "",
     /* Fuer die Vorfuehrung der Paralleländerung. */
     fremdstand: {}
   };
@@ -655,6 +657,60 @@
        moeglich, die Aktion verlangt dann einen Grund. */
     return `<button class="knopf klein" type="button"
       data-tun="vg-teil-uebernehmen:${h(v.id)}|${h(lage.schluessel)}">Übernehmen</button>`;
+  }
+
+  /*
+    Ein Sprung aus dem Kalender soll einen Dialog oeffnen. Das kann
+    erst geschehen, wenn die Flaeche steht - deshalb wird der Wunsch
+    gemerkt und hier eingeloest.
+  */
+  function nachZeichnen() {
+    if (!stand.oeffneNachZeichnen) return;
+    const wunsch = stand.oeffneNachZeichnen;
+    stand.oeffneNachZeichnen = "";
+    if (wunsch === "auswahl") {
+      R.dialogOeffnen(auswahlDialog());
+      return;
+    }
+    const v = vorgangFinden(wunsch);
+    if (!v) return;
+    handhabungSetzen(v, { gesehen: true });
+    stand.offen = wunsch;
+    R.dialogOeffnen(vorgangDialog());
+  }
+
+  /*
+    Mehrere passende Vorgaenge - die Auswahl nennt Nummer, Zeitraum
+    und Zustand. Geraten wird nicht.
+  */
+  function auswahlDialog() {
+    const s = stand.auswahl;
+    const m = D.mitarbeiter.find((x) => x.id === s.mitarbeiterId);
+    const treffer = D.vorgaengeZuAbwesenheit(s.mitarbeiterId, s.iso, s.art)
+      .filter(sichtbarFuerMich);
+    return `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="awTitel">
+        <header class="dialog-kopf">
+          <h2 id="awTitel">Mehrere Vorgänge passen</h2>
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>
+        <div class="dialog-rumpf">
+          ${R.zustandsKasten("vorbereitet", "Es wird nicht geraten",
+            "Zu " + h(m ? m.name : s.mitarbeiterId) + " und diesem Tag gibt es mehrere Vorgänge. Wählen Sie, welchen Sie öffnen wollen.")}
+          <div class="wahlraster">
+            ${treffer.map((v) => `<button class="wahlkarte" type="button"
+              data-tun="vg-oeffnen:${h(v.id)}">
+              <strong>${h(v.id)} · ${h(v.titel)}</strong>
+              <span>Gemeldet ${h(datumText(v.daten.von))} bis ${h(datumText(v.daten.bis))}</span>
+              <span>Stand: ${h(D.VORGANG_ZUSTAENDE[gesamtstand(v)])}</span>
+            </button>`).join("")}
+          </div>
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf" type="button" data-dialog-zu>Abbrechen</button>
+        </footer>
+      </div>`;
   }
 
   function zeichne() {
@@ -2872,6 +2928,39 @@
     der Karte stand - und nicht den zuletzt gewaehlten Reiter.
   */
   function sprungziel(zusatz) {
+    /*
+      "vorgang-V0002" oeffnet genau diesen Vorgang. Der Kalender
+      nutzt das: Ein Klick auf "Testfahrer 02 – Krank" soll die
+      Krankmeldung oeffnen, nicht eine Liste.
+    */
+    if (String(zusatz).startsWith("vorgang-")) {
+      const id = String(zusatz).slice("vorgang-".length);
+      const v = vorgangFinden(id);
+      if (!v || !sichtbarFuerMich(v)) return;
+      stand.reiter = "alle";
+      stand.suche = "";
+      stand.thema = "alle";
+      stand.vonDatum = "";
+      stand.bisDatum = "";
+      /* Nach dem Zeichnen oeffnen - der Dialog braucht die Flaeche. */
+      stand.oeffneNachZeichnen = id;
+      return;
+    }
+    /*
+      "auswahl-M02-krank-2026-10-02": mehrere Vorgaenge passen. Dann
+      wird nicht geraten, sondern gefragt - mit Nummer, Zeitraum und
+      Zustand.
+    */
+    if (String(zusatz).startsWith("auswahl-")) {
+      const teile = String(zusatz).slice("auswahl-".length).split("-");
+      const mid = teile.shift();
+      const art = teile.shift();
+      const iso = teile.join("-");
+      stand.auswahl = { mitarbeiterId: mid, art, iso };
+      stand.reiter = "alle";
+      stand.oeffneNachZeichnen = "auswahl";
+      return;
+    }
     if (REITER.some((x) => x.id === zusatz)) {
       stand.reiter = zusatz;
       stand.suche = "";
@@ -2882,7 +2971,7 @@
   }
 
   window.ProbeVorgaenge = {
-    offeneWarnungen, sprungziel,
+    offeneWarnungen, sprungziel, nachZeichnen,
     anmelden, zeichne, tun, geaendert, glocke, ungesehen, offeneEingabe, offeneFuerMich
   };
 })();

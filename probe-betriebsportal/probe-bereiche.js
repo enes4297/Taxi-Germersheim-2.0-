@@ -1782,6 +1782,10 @@
         window.ProbeTeam.sprungziel(zusatz);
       }
     },
+    nachZeichnen: () => {
+      if (window.ProbeVorgaenge.nachZeichnen) window.ProbeVorgaenge.nachZeichnen();
+      if (window.ProbeTeam.nachZeichnen) window.ProbeTeam.nachZeichnen();
+    },
     zeichne: (id) => (bereiche[id] ? bereiche[id]() : R.kastenLeer("Inhalte")),
     tun, geaendert,
     taste: (e) => window.ProbeFahrtassistent.taste(e),

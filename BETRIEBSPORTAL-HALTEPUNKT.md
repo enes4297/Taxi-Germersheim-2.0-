@@ -4535,3 +4535,143 @@ ein Gegenlauf auf halbem Weg sagt wenig.
 
 > **Einordnung:** Designprobe ohne Datenquelle. Der Lauf sagt nichts
 > über die produktive Instanz.
+
+---
+
+## 29. Der Rundgang — Teil 2: der Kalender führt dorthin, wo es weitergeht
+
+Fünf Befunde zum Kalender. Nur die Designprobe: keine produktive
+Adminseite ersetzt, keine Migration, keine Supabase-Daten, kein Push,
+Merge oder Deployment.
+
+### 29.1 Krankheit und Urlaub landeten am gleichen Ort
+
+**Gemessen.** „Testfahrer 02 – Krank" und „Testfahrer 06 – Urlaub"
+öffneten **beide** nur den Bereich „Fahrer & Fahrzeuge".
+
+**Ursache.** Beide Einträge trugen `ziel: "team"`. Der Kalender wusste,
+*dass* jemand krank ist, aber nicht, *welcher Vorgang* dazugehört. Der
+Leser musste ihn selbst suchen.
+
+**Geändert.** `D.vorgaengeZuAbwesenheit(mitarbeiterId, iso, art)` sucht
+über die **Mitarbeiterkennung** und den gemeldeten Zeitraum — nicht
+über den Namen, denn ein Name ist keine Kennung. Daraus folgen drei
+Fälle:
+
+| Treffer | Verhalten |
+|---|---|
+| genau einer | der Vorgang wird **direkt geöffnet** |
+| mehrere | **Auswahl** mit Vorgangsnummer, Zeitraum und Zustand — es wird nicht geraten |
+| keiner | **ehrlicher Hinweis**, kein Öffnen-Knopf, kein Sprung |
+
+Erledigte Vorgänge zählen mit: Wer im Kalender auf eine abgeschlossene
+Krankmeldung klickt, will sie ansehen.
+
+**Die Rollenrechte bleiben.** Der Prüflauf springt als Disposition in
+den Krankheitsvorgang und besteht nur, wenn dort Zeitraum und
+Planungswirkung stehen — aber kein Dateiname, kein Prüfergebnis und
+kein Ergebniswert. Ein Sprung öffnet keine Tür.
+
+### 29.2 Fahrzeugtermine zeigten in die Menge
+
+**Ursache.** `ziel: "team"` und als Titel nur das Kennzeichen.
+
+**Geändert.** Es gibt eine **Fahrzeugakte** als Dialog mit
+Fahrzeugname, Kennzeichen, stabiler Kennung, Art und Fristen aller
+drei Termine, aktuellem Zustand und — falls vorhanden — der Sperre mit
+Grund. Der **angefragte** Termin ist hervorgehoben und als „aus dem
+Kalender" gekennzeichnet; so weiß der Leser, warum er hier ist.
+
+Verknüpft wird über `fahrzeug-F02-tuev` — die **stabile Kennung**,
+nicht das Kennzeichen. Ein Kennzeichen kann wechseln. Der Prüflauf
+sucht im Quelltext eigens danach, dass kein Sprungziel aus dem
+Kennzeichen gebaut wird, und weist nach, dass eine unbekannte Kennung
+abgewiesen wird und ohne `fleet.read` nichts aufgeht.
+
+Was die Probe **nicht** hat, steht in der Akte: Werkstattbelege,
+Rechnungen und Reifenwechsel sind nicht hinterlegt — es wird nichts
+erfunden.
+
+### 29.3 „4 Schichten" sagte nicht, wer gemeint ist
+
+**Geändert.** Jede Schicht erscheint einzeln:
+
+```
+Testfahrer 01 · 06:00–14:00 · GER-TEST 001 · Im Dienst · veröffentlicht
+Testfahrer 03 · 14:00–22:00 · kein Fahrzeug · Im Dienst · veröffentlicht
+```
+
+Mit Mitarbeitername, Zeit von/bis, Fahrzeug **oder** ausdrücklich
+„kein Fahrzeug", Zustand des Mitarbeiters und Planstatus. Die Anzahl
+ergibt sich damit aus genau den Einträgen, die darunter stehen — sie
+ist keine eigene Rechnung mehr.
+
+### 29.4 „1 Schicht" an einem Tag ohne jede Schicht
+
+**Gemessen.** Alle sechs Mitarbeiter auf Frei, Krank oder Urlaub — und
+der Kalender zeigte **„1 Schicht"**.
+
+**Ursache.** Die Zählung war
+`plan.zeilen.filter(z => z.von && z.bis).length`. Sie fragte die
+Abwesenheit nicht. Eine Schichtzeit, die von einer früheren Planung
+stehen geblieben war, galt als Schicht.
+
+**Die eigentliche Ursache war tiefer:** Die Planung hatte diese
+Prüfung (`tagesstatus`, `konflikteVon`), der Kalender hatte sie nicht.
+Zwei Bewertungen für dieselbe Zeile.
+
+**Geändert.** `D.schichtbefund(zeile, iso)` in `probe-daten.js` ist
+jetzt **die** Bewertung. Sie gibt zurück:
+
+| Feld | Bedeutung |
+|---|---|
+| `status` | dienst / frei / krank / urlaub |
+| `hatZeit` | steht überhaupt eine Zeit drin? |
+| `gueltig` | zählt das als normale Schicht? |
+| `konflikt` | wenn nicht: der Befund im Klartext |
+| `ausnahme` | bewusst trotz Abwesenheit eingeplant? |
+
+Gültig ist eine Schicht nur, wenn eine Zeit steht **und** der
+Mitarbeiter wirksam im Dienst ist. Der Prüflauf vergleicht die Zahl
+des Kalenders mit derselben Rechnung über die Planungsdaten und
+besteht nur bei Gleichheit.
+
+**Eine ungültige Schicht verschwindet nicht.** Sie wird benannt:
+
+- „Ungültige Schicht – Mitarbeiter ist krank"
+- „Ungültige Schicht – Mitarbeiter hat genehmigten Urlaub"
+- „Schicht vorhanden, Mitarbeiter steht auf Frei"
+
+Stilles Weglassen wäre genauso falsch wie stilles Mitzählen. Die
+Konflikte haben einen eigenen Anzeigefilter, damit man sie
+ausblenden **kann** — aber nicht muss.
+
+Eine **bestätigte Ausnahme** („trotz Abwesenheit eingeplant") bleibt
+erlaubt, gilt als Schicht und wird als „bestätigte Ausnahme"
+ausgewiesen. Sie ist eine Entscheidung, die jemand getroffen und
+begründet hat. Die **Abwesenheit selbst** bleibt dabei unverändert —
+der Prüflauf liest sie nach der Ausnahme noch einmal.
+
+### 29.5 Was bestanden hatte, bleibt gesichert
+
+Manuell bestanden und jetzt als Regression festgehalten:
+
+- „Fahrzeuge" ausschalten entfernt **nur** Fahrzeugtermine; Schichten
+  und Abwesenheiten bleiben in unveränderter Zahl.
+- „Fahrten" ausschalten entfernt **nur** Fahrten.
+- **Kein Filter verändert Daten** — der Prüflauf vergleicht den
+  ganzen Plan als Text vor und nach dem Umschalten.
+- Eine **ungespeicherte Planungseingabe** übersteht den Wechsel in den
+  Kalender, das Blättern und die Rückkehr. Geprüft mit einer getippten
+  Zeit, die danach noch im Feld steht.
+- Der Kalender ruft `planEntwurf()` **nicht** auf — im Quelltext
+  nachgesehen, nicht nur im Verhalten.
+
+### 29.6 Prüfstand Teil 2
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-kalenderwege-pruefen` (9 Blöcke, neu) | **88 bestanden, 0 offen** |
+
+> **Einordnung:** Designprobe ohne Datenquelle. Der Lauf sagt nichts
+> über die produktive Instanz.

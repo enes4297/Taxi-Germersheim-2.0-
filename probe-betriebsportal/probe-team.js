@@ -43,7 +43,11 @@
     offenerFahrer: "",
     zuweisung: null,     // { fahrzeugId } oder { mitarbeiterId }
     lohnNeu: null,       // { mitarbeiterId, monat, jahr, datei, grund, fehler }
-    sperre: null         // { fahrzeugId, ziel, grund, fehler }
+    sperre: null,        // { fahrzeugId, ziel, grund, fehler }
+    /* Ein Sprung aus dem Kalender will eine Fahrzeugakte oeffnen. Das
+       geht erst, wenn die Flaeche steht - siehe nachZeichnen(). */
+    oeffneFahrzeug: null,
+    unterbereich: ""
   };
 
   /*
@@ -274,6 +278,100 @@
           : `<span class="fz-hinweis">Zustand und Stammdaten ändert die Administration.</span>`}
       </div>
     </article>`;
+  }
+
+  /*
+    Die Akte EINES Fahrzeugs. Zeigt, was ein Termin zum Nachsehen
+    braucht: Name, Kennzeichen, Art des Termins, Frist, aktueller
+    Zustand und eine vorhandene Sperre mit Grund.
+
+    Der Termin wird benannt, wenn einer angefragt wurde - dann weiss
+    der Leser, warum er hier ist.
+  */
+  const TERMINNAMEN = { tuev: "TÜV", service: "Service", versicherung: "Versicherung" };
+
+  function fahrzeugakteDialog(f, terminFeld) {
+    const e = P.planEntwurf();
+    const lage = fahrzeugLage(e, f);
+    const marke = LAGE_MARKE[lage];
+    const belegt = fahrerZuFahrzeug(e, f.id);
+    const termine = [
+      ["tuev", "TÜV", terminLage(f.tuev), f.tuev],
+      ["versicherung", "Versicherung", terminLage(f.versicherung), f.versicherung],
+      ["service", "Nächster Service", terminLage(f.service), f.service]
+    ];
+    const angefragt = terminFeld ? TERMINNAMEN[terminFeld] : "";
+    return `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="fzTitel">
+        <header class="dialog-kopf">
+          <h2 id="fzTitel">${h(f.name)}</h2>
+          ${R.marke(marke[0], marke[1])}
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>
+        <div class="dialog-rumpf">
+          ${angefragt ? R.zustandsKasten("vorbereitet", angefragt + " steht an",
+            "Sie kommen aus dem Kalender. Der angefragte Termin ist unten hervorgehoben.") : ""}
+          <dl class="zusammenfassung">
+            <div><dt>Fahrzeug</dt><dd>${h(f.name)}</dd></div>
+            <div><dt>Kennzeichen</dt><dd>${h(f.kennzeichen)}</dd></div>
+            <div><dt>Kennung</dt><dd>${h(f.id)}</dd></div>
+            <div><dt>Art</dt><dd>${h(f.art)} · ${h(f.plaetze)} Plätze${f.rollstuhl ? " · rollstuhlgeeignet" : ""}</dd></div>
+            <div><dt>Kilometerstand</dt><dd>${h(f.km.toLocaleString("de-DE"))} km</dd></div>
+            <div><dt>Aktueller Zustand</dt><dd>${h(D.FAHRZEUG_ZUSTAENDE[f.zustand])}</dd></div>
+            <div><dt>Heute zugewiesen</dt><dd>${belegt && belegt.mitarbeiter
+              ? h(belegt.mitarbeiter.name) + " · " + h(belegt.zeile.von) + "–" + h(belegt.zeile.bis)
+              : "niemand"}</dd></div>
+          </dl>
+          <div class="dialog-schritt">
+            <h3>Termine und Fristen</h3>
+            <ul class="konfliktliste">
+              ${termine.map(([feld, name, lg, datum]) => `<li class="${feld === terminFeld ? "ist-ausnahme" : ""}">
+                <strong>${h(name)}${feld === terminFeld ? " · aus dem Kalender" : ""}</strong>
+                <span>${h(datum ? D.alsText(new Date(datum + "T00:00:00")) : "kein Datum hinterlegt")}
+                  · ${h(lg.text)}</span>
+              </li>`).join("")}
+            </ul>
+          </div>
+          ${f.zustand === "gesperrt" || f.sperrgrund ? `<div class="dialog-schritt">
+            <h3>Sperre</h3>
+            <p class="schritt-hinweis"><strong>${h(D.FAHRZEUG_ZUSTAENDE[f.zustand])}:</strong>
+              ${h(f.sperrgrund || "ohne Angabe")}</p>
+          </div>` : ""}
+          <p class="schritt-hinweis">Werkstattbelege, Rechnungen und Reifenwechsel sind in
+            dieser Designprobe nicht hinterlegt — es wird nichts erfunden.</p>
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf" type="button" data-dialog-zu>Schließen</button>
+          ${darfFahrzeugPflegen()
+            ? `<button class="knopf haupt-knopf" type="button"
+                data-tun="team-stammdaten:${h(f.id)}">Stammdaten bearbeiten</button>` : ""}
+        </footer>
+      </div>`;
+  }
+
+  /*
+    Ein Sprung aus dem Kalender: "fahrzeug-F02-tuev". Verknuepft wird
+    ueber die stabile Kennung - ein Kennzeichen kann wechseln.
+  */
+  function sprungziel(zusatz) {
+    if (!String(zusatz).startsWith("fahrzeug-")) return;
+    const teile = String(zusatz).slice("fahrzeug-".length).split("-");
+    const id = teile.shift();
+    const termin = teile.join("-");
+    if (!D.fahrzeuge.some((x) => x.id === id)) return;
+    if (!R.darf("fleet.read")) return;
+    stand.unterbereich = "fahrzeuge";
+    stand.oeffneFahrzeug = { id, termin };
+  }
+
+  function nachZeichnen() {
+    if (!stand.oeffneFahrzeug) return;
+    const { id, termin } = stand.oeffneFahrzeug;
+    stand.oeffneFahrzeug = null;
+    const f = D.fahrzeuge.find((x) => x.id === id);
+    if (!f || !R.darf("fleet.read")) return;
+    R.dialogOeffnen(fahrzeugakteDialog(f, termin));
   }
 
   function fahrzeugbereich(e) {
@@ -1110,5 +1208,8 @@
     return Boolean(grund && grund.value.trim().length > 0);
   }
 
-  window.ProbeTeam = { anmelden, zeichne, tun, geaendert, offeneEingabe, fahrerDialog };
+  window.ProbeTeam = {
+    anmelden, zeichne, tun, geaendert, offeneEingabe, fahrerDialog,
+    sprungziel, nachZeichnen, fahrzeugakteDialog
+  };
 })();
