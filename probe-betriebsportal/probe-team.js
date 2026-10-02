@@ -78,6 +78,22 @@
     return zeile ? { zeile, mitarbeiter: mitarbeiterVon(zeile.mitarbeiterId) } : null;
   }
 
+  /*
+    Der Einsatz eines Fahrzeugs an einem BESTIMMTEN Tag.
+
+    Gelesen wird der GESPEICHERTE Plan, nicht der Entwurf. Ein Entwurf
+    gehoert zu dem Tag, den die Planung gerade offen hat - er sagt
+    nichts ueber den 20.10. Genau daraus entstand der Widerspruch in
+    der Fahrzeugakte.
+  */
+  function einsatzAmTag(fahrzeugId, iso) {
+    if (!iso) return null;
+    const treffer = D.schichtenAmTag(iso)
+      .filter((x) => x.zeile.fahrzeugId === fahrzeugId);
+    if (!treffer.length) return null;
+    return treffer;
+  }
+
   /* Der angezeigte Fahrzeugzustand. Grundzustand zuerst - Werkstatt
      und Sperre werden nie durch eine Zuweisung ueberdeckt. */
   function fahrzeugLage(e, f) {
@@ -290,11 +306,54 @@
   */
   const TERMINNAMEN = { tuev: "TÜV", service: "Service", versicherung: "Versicherung" };
 
-  function fahrzeugakteDialog(f, terminFeld) {
-    const e = P.planEntwurf();
-    const lage = fahrzeugLage(e, f);
+  /*
+    Die Fahrzeugakte.
+
+    GEMESSENER AUSGANGSFEHLER: Beim Fahrzeugtermin "Testwagen 01" am
+    20.10.2026 stand gleichzeitig
+      oben                  "Unterwegs"
+      Aktueller Zustand     "Frei"
+      Heute zugewiesen      "Testfahrer 01"
+
+    URSACHE: Drei Bezugspunkte ohne Beschriftung.
+      - Die Marke oben kam aus fahrzeugLage(planEntwurf(), f) - also
+        aus dem Plan des Tages, den die PLANUNG gerade offen hatte.
+      - "Aktueller Zustand" war f.zustand, der Stammzustand des
+        Fahrzeugs, der zu keinem Tag gehoert.
+      - "Heute zugewiesen" kam ebenfalls aus dem Entwurf, hiess aber
+        "heute" - und wenn die Planung auf einem anderen Tag stand,
+        meinte es einen dritten Tag.
+
+    Jetzt ist jede Zeile mit ihrem Bezug beschriftet, und alle Tage
+    stehen mit konkretem Datum da. Ein Widerspruch ist damit nicht
+    mehr konstruierbar: Es gibt keine Angabe ohne Bezugstag.
+
+    `bezugIso` ist der ausgewaehlte Kalendertag, wenn die Akte aus dem
+    Kalender geoeffnet wurde - sonst leer.
+  */
+  function fahrzeugakteDialog(f, terminFeld, bezugIso) {
+    const heuteIso = D.alsIso(D.heute);
+    const heuteText = D.alsText(D.heute);
+    /* Der Tageszustand kommt aus dem GESPEICHERTEN Plan von heute -
+       nicht aus dem Entwurf eines beliebigen Planungstages. */
+    const heuteEinsatz = einsatzAmTag(f.id, heuteIso);
+    const lage = f.zustand === "gesperrt" ? "gesperrt"
+      : f.zustand === "werkstatt" ? "werkstatt"
+      : heuteEinsatz
+        ? (D.fahrten.some((x) => x.fahrzeugId === f.id && x.zustand === "unterwegs")
+            ? "unterwegs" : "zugewiesen")
+        : "verfuegbar";
     const marke = LAGE_MARKE[lage];
-    const belegt = fahrerZuFahrzeug(e, f.id);
+    const bezugText = bezugIso ? D.alsText(new Date(bezugIso + "T00:00:00")) : "";
+    const bezugEinsatz = bezugIso && bezugIso !== heuteIso ? einsatzAmTag(f.id, bezugIso) : null;
+    const einsatzZeile = (liste) => (liste && liste.length
+      ? liste.map((x) => (x.mitarbeiter ? x.mitarbeiter.name : x.zeile.mitarbeiterId)
+          + " · " + x.zeile.von + "–" + x.zeile.bis).join(" / ")
+      : "niemand");
+    /* Mehr als eine Zeile heisst: dasselbe Fahrzeug ist mehrfach
+       vergeben. Das ist ein Konflikt und wird so benannt, nicht als
+       Aufzaehlung dargestellt. */
+    const mehrfach = (liste) => Boolean(liste && liste.length > 1);
     const termine = [
       ["tuev", "TÜV", terminLage(f.tuev), f.tuev],
       ["versicherung", "Versicherung", terminLage(f.versicherung), f.versicherung],
@@ -306,23 +365,40 @@
       <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="fzTitel">
         <header class="dialog-kopf">
           <h2 id="fzTitel">${h(f.name)}</h2>
-          ${R.marke(marke[0], marke[1])}
+          ${R.marke(marke[0], marke[1] + " heute")}
           <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
         </header>
         <div class="dialog-rumpf">
-          ${angefragt ? R.zustandsKasten("vorbereitet", angefragt + " steht an",
-            "Sie kommen aus dem Kalender. Der angefragte Termin ist unten hervorgehoben.") : ""}
+          ${angefragt ? R.zustandsKasten("vorbereitet",
+            angefragt + (bezugText ? " am " + bezugText : "") + " steht an",
+            "Sie kommen aus dem Kalender. Der angefragte Termin ist unten hervorgehoben. „Zurück zum Kalender“ führt an dieselbe Stelle zurück.") : ""}
           <dl class="zusammenfassung">
             <div><dt>Fahrzeug</dt><dd>${h(f.name)}</dd></div>
             <div><dt>Kennzeichen</dt><dd>${h(f.kennzeichen)}</dd></div>
             <div><dt>Kennung</dt><dd>${h(f.id)}</dd></div>
             <div><dt>Art</dt><dd>${h(f.art)} · ${h(f.plaetze)} Plätze${f.rollstuhl ? " · rollstuhlgeeignet" : ""}</dd></div>
             <div><dt>Kilometerstand</dt><dd>${h(f.km.toLocaleString("de-DE"))} km</dd></div>
-            <div><dt>Aktueller Zustand</dt><dd>${h(D.FAHRZEUG_ZUSTAENDE[f.zustand])}</dd></div>
-            <div><dt>Heute zugewiesen</dt><dd>${belegt && belegt.mitarbeiter
-              ? h(belegt.mitarbeiter.name) + " · " + h(belegt.zeile.von) + "–" + h(belegt.zeile.bis)
-              : "niemand"}</dd></div>
+            <div><dt>Zustand im Fahrzeugstamm</dt>
+              <dd>${h(D.FAHRZEUG_ZUSTAENDE[f.zustand])}<br>
+              <span class="feldnotiz">gilt dauerhaft, nicht für einen einzelnen Tag</span></dd></div>
+            <div><dt>Einsatz heute, ${h(heuteText)}</dt>
+              <dd>${h(einsatzZeile(heuteEinsatz))}<br>
+              <span class="feldnotiz">aus dem veröffentlichten Plan für heute${
+                mehrfach(heuteEinsatz) ? " — mehrfach vergeben, siehe Konflikt" : ""}</span></dd></div>
+            ${bezugIso && bezugIso !== heuteIso ? `
+            <div><dt>Einsatz am ${h(bezugText)}</dt>
+              <dd>${h(einsatzZeile(bezugEinsatz))}<br>
+              <span class="feldnotiz">der im Kalender gewählte Tag — nicht heute${
+                mehrfach(bezugEinsatz) ? " — mehrfach vergeben, siehe Konflikt" : ""}</span></dd></div>` : ""}
           </dl>
+          ${bezugIso && bezugIso !== heuteIso ? `<p class="schritt-hinweis">
+            Diese Akte zeigt <strong>zwei verschiedene Tage</strong>: den heutigen
+            (${h(heuteText)}) und den im Kalender gewählten (${h(bezugText)}). Jede Zeile
+            nennt ihren Tag — eine Angabe ohne Bezugstag gibt es hier nicht.</p>` : ""}
+          ${(mehrfach(heuteEinsatz) || mehrfach(bezugEinsatz))
+            ? R.zustandsKasten("fehler", "Dieses Fahrzeug ist mehrfach vergeben",
+                "Im gespeicherten Plan steht es bei mehr als einer Person zur selben Zeit. Das ist ein Konflikt der Planung, nicht eine Eigenschaft des Fahrzeugs — gelöst wird er in der Schichtplanung des betroffenen Tages.")
+            : ""}
           <div class="dialog-schritt">
             <h3>Termine und Fristen</h3>
             <ul class="konfliktliste">
@@ -358,20 +434,31 @@
     if (!String(zusatz).startsWith("fahrzeug-")) return;
     const teile = String(zusatz).slice("fahrzeug-".length).split("-");
     const id = teile.shift();
-    const termin = teile.join("-");
+    /*
+      Der Rest ist der Terminname und - falls mitgegeben - der
+      Bezugstag als ISO. "fahrzeug-F01-tuev-2026-10-20" heisst also:
+      Fahrzeug F01, TUEV-Termin, aus dem Kalender vom 20.10.2026.
+
+      Ohne Bezugstag zeigt die Akte nur den heutigen Tag. Sie erfindet
+      keinen.
+    */
+    const rest = teile.join("-");
+    const treffer = /^(.*?)-?(\d{4}-\d{2}-\d{2})$/.exec(rest);
+    const termin = treffer ? treffer[1] : rest;
+    const bezugIso = treffer ? treffer[2] : "";
     if (!D.fahrzeuge.some((x) => x.id === id)) return;
     if (!R.darf("fleet.read")) return;
     stand.unterbereich = "fahrzeuge";
-    stand.oeffneFahrzeug = { id, termin };
+    stand.oeffneFahrzeug = { id, termin, bezugIso };
   }
 
   function nachZeichnen() {
     if (!stand.oeffneFahrzeug) return;
-    const { id, termin } = stand.oeffneFahrzeug;
+    const { id, termin, bezugIso } = stand.oeffneFahrzeug;
     stand.oeffneFahrzeug = null;
     const f = D.fahrzeuge.find((x) => x.id === id);
     if (!f || !R.darf("fleet.read")) return;
-    R.dialogOeffnen(fahrzeugakteDialog(f, termin));
+    R.dialogOeffnen(fahrzeugakteDialog(f, termin, bezugIso || ""));
   }
 
   function fahrzeugbereich(e) {
@@ -436,7 +523,8 @@
             <button class="knopf klein" type="button" data-tun="plan-heute">Heute</button>
             <button class="knopf klein" type="button" data-tun="plan-morgen">Morgen</button>
             <label class="tagfeld">Datum
-              <input type="date" data-plan-datum value="${h(P.planEntwurf().iso)}"></label>
+              ${window.ProbeDatum.markup({ kennung: "plan", teil: "tag",
+                wert: P.planEntwurf().iso, beschriftung: "Tag der Planung" })}</label>
             <button class="knopf klein" type="button" data-tun="plan-vor" aria-label="Ein Tag vor">Vor ›</button>
           </div>
           <span class="tagdatum">${h(D.alsText(tag))}</span>

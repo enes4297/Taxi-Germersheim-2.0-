@@ -20,8 +20,8 @@
    - zwei verschiedene Zeitraeume auf einer Seite sind ausgeschlossen:
      geprueft wird gegen die Summe derselben Tageswerte
    - Heute = 1 Tag, Gestern = 1 Tag, 7 Tage = 7, 30 Tage = 30
-   - eigener Zeitraum mit zwei Datumsfeldern, verdrehte Eingabe wird
-     gedreht, halbe Eingabe behauptet nichts
+   - eigener Zeitraum mit zwei Feldern des gemeinsamen Datumsmoduls;
+     halbe Eingabe behauptet nichts, Ende vor Beginn ist ein Fehler
    - Schaetzungen sind als Schaetzung gekennzeichnet, gezaehlte Werte
      als gezaehlt
    - keine Kachel sieht bedienbar aus, ohne es zu sein
@@ -283,17 +283,63 @@ console.log("\n--- D. Eigener Zeitraum ---\n");
   const { page, fehler } = await seite("admin");
   await inAnalyse(page);
 
-  pruefe(!(await page.$("[data-an-von]")),
+  const VON = '[data-datum-kennung="analyse"][data-datum-teil="von"]';
+  const BIS = '[data-datum-kennung="analyse"][data-datum-teil="bis"]';
+
+  /*
+    Ein Datum setzen, wie ein Mensch es tut: tippen und mit Tabulator
+    verlassen.
+
+    Vorher stand hier page.fill() mit einem ISO-Datum. Das ging am
+    Feld vorbei: Es nimmt TT.MM.JJJJ, und der Weg soll derselbe sein
+    wie in der Hand.
+  */
+  async function datumSetzen(teil, text) {
+    const w = teil === "von" ? VON : BIS;
+    await page.click(w);
+    await page.waitForTimeout(80);
+    await page.keyboard.press("Control+a");
+    await page.keyboard.press("Delete");
+    for (const z of text) {
+      await page.keyboard.type(z);
+      await page.waitForTimeout(40);
+    }
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(450);
+  }
+
+  pruefe(!(await page.$(VON)),
     "ohne die Wahl \"Eigener Zeitraum\" gibt es keine Datumsfelder");
 
   await page.click('[data-tun="an-zeitraum:eigen"]');
   await page.waitForTimeout(300);
-  pruefe(!!(await page.$("[data-an-von]")) && !!(await page.$("[data-an-bis]")),
+  pruefe(Boolean(await page.$(VON)) && Boolean(await page.$(BIS)),
     "nach der Wahl stehen zwei Datumsfelder bereit");
 
-  const typen = await page.$$eval("[data-an-von], [data-an-bis]",
-    (ns) => ns.map((n) => n.type));
-  pruefe(typen.every((t) => t === "date"), "beide sind echte Datumsfelder");
+  /*
+    GEAENDERTE ERWARTUNG.
+
+    Alt: Beide Felder sind <input type="date">.
+
+    Weshalb das nicht mehr gilt: Der manuelle Rundgang hat gemessen,
+    dass das eingebaute Datumsfeld beim Tippen des Jahres zurueck zum
+    Tag springt. Es ist portalweit durch ein eigenes Modul ersetzt -
+    wie das Zeitfeld vorher schon, aus demselben Grund.
+
+    Neu und strenger: Geprueft wird nicht nur, dass es Textfelder
+    sind, sondern dass sie zum GEMEINSAMEN Modul gehoeren. Sonst waere
+    an dieser Stelle auch eine Eigenloesung erlaubt.
+  */
+  const felder = await page.$$eval('[data-datum-kennung="analyse"]',
+    (ns) => ns.map((x) => x.type + "/" + x.dataset.datumTeil));
+  pruefe(felder.length === 2, `zwei Felder (${felder.join(", ")})`);
+  pruefe(felder.every((x) => x.startsWith("text/")),
+    "beide sind Textfelder des gemeinsamen Datumsmoduls");
+  pruefe(!(await page.$('input[type="date"]')),
+    "und es gibt kein natives Datumsfeld mehr");
+  pruefe(await page.evaluate((w) =>
+    parseFloat(getComputedStyle(document.querySelector(w)).fontSize) >= 16, VON),
+    "Schriftgröße mindestens 16 px — darunter zoomt iOS hinein");
 
   const leer = await page.evaluate(() =>
     document.querySelector(".haupt").textContent.replace(/\s+/g, " "));
@@ -302,39 +348,75 @@ console.log("\n--- D. Eigener Zeitraum ---\n");
   pruefe(!(await page.$(".haupt .kennzahl")),
     "und es steht keine einzige Kennzahl da");
 
-  /* Nur ein Feld gefuellt - weiterhin keine Behauptung. */
-  await page.fill("[data-an-von]", "2026-09-01");
-  await page.waitForTimeout(300);
+  /* Nur das Startdatum - weiterhin keine Behauptung. */
+  await datumSetzen("von", "01.09.2026");
   pruefe(!(await page.$(".haupt .kennzahl")),
-    "mit nur einem Datum ebenfalls keine Kennzahl");
+    "nur mit einem Startdatum keine Kennzahl");
 
-  await page.fill("[data-an-bis]", "2026-09-30");
-  await page.waitForTimeout(350);
+  /* Nur das Enddatum. */
+  await datumSetzen("von", "");
+  await datumSetzen("bis", "30.09.2026");
+  pruefe(!(await page.$(".haupt .kennzahl")),
+    "nur mit einem Enddatum ebenfalls keine Kennzahl");
+
+  /* Beide. */
+  await datumSetzen("von", "01.09.2026");
   const kopf = await kopfText(page);
   pruefe(/Eigener Zeitraum/.test(kopf), "der eigene Zeitraum steht im Kopf");
-  pruefe(/30 Tage/.test(kopf), "mit der richtigen Tageszahl (30)");
+  pruefe(/01\.09\.2026/.test(kopf) && /30\.09\.2026/.test(kopf),
+    "mit Von und Bis");
+  pruefe(/30 Tage/.test(kopf), "und der richtigen Tageszahl (30)");
   const bildA = await zahlenBild(page);
   pruefe(bildA.split("|").length > 5, "und alle Kennzahlen sind da");
 
-  /* Verdrehte Eingabe: bis vor von. Das darf keine leere Auswertung geben. */
-  await page.fill("[data-an-von]", "2026-09-30");
-  await page.fill("[data-an-bis]", "2026-09-01");
-  await page.waitForTimeout(350);
-  const bildB = await zahlenBild(page);
-  pruefe(bildA === bildB,
-    "eine verdrehte Eingabe wird gedreht, nicht als leer gewertet");
+  /*
+    GEAENDERTE ERWARTUNG.
+
+    Alt: Ein verdrehter Zeitraum (Ende vor Beginn) wird gedreht und
+    liefert dieselben Zahlen wie die richtige Reihenfolge.
+
+    Weshalb das fachlich nicht mehr gilt: Der Geschaeftsfuehrer hat
+    danach ausdruecklich einen FEHLER verlangt. Das ist auch das
+    bessere Verhalten - wer "01.10." bis "01.09." eintippt, hat sich
+    vertippt und soll das sehen, statt stumm eine andere Auswertung zu
+    bekommen, als er gemeint hat. Eine Eingabe stillschweigend
+    zurechtzubiegen ist eine Annahme ueber die Absicht.
+
+    Neu: Fehlermeldung, KEINE Kennzahl - auch keine alte
+    stehengebliebene - und keine behauptete Tageszahl.
+  */
+  await datumSetzen("bis", "01.08.2026");
+  pruefe(!(await page.$(".haupt .kennzahl")),
+    "ein verdrehter Zeitraum zeigt keine Kennzahl, auch keine alte");
+  const verdreht = await page.evaluate(() =>
+    document.querySelector(".haupt").textContent.replace(/\s+/g, " "));
+  pruefe(/Ende liegt vor dem Beginn/.test(verdreht),
+    "sondern eine verständliche Fehlermeldung");
+  pruefe(!/\d+ Tage?\b/.test(await kopfText(page)),
+    "und der Kopf behauptet keine Tageszahl");
+
+  /* In der richtigen Reihenfolge stehen dieselben Zahlen wieder da. */
+  await datumSetzen("bis", "30.09.2026");
+  pruefe(await zahlenBild(page) === bildA,
+    "in der richtigen Reihenfolge stimmen die Zahlen wieder");
+
+  /* Ein unmoegliches Datum. */
+  await datumSetzen("bis", "31.02.2026");
+  pruefe(!(await page.$(".haupt .kennzahl")),
+    "ein unmögliches Datum ergibt keine Kennzahl");
+  pruefe(Boolean(await page.$(".datumsfehler")),
+    "und der Fehler steht am Feld");
 
   /* Ein einziger Tag. */
-  await page.fill("[data-an-von]", "2026-09-15");
-  await page.fill("[data-an-bis]", "2026-09-15");
-  await page.waitForTimeout(350);
+  await datumSetzen("von", "15.09.2026");
+  await datumSetzen("bis", "15.09.2026");
   pruefe(/\b1 Tag\b/.test(await kopfText(page)),
     "ein einzelner Tag wird als \"1 Tag\" benannt, nicht als \"1 Tage\"");
 
   /* Zurueck auf einen festen Zeitraum - die Felder verschwinden. */
   await page.click('[data-tun="an-zeitraum:tage7"]');
   await page.waitForTimeout(300);
-  pruefe(!(await page.$("[data-an-von]")),
+  pruefe(!(await page.$(VON)),
     "nach dem Wechsel auf einen festen Zeitraum sind die Felder weg");
 
   pruefe(fehler.length === 0, "keine Fehlermeldung im Browser (" + fehler.join(" | ") + ")");
@@ -446,7 +528,7 @@ console.log("\n--- G. Rollen und Breiten ---\n");
     const ueber = await page.evaluate(() =>
       Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth));
     pruefe(ueber === 0, `bei ${breite}px kein waagerechter Überlauf (${ueber}px)`);
-    const klein = await page.$$eval("[data-an-von], [data-an-bis], [data-tun^='an-zeitraum']",
+    const klein = await page.$$eval("[data-datum], [data-tun^='an-zeitraum']",
       (ns) => ns.filter((n) => n.getBoundingClientRect().height < 36).length);
     pruefe(klein === 0, `bei ${breite}px ist kein Bedienfeld unter 36 px hoch (${klein})`);
     await page.context().close();

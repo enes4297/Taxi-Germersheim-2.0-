@@ -12,6 +12,23 @@
   "use strict";
 
   /* ---- Rollen und Faehigkeiten, wie in BETRIEBSPORTAL-ROLLENMATRIX.md ---- */
+  /*
+    Die Faehigkeiten dieser Probe.
+
+    FAEHIGKEITEN ist die AUSGANGSVERTEILUNG und wird nie veraendert -
+    sie ist der Vergleichspunkt, an dem die Einstellungen zeigen
+    koennen, was jemand geaendert hat. Gearbeitet wird mit
+    rollenRechte, einer Kopie davon.
+
+    WICHTIG zur Einordnung: Die Liste des Geschaeftsfuehrers nennt
+    teils feinere Faehigkeiten, als das Modell hat - "Fahrten sehen"
+    und "Planung sehen" sind hier beides operations.read. Diese
+    Zusammenfassung wird in den Einstellungen ausdruecklich benannt
+    und als offene Entscheidung gekennzeichnet. Sie wird NICHT
+    stillschweigend aufgeteilt: Eine Aufteilung muesste an 27 Stellen
+    entschieden werden, und eine falsche Einordnung versteckt eine
+    funktionierende Ansicht, ohne dass es auffaellt.
+  */
   const FAEHIGKEITEN = {
     admin: ["operations.read", "operations.write", "fleet.read", "fleet.write",
             "personnel.read", "personnel.write", "payroll.read", "payroll.write",
@@ -40,9 +57,66 @@
     employee:   { kennung: "U-MIT-01", name: "Testmitarbeiter 01",  rolle: "Mitarbeiter" }
   };
 
+  /*
+    ZWEI GETRENNTE ADMINISTRATIONSKONTEN.
+
+    Fuer den Start sind zwei Personen als Administration vorgesehen.
+    Sie bekommen ausdruecklich KEIN gemeinsames Konto: Bei einem
+    gemeinsamen Konto steht im Protokoll nur "Administration", und
+    niemand kann sagen, wer gehandelt hat.
+
+    Hier sind es TESTIDENTITAETEN der Designprobe. Es wird kein echtes
+    Konto angelegt, kein Passwort hinterlegt und nichts in Supabase
+    veraendert. Zugangsdaten stehen weder in den Testdaten noch im
+    Protokoll - ein Protokoll ist kein Ort fuer Geheimnisse.
+  */
+  const KONTEN = [
+    { kennung: "U-ADM-01", name: "Enes Carman",         rolle: "admin",      anzeige: "Administration" },
+    { kennung: "U-ADM-02", name: "Fatih Duman",         rolle: "admin",      anzeige: "Administration" },
+    { kennung: "U-DIS-01", name: "Testdisposition 01",  rolle: "dispatcher", anzeige: "Disposition" },
+    { kennung: "U-PER-01", name: "Testpersonal 01",     rolle: "personal",   anzeige: "Personal" },
+    { kennung: "U-BUC-01", name: "Testbuchhaltung 01",  rolle: "accounting", anzeige: "Buchhaltung" },
+    { kennung: "U-MIT-01", name: "Testmitarbeiter 01",  rolle: "employee",   anzeige: "Mitarbeiter" }
+  ];
+
+  /* Die Rollenrechte, wie sie GERADE gelten. Aenderbar nur ueber die
+     Einstellungen, und nur von einem Konto mit security.write. */
+  const rollenRechte = {};
+  for (const rolle of Object.keys(FAEHIGKEITEN)) {
+    rollenRechte[rolle] = FAEHIGKEITEN[rolle].slice();
+  }
+
+  /* Zusaetzliche Freigaben JE KONTO - getrennt von der Rolle, damit
+     erkennbar bleibt, was aus der Rolle kommt und was einzeln
+     vergeben wurde. */
+  const kontoRechte = {};
+  for (const k of KONTEN) kontoRechte[k.kennung] = [];
+
+  const kontoVon = (kennung) => KONTEN.find((k) => k.kennung === kennung) || null;
+
+  /* Das angemeldete Konto. Es muss zur gewaehlten Rolle passen -
+     sonst das erste Konto dieser Rolle. */
+  function aktuellesKonto() {
+    const gewaehlt = kontoVon(zustand.konto);
+    if (gewaehlt && gewaehlt.rolle === zustand.rolle) return gewaehlt;
+    return KONTEN.find((k) => k.rolle === zustand.rolle) || KONTEN[KONTEN.length - 1];
+  }
+
+  /* Die Faehigkeiten eines Kontos: Rolle plus einzelne Freigaben. */
+  const rechteVon = (konto) => konto
+    ? (rollenRechte[konto.rolle] || []).concat(kontoRechte[konto.kennung] || [])
+    : [];
+
   /* Das handelnde Konto. Die Administration handelt als sie selbst -
      sie kann sich nicht als Personal ausgeben. */
-  const benutzer = () => BENUTZER[zustand.rolle] || BENUTZER.employee;
+  /*
+    Das handelnde Konto. Es handelt als es selbst - eine Rolle ist
+    kein Handelnder. Im Protokoll steht deshalb Name UND Kennung.
+  */
+  const benutzer = () => {
+    const k = aktuellesKonto();
+    return { kennung: k.kennung, name: k.name, rolle: k.anzeige };
+  };
   const benutzerText = () => {
     const b = benutzer();
     return b.name + " – " + b.rolle;
@@ -67,7 +141,8 @@
     finanzen:   "M3 7h18v12H3zM3 11h18M7 15h3",
     rewards:    "M12 3l2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z",
     analyse:    "M4 20V10m5 10V4m5 16v-7m5 7V8",
-    mehr:       "M5 12h.01M12 12h.01M19 12h.01"
+    mehr:       "M5 12h.01M12 12h.01M19 12h.01",
+    einstellungen: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.5 19.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.6a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7.5l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1"
   };
 
   const symbol = (name) =>
@@ -88,7 +163,11 @@
     { id: "lohn",       name: "Lohn",               kurz: "Lohn",      symbol: "lohn",       braucht: "payroll.read" },
     { id: "finanzen",   name: "Finanzen",           kurz: "Finanzen",  symbol: "finanzen",   braucht: "finance.read" },
     { id: "rewards",    name: "Rewards",            kurz: "Rewards",   symbol: "rewards",    braucht: "rewards.read" },
-    { id: "analyse",    name: "Analyse",            kurz: "Analyse",   symbol: "analyse",    braucht: "analytics.read" }
+    { id: "analyse",    name: "Analyse",            kurz: "Analyse",   symbol: "analyse",    braucht: "analytics.read" },
+    /* Nur fuer die Administration. "security.write" ist das Recht,
+       Rechte zu vergeben - wer es nicht hat, sieht den Bereich nicht
+       und kommt auch mit einem direkten Aufruf nicht hinein. */
+    { id: "einstellungen", name: "Einstellungen",   kurz: "Rechte",    symbol: "einstellungen", braucht: "security.write" }
   ];
 
   /* ---- Zustand der Probe ---- */
@@ -98,6 +177,9 @@
        bekaeme eine Dispositionsperson die Urlaubsentscheidung, ohne
        dass die ganze Rolle erweitert wird. */
     zusatz: [],
+    /* Welches KONTO angemeldet ist. Zwei Konten koennen dieselbe
+       Rolle haben - dann entscheidet die Kennung, wer gehandelt hat. */
+    konto: "U-DIS-01",
     bereich: "uebersicht",
     fahrtFilter: "alle",
     /* Der Tag der Planung als Datum - nicht mehr nur heute/morgen.
@@ -111,7 +193,14 @@
      Bereich "Fahrer & Fahrzeuge" ist der erste, den mehrere Rollen
      aus verschiedenen Gruenden brauchen. */
   const darf = (faehigkeit) => {
-    const meine = (FAEHIGKEITEN[zustand.rolle] || []).concat(zustand.zusatz);
+    /*
+      Gefragt wird das angemeldete KONTO: seine Rolle plus seine
+      einzelnen Freigaben. zustand.zusatz bleibt als dritter Weg
+      bestehen - er wird in den Pruefläufen benutzt, um eine
+      Faehigkeit vorzufuehren, ohne die Rolle zu aendern.
+    */
+    const konto = aktuellesKonto();
+    const meine = rechteVon(konto).concat(zustand.zusatz);
     if (Array.isArray(faehigkeit)) return faehigkeit.some((f) => meine.includes(f));
     return meine.includes(faehigkeit);
   };
@@ -174,6 +263,60 @@
     false zurueck, bleibt das Fenster offen und darf selbst eine
     Sicherheitsabfrage zeichnen. Verschachtelte Fenster gibt es nicht.
   */
+  /* ============================================================
+     Herkunft eines Fensters
+     ============================================================
+     GEMESSENER AUSGANGSFEHLER: Ein Klick im Kalender auf eine
+     Krankmeldung oeffnete den richtigen Vorgang - wechselte aber im
+     Hintergrund schon den Bereich. Beim Schliessen stand man deshalb
+     in "Meldungen" statt wieder im Kalender. Beim Fahrzeugtermin
+     dasselbe mit "Fahrer & Fahrzeuge".
+
+     URSACHE: kal-ziel rief R.geheZu(bereich). Der Bereichswechsel war
+     der Weg zum Datensatz, und danach gab es keinen Weg zurueck -
+     die Herkunft war nirgends festgehalten.
+
+     Jetzt wird sie festgehalten. Eine Herkunft besteht aus:
+       bereich           wohin zurueck
+       name              wie der Knopf heisst
+       wiederherstellen  stellt den Zustand des Bereichs wieder her
+       scroll / scrollHaupt  die Position
+
+     Wer einen Datensatz direkt in seinem Fachbereich oeffnet, setzt
+     keine Herkunft - dann fuehrt Schliessen wie bisher dorthin
+     zurueck. Es gibt bewusst KEINE feste Ruecksprungseite.
+  */
+  let herkunft = null;
+  const herkunftLesen = () => herkunft;
+  const herkunftSetzen = (h) => { herkunft = h || null; };
+  const herkunftLoeschen = () => { herkunft = null; };
+
+  function zurueckZurHerkunft() {
+    if (!herkunft) return false;
+    const h = herkunft;
+    /* Zuerst loeschen: Das Zeichnen darf nicht erneut zurueckspringen. */
+    herkunft = null;
+    if (typeof h.wiederherstellen === "function") h.wiederherstellen();
+    zustand.bereich = h.bereich;
+    zeichnen();
+    /* Die Position erst nach dem Zeichnen - zeichnen() setzt sie auf 0. */
+    window.requestAnimationFrame(() => {
+      if (typeof h.scroll === "number") window.scrollTo(0, h.scroll);
+      const haupt = document.querySelector("[data-haupt]");
+      if (haupt && typeof h.scrollHaupt === "number") haupt.scrollTop = h.scrollHaupt;
+    });
+    return true;
+  }
+
+  /* Die aktuelle Position festhalten - gehoert in jede Herkunft. */
+  const scrollJetzt = () => {
+    const haupt = document.querySelector("[data-haupt]");
+    return {
+      scroll: window.scrollY || 0,
+      scrollHaupt: haupt ? haupt.scrollTop : 0
+    };
+  };
+
   let dialogSchutz = null;
   const dialogSchutzSetzen = (fn) => { dialogSchutz = fn; };
 
@@ -183,6 +326,28 @@
     ziel.innerHTML = markup;
     ziel.hidden = false;
     document.body.style.overflow = "hidden";
+    /*
+      Kommt dieses Fenster aus einem anderen Bereich, braucht es einen
+      benannten Weg zurueck. Er wird HIER eingesetzt, an einer Stelle
+      fuer jedes Fenster - nicht in jedem Dialog einzeln. Sonst haette
+      jeder neue Dialog die Chance, ihn zu vergessen.
+
+      "Schliessen" und Escape fuehren ebenfalls dorthin zurueck (siehe
+      dialogSchliessen). Der Knopf sagt es nur ausdruecklich.
+    */
+    if (herkunft && !ziel.querySelector("[data-herkunft-zurueck]")) {
+      const fuss = ziel.querySelector(".dialog-fuss");
+      const knopf = document.createElement("button");
+      knopf.className = "knopf";
+      knopf.type = "button";
+      knopf.setAttribute("data-herkunft-zurueck", "");
+      knopf.textContent = "Zurück zum " + (herkunft.name || "vorherigen Bereich");
+      if (fuss) fuss.prepend(knopf);
+      else {
+        const kopf = ziel.querySelector(".dialog-kopf");
+        if (kopf) kopf.appendChild(knopf);
+      }
+    }
     const erstes = ziel.querySelector("button, input, select, [tabindex]");
     if (erstes) erstes.focus();
   }
@@ -196,7 +361,10 @@
       begonnene Begruendung nicht verschlucken.
     */
     const offen = (window.ProbeTeam && window.ProbeTeam.offeneEingabe && window.ProbeTeam.offeneEingabe())
-      || (window.ProbeVorgaenge && window.ProbeVorgaenge.offeneEingabe && window.ProbeVorgaenge.offeneEingabe());
+      || (window.ProbeVorgaenge && window.ProbeVorgaenge.offeneEingabe && window.ProbeVorgaenge.offeneEingabe())
+      || (window.ProbeAkten && window.ProbeAkten.offeneEingabe && window.ProbeAkten.offeneEingabe())
+      || (window.ProbeEinstellungen && window.ProbeEinstellungen.offeneEingabe
+          && window.ProbeEinstellungen.offeneEingabe());
     if (!erzwingen && offen) {
       const kasten = document.querySelector(".dialog-kasten");
       if (kasten && !kasten.querySelector("[data-offen-warnung]")) {
@@ -217,6 +385,9 @@
     document.body.style.overflow = "";
     if (dialogAusloeser && document.body.contains(dialogAusloeser)) dialogAusloeser.focus();
     dialogAusloeser = null;
+    /* Kam das Fenster aus einem anderen Bereich, geht es dorthin
+       zurueck - mit Ansicht, Datum, Filtern und Position. */
+    if (herkunft) zurueckZurHerkunft();
   }
 
   const dialogOffen = () => !document.querySelector("[data-dialog]").hidden;
@@ -255,8 +426,32 @@
     document.querySelector("[data-handyleiste]").innerHTML = leiste;
 
     document.querySelector("[data-rolle]").value = zustand.rolle;
+
+    /*
+      Die Kontowahl erscheint nur, wenn es fuer diese Rolle mehr als
+      ein Konto gibt. Ein Auswahlfeld mit einem einzigen Eintrag ist
+      eine Bedienung, die nichts bedient.
+    */
+    const kontowahl = document.querySelector("[data-kontowahl]");
+    if (kontowahl) {
+      const eigene = KONTEN.filter((k) => k.rolle === zustand.rolle);
+      kontowahl.hidden = eigene.length < 2;
+      if (eigene.length > 1) {
+        const jetzt = aktuellesKonto();
+        kontowahl.innerHTML = "Konto"
+          + '<select data-konto aria-label="Handelndes Konto wählen">'
+          + eigene.map((k) => '<option value="' + h(k.kennung) + '"'
+            + (k.kennung === jetzt.kennung ? " selected" : "")
+            + ">" + h(k.name) + "</option>").join("")
+          + "</select>";
+      }
+    }
+
     const name = document.querySelector("[data-rollenname]");
-    if (name) name.textContent = ROLLENNAMEN[zustand.rolle];
+    if (name) {
+      const k = aktuellesKonto();
+      name.textContent = k.name + " · " + k.anzeige + " · " + k.kennung;
+    }
   }
 
   function mehrDialog() {
@@ -286,6 +481,18 @@
   function fokusMerken() {
     const el = document.activeElement;
     if (!el || !el.dataset || el === document.body) return null;
+    let anfangId = null;
+    let endeId = null;
+    try { anfangId = el.selectionStart; endeId = el.selectionEnd; } catch { /* nicht jedes Feld */ }
+    /*
+      Eine id ist eindeutig - der Datensatzschluessel ist es nicht.
+      Bei zwei Datumsfeldern nebeneinander trug der bisherige Weg
+      immer den Waehler "[data-datum]" und traf damit das erste Feld.
+      Der Fokus sprang vom Bis-Feld ins Von-Feld.
+    */
+    if (el.id) {
+      return { wahl: "#" + el.id, anfang: anfangId, ende: endeId };
+    }
     const schluessel = Object.keys(el.dataset)[0];
     if (!schluessel) return null;
     const attribut = "data-" + schluessel.replace(/[A-Z]/g, (z) => "-" + z.toLowerCase());
@@ -345,8 +552,26 @@
 
   function geheZu(bereichId) {
     if (!BEREICHE.some((b) => b.id === bereichId)) return;
+    /* Wer selbst woandershin geht, gibt die Herkunft auf - sonst
+       sprang das Schliessen eines spaeteren Fensters zurueck in einen
+       Bereich, den der Mensch laengst verlassen hat. */
+    herkunft = null;
     zustand.bereich = bereichId;
-    if (dialogOffen()) dialogSchliessen();
+    if (dialogOffen()) dialogSchliessen(true);
+    zeichnen();
+  }
+
+  /*
+    Derselbe Wechsel, aber mit festgehaltener Herkunft. Der Kalender
+    benutzt das: Er fuehrt zum Datensatz und bleibt als Rueckweg
+    bestehen.
+  */
+  function geheZuMitHerkunft(bereichId, h) {
+    if (!BEREICHE.some((b) => b.id === bereichId)) return;
+    herkunft = null;
+    if (dialogOffen()) dialogSchliessen(true);
+    herkunft = h || null;
+    zustand.bereich = bereichId;
     zeichnen();
   }
 
@@ -360,6 +585,13 @@
 
       if (e.target.closest("[data-glocke]")) { window.ProbeVorgaenge.glocke(); return; }
       if (e.target.closest("[data-mehr]")) { mehrDialog(); return; }
+      if (e.target.closest("[data-herkunft-zurueck]")) {
+        /* Erzwingen: Der Weg zurueck in den Kalender ist kein Verlust
+           von Eingaben - er behaelt den Vorgang offen im Bestand. Die
+           Sicherheitsabfrage gehoert an das endgueltige Verlassen. */
+        dialogSchliessen(true);
+        return;
+      }
       if (e.target.closest("[data-dialog-zu]")) { dialogSchliessen(); return; }
 
       const ziel = e.target.closest("[data-ziel]");
@@ -386,9 +618,20 @@
     });
 
     document.addEventListener("change", (e) => {
+      if (e.target.matches("[data-konto]")) {
+        /* Innerhalb derselben Rolle das Konto wechseln. */
+        const k = kontoVon(e.target.value);
+        if (k) { zustand.konto = k.kennung; zustand.rolle = k.rolle; }
+        if (dialogOffen()) dialogSchliessen(true);
+        zeichnen();
+        return;
+      }
       if (e.target.matches("[data-rolle]")) {
         zustand.rolle = e.target.value;
         zustand.zusatz = [];
+        /* Das erste Konto dieser Rolle wird angemeldet. */
+        const erstes = KONTEN.find((k) => k.rolle === zustand.rolle);
+        zustand.konto = erstes ? erstes.kennung : "";
         const erlaubt = sichtbareBereiche();
         if (!erlaubt.some((b) => b.id === zustand.bereich)) {
           zustand.bereich = erlaubt.length ? erlaubt[0].id : "uebersicht";
@@ -416,7 +659,19 @@
       */
       if (window.ProbeBereiche.taste && window.ProbeBereiche.taste(e) === true) return;
       if (!dialogOffen()) return;
-      if (e.key === "Escape") { e.preventDefault(); dialogSchliessen(); return; }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        /*
+          Escape ist der sichere Rueckweg, nicht der Notausgang.
+
+          Hat ein Fenster einen eigenen Rueckweg - etwa eine
+          Finanzaktion zurueck in ihre Rechnung -, fuehrt Escape
+          dorthin. Nur wenn es keinen gibt, schliesst es.
+        */
+        if (window.ProbeAkten && window.ProbeAkten.escape && window.ProbeAkten.escape() === true) return;
+        dialogSchliessen();
+        return;
+      }
       if (e.key !== "Tab") return;
       const kasten = document.querySelector(".dialog-kasten");
       if (!kasten) return;
@@ -434,7 +689,11 @@
     zustand, darf, h, symbol, marke, kennzahl,
     zustandsKasten, kastenLeer, kastenFehler, kastenKeinRecht, kastenVorbereitet,
     dialogOeffnen, dialogSchliessen, dialogOffen, dialogSchutzSetzen, zeichnen, geheZu,
+    herkunftLesen, herkunftSetzen, herkunftLoeschen, zurueckZurHerkunft,
+    geheZuMitHerkunft, scrollJetzt,
     BENUTZER, benutzer, benutzerText,
+    KONTEN, kontoVon, aktuellesKonto, rechteVon, rollenRechte, kontoRechte,
+    FAEHIGKEITEN, sichtbareBereiche,
     ROLLENNAMEN, BEREICHE
   };
 

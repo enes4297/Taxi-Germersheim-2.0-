@@ -49,6 +49,9 @@
     pruefkorrektur: null,
     zuordnung: null,
     auswahl: null,
+    /* Kurze Rueckmeldung nach dem Entfernen aus der Erledigt-Liste,
+       mit "Rueckgaengig". Siehe vg-aus-liste. */
+    rueckmeldung: null,
     oeffneNachZeichnen: "",
     /* Fuer die Vorfuehrung der Paralleländerung. */
     fremdstand: {}
@@ -713,6 +716,34 @@
       </div>`;
   }
 
+  /*
+    Die Rueckmeldung nach dem Entfernen aus der Erledigt-Liste.
+
+    Sie sagt ausdruecklich, dass NICHTS geloescht wurde, und bietet
+    "Rueckgaengig" an. Nur noch anzeigen, solange der Vorgang
+    tatsaechlich ausgeblendet ist - wurde er inzwischen
+    zurueckgeholt, waere die Rueckmeldung eine Unwahrheit.
+  */
+  function rueckmeldungMarkup() {
+    const rm = stand.rueckmeldung;
+    if (!rm) return "";
+    const v = vorgangFinden(rm.id);
+    if (!v || !istAusgeblendet(v)) return "";
+    return `<div class="rueckmeldung" role="status">
+      <div>
+        <strong>${h(v.titel)} ${h(rm.was)}.</strong>
+        <span>Nichts gelöscht: Der Vorgang steht weiter unter „Alle“ und im Archiv.
+          Festgehalten sind ${h(rm.zeit)} und das handelnde Konto.</span>
+      </div>
+      <div class="rueckmeldung-aktionen">
+        <button class="knopf klein" type="button" data-tun="vg-in-liste:${h(v.id)}">
+          Rückgängig</button>
+        <button class="knopf klein leise" type="button" data-tun="vg-rueckmeldung-zu"
+          aria-label="Diese Rückmeldung ausblenden">Verstanden</button>
+      </div>
+    </div>`;
+  }
+
   function zeichne() {
     const alle = alleVorgaenge().filter(sichtbarFuerMich);
     const liste = gefiltert();
@@ -745,6 +776,8 @@
         </div>
       </div>
 
+      ${rueckmeldungMarkup()}
+
       <div class="flaeche">
         <div class="filterzeile" role="group" aria-label="Bearbeitungsstand">
           ${REITER.map((x) => `<button class="filterchip" type="button"
@@ -760,9 +793,16 @@
             <input type="search" data-vg-suche value="${h(stand.suche)}" placeholder="Testfahrer, V0001 …"></label>
           ${zeitraumSichtbar() ? `
             <label class="tagfeld">Zeitraum von
-              <input type="date" data-vg-von value="${h(stand.vonDatum)}"></label>
+              ${window.ProbeDatum.markup({ kennung: "archiv", teil: "von",
+                wert: stand.vonDatum, beschriftung: "Zeitraum von",
+                fehler: stand.vonFehler })}</label>
             <label class="tagfeld">bis
-              <input type="date" data-vg-bis value="${h(stand.bisDatum)}"></label>
+              ${window.ProbeDatum.markup({ kennung: "archiv", teil: "bis",
+                wert: stand.bisDatum, beschriftung: "Zeitraum bis",
+                fehler: stand.bisFehler })}</label>
+            ${window.ProbeDatum.verdreht(stand.vonDatum, stand.bisDatum)
+              ? `<span class="datumsfehler" role="alert">Das Ende liegt vor dem Beginn — bitte tauschen.</span>`
+              : ""}
             ${stand.vonDatum || stand.bisDatum
               ? `<button class="knopf klein" type="button" data-tun="vg-zeitraum-weg">Zeitraum aufheben</button>` : ""}` : ""}
         </div>
@@ -1401,9 +1441,13 @@
           </dl>
           <div class="tageswahl">
             <label class="tagfeld">Krank von
-              <input type="date" data-zuordnung-von value="${h(s.neuVon)}"></label>
+              ${window.ProbeDatum.markup({ kennung: "zuordnung", teil: "von",
+                wert: s.neuVon, beschriftung: "Krank von", pflicht: true,
+                fehler: s.vonFehler })}</label>
             <label class="tagfeld">bis
-              <input type="date" data-zuordnung-bis value="${h(s.neuBis)}"></label>
+              ${window.ProbeDatum.markup({ kennung: "zuordnung", teil: "bis",
+                wert: s.neuBis, beschriftung: "Krank bis", pflicht: true,
+                fehler: s.bisFehler })}</label>
           </div>
           <p class="schritt-hinweis">Stimmt der Zeitraum nicht, tragen Sie ihn hier richtig
             ein. Er stammt aus dem bisherigen Vorgang, nicht aus dem Dokument.</p>
@@ -2126,14 +2170,40 @@
           nachher: LISTENSTAENDE.ausgeblendet + " · im Archiv weiter auffindbar",
           grund: ""
         });
+        /*
+          Eine kurze Rueckmeldung mit "Rueckgaengig".
+
+          Der Vorgang ist nicht geloescht - er steht weiter unter "Alle"
+          und im Archiv. Trotzdem verschwindet er aus der Liste, in der
+          man gerade arbeitet, und das sieht fuer einen Moment nach
+          Verlust aus. Die Rueckmeldung sagt, was wirklich passiert ist,
+          und bietet den Weg zurueck an derselben Stelle an.
+
+          Sie haengt am VORGANG, nicht an einer Zeitschaltung: Eine
+          Rueckmeldung, die nach fuenf Sekunden verschwindet, ist fuer
+          jemanden, der langsamer liest, keine Rueckmeldung.
+        */
+        stand.rueckmeldung = {
+          id: v.id,
+          titel: v.titel,
+          was: "aus der Erledigt-Liste entfernt",
+          zeit: v.ausListeAm
+        };
         R.zeichnen();
         return;
       }
+      /* Die Rueckmeldung wegklicken - sie aendert dabei nichts. */
+      case "vg-rueckmeldung-zu":
+        stand.rueckmeldung = null;
+        R.zeichnen();
+        return;
       case "vg-in-liste": {
         const v = vorgangFinden(wert);
         if (!v || v.abgeleitet || !istAusgeblendet(v)) return;
         v.ausListe = false;
         v.version += 1;
+        /* Die Rueckmeldung hat ihren Zweck erfuellt. */
+        if (stand.rueckmeldung && stand.rueckmeldung.id === v.id) stand.rueckmeldung = null;
         D.protokollieren({
           betrifft: v.titel + " (" + v.id + ")",
           was: "Zurück in die Arbeitsliste",
@@ -2899,16 +2969,47 @@
       }
       return true;
     }
-    if (feld.matches("[data-zuordnung-von]") && stand.zuordnung) {
-      stand.zuordnung.neuVon = feld.value;
+    /* Die vier Datumsfelder laufen ueber das gemeinsame
+       Datumsmodul - siehe datum() direkt darunter. */
+    return false;
+  }
+
+  /*
+    Die Datumsfelder dieses Moduls: der Zeitraumfilter des Archivs
+    und der Krankheitszeitraum der Neuzuordnung.
+
+    Beide trugen vorher ein <input type="date"> mit eigener
+    Behandlung. Jetzt pruefen beide dieselbe Pruefung, und der
+    Fehlertext steht am Feld.
+  */
+  function datum(kennung, teil, ergebnis) {
+    if (kennung === "archiv") {
+      if (teil === "von") {
+        stand.vonFehler = ergebnis.fehler;
+        /* Leer heisst hier "kein Filter" - das ist erlaubt. */
+        if (ergebnis.gueltig || ergebnis.leer) stand.vonDatum = ergebnis.iso;
+      } else {
+        stand.bisFehler = ergebnis.fehler;
+        if (ergebnis.gueltig || ergebnis.leer) stand.bisDatum = ergebnis.iso;
+      }
+      R.zeichnen();
       return true;
     }
-    if (feld.matches("[data-zuordnung-bis]") && stand.zuordnung) {
-      stand.zuordnung.neuBis = feld.value;
+    if (kennung === "zuordnung") {
+      if (!stand.zuordnung) return true;
+      if (teil === "von") {
+        stand.zuordnung.vonFehler = ergebnis.fehler;
+        if (ergebnis.gueltig || ergebnis.leer) stand.zuordnung.neuVon = ergebnis.iso;
+      } else {
+        stand.zuordnung.bisFehler = ergebnis.fehler;
+        if (ergebnis.gueltig || ergebnis.leer) stand.zuordnung.neuBis = ergebnis.iso;
+      }
+      /* Hier NICHT neu zeichnen: Der Dialog steht offen, und ein
+         Neuzeichnen beim Verlassen des ersten Feldes wuerde den Weg
+         zum zweiten Feld unterbrechen. Gezeichnet wird beim
+         naechsten Schritt. */
       return true;
     }
-    if (feld.matches("[data-vg-von]")) { stand.vonDatum = feld.value; R.zeichnen(); return true; }
-    if (feld.matches("[data-vg-bis]")) { stand.bisDatum = feld.value; R.zeichnen(); return true; }
     return false;
   }
 
@@ -2972,6 +3073,6 @@
 
   window.ProbeVorgaenge = {
     offeneWarnungen, sprungziel, nachZeichnen,
-    anmelden, zeichne, tun, geaendert, glocke, ungesehen, offeneEingabe, offeneFuerMich
+    anmelden, zeichne, tun, geaendert, datum, glocke, ungesehen, offeneEingabe, offeneFuerMich
   };
 })();

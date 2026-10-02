@@ -548,19 +548,19 @@
 
   /* ---- Fahrten. Nur Testkunden, keine Gesundheitsangaben. ---- */
   const fahrten = [
-    { id: "FA-0001", zustand: "eingang",      zeit: "10:40", kunde: "Testkunde 01", von: "Teststrasse 1, Germersheim", nach: "Testziel A", fahrerId: null,  fahrzeugId: null,  hinweis: "über Telefon aufgenommen" },
+    { id: "FA-0001", zustand: "eingang",      zeit: "10:40", kunde: "Testkunde 01", von: "Teststrasse 1, Germersheim", nach: "Testziel A", fahrerId: null,  fahrzeugId: null,  kundeId: "K0001", fahrgast: "", hinweis: "über Telefon aufgenommen" },
     /* Diese Anfrage hat KEINE geklaerte Abholzeit. Sie darf nicht
        zwischen Uhrzeiten einsortiert werden - sonst behauptet die
        Liste eine Reihenfolge, die es nicht gibt. */
-    { id: "FA-0002", zustand: "eingang",      zeit: "",      kunde: "Gastfahrt",    von: "Testplatz 2, Germersheim",   nach: "Testziel B", fahrerId: null,  fahrzeugId: null,  hinweis: "Rückfrage zur Uhrzeit offen" },
-    { id: "FA-0003", zustand: "ungeplant",    zeit: "12:00", kunde: "Testkunde 02", von: "Testweg 3",                  nach: "Testziel C", fahrerId: null,  fahrzeugId: null,  hinweis: "" },
-    { id: "FA-0004", zustand: "ungeplant",    zeit: "12:30", kunde: "Testkunde 03", von: "Testallee 4",                nach: "Testziel A", fahrerId: null,  fahrzeugId: null,  hinweis: "8 Plätze nötig" },
-    { id: "FA-0005", zustand: "geplant",      zeit: "13:00", kunde: "Testkunde 01", von: "Teststrasse 1",              nach: "Testziel D", fahrerId: "M02", fahrzeugId: "F02", hinweis: "" },
-    { id: "FA-0006", zustand: "geplant",      zeit: "13:20", kunde: "Testkunde 04", von: "Testring 5",                 nach: "Testziel B", fahrerId: "M03", fahrzeugId: "F03", hinweis: "" },
-    { id: "FA-0007", zustand: "unterwegs",    zeit: "09:50", kunde: "Testkunde 02", von: "Testweg 3",                  nach: "Testziel C", fahrerId: "M01", fahrzeugId: "F01", hinweis: "" },
-    { id: "FA-0008", zustand: "abgeschlossen",zeit: "08:10", kunde: "Testkunde 05", von: "Testplatz 2",                nach: "Testziel A", fahrerId: "M05", fahrzeugId: "F01", hinweis: "" },
-    { id: "FA-0009", zustand: "storniert",    zeit: "08:40", kunde: "Testkunde 03", von: "Testallee 4",                nach: "Testziel D", fahrerId: null,  fahrzeugId: null,  hinweis: "Kunde hat abgesagt" },
-    { id: "FA-0010", zustand: "klaerung",     zeit: "14:00", kunde: "Testkunde 06", von: "Testort 6",                  nach: "Testziel E", fahrerId: null,  fahrzeugId: null,  hinweis: "Adresse unvollständig" }
+    { id: "FA-0002", zustand: "eingang",      zeit: "",      kunde: "Gastfahrt",    von: "Testplatz 2, Germersheim",   nach: "Testziel B", fahrerId: null,  fahrzeugId: null,  kundeId: "", fahrgast: "", hinweis: "Rückfrage zur Uhrzeit offen" },
+    { id: "FA-0003", zustand: "ungeplant",    zeit: "12:00", kunde: "Testkunde 02", von: "Testweg 3",                  nach: "Testziel C", fahrerId: null,  fahrzeugId: null,  kundeId: "K0002", fahrgast: "", hinweis: "" },
+    { id: "FA-0004", zustand: "ungeplant",    zeit: "12:30", kunde: "Testkunde 03", von: "Testallee 4",                nach: "Testziel A", fahrerId: null,  fahrzeugId: null,  kundeId: "K0003", fahrgast: "", hinweis: "8 Plätze nötig" },
+    { id: "FA-0005", zustand: "geplant",      zeit: "13:00", kunde: "Testkunde 01", von: "Teststrasse 1",              nach: "Testziel D", fahrerId: "M02", fahrzeugId: "F02", kundeId: "K0001", fahrgast: "", hinweis: "" },
+    { id: "FA-0006", zustand: "geplant",      zeit: "13:20", kunde: "Testkunde 04", von: "Testring 5",                 nach: "Testziel B", fahrerId: "M03", fahrzeugId: "F03", kundeId: "K0004", fahrgast: "Testfahrgast Werk 2", hinweis: "" },
+    { id: "FA-0007", zustand: "unterwegs",    zeit: "09:50", kunde: "Testkunde 02", von: "Testweg 3",                  nach: "Testziel C", fahrerId: "M01", fahrzeugId: "F01", kundeId: "K0002", fahrgast: "", hinweis: "" },
+    { id: "FA-0008", zustand: "abgeschlossen",zeit: "08:10", kunde: "Testkunde 05", von: "Testplatz 2",                nach: "Testziel A", fahrerId: "M05", fahrzeugId: "F01", kundeId: "K0005", fahrgast: "", hinweis: "" },
+    { id: "FA-0009", zustand: "storniert",    zeit: "08:40", kunde: "Testkunde 03", von: "Testallee 4",                nach: "Testziel D", fahrerId: null,  fahrzeugId: null,  kundeId: "K0003", fahrgast: "", hinweis: "Kunde hat abgesagt" },
+    { id: "FA-0010", zustand: "klaerung",     zeit: "14:00", kunde: "Testkunde 06", von: "Testort 6",                  nach: "Testziel E", fahrerId: null,  fahrzeugId: null,  kundeId: "K0006", fahrgast: "", hinweis: "Adresse unvollständig" }
   ];
 
   const fahrtZustaende = [
@@ -1015,7 +1015,7 @@
     {
       id: "K0001", name: "Testkunde 01", art: "privat",
       vorname: "Test", nachname: "Kunde 01", firma: "",
-      telefon: "Testnummer 0001", kundennummer: "KD-0001",
+      telefon: "Testnummer 0001",
       strasse: "Teststrasse", hausnummer: "1", plz: "76726", ort: "Germersheim",
       email: "testkunde01@example.invalid",
       konto: "verknüpft", fahrten: 12, hinweis: "",
@@ -1035,7 +1035,7 @@
     {
       id: "K0002", name: "Testkunde 02", art: "privat",
       vorname: "Test", nachname: "Kunde 02", firma: "",
-      telefon: "Testnummer 0002", kundennummer: "KD-0002",
+      telefon: "Testnummer 0002",
       strasse: "Testweg", hausnummer: "3", plz: "67360", ort: "Lingenfeld",
       email: "", konto: "nicht verknüpft", fahrten: 3, hinweis: "", verlauf: [],
       letzteFahrten: [
@@ -1045,7 +1045,7 @@
     {
       id: "K0003", name: "Testkunde 03", art: "privat",
       vorname: "Test", nachname: "Kunde 03", firma: "",
-      telefon: "Testnummer 0003", kundennummer: "KD-0003",
+      telefon: "Testnummer 0003",
       strasse: "Testallee", hausnummer: "4a", plz: "76756", ort: "Bellheim",
       email: "testkunde03@example.invalid",
       konto: "verknüpft", fahrten: 27, hinweis: "Rollstuhlfahrzeug erforderlich", verlauf: [],
@@ -1059,7 +1059,10 @@
     {
       id: "K0004", name: "Testfirma 04", art: "firma",
       vorname: "", nachname: "", firma: "Testfirma 04 GmbH",
-      telefon: "Testnummer 0004", kundennummer: "KD-0004",
+      /* Zustaendige Person beim Auftraggeber - NICHT der Fahrgast.
+         Wer befoerdert wird, steht an der einzelnen Fahrt. */
+      ansprechpartner: "Testleitung Fuhrpark", abteilung: "Verwaltung",
+      telefon: "Testnummer 0004",
       strasse: "Testring", hausnummer: "5", plz: "76726", ort: "Germersheim",
       email: "buchhaltung@testfirma04.invalid",
       konto: "nicht verknüpft", fahrten: 8, hinweis: "Rechnung monatlich", verlauf: [],
@@ -1071,7 +1074,7 @@
     {
       id: "K0005", name: "Testkunde 05", art: "privat",
       vorname: "Test", nachname: "Kunde 05", firma: "",
-      telefon: "Testnummer 0005", kundennummer: "KD-0005",
+      telefon: "Testnummer 0005",
       strasse: "Testplatz", hausnummer: "2", plz: "76726", ort: "Germersheim",
       email: "", konto: "verknüpft", fahrten: 5, hinweis: "", verlauf: [],
       letzteFahrten: [
@@ -1081,7 +1084,7 @@
     {
       id: "K0006", name: "Testkunde 06", art: "privat",
       vorname: "Test", nachname: "Kunde 06", firma: "",
-      telefon: "Testnummer 0006", kundennummer: "KD-0006",
+      telefon: "Testnummer 0006",
       strasse: "Testort", hausnummer: "6", plz: "76761", ort: "Rülzheim",
       email: "", konto: "nicht verknüpft", fahrten: 1, hinweis: "", verlauf: [],
       letzteFahrten: []
@@ -1101,7 +1104,7 @@
     kunden.push({
       id: `K${nr}`, name: `Testkunde ${nr}`, art: "privat",
       vorname: "Test", nachname: `Kunde ${nr}`, firma: "",
-      telefon: `Testnummer ${nr}`, kundennummer: `KD-${nr}`,
+      telefon: `Testnummer ${nr}`,
       strasse: "Teststrasse", hausnummer: String((i % 90) + 1), plz, ort,
       konto: i % 3 === 0 ? "verknüpft" : "nicht verknüpft",
       fahrten: i % 11, hinweis: "", letzteFahrten: []
@@ -1119,18 +1122,22 @@
   /* Suche mit harter Begrenzung. Die Oberflaeche darf nie den ganzen
      Bestand zeichnen. */
   /*
-    Kundensuche. Teiltreffer in Name, Telefonnummer, Kundennummer,
-    Firma, Anschrift und E-Mail.
+    Kundensuche. Teiltreffer in Name, Telefonnummer, Firma,
+    Ansprechpartner, Abteilung, Anschrift und E-Mail.
 
-    Der manuelle Rundgang hat gezeigt, dass eine Suche nur ueber Name,
-    Telefon und Nummer zu wenig ist: Wer eine Strasse im Kopf hat,
-    findet damit nichts.
+    Der manuelle Rundgang hat gezeigt, dass eine Suche nur ueber Name
+    und Telefon zu wenig ist: Wer eine Strasse im Kopf hat, findet
+    damit nichts.
 
-    Ab EINEM Zeichen wird gesucht. Vorher waren zwei verlangt - das
-    liess "Eingabe filtert nicht" aussehen, obwohl es nur zu kurz war.
+    Eine KUNDENNUMMER wird nicht mehr gesucht - es gibt keine. Im
+    Betrieb wird mit Namen, Telefonnummer und Anschrift gearbeitet.
+    Die technische Kennung ist keine Nummer fuer Menschen und wird
+    deshalb auch nicht durchsucht: Sonst waere sie ueber die Suche
+    doch wieder eine betriebliche Nummer.
   */
   const kundenText = (k) => [
-    k.name, k.telefon, k.kundennummer, k.firma || "",
+    k.name, k.telefon, k.firma || "",
+    k.ansprechpartner || "", k.abteilung || "",
     k.strasse || "", k.hausnummer || "", k.plz || "", k.ort || "",
     k.email || ""
   ].join(" ").toLowerCase();
@@ -1146,19 +1153,25 @@
     "quelle" haelt fest, wo er entstanden ist - nicht als Zierde,
     sondern damit im Verlauf steht, auf welchem Weg.
   */
+  /*
+    Der Zaehler erzeugt die TECHNISCHE Kennung, nicht eine
+    Kundennummer. Sie steht nirgends in der Oberflaeche: Eine Kennung,
+    die man dem Kunden nennt, waere eine Kundennummer - und die gibt
+    es im Betrieb nicht.
+  */
   let kundenZaehler = 9000;
   function kundeAnlegen(neu) {
     kundenZaehler += 1;
-    const nummer = "KD-" + kundenZaehler;
     const name = String(neu.name || "").trim();
     const k = {
       id: "K" + kundenZaehler,
-      name: name || nummer,
+      name: name || ("Ohne Namen " + kundenZaehler),
       art: neu.art === "firma" ? "firma" : "privat",
       vorname: "", nachname: "",
       firma: neu.art === "firma" ? name : "",
+      ansprechpartner: String(neu.ansprechpartner || "").trim(),
+      abteilung: String(neu.abteilung || "").trim(),
       telefon: String(neu.telefon || "").trim(),
-      kundennummer: nummer,
       email: String(neu.email || "").trim(),
       strasse: String(neu.strasse || "").trim(),
       hausnummer: String(neu.hausnummer || "").trim(),
@@ -1206,9 +1219,12 @@
     Die Fahrten eines Kunden aus dem GEMEINSAMEN Fahrtenbestand -
     nicht aus einer zweiten Liste am Kunden. "letzteFahrten" sind
     Vergangenheitsdaten der Probe; offene Fahrten stehen in fahrten[].
+
+    Verknuepft wird ueber die technische Kennung, NIE ueber den Namen.
+    Zwei Kunden koennen gleich heissen; eine Kennung ist eindeutig.
   */
   const fahrtenVonKunde = (k) => k
-    ? fahrten.filter((f) => f.kunde === k.name)
+    ? fahrten.filter((f) => f.kundeId === k.id)
     : [];
 
 
@@ -1281,17 +1297,22 @@
   ];
 
   /*
-    Rechnungen eines Kunden. Verknuepft wird ueber die Kundennummer,
-    sobald sie am Beleg steht - sonst ueber den Namen. Dass der Name
-    die schwaechere Verknuepfung ist, steht in der Akte.
+    Rechnungen eines Kunden. Verknuepft wird ausschliesslich ueber die
+    technische Kennung.
+
+    Vorher gab es einen Rueckfall auf den Namen. Der ist jetzt weg:
+    Ein Name ist keine Verknuepfung. Haengt ein Beleg an keiner
+    Kennung, soll er NICHT bei einem gleichnamigen Kunden auftauchen -
+    das waere eine erfundene Beziehung.
   */
   const rechnungenVonKunde = (k) => k
-    ? rechnungen.filter((r) => r.kundeId === k.id || r.kunde === k.name)
+    ? rechnungen.filter((r) => r.kundeId === k.id)
     : [];
 
-  /* Das Rewards-Konto eines Kunden, falls es eines gibt. */
+  /* Das Rewards-Konto eines Kunden, falls es eines gibt. Ebenfalls
+     nur ueber die Kennung. */
   const rewardsVonKunde = (k) => k
-    ? (rewards.konten.find((x) => x.kundeId === k.id || x.kunde === k.name) || null)
+    ? (rewards.konten.find((x) => x.kundeId === k.id) || null)
     : null;
 
   /* ---- Analyse. Ausdruecklich simulierte Werte. ---- */

@@ -154,9 +154,27 @@ console.log("\n── 2. Der Kundenbereich ist bedienbar ──");
   const nachOrt = await zeilen(page);
   pruefe(nachOrt.length < vorher && nachOrt.length > 0,
     `die Suche filtert nach der Anschrift (${nachOrt.length})`);
-  await page.fill("[data-kundensuche]", "KD-0003");
+  /*
+    GEAENDERTE ERWARTUNG.
+
+    Alt: Die Suche findet einen Kunden ueber die Kundennummer.
+
+    Weshalb das nicht mehr gilt: Es gibt keine Kundennummern mehr. Im
+    Betrieb werden keine verwendet; sie standen nur in den Testdaten.
+    Die technische Kennung ist ausdruecklich kein Suchbegriff - waere
+    sie einer, waere sie ueber die Suche doch wieder eine betriebliche
+    Nummer.
+
+    Neu: Gesucht wird nach der FIRMA. Zusaetzlich wird belegt, dass
+    die technische Kennung nichts findet.
+  */
+  await page.fill("[data-kundensuche]", "Testfirma");
   await page.waitForTimeout(500);
-  pruefe((await zeilen(page)).length === 1, "und nach der Kundennummer");
+  pruefe((await zeilen(page)).length >= 1, "und nach der Firma");
+  await page.fill("[data-kundensuche]", "K0003");
+  await page.waitForTimeout(500);
+  pruefe((await zeilen(page)).length === 0,
+    "die technische Kennung ist kein Suchbegriff");
   await page.fill("[data-kundensuche]", "Testnummer 0002");
   await page.waitForTimeout(500);
   pruefe((await zeilen(page)).length === 1, "und nach der Telefonnummer");
@@ -179,7 +197,9 @@ console.log("\n── 2. Der Kundenbereich ist bedienbar ──");
   /* Enter bei genau einem Treffer. */
   await page.evaluate(() => window.ProbeRahmen.dialogSchliessen(true));
   await page.waitForTimeout(300);
-  await page.fill("[data-kundensuche]", "KD-0002");
+  /* Ein eindeutiger Treffer, jetzt ueber die Telefonnummer statt
+     ueber die abgeschaffte Kundennummer. */
+  await page.fill("[data-kundensuche]", "Testnummer 0002");
   await page.waitForTimeout(450);
   await page.focus("[data-kundensuche]");
   await page.keyboard.press("Enter");
@@ -202,12 +222,14 @@ console.log("\n── 2. Der Kundenbereich ist bedienbar ──");
   await page.waitForTimeout(500);
   const leer = await kurz(page, ".haupt");
   pruefe(/Kein Kunde gefunden/.test(leer), "kein Treffer wird ehrlich gesagt");
-  pruefe(/Name, Telefonnummer, Kundennummer, Firma, Anschrift und E-Mail/.test(leer),
-    "und wo gesucht wurde");
+  pruefe(/Name, Telefonnummer, Firma, Ansprechpartner, Anschrift und E-Mail/.test(leer),
+    "und wo gesucht wurde — ohne Kundennummer, denn es gibt keine");
+  pruefe(!/Kundennummer/.test(leer),
+    "der Hinweis nennt keine Kundennummer");
   pruefe((await zeilen(page)).length === 0, "es wird keine Zeile gezeigt");
 
   /* Tastatur: die Zeile ist erreichbar. */
-  await page.fill("[data-kundensuche]", "KD-0001");
+  await page.fill("[data-kundensuche]", "Testnummer 0001");
   await page.waitForTimeout(450);
   await page.focus("[data-kundensuche]");
   await page.keyboard.press("Tab");
@@ -230,7 +252,14 @@ console.log("\n── 3. Was in der Kundenakte steht ──");
   const a = await kurz(page, ".dialog-kasten");
 
   for (const [was, muster] of [
-    ["Name", /Testkunde 03/], ["Kundennummer", /KD-0003/], ["Kennung", /K0003/],
+    /*
+      GEAENDERTE ERWARTUNG: Die Akte nannte Kundennummer UND Kennung.
+      Beides ist weg - eine Nummer, die in der Akte steht, wird dem
+      Kunden genannt und ist damit eine betriebliche Kundennummer,
+      auch wenn sie "Kennung" heisst. Stattdessen stehen die Angaben,
+      mit denen im Betrieb gearbeitet wird.
+    */
+    ["Name", /Testkunde 03/],
     ["Telefon", /Testnummer 0003/], ["E-Mail", /testkunde03@example\.invalid/],
     ["Anschrift", /Testallee 4a, 76756 Bellheim/],
     ["Kundenkonto", /Kundenkonto/], ["Fahrten", /Fahrten insgesamt/],
@@ -280,9 +309,16 @@ console.log("\n── 4. Neuanlage und ein gemeinsamer Bestand ──");
   await page.click('[data-tun="ak-kunde-weiter"]');
   await page.waitForTimeout(400);
   pruefe(Boolean(await page.$(".feldfehler")), "ohne Pflichtfelder geht es nicht weiter");
-  const f = await kurz(page, ".feldfehler");
+  /* Es gibt jetzt den zusammenfassenden Hinweis UND einen Fehler je
+     Feld. Gelesen werden alle, damit die Pruefung nicht davon
+     abhaengt, welcher zuerst im Baum steht. */
+  const f = (await page.$$eval(".feldfehler", (ns) => ns.map((x) => x.textContent))).join(" | ");
   pruefe(/Name oder Firma/.test(f) && /Telefonnummer/.test(f),
     `die Pflichtfelder sind benannt (${f})`);
+  pruefe(await page.getAttribute('[data-kn="name"]', "aria-invalid") === "true",
+    "und der Fehler steht am Feld selbst");
+  pruefe(await page.evaluate(() => document.activeElement && document.activeElement.id) === "kn-name",
+    "der Fokus springt auf das erste ungueltige Feld");
   pruefe(await page.evaluate(() => window.ProbeDaten.kunden.length) === vorher,
     "und es entsteht kein Kunde");
 
@@ -307,7 +343,11 @@ console.log("\n── 4. Neuanlage und ein gemeinsamer Bestand ──");
     "und die neue Akte öffnet sich direkt");
   const neu = await page.evaluate(() =>
     window.ProbeDaten.kunden.find((k) => k.name === "Testkunde 77"));
-  pruefe(Boolean(neu.kundennummer), `er hat eine Kundennummer (${neu.kundennummer})`);
+  /* GEAENDERTE ERWARTUNG: Es gibt keine Kundennummer mehr. Was es gibt
+     und geben muss, ist eine stabile technische Kennung - sie
+     verknuepft Fahrten, Rechnungen und Rewardskonto. */
+  pruefe(/^K[0-9]+$/.test(neu.id), `er hat eine technische Kennung (${neu.id})`);
+  pruefe(!("kundennummer" in neu), "und keine Kundennummer");
   pruefe(neu.quelle === "Kundenbereich", "die Herkunft ist festgehalten");
   pruefe(neu.verlauf.length === 1, "und ein Verlaufseintrag entsteht");
   pruefe(neu.nurProbe === true, "er ist als Probeeintrag gekennzeichnet");
@@ -575,7 +615,10 @@ console.log("\n── 7. Rewards vollständig und ehrlich ──");
   pruefe(!/\d/.test(platin.schwelle), `und trägt keine Zahl (${platin.schwelle})`);
 
   /* Konto oeffnen. */
-  await page.click('.aktenzeile[data-tun="ak-rewards-konto:Testkunde 03"]');
+  /* GEAENDERT: Das Rewardskonto wird ueber die KUNDENKENNUNG geoeffnet,
+     nicht ueber den Namen. Zwei Kunden koennen gleich heissen - dann
+     haette ein Klick das Konto des falschen Menschen geoeffnet. */
+  await page.click('.aktenzeile[data-tun="ak-rewards-konto:K0003"]');
   await page.waitForTimeout(600);
   pruefe(await dialogOffen(page), "das Rewards-Konto öffnet sich");
   const k = await kurz(page, ".dialog-kasten");
@@ -630,10 +673,16 @@ console.log("\n── 7. Rewards vollständig und ehrlich ──");
     "die Ausschlussregel selbst wird genannt");
   pruefe(/eingelöst/.test(k), "eingelöste Gutscheine sind erkennbar");
 
-  /* Korrektur nur mit Grund. */
-  pruefe(Boolean(await page.$('[data-tun="ak-rw-korrektur:Testkunde 03"]')),
+  /*
+    Korrektur nur mit Grund.
+
+    GEAENDERT: Die Korrektur haengt jetzt an der KUNDENKENNUNG statt am
+    Namen - zwei Kunden koennen gleich heissen, und dann haette die
+    Korrektur das Konto des falschen Menschen getroffen.
+  */
+  pruefe(Boolean(await page.$('[data-tun="ak-rw-korrektur:K0003"]')),
     "die Administration darf korrigieren");
-  await page.click('[data-tun="ak-rw-korrektur:Testkunde 03"]');
+  await page.click('[data-tun="ak-rw-korrektur:K0003"]');
   await page.waitForTimeout(500);
   await page.fill('[data-bk="wert"]', "-50");
   await page.click('[data-tun="ak-bk-weiter"]');
@@ -651,7 +700,9 @@ console.log("\n── 7. Rewards vollständig und ehrlich ──");
   pruefe(konto.punkte === 760, `die Punkte sind korrigiert (${konto.punkte})`);
   pruefe(/Manuelle Korrektur/.test(konto.verlauf[0].was), "mit eigenem Verlaufseintrag");
   pruefe(/Testgrund/.test(konto.verlauf[0].grund), "mit Grund");
-  pruefe(/Testleitung 01/.test(konto.verlauf[0].wer), "und handelnder Person");
+  /* Gegen das angemeldete Konto, nicht gegen einen festen Namen. */
+  const meinKonto2 = await page.evaluate(() => window.ProbeRahmen.benutzer());
+  pruefe(konto.verlauf[0].wer.includes(meinKonto2.name), "und handelnder Person");
   pruefe(await page.evaluate(() =>
     Object.isFrozen(window.ProbeDaten.rewards.konten.find((x) => x.kunde === "Testkunde 03").verlauf[0])),
     "der Verlaufseintrag ist unveränderlich");
@@ -664,9 +715,12 @@ console.log("\n── 7. Rewards vollständig und ehrlich ──");
   pruefe(!sichtbar.includes("rewards"), "die Disposition sieht Rewards nicht");
   const vorher = await d.page.evaluate(() =>
     window.ProbeDaten.rewards.konten.find((x) => x.kunde === "Testkunde 01").punkte);
+  /* Mit der RICHTIGEN Kennung aufrufen - sonst wuerde die Pruefung auch
+     bestehen, wenn die Rechte gar nicht geprueft werden, weil der
+     Datensatz schon nicht gefunden wird. */
   await d.page.evaluate(() => {
-    window.ProbeAkten.tun("ak-rewards-konto", "Testkunde 01");
-    window.ProbeAkten.tun("ak-rw-korrektur", "Testkunde 01");
+    window.ProbeAkten.tun("ak-rewards-konto", "K0001");
+    window.ProbeAkten.tun("ak-rw-korrektur", "K0001");
   });
   await d.page.waitForTimeout(400);
   pruefe(!(await dialogOffen(d.page)), "und auch direkt kein Konto");

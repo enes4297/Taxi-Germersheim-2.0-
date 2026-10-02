@@ -172,7 +172,30 @@ console.log("\n── 3. Die Navigation richtet sich nach der Rolle ──");
 
   await rolleSetzen(page, "admin");
   nav = await navTexte(page);
-  pruefe(nav.length === 12, `Administration sieht alle zwoelf Bereiche (${nav.length})`);
+  /*
+    GEAENDERTE ERWARTUNG.
+
+    Alt: Die Administration sieht zwoelf Bereiche.
+
+    Weshalb das nicht mehr gilt: Der Geschaeftsfuehrer hat einen
+    dreizehnten verlangt - "Einstellungen" fuer Rollen und Rechte,
+    ausschliesslich fuer die Administration. Eine feste Zahl waere
+    hier ohnehin eine schwache Erwartung: Sie haelt nur fest, WIE
+    VIELE Bereiche es gibt, nicht WELCHE.
+
+    Neu und strenger: Geprueft wird die MENGE der Bereiche, nicht die
+    Zahl - und zusaetzlich, dass der neue Bereich an das Recht
+    security.write gebunden ist und keine andere Rolle ihn sieht.
+  */
+  const ERWARTET_ADMIN = ["Übersicht", "Fahrten", "Planung", "Fahrer & Fahrzeuge",
+    "Kalender", "Meldungen", "Kunden", "Personal", "Lohn", "Finanzen",
+    "Rewards", "Analyse", "Einstellungen"];
+  pruefe(ERWARTET_ADMIN.every((x) => nav.includes(x)),
+    `die Administration sieht alle erwarteten Bereiche (${nav.length}): ${nav.join(", ")}`);
+  pruefe(nav.length === ERWARTET_ADMIN.length,
+    `und keinen darueber hinaus (${nav.length} von ${ERWARTET_ADMIN.length})`);
+  pruefe(nav.includes("Einstellungen"),
+    "darunter der neue Bereich fuer Rollen und Rechte");
 
   await rolleSetzen(page, "personal");
   nav = await navTexte(page);

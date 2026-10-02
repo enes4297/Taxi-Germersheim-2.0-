@@ -454,7 +454,9 @@ console.log("\n── 6. Rollen und Datenschutz ──");
   await uebernehmen(a.page, "personal");
   pruefe(await kannAbschliessen(a.page), "mit Einsicht und Ergebnis darf sie");
   const pa = await protokoll(a.page);
-  pruefe(/Testleitung 01/.test(pa.find((x) => /angesehen/.test(x.was)).wer),
+  /* Gegen das angemeldete Konto, nicht gegen einen festen Namen. */
+  const meinKonto3 = await a.page.evaluate(() => window.ProbeRahmen.benutzer());
+  pruefe(pa.find((x) => /angesehen/.test(x.was)).wer.includes(meinKonto3.name),
     "sie handelt dabei unter eigenem Namen");
   await a.ctx.close();
 }

@@ -1645,3 +1645,119 @@ textarea {
   .balkenzeile { grid-template-columns: 1fr auto; }
   .balkenstab { grid-column: 1 / -1; }
 }
+
+/* ============================================================
+   Kontrolliertes Datumsfeld
+   ============================================================
+   Ersetzt <input type="date"> portalweit. Grund steht in
+   probe-datumsfeld.js: Das eingebaute Feld hat drei Abschnitte und
+   springt beim Tippen des Jahres zurueck zum Tag. Dasselbe Muster wie
+   beim Zeitfeld. */
+.datumsfeld {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.datumsfeld input {
+  width: 128px;
+  min-width: 0;
+  /* Mindestens 16px: darunter zoomt iOS beim Fokus in das Feld hinein
+     und verschiebt die ganze Ansicht. */
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  text-align: center;
+  text-transform: none;
+}
+.datumsfeld.hat-fehler input {
+  border-color: var(--rot);
+  border-width: 2px;
+}
+.datumsfehler {
+  max-width: 240px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--rot);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+}
+/* Ein Datumsfeld innerhalb einer Beschriftung erbt deren
+   Grossschreibung nicht - die Ziffern sollen normal stehen. */
+.tagfeld .datumsfeld input { text-transform: none; }
+
+@media (max-width: 560px) {
+  .datumsfeld { width: 100%; }
+  .datumsfeld input { width: 100%; }
+}
+
+/* Die kleine Erläuterung unter einem Wert. Sie sagt, auf welchen Tag
+   oder welche Quelle sich der Wert bezieht - genau das fehlte in der
+   Fahrzeugakte und erzeugte dort einen Widerspruch. */
+.feldnotiz {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--gedaempft);
+  font-weight: 400;
+}
+
+/* ============================================================
+   Kurze Rückmeldung mit Rückgängig
+   ============================================================
+   Nach dem Entfernen aus der Erledigt-Liste. Sie verschwindet NICHT
+   von selbst: Eine Meldung, die nach fuenf Sekunden weg ist, hat
+   jemand, der langsamer liest, nie gesehen. */
+.rueckmeldung {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+.rueckmeldung > div:first-child { display: grid; gap: 3px; min-width: 0; }
+.rueckmeldung strong { font-size: 15px; }
+.rueckmeldung span { font-size: 13px; line-height: 1.45; color: var(--gedaempft); }
+.rueckmeldung-aktionen { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 560px) {
+  .rueckmeldung { flex-direction: column; align-items: stretch; }
+  .rueckmeldung-aktionen .knopf { flex: 1 1 auto; }
+}
+
+/* ============================================================
+   Einstellungen: Rechteliste
+   ============================================================
+   Eine Zeile je Fähigkeit. Was aus der Rolle kommt, ist gesperrt und
+   abgesetzt - es soll sichtbar sein, dass es nicht hier entschieden
+   wird, sondern an der Rolle. */
+.rechteliste { display: grid; gap: 6px; margin-top: 8px; }
+.rechtezeile {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  cursor: pointer;
+  font-size: 15px;
+}
+.rechtezeile:hover { background: var(--flaeche-2); }
+.rechtezeile input { margin-top: 2px; flex: 0 0 auto; width: 18px; height: 18px; }
+.rechtezeile > span { display: grid; gap: 2px; min-width: 0; }
+.rechtezeile strong { font-weight: 600; }
+.rechtezeile.ist-aus-rolle {
+  cursor: default;
+  border-left: 3px solid var(--gedaempft);
+  opacity: 0.75;
+}
+.rechtezeile.ist-aus-rolle:hover { background: var(--grund); }

@@ -35,7 +35,11 @@
     abholung: "",
     abholungEigen: false,
     ziel: "",
-    datum: "",
+    datum: D.alsIso(D.heute),
+    datumfehler: "",
+    /* Nur bei einem Firmenkunden gefuellt: wer tatsaechlich faehrt.
+       Steht an der Fahrt, nicht am Kunden. */
+    fahrgast: "",
     zeit: "",
     zeitfehler: "",
     leistung: "",
@@ -186,7 +190,7 @@
         <button class="treffer ${i === stand.markiert ? "ist-markiert" : ""}" type="button"
           role="option" aria-selected="${i === stand.markiert}" data-tun="fa-kunde:${h(k.id)}">
           <strong>${h(k.name)}</strong>
-          <span>${h(k.kundennummer)} · ${h(k.telefon)} · ${h(D.standardadresse(k))}</span>
+          <span>${h(k.telefon)} · ${h(D.standardadresse(k))}${k.art === "firma" && k.ansprechpartner ? " · " + h(k.ansprechpartner) : ""}</span>
         </button>`).join("")}
     </div>${mehr}`;
   }
@@ -201,7 +205,7 @@
           ${D.letzteKunden.map((k) => `
             <button class="treffer" type="button" data-tun="fa-kunde:${h(k.id)}">
               <strong>${h(k.name)}</strong>
-              <span>${h(k.kundennummer)} · ${h(k.telefon)}</span>
+              <span>${h(k.telefon)} · ${h(D.standardadresse(k))}</span>
             </button>`).join("")}
         </div>`;
     }
@@ -250,7 +254,7 @@
       ? `<div class="gewaehlt-kasten">
           <div>
             <strong>${h(gewaehlt.name)}</strong>
-            <span>${h(gewaehlt.kundennummer)} · ${h(gewaehlt.telefon)}</span>
+            <span>${h(gewaehlt.telefon)}${gewaehlt.art === "firma" ? " · Firmenkunde" : ""}</span>
             <span>${h(D.standardadresse(gewaehlt))}</span>
           </div>
           <button class="knopf klein" type="button" data-tun="fa-kunde-loesen">Anderen wählen</button>
@@ -266,6 +270,18 @@
       return `<div class="dialog-schritt">
         <h3>Für wen ist die Fahrt?</h3>
         ${gewaehltMarkup}
+        ${gewaehlt && gewaehlt.art === "firma" ? `
+          <h3 style="margin-top:16px">Wer wird befördert?</h3>
+          <p class="schritt-hinweis">Auftraggeber ist <strong>${h(gewaehlt.firma || gewaehlt.name)}</strong>.
+            Die Fahrt bleibt mit diesem Firmenkunden verknüpft. Hier steht nur, wer
+            tatsächlich mitfährt oder vor Ort zuständig ist — das wechselt von Fahrt zu Fahrt.</p>
+          <label>Fahrgast / Ansprechpartner
+            <input type="text" data-feld="fahrgast" value="${h(stand.fahrgast)}"
+              placeholder="${h(gewaehlt.ansprechpartner || "Testfahrgast Werk 2")}"
+              autocomplete="off"></label>
+          <p class="schritt-hinweis">Keine Angabe ist erlaubt — dann fährt niemand
+            namentlich mit, und es wird nichts erfunden. <strong>Keine</strong> Gesundheits-
+            oder Diagnoseangabe in dieses Feld.</p>` : ""}
       </div>`;
     }
 
@@ -273,7 +289,7 @@
       <h3>Für wen ist die Fahrt?</h3>
       <label>Suche
         <input type="search" data-feld="suche" data-suchfeld value="${h(stand.suche)}"
-          placeholder="Name, Telefonnummer oder Kundennummer suchen" autocomplete="off">
+          placeholder="Name, Telefonnummer, Firma oder Anschrift suchen" autocomplete="off">
       </label>
       <div data-trefferbereich>${trefferbereich()}</div>
       <div class="wahlraster" style="margin-top:14px">
@@ -351,8 +367,10 @@
     return `<div class="dialog-schritt">
       <h3>Wann?</h3>
       <div class="feldpaar">
-        <label>Datum<input type="date" data-feld="datum" data-weiter
-          value="${h(stand.datum || D.alsIso(D.heute))}"></label>
+        <label>Datum
+          ${window.ProbeDatum.markup({ kennung: "fahrt", teil: "datum",
+            wert: stand.datum, beschriftung: "Datum der Fahrt",
+            pflicht: true, fehler: stand.datumfehler })}</label>
         <label>Uhrzeit
           ${window.ProbeZeit.markup({ kennung: "fahrt", teil: "zeit", wert: stand.zeit,
             beschriftung: "Uhrzeit der Fahrt", fehler: stand.zeitfehler })}</label>
@@ -503,9 +521,12 @@
     return `<div class="dialog-schritt">
       <h3>Bitte prüfen</h3>
       ${abschnitt("Kunde", 1, [
-        ["Name", kundeName],
+        [k && k.art === "firma" ? "Auftraggeber (Firma)" : "Name", kundeName],
+        ...(k && k.art === "firma" ? [
+          ["Fahrgast / Ansprechpartner", stand.fahrgast.trim() || "nicht angegeben"]
+        ] : []),
         ["Telefon", telefon],
-        ["Kundennummer", k ? k.kundennummer : ""],
+
         ["Hinweis zum Kunden", k ? k.hinweis : ""],
         ["Kundenbestand", wirdAngelegt
           ? "wird mit dem Speichern neu angelegt"
@@ -700,7 +721,9 @@
         quelle: "Fahrtaufnahme"
       });
       D.protokollieren({
-        betrifft: angelegt.name + " (" + angelegt.kundennummer + ")",
+        /* Die technische Kennung - eindeutig, aber keine Kundennummer
+           fuer Menschen. */
+        betrifft: angelegt.name + " (" + angelegt.id + ")",
         was: "Kunde angelegt",
         vorher: "nicht im Bestand",
         nachher: "angelegt über die Fahrtaufnahme", grund: ""
@@ -722,6 +745,10 @@
       /* Die Kennung, nicht nur der Name - ein Name ist keine
          Verknuepfung. */
       kundeId: k ? k.id : (angelegt ? angelegt.id : ""),
+      /* Nur bei einem Firmenkunden gefuellt. Die Fahrt bleibt am
+         Firmenkunden haengen - der Fahrgast ist eine Zusatzangabe,
+         keine zweite Verknuepfung. */
+      fahrgast: (k && k.art === "firma") ? stand.fahrgast.trim() : "",
       von: stand.abholung,
       nach: stand.ziel,
       fahrerId: null,
@@ -737,7 +764,7 @@
        normal geschlossen werden. Ohne diese Zeile wuerde die
        Sicherheitsabfrage des Assistenten dort weiterwirken. */
     R.dialogSchutzSetzen(null);
-    const gespeichert = { nummer, kundeName, angelegt: angelegt ? angelegt.kundennummer : "" };
+    const gespeichert = { nummer, kundeName, angelegt: angelegt ? angelegt.name : "" };
     stand = leererStand();
 
     R.dialogOeffnen(`
@@ -989,10 +1016,48 @@
     zeichnen(false);
   }
 
+  /*
+    Das Datum der Fahrt aus dem gemeinsamen Datumsmodul.
+
+    Vorher stand hier ein <input type="date"> mit data-feld="datum",
+    dessen Wert werteLesen() beilaeufig mitnahm. Das Feld sprang beim
+    Tippen des Jahres zurueck zum Tag - der gemessene Mangel.
+
+    Ein Datum ist hier PFLICHT: Eine Fahrt ohne Tag ist nicht
+    planbar. Leer ist deshalb - anders als beim Archivfilter - ein
+    Fehler.
+  */
+  function datum(kennung, teil, ergebnis) {
+    if (kennung !== "fahrt" || teil !== "datum") return false;
+    if (ergebnis.leer) {
+      stand.datumfehler = "Bitte ein Datum eintragen, zum Beispiel 02.10.2026.";
+      stand.fehler = stand.datumfehler;
+      zeichnen(false);
+      return true;
+    }
+    if (!ergebnis.gueltig) {
+      stand.datumfehler = ergebnis.fehler;
+      stand.fehler = ergebnis.fehler;
+      zeichnen(false);
+      return true;
+    }
+    stand.datumfehler = "";
+    stand.fehler = "";
+    stand.datum = ergebnis.iso;
+    stand.beruehrt = true;
+    zeichnen(false);
+    return true;
+  }
+
+  /* Eingabetaste im Datumsfeld: nur weiter, wenn der Schritt gueltig ist. */
+  function datumWeiter() {
+    if (stand.schritt === 4 && !stand.datumfehler) weiter();
+  }
+
   /* Eingabetaste im Zeitfeld: nur weiter, wenn der Schritt gueltig ist. */
   function zeitWeiter() {
     if (stand.schritt === 4) weiter();
   }
 
-  window.ProbeFahrtassistent = { starten, tun, taste, eingabe, zeit, zeitWeiter };
+  window.ProbeFahrtassistent = { starten, tun, taste, eingabe, zeit, zeitWeiter, datum, datumWeiter };
 })();

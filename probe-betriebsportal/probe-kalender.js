@@ -35,6 +35,10 @@
   const stand = {
     sicht: "monat",          /* tag | woche | monat */
     datum: "",               /* ISO des Bezugstages */
+    /* Fehlertext des Datumsfeldes. Er steht hier von Anfang an - ein
+       Feld, das erst spaeter dazukommt, laesst zwei Zustaende
+       unterschiedlich aussehen, die gleich sind. */
+    datumFehler: "",
     arten: {                 /* reine Anzeigefilter */
       fahrt: true, schicht: true, konflikt: true, abwesenheit: true,
       fahrzeug: true, dokument: true
@@ -207,8 +211,13 @@
             titel: f.name + " · " + f.kennzeichen,
             zusatz: text + " · " + D.FAHRZEUG_ZUSTAENDE[f.zustand]
               + (f.sperrgrund ? " · " + f.sperrgrund : ""),
-            /* Stabile Kennung, nicht das Kennzeichen. */
-            ziel: f.id ? "team:fahrzeug-" + f.id + "-" + feld : "",
+            /*
+              Stabile Kennung, nicht das Kennzeichen - und der
+              KALENDERTAG dazu. Ohne ihn zeigte die Fahrzeugakte
+              Angaben, die zu einem anderen Tag gehoerten, und
+              widersprach sich selbst.
+            */
+            ziel: f.id ? "team:fahrzeug-" + f.id + "-" + feld + "-" + isoTag : "",
             leerhinweis: f.id ? "" : "Zu diesem Termin fehlt die Fahrzeugkennung."
           });
         }
@@ -249,6 +258,9 @@
     { id: "dokument",    name: "Dokumentfristen", braucht: "personnel.read" }
   ];
 
+  /* Sind alle sichtbaren Kategorien eingeschaltet? */
+  const alleAn = (sichtbar) => sichtbar.every((a) => Boolean(stand.arten[a.id]));
+
   function leiste() {
     const b = bezug();
     const sichtbar = ARTEN.filter((a) => R.darf(a.braucht));
@@ -265,13 +277,24 @@
         <button class="knopf klein" type="button" data-tun="kal-vor"
           aria-label="Nächster Zeitraum">Vor ›</button>
         <label class="tagfeld">Datum
-          <input type="date" data-kal-datum value="${h(b)}"></label>
+          ${window.ProbeDatum.markup({ kennung: "kalender", teil: "tag",
+            wert: b, beschriftung: "Angezeigtes Datum",
+            fehler: stand.datumFehler })}</label>
       </div>
       ${sichtbar.length ? `<div class="filterzeile" role="group" aria-label="Anzeige einschränken">
-        ${sichtbar.map((a) => `<button class="filterchip" type="button"
-          data-tun="kal-art:${h(a.id)}" aria-pressed="${stand.arten[a.id]}">
-          ${h(a.name)}</button>`).join("")}
+        ${sichtbar.map((a) => {
+          const an = Boolean(stand.arten[a.id]);
+          const allein = an && sichtbar.every((x) => Boolean(stand.arten[x.id]) === (x.id === a.id));
+          return `<button class="filterchip" type="button"
+            data-tun="kal-art:${h(a.id)}" aria-pressed="${an}"
+            aria-label="${h(a.name)} — ${allein ? "zeigt gerade nur diese Kategorie, Klick zeigt wieder alle" : "Klick zeigt nur diese Kategorie"}">
+            ${h(a.name)}</button>`;
+        }).join("")}
       </div>` : ""}
+      ${sichtbar.length ? `<p class="schritt-hinweis">${alleAn(sichtbar)
+        ? "Alle Kategorien sind sichtbar. Ein Klick auf eine Kategorie zeigt nur diese."
+        : `Eingeschränkt auf <strong>${h(sichtbar.filter((a) => stand.arten[a.id]).map((a) => a.name).join(", "))}</strong>.
+           Noch ein Klick auf dieselbe Kategorie zeigt wieder alle.`}</p>` : ""}
       <p class="schritt-hinweis">Diese Filter ändern nur die Anzeige. Es wird nichts
         gespeichert und nichts entschieden. Was Sie hier sehen, hängt an Ihrer Rolle.</p>`;
   }
@@ -414,11 +437,34 @@
         stand.sicht = "tag";
         R.zeichnen();
         return;
-      case "kal-art":
-        /* Reiner Anzeigefilter - er veraendert keine Daten. */
-        stand.arten[wert] = !stand.arten[wert];
+      case "kal-art": {
+        /*
+          Reiner Anzeigefilter - er veraendert keine Daten.
+
+          GEMESSENER AUSGANGSFEHLER: Jeder Klick schaltete GENAU EINE
+          Kategorie um. Wer nur die Abwesenheiten sehen wollte, musste
+          fuenf andere Filter einzeln ausschalten - sechs Klicks fuer
+          einen Wunsch.
+
+          Jetzt: Ein Klick waehlt diese Kategorie ALLEIN aus. Ein
+          zweiter Klick auf dieselbe Kategorie fuehrt zu "alle"
+          zurueck. Damit sind beide haeufigen Absichten je ein Klick,
+          und man kann sich nicht aus Versehen in einen Zustand
+          klicken, in dem nichts mehr zu sehen ist.
+
+          Geprueft wird gegen die SICHTBAREN Kategorien, nicht gegen
+          alle: Wer die Dokumentfristen nicht sehen darf, soll mit
+          einem zweiten Klick nicht in einen Zustand geraten, in dem
+          eine unsichtbare Kategorie eingeschaltet ist.
+        */
+        if (!ARTEN.some((a) => a.id === wert)) return;
+        const sichtbar = ARTEN.filter((a) => R.darf(a.braucht)).map((a) => a.id);
+        if (!sichtbar.includes(wert)) return;
+        const nurDieser = sichtbar.every((id) => stand.arten[id] === (id === wert));
+        for (const id of sichtbar) stand.arten[id] = nurDieser ? true : id === wert;
         R.zeichnen();
         return;
+      }
       case "kal-ziel": {
         const [ziel, tag] = wert.split("|");
         /* Das Ziel darf einen Zusatz tragen - "fahrten:offen" fuehrt
@@ -433,21 +479,65 @@
             window.ProbeBereiche.sprungziel(bereich, zusatz);
           }
         }
-        R.geheZu(bereich);
+        /*
+          Die Herkunft festhalten, BEVOR der Bereich wechselt.
+
+          Gemessener Fehler: Vorher stand hier nur R.geheZu(bereich).
+          Der Vorgang war der richtige, aber beim Schliessen landete
+          man in "Meldungen" beziehungsweise "Fahrer & Fahrzeuge".
+
+          Festgehalten wird alles, was den Kalenderzustand ausmacht:
+          Ansicht, Datum, Filter und Position. Die Filter werden
+          KOPIERT - ein Verweis auf stand.arten wuerde spaetere
+          Aenderungen mitnehmen und waere damit kein Zustand, sondern
+          nur ein Zeiger.
+        */
+        const sicherung = {
+          sicht: stand.sicht,
+          datum: stand.datum,
+          arten: Object.assign({}, stand.arten),
+          datumFehler: stand.datumFehler || ""
+        };
+        const lage = R.scrollJetzt();
+        R.geheZuMitHerkunft(bereich, {
+          bereich: "kalender",
+          name: "Kalender",
+          scroll: lage.scroll,
+          scrollHaupt: lage.scrollHaupt,
+          wiederherstellen() {
+            stand.sicht = sicherung.sicht;
+            stand.datum = sicherung.datum;
+            stand.arten = Object.assign({}, sicherung.arten);
+            stand.datumFehler = sicherung.datumFehler;
+          }
+        });
         return;
       }
       default:
     }
   }
 
-  function geaendert(feld) {
-    if (feld.matches("[data-kal-datum]") && feld.value) {
-      stand.datum = feld.value;
-      R.zeichnen();
-      return true;
-    }
+  function geaendert() {
+    /* Dieses Modul hat nur ein Eingabefeld, und das ist das Datum.
+       Es laeuft ueber das gemeinsame Datumsmodul - siehe datum(). */
     return false;
   }
 
-  window.ProbeKalender = { zeichne, tun, geaendert, anmelden, stand };
+  /*
+    Das Datum des Kalenders aus dem gemeinsamen Datumsmodul.
+    Gibt true zurueck, wenn die Kennung diesem Modul gehoert - sonst
+    darf die naechste Stelle gefragt werden.
+  */
+  function datum(kennung, teil, ergebnis) {
+    if (kennung !== "kalender") return false;
+    stand.datumFehler = ergebnis.fehler;
+    /* Ein leeres Feld bedeutet nicht "kein Kalender" - der Kalender
+       braucht immer einen Tag. Das zuletzt gueltige Datum bleibt
+       deshalb stehen. */
+    if (ergebnis.gueltig) stand.datum = ergebnis.iso;
+    R.zeichnen();
+    return true;
+  }
+
+  window.ProbeKalender = { zeichne, tun, geaendert, datum, anmelden, stand };
 })();

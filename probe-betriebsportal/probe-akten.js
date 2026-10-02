@@ -118,9 +118,21 @@
     return dialogKopf(k.name, k.art === "firma" ? "Firmenkunde" : "Privatkunde") + `
       <div class="dialog-rumpf">
         ${zeileDl([
-          ["Kundennummer", h(k.kundennummer)],
-          ["Kennung", h(k.id)],
+          /*
+            KEINE Kundennummer und KEINE Kennung.
+
+            Im Betrieb wird mit Namen, Telefonnummer und Anschrift
+            gearbeitet. Eine Nummer, die hier steht, wird genannt und
+            ist damit eine betriebliche Kundennummer - auch wenn sie
+            "Kennung" heisst. Die technische Kennung bleibt intern und
+            verknuepft Fahrten, Rechnungen und Rewardskonto.
+          */
           [k.art === "firma" ? "Firma" : "Name", h(k.firma || k.name)],
+          ...(k.art === "firma" ? [
+            ["Ansprechpartner", k.ansprechpartner
+              ? h(k.ansprechpartner) : "<em>nicht hinterlegt</em>"],
+            ["Abteilung", k.abteilung ? h(k.abteilung) : "<em>nicht hinterlegt</em>"]
+          ] : []),
           ["Telefon", h(k.telefon)],
           ["E-Mail", k.email ? h(k.email) : "<em>nicht hinterlegt</em>"],
           ["Anschrift", h(anschrift)],
@@ -129,6 +141,11 @@
           ["Fahrten insgesamt", h(k.fahrten)]
         ])}
 
+        ${k.art === "firma" ? `<p class="schritt-hinweis">
+          <strong>Auftraggeber ist die Firma.</strong> Wer tatsächlich befördert wird,
+          steht an der <strong>einzelnen Fahrt</strong> im Feld „Fahrgast / Ansprechpartner“ —
+          nicht hier. Beides zu vermischen würde eine Fahrt der falschen Person
+          zuordnen.</p>` : ""}
         ${k.hinweis ? `<div class="dialog-schritt">
           <h3>Betrieblicher Hinweis</h3>
           <p class="schritt-hinweis">${h(k.hinweis)}</p>
@@ -209,10 +226,44 @@
   /* ============================================================
      2. Kundenneuanlage - zweistufig
      ============================================================ */
+  /*
+    Pflichtfelder der Kundenanlage.
+
+    Verbessert nach dem Rundgang: Es gibt weiterhin den
+    zusammenfassenden Hinweis oben, aber zusaetzlich steht der Fehler
+    DIREKT am betroffenen Feld, und der Fokus springt auf das erste
+    ungueltige. Vorher musste man aus "Bitte ausfuellen: Telefonnummer"
+    selbst heraussuchen, welches Feld gemeint war.
+  */
   const PFLICHT = [
     ["name", "Name oder Firma"],
     ["telefon", "Telefonnummer"]
   ];
+
+  /* Der Fehler eines einzelnen Feldes - leer, solange nichts geprueft
+     wurde. Erst "Weiter" prueft; wer noch tippt, soll nicht
+     angemeckert werden. */
+  const feldFehler = (feld) => {
+    const s = stand.kundeNeu;
+    if (!s || !s.geprueft) return "";
+    const pflicht = PFLICHT.find(([f]) => f === feld);
+    if (!pflicht) return "";
+    return String(s.felder[feld] || "").trim()
+      ? "" : "Dieses Feld ist Pflicht.";
+  };
+
+  const feldMitFehler = (feld, beschriftung, platzhalter, art) => {
+    const s = stand.kundeNeu;
+    const fehler = feldFehler(feld);
+    const id = "kn-" + feld;
+    return `<label class="${fehler ? "hat-fehler" : ""}">${beschriftung}
+      <input type="${art || "text"}" id="${id}" data-kn="${feld}"
+        value="${h(s.felder[feld])}" placeholder="${h(platzhalter || "")}"
+        ${fehler ? `aria-invalid="true" aria-describedby="${id}-fehler"` : ""}
+        autocomplete="off">
+      ${fehler ? `<span class="feldfehler" id="${id}-fehler" role="alert">${h(fehler)}</span>` : ""}
+    </label>`;
+  };
 
   function kundeNeuDialog() {
     const s = stand.kundeNeu;
@@ -227,6 +278,11 @@
           ${zeileDl([
             ["Art", f.art === "firma" ? "Firmenkunde" : "Privatkunde"],
             [f.art === "firma" ? "Firma" : "Name", h(f.name)],
+            ...(f.art === "firma" ? [
+              ["Ansprechpartner", f.ansprechpartner
+                ? h(f.ansprechpartner) : "<em>nicht angegeben</em>"],
+              ["Abteilung", f.abteilung ? h(f.abteilung) : "<em>nicht angegeben</em>"]
+            ] : []),
             ["Telefon", h(f.telefon)],
             ["E-Mail", f.email ? h(f.email) : "<em>nicht angegeben</em>"],
             ["Anschrift", h(anschriftText(f)) || "<em>nicht angegeben</em>"],
@@ -259,17 +315,23 @@
         </div>
         <div class="dialog-schritt">
           <h3>Pflichtangaben</h3>
-          <label>${f.art === "firma" ? "Firma" : "Name"} <span class="band-warnung">Pflichtfeld</span>
-            <input type="text" data-kn="name" value="${h(f.name)}"
-              placeholder="${f.art === "firma" ? "Testfirma 05 GmbH" : "Testkunde 07"}"></label>
-          <label>Telefonnummer <span class="band-warnung">Pflichtfeld</span>
-            <input type="text" data-kn="telefon" value="${h(f.telefon)}"
-              placeholder="Testnummer 0007"></label>
+          ${feldMitFehler("name",
+            (f.art === "firma" ? "Firma" : "Name") + ` <span class="band-warnung">Pflichtfeld</span>`,
+            f.art === "firma" ? "Testfirma 05 GmbH" : "Testkunde 07")}
+          ${feldMitFehler("telefon",
+            `Telefonnummer <span class="band-warnung">Pflichtfeld</span>`,
+            "Testnummer 0007", "tel")}
         </div>
+        ${f.art === "firma" ? `<div class="dialog-schritt">
+          <h3>Beim Auftraggeber</h3>
+          <p class="schritt-hinweis">Wer bei der Firma zuständig ist. <strong>Nicht</strong>
+            der Fahrgast — der wird an der einzelnen Fahrt eingetragen.</p>
+          ${feldMitFehler("ansprechpartner", "Ansprechpartner (optional)", "Testleitung Fuhrpark")}
+          ${feldMitFehler("abteilung", "Abteilung (optional)", "Verwaltung")}
+        </div>` : ""}
         <div class="dialog-schritt">
           <h3>Weitere Angaben</h3>
-          <label>E-Mail <input type="text" data-kn="email" value="${h(f.email)}"
-            placeholder="optional"></label>
+          ${feldMitFehler("email", "E-Mail", "optional")}
           <div class="feldpaar">
             <label>Straße <input type="text" data-kn="strasse" value="${h(f.strasse)}"></label>
             <label>Hausnummer <input type="text" data-kn="hausnummer" value="${h(f.hausnummer)}"></label>
@@ -397,10 +459,52 @@
   /* ============================================================
      4. Rechnungsakte
      ============================================================ */
+  /*
+    Was an einer Rechnung noch moeglich ist.
+
+    GEMESSENER AUSGANGSFEHLER: Bei RE-2026-0001 mit Zustand "bezahlt"
+    waren "Zahlung erfassen" und "Mahnung vorbereiten" aktiv. Beides
+    ist fachlich falsch: Eine bezahlte Rechnung nimmt keine weitere
+    normale Zahlung, und gemahnt wird nur, was offen ist.
+
+    URSACHE: Die Knoepfe hingen allein an finance.write. Der ZUSTAND
+    der Rechnung kam in der Entscheidung nicht vor - weder in der
+    Anzeige noch in der Aktion.
+
+    Die Regel steht jetzt hier, an einer Stelle, und wird von der
+    Anzeige UND von der Aktion gefragt. Ein direkter Aufruf von
+    ak-zahlung auf eine bezahlte Rechnung bleibt deshalb wirkungslos.
+
+    NICHT entschieden und deshalb nicht gebaut: Rueckzahlung,
+    Ueberzahlung und Storno. Dafuer gibt es keine Geschaeftsregel -
+    sie wird auch nicht erfunden.
+  */
+  const istBezahlt = (r) => Boolean(r) && r.zustand === "bezahlt";
+
+  function rechnungSperre(r, art) {
+    if (!r) return "Diese Rechnung gibt es nicht.";
+    if (art === "zahlung" && istBezahlt(r)) {
+      return "Diese Rechnung ist vollständig bezahlt. Eine weitere Zahlung "
+        + "wird nicht erfasst. Rückzahlung und Überzahlung sind noch nicht "
+        + "festgelegt — bitte zuerst entscheiden lassen.";
+    }
+    if (art === "mahnung" && istBezahlt(r)) {
+      return "Diese Rechnung ist vollständig bezahlt. Gemahnt wird nur, was "
+        + "offen ist.";
+    }
+    if (art === "mahnung" && r.zustand === "Entwurf") {
+      return "Diese Rechnung ist noch ein Entwurf und nicht gestellt. "
+        + "Gemahnt wird erst, was hinausgegangen ist.";
+    }
+    return "";
+  }
+
   function rechnungsakte(nr) {
     const r = D.rechnungen.find((x) => x.nr === nr);
     if (!r) return "";
     const darfBuchen = R.darf("finance.write");
+    const sperreZahlung = rechnungSperre(r, "zahlung");
+    const sperreMahnung = rechnungSperre(r, "mahnung");
     const fahrten = (r.fahrten || []);
     const posten = (r.posten || []);
     const zahlungen = (r.zahlungen || []);
@@ -448,13 +552,27 @@
             "Es ist keine Datei hinterlegt und keine Storage-API verfügbar. Im Portal würde sie über eine kurz gültige, signierte Adresse geöffnet — wie im Lohnbereich. Kein Herunterladen auf Vorrat, kein Anhang per E-Mail.")}
         </div>
 
+        ${(sperreZahlung || sperreMahnung) && darfBuchen ? `<div class="dialog-schritt">
+          <h3>Was hier nicht mehr geht</h3>
+          <ul class="konfliktliste technisch">
+            ${sperreZahlung ? `<li><strong>Zahlung erfassen</strong>
+              <span>${h(sperreZahlung)}</span></li>` : ""}
+            ${sperreMahnung ? `<li><strong>Mahnung vorbereiten</strong>
+              <span>${h(sperreMahnung)}</span></li>` : ""}
+          </ul>
+          <p class="schritt-hinweis">Eine <strong>Korrektur als neue Version</strong> bleibt
+            möglich — sie überschreibt nichts, sondern stellt richtig.</p>
+        </div>` : ""}
+
         ${verlaufBlock("Änderungsverlauf", r.verlauf)}
       </div>
       <footer class="dialog-fuss">
         <button class="knopf" type="button" data-dialog-zu>Schließen</button>
         ${darfBuchen ? `
-          <button class="knopf" type="button" data-tun="ak-zahlung:${h(r.nr)}">Zahlung erfassen</button>
-          <button class="knopf" type="button" data-tun="ak-mahnung:${h(r.nr)}">Mahnung vorbereiten</button>
+          ${sperreZahlung ? "" : `<button class="knopf" type="button"
+            data-tun="ak-zahlung:${h(r.nr)}">Zahlung erfassen</button>`}
+          ${sperreMahnung ? "" : `<button class="knopf" type="button"
+            data-tun="ak-mahnung:${h(r.nr)}">Mahnung vorbereiten</button>`}
           <button class="knopf haupt-knopf" type="button" data-tun="ak-rech-korrektur:${h(r.nr)}">
             Korrektur als neue Version</button>`
           : `<span class="fz-hinweis">Buchen und korrigieren darf nur, wer finance.write hat.</span>`}
@@ -465,8 +583,19 @@
   /* ============================================================
      5. Rewards-Konto
      ============================================================ */
-  function rewardskontoVon(kundeName) {
-    const konto = D.rewards.konten.find((x) => x.kunde === kundeName);
+  /*
+    Das Rewards-Konto zu einer KUNDENKENNUNG.
+
+    Vorher nahm diese Funktion den Kundennamen. Zwei Kunden koennen
+    gleich heissen - dann haette ein Klick das Konto des falschen
+    Menschen geoeffnet. Jetzt entscheidet die Kennung.
+
+    Ein Konto ohne Kennung wird NICHT mehr ueber den Namen gefunden.
+    Das ist gewollt: Eine Beziehung, die niemand hergestellt hat,
+    soll die Oberflaeche nicht erfinden.
+  */
+  function rewardskontoVon(kundeId) {
+    const konto = D.rewards.konten.find((x) => x.kundeId === kundeId);
     if (!konto) return "";
     const stufe = D.REWARDS_STUFEN.find((s) => s.name === konto.stufe);
     const vip = D.REWARDS_STUFEN.find((s) => s.name === "VIP");
@@ -523,7 +652,7 @@
         <button class="knopf" type="button" data-dialog-zu>Schließen</button>
         ${darfKorrigieren
           ? `<button class="knopf haupt-knopf" type="button"
-              data-tun="ak-rw-korrektur:${h(konto.kunde)}">Punkte korrigieren</button>`
+              data-tun="ak-rw-korrektur:${h(konto.kundeId)}">Punkte korrigieren</button>`
           : `<span class="fz-hinweis">Eine manuelle Korrektur darf nur die Administration.</span>`}
       </footer>
     </div>`;
@@ -543,13 +672,38 @@
          der betroffene Beleg.
        - Die Berechtigung steht in der AKTION, nicht nur am Knopf.
   */
+  /*
+    Die sichtbaren Felder des Buchungsfensters in den Stand holen.
+
+    Gebraucht an jeder Stelle, die das Fenster verlaesst oder
+    wechselt - sonst waere die zuletzt getippte Zahl weg, obwohl
+    niemand sie verworfen hat.
+  */
+  function bkFelderLesen() {
+    const s = stand.korrektur;
+    if (!s) return;
+    document.querySelectorAll("[data-bk]").forEach((el) => {
+      s[el.dataset.bk] = el.value;
+    });
+    const grund = document.querySelector("[data-bk-grund]");
+    if (grund) s.grund = grund.value;
+  }
+
+  /* Ist in diesem Fenster schon etwas eingetragen? Dann darf es nicht
+     kommentarlos verlassen werden. */
+  function bkBegonnen() {
+    const s = stand.korrektur;
+    if (!s) return false;
+    return Boolean(String(s.wert || "").trim() || String(s.grund || "").trim());
+  }
+
   function buchungsDialog() {
     const s = stand.korrektur;
     const r = s.art !== "rewards"
       ? D.rechnungen.find((x) => x.nr === s.id)
       : null;
     const konto = s.art === "rewards"
-      ? D.rewards.konten.find((x) => x.kunde === s.id)
+      ? D.rewards.konten.find((x) => x.kundeId === s.id)
       : null;
 
     const TITEL = {
@@ -601,6 +755,8 @@
         </div>
         <footer class="dialog-fuss">
           <button class="knopf" type="button" data-tun="ak-bk-zurueck">Zurück und ändern</button>
+          ${s.zurueckZu ? `<button class="knopf" type="button"
+            data-tun="ak-bk-zur-rechnung">Zurück zur Rechnung</button>` : ""}
           <button class="knopf" type="button" data-dialog-zu>Abbrechen</button>
           <button class="knopf haupt-knopf" type="button" data-tun="ak-bk-ja">Verbindlich speichern</button>
         </footer>
@@ -626,6 +782,8 @@
           hinterlegt.</p>` : ""}
       </div>
       <footer class="dialog-fuss">
+        ${s.zurueckZu ? `<button class="knopf" type="button"
+          data-tun="ak-bk-zur-rechnung">Zurück zur Rechnung</button>` : ""}
         <button class="knopf" type="button" data-dialog-zu>Abbrechen</button>
         <button class="knopf haupt-knopf" type="button" data-tun="ak-bk-weiter">Weiter</button>
       </footer>
@@ -650,9 +808,10 @@
       case "ak-kunde-neu":
         if (!R.darf("customers.write")) return;
         stand.kundeNeu = {
-          stufe: "eingabe", fehler: "",
+          stufe: "eingabe", fehler: "", geprueft: false,
           felder: {
             art: "privat", name: "", telefon: "", email: "",
+            ansprechpartner: "", abteilung: "",
             strasse: "", hausnummer: "", plz: "", ort: "", hinweis: ""
           }
         };
@@ -667,10 +826,18 @@
       case "ak-kunde-weiter": {
         const s = stand.kundeNeu;
         if (!s) return;
+        s.geprueft = true;
         const fehlend = PFLICHT.filter(([feld]) => !String(s.felder[feld] || "").trim());
         if (fehlend.length) {
-          s.fehler = "Bitte ausfüllen: " + fehlend.map(([, n]) => n).join(", ") + ".";
+          /* Der zusammenfassende Hinweis bleibt - zusaetzlich steht der
+             Fehler jetzt am Feld, und der Fokus geht auf das erste. */
+          s.fehler = "Bitte ausfüllen: " + fehlend.map(([, name]) => name).join(", ") + ".";
           R.dialogOeffnen(kundeNeuDialog());
+          const erstes = document.getElementById("kn-" + fehlend[0][0]);
+          if (erstes) {
+            erstes.focus();
+            try { erstes.select(); } catch { /* manche Felder mögen das nicht */ }
+          }
           return;
         }
         s.stufe = "pruefen";
@@ -693,7 +860,10 @@
           was: "Kunde angelegt", vorher: "—", nachher: neu.name, grund: ""
         });
         D.protokollieren({
-          betrifft: neu.name + " (" + neu.kundennummer + ")",
+          /* Die technische Kennung gehoert ins Protokoll - es muss
+             eindeutig sein, welcher Datensatz gemeint war. Sie steht
+             dort als technische Angabe, nicht als Kundennummer. */
+          betrifft: neu.name + " (" + neu.id + ")",
           was: "Kunde angelegt",
           vorher: "nicht im Bestand",
           nachher: "angelegt über den Kundenbereich", grund: ""
@@ -718,7 +888,7 @@
       case "ak-rewards": {
         const k = D.kundeVon(wert);
         if (!k || !R.darf("rewards.read")) return;
-        R.dialogOeffnen(rewardskontoVon(k.name));
+        R.dialogOeffnen(rewardskontoVon(k.id));
         return;
       }
 
@@ -762,17 +932,48 @@
         if (!r) return;
         const art = name === "ak-zahlung" ? "zahlung"
           : name === "ak-mahnung" ? "mahnung" : "rechnung";
-        stand.korrektur = {
-          art, id: wert, stufe: "eingabe", grund: "", fehler: "",
-          wert: "", art2: "Überweisung", vorher: "", nachher: ""
-        };
+        /*
+          Die Sperre steht HIER, nicht nur am Knopf. Ein direkter Aufruf
+          ak-zahlung auf eine bezahlte Rechnung soll nichts bewirken -
+          ein fehlender Knopf ist kein Schutz.
+        */
+        const sperre = rechnungSperre(r, art);
+        if (sperre) return;
+        /*
+          Den begonnenen Entwurf WEITERFUEHREN, wenn es derselbe
+          Vorgang ist.
+
+          Gemessen im eigenen Prueflauf: "Zurueck zur Rechnung"
+          behielt den Entwurf - aber das erneute Oeffnen der
+          Aktion legte einen neuen an und warf ihn damit weg. Der
+          Rueckweg war dann nur die halbe Zusage.
+
+          Eine ANDERE Aktion oder eine andere Rechnung faengt neu an:
+          Ein Betrag aus einer Zahlung hat in einer Mahnung nichts zu
+          suchen.
+        */
+        const alt = stand.korrektur;
+        if (alt && alt.art === art && alt.id === wert) {
+          alt.stufe = "eingabe";
+          alt.fehler = "";
+          alt.zurueckZu = wert;
+        } else {
+          stand.korrektur = {
+            art, id: wert, stufe: "eingabe", grund: "", fehler: "",
+            wert: "", art2: "Überweisung", vorher: "", nachher: "",
+            /* Woher die Aktion kam - fuer den Weg zurueck. */
+            zurueckZu: wert
+          };
+        }
         R.dialogOeffnen(buchungsDialog());
         return;
       }
       case "ak-rw-korrektur": {
         /* Nur die Administration - rewards.write allein genuegt nicht. */
         if (!R.darf("rewards.write") || !R.darf("security.read")) return;
-        const konto = D.rewards.konten.find((x) => x.kunde === wert);
+        /* Ueber die KUNDENKENNUNG, nicht ueber den Namen - zwei Kunden
+           koennen gleich heissen. */
+        const konto = D.rewards.konten.find((x) => x.kundeId === wert);
         if (!konto) return;
         stand.korrektur = {
           art: "rewards", id: wert, stufe: "eingabe", grund: "", fehler: "",
@@ -783,10 +984,30 @@
       }
       case "ak-bk-zurueck":
         if (!stand.korrektur) return;
+        /* Erst die sichtbaren Felder einsammeln - sonst waere die
+           letzte Eingabe beim Zurueckgehen verloren. */
+        bkFelderLesen();
         stand.korrektur.stufe = "eingabe";
         stand.korrektur.fehler = "";
         R.dialogOeffnen(buchungsDialog());
         return;
+
+      /*
+        Der Weg zurueck in die Rechnung. Es wird NICHTS gespeichert.
+
+        Die Eingaben bleiben im Stand erhalten: Wer die Aktion gleich
+        wieder oeffnet, findet seinen Betrag und seinen Grund wieder.
+        Eine begonnene Eingabe darf nicht verschwinden, nur weil
+        jemand noch einmal in die Rechnung schaut.
+      */
+      case "ak-bk-zur-rechnung": {
+        const s = stand.korrektur;
+        if (!s || !s.zurueckZu) return;
+        bkFelderLesen();
+        /* Der Stand bleibt stehen - nur das Fenster wechselt. */
+        R.dialogOeffnen(rechnungsakte(s.zurueckZu));
+        return;
+      }
       case "ak-bk-weiter": {
         const s = stand.korrektur;
         if (!s) return;
@@ -804,7 +1025,7 @@
         }
         /* Vorher und nachher ausrechnen, damit die Pruefung sie zeigt. */
         if (s.art === "rewards") {
-          const konto = D.rewards.konten.find((x) => x.kunde === s.id);
+          const konto = D.rewards.konten.find((x) => x.kundeId === s.id);
           s.vorher = konto.punkte + " Punkte";
           s.nachher = (konto.punkte + Number(s.wert)) + " Punkte";
         } else {
@@ -832,6 +1053,18 @@
         if (s.art === "rewards") {
           if (!R.darf("rewards.write") || !R.darf("security.read")) return;
         } else if (!R.darf("finance.write")) return;
+        /* Noch einmal, kurz vor dem Schreiben: Zwischen dem Oeffnen des
+           Fensters und diesem Klick kann die Rechnung bezahlt worden
+           sein. Die Pruefung beim Oeffnen allein genuegt nicht. */
+        if (s.art !== "rewards") {
+          const rJetzt = D.rechnungen.find((x) => x.nr === s.id);
+          if (rechnungSperre(rJetzt, s.art)) {
+            s.fehler = rechnungSperre(rJetzt, s.art);
+            s.stufe = "eingabe";
+            R.dialogOeffnen(buchungsDialog());
+            return;
+          }
+        }
 
         const feld = document.querySelector("[data-bk-grund]");
         s.grund = feld ? feld.value.trim() : "";
@@ -845,7 +1078,7 @@
         }
 
         if (s.art === "rewards") {
-          const konto = D.rewards.konten.find((x) => x.kunde === s.id);
+          const konto = D.rewards.konten.find((x) => x.kundeId === s.id);
           const vorher = konto.punkte;
           konto.punkte = vorher + Number(s.wert);
           if (!konto.verlauf) konto.verlauf = [];
@@ -950,10 +1183,43 @@
   }
 
 
+  /*
+    Escape in einer Finanzaktion: zurueck zur Rechnung, nicht hinaus.
+
+    Gemessener Mangel: Es gab nur "Schliessen". Wer versehentlich
+    "Zahlung erfassen" geklickt hatte, verlor die Rechnung und musste
+    sie neu suchen.
+
+    Gibt true zurueck, wenn der Rueckweg genommen wurde - dann
+    schliesst der Rahmen nicht.
+  */
+  function escape() {
+    const s = stand.korrektur;
+    if (!s || !s.zurueckZu) return false;
+    bkFelderLesen();
+    R.dialogOeffnen(rechnungsakte(s.zurueckZu));
+    return true;
+  }
+
+  /*
+    Ist in einer Finanzaktion schon etwas eingetragen? Der Rahmen
+    fragt das vor dem endgueltigen Verlassen und zeigt dann eine
+    Sicherheitsabfrage.
+
+    Gelesen wird aus den SICHTBAREN Feldern: Was gerade getippt ist,
+    steht noch nicht im Stand.
+  */
+  function offeneEingabe() {
+    if (!stand.korrektur && !stand.kundeNeu) return false;
+    const felder = [...document.querySelectorAll("[data-bk], [data-bk-grund], [data-kn]")];
+    return felder.some((el) => String(el.value || "").trim().length > 0);
+  }
+
   window.ProbeAkten = {
     tun, geaendert, nachZeichnen, stand,
     aktenzeile, dialogKopf, zeileDl, verlaufBlock, verlaufEintragen,
     meinKonto, meinName, kontoText, jetzt, zeitstempel, anschriftText,
-    kundenakte, personalakte, rechnungsakte, rewardskontoVon
+    kundenakte, personalakte, rechnungsakte, rewardskontoVon,
+    escape, offeneEingabe
   };
 })();

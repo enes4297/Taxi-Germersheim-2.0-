@@ -564,6 +564,10 @@
     { id: "konflikte", name: "Nur Konflikte" }
   ];
 
+  /* Der Fehlertext des Planungsdatums. Er steht hier und nicht im
+     Entwurf, weil er die EINGABE betrifft, nicht die Planung. */
+  let planDatumFehler = "";
+
   function planung() {
     const e = planEntwurf();
     const tag = planDatumObjekt();
@@ -642,7 +646,9 @@
             <button class="knopf klein" type="button" data-tun="plan-heute" aria-pressed="${istHeute()}">Heute</button>
             <button class="knopf klein" type="button" data-tun="plan-morgen" aria-pressed="${istMorgen()}">Morgen</button>
             <label class="tagfeld">Datum
-              <input type="date" data-plan-datum value="${h(planTagIso())}"></label>
+              ${window.ProbeDatum.markup({ kennung: "plan", teil: "tag",
+                wert: planTagIso(), beschriftung: "Tag der Planung",
+                fehler: planDatumFehler })}</label>
             <button class="knopf klein" type="button" data-tun="plan-vor" aria-label="Ein Tag vor">Vor ›</button>
           </div>
           <span class="tagdatum">${h(D.alsText(tag))}</span>
@@ -870,11 +876,14 @@
       const ort = [k.plz, k.ort].filter(Boolean).join(" ");
       return window.ProbeAkten.aktenzeile(
         `ak-kunde:${k.id}`,
-        k.name + ", " + k.kundennummer + ", " + k.telefon
+        /* Die Vorlesefassung nennt ebenfalls keine Nummer. */
+        k.name + ", " + k.telefon
           + (ort ? ", " + ort : "") + ". Kundenakte öffnen.",
         [
           `<strong>${h(k.name)}</strong>${k.nurProbe ? " " + R.marke("aktiv", "neu in der Probe") : ""}`,
-          h(k.kundennummer),
+          k.art === "firma"
+            ? (k.ansprechpartner ? h(k.ansprechpartner) : "<em>ohne Ansprechpartner</em>")
+            : "—",
           h(k.telefon),
           h(ort) || "—",
           k.konto === "verknüpft" ? R.marke("gut", "verknüpft") : R.marke("ruhig", "nicht verknüpft"),
@@ -889,14 +898,14 @@
       /* Dieselbe Schwelle wie im Fahrtassistenten - eine Suche,
          zwei Oberflaechen, eine Regel. */
       rumpf = R.zustandsKasten("leer", "Mindestens zwei Zeichen eingeben",
-        `Der Bestand hat ${h(D.kunden.length)} Kunden — es werden nie alle gezeigt. Gesucht wird in Name, Telefonnummer, Kundennummer, Firma, Anschrift und E-Mail.`);
+        `Der Bestand hat ${h(D.kunden.length)} Kunden — es werden nie alle gezeigt. Gesucht wird in Name, Telefonnummer, Firma, Ansprechpartner, Anschrift und E-Mail.`);
     } else if (ergebnis && !liste.length) {
       rumpf = R.zustandsKasten("leer", "Kein Kunde gefunden",
-        `Zu „${h(suche)}“ passt kein Eintrag. Gesucht wird in Name, Telefonnummer, Kundennummer, Firma, Anschrift und E-Mail.`);
+        `Zu „${h(suche)}“ passt kein Eintrag. Gesucht wird in Name, Telefonnummer, Firma, Ansprechpartner, Anschrift und E-Mail.`);
     } else {
       rumpf = `<div class="aktenliste" role="list">
         <div class="az-kopf" aria-hidden="true">
-          <span>Name</span><span>Kundennummer</span><span>Telefon</span>
+          <span>Name</span><span>Ansprechpartner</span><span>Telefon</span>
           <span>Ort</span><span>Kundenkonto</span><span>Fahrten</span><span>Hinweis</span>
         </div>
         ${liste.map(zeile).join("")}
@@ -916,9 +925,9 @@
       </div>
       <div class="flaeche">
         <h2>Suche</h2>
-        <label style="max-width:460px">Name, Telefon, Kundennummer, Anschrift oder E-Mail
+        <label style="max-width:460px">Name, Telefon, Firma, Anschrift oder E-Mail
           <input type="search" data-kundensuche value="${h(kundenStand.suche)}"
-            placeholder="Testkunde 03, Testallee, KD-0003 …"></label>
+            placeholder="Testkunde 03, Testallee, Testfirma …"></label>
         <p class="schritt-hinweis">Es wird beim Tippen gefiltert. Bei genau einem Treffer
           öffnet Enter die Kundenakte.</p>
         ${ergebnis ? `<p class="wichtig" style="font-size:14px">
@@ -1172,12 +1181,12 @@
       const k = D.kunden.find((x) => x.id === konto.kundeId || x.name === konto.kunde);
       const stufe = D.REWARDS_STUFEN.find((s) => s.name === konto.stufe);
       return window.ProbeAkten.aktenzeile(
-        `ak-rewards-konto:${konto.kunde}`,
+        `ak-rewards-konto:${konto.kundeId}`,
         konto.kunde + ", " + konto.punkte + " Punkte, Stufe " + konto.stufe
           + ". Rewards-Konto öffnen.",
         [
           `<strong>${h(konto.kunde)}</strong>`,
-          k ? h(k.kundennummer) : "—",
+          k ? h([k.plz, k.ort].filter(Boolean).join(" ")) || "—" : "—",
           h(konto.punkte) + " Punkte",
           R.marke(stufe ? stufe.marke : "ruhig", konto.stufe),
           h(konto.qualifizierteFahrten !== undefined ? konto.qualifizierteFahrten : "—")
@@ -1250,7 +1259,7 @@
         <h2>Konten</h2>
         <div class="aktenliste" role="list">
           <div class="az-kopf" aria-hidden="true">
-            <span>Kunde</span><span>Kundennummer</span><span>Punkte</span>
+            <span>Kunde</span><span>Ort</span><span>Punkte</span>
             <span>Stufe</span><span>Qual. Fahrten</span><span>Drehs</span><span>Verlauf</span>
           </div>
           ${D.rewards.konten.map(zeile).join("")}
@@ -1272,7 +1281,15 @@
     Tagesbereich. Sie koennen deshalb nicht auseinanderlaufen - es gibt
     nur eine Rechnung.
   */
-  const analyseStand = { zeitraum: "tage7", von: "", bis: "", fehler: "" };
+  /*
+    fehlerVon und fehlerBis stehen am jeweiligen FELD - eine
+    Sammelmeldung allein laesst offen, welches der beiden Felder
+    gemeint ist. "verdreht" ist der Fehler des Zeitraums als Ganzes.
+  */
+  const analyseStand = {
+    zeitraum: "tage7", von: "", bis: "",
+    fehlerVon: "", fehlerBis: "", verdreht: false
+  };
 
   function analyse() {
     if (!R.darf("analytics.read")) return R.kastenKeinRecht("Analyse");
@@ -1285,14 +1302,26 @@
     const groesster = Math.max(1, ...a.ereignisse.map((x) => x.wert));
     const groessteSeite = Math.max(1, ...a.seiten.map((x) => x.wert));
 
-    /* Ohne vollstaendigen eigenen Zeitraum wird nichts behauptet. */
-    const unvollstaendig = gewaehlt.id === "eigen" && (!bereich.von || !bereich.bis);
+    /*
+      Ohne vollstaendigen eigenen Zeitraum wird nichts behauptet.
+
+      GEAENDERTES VERHALTEN: Ein verdrehter Zeitraum (Ende vor Beginn)
+      wurde vorher stillschweigend gedreht. Der Geschaeftsfuehrer hat
+      danach ausdruecklich einen FEHLER verlangt. Das ist auch das
+      bessere Verhalten: Wer "01.10." bis "01.09." eintippt, hat sich
+      vertippt und soll das sehen, statt stumm eine andere Auswertung
+      zu bekommen, als er gemeint hat.
+    */
+    const unvollstaendig = gewaehlt.id === "eigen"
+      && (!analyseStand.von || !analyseStand.bis
+          || analyseStand.fehlerVon || analyseStand.fehlerBis);
+    const verdreht = gewaehlt.id === "eigen" && analyseStand.verdreht;
 
     return `
       <div class="bereichskopf"><div>
         <h1>Analyse</h1>
         <p class="wichtig">Zeitraum: <strong>${h(gewaehlt.name)}</strong>${
-          unvollstaendig ? "" : ` · ${h(alsTag(bereich.von))} bis ${h(alsTag(bereich.bis))}
+          (unvollstaendig || verdreht) ? "" : ` · ${h(alsTag(bereich.von))} bis ${h(alsTag(bereich.bis))}
             · ${h(a.tage)} ${a.tage === 1 ? "Tag" : "Tage"}`}</p>
       </div></div>
 
@@ -1307,17 +1336,24 @@
             ${h(z.name)}</button>`).join("")}
         </div>
         ${gewaehlt.id === "eigen" ? `<div class="tageswahl">
-          <label class="tagfeld">von <input type="date" data-an-von value="${h(analyseStand.von)}"></label>
-          <label class="tagfeld">bis <input type="date" data-an-bis value="${h(analyseStand.bis)}"></label>
+          <label class="tagfeld">von ${window.ProbeDatum.markup({ kennung: "analyse",
+            teil: "von", wert: analyseStand.von, beschriftung: "Zeitraum von",
+            fehler: analyseStand.fehlerVon })}</label>
+          <label class="tagfeld">bis ${window.ProbeDatum.markup({ kennung: "analyse",
+            teil: "bis", wert: analyseStand.bis, beschriftung: "Zeitraum bis",
+            fehler: analyseStand.fehlerBis })}</label>
         </div>` : ""}
         <p class="schritt-hinweis">Der gewählte Zeitraum gilt für <strong>alle</strong>
           Kennzahlen dieser Seite. Sie werden aus denselben Tageswerten summiert — zwei
           verschiedene Zeiträume auf einer Seite sind damit ausgeschlossen.</p>
       </div>
 
-      ${unvollstaendig
+      ${verdreht
+        ? R.zustandsKasten("fehler", "Das Ende liegt vor dem Beginn",
+            "Ein Zeitraum läuft nicht rückwärts. Bitte die beiden Daten tauschen. Solange bleibt jede Kennzahl leer — eine Zahl zu einem unmöglichen Zeitraum wäre eine Behauptung.")
+        : unvollstaendig
         ? R.zustandsKasten("leer", "Bitte beide Datumsfelder füllen",
-            "Ohne vollständigen Zeitraum wird keine Zahl gezeigt — eine halbe Auswahl ergibt keine Auswertung.")
+            "Ohne vollständigen Zeitraum wird keine Zahl gezeigt — eine halbe Auswahl ergibt keine Auswertung. Es bleibt auch keine alte Zahl stehen.")
         : `
       <div class="flaeche">
         <h2>Reichweite</h2>
@@ -1708,6 +1744,7 @@
     if (name.startsWith("vg-")) { window.ProbeVorgaenge.tun(name, wert); return; }
     if (name.startsWith("kal-")) { window.ProbeKalender.tun(name, wert); return; }
     if (name.startsWith("ak-")) { window.ProbeAkten.tun(name, wert); return; }
+    if (name.startsWith("es-")) { window.ProbeEinstellungen.tun(name, wert); return; }
 
     switch (name) {
       case "neue-fahrt": window.ProbeFahrtassistent.starten(); return;
@@ -1959,11 +1996,7 @@
       R.zeichnen();
       return true;
     }
-    if (feld.matches("[data-plan-datum]")) {
-      if (feld.value) { R.zustand.planDatum = feld.value; R.zustand.planEntwurf = null; }
-      R.zeichnen();
-      return true;
-    }
+    /* Das Planungsdatum laeuft jetzt ueber ProbeDatum - siehe unten. */
     if (feld.matches("[data-plan-suche]")) {
       planEntwurf().suche = feld.value; R.zeichnen(); return true;
     }
@@ -1972,10 +2005,8 @@
     if (window.ProbeVorgaenge.geaendert(feld)) return true;
     if (window.ProbeKalender.geaendert(feld)) return true;
     if (window.ProbeAkten.geaendert(feld)) return true;
-    /* Eigener Zeitraum der Analyse. Uebernommen wird bei "change",
-       also wenn das Datum vollstaendig ist - nicht bei jeder Ziffer. */
-    if (feld.matches("[data-an-von]")) { analyseStand.von = feld.value; R.zeichnen(); return true; }
-    if (feld.matches("[data-an-bis]")) { analyseStand.bis = feld.value; R.zeichnen(); return true; }
+    if (window.ProbeEinstellungen.geaendert(feld)) return true;
+    /* Der eigene Zeitraum der Analyse laeuft ueber ProbeDatum. */
     /* Kundensuche filtert beim Tippen. Der Schreibzeiger bleibt,
        weil zeichnen() ihn wiederherstellt. */
     if (feld.matches("[data-kundensuche]")) {
@@ -2015,7 +2046,13 @@
     R.zeichnen();
   }
 
-  const bereiche = { uebersicht, fahrten, planung, team, kalender, meldungen, kunden, personal, lohn, finanzen, rewards, analyse };
+  const bereiche = {
+    uebersicht, fahrten, planung, team, kalender, meldungen,
+    kunden, personal, lohn, finanzen, rewards, analyse,
+    /* Der Bereich liegt in einem eigenen Modul - er ist gross genug
+       und hat mit den uebrigen Flaechen nichts gemeinsam. */
+    einstellungen: () => window.ProbeEinstellungen.zeichne()
+  };
 
   /* ============================================================
      Zeitfelder anmelden
@@ -2045,6 +2082,66 @@
     verwerfen() { /* der Wert im Feld wurde schon zurueckgesetzt */ }
   });
   window.ProbeZeit.binden();
+
+  /*
+    Das gemeinsame Datumsmodul - eine Anmeldung fuer das ganze Portal.
+
+    Gemessener Ausgangsfehler: Zehn <input type="date"> an fuenf
+    Stellen. Jedes sprang beim Tippen des Jahres zurueck zum Tag.
+
+    Jetzt gibt es ein Feld, eine Pruefung und eine Verteilung. Wer
+    ein weiteres Datumsfeld braucht, nimmt dasselbe Modul; eine
+    Eigenloesung daneben kann es nicht mehr geben, weil es kein
+    natives Datumsfeld mehr gibt.
+  */
+  function datumUebernehmen(kennung, teil, ergebnis) {
+    switch (kennung) {
+      case "plan": {
+        planDatumFehler = ergebnis.fehler;
+        if (ergebnis.gueltig) {
+          /* Ein neuer Tag heisst neuer Entwurf - der alte gehoerte
+             zum alten Tag. */
+          R.zustand.planDatum = ergebnis.iso;
+          R.zustand.planEntwurf = null;
+        }
+        R.zeichnen();
+        return;
+      }
+      case "analyse": {
+        if (teil === "von") {
+          analyseStand.fehlerVon = ergebnis.fehler;
+          analyseStand.von = ergebnis.gueltig ? ergebnis.iso : "";
+        } else {
+          analyseStand.fehlerBis = ergebnis.fehler;
+          analyseStand.bis = ergebnis.gueltig ? ergebnis.iso : "";
+        }
+        analyseStand.verdreht = window.ProbeDatum.verdreht(analyseStand.von, analyseStand.bis);
+        R.zeichnen();
+        return;
+      }
+      default:
+        /* Die Fachmodule behandeln ihre eigenen Kennungen. */
+        if (window.ProbeKalender.datum && window.ProbeKalender.datum(kennung, teil, ergebnis)) return;
+        if (window.ProbeVorgaenge.datum && window.ProbeVorgaenge.datum(kennung, teil, ergebnis)) return;
+        if (window.ProbeFahrtassistent.datum && window.ProbeFahrtassistent.datum(kennung, teil, ergebnis)) return;
+    }
+  }
+
+  window.ProbeDatum.anmelden({
+    uebernehmen: datumUebernehmen,
+    weiter(kennung, teil, feld) {
+      if (kennung === "fahrt" && window.ProbeFahrtassistent.datumWeiter) {
+        window.ProbeFahrtassistent.datumWeiter(teil, feld);
+      }
+    },
+    verwerfen(kennung, teil, feld) {
+      /* Der Wert im Feld wurde schon zurueckgesetzt. Die Fehlermeldung
+         muss aber mit verschwinden - sonst bliebe eine Warnung zu
+         einer Eingabe stehen, die es nicht mehr gibt. */
+      datumUebernehmen(kennung, teil, window.ProbeDatum.pruefen(feld.value));
+    }
+  });
+  window.ProbeDatum.binden();
 
   window.ProbeBereiche = {
     /*

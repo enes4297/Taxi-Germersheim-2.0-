@@ -59,6 +59,28 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(PORT, "127.0.0.1", r));
 const ADRESSE = `http://127.0.0.1:${PORT}/`;
 
+/*
+  Ein Datum setzen, wie ein Mensch es tut.
+
+  Die nativen Datumsfelder sind portalweit ersetzt: Sie sprangen beim
+  Tippen des Jahres zurueck zum Tag. page.fill() mit einem ISO-Datum
+  geht am neuen Feld vorbei - es nimmt TT.MM.JJJJ.
+*/
+async function datumTippen(page, wahl, iso) {
+  const [j, m, t] = String(iso).split("-");
+  const text = t + "." + m + "." + j;
+  await page.click(wahl);
+  await page.waitForTimeout(80);
+  await page.keyboard.press("Control+a");
+  await page.keyboard.press("Delete");
+  for (const z of text) {
+    await page.keyboard.type(z);
+    await page.waitForTimeout(40);
+  }
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(450);
+}
+
 let bestanden = 0;
 const offen = [];
 function pruefe(bedingung, name) {
@@ -93,8 +115,9 @@ const tagesansicht = async (page, iso) => {
   await page.evaluate(() => window.ProbeRahmen.geheZu("kalender"));
   await page.waitForTimeout(400);
   if (iso) {
-    await page.fill("[data-kal-datum]", iso);
-    await page.waitForTimeout(500);
+    /* Ueber das gemeinsame Datumsmodul, Zeichen fuer Zeichen - das
+       native Feld gibt es nicht mehr. */
+    await datumTippen(page, '[data-datum-kennung="kalender"]', iso);
   }
   await page.click('[data-tun="kal-sicht:tag"]');
   await page.waitForTimeout(450);
@@ -363,10 +386,42 @@ console.log("\n── 7. Der Termin öffnet das Fahrzeug ──");
   pruefe(/Testwagen 02/.test(akte), "sie nennt den Fahrzeugnamen");
   pruefe(/GER-TEST 002/.test(akte), "das Kennzeichen");
   pruefe(/KennungF02/.test(akte.replace(/\s/g, "")), "die stabile Kennung");
-  pruefe(/TÜV steht an/.test(akte), "die Art des angefragten Termins");
+  /*
+    GEAENDERTE ERWARTUNGEN.
+
+    Alt: Die Akte nennt "TÜV steht an" und eine Zeile "Aktueller
+    Zustand".
+
+    Weshalb das nicht mehr gilt: Der manuelle Rundgang hat gemessen,
+    dass die Akte sich widersprach - oben "Unterwegs", daneben
+    "Aktueller Zustand: Frei", darunter "Heute zugewiesen: Testfahrer
+    01". Drei Bezugspunkte ohne Beschriftung. "Aktueller Zustand" war
+    der Stammzustand, der zu keinem Tag gehoert; "Heute zugewiesen"
+    kam aus dem Plan eines anderen Tages.
+
+    Die Terminzeile heisst jetzt "TÜV am TT.MM.JJJJ steht an" - mit
+    dem Tag, aus dem man gekommen ist.
+
+    Neu und strenger: Geprueft wird, dass die beiden unbeschrifteten
+    Zeilen NICHT mehr vorkommen und dass jede Angabe ihren Bezugstag
+    nennt. Ein Widerspruch ist damit nicht mehr konstruierbar.
+  */
+  pruefe(/TÜV/.test(akte) && /steht an/.test(akte),
+    "die Art des angefragten Termins");
   pruefe(/aus dem Kalender/.test(akte), "und dass er hervorgehoben ist");
-  pruefe(/23\.10\.2026|\d{2}\.\d{2}\.\d{4}/.test(akte), "die Frist mit Datum");
-  pruefe(/Aktueller Zustand/.test(akte), "den aktuellen Fahrzeugzustand");
+  pruefe(/\d{2}\.\d{2}\.\d{4}/.test(akte), "die Frist mit Datum");
+  pruefe(!/Aktueller Zustand/.test(akte),
+    "es gibt keine Zeile „Aktueller Zustand“ mehr — sie nannte keinen Tag");
+  pruefe(!/Heute zugewiesen/.test(akte),
+    "und keine Zeile „Heute zugewiesen“ ohne Datum");
+  pruefe(/Zustand im Fahrzeugstamm/.test(akte),
+    "der Stammzustand ist als solcher benannt");
+  const einsatzzeilen = await page.$$eval(".dialog-kasten dt",
+    (ns) => ns.map((x) => x.textContent.trim()).filter((x) => /^Einsatz /.test(x)));
+  pruefe(einsatzzeilen.length >= 1,
+    `der Einsatz steht mit seinem Tag da (${einsatzzeilen.join(" | ")})`);
+  pruefe(einsatzzeilen.every((x) => /\d{2}\.\d{2}\.\d{4}/.test(x)),
+    "und jede Einsatzzeile nennt ein konkretes Datum");
   pruefe(/nicht hinterlegt/.test(akte), "und was die Probe nicht hat");
 
   /* Ein gesperrtes Fahrzeug nennt seinen Grund. */
@@ -414,38 +469,54 @@ console.log("\n── 8. Was bestanden hat, bleibt bestanden ──");
   await tagesansicht(page);
   const vorher = await eintraege(page);
 
-  /* Fahrzeuge aus - nur Fahrzeugtermine verschwinden. */
-  await page.click('[data-tun="kal-art:fahrzeug"]');
-  await page.waitForTimeout(400);
-  const ohneFz = await eintraege(page);
-  pruefe(!ohneFz.some((x) => /^Fahrzeug/.test(x.text)), "„Fahrzeuge“ aus entfernt Fahrzeugtermine");
-  pruefe(ohneFz.filter((x) => /^Abwesenheit/.test(x.text)).length
-    === vorher.filter((x) => /^Abwesenheit/.test(x.text)).length,
-    "die Abwesenheiten bleiben");
-  pruefe(ohneFz.filter((x) => /^Schicht/.test(x.text)).length
-    === vorher.filter((x) => /^Schicht/.test(x.text)).length,
-    "die Schichten bleiben");
-  await page.click('[data-tun="kal-art:fahrzeug"]');
-  await page.waitForTimeout(350);
+  /*
+    GEAENDERTES VERHALTEN.
 
-  /* Fahrten aus - nur Fahrten verschwinden. */
-  await page.click('[data-tun="kal-art:fahrt"]');
-  await page.waitForTimeout(400);
-  const ohneFahrt = await eintraege(page);
-  pruefe(!ohneFahrt.some((x) => /^Fahrten/.test(x.text)), "„Fahrten“ aus entfernt Fahrten");
-  pruefe(ohneFahrt.some((x) => /^Schicht/.test(x.text)), "die Schichten bleiben");
-  await page.click('[data-tun="kal-art:fahrt"]');
-  await page.waitForTimeout(350);
+    Alt: Ein Klick auf eine Kategorie schaltete GENAU DIESE aus, die
+    uebrigen blieben. Geprueft wurde also "Fahrzeuge aus - Fahrzeuge
+    weg, Abwesenheiten bleiben".
 
-  /* Konflikte lassen sich eigens ausblenden. */
-  pruefe(Boolean(await page.$('[data-tun="kal-art:konflikt"]')),
-    "es gibt einen Filter für Konflikte");
-  await page.click('[data-tun="kal-art:konflikt"]');
-  await page.waitForTimeout(400);
-  pruefe(!(await eintraege(page)).some((x) => /^Konflikt/.test(x.text)),
-    "er entfernt nur die Konflikte");
-  await page.click('[data-tun="kal-art:konflikt"]');
-  await page.waitForTimeout(350);
+    Weshalb das fachlich nicht mehr gilt: Der manuelle Rundgang hat
+    gemessen, dass man fuenf andere Filter einzeln ausschalten musste,
+    um nur eine Kategorie zu sehen - sechs Klicks fuer einen Wunsch.
+    Der Geschaeftsfuehrer hat deshalb den Einzelfilter verlangt: Ein
+    Klick waehlt diese Kategorie ALLEIN aus, ein zweiter fuehrt zu
+    "alle" zurueck.
+
+    Die ABSICHT der alten Erwartung bleibt und wird strenger geprueft:
+    Der Filter darf nur die Anzeige aendern, und jede Kategorie muss
+    sich einzeln zeigen lassen. Geprueft wird jetzt fuer ALLE sechs
+    Kategorien in beiden Richtungen statt fuer drei in einer.
+  */
+  const ARTEN = [
+    ["fahrt", /^Fahrten/], ["schicht", /^Schicht/], ["konflikt", /^Konflikt/],
+    ["abwesenheit", /^Abwesenheit/], ["fahrzeug", /^Fahrzeug/], ["dokument", /^Dokument/]
+  ];
+  for (const [id, muster] of ARTEN) {
+    await page.click(`[data-tun="kal-art:${id}"]`);
+    await page.waitForTimeout(400);
+    const gedrueckt = await page.$$eval('[data-tun^="kal-art:"]',
+      (ns) => ns.filter((x) => x.getAttribute("aria-pressed") === "true")
+        .map((x) => x.dataset.tun.split(":")[1]));
+    pruefe(gedrueckt.length === 1 && gedrueckt[0] === id,
+      `ein Klick auf „${id}“ zeigt nur diese Kategorie (${gedrueckt.join(", ")})`);
+    const jetzt = await eintraege(page);
+    /* Was uebrig ist, gehoert zu dieser Kategorie - oder die Liste ist
+       leer, weil es an diesem Tag keinen solchen Eintrag gibt. Beides
+       ist richtig; falsch waere ein Eintrag einer ANDEREN Kategorie. */
+    const fremd = jetzt.filter((x) => !muster.test(x.text));
+    pruefe(fremd.length === 0,
+      `und keinen Eintrag einer anderen (${fremd.map((x) => x.text.slice(0, 20)).join(" / ")})`);
+
+    await page.click(`[data-tun="kal-art:${id}"]`);
+    await page.waitForTimeout(400);
+    const wieder = await page.$$eval('[data-tun^="kal-art:"]',
+      (ns) => ns.every((x) => x.getAttribute("aria-pressed") === "true"));
+    pruefe(wieder, `ein zweiter Klick auf „${id}“ zeigt wieder alle`);
+    const zurueck = await eintraege(page);
+    pruefe(zurueck.length === vorher.length,
+      `und es sind wieder genauso viele Einträge wie vorher (${zurueck.length})`);
+  }
 
   /* Kein Filter aendert Daten. */
   const planVorher = await page.evaluate(() => JSON.stringify(window.ProbeDaten.planung));

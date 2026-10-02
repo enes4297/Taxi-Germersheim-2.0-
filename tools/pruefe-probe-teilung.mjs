@@ -51,6 +51,28 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(PORT, "127.0.0.1", r));
 const ADRESSE = `http://127.0.0.1:${PORT}/`;
 
+/*
+  Ein Datum setzen, wie ein Mensch es tut.
+
+  Die nativen Datumsfelder sind portalweit ersetzt: Sie sprangen beim
+  Tippen des Jahres zurueck zum Tag. page.fill() mit einem ISO-Datum
+  geht am neuen Feld vorbei - es nimmt TT.MM.JJJJ.
+*/
+async function datumTippen(page, wahl, iso) {
+  const [j, m, t] = String(iso).split("-");
+  const text = t + "." + m + "." + j;
+  await page.click(wahl);
+  await page.waitForTimeout(80);
+  await page.keyboard.press("Control+a");
+  await page.keyboard.press("Delete");
+  for (const z of text) {
+    await page.keyboard.type(z);
+    await page.waitForTimeout(40);
+  }
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(450);
+}
+
 let bestanden = 0;
 const offen = [];
 function pruefe(bedingung, name) {
@@ -269,8 +291,27 @@ console.log("\n── 4. Nichts verschwindet ──");
     "und sagt ausdruecklich, dass nichts geloescht wird");
 
   /* Zeitraum, Thema und Suche stehen im Archiv bereit. */
-  pruefe(Boolean(await page.$("[data-vg-von]")), "ein Zeitraum laesst sich eingrenzen");
-  pruefe(Boolean(await page.$("[data-vg-bis]")), "von und bis");
+  /*
+    GEAENDERTE ERWARTUNG.
+
+    Alt: Die Zeitraumfelder des Archivs heissen data-vg-von und
+    data-vg-bis.
+
+    Weshalb das nicht mehr gilt: Beide waren <input type="date"> und
+    sprangen beim Tippen des Jahres zurueck zum Tag. Sie laufen jetzt
+    ueber das gemeinsame Datumsmodul und tragen dessen Attribute.
+
+    Neu und strenger: Geprueft wird, dass es die Felder gibt UND dass
+    sie zum gemeinsamen Modul gehoeren - eine Eigenloesung an dieser
+    Stelle wuerde jetzt auffallen.
+  */
+  const archivFelder = await page.$$eval('[data-datum-kennung="archiv"]',
+    (ns) => ns.map((x) => x.type + "/" + x.dataset.datumTeil));
+  pruefe(archivFelder.includes("text/von"),
+    `ein Zeitraum laesst sich eingrenzen (${archivFelder.join(", ")})`);
+  pruefe(archivFelder.includes("text/bis"), "von und bis");
+  pruefe(!(await page.$('input[type="date"]')),
+    "und zwar ohne natives Datumsfeld");
   pruefe(Boolean(await page.$("[data-vg-thema]")), "nach Thema laesst sich filtern");
   pruefe(Boolean(await page.$("[data-vg-suche]")), "und nach Vorgang oder Person suchen");
 
@@ -282,11 +323,12 @@ console.log("\n── 4. Nichts verschwindet ──");
   pruefe(Boolean(await page.$(vg("V0005"))), "ein abgeschlossener Vorgang ist auffindbar");
 
   /* Der Zeitraumfilter aendert keine Daten. */
+  const VG_VON = '[data-datum-kennung="archiv"][data-datum-teil="von"]';
+  const VG_BIS = '[data-datum-kennung="archiv"][data-datum-teil="bis"]';
   const vorher = await page.evaluate(() => window.ProbeDaten.vorgaenge.length);
   await page.fill("[data-vg-suche]", "");
-  await page.fill("[data-vg-von]", "2020-01-01");
-  await page.fill("[data-vg-bis]", "2020-01-02");
-  await page.waitForTimeout(400);
+  await datumTippen(page, VG_VON, "2020-01-01");
+  await datumTippen(page, VG_BIS, "2020-01-02");
   const nachher = await page.evaluate(() => window.ProbeDaten.vorgaenge.length);
   pruefe(vorher === nachher, "der Zeitraumfilter loescht nichts");
   pruefe(Boolean(await page.$('[data-tun="vg-zeitraum-weg"]')),
@@ -348,8 +390,13 @@ console.log("\n── 5. Uebernahme mit Namen, Grund und Vorgeschichte ──");
 
   const teil = await page.evaluate(() =>
     window.ProbeDaten.vorgaenge.find((x) => x.id === "V0002").teile.personal);
-  pruefe(/Testleitung/.test(teil.verantwortlich.name),
-    `jetzt ist die Administration verantwortlich (${teil.verantwortlich.name})`);
+  const meinKonto = await page.evaluate(() => window.ProbeRahmen.benutzer());
+  pruefe(teil.verantwortlich.name === meinKonto.name,
+    `jetzt ist das angemeldete Konto verantwortlich (${teil.verantwortlich.name})`);
+  pruefe(teil.verantwortlich.rolle === "Administration",
+    `und zwar in der Rolle Administration (${teil.verantwortlich.rolle})`);
+  pruefe(Boolean(teil.verantwortlich.kennung),
+    `mit festgehaltener Kennung (${teil.verantwortlich.kennung})`);
   pruefe(Boolean(teil.letzter) && /Testpersonal/.test(teil.letzter.name),
     "die bisherige Bearbeitung bleibt als „zuletzt bearbeitet“ sichtbar");
   pruefe(teil.verantwortlich.kennung !== teil.letzter.kennung,
@@ -358,7 +405,10 @@ console.log("\n── 5. Uebernahme mit Namen, Grund und Vorgeschichte ──");
   const eintraege = await protokoll(page);
   pruefe(eintraege.length === vorher + 1, "die Uebernahme erzeugt einen Protokolleintrag");
   const e = eintraege[0];
-  pruefe(/Testleitung 01/.test(e.wer), `er nennt die handelnde Person (${e.wer})`);
+  pruefe(e.wer.includes(meinKonto.name),
+    `er nennt die handelnde Person (${e.wer})`);
+  pruefe(e.kennung === meinKonto.kennung,
+    `und ihre Kennung (${e.kennung})`);
   pruefe(/Administration/.test(e.rolle), "mit ihrer Rolle");
   pruefe(Boolean(e.kennung), `und ihrer unveraenderlichen Kennung (${e.kennung})`);
   pruefe(Boolean(e.datum) && Boolean(e.zeit), "sowie Datum und Uhrzeit");
@@ -375,7 +425,7 @@ console.log("\n── 5. Uebernahme mit Namen, Grund und Vorgeschichte ──");
   await page.waitForTimeout(400);
   await oeffnen(page, "V0002");
   const perText = await page.textContent(".dialog-kasten");
-  pruefe(/Testleitung 01/.test(perText), "Personal sieht, wer uebernommen hat");
+  pruefe(perText.includes(meinKonto.name), "Personal sieht, wer uebernommen hat");
   pruefe(/Testpersonal 01/.test(perText), "und die eigene Vorgeschichte steht weiter da");
   await ctx.close();
 }
@@ -387,10 +437,14 @@ console.log("\n── 6. Planung ohne Tagesgrenze ──");
   for (const knopf of ["plan-zurueck", "plan-heute", "plan-morgen", "plan-vor"]) {
     pruefe(Boolean(await page.$(`[data-tun="${knopf}"]`)), `es gibt „${knopf}“`);
   }
-  pruefe(Boolean(await page.$("[data-plan-datum]")), "und ein freies Datumsfeld");
+  /* GEAENDERTE ERWARTUNG: Das Feld laeuft jetzt ueber das gemeinsame
+     Datumsmodul - geprueft wird das ausdruecklich mit. */
+  const PLAN = '[data-datum-kennung="plan"][data-datum-teil="tag"]';
+  pruefe(Boolean(await page.$(PLAN)), "und ein freies Datumsfeld");
+  pruefe(await page.getAttribute(PLAN, "type") === "text",
+    "aus dem gemeinsamen Datumsmodul, nicht nativ");
 
-  await page.fill("[data-plan-datum]", "2026-12-24");
-  await page.waitForTimeout(500);
+  await datumTippen(page, PLAN, "2026-12-24");
   const gewaehlt = await page.evaluate(() => window.ProbeRahmen.zustand.planDatum);
   pruefe(gewaehlt === "2026-12-24", `ein weit entfernter Tag laesst sich waehlen (${gewaehlt})`);
   pruefe((await page.$$("[data-mitarbeiter]")).length > 0,
@@ -417,7 +471,8 @@ console.log("\n── 7. Kalender: zeigen, nicht entscheiden ──");
   for (const k of ["kal-zurueck", "kal-heute", "kal-vor"]) {
     pruefe(Boolean(await page.$(`[data-tun="${k}"]`)), `und die Bedienung „${k}“`);
   }
-  pruefe(Boolean(await page.$("[data-kal-datum]")), "sowie ein freies Datumsfeld");
+  pruefe(Boolean(await page.$('[data-datum-kennung="kalender"]')),
+    "sowie ein freies Datumsfeld aus dem gemeinsamen Modul");
   pruefe((await page.$$(".kal-monat .kal-tag")).length >= 28,
     "der Monat zeigt ein volles Raster");
 

@@ -133,7 +133,19 @@
       const feld = e.target;
       if (!feld.matches || !feld.matches("[data-zeit]")) return;
       if (!letzterWert.has(schluessel(feld))) letzterWert.set(schluessel(feld), feld.value);
+      /*
+        Markieren erst im naechsten Bild - sonst hebt der Browser die
+        Markierung beim Setzen des Fokus wieder auf.
+
+        Aber nur, wenn seit dem Betreten NICHTS getippt wurde: Wer
+        sofort anfaengt zu tippen, verlor sonst die ersten Zeichen,
+        weil die Markierung sie ersetzte. Vom eigenen Prueflauf
+        gefunden.
+      */
+      const beimBetreten = feld.value;
       window.requestAnimationFrame(() => {
+        if (document.activeElement !== feld) return;
+        if (feld.value !== beimBetreten) return;
         try { feld.select(); } catch { /* manche Browser mögen das nicht */ }
       });
     });

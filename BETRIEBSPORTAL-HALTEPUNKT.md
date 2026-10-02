@@ -1,7 +1,7 @@
 # Betriebsportal — Bericht am verbindlichen Haltepunkt
 
 **Branch:** `feature/030-betriebsportal-neu`
-**Stand:** 02.10.2026
+**Stand:** 02.10.2026 (zweiter Durchgang)
 **Phasen abgeschlossen:** 0, 1, 2, 3, 4, 19, 21
 **Kein echter Betriebsportalcode ist verändert.**
 
@@ -5204,3 +5204,777 @@ Browser.**
 Rolle **Testdisposition 01**. Erwartung: Die Bereiche Kunden, Personal,
 Finanzen, Lohn, Rewards und Analyse sind **nicht** sichtbar. Eine
 Krankmeldung öffnen: weder Dateiname noch Datei noch Prüfergebnis.
+
+---
+
+## 37. Ein Datumsfeld für das ganze Portal
+
+### Der gemessene Ausgangsfehler
+
+Beim Eingeben des Jahres sprang das Feld nach der ersten Ziffer zurück zum
+Tag. Aus `02102026` wurde etwas wie `2026-02-00`. Eine normale Eingabe von
+links nach rechts war nicht möglich.
+
+### Die Ursache
+
+Nicht unser Code, sondern das Verhalten von `<input type="date">`: Das Feld
+hat innen drei Abschnitte und übernimmt jeden, sobald er „voll" scheint.
+Genau derselbe Mangel wie bei `<input type="time">`, der dieses Portal
+schon ein eigenes **Zeitmodul** gekostet hat.
+
+Deshalb hilft kein Flicken an der Aufrufstelle. Es waren **zehn** solche
+Felder an **fünf** Stellen:
+
+| Datei | Felder |
+|---|---|
+| `probe-bereiche.js` | Planungsdatum, Analyse von, Analyse bis |
+| `probe-kalender.js` | Kalendertag |
+| `probe-team.js` | Planungsdatum in der Schichtleiste |
+| `probe-vorgaenge.js` | Archivfilter von/bis, Neuzuordnung von/bis |
+| `probe-fahrtassistent.js` | Datum der Fahrt |
+
+### Was gebaut wurde
+
+**Neu: `probe-datumsfeld.js`** (`window.ProbeDatum`), nach demselben Muster
+wie das Zeitmodul. Ein gewöhnliches Textfeld mit eigener Prüfung:
+
+- Eingabe von links nach rechts, nichts springt
+- `02102026`, `2102026`, `02.10.2026`, `2.10.2026`, `02-10-2026`,
+  `02/10/2026` und ISO `2026-10-02` werden angenommen
+- **echte** Datumsprüfung: 31.02. ist ungültig, 29.02.2024 gültig,
+  29.02.2026 nicht, 1900 kein Schaltjahr, 2000 schon
+- ungültige Werte werden **nicht übernommen**; der Fehler steht am Feld,
+  mit `aria-invalid` und `aria-describedby`
+- Enter übernimmt nur Gültiges, Escape verwirft die laufende Änderung
+- beim Betreten wird ein vorhandener Wert markiert
+- 16 px Schriftgröße — darunter zoomt iOS beim Fokus hinein
+
+**Nach außen immer ISO, angezeigt immer TT.MM.JJJJ.** Der Bestand rechnet
+mit ISO; der Mensch liest TT.MM.JJJJ. Beides getrennt zu halten verhindert,
+dass ein Anzeigeformat in die Daten sickert.
+
+**Eine Anmeldung für das ganze Portal.** `ProbeDatum.anmelden()` wird genau
+einmal in `probe-bereiche.js` gerufen und verteilt nach Kennung an Planung,
+Kalender, Analyse, Archivfilter, Neuzuordnung und Fahrtaufnahme. Eine
+Eigenlösung daneben kann es nicht mehr geben, weil es **kein natives
+Datumsfeld mehr gibt** — der Prüflauf zählt in allen Rollen und allen
+Bereichen nach: null.
+
+### Zwei eigene Fehler, die der Prüflauf gefunden hat
+
+1. **Das Markieren beim Betreten löschte die Eingabe.** `select()` lief in
+   einem `requestAnimationFrame`, also **nach** dem ersten Tastendruck, und
+   markierte dann die schon getippte Ziffer — die der nächste Anschlag
+   ersetzte. Aus `01092026` wurde `2026`. Behoben: Markiert wird nur, wenn
+   seit dem Betreten nichts getippt wurde. **Derselbe Fehler steckte im
+   Zeitmodul** und ist dort mit behoben — ihn nur an einer Stelle zu
+   beheben hieße, ihn an der anderen stehen zu lassen.
+2. **Der Fokusmerker traf das falsche Feld.** `fokusMerken()` nahm den
+   ersten Datensatzschlüssel des Elements — bei
+   `data-datum`/`-kennung`/`-teil` also `datum` mit leerem Wert — und baute
+   daraus `[data-datum]`. Bei den zwei Datumsfeldern der Analyse traf das
+   immer das erste. Nach dem Neuzeichnen saß der Fokus im Von-Feld, obwohl
+   er im Bis-Feld war. Behoben: Eine `id` ist eindeutig und wird bevorzugt.
+
+---
+
+## 38. Der Kalenderfilter: ein Klick statt sechs
+
+### Der gemessene Ausgangsfehler
+
+Jeder Klick schaltete **genau eine** Kategorie um. Wer nur die
+Abwesenheiten sehen wollte, musste fünf andere Filter einzeln ausschalten.
+
+### Was geändert wurde
+
+Ein Klick wählt die Kategorie **allein** aus. Ein zweiter Klick auf
+dieselbe Kategorie führt zu „alle" zurück. Damit sind beide häufigen
+Absichten je ein Klick.
+
+Geprüft wird gegen die **sichtbaren** Kategorien, nicht gegen alle: Wer die
+Dokumentfristen nicht sehen darf, soll mit dem zweiten Klick nicht in einen
+Zustand geraten, in dem eine unsichtbare Kategorie eingeschaltet ist.
+
+Die Leiste sagt jetzt auch, was der Klick tut — über `aria-label` und über
+einen Satz darunter: „Alle Kategorien sind sichtbar. Ein Klick auf eine
+Kategorie zeigt nur diese." beziehungsweise „Eingeschränkt auf … Noch ein
+Klick auf dieselbe Kategorie zeigt wieder alle."
+
+Der Prüflauf belegt für **alle sechs** Kategorien beide Richtungen, dass
+der Filter **keine Daten** ändert (Planung, Abwesenheiten und Fahrzeuge
+sind vorher und nachher byteweise gleich), dass Ansicht, Datum und Filter
+ein Neuzeichnen überleben, und dass ein erfundener Filtername über den
+direkten Aufruf nichts bewirkt.
+
+---
+
+## 39. Herkunft und Rückweg
+
+### Der gemessene Ausgangsfehler
+
+Kalendereinträge öffneten inzwischen den richtigen Datensatz, aber die
+Zielseite wurde bereits im Hintergrund gewechselt:
+
+- Krankmeldung aus dem Kalender → beim Schließen in **Meldungen**
+- Fahrzeugtermin aus dem Kalender → beim Schließen in **Fahrer &
+  Fahrzeuge**
+
+### Die Ursache
+
+`kal-ziel` rief `R.geheZu(bereich)`. Der Bereichswechsel **war** der Weg
+zum Datensatz, und danach gab es keinen Weg zurück — die Herkunft war
+nirgends festgehalten.
+
+### Was gebaut wurde
+
+Eine **Herkunft** im Rahmen: `{ bereich, name, wiederherstellen, scroll,
+scrollHaupt }`. Der Kalender legt sie an, bevor er wechselt, und sichert
+dabei Ansicht, Datum und Filter — die Filter werden **kopiert**, nicht
+verwiesen; ein Verweis hätte spätere Änderungen mitgenommen und wäre damit
+kein Zustand, sondern nur ein Zeiger.
+
+`R.geheZuMitHerkunft()` wechselt mit festgehaltener Herkunft.
+`dialogSchliessen()` kehrt danach dorthin zurück — damit gilt es für
+**Schließen, Escape und den Knopf** gleichermaßen, ohne dass jeder Dialog
+es einzeln können muss.
+
+Der Knopf **„Zurück zum Kalender"** wird in `dialogOeffnen()` eingesetzt —
+an **einer** Stelle für jedes Fenster. In jedem Dialog einzeln hätte jeder
+neue Dialog die Chance, ihn zu vergessen.
+
+**Keine pauschale Rücksprungseite:** Wer einen Datensatz direkt in seinem
+Fachbereich öffnet, setzt keine Herkunft — dann führt Schließen wie bisher
+dorthin zurück. Und ein ausdrücklicher Bereichswechsel (`geheZu`) **gibt
+die Herkunft auf**; sonst hätte das Schließen eines späteren Fensters in
+einen Bereich zurückgesprungen, den der Mensch längst verlassen hat.
+
+### Die beiden ausdrücklich genannten Fälle
+
+| Fall | Ergebnis |
+|---|---|
+| Krankmeldung **Testfahrer 02 vom 03.10.2026** | öffnet `V0002`; Schließen, Escape und der Knopf führen in den Kalender zurück — Tagesansicht, 03.10.2026, alle Filter wie vorher |
+| Fahrzeugtermin **Testwagen 01 vom 20.10.2026** | öffnet die Akte von `F01` mit hervorgehobenem Service-Termin; Escape führt in den Kalender vom 20.10.2026 zurück |
+
+---
+
+## 40. Die Fahrzeugakte widerspricht sich nicht mehr
+
+### Der gemessene Ausgangsfehler
+
+Beim Fahrzeugtermin Testwagen 01 am 20.10.2026 stand **gleichzeitig**:
+
+- oben „Unterwegs"
+- „Aktueller Zustand: Frei"
+- „Heute zugewiesen: Testfahrer 01"
+
+### Die Ursache — drei Bezugspunkte ohne Beschriftung
+
+| Angabe | woher sie kam |
+|---|---|
+| die Marke oben | `fahrzeugLage(planEntwurf(), f)` — aus dem Plan des Tages, den die **Planung** gerade offen hatte |
+| „Aktueller Zustand" | `f.zustand`, der Stammzustand, der zu **keinem** Tag gehört |
+| „Heute zugewiesen" | ebenfalls aus dem Entwurf, hieß aber „heute" — und wenn die Planung auf einem anderen Tag stand, meinte es einen **dritten** Tag |
+
+### Was geändert wurde
+
+Jede Zeile nennt jetzt ihren Bezug, und jeder Tag steht mit konkretem
+Datum da:
+
+- **Zustand im Fahrzeugstamm** — „gilt dauerhaft, nicht für einen
+  einzelnen Tag"
+- **Einsatz heute, Freitag, 02.10.2026** — „aus dem veröffentlichten Plan
+  für heute"
+- **Einsatz am Dienstag, 20.10.2026** — „der im Kalender gewählte Tag —
+  nicht heute"
+
+Gelesen wird der **gespeicherte** Plan, nicht der Entwurf. Ein Entwurf
+gehört zu dem Tag, den die Planung offen hat; er sagt nichts über den
+20.10.
+
+**Ein Widerspruch ist damit nicht mehr konstruierbar**, weil es keine
+Angabe ohne Bezugstag gibt. Der Prüflauf belegt das strukturell: Die
+Begriffe „Aktueller Zustand" und „Heute zugewiesen" dürfen **nicht
+vorkommen**, und jede Einsatzzeile **muss** ein Datum im Format TT.MM.JJJJ
+tragen.
+
+**Nebenbefund, ehrlich benannt:** Im Testbestand stehen M01 und M05
+gleichzeitig auf F01 (beide 06:00–14:00). Die Akte zählte das vorher flach
+auf und ließ es normal aussehen. Jetzt heißt es „mehrfach vergeben, siehe
+Konflikt", mit einem eigenen Kasten: „Das ist ein Konflikt der Planung,
+nicht eine Eigenschaft des Fahrzeugs."
+
+---
+
+## 41. Keine Kundennummern, dafür Firmenkunden mit Fahrgast
+
+### Der gemessene Ausgangsfehler
+
+In der Oberfläche standen Kundennummern (`KD-0003`). Im Betrieb werden
+keine verwendet. Und bei einem Firmenkunden fehlte jede Angabe zur
+tatsächlich beförderten oder zuständigen Person.
+
+### Was geändert wurde
+
+**Das Feld `kundennummer` ist aus dem Datenmodell entfernt** — an allen
+sieben Stellen, auch bei den tausend erzeugten Testkunden. Es stand nur
+deshalb da, weil ich es für die Verknüpfung gebraucht zu haben glaubte;
+verknüpft wird aber über `id`.
+
+**Die technische Kennung bleibt intern und wird nirgends gezeigt.** Weder
+als „Kundennummer" noch als „Kennung". Der Grund: Eine Nummer, die in der
+Akte steht, wird genannt — und ist damit eine betriebliche Kundennummer,
+auch wenn sie anders heißt. Sie ist auch **kein Suchbegriff**: Sonst wäre
+sie über die Suche doch wieder eine Nummer. Der Prüflauf durchsucht die
+sichtbaren Texte von Kunden, Finanzen, Rewards, Fahrten, Übersicht,
+Kundenakte, Rewardskonto, Rechnungsakte, Fahrtaufnahme und Trefferliste auf
+`KD-\d`, das Wort „Kundennummer" und `K\d{4}` — nichts davon kommt vor.
+
+**An ihrer Stelle steht, was im Betrieb hilft:** in der Kundenliste der
+Ansprechpartner (bei Privatkunden ein Strich), in der Rewardsliste der Ort,
+in der Trefferliste der Fahrtaufnahme die Anschrift.
+
+### Verknüpfungen laufen nie über den Namen
+
+Vorher hatten `rechnungenVonKunde` und `rewardsVonKunde` einen **Rückfall
+auf den Namen**, und `fahrtenVonKunde` lief **ausschließlich** über ihn.
+Das ist weg:
+
+- jede Fahrt trägt `kundeId` (eine Gastfahrt bewusst leer)
+- jede Rechnung und jedes Rewardskonto tragen `kundeId`
+- `rewardskontoVon()` nimmt jetzt die Kennung, nicht den Namen
+
+Der Prüflauf legt einen **zweiten Kunden mit demselben Namen** an und
+belegt, dass er keine fremden Fahrten, Rechnungen oder Rewardskonten
+einsammelt. Hängt ein Beleg an keiner Kennung, taucht er bei keinem
+gleichnamigen Kunden auf — eine Beziehung, die niemand hergestellt hat,
+soll die Oberfläche nicht erfinden.
+
+### Firmenkunde und Fahrgast sind zwei verschiedene Dinge
+
+| Angabe | wo sie steht |
+|---|---|
+| Firma (Pflicht), Telefon (Pflicht), Ansprechpartner, Abteilung, E-Mail, Anschrift, betrieblicher Hinweis | am **Kunden** |
+| Fahrgast / Ansprechpartner | an der **einzelnen Fahrt** |
+
+Die Firma ist der Auftraggeber; der Fahrgast wechselt von Fahrt zu Fahrt.
+Beides in ein Feld zu legen hieße, eine Fahrt der falschen Person
+zuzuordnen. Die Akte und die Fahrtaufnahme sagen das ausdrücklich, und die
+Zusammenfassung vor dem Speichern nennt beide getrennt: „Auftraggeber
+(Firma)" und „Fahrgast / Ansprechpartner". Die Fahrt bleibt mit dem
+Firmenkunden verknüpft.
+
+Das Feld ist **nicht Pflicht** — keine Angabe ist erlaubt, dann fährt
+niemand namentlich mit. **Kein medizinisches Freitextfeld** kam dazu; das
+Feld trägt den ausdrücklichen Hinweis, dass dort keine Gesundheitsangabe
+hingehört.
+
+### Die Pflichtfeldprüfung
+
+Der geprüfte Ablauf bleibt unverändert: Abbrechen legt nichts an, „Zurück
+und ändern" erhält alle Eingaben, erst „Verbindlich anlegen" erzeugt genau
+einen Kunden, und er ist sofort in Suche und Fahrtaufnahme verfügbar.
+
+Verbessert: Der Fehler steht jetzt **direkt am Feld** (`aria-invalid`,
+`aria-describedby`), der Fokus springt auf das **erste** ungültige Feld, und
+der zusammenfassende Hinweis bleibt zusätzlich. Vorher musste man aus
+„Bitte ausfüllen: Telefonnummer" selbst heraussuchen, welches Feld gemeint
+war.
+
+---
+
+## 42. Eine bezahlte Rechnung ist abgeschlossen
+
+### Der gemessene Ausgangsfehler
+
+Bei `RE-2026-0001` mit Zustand „bezahlt" waren **Zahlung erfassen** und
+**Mahnung vorbereiten** aktiv.
+
+### Die Ursache
+
+Die Knöpfe hingen allein an `finance.write`. Der **Zustand** der Rechnung
+kam in der Entscheidung nicht vor — weder in der Anzeige noch in der
+Aktion.
+
+### Was geändert wurde
+
+Eine Funktion `rechnungSperre(r, art)` an **einer** Stelle, gefragt von der
+Anzeige **und** von der Aktion. Deshalb bleibt ein direkter Aufruf von
+`ak-zahlung` auf eine bezahlte Rechnung wirkungslos — ein fehlender Knopf
+ist kein Schutz. Zusätzlich wird unmittelbar **vor dem Schreiben** noch
+einmal geprüft: Zwischen dem Öffnen des Fensters und dem Klick kann die
+Rechnung bezahlt worden sein.
+
+Eine **Korrektur als neue Version** bleibt möglich — sie überschreibt
+nichts, sondern stellt richtig.
+
+Die Akte sagt auch, **warum** die Knöpfe fehlen. Eine stumme Sperre ist
+keine Erklärung.
+
+### Offene Geschäftsentscheidung
+
+**Rückzahlung, Überzahlung und Storno sind nicht festgelegt** und werden
+nicht erfunden. Die Sperrmeldung benennt das ausdrücklich: „Rückzahlung und
+Überzahlung sind noch nicht festgelegt — bitte zuerst entscheiden lassen."
+
+---
+
+## 43. Rückweg in den Finanzdialogen
+
+### Der gemessene Ausgangsfehler
+
+Nach einem versehentlichen Klick auf „Zahlung erfassen", „Mahnung
+vorbereiten" oder „Korrektur als neue Version" gab es nur „Schließen" —
+die Rechnung war weg und musste neu gesucht werden.
+
+### Was geändert wurde
+
+Jede Finanzaktion hat jetzt in **beiden** Stufen:
+
+- **Zurück zur Rechnung** — führt in die Akte, ohne etwas zu speichern
+- **Abbrechen / Schließen** — verlässt das Fenster
+- **Escape** wirkt wie „Zurück zur Rechnung", nicht wie „hinaus"
+- bei begonnener Eingabe kommt vor dem endgültigen Verlassen eine
+  Sicherheitsabfrage (`ProbeAkten.offeneEingabe()` meldet das dem Rahmen,
+  wie es Team und Vorgänge schon tun)
+
+**Gespeichert wird erst nach der letzten Prüfung.** Der Prüflauf belegt für
+alle drei Aktionen, dass auf dem Rückweg weder eine Zahlung noch ein
+Verlaufseintrag entsteht.
+
+### Ein eigener Fehler, den der Prüflauf gefunden hat
+
+„Zurück zur Rechnung" behielt den Entwurf — aber das **erneute Öffnen** der
+Aktion legte einen neuen an und warf ihn damit weg. Der Rückweg war so nur
+die halbe Zusage. Behoben: Dieselbe Aktion auf derselben Rechnung führt den
+begonnenen Entwurf weiter. Eine **andere** Aktion oder eine andere Rechnung
+fängt neu an — ein Betrag aus einer Zahlung hat in einer Mahnung nichts zu
+suchen.
+
+---
+
+## 44. Erledigte Vorgänge: eine Rückmeldung mit Rückgängig
+
+Das geprüfte Verhalten bleibt vollständig erhalten: nichts wird gelöscht,
+der Vorgang steht weiter unter „Alle" und im Archiv, Zeitpunkt und
+handelnde Person bleiben protokolliert, „Zurück in die Arbeitsliste" stellt
+ihn wieder her, und „Wiedereröffnen" ist eine getrennte fachliche Aktion.
+
+**Neu:** Nach dem Entfernen erscheint eine kurze Rückmeldung mit
+**Rückgängig**. Sie sagt ausdrücklich, dass nichts gelöscht wurde, und wo
+der Vorgang jetzt steht.
+
+Sie hängt am Vorgang, **nicht an einer Zeitschaltung**: Eine Rückmeldung,
+die nach fünf Sekunden verschwindet, hat jemand, der langsamer liest, nie
+gesehen. Sie verschwindet, wenn der Vorgang zurückgeholt wurde — dann wäre
+sie eine Unwahrheit — oder wenn man sie wegklickt.
+
+---
+
+## 45. Einstellungen → Rollen & Rechte
+
+### Was gebaut wurde
+
+**Neu: `probe-einstellungen.js`** und ein Bereich **Einstellungen**, der
+`security.write` verlangt. In dieser Probe hat das ausschließlich die
+Administration.
+
+**Rolle und einzelne Freigabe bleiben getrennt:**
+
+- `rollenRechte[rolle]` gilt für **alle** Konten dieser Rolle
+- `kontoRechte[kennung]` sind **zusätzliche** Freigaben für ein Konto
+- `FAEHIGKEITEN` bleibt unverändert als **Ausgangsverteilung** — daran
+  zeigt die Oberfläche, was jemand geändert hat
+
+Ohne diese Trennung wäre nach einer Weile nicht mehr erkennbar, ob jemand
+ein Recht aus seiner Rolle hat oder weil es ihm einmal einzeln gegeben
+wurde. Im Bearbeitungsfenster sind Rechte, die aus der Rolle kommen,
+abgesetzt und gesperrt dargestellt.
+
+**Verstecken ist kein Schutz.** Jede Aktion (`es-rolle`, `es-konto`,
+`es-weiter`, `es-zurueck`, `es-ja`) prüft `security.write` **selbst**. Der
+Prüflauf ruft für Disposition, Personal, Buchhaltung und Mitarbeiter alle
+fünf Aktionen direkt auf: kein Recht ändert sich, kein Fenster öffnet sich.
+
+**Navigation und Aktion folgen derselben Fähigkeit.** Der Prüflauf nimmt
+der Buchhaltung `analytics.read`, und danach ist der Bereich nicht nur aus
+der Navigation verschwunden — ein direkter Sprung dorthin wird abgewiesen.
+
+**Die letzte Administration bleibt handlungsfähig.** Geprüft wird nicht
+„bin ich noch drin", sondern „gibt es **danach** noch irgendein Konto, das
+`security.write` **und** `self.read` hat". Das ist der Unterschied zwischen
+einer Höflichkeit und einem Schutz: Auch wer einem **anderen**
+Administrationskonto das Recht nimmt, darf das letzte nicht treffen. Die
+Prüfung läuft beim Zeichnen **und** unmittelbar vor dem Schreiben — ein
+direkter Aufruf hat die Anzeige nie gesehen.
+
+**Letzte Prüfung und Protokoll.** Vor dem Speichern: betroffene Rolle
+beziehungsweise betroffenes Konto, vorher, nachher, was dazukommt, was
+entzogen wird, wer danach noch Rechte verwalten kann, das handelnde Konto
+und ein **Pflichtgrund**. Protokolliert werden Name, Kennung, Rolle, Datum,
+Uhrzeit, Ziel, vorher, nachher und Grund. Eine spätere Korrektur kommt als
+**neuer Eintrag** dazu; ein bestehender wird nie überschrieben.
+
+### Wo die Wunschliste feiner ist als das Modell — offen gekennzeichnet
+
+Die genannten Fähigkeiten „Fahrten sehen" und „Planung sehen" sind im
+Modell **ein** Recht (`operations.read`); ebenso „Personal sehen" und
+„Krankheitszeiträume sehen" (`personnel.read`) sowie „Personal bearbeiten"
+und „Gesundheitsdokumente prüfen" (`personnel.write`).
+
+Das steht **in der Oberfläche an jeder betroffenen Zeile** und unter
+„Offene Entscheidungen". Es wird **nicht** stillschweigend aufgeteilt: Eine
+Aufteilung von `operations.read` müsste an 27 Stellen entschieden werden,
+und eine falsche Einordnung versteckt eine funktionierende Ansicht, ohne
+dass es auffällt. Ob die Aufteilung kommen soll, ist eine Entscheidung, die
+ich nicht treffe.
+
+Ebenfalls offen und so gekennzeichnet: die genaue spätere Verteilung für
+Buchhaltung, Personal und Disposition, und ob für die Rechtevergabe ein
+Vieraugenprinzip gelten soll.
+
+---
+
+## 46. Zwei getrennte Administrationskonten
+
+Für den Start sind zwei Personen als Administration vorgesehen. In der
+Designprobe stehen sie als **Testidentitäten**:
+
+| Kennung | Name | Rolle |
+|---|---|---|
+| `U-ADM-01` | Enes Carman | Administration |
+| `U-ADM-02` | Fatih Duman | Administration |
+
+**Kein gemeinsames Administrationskonto.** Bei einem gemeinsamen Konto
+steht im Protokoll nur „Administration", und niemand kann sagen, wer
+gehandelt hat.
+
+Die Kontowahl erscheint im Banner, aber nur dort, wo es für eine Rolle mehr
+als ein Konto gibt — ein Auswahlfeld mit einem einzigen Eintrag ist eine
+Bedienung, die nichts bedient. `benutzer()` nennt jetzt das **Konto** statt
+der Rolle; im Protokoll stehen Name, Kennung, Rolle, Datum und Uhrzeit.
+
+Der Prüflauf lässt **beide** Konten dieselbe Aktion ausführen und belegt,
+dass die beiden Protokolleinträge unterscheidbar sind.
+
+**Es wird kein echtes Konto angelegt**, kein Passwort hinterlegt und nichts
+in Supabase verändert. Zugangsdaten stehen weder in den Testdaten noch im
+Protokoll — ein Protokoll ist kein Ort für Geheimnisse. Der Prüflauf sucht
+in beiden nach `passwort|password|kennwort|token|secret|schluessel`.
+
+---
+
+## 47. Analyse nach dem Umbau
+
+Die funktionierende Berechnung ist **unberührt**: Heute 180 Seitenaufrufe,
+letzte 30 Tage 5.724, und alle Kennzahlen reagieren gemeinsam. Der Prüflauf
+belegt beide Zahlen ausdrücklich und vergleicht nach dem Umbau, dass „Letzte
+30 Tage" **genau dieselben** Werte zeigt wie vorher.
+
+Mit dem gemeinsamen Datumsfeld geprüft:
+
+| Eingabe | Verhalten |
+|---|---|
+| nur Startdatum | keine Kennzahl, Bitte beide Felder zu füllen |
+| nur Enddatum | keine Kennzahl |
+| gültiger Zeitraum | alle Kennzahlen, Balken und Quoten gemeinsam |
+| **Ende vor Beginn** | **Fehler**, keine Kennzahl, keine Tageszahl im Kopf |
+| unmögliches Datum (31.02.) | keine Kennzahl, Fehler am Feld |
+
+**Geändertes Verhalten, ausdrücklich benannt:** Ein verdrehter Zeitraum
+wurde vorher stillschweigend **gedreht**. Der Geschäftsführer hat danach
+einen **Fehler** verlangt. Das ist auch das bessere Verhalten: Wer „01.10."
+bis „01.09." eintippt, hat sich vertippt und soll das sehen, statt stumm
+eine andere Auswertung zu bekommen, als er gemeint hat. Die alte Erwartung
+in `probe-analyse-pruefen` („eine verdrehte Eingabe wird gedreht, nicht als
+leer gewertet") gilt damit nicht mehr und ist angepasst.
+
+**Nie teilweise alte Zahlen:** Bei unvollständigem oder verdrehtem Zeitraum
+wird **gar keine** Kennzahl gezeichnet. Der Prüflauf prüft die Anzahl der
+Kennzahlkacheln auf null — eine stehengebliebene alte Zahl wäre damit
+sichtbar.
+
+---
+
+## 48. Eigene Fehler und veraltete Prüferwartungen
+
+Getrennt aufgeführt, wie verlangt.
+
+### 48.1 Eigene Umsetzungsfehler
+
+| Fehler | Wirkung | Gefunden von |
+|---|---|---|
+| `select()` im `requestAnimationFrame` beim Betreten eines Datums- oder Zeitfeldes | Wer sofort nach dem Klick tippte, verlor die ersten Zeichen: aus `01092026` wurde `2026` | eigener Prüflauf |
+| `fokusMerken()` baute den Wähler aus dem ersten Datensatzschlüssel | Bei zwei Datumsfeldern nebeneinander sprang der Fokus nach dem Neuzeichnen immer ins **erste** | eigener Prüflauf |
+| `stand.datum` der Fahrtaufnahme war leer, nachdem `data-feld="datum"` wegfiel | Das Feld zeigte „heute", `schrittFehler(4)` verlangte trotzdem ein Datum | beim Bauen bemerkt |
+| `datumFehler` fehlte im Anfangszustand des Kalenders | Zwei Zustände, die gleich sind, sahen beim Vergleich verschieden aus | eigener Prüflauf |
+| `ak-zahlung` legte beim erneuten Öffnen einen neuen Entwurf an | „Zurück zur Rechnung" behielt die Eingabe, das Wiederöffnen warf sie weg — der Rückweg war nur die halbe Zusage | eigener Prüflauf |
+
+Die ersten beiden sind **dieselbe Art Fehler**: eine Annahme darüber, was
+zwischen zwei Bildern passiert. Beide steckten auch im **Zeitmodul** und
+sind dort mit behoben — ihn nur an einer Stelle zu beheben hieße, ihn an der
+anderen stehen zu lassen.
+
+### 48.2 Fehler in meinen eigenen Prüfläufen
+
+Diese gehören getrennt, weil sie **nichts** über die Oberfläche sagen:
+
+1. **Der Filter blieb eingeschränkt.** Ein vorheriger Abschnitt hatte den
+   Kalender auf „nur Abwesenheiten" gestellt. Am 20.10. stand dann nichts
+   da — nicht weil der Fahrzeugtermin fehlte, sondern weil er ausgefiltert
+   war. Erst „alle", dann suchen.
+2. **Dreimal „Weiter" reicht nicht.** Eine Gastfahrt braucht Abhol- und
+   Zieladresse. Der Assistent blieb zu Recht in Schritt 2 stehen; mein
+   Prüflauf hielt das für einen Mangel.
+3. **„30 Tage" steht auch auf dem Knopf.** Ich habe den ganzen
+   Flächentext durchsucht statt nur den Kopf.
+4. **„Supabase" steht im Kopfkommentar.** Mein Modul sagt ausdrücklich
+   „kennt weder Supabase noch fetch" — und meine Suche nach `supabase`
+   schlug darauf an. Jetzt wird im Code **ohne Kommentare** gesucht.
+5. **`innerText` liefert die CSS-Großschreibung.** Die Konfliktliste setzt
+   ihre Überschriften per CSS in Großbuchstaben; dort stand „WIRD
+   ENTZOGEN", und meine Suche nach `/wird entzogen/` fand nichts. Die
+   Oberfläche war richtig, meine Suche war es nicht.
+6. **`page.fill()` mit einem ISO-Datum** geht am neuen Feld vorbei — es
+   nimmt TT.MM.JJJJ. Die Prüfläufe tippen jetzt Zeichen für Zeichen, so wie
+   ein Mensch.
+
+### 48.3 Veraltete Prüferwartungen — angepasst mit Begründung
+
+Jede Anpassung steht als Kommentar **im Prüflauf selbst**, nicht nur hier.
+
+| Lauf | Alte Erwartung | Weshalb sie nicht mehr gilt | Neue, strengere Erwartung |
+|---|---|---|---|
+| `probe-portal` | „Administration sieht alle zwölf Bereiche" | Der dreizehnte Bereich (Einstellungen) wurde ausdrücklich verlangt. Eine feste Zahl hält ohnehin nur fest, **wie viele** Bereiche es gibt, nicht **welche** | die **Menge** der Bereiche, und dass Einstellungen an `security.write` hängt |
+| `probe-fahrt` | Der Platzhalter nennt „Name, Telefonnummer oder Kundennummer" | Es gibt keine Kundennummern mehr. Ein Platzhalter, der nach einer Nummer fragt, die es nicht gibt, schickt in die Irre | er nennt Name und Telefonnummer **und keine** Kundennummer |
+| `probe-fahrt` | Die Suche findet Testkunde 03 über `KD-0003` | dieselbe Änderung | sie findet ihn über die **Anschrift**, und die technische Kennung findet **nichts** |
+| `probe-akten` | Suche „nach der Kundennummer"; Enter-Treffer über `KD-0002`; der Hinweis nennt „Kundennummer"; die Akte zeigt Kundennummer **und** Kennung | dieselbe Änderung. Eine Nummer, die in der Akte steht, wird dem Kunden genannt — und ist damit eine betriebliche Kundennummer, auch wenn sie „Kennung" heißt | Suche nach **Firma**, Enter über die **Telefonnummer**, der Hinweis ohne Nummer, die Akte ohne beides — und ausdrücklich: die Kennung ist **kein** Suchbegriff |
+| `probe-akten` | „er hat eine Kundennummer" | dieselbe Änderung | er hat eine stabile **technische Kennung**, und `kundennummer` existiert nicht |
+| `probe-analyse` | „eine verdrehte Eingabe wird gedreht, nicht als leer gewertet" | Der Geschäftsführer hat danach ausdrücklich einen **Fehler** verlangt. Das ist auch das bessere Verhalten: Wer sich vertippt, soll das sehen, statt stumm eine andere Auswertung zu bekommen. Eine Eingabe stillschweigend zurechtzubiegen ist eine Annahme über die Absicht | **Fehlermeldung**, keine Kennzahl, keine Tageszahl — und in der richtigen Reihenfolge wieder dieselben Zahlen |
+| `probe-analyse` | „beide sind echte Datumsfelder" (`type="date"`) | das native Feld ist portalweit ersetzt | beide gehören zum **gemeinsamen Modul** — sonst wäre auch eine Eigenlösung erlaubt |
+
+**Keine** dieser Anpassungen macht einen Lauf schwächer. In fünf Fällen
+prüft er danach mehr als vorher.
+
+---
+
+## 50. Alle sechzehn Prüfläufe, vollständig gefahren
+
+Stand 02.10.2026. Jeder Lauf wurde bis zur gedruckten Abschlussbilanz
+gefahren. Ein Lauf ohne Bilanz gilt nicht als bestanden.
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-portal-pruefen` | **114 bestanden, 0 offen** |
+| `probe-fahrt-pruefen` | **172 bestanden, 0 offen** |
+| `probe-planung-pruefen` | **171 bestanden, 0 offen** |
+| `probe-team-pruefen` | **197 bestanden, 0 offen** |
+| `probe-vorgaenge-pruefen` | **138 bestanden, 0 offen** |
+| `probe-teilung-pruefen` | **105 bestanden, 0 offen** |
+| `probe-dokument-pruefen` | **93 bestanden, 0 offen** |
+| `probe-regeln-pruefen` | **123 bestanden, 0 offen** |
+| `probe-zuordnung-pruefen` | **126 bestanden, 0 offen** |
+| `probe-karten-pruefen` | **88 bestanden, 0 offen** |
+| `probe-wahrheit-pruefen` | **78 bestanden, 0 offen** |
+| `probe-kalenderwege-pruefen` | **109 bestanden, 0 offen** |
+| `probe-akten-pruefen` | **243 bestanden, 0 offen** |
+| `probe-analyse-pruefen` | **123 bestanden, 0 offen** |
+| `probe-datum-pruefen` (neu) | **162 bestanden, 0 offen** |
+| `probe-rechte-pruefen` (neu) | **218 bestanden, 0 offen** |
+| **Summe** | **2 260 bestanden, 0 offen** |
+
+In allen sechzehn Läufen: **null Anfragen nach außen.** Jeder
+Browserkontext bricht jede Verbindung ab, die nicht auf den eigenen
+Testserver zeigt, und zählt sie. Die Zähler stehen am Ende jedes Laufs
+bei 0.
+
+### Was in diesem Durchgang dazukam
+
+| Punkt | wo belegt |
+|---|---|
+| gemeinsames Datumsmodul in allen betroffenen Bereichen | `probe-datum` 1–3 |
+| vollständige Tastaturbedienung der Datumsfelder | `probe-datum` 2 |
+| Einzelfilter und Rückkehr zu „alle", alle sechs Kategorien, beide Richtungen | `probe-datum` 4, `probe-kalenderwege` 8 |
+| Kalenderherkunft mit Datum, Ansicht, Filtern und Scrollposition | `probe-datum` 5 |
+| Rückweg für jede Kalenderkategorie, Schließen/Escape/Knopf | `probe-datum` 5 |
+| keine widersprüchlichen Fahrzeugzustände | `probe-datum` 5, `probe-kalenderwege` 7 |
+| keine sichtbaren betrieblichen Kundennummern (10 Ansichten) | `probe-rechte` 1 |
+| technische Kunden-ID bleibt stabil, gleichnamiger Kunde sammelt nichts ein | `probe-rechte` 2 |
+| Firmenkunde und Fahrgast getrennt geführt | `probe-rechte` 3 |
+| bezahlte Rechnung blockiert Zahlung und Mahnung, auch direkt aufgerufen | `probe-rechte` 4 |
+| Finanzdialoge mit Rückweg, Eingaben erhalten | `probe-rechte` 5 |
+| entfernte Vorgänge bleiben gespeichert und wiederherstellbar | `probe-rechte` 6 |
+| zwei Admin-Testidentitäten mit unterscheidbaren Protokollen | `probe-rechte` 7 |
+| Rollenfähigkeiten greifen in Navigation **und** Aktion | `probe-rechte` 8, 10 |
+| Administration kann sich nicht selbst aussperren | `probe-rechte` 9 |
+| keine Diagnose, kein medizinischer Freitext, keine Zugangsdaten | `probe-rechte` 7, 11 |
+| 320, 390, 430 und 1440 px ohne Überlauf | `probe-datum` 7, `probe-rechte` 11 |
+| null Netzaufrufe | alle sechzehn Läufe |
+
+### Was diese Zahlen nicht sagen
+
+- Es ist **keine Datenquelle** angebunden. Alles steht im Speicher des
+  Browsers und ist nach dem Neuladen weg.
+- **Kein Lauf** sagt etwas über die produktive Supabase-Instanz: nicht
+  über RLS, nicht über Grants, nicht über das Verhalten der Storage-API.
+- Die **Rechteverwaltung ist eine Vorführung.** Es wird keine
+  Supabase-Rolle angelegt, kein Grant vergeben und keine RLS-Policy
+  geändert. Dass dieselbe Rechtelogik serverseitig greift, ist damit
+  **nicht** gezeigt — und genau das wäre im Betrieb der entscheidende
+  Teil: Eine Prüfung im Browser schützt nichts.
+- Die zwei Administrationskonten sind **Testidentitäten**. Es gibt kein
+  echtes Konto, kein Passwort, keine Anmeldung.
+- Es wurde **keine E-Mail** versendet, **keine PDF** erzeugt, **keine
+  PAJ-Anfrage** gestellt.
+- Der produktive Verwaltungsbereich unter `admin/` ist **unverändert**.
+
+### Noch nicht gegen Supabase geprüft
+
+- ob RLS fremde Daten tatsächlich abweist
+- ob die hier geschalteten Fähigkeiten serverseitig Entsprechungen haben
+- Verhalten der Storage-API für Bescheinigungen und Lohn-PDF
+- die echten Rollen und Grants der produktiven Instanz
+- Passwort-Zurücksetzen für Kunden
+- SMTP mit SPF, DKIM und DMARC
+- das ovale Glücksrad auf dem iPhone
+
+---
+
+## 51. Manueller Testweg
+
+Vorschau: `npm run probe-portal`, dann die genannte Adresse im Browser.
+Rolle und Konto stehen oben im Banner. **Nichts davon verlässt den
+Browser.**
+
+### A. Das Datumsfeld (Block 1)
+
+1. Rolle **Administration**, Bereich **Kalender**. Ins Datumsfeld klicken.
+2. `20102026` tippen — Ziffer für Ziffer hinsehen. Erwartung: Jede Ziffer
+   landet rechts, **nichts springt**, der Fokus bleibt im Feld.
+3. **Enter**. Erwartung: Das Feld zeigt `20.10.2026`, und der Kalender
+   steht auf diesem Tag.
+4. `31.02.2026` tippen, Enter. Erwartung: **Nicht übernommen.** Unter dem
+   Feld steht „Der Monat 02.2026 hat 28 Tage."
+5. `29.02.2024` eintragen. Erwartung: angenommen — ein Schaltjahr.
+6. Irgendetwas tippen und **Escape** drücken. Erwartung: Der letzte gültige
+   Wert kommt zurück, und **nichts schließt sich**.
+7. Dasselbe in **Planung**, **Analyse → Eigener Zeitraum**, **Meldungen →
+   Archiv** und in der **Fahrtaufnahme, Schritt 4**. Erwartung: überall
+   dasselbe Feld, dasselbe Verhalten.
+
+### B. Kalenderfilter und Rückweg (Blöcke 2–4)
+
+1. Bereich **Kalender**, Datum **03.10.2026**, Tagesansicht.
+2. Einmal auf **Abwesenheiten** klicken. Erwartung: **Nur** Abwesenheiten
+   bleiben gold, alle anderen aus — ein Klick, nicht sechs.
+3. Noch einmal auf **Abwesenheiten**. Erwartung: alle wieder gold.
+4. Wieder auf Abwesenheiten einschränken, dann die **Krankmeldung
+   Testfahrer 02** öffnen. Erwartung: Es öffnet sich `V0002`, und unten
+   steht **„Zurück zum Kalender"**.
+5. Diesen Knopf drücken. Erwartung: Tagesansicht, 03.10.2026, der Filter
+   **steht noch auf Abwesenheiten**, dieselbe Scrollposition.
+6. Dasselbe mit **Escape** und mit **Schließen** — gleiches Ergebnis.
+7. Alle Filter wieder anschalten, Datum **20.10.2026**. Den
+   **Fahrzeugtermin Testwagen 01** öffnen. Erwartung:
+   - die Akte von Testwagen 01, der Service-Termin hervorgehoben
+   - **keine** Zeile „Aktueller Zustand" und **keine** „Heute zugewiesen"
+   - stattdessen „Zustand im Fahrzeugstamm", „Einsatz heute, **02.10.2026**"
+     und „Einsatz am **20.10.2026**" — jede mit Datum
+   - der Hinweis, dass zwei verschiedene Tage gezeigt werden
+8. **Escape**. Erwartung: zurück im Kalender vom 20.10.2026.
+9. Gegenprobe: In **Fahrer & Fahrzeuge** ein Fahrzeug direkt öffnen.
+   Erwartung: **kein** Knopf „Zurück zum Kalender", und Schließen führt in
+   Fahrer & Fahrzeuge zurück.
+
+### C. Kunden und Firmenkunden (Blöcke 5–7)
+
+1. Bereich **Kunden**. Erwartung: **nirgends** eine Kundennummer, keine
+   `KD-…`, kein `K0003`, nicht in der Liste, nicht in der Akte.
+2. `Testallee` eintippen. Erwartung: Testkunde 03 wird gefunden.
+3. `K0003` eintippen. Erwartung: **kein** Treffer — die technische Kennung
+   ist kein Suchbegriff.
+4. **Testfirma 04** öffnen. Erwartung: Ansprechpartner und Abteilung, und
+   der Satz, dass die Firma der Auftraggeber ist.
+5. **Neuen Kunden anlegen**, **Firmenkunde** wählen. Erwartung: Felder für
+   Ansprechpartner und Abteilung erscheinen.
+6. Ohne Eingabe auf **Weiter**. Erwartung: Der Fehler steht **am Feld**, und
+   der Schreibzeiger sitzt im ersten ungültigen Feld.
+7. Ausfüllen, **Weiter**, **Zurück und ändern**. Erwartung: alle Eingaben
+   noch da. Dann **Abbrechen** — es entsteht **kein** Kunde.
+8. Noch einmal anlegen, diesmal **Verbindlich anlegen**. Erwartung: genau
+   **ein** Kunde, sofort in der Suche.
+9. **Neue Fahrt aufnehmen**, diesen Firmenkunden wählen. Erwartung: ein
+   Feld **„Fahrgast / Ansprechpartner"** erscheint, mit dem Hinweis, dass es
+   nicht der Auftraggeber ist. Ausfüllen und bis zur Zusammenfassung gehen.
+   Erwartung: „Auftraggeber (Firma)" und „Fahrgast / Ansprechpartner"
+   stehen **getrennt** da.
+
+### D. Finanzen (Blöcke 8–9)
+
+1. Rolle **Buchhaltung**, Bereich **Finanzen**. Die Rechnung mit Zustand
+   **bezahlt** öffnen.
+2. Erwartung: **kein** „Zahlung erfassen", **kein** „Mahnung vorbereiten".
+   Stattdessen ein Abschnitt „Was hier nicht mehr geht" mit Begründung, und
+   der Hinweis, dass Rückzahlung und Überzahlung **offen** sind.
+3. „Korrektur als neue Version" ist weiterhin da.
+4. Eine **offene** Rechnung öffnen, **Zahlung erfassen** klicken, einen
+   Betrag eintragen, **Zurück zur Rechnung**. Erwartung: Sie sind in der
+   Akte, **nichts** wurde gespeichert.
+5. Noch einmal „Zahlung erfassen". Erwartung: Ihr Betrag ist **noch da**.
+6. **Escape** drücken. Erwartung: zurück zur Rechnung, das Fenster bleibt
+   offen.
+7. Etwas eintragen und **Abbrechen** drücken. Erwartung: eine
+   Sicherheitsabfrage, bevor etwas verloren geht.
+
+### E. Erledigte Vorgänge (Block 10)
+
+1. Rolle **Administration**, **Meldungen**, Reiter **Erledigt**.
+2. Bei einem Vorgang **Aus Erledigt-Liste entfernen**. Erwartung: Eine
+   Rückmeldung erscheint: „Nichts gelöscht …" mit **Rückgängig**.
+3. Reiter **Alle** und **Archiv** prüfen. Erwartung: Der Vorgang steht in
+   beiden.
+4. Zurück auf **Erledigt**, **Rückgängig** drücken. Erwartung: Er ist
+   wieder da, und die Rückmeldung verschwindet.
+
+### F. Rollen & Rechte (Blöcke 11–12)
+
+1. Rolle **Administration**. Erwartung: Oben erscheint eine zweite Auswahl
+   **Konto** mit **Enes Carman** und **Fatih Duman**.
+2. Auf **Fatih Duman** stellen. Erwartung: Links steht „Fatih Duman ·
+   Administration · U-ADM-02".
+3. Bereich **Einstellungen** öffnen.
+4. **Rolle Buchhaltung** anklicken, den Haken bei **Analyse sehen**
+   entfernen, **Weiter zur Prüfung**.
+5. Erwartung: Die Prüfung zeigt, was entzogen wird, welches Konto betroffen
+   ist, und **wer danach noch Rechte verwalten kann**.
+6. Ohne Grund auf **Verbindlich speichern**. Erwartung: Es passiert
+   **nichts**, und es wird nach dem Grund gefragt.
+7. Einen Grund eintragen und speichern. Dann auf Rolle **Buchhaltung**
+   umstellen. Erwartung: **Analyse** ist aus der Navigation verschwunden.
+8. Zurück als Administration: **Konto U-DIS-01** anklicken, **Urlaub
+   entscheiden** ankreuzen, speichern. Erwartung: Die Freigabe steht am
+   **Konto**, nicht an der Rolle — in der Liste als „1 einzeln".
+9. **Rolle Administration** anklicken und **Rechte verwalten** abwählen,
+   **Weiter**. Erwartung: Eine Fehlermeldung, dass danach **kein einziges
+   Konto** mehr Rechte verwalten könnte — und **kein** Speicherknopf.
+10. Unten im Bereich: das **Protokoll der Rechteänderungen** mit Name,
+    Kennung, Zeit, Ziel, vorher, nachher und Grund.
+
+### G. Analyse (Block 13)
+
+1. Bereich **Analyse**, **Heute**. Erwartung: 180 Seitenaufrufe.
+2. **Letzte 30 Tage**. Erwartung: 5.724 — und **alle** Zahlen ändern sich
+   mit.
+3. **Eigener Zeitraum**. Nur das Von-Datum eintragen. Erwartung: **keine**
+   Kennzahl, sondern die Bitte, beide Felder zu füllen.
+4. Beide eintragen. Erwartung: alle Kennzahlen, und im Kopf stehen Von, Bis
+   und die Tageszahl.
+5. Das Bis-Datum **vor** das Von-Datum setzen. Erwartung: „Das Ende liegt
+   vor dem Beginn" — **keine** Kennzahl, auch keine alte.
+6. Zurück auf **Letzte 30 Tage**. Erwartung: wieder 5.724.
+
+### H. Gegenprobe Disposition
+
+Rolle **Testdisposition 01**. Erwartung: **Einstellungen** ist nicht
+sichtbar, Kunden, Personal, Lohn, Finanzen, Rewards und Analyse ebenfalls
+nicht. Eine Krankmeldung öffnen: weder Dateiname noch Datei noch
+Prüfergebnis.

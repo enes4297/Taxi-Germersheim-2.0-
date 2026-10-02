@@ -29,6 +29,13 @@
         <option value="employee">Mitarbeiter</option>
       </select>
     </label>
+
+    <!-- Innerhalb der Administration gibt es ZWEI getrennte Konten.
+         Kein gemeinsames Administrationskonto: im Protokoll muss
+         stehen, WER gehandelt hat, nicht nur welche Rolle. -->
+    <label class="banner-rolle" data-kontowahl hidden>
+      Konto
+    </label>
   </div>
 
   <div class="portal">
@@ -62,10 +69,12 @@
   <script src="probe-daten.js"></script>
   <script src="probe-rahmen.js"></script>
   <script src="probe-zeitfeld.js"></script>
+  <script src="probe-datumsfeld.js"></script>
   <script src="probe-fahrtassistent.js"></script>
   <script src="probe-team.js"></script>
   <script src="probe-vorgaenge.js"></script>
   <script src="probe-akten.js"></script>
+  <script src="probe-einstellungen.js"></script>
   <script src="probe-kalender.js"></script>
   <script src="probe-bereiche.js"></script>
 </body>

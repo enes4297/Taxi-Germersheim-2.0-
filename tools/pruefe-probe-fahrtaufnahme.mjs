@@ -85,8 +85,24 @@ console.log("\n── 1. Kunde auswaehlen statt Kundenkarten ──");
   const text = await rumpf(page);
   pruefe(/Für wen ist die Fahrt\?/.test(text), "die Ueberschrift heisst nicht mehr „Wer fährt?“");
   pruefe(!/Wer fährt\?/.test(text), "die alte Ueberschrift ist weg");
+  /*
+    GEAENDERTE ERWARTUNG.
+
+    Alt: Der Platzhalter nennt "Name, Telefonnummer oder Kundennummer".
+
+    Weshalb das nicht mehr gilt: Im Betrieb werden keine Kundennummern
+    verwendet - der Geschaeftsfuehrer hat sie ausdruecklich aus der
+    Oberflaeche nehmen lassen. Ein Platzhalter, der nach einer Nummer
+    fragt, die es nicht gibt, schickt den Menschen in die Irre.
+
+    Neu: Der Platzhalter nennt die Felder, in denen wirklich gesucht
+    wird, und ausdruecklich KEINE Nummer. Geprueft wird beides.
+  */
   const feld = await page.getAttribute("[data-suchfeld]", "placeholder");
-  pruefe(/Name, Telefonnummer oder Kundennummer/.test(feld || ""), "das Suchfeld nennt, wonach gesucht wird");
+  pruefe(/Name/.test(feld || "") && /Telefonnummer/.test(feld || ""),
+    `das Suchfeld nennt, wonach gesucht wird: „${feld}“`);
+  pruefe(!/Kundennummer/.test(feld || ""),
+    "und fragt nicht nach einer Kundennummer — es gibt keine");
   pruefe(/Zuletzt verwendet/.test(text), "zuletzt verwendete Kunden stehen darunter");
   pruefe(/Gastfahrt/.test(text) && /Neuen Kunden anlegen/.test(text), "Gastfahrt und Neuanlage sind erreichbar");
 
@@ -119,9 +135,30 @@ console.log("\n── 2. Suche mit vielen Datensaetzen ──");
   pruefe(viele <= 8, `bei vielen Treffern werden hoechstens acht gezeichnet (${viele})`);
   pruefe(/Bitte genauer suchen/.test(await rumpf(page)), "und es wird gesagt, dass es mehr gibt");
 
-  await page.fill("[data-suchfeld]", "KD-0003");
+  /*
+    GEAENDERTE ERWARTUNG.
+
+    Alt: Die Suche findet Testkunde 03 ueber die Kundennummer "KD-0003".
+
+    Weshalb das nicht mehr gilt: Es gibt keine Kundennummern mehr - der
+    Geschaeftsfuehrer hat sie aus der Oberflaeche nehmen lassen, weil im
+    Betrieb keine verwendet werden. Die technische Kennung ist
+    ausdruecklich KEIN Suchbegriff: Waere sie einer, waere sie ueber die
+    Suche doch wieder eine betriebliche Nummer.
+
+    Neu, und naeher am Betrieb: Gesucht wird ueber die ANSCHRIFT. Das
+    ist, womit die Zentrale tatsaechlich arbeitet. Zusaetzlich wird
+    belegt, dass die technische Kennung nichts findet.
+  */
+  await page.fill("[data-suchfeld]", "Testallee");
   await page.waitForTimeout(250);
-  pruefe((await page.textContent(".treffer")).includes("Testkunde 03"), "Suche ueber die Kundennummer findet");
+  pruefe((await page.textContent(".treffer")).includes("Testkunde 03"),
+    "Suche ueber die Anschrift findet");
+
+  await page.fill("[data-suchfeld]", "K0003");
+  await page.waitForTimeout(300);
+  pruefe(await page.$$eval(".treffer", (n) => n.length) === 0,
+    "die technische Kennung ist kein Suchbegriff");
 
   await page.fill("[data-suchfeld]", "Testnummer 0002");
   await page.waitForTimeout(250);

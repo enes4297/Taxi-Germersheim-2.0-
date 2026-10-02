@@ -52,6 +52,28 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(PORT, "127.0.0.1", r));
 const ADRESSE = `http://127.0.0.1:${PORT}/`;
 
+/*
+  Ein Datum setzen, wie ein Mensch es tut.
+
+  Die nativen Datumsfelder sind portalweit ersetzt: Sie sprangen beim
+  Tippen des Jahres zurueck zum Tag. page.fill() mit einem ISO-Datum
+  geht am neuen Feld vorbei - es nimmt TT.MM.JJJJ.
+*/
+async function datumTippen(page, wahl, iso) {
+  const [j, m, t] = String(iso).split("-");
+  const text = t + "." + m + "." + j;
+  await page.click(wahl);
+  await page.waitForTimeout(80);
+  await page.keyboard.press("Control+a");
+  await page.keyboard.press("Delete");
+  for (const z of text) {
+    await page.keyboard.type(z);
+    await page.waitForTimeout(40);
+  }
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(450);
+}
+
 let bestanden = 0;
 const offen = [];
 function pruefe(bedingung, name) {
@@ -360,16 +382,23 @@ console.log("\n── 5. Fall A: andere Person, neuer Vorgang ──");
   /* textContent setzt zwischen <dt> und <dd> KEIN Leerzeichen -
      "Übernommen aus" und "Vorgang V0002" stehen direkt aneinander. */
   pruefe(/Übernommen ausVorgang V0002/.test(s3), "die Herkunft des Zeitraums ist benannt");
-  pruefe(Boolean(await page.$("[data-zuordnung-von]")), "der Zeitraum ist prüfbar");
-  pruefe(Boolean(await page.$("[data-zuordnung-bis]")), "von und bis");
+  /* GEAENDERTE ERWARTUNG: Die beiden Felder laufen jetzt ueber das
+     gemeinsame Datumsmodul. Geprueft wird beides - dass sie da sind
+     und dass sie zum Modul gehoeren. */
+  const ZU_VON = '[data-datum-kennung="zuordnung"][data-datum-teil="von"]';
+  const ZU_BIS = '[data-datum-kennung="zuordnung"][data-datum-teil="bis"]';
+  pruefe(Boolean(await page.$(ZU_VON)), "der Zeitraum ist prüfbar");
+  pruefe(Boolean(await page.$(ZU_BIS)), "von und bis");
+  pruefe(!(await page.$('input[type="date"]')),
+    "und zwar ohne natives Datumsfeld");
 
   /* Zeitraum wird geprueft. */
-  await page.fill("[data-zuordnung-bis]", "2020-01-01");
+  await datumTippen(page, ZU_BIS, "2020-01-01");
   await page.click('[data-tun="vg-zuordnung-neu-weiter"]');
   await page.waitForTimeout(450);
   pruefe(Boolean(await page.$(".feldfehler")), "ein Ende vor dem Beginn wird abgewiesen");
 
-  await page.fill("[data-zuordnung-bis]", "2026-10-03");
+  await datumTippen(page, ZU_BIS, "2026-10-03");
   await page.click('[data-tun="vg-zuordnung-neu-weiter"]');
   await page.waitForTimeout(450);
   const s4 = (await page.textContent(".dialog-rumpf")).replace(/\s+/g, " ");
