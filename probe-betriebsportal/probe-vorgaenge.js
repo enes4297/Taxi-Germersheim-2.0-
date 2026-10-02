@@ -43,6 +43,9 @@
     uebernahme: null,
     wiedereroeffnen: null,
     einsicht: null,
+    /* Wo im Vorgang stand der Blick, bevor die Vorschau aufging? */
+    rollstand: 0,
+    verlassenGefragt: false,
     pruefkorrektur: null,
     zuordnung: null,
     /* Fuer die Vorfuehrung der Paralleländerung. */
@@ -388,6 +391,57 @@
   };
 
   /*
+    Wonach richten sich die Aktionen auf der Listenkarte?
+
+    Nach dem Teilschritt, der mir offensteht - und nur nach dem. Der
+    manuelle Test hat gezeigt, warum: Nach dem Abschluss der eigenen
+    Personalpruefung standen auf der Karte weiter "Uebernehmen" und
+    "Weitergeben", obwohl der eigene Teil fertig war und nur noch der
+    Teilschritt einer ANDEREN Rolle offen war. Beide Knoepfe haetten
+    dort nichts bewirkt - oder Schlimmeres: den fremden Teil
+    angefasst.
+
+    Rueckgabe:
+      schluessel  der eigene offene Teilschritt, sonst ""
+      meins       ist er mir zugewiesen?
+      fremdOffen  ist (nur) ein fremder Teilschritt offen?
+  */
+  function kartenlage(v) {
+    const fertig = gesamtstand(v) === "erledigt";
+    if (fertig) return { fertig, schluessel: "", meins: false, fremdOffen: false };
+
+    if (!v.teile) {
+      /* Vorgang ohne Teilschritte: der Vorgang selbst ist die Einheit. */
+      const meine = meinKonto().kennung;
+      const meins = Boolean(v.verantwortlich && v.verantwortlich.kennung === meine);
+      return {
+        fertig: false, schluessel: "", ohneTeile: true,
+        meins, frei: !v.verantwortlich, fremdOffen: Boolean(v.verantwortlich) && !meins
+      };
+    }
+
+    const meine = meinKonto().kennung;
+    const offeneEigene = Object.entries(v.teile)
+      .filter(([, x]) => R.darf(x.braucht) && x.zustand !== "erledigt");
+    const offeneFremde = Object.entries(v.teile)
+      .filter(([, x]) => !R.darf(x.braucht) && x.zustand !== "erledigt");
+
+    if (!offeneEigene.length) {
+      return {
+        fertig: false, schluessel: "", meins: false, frei: false,
+        fremdOffen: offeneFremde.length > 0
+      };
+    }
+    const [schluessel, x] = offeneEigene[0];
+    return {
+      fertig: false, schluessel,
+      meins: Boolean(x.verantwortlich && x.verantwortlich.kennung === meine),
+      frei: !x.verantwortlich,
+      fremdOffen: false
+    };
+  }
+
+  /*
     Die Hauptaktion der LISTENKARTE.
 
     Sie oeffnet ausschliesslich den Vorgang und speichert nichts.
@@ -407,12 +461,26 @@
   */
   function hauptaktion(v) {
     const auf = `vg-oeffnen:${v.id}`;
-    if (gesamtstand(v) === "erledigt") return { name: "Ansehen", tun: auf };
-    if (v.thema === "urlaub" && v.art === "aufgabe") return { name: "Antrag öffnen", tun: auf };
-    if (v.thema === "krankheit") return { name: "Krankmeldung prüfen", tun: auf };
+    const lage = kartenlage(v);
+    if (lage.fertig) return { name: "Ansehen", tun: auf };
+    /*
+      Steht mir hier nichts offen - weil mein Teilschritt fertig ist
+      oder mir gar keiner gehoert -, dann heisst der Knopf "ansehen"
+      und nicht "pruefen". Sonst verspricht er eine Arbeit, die es
+      fuer mich nicht gibt.
+    */
+    const nurAnsehen = !lage.schluessel && !lage.ohneTeile;
+    if (v.thema === "urlaub" && v.art === "aufgabe") {
+      return { name: nurAnsehen ? "Antrag ansehen" : "Antrag öffnen", tun: auf };
+    }
+    if (v.thema === "krankheit") {
+      return { name: nurAnsehen ? "Krankmeldung ansehen" : "Krankmeldung prüfen", tun: auf };
+    }
     if (v.thema === "fahrt") return { name: "Zur Fahrt", tun: auf };
-    if (v.thema === "dokument") return { name: "Dokument öffnen", tun: auf };
-    return { name: "Vorgang öffnen", tun: auf };
+    if (v.thema === "dokument") {
+      return { name: nurAnsehen ? "Dokument ansehen" : "Dokument öffnen", tun: auf };
+    }
+    return { name: nurAnsehen ? "Vorgang ansehen" : "Vorgang öffnen", tun: auf };
   }
 
   const verantwortlichText = (v) => {
@@ -453,12 +521,65 @@
       </ul>` : ""}
       <div class="vg-aktionen">
         <button class="knopf klein haupt-knopf" type="button" data-tun="${h(aktion.tun)}">${h(aktion.name)}</button>
-        ${gesamtstand(v) !== "erledigt"
-          ? `<button class="knopf klein" type="button" data-tun="vg-uebernehmen:${h(v.id)}">Übernehmen</button>` : ""}
-        ${(v.verantwortlich || (v.teile && meinTeil(v) && meinTeil(v).verantwortlich)) && gesamtstand(v) !== "erledigt"
-          ? `<button class="knopf klein" type="button" data-tun="vg-weitergeben:${h(v.id)}">Weitergeben</button>` : ""}
+        ${kartenaktionen(v)}
       </div>
     </article>`;
+  }
+
+  /*
+    Die Nebenaktionen der Karte. Sie entstehen ausschliesslich aus
+    einem Teilschritt, der mir offensteht:
+
+      offen und unzugewiesen  -> "Uebernehmen"
+      offen und meins         -> "Weitergeben"
+      mein Teil erledigt      -> keine
+      nur fremder Teil offen  -> keine
+      ganzer Vorgang erledigt -> "Wiedereroeffnen", falls berechtigt
+
+    Die Aktionen nennen den Teilschritt ausdruecklich. Damit kann die
+    Karte nie den Teil einer anderen Rolle anfassen.
+  */
+  function kartenaktionen(v) {
+    const lage = kartenlage(v);
+
+    if (lage.fertig) {
+      return v.abgeleitet || !R.darf("personnel.read")
+        ? ""
+        : `<button class="knopf klein" type="button"
+            data-tun="vg-wiedereroeffnen:${h(v.id)}">Wiedereröffnen</button>`;
+    }
+
+    /* Vorgang ohne Teilschritte - er ist selbst die Einheit. */
+    if (lage.ohneTeile) {
+      if (lage.frei) {
+        return `<button class="knopf klein" type="button"
+          data-tun="vg-uebernehmen:${h(v.id)}">Übernehmen</button>`;
+      }
+      if (lage.meins) {
+        return `<button class="knopf klein" type="button"
+          data-tun="vg-weitergeben:${h(v.id)}">Weitergeben</button>`;
+      }
+      /* Jemand anderes hat ihn - uebernehmen geht, braucht aber einen
+         Grund. Den fragt die Aktion selbst ab. */
+      return `<button class="knopf klein" type="button"
+        data-tun="vg-uebernehmen:${h(v.id)}">Übernehmen</button>`;
+    }
+
+    /* Mir steht kein Teilschritt offen. */
+    if (!lage.schluessel) return "";
+
+    if (lage.frei) {
+      return `<button class="knopf klein" type="button"
+        data-tun="vg-teil-uebernehmen:${h(v.id)}|${h(lage.schluessel)}">Übernehmen</button>`;
+    }
+    if (lage.meins) {
+      return `<button class="knopf klein" type="button"
+        data-tun="vg-teil-weitergeben:${h(v.id)}|${h(lage.schluessel)}">Weitergeben</button>`;
+    }
+    /* Jemand anderes bearbeitet meinen Teilschritt. Uebernehmen ist
+       moeglich, die Aktion verlangt dann einen Grund. */
+    return `<button class="knopf klein" type="button"
+      data-tun="vg-teil-uebernehmen:${h(v.id)}|${h(lage.schluessel)}">Übernehmen</button>`;
   }
 
   function zeichne() {
@@ -814,6 +935,14 @@
   }
 
   function vorgangDialog() {
+    /*
+      Der Schutz gilt nur fuer die Dokumentvorschau. Wird die
+      Krankmeldung gezeichnet - auf welchem Weg auch immer -, ist er
+      weg. Sonst bliebe er haengen, und Escape im Vorgang wuerde den
+      Vorgang nicht mehr schliessen, sondern nur neu zeichnen: eine
+      Falle, aus der man nicht herauskaeme.
+    */
+    R.dialogSchutzSetzen(null);
     const v = vorgangFinden(stand.offen);
     if (!v) return "";
     if (!sichtbarFuerMich(v)) {
@@ -1260,6 +1389,31 @@
       </div>`;
   }
 
+  /* Die Scrollposition des Dialogrumpfs lesen und setzen. */
+  function rollstandLesen() {
+    const rumpf = document.querySelector(".dialog-rumpf");
+    return rumpf ? rumpf.scrollTop : 0;
+  }
+  function rollstandSetzen(wert) {
+    const rumpf = document.querySelector(".dialog-rumpf");
+    if (rumpf) rumpf.scrollTop = wert;
+  }
+
+  /*
+    Von der Vorschau zurueck in die Krankmeldung. Der Vorgang bleibt
+    geoeffnet; Uebernahme, Einsicht, Pruefergebnis und Scrollposition
+    bleiben, wie sie waren. Es wird nichts gespeichert und nichts
+    zurueckgenommen.
+  */
+  function zurueckZumVorgang(id) {
+    stand.einsicht = null;
+    stand.verlassenGefragt = false;
+    stand.offen = id;
+    R.dialogSchutzSetzen(null);
+    R.dialogOeffnen(vorgangDialog());
+    rollstandSetzen(stand.rollstand);
+  }
+
   function bescheinigungDialog() {
     const v = vorgangFinden(stand.einsicht);
     const nw = aktuellerNachweis(v);
@@ -1269,7 +1423,10 @@
       <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="beTitel">
         <header class="dialog-kopf">
           <h2 id="beTitel">Bescheinigung ansehen</h2>
-          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+          <button class="knopf klein" type="button" data-tun="vg-vorschau-zurueck:${h(v.id)}">
+            ‹ Zurück zur Krankmeldung</button>
+          <button class="knopf klein" type="button" data-tun="vg-vorschau-raus:${h(v.id)}"
+            aria-label="Vorgang verlassen">✕ Vorgang verlassen</button>
         </header>
         <div class="dialog-rumpf">
           ${R.zustandsKasten("vorbereitet", "In dieser Designprobe gibt es keine Datei",
@@ -1296,12 +1453,23 @@
             Krankheitsgrund, kein Dokumentinhalt.</p>
           ${e ? `<p class="schritt-hinweis">Bereits geöffnet von ${h(kontoText(e))} ·
             ${h(e.datum)} ${h(e.zeit)}. Jedes Öffnen wird einzeln protokolliert.</p>` : ""}
+          <p class="schritt-hinweis">„Zurück zur Krankmeldung“ schließt nur diese Vorschau;
+            der Vorgang bleibt offen und Ihr Stand erhalten. „Vorgang verlassen“ schließt
+            alles. Escape wirkt wie „Zurück zur Krankmeldung“.</p>
         </div>
         <footer class="dialog-fuss">
-          <button class="knopf" type="button" data-dialog-zu>Schließen</button>
+          <button class="knopf" type="button" data-tun="vg-vorschau-zurueck:${h(v.id)}">
+            Zurück zur Krankmeldung</button>
+          <button class="knopf leise" type="button" data-tun="vg-vorschau-raus:${h(v.id)}">
+            Vorgang verlassen</button>
           <button class="knopf haupt-knopf" type="button" data-tun="vg-einsicht-ja:${h(v.id)}">
             Einsicht bestätigen und weiter zum Prüfergebnis</button>
         </footer>
+        ${stand.verlassenGefragt
+          ? `<div class="feldfehler" role="alert" data-verlassen-warnung>
+              Die Dokumentprüfung ist noch nicht abgeschlossen. „Vorgang verlassen“ noch
+              einmal drücken, um den ganzen Vorgang zu schließen — oder „Zurück zur
+              Krankmeldung“, um weiterzuarbeiten.</div>` : ""}
       </div>`;
   }
 
@@ -1486,10 +1654,16 @@
         Bearbeiter" und "aktueller Verantwortlicher" sind getrennte
         Angaben.
       */
+      /*
+        Uebernahme des GANZEN Vorgangs. Nur fuer Vorgaenge ohne
+        Teilschritte - wo es Teilschritte gibt, wird der Teil
+        ausdruecklich benannt (vg-teil-uebernehmen). Sonst koennte
+        eine Karte den Teil einer anderen Rolle anfassen.
+      */
       case "vg-uebernehmen": {
         const v = vorgangFinden(wert);
-        if (!v) return;
-        const teil = meinTeil(v);
+        if (!v || v.teile) return;
+        const teil = null;
         if (uebernahmeBrauchtGrund(v, teil)) {
           stand.uebernahme = { id: wert, grund: "", fehler: "" };
           R.dialogOeffnen(uebernahmeDialog());
@@ -1529,8 +1703,8 @@
       */
       case "vg-weitergeben": {
         const v = vorgangFinden(wert);
-        if (!v) return;
-        const teil = meinTeil(v);
+        if (!v || v.teile) return;
+        const teil = null;
         const vorher = teil
           ? (teil.verantwortlich ? kontoText(teil.verantwortlich) : "noch niemand")
           : (v.verantwortlich ? kontoText(v.verantwortlich) : "noch niemand");
@@ -1567,6 +1741,8 @@
         if (!v || !v.teile || !v.teile[schluessel]) return;
         const x = v.teile[schluessel];
         if (!R.darf(x.braucht)) return;
+        /* Ein erledigter Teilschritt wird nicht uebernommen. */
+        if (x.zustand === "erledigt") return;
         const fremd = x.verantwortlich && x.verantwortlich.kennung !== meinKonto().kennung;
         if (fremd || (x.vertraulich && x.verantwortlich)) {
           stand.uebernahme = { id, teil: schluessel, grund: "", fehler: "" };
@@ -1584,6 +1760,10 @@
         if (!v || !v.teile || !v.teile[schluessel]) return;
         const x = v.teile[schluessel];
         if (!R.darf(x.braucht)) return;
+        /* Ein erledigter Teilschritt wird nicht weitergegeben, und
+           weitergeben darf nur, wer ihn auch hat. */
+        if (x.zustand === "erledigt") return;
+        if (!x.verantwortlich || x.verantwortlich.kennung !== meinKonto().kennung) return;
         const vorher = x.verantwortlich ? kontoText(x.verantwortlich) : "noch niemand";
         if (x.verantwortlich) x.letzter = { ...x.verantwortlich, zeit: jetzt() };
         x.verantwortlich = null;
@@ -1829,8 +2009,51 @@
       case "vg-bescheinigung": {
         const v = vorgangFinden(wert);
         if (!v || !vertraulichSichtbar(v) || !aktuellerNachweis(v)) return;
+        /*
+          Die Scrollposition des Vorgangs merken. Der manuelle Test hat
+          gezeigt, warum: Nach dem Ansehen landete man oben im Dialog -
+          oder gleich ganz draussen.
+        */
+        stand.rollstand = rollstandLesen();
         stand.einsicht = wert;
+        stand.verlassenGefragt = false;
         R.dialogOeffnen(bescheinigungDialog());
+        /*
+          Escape und ein Klick neben das Fenster fuehren ZURUECK in die
+          Krankmeldung, nicht aus dem Vorgang heraus. Ein
+          versehentliches Escape soll nicht die halbe Arbeit kosten.
+        */
+        R.dialogSchutzSetzen(() => { zurueckZumVorgang(v.id); return false; });
+        return;
+      }
+
+      /* Nur die Vorschau zu - der Vorgang bleibt offen. */
+      case "vg-vorschau-zurueck":
+        zurueckZumVorgang(wert);
+        return;
+
+      /*
+        Den ganzen Vorgang verlassen. Ist die Dokumentpruefung noch
+        nicht abgeschlossen, wird einmal nachgefragt - mit Begruendung,
+        nicht mit einem nackten "Sind Sie sicher?".
+      */
+      case "vg-vorschau-raus": {
+        const v = vorgangFinden(wert);
+        if (!v) return;
+        const teil = meinTeil(v);
+        const unfertig = teil ? Boolean(teilOffen(v, teil)) : false;
+        if (unfertig && !stand.verlassenGefragt) {
+          stand.verlassenGefragt = true;
+          R.dialogOeffnen(bescheinigungDialog());
+          R.dialogSchutzSetzen(() => { zurueckZumVorgang(v.id); return false; });
+          return;
+        }
+        stand.einsicht = null;
+        stand.verlassenGefragt = false;
+        stand.offen = null;
+        R.dialogSchutzSetzen(null);
+        R.dialogSchliessen(true);
+        R.zeichnen();
         return;
       }
       case "vg-einsicht-ja": {
@@ -1846,9 +2069,9 @@
           was: "Bescheinigung angesehen",
           vorher, nachher: "über signierte Adresse geöffnet", grund: ""
         });
-        stand.einsicht = null;
-        stand.offen = v.id;
-        R.dialogOeffnen(vorgangDialog());
+        /* Zurueck in die Krankmeldung, nicht hinaus - mit der
+           Scrollposition von vorher. */
+        zurueckZumVorgang(v.id);
         R.zeichnen();
         return;
       }

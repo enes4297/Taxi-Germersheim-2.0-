@@ -1492,3 +1492,22 @@ textarea {
   opacity: .45;
   cursor: not-allowed;
 }
+
+/* ============================================================
+   Dialogkopf mit zwei Wegen hinaus
+   ============================================================
+   Die Dokumentvorschau hat zwei getrennte Ausgaenge: zurueck in den
+   Vorgang und ganz hinaus. Mit der alten Regel bekaeme JEDER Knopf
+   "margin-left: auto" und sie wuerden auseinandergezogen. Nur der
+   erste nach der Ueberschrift schiebt, die uebrigen folgen ihm. */
+.dialog-kopf h2 ~ .knopf { margin-left: 0; }
+.dialog-kopf h2 + .knopf { margin-left: auto; }
+
+@media (max-width: 560px) {
+  /* Auf schmalen Geraeten umbricht der Kopf, statt die Ueberschrift
+     zu quetschen. */
+  .dialog-kopf { flex-wrap: wrap; }
+  .dialog-kopf h2 { flex: 1 1 100%; }
+  .dialog-kopf h2 + .knopf { margin-left: 0; }
+  .dialog-kopf .knopf { flex: 1 1 auto; }
+}

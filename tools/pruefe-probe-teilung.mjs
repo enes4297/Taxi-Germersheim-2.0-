@@ -106,7 +106,7 @@ const protokoll = (page) => page.evaluate(() => window.ProbeDaten.protokoll.slic
   dastehen.
 */
 const uebernehmen = async (page, teil, id = "V0002") => {
-  const knopf = await page.$(`[data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
+  const knopf = await page.$(`.dialog-kasten [data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
   if (knopf) { await knopf.click(); await page.waitForTimeout(450); }
 };
 
@@ -139,7 +139,7 @@ console.log("\n── 1. Ein Vorgang, zwei Verantwortungen ──");
 
   /* Die Hauptaktion heisst nach dem eigenen Schritt - nicht "Erledigt". */
   await uebernehmen(page, "planung");
-  const knopf = await page.textContent('[data-tun="vg-teil-erledigen:V0002|planung"]');
+  const knopf = await page.textContent('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|planung"]');
   pruefe(/Planung bearbeitet/.test(knopf),
     `die Hauptaktion heisst nach dem eigenen Schritt (${knopf.trim()})`);
   pruefe(!/^\s*Erledigt\s*$/.test(knopf), "und niemals einfach „Erledigt“");
@@ -159,10 +159,10 @@ console.log("\n── 2. Niemand schliesst den Vorgang der anderen ──");
   const { ctx, page } = await seite("dispatcher");
   await oeffnen(page, "V0002");
   /* Seit dem 01.10.2026 schliesst nur der Verantwortliche ab. */
-  pruefe(!(await page.$('[data-tun="vg-teil-erledigen:V0002|planung"]')),
+  pruefe(!(await page.$('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|planung"]')),
     "ohne Übernahme ist auch die Planung gesperrt");
   await uebernehmen(page, "planung");
-  await page.click('[data-tun="vg-teil-erledigen:V0002|planung"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|planung"]');
   await page.waitForTimeout(450);
 
   const stand = await page.evaluate(() => {
@@ -190,16 +190,16 @@ console.log("\n── 2. Niemand schliesst den Vorgang der anderen ──");
   pruefe(/Bescheinigung eingegangen/.test(perText),
     "Personal sieht seinen offenen Dokumentpruefauftrag");
   /* Ohne Einsicht und Ergebnis ist der Abschluss gesperrt. */
-  pruefe(!(await page.$('[data-tun="vg-teil-erledigen:V0002|personal"]')),
+  pruefe(!(await page.$('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|personal"]')),
     "ohne Dokumentprüfung ist der Abschluss gesperrt");
   await uebernehmen(page, "personal");
   await dokumentPruefen(page);
-  const perKnopf = await page.textContent('[data-tun="vg-teil-erledigen:V0002|personal"]');
+  const perKnopf = await page.textContent('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|personal"]');
   pruefe(/Dokumentprüfung abgeschlossen/.test(perKnopf),
     `und seine eigene Hauptaktion (${perKnopf.trim()})`);
 
   /* Jetzt schliesst Personal - erst damit ist der Vorgang fertig. */
-  await page.click('[data-tun="vg-teil-erledigen:V0002|personal"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|personal"]');
   await page.waitForTimeout(450);
   const danach = await page.evaluate(() => {
     const v = window.ProbeDaten.vorgaenge.find((x) => x.id === "V0002");
@@ -220,9 +220,9 @@ console.log("\n── 3. Erledigt wird nicht still zurueckgesetzt ──");
   const { ctx, page } = await seite("personal");
   /* V0005 ist im Bestand bereits erledigt. */
   await oeffnen(page, "V0005");
-  pruefe(Boolean(await page.$('[data-tun="vg-wiedereroeffnen:V0005"]')),
+  pruefe(Boolean(await page.$('.dialog-kasten [data-tun="vg-wiedereroeffnen:V0005"]')),
     "ein erledigter Vorgang laesst sich wiedereroeffnen");
-  await page.click('[data-tun="vg-wiedereroeffnen:V0005"]');
+  await page.click('.dialog-kasten [data-tun="vg-wiedereroeffnen:V0005"]');
   await page.waitForTimeout(400);
 
   /* Ohne Grund geht nichts. */
@@ -303,7 +303,7 @@ console.log("\n── 5. Uebernahme mit Namen, Grund und Vorgeschichte ──");
   const { ctx, page } = await seite("personal");
   /* Personal uebernimmt zuerst seinen Teilschritt. */
   await oeffnen(page, "V0002");
-  await page.click('[data-tun="vg-teil-uebernehmen:V0002|personal"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-uebernehmen:V0002|personal"]');
   await page.waitForTimeout(450);
   const ersterHalter = await page.evaluate(() =>
     window.ProbeDaten.vorgaenge.find((x) => x.id === "V0002").teile.personal.verantwortlich);
@@ -326,9 +326,9 @@ console.log("\n── 5. Uebernahme mit Namen, Grund und Vorgeschichte ──");
     (nodes) => nodes.map((x) => x.textContent.trim()));
   pruefe(teilAktionen.filter((x) => /Planung bearbeitet|Dokumentprüfung abgeschlossen/.test(x)).length === 2,
     `je ein Abschlussknopf pro Teilschritt (${teilAktionen.length} Knöpfe)`);
-  pruefe(!(await page.$('[data-tun="vg-teil-erledigen:V0002|personal"]')),
+  pruefe(!(await page.$('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|personal"]')),
     "die Personalprüfung bleibt auch für die Administration gesperrt");
-  await page.click('[data-tun="vg-teil-uebernehmen:V0002|personal"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-uebernehmen:V0002|personal"]');
   await page.waitForTimeout(450);
   pruefe(Boolean(await page.$("[data-uebernahme-grund]")),
     "die Uebernahme einer begonnenen Aufgabe fragt nach dem Grund");

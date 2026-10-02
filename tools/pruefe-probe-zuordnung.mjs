@@ -106,7 +106,7 @@ const protokoll = (page) => page.evaluate(() => window.ProbeDaten.protokoll.slic
   dastehen.
 */
 const uebernehmen = async (page, teil, id = "V0002") => {
-  const knopf = await page.$(`[data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
+  const knopf = await page.$(`.dialog-kasten [data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
   if (knopf) { await knopf.click(); await page.waitForTimeout(450); }
 };
 

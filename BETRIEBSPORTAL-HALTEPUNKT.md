@@ -4186,5 +4186,171 @@ der neuen Übernahme-Bedingung:
   ist es jetzt bis zur Übernahme — braucht aber weiterhin keine
   Dokumentprüfung. Genau dieser Unterschied wird nun geprüft.
 
+Zusammen **1301 Zusicherungen, 0 offen**, null Netzwerkaufrufe. Alle
+zehn Läufe vollständig beendet, jeder mit gedruckter Bilanz.
+
+Vier Selektoren waren dabei noch nachzujustieren: Das Umstellen auf
+`.dialog-kasten` hatte ich zu weit gefasst. `vg-uebernehmen` und
+`vg-weitergeben` sind die **Gesamtaktionen** und liegen auf der
+Karte, nicht im Dialog — sie adressieren jetzt ausdrücklich die Karte
+(`.vorgang[data-vorgang=…]`). Beides zu genau zu machen ist richtig;
+beides pauschal umzustellen war es nicht.
+
+> **Einordnung:** Designprobe ohne Datenquelle. Der Lauf sagt nichts
+> über die produktive Instanz.
+
+---
+
+## 27. Zwei Bedienkorrekturen nach der fachlichen Freigabe
+
+Die Krankmeldung ist fachlich geprüft und bestanden. Zwei
+Bedienbefunde blieben (Nutzer, 01.10.2026).
+
+### 27.1 Die Dokumentvorschau hatte nur einen Ausgang
+
+**Der Befund.** Beim Öffnen der Bescheinigung gab es nur
+„Schließen" — und das verließ den **ganzen Vorgang**. Wer nur kurz
+hineinsehen wollte, musste ihn danach neu öffnen.
+
+Das war eine Folge der Bauweise: Die Probe hat **genau eine
+Dialogebene** (keine verschachtelten Fenster), und die Vorschau
+ersetzt den Vorgangsdialog. „Schließen" schloss darum die Ebene, nicht
+die Vorschau.
+
+**Jetzt zwei getrennte Wege:**
+
+| Weg | Wirkung |
+|---|---|
+| **‹ Zurück zur Krankmeldung** (Kopf und Fuß) | schließt nur die Vorschau; der Vorgang bleibt offen |
+| **✕ Vorgang verlassen** (Kopf und Fuß) | verlässt alles — mit Sicherheitsabfrage, wenn die Prüfung unfertig ist |
+| **Escape** | wirkt wie „Zurück zur Krankmeldung" |
+| **Klick neben das Fenster** | ebenso |
+
+Dass Escape und der Klick daneben **zurückführen** und nicht hinaus,
+ist Absicht: Ein versehentliches Escape soll nicht die halbe Arbeit
+kosten. Umgesetzt über den vorhandenen `dialogSchutz` des Rahmens —
+er gibt `false` zurück und zeichnet stattdessen den Vorgang.
+
+Erhalten bleiben bei der Rückkehr: **Übernahme, Einsicht,
+Prüfergebnis, Bearbeitungsstand und die Scrollposition**. Letztere
+wird vor dem Öffnen der Vorschau gemerkt und danach wieder gesetzt;
+der Prüflauf scrollt auf 220 px und vergleicht.
+
+Auch **„Einsicht bestätigen"** führt jetzt in den Vorgang zurück
+statt hinaus — mit derselben Scrollposition.
+
+**Die Sicherheitsabfrage** ist kein nacktes „Sind Sie sicher?":
+
+> Die Dokumentprüfung ist noch nicht abgeschlossen. „Vorgang
+> verlassen" noch einmal drücken, um den ganzen Vorgang zu
+> schließen — oder „Zurück zur Krankmeldung", um weiterzuarbeiten.
+
+Sie nennt, **was** unfertig ist, **was** zu tun ist und **wie** man
+zurückkommt.
+
+**Eine Falle, die ich dabei vermeiden musste:** Bliebe der
+`dialogSchutz` nach der Rückkehr gesetzt, würde Escape im Vorgang
+diesen nicht mehr schließen, sondern nur neu zeichnen — ein Dialog,
+aus dem man nicht herauskommt. `vorgangDialog()` löscht den Schutz
+deshalb bei **jedem** Zeichnen, egal auf welchem Weg. Der Prüflauf
+drückt am Ende Escape im Vorgang und besteht nur, wenn er sich
+schließt.
+
+### 27.2 Die Karte zeigte Aktionen, die es nicht mehr gab
+
+**Der Befund.** Nach Abschluss der eigenen Personalprüfung zeigte die
+Karte für Personal weiter „Übernehmen" und „Weitergeben" — obwohl
+Testpersonal bereits verantwortlich, der eigene Teilschritt erledigt
+und nur noch der Teilschritt **einer anderen Rolle** offen war.
+
+Die alten Bedingungen fragten den **Gesamtstand** ab („solange nicht
+alles erledigt ist, zeige Übernehmen") — nicht, ob mir selbst
+überhaupt noch etwas offensteht. Die Knöpfe hätten nichts bewirkt oder,
+schlimmer, den fremden Teil angefasst.
+
+**Jetzt leiten sich die Aktionen aus `kartenlage(v)` ab** — dem
+Teilschritt, der **mir** offensteht:
+
+| Lage | Aktionen auf der Karte | Hauptknopf |
+|---|---|---|
+| eigener Teil offen, unzugewiesen | **Übernehmen** | Krankmeldung prüfen |
+| eigener Teil offen, selbst übernommen | **Weitergeben** | Krankmeldung prüfen |
+| eigener Teil offen, fremd übernommen | **Übernehmen** (fragt dann nach dem Grund) | Krankmeldung prüfen |
+| eigener Teil erledigt | **keine** | **Krankmeldung ansehen** |
+| nur fremder Teil offen | **keine** | **Krankmeldung ansehen** |
+| ganzer Vorgang erledigt | **Wiedereröffnen**, falls berechtigt | Ansehen |
+
+Der **Hauptknopf** unterscheidet jetzt ebenfalls: Steht mir nichts
+offen, heißt er „ansehen" statt „prüfen". Sonst verspricht er eine
+Arbeit, die es für mich nicht gibt.
+
+Die Kartenaktionen **nennen den Teilschritt ausdrücklich**
+(`vg-teil-uebernehmen:V0002|personal`). Damit kann eine Karte nie den
+Teil einer anderen Rolle anfassen — vorher lief sie über die
+Gesamtaktion, die sich ihren Teil selbst suchte.
+
+**Dieselben Regeln in den Aktionen:**
+
+- `vg-teil-uebernehmen` und `vg-teil-weitergeben` weisen einen
+  **erledigten** Teilschritt ab.
+- `vg-teil-weitergeben` weist ab, wer den Teilschritt nicht selbst
+  hat.
+- `vg-uebernehmen` und `vg-weitergeben` — die Gesamtaktionen — gelten
+  nur noch für Vorgänge **ohne** Teilschritte und weisen alles andere
+  ab.
+
+Der Prüflauf ruft alle fünf direkt auf und weist jedes Mal nach, dass
+sich nichts ändert.
+
+### 27.3 Was dabei an den Prüfläufen zu ändern war
+
+Seit die Karte ihre Aktionen aus dem Teilschritt ableitet, gibt es
+dieselben `data-tun`-Werte an **zwei** Stellen: auf der Karte und im
+geöffneten Vorgang. Ein Selektor ohne Bereich trifft die Karte — die
+vom Dialog verdeckt ist, sodass der Klick ins Leere geht.
+
+Für einen Menschen ist das kein Problem: Er sieht die Karte nicht,
+solange der Dialog offen ist. Für die Prüfläufe schon. **31 Selektoren
+in sechs Läufen** adressieren den Dialog jetzt ausdrücklich
+(`.dialog-kasten [data-tun=…]`). Das ist nicht nur eine Reparatur,
+sondern genauer: Vorher hing es an der Reihenfolge im Dokument,
+welches Element getroffen wurde.
+
+### 27.4 Derselbe eigene Fehler, zum vierten Mal
+
+Beim Einsetzen der neuen Prüfblöcke wurde `page.$$eval` erneut zu
+`page.$eval` — und `nodes.map is not a function` beendete den Lauf.
+
+Die Ursache ist jedes Mal dieselbe: `String.replace` deutet `$$` im
+**Ersatztext** als ein einzelnes `$`. Das steht seit Abschnitt 23.7 in
+diesem Bericht — und ich habe es trotzdem wieder getan, weil mein
+Änderungshelfer intern `String.replace` benutzt.
+
+**Eine Lehre, die man aufschreibt und nicht anwendet, ist keine.** Die
+belastbare Form ist nicht „aufpassen", sondern: Der Ersatztext darf
+nicht durch `String.replace` gehen. Entweder als **Funktion**
+übergeben (`replace(a, () => b)` — dann wird nichts gedeutet) oder über
+Index und `slice` einsetzen.
+
+Gefunden hat es der Lauf selbst, nicht ich. Dass ein Lauf mit
+`TypeError` abbricht und **keine Bilanz druckt**, ist dabei das
+Entscheidende: Hätte er stillschweigend weniger geprüft, wäre es
+durchgegangen.
+
+### 27.5 Prüfstand
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-karten-pruefen` (8 Blöcke, erweitert) | **79 bestanden, 0 offen** |
+| `probe-teilung-pruefen` | 100 bestanden, 0 offen |
+| `probe-regeln-pruefen` | 123 bestanden, 0 offen |
+| `probe-dokument-pruefen` | 93 bestanden, 0 offen |
+| `probe-zuordnung-pruefen` | 125 bestanden, 0 offen |
+| `probe-vorgaenge-pruefen` | 138 bestanden, 0 offen |
+| `probe-team-pruefen` | 197 bestanden, 0 offen |
+| `probe-planung-pruefen` | 171 bestanden, 0 offen |
+| `probe-fahrt-pruefen` | 168 bestanden, 0 offen |
+| `probe-portal-pruefen` | 107 bestanden, 0 offen |
+
 > **Einordnung:** Designprobe ohne Datenquelle. Der Lauf sagt nichts
 > über die produktive Instanz.

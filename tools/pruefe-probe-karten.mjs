@@ -92,6 +92,12 @@ async function seite(rolle = "personal") {
 }
 
 const oeffnen = async (page, id = "V0002") => {
+  /* Ein offener Dialog deckt die Reiterleiste ab - erst wegraeumen,
+     sonst laeuft der Klick in eine Zeitueberschreitung. */
+  if (await page.evaluate(() => window.ProbeRahmen.dialogOffen())) {
+    await page.evaluate(() => window.ProbeRahmen.dialogSchliessen(true));
+    await page.waitForTimeout(300);
+  }
   await page.click('[data-tun="vg-reiter:alle"]');
   await page.waitForTimeout(300);
   await page.click(`.vorgang[data-vorgang="${id}"] [data-tun="vg-oeffnen:${id}"]`);
@@ -103,6 +109,23 @@ const kannAbschliessen = async (page, teil = "personal", id = "V0002") =>
   (await knoepfe(page)).some((x) => x === `vg-teil-erledigen:${id}|${teil}`);
 const teilstand = (page, teil = "personal", id = "V0002") => page.evaluate(
   ([a, b]) => window.ProbeDaten.vorgangVon(a).teile[b].zustand, [id, teil]);
+/* Die Knoepfe EINER Listenkarte - Text und Aktion. */
+const kartenknoepfe = (page, id = "V0002") =>
+  page.$$eval(`.vorgang[data-vorgang="${id}"] button`,
+    (nodes) => nodes.map((x) => ({ text: x.textContent.trim(), tun: x.dataset.tun || "" })));
+const kartenNamen = async (page, id = "V0002") =>
+  (await kartenknoepfe(page, id)).map((x) => x.text);
+
+/* Den eigenen Teilschritt uebernehmen - im geoeffneten Vorgang. */
+const uebernehmen = async (page, teil, id = "V0002") => {
+  const knopf = await page.$(`.dialog-kasten [data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
+  if (knopf) { await knopf.click(); await page.waitForTimeout(450); }
+};
+const zu = async (page) => {
+  await page.evaluate(() => window.ProbeRahmen.dialogSchliessen(true));
+  await page.waitForTimeout(300);
+};
+
 const sperrgrund = async (page) =>
   (await page.$$eval(".teil-sperre", (n) => n.map((x) => x.textContent.replace(/\s+/g, " ").trim()))).join(" || ");
 
@@ -215,7 +238,7 @@ console.log("\n── 3. Fünf Voraussetzungen, eine nach der anderen ──");
   await page.waitForTimeout(300);
   pruefe(await teilstand(page) === "offen", "auch der direkte Aufruf schliesst nichts ab");
 
-  await page.click('[data-tun="vg-teil-uebernehmen:V0002|personal"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-uebernehmen:V0002|personal"]');
   await page.waitForTimeout(450);
   const v1 = await page.evaluate(() =>
     window.ProbeDaten.vorgangVon("V0002").teile.personal.verantwortlich);
@@ -227,7 +250,7 @@ console.log("\n── 3. Fünf Voraussetzungen, eine nach der anderen ──");
     "jetzt fehlt die geöffnete Bescheinigung");
   await page.click('[data-tun="vg-bescheinigung:V0002"]');
   await page.waitForTimeout(400);
-  pruefe(!(await page.$('[data-tun^="vg-teil-erledigen"]')),
+  pruefe(!(await page.$('.dialog-kasten [data-tun^="vg-teil-erledigen"]')),
     "das blosse Öffnen der Vorschau reicht nicht");
   await page.click('[data-tun="vg-einsicht-ja:V0002"]');
   await page.waitForTimeout(450);
@@ -255,7 +278,7 @@ console.log("\n── 3. Fünf Voraussetzungen, eine nach der anderen ──");
   pruefe(await kannAbschliessen(page), "erst mit allen fünf steht der Abschluss bereit");
   pruefe(!(await page.$(".dialog-kasten button[disabled]")), "und nichts ist mehr gesperrt");
 
-  await page.click('[data-tun="vg-teil-erledigen:V0002|personal"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|personal"]');
   await page.waitForTimeout(450);
   pruefe(await teilstand(page) === "erledigt", "der Teilschritt ist abgeschlossen");
   await ctx.close();
@@ -266,7 +289,7 @@ console.log("\n── 4. Fremde Verantwortung sperrt — auch die Administration
 {
   const { ctx, page } = await seite("personal");
   await oeffnen(page);
-  await page.click('[data-tun="vg-teil-uebernehmen:V0002|personal"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-uebernehmen:V0002|personal"]');
   await page.waitForTimeout(450);
   await page.click('[data-tun="vg-bescheinigung:V0002"]');
   await page.waitForTimeout(400);
@@ -289,14 +312,14 @@ console.log("\n── 4. Fremde Verantwortung sperrt — auch die Administration
   await page.evaluate(() => window.ProbeVorgaenge.tun("vg-teil-erledigen", "V0002|personal"));
   await page.waitForTimeout(300);
   pruefe(await teilstand(page) === "offen", "auch der direkte Aufruf nicht");
-  pruefe(Boolean(await page.$('[data-tun="vg-teil-uebernehmen:V0002|personal"]')),
+  pruefe(Boolean(await page.$('.dialog-kasten [data-tun="vg-teil-uebernehmen:V0002|personal"]')),
     "sie kann ihn aber übernehmen — mit Grund");
 
   /* Ihr eigener Teilschritt ist davon unberuehrt, braucht aber auch
      die Uebernahme. */
   pruefe(!(await kannAbschliessen(page, "planung")),
     "auch ihr eigener Teilschritt braucht erst die Übernahme");
-  await page.click('[data-tun="vg-teil-uebernehmen:V0002|planung"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-uebernehmen:V0002|planung"]');
   await page.waitForTimeout(450);
   pruefe(await kannAbschliessen(page, "planung"),
     "danach darf sie die Planung abschliessen");
@@ -326,8 +349,188 @@ console.log("\n── 5. Auch die Übersicht ──");
   await ctx.close();
 }
 
-/* ═══ 6. Netz und Quelltext ═════════════════════════════════════ */
-console.log("\n── 6. Nichts geht nach draussen ──");
+/* ═══ 6. Die Dokumentvorschau hat zwei getrennte Wege ══════════ */
+console.log("\n── 6. Zurück zur Krankmeldung oder ganz hinaus ──");
+{
+  const { ctx, page } = await seite("personal");
+  await oeffnen(page);
+  await uebernehmen(page, "personal");
+
+  /* Eine Scrollposition setzen, damit die Rueckkehr etwas zu
+     erhalten hat. */
+  await page.evaluate(() => { document.querySelector(".dialog-rumpf").scrollTop = 220; });
+  await page.waitForTimeout(200);
+  const rollVor = await page.evaluate(() => document.querySelector(".dialog-rumpf").scrollTop);
+  pruefe(rollVor > 0, `der Vorgang ist gescrollt (${rollVor}px)`);
+
+  await page.click('.dialog-kasten [data-tun="vg-bescheinigung:V0002"]');
+  await page.waitForTimeout(450);
+  const knoepfeV = await page.$$eval(".dialog-kasten button",
+    (nodes) => nodes.map((x) => x.textContent.trim()));
+  pruefe(knoepfeV.some((x) => /Zurück zur Krankmeldung/.test(x)),
+    "es gibt „Zurück zur Krankmeldung“");
+  pruefe(knoepfeV.some((x) => /Vorgang verlassen/.test(x)),
+    "und getrennt davon „Vorgang verlassen“");
+  pruefe(!knoepfeV.some((x) => x === "Schließen" || x === "✕ Schließen"),
+    "ein blosses „Schließen“ gibt es dort nicht mehr");
+  const hinweis = (await page.textContent(".dialog-rumpf")).replace(/\s+/g, " ");
+  pruefe(/schließt nur diese Vorschau/.test(hinweis), "der Unterschied steht dabei");
+  pruefe(/Escape wirkt wie „Zurück zur Krankmeldung“/.test(hinweis),
+    "und was Escape tut");
+
+  /* Escape fuehrt zurueck, nicht hinaus. */
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(450);
+  pruefe(await page.evaluate(() => window.ProbeRahmen.dialogOffen()),
+    "Escape schliesst nicht den ganzen Vorgang");
+  pruefe(/Krankmeldung eingegangen/.test(await page.textContent(".dialog-kopf h2")),
+    "sondern führt in die Krankmeldung zurück");
+  pruefe(await page.evaluate(() => document.querySelector(".dialog-rumpf").scrollTop) === rollVor,
+    "die Scrollposition bleibt erhalten");
+  const v1 = await page.evaluate(() =>
+    window.ProbeDaten.vorgangVon("V0002").teile.personal.verantwortlich);
+  pruefe(Boolean(v1) && /Testpersonal 01/.test(v1.name), "die Übernahme bleibt erhalten");
+
+  /* Der Knopf tut dasselbe. */
+  await page.click('.dialog-kasten [data-tun="vg-bescheinigung:V0002"]');
+  await page.waitForTimeout(400);
+  await page.click('[data-tun="vg-vorschau-zurueck:V0002"]');
+  await page.waitForTimeout(450);
+  pruefe(/Krankmeldung eingegangen/.test(await page.textContent(".dialog-kopf h2")),
+    "„Zurück zur Krankmeldung“ führt in den Vorgang zurück");
+
+  /* Einsicht bestaetigen fuehrt ebenfalls zurueck, nicht hinaus. */
+  await page.click('.dialog-kasten [data-tun="vg-bescheinigung:V0002"]');
+  await page.waitForTimeout(400);
+  await page.click('[data-tun="vg-einsicht-ja:V0002"]');
+  await page.waitForTimeout(500);
+  pruefe(await page.evaluate(() => window.ProbeRahmen.dialogOffen())
+    && /Krankmeldung eingegangen/.test(await page.textContent(".dialog-kopf h2")),
+    "auch „Einsicht bestätigen“ bleibt im Vorgang");
+
+  /* Vorgang verlassen: Sicherheitsabfrage, solange unfertig. */
+  await page.click('.dialog-kasten [data-tun="vg-bescheinigung:V0002"]');
+  await page.waitForTimeout(400);
+  await page.click('[data-tun="vg-vorschau-raus:V0002"]');
+  await page.waitForTimeout(450);
+  pruefe(await page.evaluate(() => window.ProbeRahmen.dialogOffen()),
+    "„Vorgang verlassen“ fragt erst nach");
+  pruefe(Boolean(await page.$("[data-verlassen-warnung]")), "es gibt eine Sicherheitsabfrage");
+  const warn = (await page.textContent("[data-verlassen-warnung]")).replace(/\s+/g, " ");
+  pruefe(/noch nicht abgeschlossen/.test(warn), "sie sagt, was unfertig ist");
+  pruefe(/noch einmal drücken/.test(warn), "und was zu tun ist");
+  pruefe(/weiterzuarbeiten/.test(warn), "und wie man zurückkommt");
+
+  await page.click('[data-tun="vg-vorschau-raus:V0002"]');
+  await page.waitForTimeout(450);
+  pruefe(!(await page.evaluate(() => window.ProbeRahmen.dialogOffen())),
+    "beim zweiten Mal wird der Vorgang verlassen");
+
+  /* Und Escape im Vorgang selbst schliesst weiterhin. */
+  await oeffnen(page);
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(400);
+  pruefe(!(await page.evaluate(() => window.ProbeRahmen.dialogOffen())),
+    "Escape im Vorgang schliesst ihn weiterhin — der Schutz bleibt nicht hängen");
+  await ctx.close();
+}
+
+/* ═══ 7. Kartenaktionen folgen dem eigenen Teilschritt ═════════ */
+console.log("\n── 7. Übernehmen und Weitergeben nur, wo es etwas zu tun gibt ──");
+{
+  const { ctx, page } = await seite("personal");
+  await page.click('[data-tun="vg-reiter:alle"]');
+  await page.waitForTimeout(300);
+
+  /* (a) eigener Teilschritt offen und unzugewiesen. */
+  let k = await kartenknoepfe(page);
+  pruefe(k.some((x) => x.text === "Übernehmen"), "unzugewiesen: „Übernehmen“ ist da");
+  pruefe(!k.some((x) => x.text === "Weitergeben"), "und „Weitergeben“ nicht");
+  pruefe(k.some((x) => x.tun === "vg-teil-uebernehmen:V0002|personal"),
+    "die Aktion nennt den eigenen Teilschritt ausdrücklich");
+
+  /* (b) eigener Teilschritt offen und selbst übernommen. */
+  await page.click('.vorgang[data-vorgang="V0002"] [data-tun="vg-teil-uebernehmen:V0002|personal"]');
+  await page.waitForTimeout(500);
+  k = await kartenknoepfe(page);
+  pruefe(k.some((x) => x.text === "Weitergeben"), "selbst übernommen: „Weitergeben“ ist da");
+  pruefe(!k.some((x) => x.text === "Übernehmen"), "und „Übernehmen“ nicht mehr");
+  pruefe(k.some((x) => x.tun === "vg-teil-weitergeben:V0002|personal"),
+    "auch sie nennt den Teilschritt");
+
+  /* (c) eigener Teilschritt erledigt, fremder offen. */
+  await oeffnen(page);
+  await page.click('.dialog-kasten [data-tun="vg-bescheinigung:V0002"]');
+  await page.waitForTimeout(400);
+  await page.click('[data-tun="vg-einsicht-ja:V0002"]');
+  await page.waitForTimeout(400);
+  await page.click('.dialog-kasten [data-tun="vg-ergebnis:V0002|ok"]');
+  await page.waitForTimeout(450);
+  await page.click('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|personal"]');
+  await page.waitForTimeout(450);
+  await zu(page);
+
+  const namen = await kartenNamen(page);
+  pruefe(!namen.includes("Übernehmen"),
+    "eigener Teil erledigt: kein „Übernehmen“ — das war der Befund");
+  pruefe(!namen.includes("Weitergeben"), "und kein „Weitergeben“");
+  pruefe(namen.length === 1 && /Krankmeldung ansehen/.test(namen[0]),
+    `nur noch „Krankmeldung ansehen“ (${namen.join(" | ")})`);
+
+  /* Die direkten Aufrufe setzen dieselbe Regel durch. */
+  await page.evaluate(() => window.ProbeVorgaenge.tun("vg-teil-weitergeben", "V0002|personal"));
+  await page.waitForTimeout(300);
+  const nachWeiter = await page.evaluate(() => {
+    const x = window.ProbeDaten.vorgangVon("V0002").teile.personal;
+    return { zustand: x.zustand, wer: x.verantwortlich ? x.verantwortlich.name : "" };
+  });
+  pruefe(nachWeiter.zustand === "erledigt" && /Testpersonal 01/.test(nachWeiter.wer),
+    "ein erledigter Teilschritt wird auch direkt nicht weitergegeben");
+  await page.evaluate(() => window.ProbeVorgaenge.tun("vg-teil-uebernehmen", "V0002|personal"));
+  await page.waitForTimeout(300);
+  pruefe(await page.evaluate(() =>
+    window.ProbeDaten.vorgangVon("V0002").teile.personal.zustand) === "erledigt",
+    "und auch nicht erneut übernommen");
+  await page.evaluate(() => window.ProbeVorgaenge.tun("vg-teil-uebernehmen", "V0002|planung"));
+  await page.waitForTimeout(300);
+  pruefe(await page.evaluate(() =>
+    window.ProbeDaten.vorgangVon("V0002").teile.planung.verantwortlich) === null,
+    "den fremden Teilschritt kann Personal auch direkt nicht übernehmen");
+
+  /* Die alten Gesamtaktionen greifen bei Teilvorgaengen nicht mehr. */
+  await page.evaluate(() => window.ProbeVorgaenge.tun("vg-uebernehmen", "V0002"));
+  await page.waitForTimeout(300);
+  await page.evaluate(() => window.ProbeVorgaenge.tun("vg-weitergeben", "V0002"));
+  await page.waitForTimeout(300);
+  pruefe(await page.evaluate(() =>
+    window.ProbeDaten.vorgangVon("V0002").teile.personal.zustand) === "erledigt",
+    "die Gesamtaktionen fassen einen Vorgang mit Teilschritten nicht an");
+
+  /* (d) ganzer Vorgang erledigt. */
+  await page.selectOption("[data-rolle]", "dispatcher");
+  await page.waitForTimeout(400);
+  await oeffnen(page);
+  await uebernehmen(page, "planung");
+  await page.click('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|planung"]');
+  await page.waitForTimeout(450);
+  await zu(page);
+  const dNamen = await kartenNamen(page);
+  pruefe(dNamen.length === 1 && dNamen[0] === "Ansehen",
+    `erledigt, ohne Recht zur Wiedereröffnung: nur „Ansehen“ (${dNamen.join(" | ")})`);
+
+  await page.selectOption("[data-rolle]", "personal");
+  await page.waitForTimeout(400);
+  await page.click('[data-tun="vg-reiter:alle"]');
+  await page.waitForTimeout(300);
+  const pNamen = await kartenNamen(page);
+  pruefe(pNamen.includes("Ansehen"), "erledigt: „Ansehen“");
+  pruefe(pNamen.includes("Wiedereröffnen"), "und — weil berechtigt — „Wiedereröffnen“");
+  pruefe(pNamen.length === 2, `und sonst nichts (${pNamen.join(" | ")})`);
+  await ctx.close();
+}
+
+/* ═══ 8. Netz und Quelltext ═════════════════════════════════════ */
+console.log("\n── 8. Nichts geht nach draussen ──");
 pruefe(fremdeAnfragen.length === 0,
   `keine einzige Anfrage nach aussen im ganzen Lauf (${fremdeAnfragen.length})`);
 {

@@ -123,7 +123,7 @@ const ansehen = async (page) => {
   dastehen.
 */
 const uebernehmen = async (page, teil, id = "V0002") => {
-  const knopf = await page.$(`[data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
+  const knopf = await page.$(`.dialog-kasten [data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
   if (knopf) { await knopf.click(); await page.waitForTimeout(450); }
 };
 
@@ -183,7 +183,7 @@ console.log("\n── 1. „Alles in Ordnung“ gibt den Abschluss frei ──")
   pruefe(d.klaerungen.length === 0, "es entsteht keine Rückfrage und keine Anforderung");
   pruefe(d.nachweise.length === 1, "und kein weiterer Nachweis");
 
-  await page.click('[data-tun="vg-teil-erledigen:V0002|personal"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|personal"]');
   await page.waitForTimeout(450);
   pruefe(await teilstand(page) === "erledigt", "die Personalprüfung ist abgeschlossen");
   await ctx.close();
@@ -483,7 +483,7 @@ console.log("\n── 7. Keine technische Aufbewahrungsfrist ──");
   await ansehen(page);
   await ergebnisWaehlen(page, "ok");
   await uebernehmen(page, "personal");
-  await page.click('[data-tun="vg-teil-erledigen:V0002|personal"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|personal"]');
   await page.waitForTimeout(450);
   const d = await daten(page);
   pruefe(d.nachweise.length === 2,

@@ -381,6 +381,13 @@ console.log("\n── 8. Krankmeldung ──");
   const datei = (await c.page.textContent(".dialog-kasten")).replace(/\s+/g, " ");
   pruefe(/keine öffentliche Adresse/.test(datei), "es gibt keine oeffentliche Adresse");
   pruefe(/kein Anhang per E-Mail/.test(datei), "und keinen Anhang per E-Mail");
+  /* Die Vorschau hat seit dem 01.10.2026 zwei getrennte Wege hinaus
+     und kein blosses "Schliessen" mehr. Hier geht es zurueck in die
+     Krankmeldung - siehe pruefe-probe-karten, Block 6. */
+  await c.page.click('[data-tun="vg-vorschau-zurueck:V0002"]');
+  await c.page.waitForTimeout(400);
+  pruefe(/Krankmeldung eingegangen/.test(await c.page.textContent(".dialog-kopf h2")),
+    "„Zurück zur Krankmeldung“ bleibt im Vorgang");
   await c.page.click("button[data-dialog-zu]");
   await c.page.waitForTimeout(300);
 
@@ -444,7 +451,7 @@ console.log("\n── 9. Dokumente ──");
 console.log("\n── 10. Übernehmen und weitergeben ──");
 {
   const { ctx, page } = await seite("dispatcher");
-  await page.click('[data-tun="vg-uebernehmen:V0003"]');
+  await page.click('.vorgang[data-vorgang="V0003"] [data-tun="vg-uebernehmen:V0003"]');
   await page.waitForTimeout(450);
   /* Der Vorgang steht jetzt unter "In Bearbeitung". */
   await page.click('[data-tun="vg-reiter:alle"]');
@@ -457,7 +464,7 @@ console.log("\n── 10. Übernehmen und weitergeben ──");
   pruefe(protokoll.was === "Aufgabe übernommen", "die Uebernahme ist protokolliert");
   pruefe(Boolean(protokoll.zeit) && Boolean(protokoll.wer), "mit wer und wann");
 
-  await page.click('[data-tun="vg-weitergeben:V0003"]');
+  await page.click('.vorgang[data-vorgang="V0003"] [data-tun="vg-weitergeben:V0003"]');
   await page.waitForTimeout(450);
   const danach = await page.evaluate(() => window.ProbeDaten.vorgangVon("V0003").zustaendig);
   pruefe(!danach, "nach dem Weitergeben ist niemand zustaendig");
@@ -492,7 +499,7 @@ console.log("\n── 11. Zwei Personen am selben Vorgang ──");
 console.log("\n── 12. Filter und Suche ──");
 {
   const { ctx, page } = await seite("dispatcher");
-  await page.click('[data-tun="vg-uebernehmen:V0003"]');
+  await page.click('.vorgang[data-vorgang="V0003"] [data-tun="vg-uebernehmen:V0003"]');
   await page.waitForTimeout(400);
   await page.click('[data-tun="vg-reiter:alle"]');
   await page.waitForTimeout(300);
@@ -528,7 +535,7 @@ console.log("\n── 12. Filter und Suche ──");
 console.log("\n── 13. Protokoll ──");
 {
   const { ctx, page } = await seite("admin");
-  await page.click('[data-tun="vg-uebernehmen:V0003"]');
+  await page.click('.vorgang[data-vorgang="V0003"] [data-tun="vg-uebernehmen:V0003"]');
   await page.waitForTimeout(450);
   const versuch = await page.evaluate(() => {
     const e = window.ProbeDaten.protokoll[0];

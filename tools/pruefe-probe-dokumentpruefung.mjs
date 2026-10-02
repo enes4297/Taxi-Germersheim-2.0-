@@ -112,7 +112,7 @@ const aktuell = (d) => d.nachweise[d.nachweise.length - 1];
   dastehen.
 */
 const uebernehmen = async (page, teil, id = "V0002") => {
-  const knopf = await page.$(`[data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
+  const knopf = await page.$(`.dialog-kasten [data-tun="vg-teil-uebernehmen:${id}|${teil}"]`);
   if (knopf) { await knopf.click(); await page.waitForTimeout(450); }
 };
 
@@ -273,7 +273,7 @@ console.log("\n── 4. Erst bewerten, dann abschliessen ──");
   pruefe(!(await page.$(".dialog-kasten button[disabled]")),
     "und keine Aktion ist mehr gesperrt");
 
-  await page.click('[data-tun="vg-teil-erledigen:V0002|personal"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|personal"]');
   await page.waitForTimeout(450);
   pruefe(await teilstand(page) === "erledigt", "der Teilschritt ist abgeschlossen");
 
@@ -329,7 +329,7 @@ console.log("\n── 6. Was protokolliert wird – und was nicht ──");
   await page.click('[data-tun="vg-ergebnis:V0002|ok"]');
   await page.waitForTimeout(400);
   await uebernehmen(page, "personal");
-  await page.click('[data-tun="vg-teil-erledigen:V0002|personal"]');
+  await page.click('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|personal"]');
   await page.waitForTimeout(450);
 
   const p = await protokoll(page);
@@ -392,10 +392,10 @@ console.log("\n── 7. Für die Disposition bleibt alles verschlossen ──")
   /* Ihr eigener Teilschritt bleibt davon unberuehrt. */
   /* Auch die Planung braucht die Uebernahme - aber sie braucht keine
      Dokumentpruefung. Das ist der Unterschied. */
-  pruefe(!(await page.$('[data-tun="vg-teil-erledigen:V0002|planung"]')),
+  pruefe(!(await page.$('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|planung"]')),
     "ihr eigener Teilschritt braucht erst die Übernahme");
   await uebernehmen(page, "planung");
-  pruefe(Boolean(await page.$('[data-tun="vg-teil-erledigen:V0002|planung"]')),
+  pruefe(Boolean(await page.$('.dialog-kasten [data-tun="vg-teil-erledigen:V0002|planung"]')),
     "danach ist er frei — ohne Dokumentprüfung");
   await ctx.close();
 }
