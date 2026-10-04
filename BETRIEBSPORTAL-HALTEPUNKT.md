@@ -1,7 +1,7 @@
 # Betriebsportal — Bericht am verbindlichen Haltepunkt
 
 **Branch:** `feature/030-betriebsportal-neu`
-**Stand:** 02.10.2026 (zweiter Durchgang)
+**Stand:** 04.10.2026 (dritter Durchgang)
 **Phasen abgeschlossen:** 0, 1, 2, 3, 4, 19, 21
 **Kein echter Betriebsportalcode ist verändert.**
 
@@ -5978,3 +5978,439 @@ Rolle **Testdisposition 01**. Erwartung: **Einstellungen** ist nicht
 sichtbar, Kunden, Personal, Lohn, Finanzen, Rewards und Analyse ebenfalls
 nicht. Eine Krankmeldung öffnen: weder Dateiname noch Datei noch
 Prüfergebnis.
+
+---
+
+## 52. Der Aktenweg: von der Kundenakte in die Rechnung und zurück
+
+### Die gemessenen Ausgangsfehler
+
+1. In der Akte von Testkunde 03 stand `RE-2026-0002` als `<li>` — nicht
+   anklickbar, mit der Tastatur nicht erreichbar.
+2. „Rewards-Konto öffnen" öffnete das richtige Konto, hatte aber **keinen
+   Weg zurück**.
+
+### Die Ursache
+
+Es gab genau **eine** Dialogebene und keine Erinnerung daran, woraus ein
+Fenster geöffnet wurde. „Zurück" konnte es deshalb gar nicht geben — nicht
+weil der Knopf fehlte, sondern weil das Ziel nicht festgehalten war.
+
+### Was gebaut wurde
+
+Ein **Aktenweg** als Stapel. Jeder Eintrag hält fest, welche Akte offen war
+und wo in ihr der Blick stand. Verschachtelte Fenster gibt es weiterhin
+nicht — es wird immer nur **ein** Fenster gezeigt, der Stapel liegt daneben.
+
+Ein Stapel und nicht ein einzelner Verweis: Von der Kundenakte in die
+Rechnung und von dort weiter muss jeder Schritt **einzeln** zurückgehen
+können.
+
+| Bedienung | Wirkung |
+|---|---|
+| Rechnungszeile anklicken oder mit **Enter** | öffnet die Rechnungsakte dieses Kunden |
+| **Zurück zur Kundenakte** (Kopf **und** Fuß) | genau dieser Kunde, dieselbe Scrollposition |
+| **Escape** | wirkt wie der Rückweg, nicht wie Schließen |
+| **Schließen** | verlässt den gesamten Aktenweg und räumt den Stapel ab |
+
+Der Knopf steht in **Kopf und Fuß**: Wer unten in einer langen Akte steht,
+soll nicht erst nach oben scrollen müssen.
+
+**Die Berechtigung steht in der Aktion.** `ak-rechnung-aus-kunde` prüft
+`finance.read` selbst, und zusätzlich, dass die Rechnung **diesem** Kunden
+gehört — eine fremde Nummer im Knopfwert öffnet keine fremde Akte.
+
+**Keine erfundene Herkunft.** Wird das Rewards-Konto aus der Rewardsliste
+geöffnet, wird **kein** Weg gemerkt: Dann gibt es keine Kundenakte, aus der
+man käme, und eine zu behaupten wäre eine Unwahrheit. Der Prüflauf belegt
+beide Fälle.
+
+### Ein eigener Fehler, vom Rauchtest gefunden
+
+Die gemerkte Scrollposition war nicht die, an der der Mensch stand. Ursache:
+Der Browser holt das angeklickte Element in den Blick, sobald es den Fokus
+bekommt — und das passiert **vor** dem Klick-Ereignis. Was mein Code dann
+las, war die vom Browser verschobene Position.
+
+Im Alltag fällt das kaum auf, weil man nur anklickt, was man sieht. Bei
+Tastaturbedienung und bei einem Knopf am Rand des Blickfeldes aber schon.
+Gelesen wird die Position jetzt bei `pointerdown` beziehungsweise `keydown`
+— beide kommen vor dem Fokuswechsel.
+
+---
+
+## 53. Die Einstellungsseite springt nicht mehr
+
+### Der gemessene Ausgangsfehler
+
+Beim Umschalten eines Rechts sprang die lange Seite nach ganz oben, und der
+Tastaturfokus war weg. Die Änderung kam an — aber bei einem Recht weit
+unten musste man jedes Mal wieder hinunterscrollen.
+
+### Die Ursache
+
+`geaendert()` rief `R.dialogOeffnen(rechteDialog())`. Das ersetzt den
+**ganzen** Fensterinhalt: Der Rumpf beginnt wieder bei 0, und
+`dialogOeffnen()` setzt den Fokus auf das erste Element.
+
+### Was geändert wurde
+
+Ein Haken baut das Fenster **nicht mehr neu**. Der Haken selbst steht schon
+richtig — der Browser hat ihn umgeschaltet. Neu gezeichnet wird nur, was vom
+Entwurf abhängt: der Änderungsblock und die Fehlerzeile.
+
+Damit **können** Scrollposition und Fokus nicht verlorengehen, statt
+hinterher wiederhergestellt zu werden. Das ist der Unterschied zwischen „es
+geht nicht kaputt" und „es wird repariert".
+
+Für die Fälle, in denen das Fenster wirklich neu gebaut werden muss, gibt es
+`neuZeichnenAnPosition()`: Es merkt Rumpfposition und fokussiertes Recht,
+zeichnet neu und stellt beides wieder her — zweimal, weil der Browser beim
+Setzen des Fokus noch verschieben kann.
+
+Der Prüflauf prüft ausdrücklich auf der **letzten** Berechtigung der Liste —
+bei einem Recht ganz oben wäre der Unterschied nicht zu sehen. Geprüft
+werden Tastatur (Leertaste), Maus und ein ausdrückliches Neuzeichnen der
+Fläche.
+
+---
+
+## 54. Der Pflichtgrund sagt, was fehlt
+
+### Der gemessene Ausgangsfehler
+
+Bei „Verbindlich speichern" ohne Grund wurde richtig nichts gespeichert —
+aber es leuchtete nur das Eingabefeld. Wer nicht weiß, warum, probiert es
+noch einmal.
+
+### Was geändert wurde
+
+| Anforderung | Umsetzung |
+|---|---|
+| Meldung am Feld | „Bitte einen Grund eingeben." direkt darunter |
+| Fokus ins Feld | mit Schreibzeiger **am Ende** — wer etwas zu Kurzes getippt hat, soll weiterschreiben können |
+| Fehlerzustand | `aria-invalid="true"` am Feld |
+| für Screenreader | `role="alert"` und `aria-live="polite"`, über `aria-describedby` dem Feld zugeordnet |
+| erst mit gültigem Grund speichern | unverändert, mindestens drei Zeichen |
+| direkter Aufruf ohne Grund | unverändert wirkungslos |
+
+**Beim Tippen verschwindet die Meldung wieder** — ohne Neuzeichnen, damit
+der Schreibzeiger im Feld bleibt. Eine Fehlermeldung, die stehen bleibt,
+während man sie gerade behebt, ist falsch.
+
+---
+
+## 55. Die Rechte sind fachlich getrennt
+
+### Der Auftrag
+
+`operations.read` verband „Fahrten sehen" und „Planung sehen";
+`personnel.read` verband Personalansicht und Krankheitszeiträume. Für die
+Rollenvergabe zu grob — wer planen durfte, musste zwangsläufig die Fahrten
+sehen.
+
+Ich hatte diese Aufteilung im vorigen Durchgang **abgelehnt** und als offene
+Entscheidung gekennzeichnet, weil sie an 27 Stellen entschieden werden muss
+und eine falsche Einordnung eine funktionierende Ansicht versteckt. Der
+Geschäftsführer hat sie jetzt ausdrücklich verlangt — damit ist sie
+entschieden und umgesetzt.
+
+### Die neuen Fähigkeiten
+
+| Fähigkeit | Was sie öffnet |
+|---|---|
+| `fahrten.read` | Bereich **Fahrten**, Fahrten im Kalender |
+| `planung.read` | Bereich **Planung**, Schichten und Konflikte im Kalender |
+| `personal.read` | Bereich **Personal**, Personalakte, Dokumentfristen — **ohne** Krankheit |
+| `krankheit.read` | gemeldete Zeiträume und vertrauliche Inhalte eines Krankheitsvorgangs |
+| `dokument.pruefen` | **die engste Stufe:** Bescheinigung öffnen, Einsicht bestätigen, Ergebnis wählen |
+
+`personnel.write` heißt jetzt nur noch „Personal bearbeiten" — die
+Dokumentprüfung ist herausgelöst.
+
+**Warum die Dokumentprüfung noch einmal getrennt ist:** Wer einen
+Krankheitszeitraum sehen darf, darf damit noch nicht die ärztliche
+Bescheinigung aufmachen. Der Zeitraum ist eine betriebliche Angabe, die
+Datei ist ein Gesundheitsdokument. Dazwischen liegt der eigentliche
+Unterschied im Schutzbedarf.
+
+### Wie die Umstellung ohne Regression gelang
+
+Ein blindes Ersetzen an 27 Stellen wäre genau der Fehler gewesen, den ich
+vorher benannt habe. Stattdessen:
+
+1. Die neuen feinen Fähigkeiten eingeführt.
+2. Die alten groben Kennungen bleiben als **Frage** gültig:
+   `darf("operations.read")` heißt jetzt „hat Fahrten- **oder**
+   Planungssicht". Kein Konto **besitzt** sie noch — sie stehen in keiner
+   Rolle und in keiner Freigabe, und in den Einstellungen sind sie nicht
+   schaltbar.
+3. Dann wurde jede Stelle einzeln angesehen, die **genau** sein muss, und
+   auf die feine Fähigkeit umgestellt.
+
+Dadurch hat keine Stelle still ihren Schutz verloren, und die präzisen
+Stellen sind präzise geworden. Der Prüflauf belegt, dass die groben
+Kennungen in keiner Rolle mehr stehen.
+
+### Die Einordnung, Stelle für Stelle
+
+| Stelle | vorher | jetzt | Begründung |
+|---|---|---|---|
+| Bereich Fahrten | `operations.read` | `fahrten.read` | |
+| Bereich Planung | `operations.read` | `planung.read` | |
+| Kalender: Fahrten | `operations.read` | `fahrten.read` | |
+| Kalender: Schichten, Konflikte | `operations.read` | `planung.read` | Ein Konflikt ist ein Widerspruch im **Schichtplan**, keine Eigenschaft einer Fahrt |
+| Kalender: Abwesenheiten | `operations.read` oder `personnel.read` | `planung.read` oder `krankheit.read` | Die Planung muss wissen, **dass** jemand ausfällt; der **Grund** hängt an `krankheit.read` und wird am Vorgang geprüft |
+| Kalender: Dokumentfristen | `personnel.read` | `personal.read` | Führerschein und P-Schein sind Stammdaten, nicht Krankheit |
+| Bereich Personal, Personalakte | `personnel.read` | `personal.read` | |
+| Krankheitsinhalte am Vorgang | `personnel.read` | `krankheit.read` | |
+| Bescheinigung öffnen, Einsicht, Ergebnis, Neuzuordnung | `personnel.read` | `dokument.pruefen` | Gesundheitsdokument |
+| Teilschritt „Personalprüfung" | `personal.read` | `dokument.pruefen` | Dieser Teilschritt **ist** die Dokumentprüfung |
+| Wiedereröffnen eines Krankheitsvorgangs | `personnel.read` | `krankheit.read` | Eine Entscheidung über einen Krankheitsvorgang |
+| Fahrer sehen, Telefonnummer | `operations.read` oder `personnel.read` | `fahrten.read`, `planung.read` oder `personal.read` | Die Zentrale braucht die Nummer für Rückfragen zur Schicht, das Personal für die Stammdaten |
+
+### Was der Prüflauf belegt
+
+- **Nur `planung.read`:** Planung sichtbar, Fahrten nicht; im Kalender nur
+  Schichten, Konflikte und Abwesenheiten; ein direkter Sprung nach Fahrten
+  wird abgewiesen.
+- **Nur `fahrten.read`:** umgekehrt, und im Kalender nur die Fahrten.
+- **Nur `personal.read`:** Bereich Personal erreichbar, aber **kein**
+  Dateiname, **kein** Knopf zur Bescheinigung — und die direkt aufgerufenen
+  Dokumentaktionen ändern nichts.
+- **`krankheit.read` ohne `dokument.pruefen`:** Der Zeitraum ist sichtbar,
+  die Bescheinigung bleibt verschlossen, auch über den direkten Aufruf. An
+  ihrer Stelle steht ein ehrlicher Satz statt eines fehlenden Knopfes.
+- Die **Aussperrsperre** für die Rechteverwaltung greift unverändert, auch
+  über den direkten Aufruf.
+
+---
+
+## 56. Eigene Fehler, Prüflauffehler und offene Entscheidungen
+
+### 56.1 Echte Oberflächenfehler — alle fünf behoben
+
+| Befund | Ursache | Behoben |
+|---|---|---|
+| 1. `RE-2026-0002` in der Kundenakte nicht anklickbar | die Zeile war ein `<li>`, keine Schaltfläche; es gab keine Herkunft, also konnte „Zurück" nicht existieren | echte `<button>` mit `aria-label`, Aktenweg als Stapel, Rückweg in Kopf und Fuß, Escape wie Rückweg, „Schließen" räumt den Weg ab |
+| 2. Kein Rückweg aus dem Rewards-Konto | dieselbe Ursache | derselbe Aktenweg; aus der Rewardsliste geöffnet **bewusst kein** Rückweg |
+| 3. Einstellungsseite sprang nach oben, Fokus weg | `geaendert()` rief `dialogOeffnen(rechteDialog())` und ersetzte den ganzen Fensterinhalt | ein Haken baut das Fenster **nicht mehr neu**; nur der Änderungsblock wird gezeichnet |
+| 4. Pflichtgrund ohne Meldung | der Fehler stand nur als Sammelmeldung, nicht am Feld | „Bitte einen Grund eingeben." am Feld, Fokus hinein, `aria-invalid`, `role="alert"`, `aria-live`, `aria-describedby` |
+| 5. Rechte zu grob zusammengefasst | `operations.read` und `personnel.read` fassten je zwei Dinge zusammen | fünf getrennte Fähigkeiten, siehe Abschnitt 55 |
+
+### 56.2 Eigene Umsetzungsfehler
+
+**Die gemerkte Scrollposition war die falsche.** Der Browser holt das
+angeklickte Element in den Blick, sobald es den Fokus bekommt — und das
+passiert **vor** dem Klick-Ereignis. Was mein Code dann las, war die vom
+Browser verschobene Position. Im Alltag fällt das kaum auf, weil man nur
+anklickt, was man sieht; bei Tastaturbedienung und bei einem Knopf am Rand
+des Blickfeldes aber schon. Gelesen wird die Position jetzt bei
+`pointerdown` beziehungsweise `keydown`.
+
+**Die Dokumentknöpfe hingen nur an der Aktion.** Nach der Aufteilung prüften
+`vg-bescheinigung`, `vg-einsicht-ja` und `vg-ergebnis` richtig auf
+`dokument.pruefen` — aber der **Knopf** war weiterhin sichtbar. Der eigene
+Prüflauf hat das gefunden. Jetzt steht an seiner Stelle ein Satz, der sagt
+warum: „Die Bescheinigung öffnen darf nur, wer Gesundheitsdokumente prüfen
+darf. Der gemeldete Zeitraum ist davon getrennt und hier sichtbar."
+
+### 56.3 Fehler in meinen Prüfläufen
+
+Diese gehören getrennt, weil sie **nichts** über die Oberfläche sagen.
+
+**Feste Datumsangaben neben Daten, die aus „heute" entstehen.** Das ist der
+schwerwiegendste: Im Prüflauf zur Neuzuordnung stand `"2026-10-03"` als
+Krankheitsende. Der Zeitraum von `V0002` beginnt dagegen am **heutigen** Tag
+— er wird aus `alsIso(heute)` gerechnet. Solange der Lauf am 02.10.2026
+lief, lag das feste Ende nach dem Beginn und alles passte. Zwei Tage später
+lag es **davor**, und die Oberfläche hat zu Recht „Das Ende liegt vor dem
+Beginn" gemeldet.
+
+Ein festes Datum neben Daten aus „heute" ist eine **Zeitbombe**: Der Lauf
+besteht, bis der Kalender weiterläuft. Betroffen waren der Zuordnungs- und
+der Datumslauf; an **sechzehn** Stellen wird der Tag jetzt aus dem Bestand
+gerechnet.
+
+**Eine Prüfung, die aus dem falschen Grund bestand.** „Ein Ende vor dem
+Beginn wird abgewiesen" prüfte nur, **dass** ein `.feldfehler` da war — sie
+hätte auch bei „Zeitraum unvollständig" bestanden. Jetzt wird der
+**Fehlertext** geprüft.
+
+**Ein unrealistischer Rauchtest.** Ich habe die Akte programmatisch auf
+Position 300 gescrollt und dann eine Zeile angeklickt, die bei 893 lag. Ein
+Mensch klickt nicht auf etwas, das er nicht sieht. Der Prüflauf holt die
+Zeile jetzt erst in den Blick — so, wie es tatsächlich bedient wird.
+
+**Ein Rauchtest, der an der falschen Stelle suchte.** `v.nachweise` gibt es
+nicht; die Nachweise liegen in `v.daten.nachweise`. Die Prüfung war damit
+leer und hätte alles bestanden.
+
+### 56.4 Veraltete Prüferwartungen — angepasst mit Begründung
+
+| Lauf | Alte Erwartung | Weshalb sie nicht mehr gilt |
+|---|---|---|
+| `probe-rechte` | Die Sammelmeldung sagt „Bitte einen Grund eintragen." | Der Hinweis steht jetzt **am Feld** und heißt „Bitte einen Grund eingeben." Geprüft wird dort — und zusätzlich `aria-invalid` und `role="alert"` |
+
+Das ist die einzige in diesem Durchgang. Alle übrigen sechzehn Läufe sind
+ohne Anpassung durchgelaufen — die Rechteaufteilung hat **keine** bestehende
+Erwartung gebrochen. Das war der Zweck des Umwegs über die groben Kennungen
+als Frage.
+
+### 56.5 Bewusst offene Geschäftsentscheidungen
+
+| Punkt | Stand |
+|---|---|
+| Die spätere Verteilung für Buchhaltung, Personal und Disposition | **nicht festgelegt.** Die Probe zeigt, dass sie schaltbar ist, und legt nichts fest |
+| Ob „Fahrten bearbeiten" und „Planung bearbeiten" getrennt werden sollen | **offen.** `operations.write` ist weiterhin eines; getrennt wurden nur die **Lese**rechte, wie verlangt |
+| Ob für die Rechtevergabe ein Vieraugenprinzip gelten soll | **offen** |
+| Rückzahlung, Überzahlung und Storno bei Rechnungen | **offen**, benannt in der Sperrmeldung |
+| Mahnstufen, Mahngebühren, Zahlungsfrist | **offen** |
+| Aufbewahrungs- und Löschfrist für Krankheitsnachweise | **offene rechtliche Entscheidung** |
+| Punktzahlen der Rewardsstufen unterhalb von VIP | **offen** |
+| Welche Ereignisse die Analyse erheben darf | **offene rechtliche Entscheidung**; ohne sie bleibt der Bereich produktiv leer |
+
+**Erledigt und damit nicht mehr offen:** „Fahrten sehen" und „Planung
+sehen" sind getrennt, ebenso „Personalstammdaten sehen" und
+„Krankheitszeiträume sehen", und die Dokumentprüfung ist noch einmal eigens
+geschützt.
+
+---
+
+## 58. Alle siebzehn Prüfläufe, vollständig gefahren
+
+Stand 04.10.2026. Jeder Lauf bis zur gedruckten Abschlussbilanz.
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-portal-pruefen` | **114 bestanden, 0 offen** |
+| `probe-fahrt-pruefen` | **172 bestanden, 0 offen** |
+| `probe-planung-pruefen` | **171 bestanden, 0 offen** |
+| `probe-team-pruefen` | **197 bestanden, 0 offen** |
+| `probe-vorgaenge-pruefen` | **138 bestanden, 0 offen** |
+| `probe-teilung-pruefen` | **105 bestanden, 0 offen** |
+| `probe-dokument-pruefen` | **93 bestanden, 0 offen** |
+| `probe-regeln-pruefen` | **123 bestanden, 0 offen** |
+| `probe-zuordnung-pruefen` | **126 bestanden, 0 offen** |
+| `probe-karten-pruefen` | **88 bestanden, 0 offen** |
+| `probe-wahrheit-pruefen` | **78 bestanden, 0 offen** |
+| `probe-kalenderwege-pruefen` | **109 bestanden, 0 offen** |
+| `probe-akten-pruefen` | **243 bestanden, 0 offen** |
+| `probe-analyse-pruefen` | **123 bestanden, 0 offen** |
+| `probe-datum-pruefen` | **162 bestanden, 0 offen** |
+| `probe-rechte-pruefen` | **220 bestanden, 0 offen** |
+| `probe-aktenweg-pruefen` (neu) | **121 bestanden, 0 offen** |
+| **Summe** | **2 383 bestanden, 0 offen** |
+
+In allen siebzehn Läufen: **null Anfragen nach außen.**
+
+### Was diese Zahlen nicht sagen
+
+- Es ist **keine Datenquelle** angebunden. Alles liegt im Speicher des
+  Browsers und ist nach dem Neuladen weg.
+- **Die Rechteverwaltung ist eine Vorführung.** Eine Prüfung im Browser
+  schützt nichts. Dass die fünf neuen Fähigkeiten serverseitig
+  Entsprechungen haben — Supabase-Rollen, Grants, RLS —, ist **nicht**
+  gezeigt und wäre im Betrieb der entscheidende Teil.
+- **Kein Lauf** sagt etwas über die produktive Instanz: nicht über RLS,
+  nicht über Grants, nicht über das Verhalten der Storage-API.
+- Die zwei Administrationskonten sind **Testidentitäten**. Kein echtes
+  Konto, kein Passwort, keine Anmeldung.
+- Der produktive Verwaltungsbereich unter `admin/` ist **unverändert**.
+
+---
+
+## 59. Manueller Testweg
+
+Vorschau: `npm run probe-portal`, dann die genannte Adresse im Browser.
+Rolle und Konto stehen oben im Banner. **Nichts davon verlässt den
+Browser.**
+
+### A. Rechnung aus der Kundenakte (Punkt 1)
+
+1. Rolle **Administration**, Bereich **Kunden**, `Testkunde 03` suchen und
+   die Zeile anklicken.
+2. In der Akte nach unten zu **Rechnungen** scrollen. Erwartung:
+   `RE-2026-0002` ist eine **Schaltfläche** — der Zeiger wird zur Hand, und
+   die Zeile hebt sich beim Überfahren ab.
+3. Mit **Tabulator** dorthin, dann **Enter**. Erwartung: Die
+   Rechnungsakte `RE-2026-0002` öffnet sich — **nicht** die
+   Finanzübersicht.
+4. Erwartung: **Zurück zur Kundenakte** steht **oben und unten**.
+5. Den unteren Knopf drücken. Erwartung: Sie sind bei Testkunde 03, und
+   zwar **an derselben Stelle** in der Akte wie vorher.
+6. Noch einmal die Rechnung öffnen, dann **Escape**. Erwartung: dasselbe.
+7. Noch einmal öffnen, dann **Schließen**. Erwartung: Der ganze Aktenweg
+   ist verlassen — keine Kundenakte mehr offen.
+8. Gegenprobe als **Testdisposition 01**: Die Disposition sieht den
+   Kundenbereich nicht. Ein direkter Aufruf bleibt wirkungslos.
+
+### B. Rückweg aus dem Rewards-Konto (Punkt 2)
+
+1. Wieder in der Akte von Testkunde 03: **Rewards-Konto öffnen**.
+2. Erwartung: **Zurück zur Kundenakte** steht **oben und unten**.
+3. Drücken. Erwartung: Testkunde 03, dieselbe Scrollposition.
+4. **Escape** aus dem Konto: dasselbe. **Schließen**: alles verlassen.
+5. Gegenprobe: Bereich **Rewards**, dort eine Kontozeile anklicken.
+   Erwartung: Das Konto öffnet, aber es gibt **keinen** Rückweg — Sie
+   kommen aus keiner Kundenakte, und es wird keine erfunden.
+
+### C. Scrollposition in der Rechteverwaltung (Punkt 3)
+
+1. Rolle **Administration**, Bereich **Einstellungen**, **Rolle
+   Disposition** anklicken.
+2. Im Fenster **ganz nach unten** scrollen, zur letzten Berechtigung
+   („Eigene Übersicht und Meldungen sehen").
+3. Mit **Tabulator** dorthin und **Leertaste** drücken. Erwartung: Die
+   Seite **bleibt stehen**, der Fokus bleibt auf dem Schalter, und weiter
+   unten erscheint der Änderungsblock.
+4. Noch einmal Leertaste. Erwartung: dasselbe.
+5. Dasselbe mit der **Maus** auf einer anderen Berechtigung weit unten.
+
+### D. Pflichtgrund (Punkt 4)
+
+1. In derselben Rolle ein Recht ändern, **Weiter zur Prüfung**.
+2. **Verbindlich speichern** ohne Grund. Erwartung:
+   - unter dem Grundfeld steht **„Bitte einen Grund eingeben."**
+   - der Schreibzeiger sitzt **im Feld**
+   - das Feld ist rot umrandet
+   - es wurde **nichts** gespeichert
+3. Anfangen zu tippen. Erwartung: Die Meldung verschwindet, der
+   Schreibzeiger bleibt im Feld.
+4. Mit gültigem Grund speichern. Erwartung: Die Änderung ist da und steht
+   im Protokoll unten im Bereich.
+
+### E. Getrennte Rechte (Punkt 5)
+
+1. Bereich **Einstellungen**, **Rolle Disposition**. Erwartung: Es gibt
+   jetzt **getrennte** Schalter für **Fahrten sehen** und **Planung
+   sehen**.
+2. **Fahrten sehen** abwählen, mit Grund speichern.
+3. Auf Rolle **Disposition** umstellen. Erwartung: **Planung** ist da,
+   **Fahrten** ist aus der Navigation verschwunden. Im **Kalender** gibt es
+   die Kategorie „Fahrten" nicht mehr, Schichten und Konflikte schon.
+4. Zurück als Administration: **Fahrten sehen** wieder an, **Planung
+   sehen** aus. Erwartung: genau umgekehrt.
+5. **Rolle Personal**: Erwartung: getrennte Schalter für
+   **Personalstammdaten sehen**, **Krankheitszeiträume sehen** und
+   **Gesundheitsdokumente prüfen**.
+6. **Gesundheitsdokumente prüfen** abwählen, speichern. Dann als
+   **Testpersonal 01** eine Krankmeldung öffnen. Erwartung: Der gemeldete
+   Zeitraum ist zu sehen, aber **kein Dateiname** und **kein Knopf** zur
+   Bescheinigung — stattdessen ein Satz, der sagt warum.
+7. Zusätzlich **Krankheitszeiträume sehen** abwählen. Erwartung: Auch der
+   vertrauliche Teil ist weg; die Stammdaten im Bereich **Personal**
+   bleiben.
+8. Gegenprobe der Sperre: **Rolle Administration**, **Rechte verwalten**
+   abwählen, **Weiter**. Erwartung: Fehlermeldung, dass danach kein Konto
+   mehr Rechte verwalten könnte — und **kein** Speicherknopf.
+
+### F. Was nicht zurückgebaut sein darf
+
+- In der Kundenakte steht **keine** Kundennummer und **keine** Kennung.
+- **Neue Fahrt für diesen Kunden** übernimmt Testkunde 03 **und** die
+  Abholadresse „Testallee".
+- **Abbrechen** legt keine Fahrt an; es bleiben zwei offene Fahrten.
+- Rechteänderungen werden erst nach der abschließenden Prüfung gespeichert.
+- Die **Analyse** verschwindet bei entzogener Berechtigung wirklich — auch
+  über einen direkten Sprung.

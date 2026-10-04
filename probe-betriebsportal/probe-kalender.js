@@ -11,7 +11,7 @@
      wurde, und fuehrt in die zustaendige Ansicht. Die Filter
      veraendern ausschliesslich die Anzeige.
   2. Der Inhalt haengt an den Faehigkeiten der Rolle, nicht an einem
-     ausgeblendeten Knopf. Wer "personnel.read" nicht hat, bekommt die
+     ausgeblendeten Knopf. Wer "personal.read" nicht hat, bekommt die
      Dokumentfristen gar nicht erst geliefert.
   3. Im Kalender steht NIE eine Diagnose, eine Bescheinigung oder eine
      sonstige medizinische Angabe. Nur "Krank" als Tatsache der
@@ -92,7 +92,7 @@
 
     /* --- Fahrten. Nur der laufende Tag hat in dieser Probe Fahrten;
            fuer andere Tage wird nichts behauptet. --- */
-    if (R.darf("operations.read") && isoTag === heuteIso && D.fahrtenHeute().length) {
+    if (R.darf("fahrten.read") && isoTag === heuteIso && D.fahrtenHeute().length) {
       /*
         Dieselbe Definition wie Uebersicht und Fahrtenliste. Vorher
         zaehlte jede Stelle selbst, und am selben Tag standen 10, 10
@@ -126,7 +126,8 @@
            Jetzt kommt jede Schicht einzeln, mit Namen, Zeit,
            Fahrzeug, Zustand und Planstatus. Ungueltige erscheinen
            als Konflikt - nicht als Schicht und nicht gar nicht. --- */
-    if (R.darf("operations.read")) {
+    /* Schichten und Konflikte - Planungssicht. */
+    if (R.darf("planung.read")) {
       const plan = D.planung[isoTag];
       const schichten = D.schichtenAmTag(isoTag);
       const planStatus = plan && plan.veroeffentlicht ? "veröffentlicht" : "Entwurf";
@@ -161,7 +162,7 @@
            Bereich "Fahrer & Fahrzeuge". Vorher oeffneten "Krank" und
            "Urlaub" beide dieselbe Seite - der Nutzer musste den
            Vorgang selbst suchen. --- */
-    if (R.darf(["operations.read", "personnel.read"])) {
+    if (R.darf(["planung.read", "krankheit.read"])) {
       D.mitarbeiter.forEach((m) => {
         const a = D.abwesenheitFuer(m.id, isoTag);
         const eintrag = a.wirksam || a.beantragt;
@@ -225,7 +226,8 @@
     }
 
     /* --- Dokumentfristen. Art und Frist, kein Aktenauszug. --- */
-    if (R.darf("personnel.read")) {
+    /* Dokumentfristen - Personalstammdaten. */
+    if (R.darf("personal.read")) {
       D.fahrerDokumente.forEach((dok) => {
         if (dok.bis !== isoTag) return;
         const m = D.mitarbeiter.find((x) => x.id === dok.mitarbeiterId);
@@ -249,13 +251,32 @@
     { id: "monat", name: "Monat" }
   ];
 
+  /*
+    Jede Kategorie nennt die Faehigkeit, die sie WIRKLICH braucht.
+
+    Vorher hingen Fahrten, Schichten und Konflikte alle an
+    "operations.read" - wer die Planung sehen durfte, sah damit
+    zwangslaeufig auch die Fahrten. Das war der Punkt, den der
+    Geschaeftsfuehrer getrennt haben wollte.
+
+    Schichten und Konflikte gehoeren zur PLANUNG: Ein Konflikt ist
+    ein Widerspruch im Schichtplan, keine Eigenschaft einer Fahrt.
+
+    "Abwesenheiten" braucht Planungssicht ODER Krankheitssicht: Die
+    Planung muss wissen, dass jemand ausfaellt, um planen zu
+    koennen; der GRUND ist die vertrauliche Angabe und haengt an
+    krankheit.read - gepruefr wird er am Vorgang, nicht hier.
+
+    "Dokumentfristen" sind Fuehrerschein und Personenbefoerderungs-
+    schein, also Personalstammdaten - nicht Krankheit.
+  */
   const ARTEN = [
-    { id: "fahrt",       name: "Fahrten",         braucht: "operations.read" },
-    { id: "schicht",     name: "Schichten",       braucht: "operations.read" },
-    { id: "konflikt",    name: "Konflikte",       braucht: "operations.read" },
-    { id: "abwesenheit", name: "Abwesenheiten",   braucht: ["operations.read", "personnel.read"] },
+    { id: "fahrt",       name: "Fahrten",         braucht: "fahrten.read" },
+    { id: "schicht",     name: "Schichten",       braucht: "planung.read" },
+    { id: "konflikt",    name: "Konflikte",       braucht: "planung.read" },
+    { id: "abwesenheit", name: "Abwesenheiten",   braucht: ["planung.read", "krankheit.read"] },
     { id: "fahrzeug",    name: "Fahrzeuge",       braucht: "fleet.read" },
-    { id: "dokument",    name: "Dokumentfristen", braucht: "personnel.read" }
+    { id: "dokument",    name: "Dokumentfristen", braucht: "personal.read" }
   ];
 
   /* Sind alle sichtbaren Kategorien eingeschaltet? */

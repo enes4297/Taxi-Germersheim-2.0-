@@ -25,14 +25,19 @@
   const anmelden = (planung) => { P = planung; };
 
   /* ---- Fähigkeiten ---- */
-  const darfFahrerSehen   = () => R.darf("operations.read") || R.darf("personnel.read");
+  /* Wer einen Fahrer ueberhaupt sehen darf: die Disposition zum
+     Planen, das Personal zur Pflege. Eine von beiden genuegt. */
+  const darfFahrerSehen   = () => R.darf(["fahrten.read", "planung.read", "personal.read"]);
   const darfFahrzeugeSehen = () => R.darf("fleet.read");
   const darfZuweisen      = () => R.darf("operations.write");
   const darfFahrzeugPflegen = () => R.darf("fleet.write");
-  const darfTelefon       = () => R.darf("operations.read") || R.darf("personnel.read");
+  /* Die Telefonnummer braucht die Zentrale fuer Rueckfragen zur
+     Schicht - und das Personal fuer die Stammdaten. */
+  const darfTelefon       = () => R.darf(["fahrten.read", "planung.read", "personal.read"]);
   const darfLohn          = () => R.darf("payroll.read");
   const darfLohnPflegen   = () => R.darf("payroll.write");
-  const darfPersonalakte  = () => R.darf("personnel.read");
+  /* Die Personalakte zeigt Stammdaten - nicht Krankheit. */
+  const darfPersonalakte  = () => R.darf("personal.read");
 
   /* ---- Ansichtszustand ---- */
   const stand = {

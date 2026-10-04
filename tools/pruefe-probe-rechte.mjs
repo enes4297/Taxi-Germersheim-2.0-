@@ -730,7 +730,25 @@ console.log("\n── 8. Rechte verwalten ──");
   pruefe(await page.evaluate(() =>
     window.ProbeRahmen.rollenRechte.accounting.includes("analytics.read")),
     "ohne Grund wird nichts geändert");
-  pruefe(/Grund eintragen/.test(await dialogText(page)), "und danach gefragt");
+  /*
+    GEAENDERTE ERWARTUNG.
+
+    Alt: Die Sammelmeldung sagte "Bitte einen Grund eintragen. Ohne
+    Grund wird nichts geaendert."
+
+    Weshalb das nicht mehr gilt: Der manuelle Gegenlauf hat gemessen,
+    dass nur das Feld leuchtete. Der Hinweis steht jetzt AM FELD und
+    heisst "Bitte einen Grund eingeben." - geprueft wird deshalb dort,
+    und zusaetzlich, dass er fuer Hilfsmittel ausgegeben wird.
+  */
+  pruefe(/Bitte einen Grund eingeben/.test(await dialogText(page)),
+    "und danach gefragt");
+  pruefe(await page.getAttribute("[data-es-grund]", "aria-invalid") === "true",
+    "das Feld ist als fehlerhaft gekennzeichnet");
+  pruefe(await page.evaluate(() => {
+    const k = document.getElementById("es-grund-fehler");
+    return Boolean(k) && k.getAttribute("role") === "alert";
+  }), "und der Hinweis wird fuer Screenreader ausgegeben");
 
   await page.fill("[data-es-grund]", "Buchhaltung braucht die Analyse nicht mehr.");
   await page.click('[data-tun="es-ja"]');

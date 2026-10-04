@@ -20,27 +20,59 @@
     koennen, was jemand geaendert hat. Gearbeitet wird mit
     rollenRechte, einer Kopie davon.
 
-    WICHTIG zur Einordnung: Die Liste des Geschaeftsfuehrers nennt
-    teils feinere Faehigkeiten, als das Modell hat - "Fahrten sehen"
-    und "Planung sehen" sind hier beides operations.read. Diese
-    Zusammenfassung wird in den Einstellungen ausdruecklich benannt
-    und als offene Entscheidung gekennzeichnet. Sie wird NICHT
-    stillschweigend aufgeteilt: Eine Aufteilung muesste an 27 Stellen
-    entschieden werden, und eine falsche Einordnung versteckt eine
-    funktionierende Ansicht, ohne dass es auffaellt.
+    AUFGETEILT auf Anweisung des Geschaeftsfuehrers: "Fahrten sehen"
+    und "Planung sehen" waren ein Recht, ebenso "Personalstammdaten
+    sehen" und "Krankheitszeitraeume sehen". Fuer die Rollenvergabe
+    war das zu grob.
+
+    Die Dokumentpruefung (dokument.pruefen) ist noch einmal getrennt
+    und die engste Stufe - wer einen Krankheitszeitraum sehen darf,
+    darf damit noch nicht die Bescheinigung oeffnen.
   */
   const FAEHIGKEITEN = {
-    admin: ["operations.read", "operations.write", "fleet.read", "fleet.write",
-            "personnel.read", "personnel.write", "payroll.read", "payroll.write",
+    admin: ["fahrten.read", "planung.read", "operations.write",
+            "fleet.read", "fleet.write",
+            "personal.read", "krankheit.read", "dokument.pruefen", "personnel.write",
+            "payroll.read", "payroll.write",
             "customers.read", "customers.write", "finance.read", "finance.write",
             "rewards.read", "rewards.write", "analytics.read",
             "security.read", "security.write", "absence.decide", "self.read"],
-    dispatcher: ["operations.read", "operations.write", "fleet.read", "self.read"],
-    personal:   ["personnel.read", "personnel.write", "payroll.read", "payroll.write",
+    dispatcher: ["fahrten.read", "planung.read", "operations.write",
+                 "fleet.read", "self.read"],
+    personal:   ["personal.read", "krankheit.read", "dokument.pruefen", "personnel.write",
+                 "payroll.read", "payroll.write",
                  "absence.decide", "self.read"],
     accounting: ["customers.read", "customers.write", "finance.read", "finance.write",
                  "analytics.read", "self.read"],
     employee:   ["self.read"]
+  };
+
+  /*
+    GROBE FAEHIGKEITEN - nur als FRAGE, nie als Besitz.
+
+    Der Geschaeftsfuehrer hat verlangt, dass "Fahrten sehen" und
+    "Planung sehen" unabhaengig schaltbar sind, ebenso
+    "Personalstammdaten sehen" und "Krankheitszeitraeume sehen".
+    Beide waren vorher je EIN Recht.
+
+    Damit nicht an 27 Stellen geraten werden muss, bleibt die alte,
+    grobe Kennung als FRAGE gueltig: darf("operations.read") heisst
+    jetzt "hat Fahrten- ODER Planungssicht". Kein Konto BESITZT sie
+    noch - sie steht in keiner Rolle und in keiner Freigabe.
+
+    Das ist bewusst so gebaut: Eine Stelle, die wirklich nur die
+    Planung meint, wird einzeln auf planung.read umgestellt. Eine
+    Stelle, der beides genuegt, darf die grobe Frage behalten. Haette
+    ich alle 27 Stellen blind ersetzt, waere bei jeder falschen
+    Einordnung eine funktionierende Ansicht verschwunden, ohne dass
+    es auffaellt.
+
+    In den EINSTELLUNGEN tauchen die groben Kennungen nicht auf -
+    schaltbar sind nur die feinen.
+  */
+  const GROBE = {
+    "operations.read": ["fahrten.read", "planung.read"],
+    "personnel.read": ["personal.read", "krankheit.read"]
   };
 
   /*
@@ -153,13 +185,18 @@
   /* ---- Die elf Bereiche ---- */
   const BEREICHE = [
     { id: "uebersicht", name: "Übersicht",          kurz: "Übersicht", symbol: "uebersicht", braucht: "self.read" },
-    { id: "fahrten",    name: "Fahrten",            kurz: "Fahrten",   symbol: "fahrten",    braucht: "operations.read" },
-    { id: "planung",    name: "Planung",            kurz: "Planung",   symbol: "planung",    braucht: "operations.read" },
-    { id: "team",       name: "Fahrer & Fahrzeuge", kurz: "Team",      symbol: "team",       braucht: ["operations.read", "personnel.read", "fleet.read"] },
-    { id: "kalender",   name: "Kalender",           kurz: "Kalender",  symbol: "kalender",   braucht: ["operations.read", "personnel.read", "fleet.read"] },
+    /*
+      Jeder Bereich nennt die Faehigkeit, die er WIRKLICH braucht.
+      "Fahrten" braucht Fahrtensicht, "Planung" Planungssicht - wer
+      nur eines von beiden hat, sieht nur eines von beiden.
+    */
+    { id: "fahrten",    name: "Fahrten",            kurz: "Fahrten",   symbol: "fahrten",    braucht: "fahrten.read" },
+    { id: "planung",    name: "Planung",            kurz: "Planung",   symbol: "planung",    braucht: "planung.read" },
+    { id: "team",       name: "Fahrer & Fahrzeuge", kurz: "Team",      symbol: "team",       braucht: ["fahrten.read", "planung.read", "personal.read", "fleet.read"] },
+    { id: "kalender",   name: "Kalender",           kurz: "Kalender",  symbol: "kalender",   braucht: ["fahrten.read", "planung.read", "personal.read", "krankheit.read", "fleet.read"] },
     { id: "meldungen",  name: "Meldungen",          kurz: "Meldungen", symbol: "meldungen",  braucht: "self.read" },
     { id: "kunden",     name: "Kunden",             kurz: "Kunden",    symbol: "kunden",     braucht: "customers.read" },
-    { id: "personal",   name: "Personal",           kurz: "Personal",  symbol: "personal",   braucht: "personnel.read" },
+    { id: "personal",   name: "Personal",           kurz: "Personal",  symbol: "personal",   braucht: "personal.read" },
     { id: "lohn",       name: "Lohn",               kurz: "Lohn",      symbol: "lohn",       braucht: "payroll.read" },
     { id: "finanzen",   name: "Finanzen",           kurz: "Finanzen",  symbol: "finanzen",   braucht: "finance.read" },
     { id: "rewards",    name: "Rewards",            kurz: "Rewards",   symbol: "rewards",    braucht: "rewards.read" },
@@ -201,8 +238,13 @@
     */
     const konto = aktuellesKonto();
     const meine = rechteVon(konto).concat(zustand.zusatz);
-    if (Array.isArray(faehigkeit)) return faehigkeit.some((f) => meine.includes(f));
-    return meine.includes(faehigkeit);
+    /* Eine grobe Kennung ist erfuellt, wenn EINE ihrer feinen
+       Faehigkeiten vorliegt - siehe GROBE. */
+    const hat = (f) => (GROBE[f]
+      ? GROBE[f].some((x) => meine.includes(x))
+      : meine.includes(f));
+    if (Array.isArray(faehigkeit)) return faehigkeit.some(hat);
+    return hat(faehigkeit);
   };
   const sichtbareBereiche = () => BEREICHE.filter((b) => darf(b.braucht));
 
@@ -385,6 +427,9 @@
     document.body.style.overflow = "";
     if (dialogAusloeser && document.body.contains(dialogAusloeser)) dialogAusloeser.focus();
     dialogAusloeser = null;
+    /* Den Modulen sagen, dass ihr Fenster endgueltig zu ist. Sie
+       raeumen dann ihre eigenen Wege ab - der Rahmen kennt sie nicht. */
+    if (window.ProbeAkten && window.ProbeAkten.geschlossen) window.ProbeAkten.geschlossen();
     /* Kam das Fenster aus einem anderen Bereich, geht es dorthin
        zurueck - mit Ansicht, Datum, Filtern und Position. */
     if (herkunft) zurueckZurHerkunft();
@@ -693,7 +738,7 @@
     geheZuMitHerkunft, scrollJetzt,
     BENUTZER, benutzer, benutzerText,
     KONTEN, kontoVon, aktuellesKonto, rechteVon, rollenRechte, kontoRechte,
-    FAEHIGKEITEN, sichtbareBereiche,
+    FAEHIGKEITEN, GROBE, sichtbareBereiche,
     ROLLENNAMEN, BEREICHE
   };
 

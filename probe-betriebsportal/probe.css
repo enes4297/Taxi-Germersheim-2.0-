@@ -1761,3 +1761,53 @@ textarea {
   opacity: 0.75;
 }
 .rechtezeile.ist-aus-rolle:hover { background: var(--grund); }
+
+/* ============================================================
+   Bedienbare Zeile in einer Konfliktliste
+   ============================================================
+   Gemessener Fehler: In der Kundenakte stand die Rechnungsnummer als
+   <li> - nicht anklickbar und mit der Tastatur nicht erreichbar.
+
+   Die Liste behält ihr Aussehen; die Zeile wird zur Schaltfläche. Nur
+   wo .ist-bedienbar steht - eine Liste, die nur anzeigt, soll auch
+   nicht nach Bedienung aussehen. */
+.konfliktliste.ist-bedienbar li { padding: 0; }
+.zeilenknopf {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  min-height: 36px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.zeilenknopf:hover { background: var(--flaeche-2); }
+.zeilenknopf strong {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.zeilenknopf span { font-size: 15px; }
+
+/* Ein Pflichtfeld mit Fehler. Der Text steht am Feld, nicht nur oben -
+   eine Sammelmeldung lässt offen, welches Feld gemeint ist. */
+label.hat-fehler > textarea,
+label.hat-fehler > input,
+label.hat-fehler > select {
+  border-color: var(--rot);
+  border-width: 2px;
+}
+label > .feldfehler:empty { display: none; }
+label > .feldfehler {
+  margin: 6px 0 0;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: normal;
+}

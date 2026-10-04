@@ -56,6 +56,31 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(PORT, "127.0.0.1", r));
 const ADRESSE = `http://127.0.0.1:${PORT}/`;
 
+/*
+  Die Tage, an denen in dieser Probe etwas liegt - aus dem BESTAND
+  gerechnet, nicht festgeschrieben.
+
+  Eigener Fehler des ersten Versuchs: Hier standen "2026-10-03" und
+  "2026-10-20". Beide Daten im Bestand entstehen aus "heute"; einen
+  Tag spaeter zeigten die festen Werte auf nichts mehr. Ein festes
+  Datum neben Daten aus "heute" ist eine Zeitbombe.
+*/
+async function tageAusDemBestand(page) {
+  return page.evaluate(() => {
+    const D = window.ProbeDaten;
+    const krank = D.vorgaenge.find((v) => v.thema === "krankheit" && v.daten && v.daten.von);
+    const fz = D.fahrzeuge.find((f) => f.service || f.tuev);
+    return {
+      /* Ein Tag, an dem eine Abwesenheit liegt. */
+      abwesenheit: krank ? krank.daten.von : D.alsIso(D.heute),
+      /* Ein Tag, an dem ein Fahrzeugtermin liegt. */
+      fahrzeug: fz ? (fz.service || fz.tuev) : D.alsIso(D.heute),
+      fahrzeugId: fz ? fz.id : "",
+      heute: D.alsIso(D.heute)
+    };
+  });
+}
+
 let bestanden = 0;
 const offen = [];
 function pruefe(bedingung, name) {
@@ -190,12 +215,21 @@ console.log("\n── 2. Tippen, Enter, Escape, Fokus ──");
     "Schriftgröße mindestens 16 px — darunter zoomt iOS hinein");
 
   /* Von links nach rechts, Zeichen fuer Zeichen. Nichts springt. */
+  /*
+    Getippt wird ein Tag, den es im Bestand gibt - der Fahrzeugtermin.
+    Ein fester Tag waere wieder eine Zeitbombe.
+  */
+  const tage = await tageAusDemBestand(page);
+  const tippZiffern = tage.fahrzeug.slice(8, 10) + tage.fahrzeug.slice(5, 7)
+    + tage.fahrzeug.slice(0, 4);
+  const tippText = tage.fahrzeug.slice(8, 10) + "." + tage.fahrzeug.slice(5, 7)
+    + "." + tage.fahrzeug.slice(0, 4);
   await page.click(feld);
   await page.keyboard.press("Control+a");
   await page.keyboard.press("Delete");
   let fokusVerloren = 0;
   let zwischen = [];
-  for (const z of "20102026") {
+  for (const z of tippZiffern) {
     await page.keyboard.type(z);
     await page.waitForTimeout(45);
     const stand = await page.evaluate((w) => {
@@ -206,7 +240,7 @@ console.log("\n── 2. Tippen, Enter, Escape, Fokus ──");
     if (!stand.fokus) fokusVerloren += 1;
   }
   pruefe(fokusVerloren === 0, `der Fokus bleibt beim Tippen im Feld (${fokusVerloren} Verluste)`);
-  pruefe(await feldWert(page, feld) === "20102026",
+  pruefe(await feldWert(page, feld) === tippZiffern,
     `alle acht Ziffern kommen an: ${zwischen.join(" → ")}`);
   /* Das war der eigentliche Mangel: Beim nativen Feld wuerde hier
      etwas wie "2026-02-00" stehen, weil der Fokus gesprungen ist. */
@@ -215,16 +249,16 @@ console.log("\n── 2. Tippen, Enter, Escape, Fokus ──");
 
   await page.keyboard.press("Enter");
   await page.waitForTimeout(400);
-  pruefe(await feldWert(page, feld) === "20.10.2026",
-    "Enter formt daraus TT.MM.JJJJ");
-  pruefe(await page.evaluate(() => window.ProbeKalender.stand.datum) === "2026-10-20",
+  pruefe(await feldWert(page, feld) === tippText,
+    `Enter formt daraus TT.MM.JJJJ (${tippText})`);
+  pruefe(await page.evaluate(() => window.ProbeKalender.stand.datum) === tage.fahrzeug,
     "und der Kalender steht auf diesem Tag");
 
   /* Ungueltig: Fehler am Feld, Wert NICHT uebernommen. */
   await tippen(page, feld, "31.02.2026");
   await page.keyboard.press("Enter");
   await page.waitForTimeout(400);
-  pruefe(await page.evaluate(() => window.ProbeKalender.stand.datum) === "2026-10-20",
+  pruefe(await page.evaluate(() => window.ProbeKalender.stand.datum) === tage.fahrzeug,
     "ein unmögliches Datum wird nicht übernommen");
   const fehlertext = await page.evaluate(() => {
     const el = document.querySelector(".datumsfehler");
@@ -240,9 +274,9 @@ console.log("\n── 2. Tippen, Enter, Escape, Fokus ──");
   await tippen(page, feld, "05.05.2027");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
-  pruefe(await feldWert(page, feld) === "20.10.2026",
+  pruefe(await feldWert(page, feld) === tippText,
     "Escape verwirft die Änderung und holt den letzten Wert zurück");
-  pruefe(await page.evaluate(() => window.ProbeKalender.stand.datum) === "2026-10-20",
+  pruefe(await page.evaluate(() => window.ProbeKalender.stand.datum) === tage.fahrzeug,
     "der Kalendertag bleibt dabei unverändert");
 
   /* Tastatur: Tab erreicht das Feld, der Fokus ist sichtbar. */
@@ -386,7 +420,8 @@ console.log("\n── 4. Ein Klick wählt allein aus ──");
 
   /* Ansicht, Datum und Filter ueberleben ein Neuzeichnen. */
   await page.evaluate(() => { window.ProbeKalender.stand.sicht = "woche"; });
-  await page.evaluate((x) => window.ProbeKalender.tun("kal-tag", x), "2026-10-20");
+  await page.evaluate((x) => window.ProbeKalender.tun("kal-tag", x),
+    (await tageAusDemBestand(page)).fahrzeug);
   await page.waitForTimeout(300);
   await page.click('[data-tun="kal-art:dokument"]');
   await page.waitForTimeout(250);
@@ -436,12 +471,14 @@ console.log("\n── 5. Aus dem Kalender und zurück ──");
     return page.evaluate(() => JSON.stringify(window.ProbeKalender.stand));
   }
 
-  /* --- Krankmeldung Testfahrer 02 vom 03.10.2026 --- */
-  const lage1 = await kalenderLage("2026-10-03", "abwesenheit");
+  /* --- Krankmeldung aus dem Kalender, an dem Tag, an dem sie liegt --- */
+  const tage5 = await tageAusDemBestand(page);
+  const lage1 = await kalenderLage(tage5.abwesenheit, "abwesenheit");
   const ziele1 = await page.$$eval('[data-tun^="kal-ziel:"]',
     (ns) => ns.map((x) => x.dataset.tun));
   const krank = ziele1.find((z) => z.includes("meldungen:vorgang-"));
-  pruefe(Boolean(krank), `am 03.10.2026 führt ein Eintrag zum Vorgang (${krank || "keiner"})`);
+  pruefe(Boolean(krank),
+    `am ${tage5.abwesenheit} führt ein Eintrag zum Vorgang (${krank || "keiner"})`);
   if (krank) {
     await page.click(`[data-tun="${krank}"]`);
     await page.waitForTimeout(500);
@@ -467,7 +504,7 @@ console.log("\n── 5. Aus dem Kalender und zurück ──");
   }
 
   /* Dasselbe mit Escape. */
-  const lage2 = await kalenderLage("2026-10-03", "abwesenheit");
+  const lage2 = await kalenderLage(tage5.abwesenheit, "abwesenheit");
   if (krank) {
     await page.click(`[data-tun="${krank}"]`);
     await page.waitForTimeout(450);
@@ -480,7 +517,7 @@ console.log("\n── 5. Aus dem Kalender und zurück ──");
   }
 
   /* Und mit "Schliessen". */
-  const lage3 = await kalenderLage("2026-10-03", "abwesenheit");
+  const lage3 = await kalenderLage(tage5.abwesenheit, "abwesenheit");
   if (krank) {
     await page.click(`[data-tun="${krank}"]`);
     await page.waitForTimeout(450);
@@ -507,15 +544,15 @@ console.log("\n── 5. Aus dem Kalender und zurück ──");
     const s = window.ProbeKalender.stand;
     for (const k of Object.keys(s.arten)) s.arten[k] = true;
   });
-  const lage4 = await kalenderLage("2026-10-20", null);
+  const lage4 = await kalenderLage(tage5.fahrzeug, null);
   const ziele2 = await page.$$eval('[data-tun^="kal-ziel:"]',
     (ns) => ns.map((x) => x.dataset.tun));
   const fz = ziele2.find((z) => z.includes("fahrzeug-"));
   pruefe(Boolean(fz), `am 20.10.2026 führt ein Eintrag zur Fahrzeugakte (${fz || "keiner"})`);
   pruefe(Boolean(fz) && /fahrzeug-F\d+-/.test(fz),
     "und zwar über die Fahrzeugkennung, nicht über das Kennzeichen");
-  pruefe(Boolean(fz) && fz.includes("2026-10-20"),
-    "der Kalendertag wird mitgegeben");
+  pruefe(Boolean(fz) && fz.includes(tage5.fahrzeug),
+    `der Kalendertag wird mitgegeben (${tage5.fahrzeug})`);
   if (fz) {
     await page.click(`[data-tun="${fz}"]`);
     await page.waitForTimeout(500);
@@ -545,8 +582,10 @@ console.log("\n── 5. Aus dem Kalender und zurück ──");
       `es gibt getrennte Einsatzzeilen je Tag (${mitDatum.join(" | ")})`);
     pruefe(mitDatum.every((x) => /\d{2}\.\d{2}\.\d{4}/.test(x)),
       "und jede nennt ein konkretes Datum");
-    pruefe(mitDatum.some((x) => /20\.10\.2026/.test(x)),
-      "darunter der im Kalender gewählte Tag");
+    const gewaehltText = tage5.fahrzeug.slice(8, 10) + "." + tage5.fahrzeug.slice(5, 7)
+      + "." + tage5.fahrzeug.slice(0, 4);
+    pruefe(mitDatum.some((x) => x.includes(gewaehltText)),
+      `darunter der im Kalender gewählte Tag (${gewaehltText})`);
     pruefe(/zwei verschiedene Tage/.test(akte.text),
       "die Akte sagt ausdrücklich, dass zwei Tage gezeigt werden");
 
@@ -578,7 +617,7 @@ console.log("\n── 5. Aus dem Kalender und zurück ──");
   }
 
   /* Ein ausdruecklicher Bereichswechsel gibt die Herkunft auf. */
-  await kalenderLage("2026-10-03", null);
+  await kalenderLage(tage5.abwesenheit, null);
   if (krank) {
     await page.click(`[data-tun="${krank}"]`);
     await page.waitForTimeout(450);
@@ -626,8 +665,21 @@ console.log("\n── 6. Eigener Zeitraum der Analyse ──");
   pruefe((await zahlen()).length === 0,
     "ohne Eingabe steht keine Kennzahl da");
 
+  /*
+    Ein Zeitraum innerhalb der 400 Tage, die analyseTage umfasst -
+    gerechnet aus heute, damit er nicht irgendwann herausfaellt.
+  */
+  const bereich = await page.evaluate(() => {
+    const D = window.ProbeDaten;
+    const hin = (abstand) => D.alsIso(D.tagAls(-abstand));
+    return { vonIso: hin(40), bisIso: hin(11) };
+  });
+  const vonIso = bereich.vonIso;
+  const bisIso = bereich.bisIso;
+  const alsText = (iso) => iso.slice(8, 10) + "." + iso.slice(5, 7) + "." + iso.slice(0, 4);
+
   /* Nur Startdatum. */
-  await tippen(page, von, "01.09.2026");
+  await tippen(page, von, alsText(vonIso));
   await page.keyboard.press("Tab");
   await page.waitForTimeout(450);
   pruefe((await zahlen()).length === 0, "nur ein Startdatum ergibt keine Kennzahl");
@@ -638,32 +690,37 @@ console.log("\n── 6. Eigener Zeitraum der Analyse ──");
   await tippen(page, von, "");
   await page.keyboard.press("Tab");
   await page.waitForTimeout(400);
-  await tippen(page, bis, "30.09.2026");
+  await tippen(page, bis, alsText(bisIso));
   await page.keyboard.press("Tab");
   await page.waitForTimeout(450);
   pruefe((await zahlen()).length === 0, "nur ein Enddatum ergibt ebenfalls keine Kennzahl");
 
   /* Beide - und alle Zahlen kommen gemeinsam. */
-  await tippen(page, von, "01.09.2026");
+  await tippen(page, von, alsText(vonIso));
   await page.keyboard.press("Tab");
   await page.waitForTimeout(500);
   const eigen = await zahlen();
   pruefe(eigen.length === heute.length,
     `ein gültiger Zeitraum zeigt alle Kennzahlen (${eigen.length})`);
-  pruefe(/01\.09\.2026/.test(await hauptText(page)) && /30\.09\.2026/.test(await hauptText(page)),
+  pruefe((await hauptText(page)).includes(alsText(vonIso))
+    && (await hauptText(page)).includes(alsText(bisIso)),
     "der gewählte Zeitraum steht sichtbar im Kopf");
   pruefe(/30 Tage/.test(await hauptText(page)), "mit der richtigen Tageszahl");
 
   /* Gegen die Rechnung, nicht gegen sich selbst. */
-  const soll = await page.evaluate(() => {
+  const soll = await page.evaluate(([v, b]) => {
     const D = window.ProbeDaten;
-    const t = D.analyseTage.filter((x) => x.iso >= "2026-09-01" && x.iso <= "2026-09-30");
+    const vonIso = v;
+    const bisIso = b;
+    /* Derselbe Zeitraum, den die Oberflaeche bekommen hat - aus den
+       uebergebenen Werten, nicht festgeschrieben. */
+    const t = D.analyseTage.filter((x) => x.iso >= vonIso && x.iso <= bisIso);
     return {
       tage: t.length,
       aufrufe: t.reduce((s, x) => s + x.aufrufe, 0).toLocaleString("de-DE"),
       besuche: t.reduce((s, x) => s + x.besuche, 0).toLocaleString("de-DE")
     };
-  });
+  }, [vonIso, bisIso]);
   pruefe(soll.tage === 30, `der Zeitraum umfasst 30 Tage (${soll.tage})`);
   pruefe(eigen[0] === soll.aufrufe,
     `die Seitenaufrufe sind die Summe genau dieser Tage (${eigen[0]} = ${soll.aufrufe})`);
@@ -671,7 +728,13 @@ console.log("\n── 6. Eigener Zeitraum der Analyse ──");
     `auch die Besuche (${eigen[1]} = ${soll.besuche})`);
 
   /* Ende vor Beginn: Fehler, und keine alte Zahl bleibt stehen. */
-  await tippen(page, bis, "01.08.2026");
+  /* Ein Ende klar VOR dem Beginn - gerechnet, nicht festgeschrieben. */
+  const verdrehtIso = await page.evaluate((v) => {
+    const d = new Date(v + "T00:00:00");
+    d.setDate(d.getDate() - 10);
+    return window.ProbeDaten.alsIso(d);
+  }, vonIso);
+  await tippen(page, bis, alsText(verdrehtIso));
   await page.keyboard.press("Tab");
   await page.waitForTimeout(500);
   pruefe((await zahlen()).length === 0,

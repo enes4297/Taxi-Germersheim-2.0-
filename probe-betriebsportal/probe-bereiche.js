@@ -954,7 +954,9 @@
     jede Zeile eine echte Schaltflaeche.
   */
   function personal() {
-    const darfSehen = R.darf("personnel.read");
+    /* Stammdaten, nicht Krankheit. Krankheitszeitraeume stehen am
+       Vorgang und haengen an krankheit.read. */
+    const darfSehen = R.darf("personal.read");
     if (!darfSehen) return R.kastenKeinRecht("Personal");
 
     const liste = D.mitarbeiter.map((m) => D.personalVon(m.id));
@@ -2184,7 +2186,7 @@
     eingabe: (feld) => {
       /* Suchfelder filtern beim Tippen. Der Fokus bleibt, weil
          zeichnen() ihn samt Schreibzeiger wiederherstellt. */
-      if (feld && feld.matches && feld.matches("[data-plan-suche], [data-team-fahrersuche], [data-team-fahrzeugsuche], [data-vg-suche], [data-zuordnung-suche], [data-kundensuche]")) {
+      if (feld && feld.matches && feld.matches("[data-plan-suche], [data-team-fahrersuche], [data-team-fahrzeugsuche], [data-vg-suche], [data-zuordnung-suche], [data-kundensuche], [data-es-grund]")) {
         return geaendert(feld);
       }
       return window.ProbeFahrtassistent.eingabe(feld);

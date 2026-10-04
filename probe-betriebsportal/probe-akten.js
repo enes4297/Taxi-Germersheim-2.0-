@@ -63,12 +63,134 @@
     </button>`;
   }
 
+  /* ============================================================
+     Der Aktenweg
+     ============================================================
+     GEMESSENE AUSGANGSFEHLER:
+
+     1. In der Kundenakte stand "RE-2026-0002" als <li> - nicht
+        anklickbar, nicht mit der Tastatur erreichbar.
+     2. Das Rewards-Konto liess sich oeffnen, hatte aber keinen Weg
+        zurueck zur Kundenakte.
+
+     URSACHE: Es gab nur EINE Dialogebene und keine Erinnerung daran,
+     woraus ein Fenster geoeffnet wurde. "Zurueck" konnte es deshalb
+     gar nicht geben.
+
+     Der Aktenweg ist ein STAPEL. Jeder Eintrag haelt fest, welche
+     Akte offen war und wo in ihr der Blick stand. Verschachtelte
+     Fenster gibt es weiterhin nicht - es wird immer nur EIN Fenster
+     gezeigt, der Stapel liegt daneben.
+
+     Ein Stapel und nicht ein einzelner Verweis: Von der Kundenakte
+     zur Rechnung und von dort weiter muss jeder Schritt einzeln
+     zurueckgehen koennen.
+
+     "Schliessen" raeumt den ganzen Stapel ab - es verlaesst den
+     Aktenweg, nicht nur einen Schritt.
+  */
+  const weg = [];
+
+  /* Wo steht der Blick im offenen Fenster? */
+  function rollstand() {
+    const rumpf = document.querySelector(".dialog-kasten .dialog-rumpf");
+    return rumpf ? rumpf.scrollTop : 0;
+  }
+
+  /* Die Position nach dem Zeichnen wiederherstellen. Erst im naechsten
+     Bild - vorher hat der Rumpf seine Hoehe noch nicht. */
+  function rollstandSetzen(wert) {
+    if (!wert) return;
+    window.requestAnimationFrame(() => {
+      const rumpf = document.querySelector(".dialog-kasten .dialog-rumpf");
+      if (rumpf) rumpf.scrollTop = wert;
+    });
+  }
+
+  /*
+    Die Blickposition zum BEGINN der Geste.
+
+    Gemessen beim eigenen Rauchtest: Beim Klick auf eine Zeile weit
+    unten in der Akte merkte sich der Aktenweg nicht die Position, an
+    der der Mensch stand, sondern eine andere. Ursache: Der Browser
+    holt das angeklickte Element in den Blick, sobald es den Fokus
+    bekommt - und das passiert VOR dem Klick-Ereignis. Was mein Code
+    dann las, war die vom Browser verschobene Position.
+
+    Im Alltag faellt das kaum auf, weil man nur anklickt, was man
+    sieht. Bei Tastaturbedienung und bei einem Knopf am Rand des
+    Blickfeldes aber schon.
+
+    Gelesen wird deshalb bei "pointerdown" und bei "keydown" - beide
+    kommen vor dem Fokuswechsel.
+  */
+  let rollBeiGeste = null;
+
+  function gesteBinden() {
+    const merken = (e) => {
+      if (!e.target || !e.target.closest) return;
+      if (!e.target.closest(".dialog-kasten")) return;
+      rollBeiGeste = rollstand();
+    };
+    document.addEventListener("pointerdown", merken, true);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") merken(e);
+    }, true);
+  }
+  gesteBinden();
+
+  /* Einen Schritt auf den Stapel legen, bevor das naechste Fenster
+     aufgeht. `art` und `id` sagen, wie man dorthin zurueckkommt. */
+  function wegMerken(art, id, name) {
+    const roll = rollBeiGeste === null ? rollstand() : rollBeiGeste;
+    rollBeiGeste = null;
+    weg.push({ art, id, name, roll });
+  }
+
+  const wegZiel = () => (weg.length ? weg[weg.length - 1] : null);
+
+  /* Eine Akte wieder zeichnen, zu der zurueckgegangen wird. */
+  function wegMarkup(eintrag) {
+    if (eintrag.art === "kunde") return kundenakte(eintrag.id);
+    if (eintrag.art === "rechnung") return rechnungsakte(eintrag.id);
+    if (eintrag.art === "person") return personalakte(eintrag.id);
+    if (eintrag.art === "rewards") return rewardskontoVon(eintrag.id);
+    return "";
+  }
+
+  /*
+    Einen Schritt zurueck. Gibt true, wenn es einen gab.
+
+    Die Berechtigung wird HIER noch einmal gefragt: Zwischen dem
+    Hinweg und dem Rueckweg kann ein Recht entzogen worden sein, und
+    der Stapel ist kein Freibrief.
+  */
+  function wegZurueck() {
+    const ziel = weg.pop();
+    if (!ziel) return false;
+    const markup = wegMarkup(ziel);
+    if (!markup) return false;
+    R.dialogOeffnen(markup);
+    rollstandSetzen(ziel.roll);
+    return true;
+  }
+
+  /* Der Knopf "Zurueck zur ..." - im Kopf UND im Fuss. Wer unten in
+     einer langen Akte steht, soll nicht erst nach oben scrollen. */
+  function wegKnopf(klein) {
+    const ziel = wegZiel();
+    if (!ziel) return "";
+    return `<button class="knopf${klein ? " klein" : ""}" type="button"
+      data-tun="ak-weg-zurueck">Zurück zur ${h(ziel.name)}</button>`;
+  }
+
   const dialogKopf = (titel, nebentext) => `
     <div class="dialog-hinter" data-dialog-zu></div>
     <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="akTitel">
       <header class="dialog-kopf">
         <h2 id="akTitel">${h(titel)}</h2>
         ${nebentext ? `<span class="band-gold">${h(nebentext)}</span>` : ""}
+        ${wegKnopf(true)}
         <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
       </header>`;
 
@@ -186,13 +308,17 @@
 
         ${rech ? `<div class="dialog-schritt">
           <h3>Rechnungen <span class="band-gold">${rech.length}</span></h3>
-          ${rech.length ? `<ul class="konfliktliste">
+          ${rech.length ? `<ul class="konfliktliste ist-bedienbar">
             ${rech.map((r) => `<li>
-              <strong>${h(r.nr)}</strong>
-              <span>${h(r.zeitraum)} · ${h(r.betrag)} · ${h(r.zustand)}</span></li>`).join("")}
+              <button class="zeilenknopf" type="button"
+                data-tun="ak-rechnung-aus-kunde:${h(r.nr)}|${h(k.id)}"
+                aria-label="Rechnung ${h(r.nr)}, ${h(r.zeitraum)}, ${h(r.betrag)}, ${h(r.zustand)}. Rechnungsakte öffnen.">
+                <strong>${h(r.nr)}</strong>
+                <span>${h(r.zeitraum)} · ${h(r.betrag)} · ${h(r.zustand)}</span>
+              </button></li>`).join("")}
           </ul>
-          <p class="schritt-hinweis">Verknüpft über die Kundenkennung, soweit sie am Beleg
-            steht — sonst über den Namen. Der Name ist die schwächere Verknüpfung.</p>`
+          <p class="schritt-hinweis">Jede Rechnung öffnet ihre Akte. Verknüpft wird
+            ausschließlich über die Kundenkennung — ein Name ist keine Verknüpfung.</p>`
           : `<p class="schritt-hinweis">Keine Rechnung zu diesem Kunden.</p>`}
         </div>` : ""}
 
@@ -216,6 +342,7 @@
           nichts erfunden.</p>
       </div>
       <footer class="dialog-fuss">
+        ${wegKnopf(false)}
         <button class="knopf" type="button" data-dialog-zu>Schließen</button>
         ${R.darf("operations.write") ? `<button class="knopf haupt-knopf" type="button"
           data-tun="ak-kunde-fahrt:${h(k.id)}">Neue Fahrt für diesen Kunden</button>` : ""}
@@ -359,7 +486,9 @@
     const pz = D.personalVon(id);
     if (!pz) return "";
     const darfLohn = R.darf("payroll.read");
-    const darfKrank = R.darf("personnel.read");
+    /* Krankheitszeitraeume sind eigens geschuetzt - wer nur die
+       Stammdaten sehen darf, sieht sie nicht. */
+    const darfKrank = R.darf("krankheit.read");
     const lohnzeilen = darfLohn ? D.lohn.filter((l) => l.mitarbeiterId === id) : [];
     const krankVorgaenge = darfKrank
       ? D.vorgaenge.filter((v) => v.thema === "krankheit" && v.betrifft && v.betrifft.id === id)
@@ -567,6 +696,7 @@
         ${verlaufBlock("Änderungsverlauf", r.verlauf)}
       </div>
       <footer class="dialog-fuss">
+        ${wegKnopf(false)}
         <button class="knopf" type="button" data-dialog-zu>Schließen</button>
         ${darfBuchen ? `
           ${sperreZahlung ? "" : `<button class="knopf" type="button"
@@ -649,6 +779,7 @@
         </div>
       </div>
       <footer class="dialog-fuss">
+        ${wegKnopf(false)}
         <button class="knopf" type="button" data-dialog-zu>Schließen</button>
         ${darfKorrigieren
           ? `<button class="knopf haupt-knopf" type="button"
@@ -885,16 +1016,58 @@
       }
 
       /* ---- Rewards aus der Kundenakte ---- */
+      /*
+        Eine Rechnung AUS der Kundenakte.
+
+        Gemessener Fehler: In der Akte stand die Rechnungsnummer als
+        <li> - nicht anklickbar und mit der Tastatur nicht erreichbar.
+
+        Der Wert traegt beides: die Rechnungsnummer und die Kennung des
+        Kunden, aus dessen Akte man kommt. Die Herkunft wird nicht
+        geraten - sie steht am Knopf.
+
+        Die Berechtigung wird HIER geprueft, nicht nur am Knopf: Wer
+        finance.read nicht hat, kommt auch mit einem direkten Aufruf
+        nicht in die Rechnung.
+      */
+      case "ak-rechnung-aus-kunde": {
+        const [nr, kundeId] = String(wert).split("|");
+        if (!R.darf("finance.read")) return;
+        const r = D.rechnungen.find((x) => x.nr === nr);
+        const k = D.kundeVon(kundeId);
+        if (!r || !k) return;
+        /* Nur Rechnungen DIESES Kunden - eine fremde Nummer im Wert
+           soll keine fremde Akte oeffnen. */
+        if (r.kundeId !== k.id) return;
+        wegMerken("kunde", k.id, "Kundenakte");
+        R.dialogOeffnen(rechnungsakte(nr));
+        return;
+      }
+
+      /* Einen Schritt im Aktenweg zurueck. */
+      case "ak-weg-zurueck":
+        wegZurueck();
+        return;
+
       case "ak-rewards": {
         const k = D.kundeVon(wert);
         if (!k || !R.darf("rewards.read")) return;
+        /* Aus der Kundenakte geoeffnet - also fuehrt der Weg dorthin
+           zurueck. Wird das Konto von der Rewardsliste geoeffnet
+           (ak-rewards-konto), wird KEIN Weg gemerkt: Dann gibt es
+           keine Kundenakte, aus der man kaeme, und eine zu erfinden
+           waere eine Unwahrheit. */
+        wegMerken("kunde", k.id, "Kundenakte");
         R.dialogOeffnen(rewardskontoVon(k.id));
         return;
       }
 
       /* ---- Personalakte ---- */
       case "ak-person": {
-        if (!R.darf("personnel.read")) return;
+        /* Die Personalakte braucht Stammdatensicht. Die Pruefung
+           steht in der AKTION - ein fehlender Knopf ist kein
+           Schutz. */
+        if (!R.darf("personal.read")) return;
         const pz = D.personalVon(wert);
         if (!pz) return;
         R.dialogOeffnen(personalakte(pz.id));
@@ -1194,11 +1367,37 @@
     schliesst der Rahmen nicht.
   */
   function escape() {
+    /*
+      Eine Finanzaktion fuehrt zurueck in ihre Rechnung. Das steht
+      zuerst: Wer in einer Zahlung tippt, meint mit Escape diese
+      Zahlung, nicht den ganzen Aktenweg.
+    */
     const s = stand.korrektur;
-    if (!s || !s.zurueckZu) return false;
-    bkFelderLesen();
-    R.dialogOeffnen(rechnungsakte(s.zurueckZu));
-    return true;
+    if (s && s.zurueckZu) {
+      bkFelderLesen();
+      R.dialogOeffnen(rechnungsakte(s.zurueckZu));
+      return true;
+    }
+    /*
+      Sonst einen Schritt im Aktenweg zurueck. Escape wirkt damit wie
+      der Knopf "Zurueck zur ..." - und nicht wie "Schliessen". Wer
+      aus der Kundenakte in eine Rechnung gegangen ist, will mit
+      Escape in die Kundenakte, nicht hinaus.
+    */
+    if (wegZiel()) return wegZurueck();
+    return false;
+  }
+
+  /*
+    Der Rahmen meldet, dass ein Fenster endgueltig geschlossen wurde.
+
+    Dann ist der Aktenweg zu Ende: "Schliessen" verlaesst den ganzen
+    Weg, nicht einen Schritt. Ohne dieses Abraeumen wuerde ein spaeter
+    geoeffnetes Fenster einen Rueckweg anbieten, der zu einer Akte
+    fuehrt, die der Mensch laengst verlassen hat.
+  */
+  function geschlossen() {
+    weg.length = 0;
   }
 
   /*
@@ -1220,6 +1419,6 @@
     aktenzeile, dialogKopf, zeileDl, verlaufBlock, verlaufEintragen,
     meinKonto, meinName, kontoText, jetzt, zeitstempel, anschriftText,
     kundenakte, personalakte, rechnungsakte, rewardskontoVon,
-    escape, offeneEingabe
+    escape, offeneEingabe, geschlossen, wegZiel
   };
 })();

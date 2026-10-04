@@ -364,7 +364,9 @@
     },
     personal: {
       name: "Personalprüfung", zustand: "offen",
-      braucht: ["personnel.read"],
+      /* Die Personalpruefung IST die Dokumentpruefung - sie verlangt
+         deshalb die engste Faehigkeit, nicht blosse Stammdatensicht. */
+      braucht: ["dokument.pruefen"],
       aktion: "Dokumentprüfung abgeschlossen",
       erfordert: "bescheinigung",
       schritte: "Bescheinigung eingegangen · Dokument geprüft · Zeitraum geprüft",
@@ -628,7 +630,7 @@
       eingang: "heute 07:48", eingangIso: alsIso(heute), dringlichkeit: "normal",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
       ausListe: false, ausListeAm: "", ausListeVon: null,
-      sichtbar: ["operations.read", "personnel.read"],
+      sichtbar: ["planung.read", "personal.read", "krankheit.read"],
       vertraulich: [],
       daten: { von: alsIso(tagAls(6)), bis: alsIso(tagAls(12)) },
       empfehlung: "", antwort: "", notizen: []
@@ -640,9 +642,9 @@
       eingang: "heute 06:05", eingangIso: alsIso(heute), dringlichkeit: "hoch",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
       ausListe: false, ausListeAm: "", ausListeVon: null,
-      sichtbar: ["operations.read", "personnel.read"],
+      sichtbar: ["planung.read", "personal.read", "krankheit.read"],
       /* Die Bescheinigung sehen nur Personal und Administration. */
-      vertraulich: ["personnel.read"],
+      vertraulich: ["krankheit.read"],
       daten: {
         von: alsIso(heute), bis: alsIso(tagAls(2)),
         /*
@@ -706,7 +708,7 @@
       eingang: "heute 10:40", eingangIso: alsIso(heute), dringlichkeit: "hoch",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
       ausListe: false, ausListeAm: "", ausListeVon: null,
-      sichtbar: ["operations.read"], vertraulich: [],
+      sichtbar: ["fahrten.read", "planung.read"], vertraulich: [],
       daten: { hinweis: "über das Formular aufgenommen" },
       empfehlung: "", antwort: "", notizen: []
     },
@@ -717,7 +719,7 @@
       eingang: "heute 09:20", eingangIso: alsIso(heute), dringlichkeit: "normal",
       zustaendig: "Testdisposition 01 – Disposition", zustand: "bearbeitung", gesehen: true, version: 1,
       ausListe: false, ausListeAm: "", ausListeVon: null,
-      sichtbar: ["operations.read"], vertraulich: [],
+      sichtbar: ["fahrten.read", "planung.read"], vertraulich: [],
       daten: { hinweis: "Rückruf vereinbart" },
       empfehlung: "", antwort: "", notizen: []
     },
@@ -740,7 +742,7 @@
       eingang: "dauerhaft", eingangIso: alsIso(heute), dringlichkeit: "niedrig",
       zustaendig: "", zustand: "neu", gesehen: true, version: 1,
       ausListe: false, ausListeAm: "", ausListeVon: null,
-      sichtbar: ["operations.read"], vertraulich: [],
+      sichtbar: ["fahrten.read", "planung.read"], vertraulich: [],
       daten: { text: "Es werden keine Positionen angezeigt und keine erfunden." },
       empfehlung: "", antwort: "", notizen: []
     },
@@ -752,7 +754,7 @@
       zustaendig: "Testpersonal 01 – Personal", zustand: "erledigt", gesehen: true, version: 2,
       abgeschlossenAm: alsIso(tagAls(-3)), archivAb: alsIso(tagAls(87)),
       ausListe: false, ausListeAm: "", ausListeVon: null,
-      sichtbar: ["operations.read", "personnel.read"], vertraulich: [],
+      sichtbar: ["planung.read", "personal.read", "krankheit.read"], vertraulich: [],
       daten: { von: alsIso(tagAls(-1)), bis: alsIso(tagAls(1)), entscheidung: "genehmigt" },
       empfehlung: "Aus Planungssicht möglich",
       antwort: "Ihr Urlaubsantrag wurde genehmigt.",
@@ -774,8 +776,8 @@
       eingang: "vor 10 Tagen", eingangIso: alsIso(tagAls(-10)), dringlichkeit: "normal",
       zustaendig: "", zustand: "bearbeitung", gesehen: true, version: 1,
       ausListe: false, ausListeAm: "", ausListeVon: null,
-      sichtbar: ["operations.read", "personnel.read"],
-      vertraulich: ["personnel.read"],
+      sichtbar: ["planung.read", "personal.read", "krankheit.read"],
+      vertraulich: ["krankheit.read"],
       daten: {
         von: alsIso(tagAls(-10)), bis: alsIso(tagAls(-8)),
         nachweise: [
@@ -813,7 +815,7 @@
       art: "aufgabe", thema: "system", dringlichkeit: "normal",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
       ausListe: false, ausListeAm: "", ausListeVon: null,
-      sichtbar: ["operations.read"], vertraulich: [],
+      sichtbar: ["fahrten.read", "planung.read"], vertraulich: [],
       daten: {}, empfehlung: "", antwort: "", notizen: [],
       teile: null, abgeschlossenAm: "", archivAb: "",
       nachweise: null, klaerungen: null,

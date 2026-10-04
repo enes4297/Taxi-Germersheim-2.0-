@@ -29,7 +29,22 @@
 
   /* ---- Faehigkeiten ---- */
   const darfEntscheiden = () => R.darf("absence.decide");
-  const darfVertraulich = () => R.darf("personnel.read");
+
+  /*
+    DREI getrennte Stufen, auf Verlangen des Geschaeftsfuehrers:
+
+      personal.read     Stammdaten sehen - Name, Vertrag, Urlaub
+      krankheit.read    Krankheitszeitraeume und vertrauliche Inhalte
+      dokument.pruefen  die Bescheinigung OEFFNEN und beurteilen
+
+    Die dritte Stufe ist die engste. Wer einen Krankheitszeitraum
+    sehen darf, darf damit noch nicht die aerztliche Bescheinigung
+    aufmachen: Der Zeitraum ist eine betriebliche Angabe, die Datei
+    ist ein Gesundheitsdokument. Zwischen beidem liegt der eigentliche
+    Unterschied im Schutzbedarf.
+  */
+  const darfVertraulich = () => R.darf("krankheit.read");
+  const darfDokument = () => R.darf("dokument.pruefen");
   const darfEmpfehlen = () => R.darf("operations.write");
 
   const stand = {
@@ -282,9 +297,9 @@
           betrifft: { art: "mitarbeiter", id: m.id, name: m.name },
           eingang: "laufend", eingangIso: D.alsIso(D.heute),
           dringlichkeit: e.lage === "fehlt" || e.lage === "abgelaufen" ? "hoch" : "normal",
-          sichtbar: ["operations.read", "personnel.read"],
+          sichtbar: ["planung.read", "personal.read", "krankheit.read"],
           /* Den Dateiinhalt sehen nur Personal und Administration. */
-          vertraulich: ["personnel.read"],
+          vertraulich: ["krankheit.read"],
           daten: { art: e.art, frist: e.bis, lage: e.lage, datei: `Testnachweis-${m.id}.pdf` },
           empfehlung: "", antwort: "", notizen: [], version: 1
         });
@@ -302,7 +317,7 @@
         betrifft: { art: "mitarbeiter", id: k.kennung, name: (D.mitarbeiter.find((m) => m.id === k.kennung) || {}).name || k.kennung },
         eingang: "laufend", eingangIso: D.alsIso(D.heute),
         dringlichkeit: k.art === "technisch" ? "hoch" : "normal",
-        sichtbar: ["operations.read"], vertraulich: [],
+        sichtbar: ["fahrten.read", "planung.read"], vertraulich: [],
         daten: { text: k.text },
         empfehlung: "", antwort: "", notizen: [], version: 1
       });
@@ -611,7 +626,10 @@
 
     if (lage.fertig) {
       if (v.abgeleitet) return "";
-      const wieder = R.darf("personnel.read")
+      /* Wiedereroeffnen ist eine Entscheidung ueber einen
+         Krankheitsvorgang - dafuer braucht es die Krankheitssicht,
+         nicht blosse Stammdatensicht. */
+      const wieder = R.darf("krankheit.read")
         ? `<button class="knopf klein" type="button"
             data-tun="vg-wiedereroeffnen:${h(v.id)}">Wiedereröffnen</button>`
         : "";
@@ -901,6 +919,10 @@
         ${nw.umgezogenNach
           ? `<span class="teil-sperre">Dieser Nachweis gehört zu Vorgang
               ${h(nw.umgezogenNach)}. Die Prüfung läuft dort weiter.</span>`
+          : !darfDokument()
+          ? `<span class="teil-sperre">Die Bescheinigung öffnen darf nur, wer
+              Gesundheitsdokumente prüfen darf. Der gemeldete Zeitraum ist davon
+              getrennt und hier sichtbar.</span>`
           : `<button class="knopf klein" type="button" data-tun="vg-bescheinigung:${h(v.id)}">
               ${nw.einsicht ? "Erneut öffnen" : "Bescheinigung öffnen"}</button>`}
       </li>
@@ -933,9 +955,12 @@
           : offen[0].art === "anforderung"
           ? `<button class="knopf klein" type="button"
               data-tun="vg-neue-bescheinigung:${h(v.id)}">Neue Bescheinigung ist eingegangen</button>`
-          /* Zuordnung: nur Personal und Administration duerfen hier
-             handeln, und die Datei wird nicht geloescht. */
-          : R.darf("personnel.read")
+          /* Zuordnung: Hier wird eine Bescheinigung einem anderen
+             Vorgang zugeordnet - das ist eine Entscheidung ueber ein
+             Gesundheitsdokument. Dafuer braucht es dokument.pruefen,
+             nicht nur die Krankheitssicht. Die Datei wird dabei nicht
+             geloescht. */
+          : darfDokument()
           ? `<span class="teil-aktionen">
               <button class="knopf klein" type="button"
                 data-tun="vg-zuordnung:${h(v.id)}">Nachweis neu zuordnen</button>
@@ -973,7 +998,7 @@
         const e = nw.ergebnis ? ergebnisVon(nw.ergebnis) : null;
         const aktiv = letzte && nw.nr === letzte.nr;
         return `<li class="${nw.beanstandet ? "ist-ausnahme" : ""}">
-          <strong>${aktiv && !nw.umgezogenNach
+          <strong>${aktiv && !nw.umgezogenNach && darfDokument()
             ? `<button class="alslink" type="button" data-tun="vg-bescheinigung:${h(v.id)}">${h(nw.datei)}</button>`
             : h(nw.datei)}</strong>
           <span>Nr. ${nw.nr} · ${h(ART[nw.art] || nw.art)} · eingegangen ${h(nw.eingang)}
@@ -2273,7 +2298,9 @@
       /* ---- Einsicht in die Bescheinigung ---- */
       case "vg-bescheinigung": {
         const v = vorgangFinden(wert);
-        if (!v || !vertraulichSichtbar(v) || !aktuellerNachweis(v)) return;
+        /* Die Bescheinigung OEFFNEN - die engste Stufe. */
+        if (!v || !vertraulichSichtbar(v) || !darfDokument()) return;
+        if (!aktuellerNachweis(v)) return;
         /*
           Die Scrollposition des Vorgangs merken. Der manuelle Test hat
           gezeigt, warum: Nach dem Ansehen landete man oben im Dialog -
@@ -2323,7 +2350,9 @@
       }
       case "vg-einsicht-ja": {
         const v = vorgangFinden(wert);
-        if (!v || !vertraulichSichtbar(v)) return;
+        /* Einsicht bestaetigen heisst: Ich habe das Dokument
+           gesehen. Ohne dokument.pruefen darf das niemand sagen. */
+        if (!v || !vertraulichSichtbar(v) || !darfDokument()) return;
         const nw = aktuellerNachweis(v);
         if (!nw) return;
         const vorher = nw.einsicht ? "bereits geöffnet" : "nicht geöffnet";
@@ -2353,7 +2382,8 @@
       case "vg-ergebnis": {
         const [id, ergebnis] = wert.split("|");
         const v = vorgangFinden(id);
-        if (!v || !vertraulichSichtbar(v)) return;
+        /* Ein Pruefergebnis ist eine Beurteilung des Dokuments. */
+        if (!v || !vertraulichSichtbar(v) || !darfDokument()) return;
         const nw = aktuellerNachweis(v);
         /* Ein Ergebnis ohne Einsicht waere keine Pruefung. */
         if (!nw || !nw.einsicht) return;
@@ -2502,7 +2532,8 @@
       */
       case "vg-zuordnung": {
         const v = vorgangFinden(wert);
-        if (!v || !vertraulichSichtbar(v) || !R.darf("personnel.read")) return;
+        /* Eine Neuzuordnung verschiebt ein Gesundheitsdokument. */
+        if (!v || !vertraulichSichtbar(v) || !darfDokument()) return;
         const nw = aktuellerNachweis(v);
         if (!nw || !nw.zuordnungUngeklaert) return;
         stand.zuordnung = {
@@ -2617,7 +2648,7 @@
       /* Stufe 4: speichern. */
       case "vg-zuordnung-ja": {
         const s = stand.zuordnung;
-        if (!s || !R.darf("personnel.read")) return;
+        if (!s || !darfDokument()) return;
         if (s.stufe !== "pruefen") return;
         const feld = document.querySelector("[data-zuordnung-grund]");
         s.grund = feld ? feld.value.trim() : "";
@@ -2643,8 +2674,8 @@
             art: "aufgabe", thema: "krankheit",
             titel: "Krankmeldung – Nachweis neu zugeordnet – " + person.name,
             betrifft: { art: "mitarbeiter", id: person.id, name: person.name },
-            sichtbar: ["operations.read", "personnel.read"],
-            vertraulich: ["personnel.read"],
+            sichtbar: ["planung.read", "personal.read", "krankheit.read"],
+            vertraulich: ["krankheit.read"],
             /* Mit Teilschritten, also auch mit der Pruefsperre: Beim
                neuen Vorgang beginnt die Dokumentpruefung wirklich von
                vorn und laesst sich nicht ueberspringen. */
@@ -2706,14 +2737,15 @@
       */
       case "vg-zuordnung-unklar": {
         const v = vorgangFinden(wert);
-        if (!v || !vertraulichSichtbar(v) || !R.darf("personnel.read")) return;
+        /* Eine Neuzuordnung verschiebt ein Gesundheitsdokument. */
+        if (!v || !vertraulichSichtbar(v) || !darfDokument()) return;
         stand.zuordnung = { id: wert, ziel: "", grund: "", fehler: "", stufe: "unklar" };
         R.dialogOeffnen(zuordnungDialog());
         return;
       }
       case "vg-zuordnung-unklar-ja": {
         const s = stand.zuordnung;
-        if (!s || !R.darf("personnel.read")) return;
+        if (!s || !darfDokument()) return;
         const feld = document.querySelector("[data-zuordnung-grund]");
         s.grund = feld ? feld.value.trim() : "";
         if (s.grund.length < 3) {
@@ -2776,7 +2808,7 @@
           art: "aufgabe", thema: "krankheit",
           titel: "Prüfergebnis korrigieren – " + alt.betrifft.name,
           betrifft: { ...alt.betrifft },
-          sichtbar: ["operations.read", "personnel.read"], vertraulich: ["personnel.read"],
+          sichtbar: ["planung.read", "personal.read", "krankheit.read"], vertraulich: ["krankheit.read"],
           teile: D.krankheitsTeile(),
           daten: {
             von: alt.daten.von, bis: alt.daten.bis, bezugAuf: alt.id,

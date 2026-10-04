@@ -44,17 +44,29 @@
     Die Faehigkeiten mit der Beschriftung, die der Geschaeftsfuehrer
     genannt hat.
 
-    Wo seine Liste feiner ist als das Modell, steht das ausdruecklich
-    dabei - "Fahrten sehen" und "Planung sehen" sind hier beides
-    operations.read. Das wird benannt und als offene Entscheidung
-    gekennzeichnet, nicht stillschweigend aufgeteilt.
+    AUFGETEILT auf seine Anweisung: "Fahrten sehen" und "Planung
+    sehen" waren vorher EIN Recht (operations.read), ebenso
+    "Personalstammdaten sehen" und "Krankheitszeitraeume sehen"
+    (personnel.read). Fuer die spaetere Rollenvergabe war das zu grob -
+    wer planen darf, musste damit zwangslaeufig die Fahrten sehen.
+
+    Die Dokumentpruefung ist NOCH EINMAL getrennt und die engste
+    Stufe: Wer einen Krankheitszeitraum sehen darf, darf damit noch
+    nicht die aerztliche Bescheinigung aufmachen. Der Zeitraum ist
+    eine betriebliche Angabe, die Datei ist ein Gesundheitsdokument.
+
+    Hier stehen nur FEINE Faehigkeiten. Die alten groben Kennungen
+    sind keine Rechte mehr, sondern nur noch Fragen im Code (siehe
+    GROBE in probe-rahmen.js) - deshalb sind sie hier nicht schaltbar.
   */
   const GRUPPEN = [
     {
       name: "Betrieb",
       eintraege: [
-        { id: "operations.read", name: "Fahrten und Planung sehen",
-          zusammen: "Fahrten sehen und Planung sehen sind zurzeit EIN Recht." },
+        { id: "fahrten.read", name: "Fahrten sehen",
+          hinweis: "Der Bereich Fahrten und die Fahrten im Kalender." },
+        { id: "planung.read", name: "Planung sehen",
+          hinweis: "Der Bereich Planung sowie Schichten und Konflikte im Kalender." },
         { id: "operations.write", name: "Fahrten und Planung bearbeiten",
           zusammen: "Fahrten bearbeiten und Planung bearbeiten sind zurzeit EIN Recht." },
         { id: "fleet.read", name: "Fahrzeuge sehen" },
@@ -64,10 +76,13 @@
     {
       name: "Personal",
       eintraege: [
-        { id: "personnel.read", name: "Personal und Krankheitszeiträume sehen",
-          zusammen: "Personal sehen und Krankheitszeiträume sehen sind zurzeit EIN Recht." },
-        { id: "personnel.write", name: "Personal bearbeiten und Gesundheitsdokumente prüfen",
-          zusammen: "Personal bearbeiten und Dokumentprüfung sind zurzeit EIN Recht." },
+        { id: "personal.read", name: "Personalstammdaten sehen",
+          hinweis: "Name, Vertrag, Urlaubsanspruch, Dokumentfristen. Ohne Krankheit." },
+        { id: "krankheit.read", name: "Krankheitszeiträume sehen",
+          hinweis: "Gemeldete Zeiträume und vertrauliche Inhalte eines Krankheitsvorgangs." },
+        { id: "dokument.pruefen", name: "Gesundheitsdokumente prüfen",
+          heikel: "Die engste Stufe: Bescheinigung öffnen, Einsicht bestätigen, Ergebnis wählen." },
+        { id: "personnel.write", name: "Personal bearbeiten" },
         { id: "absence.decide", name: "Urlaub entscheiden" },
         { id: "payroll.read", name: "Lohn sehen" },
         { id: "payroll.write", name: "Lohnabrechnungen bereitstellen" }
@@ -114,7 +129,10 @@
     entwurf: null,      /* Array der Faehigkeiten im Entwurf */
     stufe: "",          /* "" | "bearbeiten" | "pruefen" */
     grund: "",
-    fehler: ""
+    fehler: "",
+    /* Der Fehler AM GRUNDFELD - getrennt von der Sammelmeldung. Eine
+       Sammelmeldung allein laesst offen, welches Feld gemeint ist. */
+    grundFehler: ""
   };
 
   const darfVerwalten = () => R.darf("security.write");
@@ -305,6 +323,9 @@
             ist — sie legt nichts fest.</li>
           ${zusammen.map((e) => `<li>${h(e.name)}: <strong>${h(e.zusammen)}</strong>
             Ob daraus zwei getrennte Rechte werden sollen, ist offen.</li>`).join("")}
+          <li><strong>Erledigt:</strong> „Fahrten sehen“ und „Planung sehen“ sind
+            getrennt, ebenso „Personalstammdaten sehen“ und „Krankheitszeiträume sehen“.
+            Die Dokumentprüfung ist noch einmal eigens geschützt.</li>
           <li>Ob ein <strong>Vieraugenprinzip</strong> für die Rechtevergabe gelten soll
             — also eine zweite Administration bestätigt — ist nicht entschieden.</li>
         </ul>
@@ -362,7 +383,8 @@
           <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
         </header>
         <div class="dialog-rumpf">
-          ${stand.fehler ? `<div class="feldfehler" role="alert">${h(stand.fehler)}</div>` : ""}
+          <div data-es-fehler>${stand.fehler
+            ? `<div class="feldfehler" role="alert">${h(stand.fehler)}</div>` : ""}</div>
           ${art === "konto" && konto ? `<p class="schritt-hinweis">Aus der Rolle
             <strong>${h(konto.anzeige)}</strong> hat dieses Konto bereits
             ${h((R.rollenRechte[konto.rolle] || []).length)} Rechte. Hier geht es nur um
@@ -383,6 +405,7 @@
                     <strong>${h(e.name)}</strong>
                     <span class="feldnotiz">${h(e.id)}${
                       ausRolle ? " · kommt aus der Rolle" : ""}${
+                      e.hinweis ? " · " + h(e.hinweis) : ""}${
                       e.heikel ? " · " + h(e.heikel) : ""}${
                       e.zusammen ? " · " + h(e.zusammen) : ""}</span>
                   </span>
@@ -391,21 +414,71 @@
             </div>
           </div>`).join("")}
 
-          ${(dazu.length || weg.length) ? `<div class="dialog-schritt">
-            <h3>Geändert gegenüber dem Stand</h3>
-            <ul class="konfliktliste">
-              ${dazu.map((x) => `<li><strong>kommt dazu</strong>
-                <span>${h((eintragVon(x) || {}).name || x)}</span></li>`).join("")}
-              ${weg.map((x) => `<li><strong>wird entzogen</strong>
-                <span>${h((eintragVon(x) || {}).name || x)}</span></li>`).join("")}
-            </ul>
-          </div>` : `<p class="schritt-hinweis">Noch nichts geändert.</p>`}
+          <div data-es-aenderungen>${aenderungsblock(vorher, entwurf)}</div>
         </div>
         <footer class="dialog-fuss">
           <button class="knopf" type="button" data-dialog-zu>Abbrechen</button>
           <button class="knopf haupt-knopf" type="button" data-tun="es-weiter">Weiter zur Prüfung</button>
         </footer>
       </div>`;
+  }
+
+  /*
+    Was sich gegenueber dem gespeicherten Stand aendert.
+
+    Eigene Funktion, weil sie EINZELN neu gezeichnet wird: Ein Haken
+    im Entwurf soll nicht das ganze Fenster neu bauen - siehe
+    geaendert().
+  */
+  function aenderungsblock(vorher, entwurf) {
+    const dazu = entwurf.filter((x) => !vorher.includes(x));
+    const weg = vorher.filter((x) => !entwurf.includes(x));
+    if (!dazu.length && !weg.length) {
+      return `<p class="schritt-hinweis">Noch nichts geändert.</p>`;
+    }
+    return `<div class="dialog-schritt">
+      <h3>Geändert gegenüber dem Stand</h3>
+      <ul class="konfliktliste">
+        ${dazu.map((x) => `<li><strong>kommt dazu</strong>
+          <span>${h((eintragVon(x) || {}).name || x)}</span></li>`).join("")}
+        ${weg.map((x) => `<li><strong>wird entzogen</strong>
+          <span>${h((eintragVon(x) || {}).name || x)}</span></li>`).join("")}
+      </ul>
+    </div>`;
+  }
+
+  /*
+    Das Fenster neu zeichnen, OHNE Scrollposition und Fokus zu
+    verlieren.
+
+    Gemessener Ausgangsfehler: Beim Umschalten eines Rechts sprang die
+    lange Seite nach ganz oben, und der Fokus war weg. Die Aenderung
+    kam an - aber die Bedienposition ging verloren, und bei einem
+    Recht weit unten musste man jedes Mal wieder hinunterscrollen.
+
+    URSACHE: geaendert() rief R.dialogOeffnen(rechteDialog()). Das
+    ersetzt den ganzen Fensterinhalt; der Rumpf beginnt wieder bei 0,
+    und dialogOeffnen() setzt den Fokus auf das erste Element.
+  */
+  function neuZeichnenAnPosition() {
+    const rumpf = document.querySelector(".dialog-kasten .dialog-rumpf");
+    const roll = rumpf ? rumpf.scrollTop : 0;
+    const aktiv = document.activeElement;
+    const merker = aktiv && aktiv.dataset && aktiv.dataset.esRecht
+      ? aktiv.dataset.esRecht : "";
+    R.dialogOeffnen(rechteDialog());
+    const neuerRumpf = document.querySelector(".dialog-kasten .dialog-rumpf");
+    if (neuerRumpf) neuerRumpf.scrollTop = roll;
+    if (merker) {
+      const neu = document.querySelector(`[data-es-recht="${merker}"]`);
+      if (neu) neu.focus();
+    }
+    /* Noch einmal im naechsten Bild: Der Browser kann die Position
+       beim Setzen des Fokus verschoben haben. */
+    window.requestAnimationFrame(() => {
+      const r2 = document.querySelector(".dialog-kasten .dialog-rumpf");
+      if (r2) r2.scrollTop = roll;
+    });
   }
 
   /* ---- Die letzte Prüfung ---- */
@@ -460,9 +533,23 @@
             </ul>` : `<p class="schritt-hinweis">Niemand — deshalb wird nicht gespeichert.</p>`}
           </div>
 
-          <label>Grund der Änderung <span class="band-warnung">Pflichtfeld</span>
-            <textarea data-es-grund rows="2"
-              placeholder="Zum Beispiel: Buchhaltung braucht die Analyse nicht mehr.">${h(stand.grund)}</textarea></label>
+          <!--
+            GEMESSENER AUSGANGSFEHLER: Ohne Grund wurde richtig nichts
+            gespeichert - aber es leuchtete nur das Feld. Wer nicht
+            weiss, warum, probiert es noch einmal.
+
+            Jetzt: ein Fehlertext DIREKT am Feld, mit aria-invalid und
+            aria-describedby, und ein role="alert" daneben, damit ein
+            Vorleseprogramm ihn ausgibt, ohne dass der Fokus erst
+            dorthin muss.
+          -->
+          <label class="${stand.grundFehler ? "hat-fehler" : ""}">Grund der Änderung
+            <span class="band-warnung">Pflichtfeld</span>
+            <textarea data-es-grund id="es-grund" rows="2"
+              ${stand.grundFehler ? `aria-invalid="true" aria-describedby="es-grund-fehler"` : ""}
+              placeholder="Zum Beispiel: Buchhaltung braucht die Analyse nicht mehr.">${h(stand.grund)}</textarea>
+            <span class="feldfehler" id="es-grund-fehler" role="alert" aria-live="polite">${
+              stand.grundFehler ? h(stand.grundFehler) : ""}</span></label>
           <p class="schritt-hinweis">Protokolliert werden Name, Kennung, Rolle, Datum,
             Uhrzeit, betroffenes Konto beziehungsweise betroffene Rolle, vorheriger und
             neuer Stand sowie dieser Grund. <strong>Keine Zugangsdaten.</strong></p>
@@ -494,6 +581,7 @@
         stand.stufe = "bearbeiten";
         stand.grund = "";
         stand.fehler = "";
+        stand.grundFehler = "";
         R.dialogOeffnen(rechteDialog());
         return;
       }
@@ -505,6 +593,7 @@
         stand.stufe = "bearbeiten";
         stand.grund = "";
         stand.fehler = "";
+        stand.grundFehler = "";
         R.dialogOeffnen(rechteDialog());
         return;
       }
@@ -538,12 +627,25 @@
         const [art, id] = stand.ziel.split(":");
         grundLesen();
         if (stand.grund.trim().length < 3) {
-          stand.fehler = "Bitte einen Grund eintragen. Ohne Grund wird nichts geändert.";
-          R.dialogOeffnen(rechteDialog());
+          /*
+            Der Fehler steht am FELD, nicht nur als Sammelmeldung oben.
+            Der Fokus springt hinein, und der Schreibzeiger ans Ende -
+            wer etwas zu Kurzes getippt hat, soll weiterschreiben
+            koennen, nicht neu anfangen.
+          */
+          stand.grundFehler = "Bitte einen Grund eingeben.";
+          stand.fehler = "";
+          neuZeichnenAnPosition();
           const feld = document.querySelector("[data-es-grund]");
-          if (feld) feld.focus();
+          if (feld) {
+            feld.focus();
+            try {
+              feld.setSelectionRange(feld.value.length, feld.value.length);
+            } catch { /* nicht jedes Feld kann das */ }
+          }
           return;
         }
+        stand.grundFehler = "";
         /*
           Die Aussperrsperre noch einmal, unmittelbar vor dem
           Schreiben. Die Pruefung beim Zeichnen allein genuegt nicht:
@@ -583,6 +685,7 @@
         stand.stufe = "";
         stand.grund = "";
         stand.fehler = "";
+        stand.grundFehler = "";
         R.dialogSchliessen(true);
         R.zeichnen();
         return;
@@ -596,8 +699,28 @@
     if (feld) stand.grund = feld.value;
   };
 
+  /*
+    Beim Tippen verschwindet die Meldung wieder - ohne Neuzeichnen,
+    damit der Schreibzeiger im Feld bleibt. Eine Fehlermeldung, die
+    stehen bleibt, waehrend man sie gerade behebt, ist falsch.
+  */
+  function grundTippen(feld) {
+    if (!feld.matches || !feld.matches("[data-es-grund]")) return false;
+    stand.grund = feld.value;
+    if (stand.grundFehler && feld.value.trim().length >= 3) {
+      stand.grundFehler = "";
+      feld.removeAttribute("aria-invalid");
+      const kasten = document.getElementById("es-grund-fehler");
+      if (kasten) kasten.textContent = "";
+      const label = feld.closest("label");
+      if (label) label.classList.remove("hat-fehler");
+    }
+    return true;
+  }
+
   /* Ein Haken im Entwurf. Geaendert wird NUR der Entwurf. */
   function geaendert(feld) {
+    if (grundTippen(feld)) return true;
     if (!feld.matches || !feld.matches("[data-es-recht]")) return false;
     if (!darfVerwalten() || !stand.entwurf) return true;
     const id = feld.dataset.esRecht;
@@ -608,8 +731,26 @@
       stand.entwurf = stand.entwurf.filter((x) => x !== id);
     }
     stand.fehler = "";
-    /* Nur das Fenster neu zeichnen - die Flaeche dahinter bleibt. */
-    R.dialogOeffnen(rechteDialog());
+
+    /*
+      NICHT das ganze Fenster neu bauen.
+
+      Der Haken selbst steht schon richtig - der Browser hat ihn
+      umgeschaltet. Neu zu zeichnen ist nur, was vom Entwurf abhaengt:
+      der Aenderungsblock und die Fehlerzeile.
+
+      Damit koennen Scrollposition und Fokus gar nicht verlorengehen,
+      statt sie hinterher wiederherzustellen. Das ist der Unterschied
+      zwischen "es geht nicht kaputt" und "es wird repariert".
+    */
+    const [art, zielId] = stand.ziel.split(":");
+    const vorher = art === "rolle"
+      ? (R.rollenRechte[zielId] || [])
+      : (R.kontoRechte[zielId] || []);
+    const block = document.querySelector("[data-es-aenderungen]");
+    if (block) block.innerHTML = aenderungsblock(vorher, stand.entwurf);
+    const fehlerzeile = document.querySelector("[data-es-fehler]");
+    if (fehlerzeile) fehlerzeile.innerHTML = "";
     return true;
   }
 

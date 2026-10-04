@@ -396,16 +396,51 @@ console.log("\n── 5. Fall A: andere Person, neuer Vorgang ──");
   await datumTippen(page, ZU_BIS, "2020-01-01");
   await page.click('[data-tun="vg-zuordnung-neu-weiter"]');
   await page.waitForTimeout(450);
-  pruefe(Boolean(await page.$(".feldfehler")), "ein Ende vor dem Beginn wird abgewiesen");
+  /* Nicht nur, DASS ein Fehler steht - sondern WELCHER. Sonst wuerde
+     die Pruefung auch bei "Zeitraum unvollstaendig" bestehen und
+     damit etwas anderes belegen, als sie behauptet. */
+  const zfehler = await page.evaluate(() => {
+    const e = document.querySelector(".feldfehler");
+    return e ? e.textContent.replace(/\s+/g, " ").trim() : "";
+  });
+  pruefe(/Ende liegt vor dem Beginn/.test(zfehler),
+    `ein Ende vor dem Beginn wird abgewiesen (${zfehler})`);
 
-  await datumTippen(page, ZU_BIS, "2026-10-03");
+  /*
+    EIGENER FEHLER IM PRUEFLAUF, behoben.
+
+    Hier stand ein FESTES Datum ("2026-10-03"). Der Zeitraum von
+    V0002 beginnt aber am HEUTIGEN Tag - er wird aus alsIso(heute)
+    gerechnet. Solange der Lauf am 02.10.2026 lief, passte das; einen
+    Tag spaeter lag das feste Ende VOR dem Beginn, und die Oberflaeche
+    hat zu Recht "Das Ende liegt vor dem Beginn" gemeldet.
+
+    Ein festes Datum neben Daten, die aus "heute" entstehen, ist eine
+    Zeitbombe: Der Lauf besteht, bis der Kalender weiterlaeuft.
+    Gerechnet wird deshalb aus dem Vorgang selbst.
+  */
+  const zeitraum = await page.evaluate(() => {
+    const D = window.ProbeDaten;
+    const v = D.vorgangVon("V0002");
+    const von = v.daten.von;
+    const d = new Date(von + "T00:00:00");
+    d.setDate(d.getDate() + 2);
+    const bis = D.alsIso(d);
+    const text = (iso) => {
+      const [j, m, t2] = iso.split("-");
+      return t2 + "." + m + "." + j;
+    };
+    return { von, bis, vonText: text(von), bisText: text(bis) };
+  });
+  await datumTippen(page, ZU_BIS, zeitraum.bis);
   await page.click('[data-tun="vg-zuordnung-neu-weiter"]');
   await page.waitForTimeout(450);
   const s4 = (await page.textContent(".dialog-rumpf")).replace(/\s+/g, " ");
   pruefe(/Bisherige Person.*Testfahrer 02/.test(s4), "bisherige Person");
   pruefe(/Neue Person.*Testfahrer 05/.test(s4), "neue Person");
   pruefe(/Neuer Zielvorgang.*neu anzulegen/.test(s4), "der Zielvorgang ist als neu benannt");
-  pruefe(/03\.10\.2026/.test(s4), "mit dem geprüften Zeitraum");
+  pruefe(s4.includes(zeitraum.bisText),
+    `mit dem geprüften Zeitraum (${zeitraum.bisText})`);
 
   /* Zurueck und aendern. */
   await page.click('[data-tun="vg-zuordnung-zurueck"]');
@@ -433,7 +468,8 @@ console.log("\n── 5. Fall A: andere Person, neuer Vorgang ──");
   });
   pruefe(Boolean(ziel), `der Zielvorgang ist da (${ziel && ziel.id})`);
   pruefe(ziel.person === "M05", "er gehört der neuen Person");
-  pruefe(ziel.bis === "2026-10-03", `mit dem geprüften Zeitraum (${ziel.von} bis ${ziel.bis})`);
+  pruefe(ziel.bis === zeitraum.bis,
+    `mit dem geprüften Zeitraum (${ziel.von} bis ${ziel.bis})`);
   pruefe(ziel.bezug === "V0002", "und verweist auf den alten Vorgang");
   pruefe(ziel.teile && ziel.erfordert === "bescheinigung",
     "er trägt die Prüfsperre — sonst wäre er ohne Prüfung abschliessbar");
