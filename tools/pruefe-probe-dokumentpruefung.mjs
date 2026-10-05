@@ -370,10 +370,21 @@ console.log("\n── 7. Für die Disposition bleibt alles verschlossen ──")
   pruefe(!/belegrahmen/.test(await page.innerHTML(".dialog-kasten")),
     "und keinen Anzeigebereich");
   pruefe(!(await page.$(".pruefkette")), "die Prüfkette gehört nicht zu ihrer Rolle");
-  pruefe(/gehört nicht zu Ihrer Rolle/.test(text),
-    "stattdessen steht da, dass die Bescheinigung nicht zu ihrer Rolle gehört");
-  pruefe(/nicht angezeigt und nicht ausgeliefert/.test(text),
-    "und dass sie weder angezeigt noch ausgeliefert wird");
+  /*
+    GEAENDERTE ERWARTUNG - Begruendung in Abschnitt 60 der
+    Dokumentation. Kurz: Der alte Satz stand UNTER den Daten, die er
+    verneinte. Der Geschaeftsfuehrer hat einen festen Wortlaut
+    vorgegeben.
+  */
+  pruefe(/Eine Bescheinigung ist eingegangen/.test(text),
+    "stattdessen steht da, dass eine Bescheinigung eingegangen ist");
+  pruefe(/fehlt Ihnen die Berechtigung/.test(text),
+    "und dass die Berechtigung für Anzeige und Prüfung fehlt");
+  /* Und zwar ohne dass die Daten im Markup stehen. */
+  const dokMarkup = await page.innerHTML(".dialog-kasten");
+  pruefe(!/Testbescheinigung|Nr\.\s*\d|Erstbescheinigung|eingegangen\s+\S+\s+\d{1,2}:\d{2}/
+    .test(dokMarkup),
+    "und keine Dokumentangabe im Markup");
 
   const k = await knoepfe(page);
   pruefe(!k.some((x) => x.startsWith("vg-bescheinigung")), "kein Knopf zum Öffnen");

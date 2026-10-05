@@ -1,7 +1,7 @@
 # Betriebsportal — Bericht am verbindlichen Haltepunkt
 
 **Branch:** `feature/030-betriebsportal-neu`
-**Stand:** 04.10.2026 (dritter Durchgang)
+**Stand:** 05.10.2026 (vierter Durchgang)
 **Phasen abgeschlossen:** 0, 1, 2, 3, 4, 19, 21
 **Kein echter Betriebsportalcode ist verändert.**
 
@@ -6414,3 +6414,296 @@ Browser.**
 - Rechteänderungen werden erst nach der abschließenden Prüfung gespeichert.
 - Die **Analyse** verschwindet bei entzogener Berechtigung wirklich — auch
   über einen direkten Sprung.
+
+---
+
+## 60. Zwei Berechtigungslücken — trotz grüner Prüfläufe
+
+Beide Lücken waren echt, und beide hatte ich beim Aufteilen der Rechte
+selbst hineingebaut. Dass siebzehn Läufe grün waren, hat sie nicht
+gefunden — weil keiner von ihnen diese Kombinationen geprüft hat. Das ist
+die lehrreiche Stelle: **Ein grüner Lauf sagt nur, was er prüft.**
+
+### 60.1 Ohne `dokument.pruefen` waren die Dokumentdaten sichtbar
+
+**Gemessen** als Rolle Personal mit `krankheit.read` an und
+`dokument.pruefen` aus: Der Öffnen-Knopf war gesperrt, aber sichtbar
+blieben Dateiname `Testbescheinigung-M02-01.pdf`, Nummer und Art der
+Bescheinigung, Eingangszeit, die vollständige dreistufige Prüfkette,
+„Folgebescheinigung zuordnen" und die dokumentbezogenen Aktionen.
+
+**Ursache.** Der ganze Bescheinigungsblock hing an `vertraulichSichtbar(v)`,
+also an `krankheit.read`. Beim Aufteilen der Rechte habe ich nur die
+**Knöpfe** gesperrt. Ein gesperrter Knopf neben dem vollen Dateinamen ist
+kein Schutz — er verbirgt die Bedienung, nicht die Angabe.
+
+**Behoben.** Der Block verlangt jetzt `vertraulichSichtbar(v) && darfDokument()`.
+Ohne `dokument.pruefen` steht **genau ein** Satz:
+
+> Eine Bescheinigung ist eingegangen. Für die Anzeige und Prüfung fehlt
+> Ihnen die Berechtigung.
+
+Kein Dateiname, keine Nummer, keine Art, keine Eingangszeit, kein
+Einsichtszustand, kein Prüfergebnis, keine Prüfschritte, keine
+Dokumentaktion — und zwar **nicht im DOM**, nicht nur optisch.
+
+Zwei Aktionen hatten denselben Mangel und sind vom eigenen Prüflauf
+gefunden worden: `vg-folge` (Folgebescheinigung zuordnen) und
+`vg-korrektur` (Zeitraum korrigieren) prüften nur `krankheit.read`. Beide
+hängen an einem Gesundheitsdokument und verlangen jetzt `dokument.pruefen`.
+
+### 60.2 Ohne `krankheit.read` war der Krankheitsvorgang zugänglich
+
+**Gemessen** als Rolle Personal mit `personal.read` an und `krankheit.read`
+aus: `V0002` ließ sich über Meldungen öffnen, mit Person, Zeitraum,
+Planungswirkung, Ersatzbedarf, Teilschritt Personalprüfung und den
+Übernahme- und Abschlussaktionen.
+
+**Ursache, zwei Teile.**
+
+1. Der Krankheitsvorgang trug `personal.read` in seiner Sichtbarkeit.
+   Stammdatensicht ist aber keine Krankheitssicht — das war eine falsche
+   Einordnung von mir beim Aufteilen.
+2. **`vg-oeffnen` und die übrigen Aktionen prüften die Sichtbarkeit nicht.**
+   Die *Liste* filterte richtig; der direkte Aufruf ging daran vorbei. Das
+   ist der schwerere Teil: Die Lücke lag nicht in den Daten, sondern darin,
+   dass der Schutz nur im Zeichnen stand.
+
+**Behoben, an zwei Stellen und beide zentral:**
+
+- `vorgangFinden()` gibt `null` zurück, wenn der Vorgang mir nicht zusteht.
+  Durch diese Funktion geht jede Aktion.
+- Ein **Tor oben in `tun()`**: Nennt der Wert einen Vorgang, den ich nicht
+  sehen darf, endet die Aktion dort. Es gibt **zweiundfünfzig** `vg-`
+  Aktionen; die Prüfung in jede einzeln zu schreiben hieße, sie bei der
+  dreiundfünfzigsten zu vergessen.
+- `personal.read` ist aus der Sichtbarkeit der **Krankheits**vorgänge
+  entfernt — in den Testdaten und an den drei Stellen, die neue anlegen.
+
+**Neutral abgewiesen.** Es gibt kein Fenster, keine Meldung, keinen
+Eintrag — und die Vorgangsnummer steht nirgends im Dokument. Ein Hinweis
+„für diesen Vorgang fehlt Ihnen die Berechtigung" wäre selbst eine
+Auskunft: nämlich darüber, dass diese Person einen Krankheitsvorgang hat.
+Der Prüflauf durchsucht dafür das **ganze** `document.body.innerHTML`.
+
+### 60.3 Was dabei nicht zurückgebaut wurde — und eine Einordnung
+
+**Urlaub bleibt bei `personal.read`.** Ein Urlaubsantrag ist keine
+Gesundheitsangabe, und das Personal muss ihn bearbeiten. Die Anweisung
+betraf ausdrücklich Krankheitsvorgänge. `V0001` und `V0007` sind davon
+unberührt.
+
+**Die Dokumentfristen bleiben Stammdaten.** Eine ablaufende
+Führerscheinfrist ist Personalstammdaten — das Personal muss sie sehen, um
+sie zu verlängern. Mein pauschales Ersetzen hatte `personal.read` dort
+zuerst mitentfernt; das ist berichtigt, und eine eigene Prüfung hält es
+fest. Die **Datei** dahinter braucht weiterhin `dokument.pruefen`.
+
+**Die Disposition behält ihren Planungsteilschritt.** `planung.read` bleibt
+in der Sichtbarkeit der Krankheitsvorgänge. Hier liegt eine Einordnung, die
+ich ausdrücklich benenne:
+
+> Wörtlich genommen hieße „Ohne `krankheit.read` darf ein Krankheitsvorgang
+> nicht in Meldungen erscheinen", dass auch die Disposition ihn verliert —
+> und mit ihm den Teilschritt **Planung**, mit dem sie einen Ersatz
+> organisiert. Das ist eine bereits bestätigte Funktion.
+>
+> **Alle sechs Zeilen der verlangten Prüftabelle haben `planung.read`
+> ausgeschaltet.** Die Tabelle ist also vollständig erfüllt, ohne diese
+> Funktion zu entfernen. Ob die Disposition künftig auch ohne
+> `krankheit.read` sehen soll, **dass** jemand ausfällt — ohne den Grund —,
+> ist eine offene Entscheidung. Dafür bräuchte es eine eigene Fähigkeit
+> („Abwesenheit sehen"), und die erfinde ich nicht.
+
+Die Disposition sieht dabei **weder** die Bescheinigung **noch** den
+vertraulichen Teil; der Prüflauf belegt das mit demselben DOM-Vergleich.
+
+### 60.4 Ein Nebenbefund: der Kalender versprach einen Sprung ins Leere
+
+Der Kalender baute sein Sprungziel aus **allen** passenden Vorgängen — auch
+aus solchen, die er mir nicht zeigen darf. Der Sprung wurde dann zu Recht
+abgewiesen, aber der Klick führte ins Nichts.
+
+Jetzt fragt der Kalender `ProbeVorgaenge.sichtbareZuAbwesenheit()` und zeigt
+bei fehlender Berechtigung einen eigenen, wahren Hinweis: „Zu diesem Eintrag
+gibt es einen Vorgang, für den Ihnen die Berechtigung fehlt." Das ist etwas
+anderes als „gibt es nicht" — und „gibt es nicht" wäre hier unwahr.
+
+### 60.5 Ein eigener Fehler, vom Prüflauf gefunden
+
+`vg-wiedereroeffnen` setzte den Stand und öffnete das Fenster **blind**. Bei
+einer Nummer, die es nicht gibt oder die nicht zugänglich ist, lief das
+Fenster auf `null` und warf einen `TypeError`. Jetzt wird erst nachgesehen,
+dann geöffnet — und Wiedereröffnen eines Krankheitsvorgangs verlangt
+`krankheit.read`.
+
+### 60.6 Fehler in meinem Prüflauf
+
+Ich habe die Batterie der vierzehn direkten Aufrufe in **jeder** Zeile der
+Tabelle gefahren — auch dort, wo das Konto berechtigt ist. Dort **sollen**
+die Aktionen wirken; „ändert nichts" war die falsche Erwartung. Und weil
+`vg-aus-liste` das Fenster schließt, liefen die folgenden Prüfungen auf
+einen leeren Dialog.
+
+Die Batterie läuft jetzt in den unberechtigten Zeilen. In den berechtigten
+wird der Vorgang normal geöffnet — und dort werden **nur die
+Dokumentaktionen** direkt aufgerufen, um zu belegen, dass sie bei offenem
+Vorgang nichts bewirken.
+
+Zweiter Fehler: Mein Suchmuster für die Eingangszeit war `/eingegangen/` —
+das Wort steht im **erlaubten** Satz („Eine Bescheinigung ist eingegangen").
+Die Prüfung meldete eine Lücke, die es nicht gab. Gesucht wird jetzt nach
+der Zeit beziehungsweise nach „Nr. 1".
+
+### 60.7 Die Prüftabelle
+
+| `personal.read` | `krankheit.read` | `dokument.pruefen` | Belegt |
+|---|---|---|---|
+| an | aus | aus | Personalbereich sichtbar und bedienbar; Krankheitsvorgang **nicht** in Meldungen, **nicht** in der Suche nach Person **oder** Vorgangsnummer, direkter Aufruf öffnet nichts, Nummer steht nirgends im Dokument |
+| aus | an | aus | Krankheitsvorgang zugänglich mit Zeitraum und Planungswirkung; **keine** Dokumentangabe im DOM, nur der eine Satz; Dokumentaktionen direkt aufgerufen bewirken nichts |
+| aus | an | an | Vorgang **und** Dokumentprüfung zugänglich, einschließlich Dateiname und Öffnen-Knopf, **ohne** Sperrsatz |
+| an | an | aus | Personalbereich **und** Zeitraum sichtbar, Dokument vollständig verborgen |
+| aus | aus | an | Dokumentrecht allein gibt **weder** Vorgang **noch** Datei frei |
+| aus | aus | aus | kein Personal- und kein Krankheitszugriff |
+
+Jede Zeile zusätzlich über direkte Aktionsaufrufe. Geprüft wird gegen den
+**DOM**, nicht gegen den gerenderten Text: Eine Angabe, die im Markup steht
+und nur optisch verborgen ist, wäre ausgeliefert.
+
+### 60.8 Was dieser Lauf nicht sagt
+
+**Eine Prüfung im Browser schützt nichts.** Dieser Lauf belegt, dass die
+Oberfläche nichts ausliefert, was sie nicht darf. Dass dieselben Regeln
+**serverseitig** greifen — Supabase-Rollen, Grants, RLS —, ist damit
+**nicht** gezeigt und wäre im Betrieb der entscheidende Teil. Im echten
+Portal müsste die Datenbank dieselben fünf Fähigkeiten kennen und
+durchsetzen; was der Browser verbirgt, kann ein Aufruf an die API
+umgehen.
+
+---
+
+## 61. Alle achtzehn Prüfläufe, vollständig gefahren
+
+Stand 05.10.2026. Jeder Lauf bis zur gedruckten Abschlussbilanz.
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-portal-pruefen` | **114 bestanden, 0 offen** |
+| `probe-fahrt-pruefen` | **172 bestanden, 0 offen** |
+| `probe-planung-pruefen` | **171 bestanden, 0 offen** |
+| `probe-team-pruefen` | **197 bestanden, 0 offen** |
+| `probe-vorgaenge-pruefen` | **139 bestanden, 0 offen** |
+| `probe-teilung-pruefen` | **105 bestanden, 0 offen** |
+| `probe-dokument-pruefen` | **94 bestanden, 0 offen** |
+| `probe-regeln-pruefen` | **123 bestanden, 0 offen** |
+| `probe-zuordnung-pruefen` | **126 bestanden, 0 offen** |
+| `probe-karten-pruefen` | **88 bestanden, 0 offen** |
+| `probe-wahrheit-pruefen` | **78 bestanden, 0 offen** |
+| `probe-kalenderwege-pruefen` | **110 bestanden, 0 offen** |
+| `probe-akten-pruefen` | **243 bestanden, 0 offen** |
+| `probe-analyse-pruefen` | **123 bestanden, 0 offen** |
+| `probe-datum-pruefen` | **162 bestanden, 0 offen** |
+| `probe-rechte-pruefen` | **220 bestanden, 0 offen** |
+| `probe-aktenweg-pruefen` | **121 bestanden, 0 offen** |
+| `probe-berechtigung-pruefen` (neu) | **99 bestanden, 0 offen** |
+| **Summe** | **2 485 bestanden, 0 offen** |
+
+In allen achtzehn Läufen: **null Anfragen nach außen.**
+
+### Drei veraltete Prüferwartungen, angepasst mit Begründung
+
+| Lauf | Alte Erwartung | Weshalb sie nicht mehr gilt |
+|---|---|---|
+| `probe-vorgaenge` | Der Hinweis für die Disposition lautet „gehört nicht zu Ihrer Rolle" | Der Geschäftsführer hat einen festen Wortlaut vorgegeben. Geprüft wird jetzt dieser **und** dass keine Dokumentangabe im Markup steht |
+| `probe-vorgaenge` | Das Band am geschützten Abschnitt lautet „nur Personal und Administration" | Der Abschnitt hängt seit der Aufteilung an einer **Fähigkeit**, nicht an einer Rolle. Ein Band, das Rollen nennt, wäre falsch, sobald jemand `dokument.pruefen` einzeln bekommt |
+| `probe-dokument` und `probe-kalenderwege` | derselbe alte Satz | derselbe Grund; beide prüfen jetzt zusätzlich das Markup |
+
+**Keine** Anpassung hat einen Lauf schwächer gemacht. Alle drei prüfen
+danach mehr als vorher — nämlich gegen den DOM statt gegen den sichtbaren
+Text. Genau diese Lücke hatte der Gegenlauf gefunden.
+
+### Was diese Zahlen nicht sagen
+
+- **Eine Prüfung im Browser schützt nichts.** Diese achtzehn Läufe belegen,
+  dass die Oberfläche nichts ausliefert, was sie nicht darf. Dass dieselben
+  fünf Fähigkeiten **serverseitig** greifen — Supabase-Rollen, Grants, RLS
+  —, ist **nicht** gezeigt. Im Betrieb ist das der entscheidende Teil: Was
+  der Browser verbirgt, kann ein Aufruf an die API umgehen.
+- Es ist **keine Datenquelle** angebunden. Alles liegt im Speicher des
+  Browsers und ist nach dem Neuladen weg.
+- Der produktive Verwaltungsbereich unter `admin/` ist **unverändert**.
+
+---
+
+## 62. Manueller Testweg
+
+Vorschau: `npm run probe-portal`, dann die genannte Adresse. Rolle und Konto
+stehen oben im Banner. **Nichts davon verlässt den Browser.**
+
+Alle Kombinationen werden über **Einstellungen → Rolle Personal**
+geschaltet, mit Grund gespeichert, und dann auf Rolle **Personal**
+umgestellt.
+
+### A. Ohne `dokument.pruefen` (Lücke 1)
+
+1. Als **Administration**, Bereich **Einstellungen**, **Rolle Personal**.
+2. **Gesundheitsdokumente prüfen** abwählen, **Krankheitszeiträume sehen**
+   anlassen. Mit Grund speichern.
+3. Auf Rolle **Personal** umstellen, **Meldungen**, die Krankmeldung von
+   Testfahrer 02 öffnen.
+4. Erwartung: Zeitraum und Planungswirkung sind da. Statt des
+   Bescheinigungsblocks steht **genau ein** Satz:
+   „Eine Bescheinigung ist eingegangen. Für die Anzeige und Prüfung fehlt
+   Ihnen die Berechtigung."
+5. **Rechtsklick → Untersuchen** (oder Strg+U). Erwartung: **Nirgends**
+   `Testbescheinigung-M02-01.pdf`, keine „Nr. 1", keine
+   „Erstbescheinigung", keine Eingangszeit, keine Prüfkette, kein
+   `vg-bescheinigung` — auch nicht verborgen im Markup.
+6. Erwartung: Auch **„Folgebescheinigung zuordnen"** und **„Zeitraum
+   korrigieren"** fehlen.
+
+### B. Ohne `krankheit.read` (Lücke 2)
+
+1. Als Administration **Krankheitszeiträume sehen** abwählen,
+   **Personalstammdaten sehen** anlassen. Speichern.
+2. Auf Rolle **Personal** umstellen.
+3. **Meldungen**: Erwartung: Die Krankmeldung von Testfahrer 02 steht
+   **nicht** in der Liste.
+4. Ins Suchfeld `Testfahrer 02` eingeben. Erwartung: Sie erscheint nicht.
+   Dann `V0002` eingeben. Erwartung: auch nicht.
+5. **Kalender** öffnen. Erwartung: Die Kategorie **Abwesenheiten** fehlt
+   ganz. **Dokumentfristen** ist da — das sind Stammdaten.
+6. **Personal** öffnen, eine Personalakte ansehen. Erwartung: Stammdaten
+   da, **kein** Krankheitszeitraum.
+7. Gegenprobe im Browser: Entwicklerkonsole öffnen und
+   `window.ProbeVorgaenge.tun("vg-oeffnen","V0002")` eingeben. Erwartung:
+   **Es passiert nichts.** Kein Fenster, keine Meldung. Und `V0002` steht
+   nirgends im Dokument.
+
+### C. Die Gegenrichtung bleibt bestanden
+
+1. **Personalstammdaten sehen** abwählen, **Krankheitszeiträume sehen**
+   und **Gesundheitsdokumente prüfen** anwählen. Speichern.
+2. Auf Rolle Personal. Erwartung: Der Bereich **Personal** ist weg, die
+   Krankmeldung ist **vollständig** zugänglich — mit Dateiname und
+   Öffnen-Knopf.
+
+### D. Die Disposition behält ihren Planungsschritt
+
+Rolle **Testdisposition 01**, Meldungen, die Krankmeldung öffnen.
+Erwartung: Zeitraum, Planungswirkung und der Teilschritt **Planung** sind
+da — aber **kein** Dateiname und derselbe Sperrsatz wie in A.
+
+### E. Die Dokumentfristen bleiben Stammdaten
+
+Nur **Personalstammdaten sehen** anwählen. Erwartung: In **Meldungen**
+stehen die Dokumentfristen (`Führerschein`, `Personenbeförderungsschein`).
+Eine öffnen: Art, Frist und Status sind da, **„Datei sicher prüfen"**
+fehlt — die Datei braucht `dokument.pruefen`.
+
+### F. Alle sechs Zeilen der Prüftabelle
+
+Der Lauf `npm run probe-berechtigung-pruefen` fährt sie automatisch, jede
+zusätzlich über direkte Aktionsaufrufe. Wer sie von Hand nachgehen will,
+schaltet die drei Rechte nach der Tabelle in Abschnitt 60.7 und prüft
+jeweils Liste, Suche, Kalender, Personalakte und den direkten Aufruf.

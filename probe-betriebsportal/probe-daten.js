@@ -642,7 +642,7 @@
       eingang: "heute 06:05", eingangIso: alsIso(heute), dringlichkeit: "hoch",
       zustaendig: "", zustand: "neu", gesehen: false, version: 1,
       ausListe: false, ausListeAm: "", ausListeVon: null,
-      sichtbar: ["planung.read", "personal.read", "krankheit.read"],
+      sichtbar: ["planung.read", "krankheit.read"],
       /* Die Bescheinigung sehen nur Personal und Administration. */
       vertraulich: ["krankheit.read"],
       daten: {
@@ -776,7 +776,7 @@
       eingang: "vor 10 Tagen", eingangIso: alsIso(tagAls(-10)), dringlichkeit: "normal",
       zustaendig: "", zustand: "bearbeitung", gesehen: true, version: 1,
       ausListe: false, ausListeAm: "", ausListeVon: null,
-      sichtbar: ["planung.read", "personal.read", "krankheit.read"],
+      sichtbar: ["planung.read", "krankheit.read"],
       vertraulich: ["krankheit.read"],
       daten: {
         von: alsIso(tagAls(-10)), bis: alsIso(tagAls(-8)),

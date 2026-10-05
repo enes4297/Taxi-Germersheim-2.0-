@@ -287,7 +287,12 @@ console.log("\n── 4. Der Sprung öffnet keine Tür ──");
   pruefe(!/Prüfergebnis festhalten/.test(inhalt), "kein Prüfergebnis");
   pruefe(!/Alles in Ordnung|Zeitraum weicht ab|Nicht lesbar/.test(inhalt),
     "und kein Ergebniswert");
-  pruefe(/gehört nicht zu Ihrer Rolle/.test(inhalt), "sie bekommt das gesagt");
+  /* GEAENDERTE ERWARTUNG - siehe Abschnitt 60 der Dokumentation. */
+  pruefe(/Eine Bescheinigung ist eingegangen/.test(inhalt)
+    && /fehlt Ihnen die Berechtigung/.test(inhalt),
+    "sie bekommt das gesagt");
+  pruefe(!/Testbescheinigung|Nr\.\s*\d/.test(await page.innerHTML(".dialog-kasten")),
+    "und keine Dokumentangabe im Markup");
   await ctx.close();
 
   /* Die Buchhaltung bekommt den Kalender gar nicht. */

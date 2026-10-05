@@ -168,7 +168,11 @@
         const eintrag = a.wirksam || a.beantragt;
         if (!eintrag) return;
         const art = a.wirksam ? a.wirksam.art : "urlaub";
-        const treffer = D.vorgaengeZuAbwesenheit(m.id, isoTag, art);
+        /* Nur die Vorgaenge, die ich auch oeffnen darf - sonst
+           verspricht der Eintrag einen Sprung, den er nicht halten
+           kann. */
+        const alleTreffer = D.vorgaengeZuAbwesenheit(m.id, isoTag, art);
+        const treffer = window.ProbeVorgaenge.sichtbareZuAbwesenheit(m.id, isoTag, art);
         liste.push({
           art: "abwesenheit",
           marke: art === "krank" ? "warnung" : "ruhig",
@@ -184,9 +188,17 @@
             : treffer.length > 1
               ? "meldungen:auswahl-" + m.id + "-" + art + "-" + isoTag
               : "",
-          leerhinweis: treffer.length ? "" : (art === "krank"
-            ? "Zu dieser Krankmeldung gibt es in der Designprobe keinen Vorgang."
-            : "Zu diesem Urlaub gibt es in der Designprobe keinen Vorgang.")
+          /*
+            Zwei verschiedene Gruende, zwei verschiedene Hinweise. Ein
+            Vorgang, den es gibt und den ich nicht sehen darf, ist
+            nicht dasselbe wie keiner - und "gibt es nicht" waere
+            hier unwahr.
+          */
+          leerhinweis: treffer.length ? "" : (alleTreffer.length
+            ? "Zu diesem Eintrag gibt es einen Vorgang, für den Ihnen die Berechtigung fehlt."
+            : (art === "krank"
+              ? "Zu dieser Krankmeldung gibt es in der Designprobe keinen Vorgang."
+              : "Zu diesem Urlaub gibt es in der Designprobe keinen Vorgang."))
         });
       });
     }

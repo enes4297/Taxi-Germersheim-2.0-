@@ -53,7 +53,8 @@
     "probe-analyse-pruefen": "node tools/pruefe-probe-analyse.mjs",
     "probe-datum-pruefen": "node tools/pruefe-probe-datumsfeld.mjs",
     "probe-rechte-pruefen": "node tools/pruefe-probe-rechte.mjs",
-    "probe-aktenweg-pruefen": "node tools/pruefe-probe-aktenweg.mjs"
+    "probe-aktenweg-pruefen": "node tools/pruefe-probe-aktenweg.mjs",
+    "probe-berechtigung-pruefen": "node tools/pruefe-probe-berechtigung.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.0",

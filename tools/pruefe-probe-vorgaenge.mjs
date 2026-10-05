@@ -345,7 +345,28 @@ console.log("\n── 8. Krankmeldung ──");
   pruefe(/Planungswirkung/.test(dispo), "die Planungswirkung");
   pruefe(/Ersatz nötig/.test(dispo), "und ob Ersatz gebraucht wird");
   pruefe(!/Testbescheinigung/.test(dispo), "aber keine Bescheinigung");
-  pruefe(/nicht zu Ihrer Rolle/.test(dispo), "und bekommt das gesagt");
+  /*
+    GEAENDERTE ERWARTUNG.
+
+    Alt: „Die eingereichte Bescheinigung gehoert nicht zu Ihrer Rolle.“
+
+    Weshalb das nicht mehr gilt: Der manuelle Gegenlauf hat gemessen,
+    dass ohne dokument.pruefen trotzdem Dateiname, Nummer, Art,
+    Eingangszeit und die ganze Pruefkette im Markup standen. Der
+    Geschaeftsfuehrer hat dafuer EINEN festen Satz vorgegeben, der
+    jetzt an dieser Stelle steht.
+
+    Neu und strenger: Geprueft wird der vorgegebene Wortlaut UND dass
+    keine Dokumentangabe im Markup steht - nicht nur im sichtbaren
+    Text.
+  */
+  pruefe(/Eine Bescheinigung ist eingegangen/.test(dispo)
+    && /fehlt Ihnen die Berechtigung/.test(dispo),
+    "und bekommt das gesagt");
+  const dispoDom = await a.page.evaluate(() =>
+    document.querySelector(".dialog-kasten").innerHTML);
+  pruefe(!/Testbescheinigung|Nr.s*d|Erstbescheinigung/.test(dispoDom),
+    "und es steht auch keine Dokumentangabe im Markup");
   pruefe(!(await a.page.$('[data-tun^="vg-datei"]')), "kein Weg zur Datei");
   pruefe(/weder Diagnose noch\s+medizinische Angaben/.test(dispo.replace(/\s+/g, " ")),
     "es steht ausdruecklich da, dass keine medizinischen Angaben gefuehrt werden");
@@ -369,7 +390,20 @@ console.log("\n── 8. Krankmeldung ──");
      fehlenden Satz. */
   const pers = (await c.page.textContent(".dialog-kasten")).replace(/\s+/g, " ");
   pruefe(/Testbescheinigung/.test(pers), "Personal sieht die Bescheinigung");
-  pruefe(/nur Personal und Administration/.test(pers), "der Abschnitt ist als geschuetzt gekennzeichnet");
+  /*
+    GEAENDERTE ERWARTUNG.
+
+    Alt: Der Abschnitt traegt das Band „nur Personal und
+    Administration“.
+
+    Weshalb das nicht mehr gilt: Seit der Aufteilung haengt der
+    Abschnitt an einer FAEHIGKEIT, nicht an einer Rolle -
+    dokument.pruefen kann jedem Konto einzeln gegeben werden. Ein Band,
+    das Rollen nennt, waere falsch, sobald jemand die Faehigkeit
+    einzeln bekommt.
+  */
+  pruefe(/nur mit Dokumentprüfung/.test(pers),
+    "der Abschnitt ist als geschuetzt gekennzeichnet");
   pruefe(/signierte Adresse/.test(pers), "sie wird ueber eine signierte Adresse geoeffnet");
 
   /* Der Dateiname selbst oeffnet die Vorschau. "Datei sicher pruefen"

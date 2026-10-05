@@ -297,9 +297,19 @@
           betrifft: { art: "mitarbeiter", id: m.id, name: m.name },
           eingang: "laufend", eingangIso: D.alsIso(D.heute),
           dringlichkeit: e.lage === "fehlt" || e.lage === "abgelaufen" ? "hoch" : "normal",
+          /*
+            EIGENER FEHLER, berichtigt: Mein pauschales Ersetzen hatte
+            personal.read auch hier entfernt. Eine ablaufende
+            Fuehrerscheinfrist ist aber PERSONALSTAMMDATEN, keine
+            Krankheit - das Personal muss sie sehen, um sie zu
+            verlaengern. Der Geschaeftsfuehrer hat ausdruecklich die
+            Krankheitsvorgaenge gemeint.
+          */
           sichtbar: ["planung.read", "personal.read", "krankheit.read"],
-          /* Den Dateiinhalt sehen nur Personal und Administration. */
-          vertraulich: ["krankheit.read"],
+          /* Dass ein Dokument fehlt oder ablaeuft, gehoert zu den
+             Stammdaten. Die DATEI selbst braucht zusaetzlich
+             dokument.pruefen - siehe detailDokument(). */
+          vertraulich: ["personal.read", "krankheit.read"],
           daten: { art: e.art, frist: e.bis, lage: e.lage, datei: `Testnachweis-${m.id}.pdf` },
           empfehlung: "", antwort: "", notizen: [], version: 1
         });
@@ -380,6 +390,21 @@
   }
 
   const sichtbarFuerMich = (v) => R.darf(v.sichtbar);
+
+  /*
+    Welche Vorgaenge zu einer Abwesenheit DARF ich sehen?
+
+    Der Kalender baute sein Sprungziel vorher aus allen Treffern -
+    auch aus solchen, die er mir gar nicht zeigen darf. Der Sprung
+    wurde dann zu Recht abgewiesen, aber der Klick fuehrte ins Leere.
+    Ein Eintrag, der etwas verspricht, das er nicht halten kann, ist
+    kein ehrlicher Eintrag.
+
+    Diese Funktion gibt dem Kalender nur, was ich sehen darf. Ist
+    nichts dabei, zeigt er seinen Hinweis statt eines Sprungs.
+  */
+  const sichtbareZuAbwesenheit = (mitarbeiterId, iso, art) =>
+    D.vorgaengeZuAbwesenheit(mitarbeiterId, iso, art).filter(sichtbarFuerMich);
   const vertraulichSichtbar = (v) => !v.vertraulich.length || R.darf(v.vertraulich);
 
   /*
@@ -858,9 +883,41 @@
   /* ============================================================
      Vorgang öffnen
      ============================================================ */
+  /*
+    Einen Vorgang holen - aber NUR, wenn er mir zusteht.
+
+    GEMESSENE LUECKE: Ein Konto mit personal.read und ohne
+    krankheit.read konnte V0002 ueber Meldungen oeffnen und sah Person,
+    Zeitraum, Planungswirkung, Ersatzbedarf und Teilschritte.
+
+    URSACHE, zwei Teile:
+      a) Der Krankheitsvorgang trug personal.read in seiner
+         Sichtbarkeit. Stammdatensicht ist aber keine Krankheitssicht.
+      b) vg-oeffnen und die uebrigen Aktionen riefen vorgangFinden()
+         und pruefen die Sichtbarkeit NICHT. Die Liste filterte
+         richtig - der direkte Aufruf ging daran vorbei.
+
+    Die Pruefung steht jetzt HIER, an der einen Stelle, durch die
+    jede Aktion geht. Ein Nachruesten in zwanzig Faellen haette
+    beim naechsten neuen Fall wieder gefehlt.
+
+    Abgewiesen wird NEUTRAL: Es gibt null zurueck, genau wie bei
+    einer unbekannten Nummer. Ein eigener Hinweis "dieser Vorgang
+    existiert, Sie duerfen nur nicht" waere selbst eine Auskunft -
+    naemlich darueber, dass diese Person einen Krankheitsvorgang hat.
+  */
   function vorgangFinden(id) {
-    return D.vorgangVon(id) || abgeleiteteWarnungen().find((w) => w.id === id) || null;
+    const v = D.vorgangVon(id) || abgeleiteteWarnungen().find((w) => w.id === id) || null;
+    if (!v) return null;
+    if (!sichtbarFuerMich(v)) return null;
+    return v;
   }
+
+  /* Fuer die wenigen Stellen, die den Vorgang OHNE Rechtepruefung
+     brauchen - etwa um festzustellen, ob eine Nummer ueberhaupt
+     vergeben ist. Bewusst eigens benannt, damit es auffaellt. */
+  const vorgangRoh = (id) =>
+    D.vorgangVon(id) || abgeleiteteWarnungen().find((w) => w.id === id) || null;
 
   function planungswirkung(v) {
     if (!v.daten.von || !v.daten.bis) return null;
@@ -1029,9 +1086,9 @@
         <p class="schritt-hinweis">In dieser Übersicht stehen weder Diagnose noch
           medizinische Angaben — nur Zeitraum und Planungswirkung.</p>
       </div>
-      ${vertraulichSichtbar(v)
+      ${(vertraulichSichtbar(v) && darfDokument())
         ? `<div class="dialog-schritt geschuetzt">
-            <h3>Eingereichte Bescheinigung <span class="band-gold">nur Personal und Administration</span></h3>
+            <h3>Eingereichte Bescheinigung <span class="band-gold">nur mit Dokumentprüfung</span></h3>
             ${nachweisliste(v)}
             <p class="schritt-hinweis">Jede Datei wird über eine kurz gültige, signierte
               Adresse geöffnet. Eine beanstandete Datei wird nie überschrieben — sie bleibt
@@ -1044,9 +1101,22 @@
             <p class="schritt-hinweis">Eine Korrektur überschreibt nichts. Sie legt einen
               neuen, eigenen Vorgang an, der auf diesen hier verweist.</p>
           </div>`
+        /*
+          GEMESSENE LUECKE: Hier stand nur vertraulichSichtbar(v), also
+          krankheit.read. Mit diesem Recht allein waren Dateiname, Nummer,
+          Art, Eingangszeit, Pruefergebnis, die dreistufige Pruefkette und
+          die Dokumentaktionen sichtbar - obwohl der Oeffnen-Knopf gesperrt
+          war. Ein gesperrter Knopf neben dem vollen Dateinamen ist kein
+          Schutz.
+
+          Ohne dokument.pruefen steht jetzt GENAU EIN Satz. Kein
+          Dateiname, keine Nummer, keine Art, keine Eingangszeit, kein
+          Einsichtszustand, kein Pruefergebnis, keine Pruefschritte, keine
+          Dokumentaktion - und zwar auch nicht im DOM.
+        */
         : `<div class="dialog-schritt">
-            <p class="schritt-hinweis">Die eingereichte Bescheinigung gehört nicht zu Ihrer Rolle.
-              Sie wird Ihnen nicht angezeigt und nicht ausgeliefert.</p>
+            <p class="schritt-hinweis">Eine Bescheinigung ist eingegangen. Für die Anzeige
+              und Prüfung fehlt Ihnen die Berechtigung.</p>
           </div>`}`;
   }
 
@@ -1062,9 +1132,9 @@
           <div><dt>Zuständig</dt><dd>${v.zustaendig ? h(v.zustaendig) : "noch niemand"}</dd></div>
         </dl>
       </div>
-      ${vertraulichSichtbar(v)
+      ${(vertraulichSichtbar(v) && darfDokument())
         ? `<div class="dialog-schritt geschuetzt">
-            <h3>Dateiprüfung <span class="band-gold">nur Personal und Administration</span></h3>
+            <h3>Dateiprüfung <span class="band-gold">nur mit Dokumentprüfung</span></h3>
             <button class="knopf klein" type="button" data-tun="vg-datei:${h(v.id)}">Datei sicher prüfen</button>
           </div>`
         : `<div class="dialog-schritt">
@@ -1834,6 +1904,33 @@
   }
 
   function tun(name, wert) {
+    /*
+      EIN TOR FUER ALLE AKTIONEN.
+
+      Gemessene Luecke: vg-oeffnen und die uebrigen Aktionen riefen
+      vorgangFinden() und pruefen die Sichtbarkeit nicht. Die Liste
+      filterte richtig - der direkte Aufruf ging daran vorbei.
+
+      Nennt der Wert einen Vorgang, den ich nicht sehen darf, endet
+      die Aktion hier. Es gibt zweiundfuenfzig vg-Aktionen; die
+      Pruefung in jede einzeln zu schreiben hiesse, sie bei der
+      dreiundfuenfzigsten zu vergessen.
+
+      NEUTRAL abgewiesen: kein Fenster, keine Meldung, kein Eintrag.
+      Ein Hinweis "fuer diesen Vorgang fehlt Ihnen die Berechtigung"
+      waere selbst eine Auskunft - naemlich darueber, dass diese
+      Person einen Krankheitsvorgang hat.
+
+      Der Wert kann "V0002" oder "V0002|personal" sein; gelesen wird
+      der Teil vor dem Strich. Eine unbekannte Nummer laeuft
+      unveraendert weiter - die Aktionen pruefen selbst, ob sie etwas
+      gefunden haben.
+    */
+    if (String(name).startsWith("vg-") && wert) {
+      const kennung = String(wert).split("|")[0];
+      const roh = vorgangRoh(kennung);
+      if (roh && !sichtbarFuerMich(roh)) return;
+    }
     switch (name) {
       case "vg-zeitraum-weg":
         stand.vonDatum = "";
@@ -2241,6 +2338,18 @@
       }
 
       case "vg-wiedereroeffnen": {
+        /*
+          Erst nachsehen, dann oeffnen. Vorher setzte diese Aktion
+          den Stand und oeffnete das Fenster blind; bei einer
+          unbekannten oder nicht zugaenglichen Nummer lief das
+          Fenster auf null. Vom eigenen Prueflauf gefunden.
+        */
+        const v = vorgangFinden(wert);
+        if (!v) return;
+        /* Wiedereroeffnen ist eine Entscheidung ueber den Vorgang -
+           dafuer braucht es die Krankheitssicht, nicht nur die
+           Sichtbarkeit. */
+        if (v.thema === "krankheit" && !R.darf("krankheit.read")) return;
         stand.wiedereroeffnen = { id: wert, grund: "", fehler: "" };
         R.dialogOeffnen(wiedereroeffnenDialog());
         return;
@@ -2674,7 +2783,7 @@
             art: "aufgabe", thema: "krankheit",
             titel: "Krankmeldung – Nachweis neu zugeordnet – " + person.name,
             betrifft: { art: "mitarbeiter", id: person.id, name: person.name },
-            sichtbar: ["planung.read", "personal.read", "krankheit.read"],
+            sichtbar: ["planung.read", "krankheit.read"],
             vertraulich: ["krankheit.read"],
             /* Mit Teilschritten, also auch mit der Pruefsperre: Beim
                neuen Vorgang beginnt die Dokumentpruefung wirklich von
@@ -2808,7 +2917,7 @@
           art: "aufgabe", thema: "krankheit",
           titel: "Prüfergebnis korrigieren – " + alt.betrifft.name,
           betrifft: { ...alt.betrifft },
-          sichtbar: ["planung.read", "personal.read", "krankheit.read"], vertraulich: ["krankheit.read"],
+          sichtbar: ["planung.read", "krankheit.read"], vertraulich: ["krankheit.read"],
           teile: D.krankheitsTeile(),
           daten: {
             von: alt.daten.von, bis: alt.daten.bis, bezugAuf: alt.id,
@@ -2835,6 +2944,9 @@
       }
 
       case "vg-datei":
+        /* Die Dateipruefung ist eine Dokumentaktion. */
+        if (!darfDokument()) return;
+        if (!vorgangFinden(wert)) return;
         R.dialogOeffnen(quittung("Datei sicher prüfen", {
           wer: R.benutzerText(), kennung: R.benutzer().kennung, rolle: R.benutzer().rolle, zeit: jetzt(), betrifft: wert,
           vorher: "nicht geöffnet", nachher: "über signierte Adresse geöffnet", grund: ""
@@ -2848,7 +2960,10 @@
       */
       case "vg-folge": {
         const v = vorgangFinden(wert);
-        if (!v || !vertraulichSichtbar(v)) return;
+        /* Eine Folgebescheinigung IST ein Gesundheitsdokument. Vorher
+           genuegte hier krankheit.read - vom eigenen Prueflauf
+           gefunden. */
+        if (!v || !vertraulichSichtbar(v) || !darfDokument()) return;
         const liste = nachweise(v);
         const vorher = liste.length;
         const nr = vorher + 1;
@@ -2879,7 +2994,9 @@
       */
       case "vg-korrektur": {
         const alt = vorgangFinden(wert);
-        if (!alt || !vertraulichSichtbar(alt)) return;
+        /* Die Korrektur haengt am Nachweis und legt einen Vorgang mit
+           Bescheinigung an - also eine Dokumentaktion. */
+        if (!alt || !vertraulichSichtbar(alt) || !darfDokument()) return;
         const neuVon = alt.daten.von;
         const neuBis = D.alsIso(D.tagAls(4));
         const neu = D.vorgangAnlegen({
@@ -3104,7 +3221,7 @@
   }
 
   window.ProbeVorgaenge = {
-    offeneWarnungen, sprungziel, nachZeichnen,
+    offeneWarnungen, sprungziel, nachZeichnen, sichtbareZuAbwesenheit,
     anmelden, zeichne, tun, geaendert, datum, glocke, ungesehen, offeneEingabe, offeneFuerMich
   };
 })();
