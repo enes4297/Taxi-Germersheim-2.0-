@@ -1,7 +1,7 @@
 # Betriebsportal — Bericht am verbindlichen Haltepunkt
 
 **Branch:** `feature/030-betriebsportal-neu`
-**Stand:** 05.10.2026 (vierter Durchgang)
+**Stand:** 06.10.2026 (achter Durchgang)
 **Phasen abgeschlossen:** 0, 1, 2, 3, 4, 19, 21
 **Kein echter Betriebsportalcode ist verändert.**
 
@@ -6707,3 +6707,302 @@ Der Lauf `npm run probe-berechtigung-pruefen` fährt sie automatisch, jede
 zusätzlich über direkte Aktionsaufrufe. Wer sie von Hand nachgehen will,
 schaltet die drei Rechte nach der Tabelle in Abschnitt 60.7 und prüft
 jeweils Liste, Suche, Kalender, Personalakte und den direkten Aufruf.
+
+---
+
+## 63. Achter Durchgang — acht bestätigte Fehler, eine Tageswahrheit
+
+Der manuelle Gegenlauf vom 06.10.2026 hat acht Fehler gefunden, zwei davon
+Berechtigungslücken. Sechs der acht hatten **dieselbe Ursache**: Dieselbe
+fachliche Frage wurde an fünf Stellen eigenständig beantwortet.
+
+### 63.1 Die gemeinsame Ursache
+
+„Arbeitet diese Person heute?" und „welches Fahrzeug fährt sie?" wurden
+gerechnet in
+
+- der Übersicht (`plan.zeilen.filter((z) => z.imDienst)`),
+- der Planung (eigenes `tagesstatus` plus eigenes `konflikteVon`),
+- der Fahrerkarte (`z.fahrzeugId` roh),
+- der Fahrzeugkarte (über den gespeicherten Plan),
+- dem Kalender (`schichtbefund()` je Zeile).
+
+Fünf Rechnungen, fünf Ergebnisse. Darum stand am selben Tag „4 Fahrer im
+Dienst" neben „3", „Testwagen 02" neben „kein Fahrzeug" neben „frei", und
+der Kalender nannte einen Konflikt, wo die Planung vier Zeilen zeigte.
+
+**Die Abhilfe ist keine Korrektur an fünf Stellen, sondern eine Quelle.**
+In `probe-daten.js` steht jetzt der Abschnitt `EINE TAGESWAHRHEIT`:
+
+| Funktion | Beantwortet |
+|---|---|
+| `tagesstatusAm(iso, zeile)` | `dienst` / `krank` / `urlaub` / `frei` |
+| `arbeitetAm(iso, zeile)` | fährt diese Person an diesem Tag? |
+| `fahrzeugAktiv(iso, zeile)` | welches Fahrzeug — `null`, wenn sie nicht fährt |
+| `planzeilenAm(iso)` | die Zeilen des gespeicherten Plans |
+| `imDienstAm(iso, zeilen?)` | die Fahrenden des Tages |
+| `konflikteFuer(iso, zeilen?, zeitfehler?)` | **alle** Konfliktregeln des Tages |
+| `konfliktZeilen(liste)` | die betroffenen Zeilen eines Konfliktbestandes |
+
+Planung, Übersicht, Fahrerkarte, Fahrzeugkarte, Fahrerakte, Fahrzeugakte und
+Kalender fragen diese Funktionen. Die 38 Zeilen Konfliktlogik, die vorher im
+Bereichsmodul standen, sind dort gelöscht und durch einen Zeiger ersetzt.
+
+### 63.2 Die acht Fehler im Einzelnen
+
+| # | Gemessen | Ursache | Abhilfe |
+|---|---|---|---|
+| 1 | „Öffnen" einer Fahrt zeigte Platzhaltertext; FA-0002 ließ die offene Rückfrage nicht erkennen | die Einzelansicht war nie gebaut | `fahrtDialog()` aus den vorhandenen Daten; Fahrer-/Fahrzeugwechsel an `operations.write` |
+| 2 | Übersicht „4 Fahrer im Dienst", Planung 3 | rohes `z.imDienst` ohne Abwesenheit | `D.imDienstAm(iso)` |
+| 3 | Konfliktzähler 3, gefilterte Liste 4 Zeilen | gezählt wurden Einträge, gezeigt Zeilen | beides aus `konfliktZeilen()` |
+| 4 | Testwagen 02 gleichzeitig frei, zugewiesen und „kein Fahrzeug" | `z.fahrzeugId` roh in der Fahrerkarte | `D.fahrzeugAktiv(iso, z)` |
+| 5 | Kalender nannte einen Konflikt statt vier, Doppelbelegung als grüne Schicht | eigene Logik aus `schichtbefund()` | `D.konflikteFuer(iso)`; Kalender bleibt nur-lesend |
+| 6 | „6 Dokumentstände zu prüfen", jede Zeile „prüfen" | `dokumentstand(…).lage` — ein Feld, das die Funktion nicht hat; der Vergleich war immer wahr | `dokumentstand(…).warnung` |
+| 7 | Buchhaltung sah alle Dispositionsaktionen; „Neue Fahrt" ging auf, mit Kundensuche | die Übersicht war überhaupt nicht rechteabhängig | jede Karte und jede Schnellaktion an ihrer Fähigkeit; Sperre in `tun()` **und** in `ProbeFahrtassistent.starten()` und `.tun()` |
+| 8 | Mitarbeiter (1 von 22 Fähigkeiten) sah zehn Fahrten mit Kunden, Zielen, Fahrern | dieselbe Ursache wie 7 | eigene eingeschränkte Übersicht `eigeneUebersicht()` |
+
+### 63.3 Was an den Berechtigungen bewusst **nicht** verändert wurde
+
+- Die Fähigkeitsnamen sind unverändert. Es ist keine neue Fähigkeit
+  entstanden.
+- „Eine Fahrt aufnehmen" hängt an `operations.write` — derselben Fähigkeit,
+  die `ak-kunde-fahrt` aus der Kundenakte schon vorher verlangt hat. Das ist
+  keine neue Regel, sondern die vorhandene an der zweiten Tür.
+- Die Buchhaltung behält `customers.read`. Sie sieht Kunden in ihrer
+  Kundenliste — aber nicht an einer Fahrtenliste, für die ihr `fahrten.read`
+  fehlt.
+- Die Nachricht „Betriebsversammlung am Freitag" trägt `sichtbar:
+  ["self.read"]` und bleibt für den Mitarbeiter sichtbar. Sie ist
+  ausdrücklich an alle gerichtet.
+- Die bestätigte Ausnahme „trotz Abwesenheit im Dienst" zählt weiterhin als
+  im Dienst. Das ist eine bestehende fachliche Entscheidung.
+
+### 63.4 Drei Stellen, an denen bewusst nichts erfunden wurde
+
+1. **Die Leistungsart der Fahrt.** Die Einzelansicht soll die Leistung
+   zeigen. Die zehn Testfahrten hatten kein solches Feld. Eingetragen wurden
+   die **vorhandenen** Leistungsarten (`normal`, `kranken`, `serie`,
+   `flughafen`) — und FA-0002 bleibt leer, weil diese Anfrage noch nicht
+   geklärt ist. Die Ansicht sagt dort „nicht erfasst", nicht „Normalfahrt".
+2. **Der Zustand nach einem Wechsel.** Ob eine Fahrt durch das Setzen eines
+   Fahrers von „ungeplant" auf „geplant" springt, ist **nicht entschieden**.
+   Der Wechsel lässt den Zustand deshalb unverändert, und der Prüflauf
+   sichert das ab.
+3. **Der Wechsel bei abgeschlossenen und stornierten Fahrten.** Ob er dort
+   gesperrt sein soll, ist ebenfalls nicht entschieden. Es wurde **keine**
+   Sperre erfunden.
+
+### 63.5 Das Datum in der Einzelansicht
+
+Die Fahrtenliste ist die **Tagesliste** (`fahrtenHeute()`); an den Fahrten
+selbst steht kein Datum. Die Einzelansicht nennt deshalb das heutige Datum
+mit dem Zusatz „(Tagesliste)" statt ein Datum zu behaupten, das nicht in den
+Daten steht.
+
+---
+
+## 64. Alle neunzehn Prüfläufe, vollständig gefahren
+
+Stand 06.10.2026. Jeder Lauf bis zur gedruckten Abschlussbilanz, nach der
+letzten Änderung noch einmal vollständig von vorn.
+
+| Prüflauf | Ergebnis |
+|---|---|
+| `probe-portal-pruefen` | **114 bestanden, 0 offen** |
+| `probe-fahrt-pruefen` | **172 bestanden, 0 offen** |
+| `probe-planung-pruefen` | **171 bestanden, 0 offen** |
+| `probe-team-pruefen` | **197 bestanden, 0 offen** |
+| `probe-vorgaenge-pruefen` | **139 bestanden, 0 offen** |
+| `probe-teilung-pruefen` | **105 bestanden, 0 offen** |
+| `probe-dokument-pruefen` | **94 bestanden, 0 offen** |
+| `probe-regeln-pruefen` | **123 bestanden, 0 offen** |
+| `probe-zuordnung-pruefen` | **126 bestanden, 0 offen** |
+| `probe-karten-pruefen` | **88 bestanden, 0 offen** |
+| `probe-wahrheit-pruefen` | **78 bestanden, 0 offen** |
+| `probe-kalenderwege-pruefen` | **117 bestanden, 0 offen** (vorher 110) |
+| `probe-akten-pruefen` | **243 bestanden, 0 offen** |
+| `probe-analyse-pruefen` | **123 bestanden, 0 offen** |
+| `probe-datum-pruefen` | **162 bestanden, 0 offen** |
+| `probe-rechte-pruefen` | **220 bestanden, 0 offen** |
+| `probe-aktenweg-pruefen` | **121 bestanden, 0 offen** |
+| `probe-berechtigung-pruefen` | **99 bestanden, 0 offen** |
+| `probe-tagwahrheit-pruefen` (neu) | **157 bestanden, 0 offen** |
+| **Summe** | **2 649 bestanden, 0 offen** |
+
+In allen neunzehn Läufen: **null Anfragen nach außen.**
+
+### 64.1 Der neue Lauf
+
+`tools/pruefe-probe-tagwahrheit.mjs`, elf Abschnitte, 120 Prüfungen im
+Quelltext, 157 ausgeführte Zusicherungen:
+
+| Abschnitt | Prüft |
+|---|---|
+| 1 | FA-0002 und FA-0006 im Einzelnen; der Wechsel als **eine** Ebene mit Rückweg; der kranke Fahrer wird nicht angeboten; der Zustand bleibt unverändert; der Wechsel steht im Protokoll |
+| 2 | „Fahrer im Dienst" in Übersicht, Planungskopf und Filter; krank/Urlaub/Frei zählen nicht; ohne gesetzte Ausnahme steht nirgends eine |
+| 3 | Zähler am Filter = Zeilen in der Liste = Zahl im Kopf |
+| 4 | dieselbe Tageszuweisung in Planung, Fahrerkarte, Fahrzeugkarte und Quelle — **gegen den DOM**, nicht gegen den sichtbaren Text |
+| 5 | Kalender und Planung aus demselben Bestand; doppeltes Fahrzeug, Fahrer ohne Fahrzeug und Restschicht alle im Kalender; der Kalender ändert nichts |
+| 6 | vier statt sechs Dokumentwarnungen; Testfahrer 01 „alle gültig" in Personal **und** in Fahrer & Fahrzeuge |
+| 7 | Buchhaltung: keine Dispositionsaktion, keine betriebliche Kennzahl, kein Tagesverlauf; fünf direkte Aufrufe abgewiesen; keine Kundendaten im Markup; Übersicht, Meldungen, Kunden, Finanzen, Analyse bleiben |
+| 8 | Mitarbeiter: kein Kundenname, kein Ort, kein Kennzeichen, keine Kennzahl, keine Dispositionsaktion — auch nicht im Markup; Meldungen und die Nachricht an alle bleiben; vier direkte Aufrufe und der Assistent abgewiesen |
+| 9 | Personal, Disposition und Administration behalten alles, was sie hatten |
+| 10 | Ladefehler bleibt vom leeren Bestand unterscheidbar |
+| 11 | Quelltext: keine zweite Rechnung, kein Netzzugriff |
+
+### 64.2 Drei veraltete Prüferwartungen, angepasst mit Begründung
+
+Alle drei stehen in `probe-kalenderwege`. Die Begründung steht **im
+Prüflauf selbst**, an der Stelle, nicht nur hier.
+
+| Alte Erwartung | Weshalb sie nicht mehr gilt | Was jetzt geprüft wird |
+|---|---|---|
+| „es gibt einzelne Schichteinträge" unter der Kategorie **Schicht** | Seit der Umstellung auf den zentralen Bestand sind an diesem Testtag **alle vier** Schichtzeilen konfliktbehaftet. Konfliktbehaftete Schichten dürfen ausdrücklich nicht als gewöhnliche Schichten erscheinen — die alte Erwartung hat genau das verlangt | jede Schichtzeile hat **einen** Eintrag, der **alle** Angaben trägt (Name, Zeit, Fahrzeug, Zustand, Planstatus), ob unter „Schicht" oder „Konflikt"; **keine** betroffene Zeile unter „Schicht"; dazu die **Gegenprobe an einem konfliktfreien Tag**, an dem Schichten wieder als Schichten erscheinen |
+| der Wortlaut „ist krank" | Der Satz stammte aus `schichtbefund()`, das der Kalender für Konflikte nicht mehr verwendet | die **Sache**: Die Zeile steht unter „Konflikt", nennt „Abwesend, Schicht noch im Plan" und den Zustand „Krank" — und **keine** Schicht trägt den Zustand „Krank" |
+
+**Keine** Anpassung hat den Lauf schwächer gemacht: `probe-kalenderwege` prüft
+danach **117** statt 110 Punkte.
+
+### 64.3 Zwei Funde des bestehenden Laufs — echte Fehler, nicht Testrauschen
+
+Die Umstellung des Kalenders auf den zentralen Bestand hat `probe-kalenderwege`
+zu Recht umgeworfen. Zwei davon waren **meine** Fehler:
+
+1. **Dem zentralen Bestand fehlte eine Regel.** Eine Zeile mit Uhrzeit, die
+   nicht im Dienst und auch nicht abwesend ist, war im zentralen
+   `konflikteFuer()` gar kein Konflikt. Diese Regel stand nur in
+   `schichtbefund()` und war damit **nur im Kalender** wirksam. Jetzt steht
+   sie zentral — also auch in Planung, Übersicht und Meldungen.
+2. **Das Konfliktentry des Kalenders verlor Angaben.** Es nannte nur noch den
+   Grund, nicht mehr Zeit, Fahrzeug, Zustand und Planstatus. Der Konflikt
+   kommt **dazu**, er ersetzt sie nicht.
+
+### 64.4 Was diese Zahlen nicht sagen
+
+- **Eine Prüfung im Browser schützt nichts.** Diese neunzehn Läufe belegen,
+  dass die Oberfläche nichts ausliefert, was sie nicht darf. Dass dieselben
+  Fähigkeiten **serverseitig** greifen — Supabase-Rollen, Grants, RLS —, ist
+  **nicht** gezeigt. Im Betrieb ist das der entscheidende Teil.
+- Es ist **keine Datenquelle** angebunden. Alles liegt im Speicher des
+  Browsers und ist nach dem Neuladen weg.
+- Der produktive Verwaltungsbereich unter `admin/`, das Mitarbeiterportal
+  unter `fahrer/` und alles unter `supabase/` sind **unverändert**.
+
+---
+
+## 65. Manueller Testweg zum achten Durchgang
+
+Vorschau: `npm run probe-portal`, dann die genannte Adresse. Rolle und Konto
+stehen oben im Banner. **Nichts davon verlässt den Browser.**
+
+### A. Die Fahrt im Einzelnen (Fehler 1)
+
+1. Als **Administration**, Bereich **Fahrten**, Ansicht **Alle**.
+2. Bei **FA-0002** auf **Öffnen**.
+3. Erwartung: Kein Platzhaltertext. Es stehen da: Nummer, Zustand
+   **Eingang**, **Gastfahrt – kein Kundenkonto**, Abholung *Testplatz 2,
+   Germersheim*, Ziel *Testziel B*, Datum mit dem Zusatz *(Tagesliste)*,
+   **Abholzeit: Zeit offen**, **Leistung: nicht erfasst**, Fahrer und
+   Fahrzeug **nicht zugewiesen**.
+4. Unter **Hinweise** stehen **zwei** Sätze: dass keine verbindliche
+   Abholzeit erfasst ist, und *Rückfrage zur Uhrzeit offen*.
+5. Schließen, **FA-0006** öffnen. Erwartung: **13:20**, Fahrgast
+   *Testfahrgast Werk 2*, Leistung **Normalfahrt**, Zustand **Geplant**.
+6. **Fahrer wechseln**. Erwartung: **ein** Fenster, nicht zwei; ein Knopf
+   **Zurück zur Fahrt** oben und unten; angeboten werden **Testfahrer 01,
+   03 und 05** — der kranke **Testfahrer 02 nicht**.
+7. **Testfahrer 01** wählen. Erwartung: zurück in der Einzelansicht, Fahrer
+   geändert, Zustand **weiterhin Geplant** (ob ein Wechsel den Zustand
+   ändern soll, ist nicht entschieden — siehe 63.4).
+
+### B. Eine Zahl für „im Dienst" (Fehler 2)
+
+1. **Übersicht**: „**3** im Dienst".
+2. **Planung**, Kopfzeile: ebenfalls **3**. Filter **Im Dienst**: **drei**
+   Zeilen.
+3. **Testfahrer 02** ist in keiner davon — er ist krank gemeldet.
+
+### C. Zähler gleich Liste (Fehler 3)
+
+1. **Planung**, der Filter **Nur Konflikte** trägt **4**.
+2. Anklicken. Erwartung: **vier** Zeilen — Testfahrer 01, 02, 03 und 05.
+3. Die Kopfzeile sagt ebenfalls „**4** mit Konflikt".
+
+### D. Eine Tageszuweisung (Fehler 4)
+
+1. **Planung**: In der Zeile von Testfahrer 02 steht in der Fahrzeugspalte
+   ein **„—"** — kein Auswahlfeld, und *GER-TEST 002* steht auch nicht als
+   vorgewählte Option im Markup.
+2. **Fahrer & Fahrzeuge**: Die Karte von Testfahrer 02 nennt **kein**
+   Fahrzeug. **Rechtsklick → Untersuchen**: *GER-TEST 002* steht auch
+   **nicht verborgen** im Markup.
+3. Die Karte von **GER-TEST 002** steht auf **Frei** und nennt Testfahrer 02
+   nicht.
+
+### E. Der Kalender rechnet nicht selbst (Fehler 5)
+
+1. **Kalender**, Sicht **Tag**.
+2. Erwartung: **vier** Konflikteinträge, nicht einer. Darunter ausdrücklich
+   **Fahrzeug doppelt** (Testfahrer 01 und 05 mit GER-TEST 001) und **kein
+   Fahrzeug** (Testfahrer 03).
+3. Erwartung: Keine dieser vier steht als gewöhnliche grüne Schicht da.
+4. Der Kalender bietet **keine** Änderung an — er bleibt nur-lesend.
+
+### F. Der Dokumentstand (Fehler 6)
+
+1. **Personal**: Die Kopfzeile sagt „**4** Dokumentstände zu prüfen".
+2. Die Zeile **Testfahrer 01** trägt **alle gültig** — seine Dokumente laufen
+   bis 2027.
+3. Vier Zeilen tragen eine Warnung: Testfahrer 02, 03, 05 und 06.
+4. **Fahrer & Fahrzeuge** warnt bei Testfahrer 01 ebenfalls nicht.
+
+### G. Die Buchhaltung (Fehler 7)
+
+1. Rolle **Buchhaltung**, Bereich **Übersicht**.
+2. Erwartung: **Kein** „Neue Fahrt aufnehmen", **keine** Schnellaktionen
+   „Neue Fahrt", „Schicht planen", „Fahrer wechseln", „Fahrzeug wechseln",
+   „Anfrage bearbeiten". **Kein Tagesverlauf.** Keine Kennzahlen „Fahrten
+   heute", „gerade unterwegs", „Fahrer im Dienst", „Fahrzeuge verfügbar".
+3. Sichtbar bleiben **Warnungen** und **Meldungen**.
+4. **Entwicklerkonsole** öffnen und eingeben:
+   `window.ProbeBereiche.tun("neue-fahrt")`. Erwartung: **Keine
+   Berechtigung** — und **kein** Schritt 1, keine Kundensuche, keine
+   Telefonnummer, keine Adresse, auch nicht im Markup.
+5. Dasselbe mit `window.ProbeFahrtassistent.starten()` und mit
+   `window.ProbeFahrtassistent.tun("fa-schritt","2")`. Erwartung: Dieselbe
+   Absage; der Schrittaufruf bringt sie nicht weiter.
+6. Dasselbe mit `window.ProbeBereiche.tun("fahrt-oeffnen:FA-0001")` und
+   `…tun("wechsel-fahrer:FA-0006")`.
+7. **Übersicht, Meldungen, Kunden, Finanzen, Analyse** bleiben vollständig
+   erreichbar.
+
+### H. Der Mitarbeiter (Fehler 8)
+
+1. Rolle **Mitarbeiter**, Bereich **Übersicht**.
+2. Erwartung: **Keine** Fahrt, **kein** Kundenname, **kein** Abholort,
+   **kein** Ziel, **kein** Kennzeichen, **keine** betriebliche Kennzahl,
+   **keine** Dispositionsaktion — auch nicht verborgen im Markup
+   (Strg+U gegenlesen).
+3. Erwartung: Eine Kennzahl **Meldungen für Sie**, der Abschnitt
+   **Nachrichten** mit **Betriebsversammlung am Freitag**, sein eigener Name
+   im Kopf, und ein Satz, der sagt, weshalb der Rest fehlt.
+4. In der Navigation stehen nur **Übersicht** und **Meldungen**.
+5. **Entwicklerkonsole**: `window.ProbeBereiche.tun("fahrt-oeffnen:FA-0001")`,
+   `…tun("neue-fahrt")`, `…tun("wechsel-fahrer:FA-0006")`,
+   `…tun("wechsel-fahrzeug:FA-0006")`, `window.ProbeFahrtassistent.starten()`.
+   Erwartung: **Nirgends** ein Testkunde, eine Teststraße oder ein
+   GER-TEST-Kennzeichen.
+
+### I. Was keine Rolle verloren haben darf
+
+| Rolle | Erwartung |
+|---|---|
+| **Personal** | Personal, Lohn, Meldungen erreichbar; die Krankmeldung V0002 **vollständig**, mit Bescheinigung |
+| **Disposition** | V0002 sichtbar, aber mit dem vorgegebenen Sperrsatz und **ohne** Dateiname im Markup; Übersicht, Fahrten, Planung, Fahrer & Fahrzeuge, Kalender vollständig |
+| **Administration** | alles — Neue Fahrt, beide Wechsel, Schicht planen, Tagesverlauf, alle Kennzahlen |
+
+### J. Ladefehler bleibt Ladefehler
+
+**Fahrten**, in der Konsole `window.ProbeBereiche.tun("fahrt-zustand:fehler")`.
+Erwartung: „konnten nicht geladen werden" **und** der Satz, dass das nicht
+heißt, es gäbe keine Einträge. Mit `…:leer` umgekehrt: „Das ist kein Fehler."

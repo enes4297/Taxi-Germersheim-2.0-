@@ -126,32 +126,73 @@
            Jetzt kommt jede Schicht einzeln, mit Namen, Zeit,
            Fahrzeug, Zustand und Planstatus. Ungueltige erscheinen
            als Konflikt - nicht als Schicht und nicht gar nicht. --- */
-    /* Schichten und Konflikte - Planungssicht. */
+    /*
+      Schichten und Konflikte - Planungssicht.
+
+      GEMESSENER AUSGANGSFEHLER: Dieser Block leitete seine Konflikte
+      aus schichtbefund() ab. Der sieht nur EINE Zeile fuer sich und
+      kennt daher nur den Widerspruch Zeit-gegen-Abwesenheit. Am
+      06.10.2026 nannte der Kalender deshalb genau einen Konflikt
+      (Testfahrer 02), waehrend Planung und Uebersicht vier Zeilen
+      zaehlten: Ein doppelt vergebenes Fahrzeug und ein Fahrer ohne
+      Fahrzeug standen hier als gewoehnliche gruene Schichten.
+
+      Jetzt fragt der Kalender denselben zentralen Konfliktbestand wie
+      Planung, Uebersicht und Meldungen. Der Kalender bleibt dabei
+      nur-lesend: Er zeigt und verlinkt, er aendert nichts.
+    */
     if (R.darf("planung.read")) {
       const plan = D.planung[isoTag];
       const schichten = D.schichtenAmTag(isoTag);
       const planStatus = plan && plan.veroeffentlicht ? "veröffentlicht" : "Entwurf";
+      const konflikte = D.konflikteFuer(isoTag);
+      const betroffen = D.konfliktZeilen(konflikte);
+      /* Alle Gruende zu einer Zeile - ein Eintrag kann zwei Fahrer
+         nennen, dann gilt er fuer beide. */
+      const gruendeVon = (id) => konflikte
+        .filter((k) => k.kennung === id || k.zweiteKennung === id)
+        .map((k) => k.kurz);
+
       for (const s of schichten) {
-        const name = s.mitarbeiter ? s.mitarbeiter.name : s.zeile.mitarbeiterId;
+        const id = s.zeile.mitarbeiterId;
+        const name = s.mitarbeiter ? s.mitarbeiter.name : id;
         const wagen = s.fahrzeug ? s.fahrzeug.kennzeichen : "kein Fahrzeug";
         const zeit = s.zeile.von + "–" + s.zeile.bis;
         const zustand = D.STATUS_IM_KALENDER[s.befund.status] || s.befund.status;
-        if (s.befund.gueltig) {
+        /* Die Angaben der Schicht. Ein Konflikt kommt DAZU - er
+           ersetzt sie nicht, sonst verliert der Eintrag Zeit,
+           Fahrzeug, Zustand und Planstatus. */
+        const fakten = zeit + " · " + wagen + " · " + zustand + " · " + planStatus
+          + (s.befund.ausnahme ? " · bestätigte Ausnahme" : "");
+        if (!betroffen.has(id)) {
           liste.push({
             art: "schicht",
             marke: plan && plan.veroeffentlicht ? "gut" : "ruhig",
             titel: name,
-            zusatz: zeit + " · " + wagen + " · " + zustand + " · " + planStatus
-              + (s.befund.ausnahme ? " · bestätigte Ausnahme" : ""),
+            zusatz: fakten,
             ziel: "planung", tag: isoTag
           });
         } else {
           liste.push({
             art: "konflikt", marke: "warnung", titel: name,
-            zusatz: s.befund.konflikt + " · " + zeit + " · " + wagen,
+            zusatz: gruendeVon(id).join(" · ") + " · " + fakten,
             ziel: "planung", tag: isoTag
           });
         }
+      }
+
+      /* Konflikte an Zeilen ohne Uhrzeit. schichtenAmTag() laesst sie
+         weg - eine Zeile ohne Zeit ist keine Schicht. Ein Konflikt ist
+         sie trotzdem, und der Kalender darf nicht weniger zeigen als
+         Planung und Uebersicht. */
+      for (const id of betroffen) {
+        if (schichten.some((s) => s.zeile.mitarbeiterId === id)) continue;
+        const m = D.mitarbeiter.find((x) => x.id === id);
+        liste.push({
+          art: "konflikt", marke: "warnung", titel: m ? m.name : id,
+          zusatz: gruendeVon(id).join(" · ") + " · ohne Uhrzeit",
+          ziel: "planung", tag: isoTag
+        });
       }
     }
 

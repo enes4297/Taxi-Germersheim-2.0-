@@ -112,204 +112,40 @@
     "krank" und "urlaub" schlagen auf Filter, Kennzahlen, Konflikte und
     die Veroeffentlichung durch.
   */
-  function tagesstatus(e, z) {
-    const abw = abwesenheitVon(e, z.mitarbeiterId);
-    if (abw.wirksam && !z.ausnahme) return abw.wirksam.art;   // "krank" | "urlaub"
-    return z.imDienst ? "dienst" : "frei";
-  }
+  /* Eine Weiterleitung an die zentrale Tageswahrheit in
+     probe-daten.js. Die Planung arbeitet am Entwurf, der Rest am
+     gespeicherten Plan - die Regel ist dieselbe. */
+  const tagesstatus = (e, z) => D.tagesstatusAm(e.iso, z);
 
   const STATUSNAMEN = { dienst: "Im Dienst", frei: "Frei", krank: "Krank", urlaub: "Urlaub" };
 
   /* Arbeitet die Person an diesem Tag tatsaechlich? Eine begruendete
      Ausnahme zaehlt als Dienst. */
-  const arbeitetAmTag = (e, z) => tagesstatus(e, z) === "dienst";
+  const arbeitetAmTag = (e, z) => D.arbeitetAm(e.iso, z);
 
-  /* Deckt die Abwesenheit die Schicht nur teilweise ab? Das kann bei
-     einer Nachtschicht vorkommen: Der Teil nach Mitternacht faellt auf
-     den Folgetag, den die Abwesenheit nicht mehr umfasst. */
-  function nurTeilweiseAbgedeckt(e, z, abw) {
-    if (!abw || !abw.wirksam) return false;
-    if (!z.von || !z.bis) return false;
-    if (!window.ProbeZeit.ueberMitternacht(z.von, z.bis)) return false;
-    const folgetag = D.alsIso(new Date(new Date(e.iso + "T00:00:00").getTime() + 86400000));
-    return !(folgetag >= abw.wirksam.von && folgetag <= abw.wirksam.bis);
-  }
-
-  /* ---- Konflikte ----
-     Getrennt nach zwei Arten, weil sie verschieden schwer wiegen:
-
-     "technisch"  - die Daten sind nicht verwendbar. Veroeffentlichen
-                    ist ausgeschlossen, nicht nur unerwuenscht.
-     "betrieblich" - fachlich unguenstig, aber eine bewusste
-                    Entscheidung ist moeglich.
+  /* Die Zeitrechnung fuer Schichten und die Pruefung auf teilweise
+     abgedeckte Abwesenheit stehen jetzt in probe-daten.js, bei den
+     uebrigen Konfliktregeln. Hier lagen sie doppelt - und nur die
+     Planung kam daran.
   */
-  function minuten(zeit) {
-    if (!zeit || !/^\d{2}:\d{2}$/.test(zeit)) return null;
-    const [s, m] = zeit.split(":").map(Number);
-    return s * 60 + m;
-  }
 
-  /* Zwei Schichten am selben Fahrzeug ueberschneiden sich? Schichten
-     ueber Mitternacht werden dabei in zwei Stuecke zerlegt. */
-  function abschnitte(von, bis) {
-    const a = minuten(von);
-    const b = minuten(bis);
-    if (a === null || b === null) return [];
-    if (b > a) return [[a, b]];
-    if (b === a) return [[a, a + 1]];
-    return [[a, 1440], [0, b]];
-  }
-  const ueberschneidet = (x, y) =>
-    abschnitte(x.von, x.bis).some(([a1, b1]) =>
-      abschnitte(y.von, y.bis).some(([a2, b2]) => a1 < b2 && a2 < b1));
+  /*
+    Die Konflikte des Planungsentwurfs.
 
-  function konflikteVon(entwurf) {
-    const liste = [];
-    /* Fuer die Fahrzeugpruefung zaehlt, wer an diesem Tag wirklich
-       faehrt - wer krank oder im Urlaub ist, belegt kein Fahrzeug. */
-    const imDienst = entwurf.zeilen.filter((z) => arbeitetAmTag(entwurf, z));
-    const tagText = D.alsText(new Date(entwurf.iso + "T00:00:00"));
+    GEMESSENE AUSGANGSFEHLER: Der Kalender leitete seine Konflikte
+    aus schichtbefund() ab und sah deshalb nur, was eine EINZELNE
+    Zeile verraet - ein doppelt vergebenes Fahrzeug und ein Fahrer
+    ohne Fahrzeug fielen dort nicht auf. Die Regeln standen hier, in
+    der Planung, und waren fuer andere Ansichten nicht erreichbar.
 
-    for (const z of entwurf.zeilen) {
-      const m = mitarbeiterVon(z.mitarbeiterId);
-      const name = m ? m.name : z.mitarbeiterId;
-
-      /* Technisch: der Mitarbeiter ist gar nicht bekannt. */
-      if (!m) {
-        liste.push({
-          art: "technisch", kennung: z.mitarbeiterId, kurz: "Mitarbeiter unbekannt",
-          text: `Zu der Kennung ${z.mitarbeiterId} gibt es keinen Mitarbeiterdatensatz.`
-        });
-        continue;
-      }
-      const abw = abwesenheitVon(entwurf, z.mitarbeiterId);
-
-      /* Technisch: krank UND genehmigter Urlaub am selben Tag. Das ist
-         ein Widerspruch in den Daten, keine Ermessensfrage. */
-      if (abw.widerspruch) {
-        liste.push({
-          art: "technisch", kennung: z.mitarbeiterId, kurz: "Krank und Urlaub zugleich",
-          text: `${name} ist am ${tagText} gleichzeitig krank gemeldet und im genehmigten Urlaub. Diese beiden Angaben widersprechen sich.`
-        });
-        continue;
-      }
-
-      /* Betrieblich: Abwesenheit und Schicht treffen aufeinander.
-         Zwei verschiedene Lagen, die verschieden zu lesen sind:
-
-         a) Der Dispatcher hat bewusst abgewichen - es gibt eine
-            begruendete Ausnahme. Die Person arbeitet.
-         b) Es steht noch eine Schicht im Plan, obwohl die Abwesenheit
-            gilt. Die Schicht ist NICHT aktiv; der Plan ist nur noch
-            nicht aufgeraeumt.
-
-         Eine Abwesenheit ganz ohne Schicht ist dagegen kein Konflikt -
-         das ist der Normalfall. */
-      if (abw.wirksam) {
-        const artName = abw.wirksam.art === "krank" ? "krank gemeldet" : "im genehmigten Urlaub";
-        const schicht = z.von && z.bis ? `${z.von}–${z.bis}` : "ohne Zeit";
-        const fz = z.fahrzeugId ? fahrzeugVon(z.fahrzeugId) : null;
-
-        if (z.ausnahme) {
-          liste.push({
-            art: "betrieblich", kennung: z.mitarbeiterId,
-            kurz: abw.wirksam.art === "krank" ? "Krank, trotzdem im Dienst" : "Urlaub, trotzdem im Dienst",
-            text: `${name} ist am ${tagText} ${artName} (${D.zeitraumText(abw.wirksam)}), ist aber für ${schicht}${fz ? ` mit ${fz.kennzeichen}` : ""} eingeplant.`,
-            ausnahme: z.ausnahme.grund
-          });
-        } else if (z.imDienst || z.von || z.bis || z.fahrzeugId) {
-          liste.push({
-            art: "betrieblich", kennung: z.mitarbeiterId,
-            kurz: "Abwesend, Schicht noch im Plan",
-            text: `${name} ist am ${tagText} ${artName} (${D.zeitraumText(abw.wirksam)}), im Plan steht aber noch ${schicht}${fz ? ` mit ${fz.kennzeichen}` : ""}. Diese Schicht ist nicht aktiv — bitte auf „${D.ABWESENHEIT_NAMEN[abw.wirksam.art]}“ setzen oder eine Ausnahme begründen.`
-          });
-        }
-      }
-
-      /* Betrieblich: die Abwesenheit deckt nur einen Teil der Schicht. */
-      if (nurTeilweiseAbgedeckt(entwurf, z, abw)) {
-        liste.push({
-          art: "betrieblich", kennung: z.mitarbeiterId, kurz: "Abwesenheit deckt nur einen Teil",
-          text: `${name}: Die Schicht ${z.von}–${z.bis} geht über Mitternacht hinaus, die eingetragene Abwesenheit endet aber am ${tagText}.`
-        });
-      }
-
-      if (!arbeitetAmTag(entwurf, z)) continue;
-
-      /* Technisch: die Uhrzeit ist unvollstaendig oder ungueltig. */
-      if (entwurf.zeitfehler[z.mitarbeiterId]) {
-        liste.push({
-          art: "technisch", kennung: z.mitarbeiterId, kurz: "Uhrzeit ungültig",
-          text: `${name}: ${entwurf.zeitfehler[z.mitarbeiterId]}`
-        });
-        continue;
-      }
-      if (!z.von || !z.bis || minuten(z.von) === null || minuten(z.bis) === null) {
-        liste.push({
-          art: "technisch", kennung: z.mitarbeiterId, kurz: "Uhrzeit unvollständig",
-          text: `${name}: Die individuelle Uhrzeit ist unvollständig.`
-        });
-        continue;
-      }
-
-      /* Technisch: das Fahrzeug gibt es nicht. */
-      if (z.fahrzeugId && !fahrzeugVon(z.fahrzeugId)) {
-        liste.push({
-          art: "technisch", kennung: z.mitarbeiterId, kurz: "Fahrzeug unbekannt",
-          text: `${name}: Die Fahrzeugkennung ${z.fahrzeugId} gehört zu keinem Fahrzeug.`
-        });
-        continue;
-      }
-
-      /* Betrieblich: kein Fahrzeug zugewiesen. */
-      if (!z.fahrzeugId) {
-        liste.push({
-          art: "betrieblich", kennung: z.mitarbeiterId, kurz: "kein Fahrzeug",
-          text: `${name} ist im Dienst, aber es wurde kein Fahrzeug zugewiesen.`
-        });
-        continue;
-      }
-
-      /* Betrieblich: Fahrzeug steht in der Werkstatt. */
-      const fz = fahrzeugVon(z.fahrzeugId);
-      if (fz.zustand !== "verfuegbar") {
-        liste.push({
-          art: "betrieblich", kennung: z.mitarbeiterId, kurz: "Fahrzeug nicht verfügbar",
-          text: `${name} soll ${fz.name} · ${fz.kennzeichen} fahren, das Fahrzeug steht aber in der Werkstatt.`
-        });
-      }
-    }
-
-    /* Betrieblich: dasselbe Fahrzeug zur selben Zeit. */
-    for (let i = 0; i < imDienst.length; i += 1) {
-      for (let j = i + 1; j < imDienst.length; j += 1) {
-        const a = imDienst[i];
-        const b = imDienst[j];
-        if (!a.fahrzeugId || a.fahrzeugId !== b.fahrzeugId) continue;
-        if (!ueberschneidet(a, b)) continue;
-        const fz = fahrzeugVon(a.fahrzeugId);
-        const na = mitarbeiterVon(a.mitarbeiterId);
-        const nb = mitarbeiterVon(b.mitarbeiterId);
-        if (!fz || !na || !nb) continue;
-        liste.push({
-          art: "betrieblich", kennung: a.mitarbeiterId, zweiteKennung: b.mitarbeiterId,
-          kurz: "Fahrzeug doppelt",
-          text: `${na.name} und ${nb.name} verwenden gleichzeitig ${fz.kennzeichen}.`
-        });
-      }
-    }
-    return liste;
-  }
-
+    Jetzt stehen sie in probe-daten.js. Diese Funktion gibt nur noch
+    den Entwurf hinein - damit rechnen Planung, Kalender, Uebersicht
+    und Meldungen nachweislich dasselbe.
+  */
+  const konflikteVon = (entwurf) =>
+    D.konflikteFuer(entwurf.iso, entwurf.zeilen, entwurf.zeitfehler);
   /* Welche Mitarbeiter sind von mindestens einem Konflikt betroffen? */
-  function betroffene(liste) {
-    const menge = new Set();
-    for (const k of liste) {
-      menge.add(k.kennung);
-      if (k.zweiteKennung) menge.add(k.zweiteKennung);
-    }
-    return menge;
-  }
+  const betroffene = (liste) => D.konfliktZeilen(liste);
 
   const kurzHinweis = (liste, mitarbeiterId) => {
     const treffer = liste.find((k) => k.kennung === mitarbeiterId || k.zweiteKennung === mitarbeiterId);
@@ -319,70 +155,163 @@
   /* ============================================================
      1. Übersicht
      ============================================================ */
+  /*
+    Die eingeschraenkte Uebersicht.
+
+    GEMESSENER AUSGANGSFEHLER: Ein Mitarbeiter mit genau EINER
+    Faehigkeit (self.read von 22) bekam dieselbe Uebersicht wie die
+    Disposition: zehn Fahrten mit Kunden, Abholorten, Zielen, Fahrern
+    und Fahrzeugen, dazu die betrieblichen Kennzahlen und alle
+    Dispositionsaktionen.
+
+    Hier wird nicht die Dispositionsuebersicht abgeschwaecht, sondern
+    eine eigene gezeigt: was diese Person betrifft. Die Meldungen
+    bleiben - und mit ihnen die Nachricht an alle Mitarbeiter, die
+    ausdruecklich an alle gerichtet ist.
+  */
+  function eigeneUebersicht(meldungen, nachrichten) {
+    return `
+      <div class="bereichskopf">
+        <div>
+          <h1>Übersicht</h1>
+          <p class="wichtig">${h(D.alsText(D.heute))} · ${h(R.aktuellesKonto().name)} · ${h(R.ROLLENNAMEN[R.zustand.rolle])}</p>
+        </div>
+      </div>
+
+      <div class="flaeche">
+        <h2>Für Sie</h2>
+        <div class="kennzahlen">
+          ${R.kennzahl(meldungen.length, "Meldungen für Sie", meldungen.length ? "warnung" : "gut", "meldungen")}
+        </div>
+        <p class="schritt-hinweis">Fahrten, Planung, Flotte und Kundendaten gehören zur
+          Disposition beziehungsweise zur Verwaltung. Sie sind in Ihrer Übersicht nicht
+          enthalten — das ist keine Störung.</p>
+      </div>
+
+      <div class="flaeche">
+        <h2>Nachrichten</h2>
+        ${nachrichten.length
+          ? `<ul class="konfliktliste">${nachrichten.map((v) => `<li>
+              <strong>${h(v.titel)}</strong>
+              ${v.daten && v.daten.text ? `<br>${h(v.daten.text)}` : ""}
+              <br><span style="color:var(--gedaempft)">${h(v.betrifft.name)} · ${h(v.eingang)}</span>
+            </li>`).join("")}</ul>`
+          : R.kastenLeer("Nachrichten für Sie")}
+      </div>
+
+      <div class="flaeche">
+        <h2>Schnellaktionen</h2>
+        <div class="wahlraster">
+          <button class="wahlkarte" type="button" data-ziel="meldungen"><strong>Meldungen</strong><span>${h(meldungen.length)} offen</span></button>
+        </div>
+      </div>`;
+  }
+
+  /* ============================================================
+     1. Übersicht
+     ============================================================
+
+     GEMESSENER AUSGANGSFEHLER: Dieser Bereich war ueberhaupt nicht
+     rechteabhaengig. Die Buchhaltung sah "Neue Fahrt", "Schicht
+     planen", "Fahrer wechseln", "Fahrzeug wechseln" und "Anfrage
+     bearbeiten", obwohl ihr operations.write, planung.read und
+     fahrten.read fehlen - und "Neue Fahrt" ging auch auf.
+
+     Jetzt entscheidet jede Faehigkeit ueber ihren Abschnitt. Nicht
+     erlaubte Schnellaktionen werden WEGGELASSEN, nicht ausgegraut,
+     und die Daten dahinter werden gar nicht erst abgefragt. Die
+     Handler sperren zusaetzlich - siehe tun().
+  */
   function uebersicht() {
     const iso = D.alsIso(D.heute);
-    const plan = D.planung[iso];
-    const imDienst = plan.zeilen.filter((z) => z.imDienst).length;
-    const ohneFahrzeug = plan.zeilen.filter((z) => z.imDienst && !z.fahrzeugId).length;
-    const frei = D.fahrzeuge.filter((f) => f.zustand === "verfuegbar").length;
-    /*
-      Keine eigene Rechnung mehr. Die Uebersicht zaehlte "Fahrten
-      heute" ohne stornierte und zeigte damit 9, wo Kalender und
-      Fahrtenliste 10 zeigten. Und sie rechnete "ungeplant + eingang"
-      = 4, sprang aber in den Filter "ungeplant" mit 2.
 
-      Jetzt kommt jede Zahl aus derselben Definition in probe-daten.js.
+    const darfFahrten = R.darf("fahrten.read");
+    const darfPlanung = R.darf("planung.read");
+    const darfFlotte  = R.darf("fleet.read");
+    const darfTun     = R.darf("operations.write");
+    /* Ohne jede betriebliche Faehigkeit ist das hier nicht die
+       richtige Uebersicht. */
+    const betrieblich = darfFahrten || darfPlanung || darfFlotte;
+
+    /* Diese beiden Bestaende sind selbst schon sichtbarkeitsgefiltert. */
+    const meldungen = window.ProbeVorgaenge.offeneFuerMich();
+    const nachrichten = window.ProbeVorgaenge.nachrichtenFuerMich();
+    const warnungen = window.ProbeVorgaenge.offeneWarnungen().length;
+
+    if (!betrieblich) return eigeneUebersicht(meldungen, nachrichten);
+
+    /*
+      Fahrer im Dienst, Fahrzeug und Konflikt kommen aus derselben
+      Tageswahrheit wie die Planung (probe-daten.js). Vorher stand
+      hier plan.zeilen.filter((z) => z.imDienst) - das rohe
+      Kennzeichen ohne Abwesenheit: Die Uebersicht zeigte vier Fahrer
+      im Dienst, die Planung fuer denselben Tag drei, weil der kranke
+      Testfahrer 02 noch eine alte Schicht im Plan hatte.
+
+      Abgefragt wird nur, was gezeigt werden darf.
     */
-    const alleHeute = D.fahrtenHeute();
+    const fahrend = darfPlanung ? D.imDienstAm(iso) : [];
+    const imDienst = fahrend.length;
+    const ohneFahrzeug = fahrend.filter((z) => !D.fahrzeugAktiv(iso, z)).length;
+
+    /* Keine eigene Rechnung mehr: Jede Fahrtenzahl kommt aus
+       derselben Definition in probe-daten.js. */
+    const alleHeute = darfFahrten ? D.fahrtenHeute() : [];
     const heuteAlle = alleHeute.length;
-    const offeneZuweisung = D.nichtZugewiesen().length;
+    const offeneZuweisung = darfFahrten ? D.nichtZugewiesen().length : 0;
     const eingang = alleHeute.filter((f) => f.zustand === "eingang").length;
     const unterwegs = alleHeute.filter((f) => f.zustand === "unterwegs").length;
-    /* Aus demselben Bestand wie "Meldungen & Aufgaben" - nicht aus
-       einer zweiten Liste. Sonst zeigten Uebersicht und Eingang
-       verschiedene Zahlen. */
-    const meldungen = window.ProbeVorgaenge.offeneFuerMich();
-    /*
-      Die Warnungen kommen aus demselben Modul, das sie auch anzeigt -
-      sonst zaehlt die Uebersicht neun und der Reiter zeigt drei
-      erledigte. Genau das ist im Rundgang passiert.
-    */
-    const warnungen = window.ProbeVorgaenge.offeneWarnungen().length;
+    const frei = darfFlotte ? D.fahrzeuge.filter((f) => f.zustand === "verfuegbar").length : 0;
 
     /* Derselbe Sortierer wie in der Fahrtenliste und im Kalender.
        Fahrten ohne geklaerte Zeit stehen hinten, nicht dazwischen. */
-    const naechste = D.nachZeit(
-      alleHeute.filter((f) => ["geplant", "unterwegs", "ungeplant"].includes(f.zustand))
-    ).slice(0, 6);
+    const naechste = darfFahrten
+      ? D.nachZeit(alleHeute.filter((f) => ["geplant", "unterwegs", "ungeplant"].includes(f.zustand))).slice(0, 6)
+      : [];
+
+    /* Jede Karte einzeln an ihrer Faehigkeit. */
+    const karten = [
+      darfFahrten ? R.kennzahl(heuteAlle, "Fahrten heute", "", "fahrten:alle") : "",
+      darfFahrten ? R.kennzahl(offeneZuweisung, "noch nicht zugewiesen", offeneZuweisung ? "warnung" : "gut", "fahrten:offen") : "",
+      darfFahrten ? R.kennzahl(unterwegs, "gerade unterwegs", "marke", "fahrten:unterwegs") : "",
+      darfPlanung ? R.kennzahl(imDienst, "Fahrer im Dienst", "gut", "planung") : "",
+      darfFlotte  ? R.kennzahl(frei, "Fahrzeuge verfügbar", "gut", "team") : "",
+      darfPlanung ? R.kennzahl(ohneFahrzeug, "im Dienst ohne Fahrzeug", ohneFahrzeug ? "warnung" : "gut", "planung") : "",
+      R.kennzahl(warnungen, "Warnungen", warnungen ? "warnung" : "gut", "meldungen:warnungen")
+    ].filter(Boolean).join("");
+
+    /* Ebenso die Schnellaktionen. Weggelassen, nicht ausgegraut. */
+    const schnell = [
+      darfTun ? `<button class="wahlkarte" type="button" data-tun="neue-fahrt"><strong>Neue Fahrt</strong><span>Fahrt aufnehmen</span></button>` : "",
+      darfPlanung ? `<button class="wahlkarte" type="button" data-ziel="planung"><strong>Schicht planen</strong><span>Heute oder morgen</span></button>` : "",
+      darfTun && darfFahrten ? `<button class="wahlkarte" type="button" data-tun="wechsel-fahrer"><strong>Fahrer wechseln</strong><span>Bei einer Fahrt</span></button>` : "",
+      darfTun && darfFahrten ? `<button class="wahlkarte" type="button" data-tun="wechsel-fahrzeug"><strong>Fahrzeug wechseln</strong><span>Bei einer Fahrt</span></button>` : "",
+      darfFahrten ? `<button class="wahlkarte" type="button" data-ziel="fahrten:eingang"><strong>Anfrage bearbeiten</strong><span>${h(eingang)} im Eingang</span></button>` : "",
+      `<button class="wahlkarte" type="button" data-ziel="meldungen"><strong>Meldungen</strong><span>${h(meldungen.length)} offen</span></button>`
+    ].filter(Boolean).join("");
 
     return `
       <div class="bereichskopf">
         <div>
           <h1>Übersicht</h1>
-          <p class="wichtig">${h(D.alsText(D.heute))} · ${h(imDienst)} im Dienst · ${
-            offeneZuweisung > 0
-              ? `${offeneZuweisung} ${offeneZuweisung === 1 ? "Fahrt wartet" : "Fahrten warten"} auf eine Zuweisung`
-              : "alle Fahrten sind zugewiesen"}</p>
+          <p class="wichtig">${h(D.alsText(D.heute))}${darfPlanung ? ` · ${h(imDienst)} im Dienst` : ""}${
+            darfFahrten
+              ? ` · ${offeneZuweisung > 0
+                  ? `${offeneZuweisung} ${offeneZuweisung === 1 ? "Fahrt wartet" : "Fahrten warten"} auf eine Zuweisung`
+                  : "alle Fahrten sind zugewiesen"}`
+              : ""}</p>
         </div>
-        <div class="hauptaktion">
+        ${darfTun ? `<div class="hauptaktion">
           <button class="knopf haupt-knopf" type="button" data-tun="neue-fahrt">Neue Fahrt aufnehmen</button>
-        </div>
+        </div>` : ""}
       </div>
 
       <div class="flaeche">
         <h2>Jetzt wichtig <span class="offen">Zahlen sind anklickbar</span></h2>
-        <div class="kennzahlen">
-          ${R.kennzahl(heuteAlle, "Fahrten heute", "", "fahrten:alle")}
-          ${R.kennzahl(offeneZuweisung, "noch nicht zugewiesen", offeneZuweisung ? "warnung" : "gut", "fahrten:offen")}
-          ${R.kennzahl(unterwegs, "gerade unterwegs", "marke", "fahrten:unterwegs")}
-          ${R.kennzahl(imDienst, "Fahrer im Dienst", "gut", "planung")}
-          ${R.kennzahl(frei, "Fahrzeuge verfügbar", "gut", "team")}
-          ${R.kennzahl(ohneFahrzeug, "im Dienst ohne Fahrzeug", ohneFahrzeug ? "warnung" : "gut", "planung")}
-          ${R.kennzahl(warnungen, "Warnungen", warnungen ? "warnung" : "gut", "meldungen:warnungen")}
-        </div>
+        <div class="kennzahlen">${karten}</div>
       </div>
 
-      <div class="flaeche">
+      ${darfFahrten ? `<div class="flaeche">
         <h2>Tagesverlauf <span class="offen">nächste Fahrten</span></h2>
         <div class="tabelle-huelle">
           <table class="liste">
@@ -410,18 +339,11 @@
         <p class="wichtig" style="margin-top:10px;font-size:14px;">
           Entfernung und Fahrzeit werden nicht angezeigt — es ist keine Kartenquelle angebunden.
         </p>
-      </div>
+      </div>` : ""}
 
       <div class="flaeche">
         <h2>Schnellaktionen</h2>
-        <div class="wahlraster">
-          <button class="wahlkarte" type="button" data-tun="neue-fahrt"><strong>Neue Fahrt</strong><span>Fahrt aufnehmen</span></button>
-          <button class="wahlkarte" type="button" data-ziel="planung"><strong>Schicht planen</strong><span>Heute oder morgen</span></button>
-          <button class="wahlkarte" type="button" data-tun="wechsel-fahrer"><strong>Fahrer wechseln</strong><span>Bei einer Fahrt</span></button>
-          <button class="wahlkarte" type="button" data-tun="wechsel-fahrzeug"><strong>Fahrzeug wechseln</strong><span>Bei einer Fahrt</span></button>
-          <button class="wahlkarte" type="button" data-ziel="fahrten:eingang"><strong>Anfrage bearbeiten</strong><span>${h(eingang)} im Eingang</span></button>
-          <button class="wahlkarte" type="button" data-ziel="meldungen"><strong>Meldungen</strong><span>${h(meldungen.length)} offen</span></button>
-        </div>
+        <div class="wahlraster">${schnell}</div>
       </div>`;
   }
 
@@ -621,7 +543,20 @@
       : leerZustand(e, konflikte);
 
     const zaehler = (id) => {
-      if (id === "konflikte") return konflikte.length;
+      /*
+        GEMESSENER AUSGANGSFEHLER: Hier stand konflikte.length - die
+        Anzahl der EINTRAEGE. Der Filter darunter zeigt aber ZEILEN,
+        und ein doppelt vergebenes Fahrzeug nennt in einem Eintrag
+        zwei Fahrer. Am 06.10.2026 standen deshalb "3" am Knopf und
+        vier Zeilen in der Liste.
+
+        Gezaehlt werden jetzt die betroffenen ZEILEN - genau die
+        Menge, die der Filter zeigt. Beide kommen aus demselben
+        Konfliktbestand.
+      */
+      if (id === "konflikte") {
+        return e.zeilen.filter((z) => betroffen.has(z.mitarbeiterId)).length;
+      }
       if (["dienst", "frei", "krank", "urlaub"].includes(id)) return zaehle(id);
       return null;
     };
@@ -631,7 +566,8 @@
         <div>
           <h1>Planung</h1>
           <p class="wichtig">${h(imDienst)} im Dienst · ${h(zaehle("frei"))} frei · ${h(zaehle("krank"))} krank ·
-            ${h(zaehle("urlaub"))} Urlaub · ${h(ohneFahrzeug)} ohne Fahrzeug · ${h(konflikte.length)} Konflikte</p>
+            ${h(zaehle("urlaub"))} Urlaub · ${h(ohneFahrzeug)} ohne Fahrzeug ·
+            ${h(e.zeilen.filter((z) => betroffen.has(z.mitarbeiterId)).length)} mit Konflikt</p>
         </div>
       </div>
 
@@ -961,8 +897,19 @@
 
     const liste = D.mitarbeiter.map((m) => D.personalVon(m.id));
     const offeneKrank = D.abwesenheiten.filter((a) => a.art === "krank").length;
-    const fristKritisch = liste.filter((pz) =>
-      pz.dokumentstand.lage !== "gueltig").length;
+    /*
+      GEMESSENER AUSGANGSFEHLER: Hier stand
+        pz.dokumentstand.lage !== "gueltig"
+      - aber dokumentstand() gibt { eintraege, warnung } zurueck und
+      hat gar kein Feld "lage". Der Vergleich war damit fuer JEDEN
+      Mitarbeiter wahr: Die Ueberschrift zeigte "6 Dokumentstaende zu
+      pruefen", und jede Zeile trug "pruefen" - auch Testfahrer 01,
+      dessen Dokumente bis 2027 gueltig sind.
+
+      "warnung" ist null, wenn alle Pflichtdokumente gueltig sind.
+      Genau das ist die Frage.
+    */
+    const fristKritisch = liste.filter((pz) => pz.dokumentstand.warnung).length;
 
     const zeile = (pz) => window.ProbeAkten.aktenzeile(
       `ak-person:${pz.id}`,
@@ -977,9 +924,9 @@
         h(pz.beschaeftigung),
         h(pz.eintritt),
         pz.konto === "verknüpft" ? R.marke("gut", "verknüpft") : R.marke("ruhig", "nicht verknüpft"),
-        pz.dokumentstand.lage === "gueltig"
-          ? R.marke("gut", "alle gültig")
-          : R.marke("warnung", D.DOKUMENT_LAGE[pz.dokumentstand.lage] || "prüfen")
+        pz.dokumentstand.warnung
+          ? R.marke("warnung", D.DOKUMENT_LAGE[pz.dokumentstand.warnung.lage] || "prüfen")
+          : R.marke("gut", "alle gültig")
       ]
     );
 
@@ -987,7 +934,8 @@
       <div class="bereichskopf"><div>
         <h1>Personal</h1>
         <p class="wichtig">${h(liste.length)} Mitarbeiter · ${h(offeneKrank)} Krankmeldung${offeneKrank === 1 ? "" : "en"}
-          · ${h(fristKritisch)} Dokumentstand zu prüfen · jede Zeile öffnet die Akte</p>
+          · ${h(fristKritisch)} Dokumentstand${fristKritisch === 1 ? "" : "e"} zu prüfen
+          · jede Zeile öffnet die Akte</p>
       </div></div>
       <div class="flaeche">
         <h2>Mitarbeiter</h2>
@@ -1431,6 +1379,206 @@
   /* ============================================================
      Kleine Bestaetigungsfenster
      ============================================================ */
+  /*
+    Die Absage bei einem direkten Aufruf. Ein fehlender Knopf ist keine
+    Sperre - wer eine Aktion von Hand aufruft, bekommt hier eine klare
+    Antwort statt eines stillen Nichts.
+  */
+  function keinZugriffDialog(was) {
+    return `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-label="Keine Berechtigung">
+        <header class="dialog-kopf"><h2>Keine Berechtigung</h2>
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button></header>
+        <div class="dialog-rumpf">${R.kastenKeinRecht(was)}</div>
+        <footer class="dialog-fuss">
+          <button class="knopf haupt-knopf" type="button" data-dialog-zu>Verstanden</button>
+        </footer>
+      </div>`;
+  }
+
+  /* ============================================================
+     Die Fahrt im Einzelnen
+     ============================================================
+
+     GEMESSENER AUSGANGSFEHLER: Hinter "Öffnen" stand ein Platzhalter
+     ("Hier stünden die Einzelheiten der Fahrt ..."). Fuer FA-0002 war
+     damit nicht nachvollziehbar, dass die Abholzeit offen ist und eine
+     Rueckfrage laeuft - genau die Angabe, um die es bei dieser Anfrage
+     geht.
+
+     Alles hier Gezeigte steht in den vorhandenen Testdaten. Was nicht
+     erfasst ist, wird als nicht erfasst benannt - nicht ergaenzt.
+  */
+  const fahrtVon = (id) => D.fahrten.find((f) => f.id === id) || null;
+
+  const leistungName = (id) => {
+    const l = D.leistungsarten.find((x) => x.id === id);
+    return l ? l.name : "";
+  };
+
+  /* Der laufende Wechselschritt: { fahrtId, art } oder null. Es bleibt
+     bei einer Fensterebene - der Wechsel ERSETZT die Einzelansicht und
+     traegt einen Rueckweg. */
+  let wechselStand = null;
+
+  const dlZeile = (was, wert) => `<dt>${h(was)}</dt><dd>${wert}</dd>`;
+  const offen = (text) => R.marke("warnung", text);
+
+  function fahrtDialog(fahrtId) {
+    const f = fahrtVon(fahrtId);
+    if (!f) return null;
+    const fa = mitarbeiterVon(f.fahrerId);
+    const fz = fahrzeugVon(f.fahrzeugId);
+    /* Eine Gastfahrt hat keine Kundenakte - das ist eine bestehende
+       fachliche Entscheidung und wird hier nur benannt. */
+    const gastfahrt = !f.kundeId;
+    const kunde = f.kundeId ? D.kundeVon(f.kundeId) : null;
+    const darfWechseln = R.darf("operations.write");
+    /* Der Sprung in die Kundenakte haengt an customers.read - die Akte
+       selbst prueft das noch einmal. */
+    const darfAkte = Boolean(kunde) && R.darf("customers.read");
+
+    const hinweise = [];
+    if (!f.zeit) {
+      hinweise.push("Für diese Fahrt ist keine verbindliche Abholzeit erfasst. "
+        + "Sie steht deshalb nicht zwischen den Uhrzeiten.");
+    }
+    if (f.hinweis) hinweise.push(f.hinweis);
+
+    return `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="fahrtTitel">
+        <header class="dialog-kopf">
+          <h2 id="fahrtTitel">Fahrt ${h(f.id)}</h2>
+          ${zustandMarke(f.zustand)}
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>
+        <div class="dialog-rumpf">
+          ${f.nurProbe ? `<p class="schritt-hinweis">${R.marke("aktiv", "nur Designprobe – nicht gespeichert")}</p>` : ""}
+
+          <h3>Auftrag</h3>
+          <dl class="aktenliste">
+            ${dlZeile("Nummer", h(f.id))}
+            ${dlZeile("Zustand", zustandMarke(f.zustand))}
+            ${dlZeile(gastfahrt ? "Fahrt für" : "Kunde",
+              gastfahrt
+                ? h("Gastfahrt – kein Kundenkonto")
+                : (darfAkte
+                  ? `<button class="knopf klein" type="button"
+                      data-tun="ak-kunde:${h(f.kundeId)}">${h(f.kunde)}</button>`
+                  : h(f.kunde)))}
+            ${f.fahrgast ? dlZeile("Fahrgast", h(f.fahrgast)) : ""}
+            ${dlZeile("Abholung", h(f.von))}
+            ${dlZeile("Ziel", h(f.nach))}
+            ${dlZeile("Datum", h(D.alsText(D.heute)) + " (Tagesliste)")}
+            ${dlZeile("Abholzeit", f.zeit ? `<strong>${h(f.zeit)}</strong>` : offen("Zeit offen"))}
+            ${dlZeile("Leistung", f.leistung ? h(leistungName(f.leistung)) : offen("nicht erfasst"))}
+          </dl>
+
+          <h3>Zuweisung</h3>
+          <dl class="aktenliste">
+            ${dlZeile("Fahrer", fa ? h(fa.name) : offen("nicht zugewiesen"))}
+            ${dlZeile("Fahrzeug", fz ? h(fz.name + " · " + fz.kennzeichen) : offen("nicht zugewiesen"))}
+          </dl>
+          ${darfWechseln ? `
+            <div class="dialog-schritt">
+              <button class="knopf" type="button" data-tun="wechsel-fahrer:${h(f.id)}">Fahrer wechseln</button>
+              <button class="knopf" type="button" data-tun="wechsel-fahrzeug:${h(f.id)}">Fahrzeug wechseln</button>
+            </div>`
+            : `<p class="schritt-hinweis">Fahrer und Fahrzeug zu ändern ist eine
+                Dispositionsaufgabe. Dafür fehlt Ihnen die Berechtigung.</p>`}
+
+          <h3>Hinweise</h3>
+          ${hinweise.length
+            ? `<ul class="konfliktliste">${hinweise.map((x) => `<li>${h(x)}</li>`).join("")}</ul>`
+            : `<p class="schritt-hinweis">Keine Hinweise erfasst.</p>`}
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf haupt-knopf" type="button" data-dialog-zu>Schließen</button>
+        </footer>
+      </div>`;
+  }
+
+  /* ------------------------------------------------------------
+     Fahrer- beziehungsweise Fahrzeugwechsel
+     ------------------------------------------------------------
+     Eine Auswahl, ein Fenster, ein Rueckweg. Die Berechtigung wird
+     hier geprueft UND im Handler - ein fehlender Knopf ist keine
+     Sperre.
+
+     Angeboten werden nur Fahrer, die an diesem Tag nach der zentralen
+     Tageswahrheit fahren, und nur Fahrzeuge, die verfuegbar sind. Ob
+     ein Wechsel den Zustand der Fahrt veraendert, ist eine offene
+     fachliche Frage - hier wird er NICHT veraendert.
+  */
+  function wechselDialog(fahrtId, art) {
+    const f = fahrtVon(fahrtId);
+    if (!f) return null;
+    const iso = D.alsIso(D.heute);
+    const fahrerArt = art === "fahrer";
+
+    let karten;
+    if (fahrerArt) {
+      karten = D.imDienstAm(iso).map((z) => {
+        const m = mitarbeiterVon(z.mitarbeiterId);
+        const wagen = D.fahrzeugAktiv(iso, z);
+        return {
+          id: z.mitarbeiterId,
+          name: m ? m.name : z.mitarbeiterId,
+          zusatz: (z.von && z.bis ? z.von + "–" + z.bis : "ohne Zeit")
+            + " · " + (wagen ? wagen.kennzeichen : "kein Fahrzeug"),
+          gewaehlt: f.fahrerId === z.mitarbeiterId
+        };
+      });
+    } else {
+      karten = D.fahrzeuge
+        .filter((x) => x.zustand === "verfuegbar")
+        .map((x) => {
+          const belegt = D.planzeilenAm(iso).find((z) => {
+            const akt = D.fahrzeugAktiv(iso, z);
+            return akt && akt.id === x.id;
+          });
+          const m = belegt ? mitarbeiterVon(belegt.mitarbeiterId) : null;
+          return {
+            id: x.id,
+            name: x.name + " · " + x.kennzeichen,
+            zusatz: m ? "heute " + m.name + " zugewiesen" : "heute keinem Fahrer zugewiesen",
+            gewaehlt: f.fahrzeugId === x.id
+          };
+        });
+    }
+
+    return `
+      <div class="dialog-hinter" data-dialog-zu></div>
+      <div class="dialog-kasten" role="dialog" aria-modal="true" aria-labelledby="wechselTitel">
+        <header class="dialog-kopf">
+          <h2 id="wechselTitel">${fahrerArt ? "Fahrer" : "Fahrzeug"} wechseln</h2>
+          <span class="band-gold">Fahrt ${h(f.id)}</span>
+          <button class="knopf klein" type="button" data-tun="wechsel-zurueck:${h(f.id)}">Zurück zur Fahrt</button>
+          <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button>
+        </header>
+        <div class="dialog-rumpf">
+          ${karten.length ? `<div class="wahlraster">
+            ${karten.map((k) => `
+              <button class="wahlkarte" type="button"
+                data-tun="wechsel-setzen:${h(f.id)}|${h(art)}|${h(k.id)}"
+                aria-pressed="${k.gewaehlt}">
+                <strong>${h(k.name)}</strong><span>${h(k.zusatz)}</span></button>`).join("")}
+          </div>`
+          : R.kastenLeer(fahrerArt ? "Fahrer im Dienst" : "verfügbaren Fahrzeuge")}
+          ${(fahrerArt && f.fahrerId) || (!fahrerArt && f.fahrzeugId) ? `
+            <div class="dialog-schritt">
+              <button class="knopf" type="button"
+                data-tun="wechsel-setzen:${h(f.id)}|${h(art)}|">Zuweisung aufheben</button>
+            </div>` : ""}
+        </div>
+        <footer class="dialog-fuss">
+          <button class="knopf" type="button" data-tun="wechsel-zurueck:${h(f.id)}">Zurück zur Fahrt</button>
+        </footer>
+      </div>`;
+  }
+
   function hinweisDialog(titel, text, art) {
     return `
       <div class="dialog-hinter" data-dialog-zu></div>
@@ -1748,8 +1896,33 @@
     if (name.startsWith("ak-")) { window.ProbeAkten.tun(name, wert); return; }
     if (name.startsWith("es-")) { window.ProbeEinstellungen.tun(name, wert); return; }
 
+    /*
+      EINE SPERRE FUER GANZE FAMILIEN.
+
+      Der Gegenlauf hat verlangt, dass nicht erlaubte Aktionen am
+      HANDLER scheitern, nicht nur am fehlenden Knopf. Eine Sperre je
+      Fall waere 30 Sperren und eine Luecke beim naechsten neuen Fall.
+
+      "plan-" veraendert oder blaettert den Planungsentwurf und
+      verlangt planung.read; "fahrt-" und "wechsel-" gehoeren zur
+      Fahrtenansicht und verlangen fahrten.read. Die einzelnen Faelle
+      pruefen zusaetzlich das Schreibrecht, wo sie etwas aendern.
+    */
+    if (name.startsWith("plan-") && !R.darf("planung.read")) return;
+    if ((name.startsWith("fahrt-") || name.startsWith("wechsel-"))
+      && !R.darf("fahrten.read")) {
+      R.dialogOeffnen(keinZugriffDialog("die Fahrtenansicht"));
+      return;
+    }
+
     switch (name) {
-      case "neue-fahrt": window.ProbeFahrtassistent.starten(); return;
+      /* Doppelt gesperrt: hier UND in starten(). Ein fehlender Knopf
+         ist keine Sperre, und ein direkter Aufruf von tun() soll
+         dieselbe Antwort bekommen wie der Knopf. */
+      case "neue-fahrt":
+        if (!R.darf("operations.write")) { R.dialogOeffnen(keinZugriffDialog("das Aufnehmen von Fahrten")); return; }
+        window.ProbeFahrtassistent.starten();
+        return;
 
       case "fahrt-filter":  R.zustand.fahrtFilter = wert; R.zeichnen(); return;
       case "an-zeitraum":
@@ -1759,17 +1932,95 @@
         R.zeichnen();
         return;
       case "fahrt-zustand": R.zustand.fahrtenZustand = wert; R.zeichnen(); return;
-      case "fahrt-oeffnen":
-        R.dialogOeffnen(hinweisDialog(`Fahrt ${wert}`,
-          "Hier stünden die Einzelheiten der Fahrt mit Fahrer- und Fahrzeugwechsel. Für die Designprobe genügt der Weg dorthin.", "leer"));
+      /* Die Einzelansicht haengt an fahrten.read - derselben
+         Faehigkeit wie die Liste, aus der sie aufgerufen wird. Der
+         direkte Aufruf wird HIER geprueft, nicht am Knopf. */
+      case "fahrt-oeffnen": {
+        if (!R.darf("fahrten.read")) { R.dialogOeffnen(keinZugriffDialog("die Einzelheiten einer Fahrt")); return; }
+        const markup = fahrtDialog(wert);
+        if (!markup) return;
+        wechselStand = null;
+        R.dialogOeffnen(markup);
         return;
+      }
       case "neu-laden": R.zustand.fahrtenZustand = "geladen"; R.zeichnen(); return;
 
+      /*
+        Fahrer- und Fahrzeugwechsel. Beides aendert die Disposition
+        und braucht operations.write - geprueft an JEDEM Einstieg,
+        nicht nur dort, wo der Knopf steht.
+      */
       case "wechsel-fahrer":
-      case "wechsel-fahrzeug":
-        R.dialogOeffnen(hinweisDialog(name === "wechsel-fahrer" ? "Fahrer wechseln" : "Fahrzeug wechseln",
-          "Ein Fenster mit genau einer Auswahl: die verfügbaren Fahrer beziehungsweise Fahrzeuge als Karten, gold markiert. Kein zweites Fenster darüber.", "leer"));
+      case "wechsel-fahrzeug": {
+        if (!R.darf("operations.write") || !R.darf("fahrten.read")) {
+          R.dialogOeffnen(keinZugriffDialog("den Fahrer- und Fahrzeugwechsel"));
+          return;
+        }
+        const art = name === "wechsel-fahrer" ? "fahrer" : "fahrzeug";
+        const fahrtId = wert || (wechselStand ? wechselStand.fahrtId : "");
+        const markup = wechselDialog(fahrtId, art);
+        if (!markup) {
+          R.dialogOeffnen(hinweisDialog(art === "fahrer" ? "Fahrer wechseln" : "Fahrzeug wechseln",
+            "Dieser Schritt beginnt an einer Fahrt. Öffnen Sie die Fahrt und wechseln Sie von dort.", "leer"));
+          return;
+        }
+        wechselStand = { fahrtId, art };
+        R.dialogOeffnen(markup);
         return;
+      }
+
+      /* Zurueck aus dem Wechsel in die Einzelansicht - eine Ebene,
+         kein zweites Fenster darueber. */
+      case "wechsel-zurueck": {
+        if (!R.darf("fahrten.read")) return;
+        const markup = fahrtDialog(wert);
+        if (!markup) return;
+        wechselStand = null;
+        R.dialogOeffnen(markup);
+        return;
+      }
+
+      /*
+        Die Zuweisung setzen. Der Zustand der Fahrt bleibt
+        unveraendert: Ob ein gesetzter Fahrer eine Fahrt automatisch
+        von "ungeplant" auf "geplant" bringt, ist eine offene
+        fachliche Frage und wird hier nicht entschieden.
+      */
+      case "wechsel-setzen": {
+        if (!R.darf("operations.write")) {
+          R.dialogOeffnen(keinZugriffDialog("den Fahrer- und Fahrzeugwechsel"));
+          return;
+        }
+        const teile = String(wert).split("|");
+        const f = fahrtVon(teile[0]);
+        const art = teile[1];
+        const ziel = teile[2] || "";
+        if (!f || (art !== "fahrer" && art !== "fahrzeug")) return;
+        if (art === "fahrer") {
+          if (ziel && !mitarbeiterVon(ziel)) return;
+          const vorher = mitarbeiterVon(f.fahrerId);
+          f.fahrerId = ziel || null;
+          const nachher = mitarbeiterVon(f.fahrerId);
+          D.protokollieren({
+            betrifft: "Fahrt " + f.id, was: "Fahrer gewechselt",
+            vorher: vorher ? vorher.name : "nicht zugewiesen",
+            nachher: nachher ? nachher.name : "nicht zugewiesen", grund: ""
+          });
+        } else {
+          if (ziel && !fahrzeugVon(ziel)) return;
+          const vorher = fahrzeugVon(f.fahrzeugId);
+          f.fahrzeugId = ziel || null;
+          const nachher = fahrzeugVon(f.fahrzeugId);
+          D.protokollieren({
+            betrifft: "Fahrt " + f.id, was: "Fahrzeug gewechselt",
+            vorher: vorher ? vorher.kennzeichen : "nicht zugewiesen",
+            nachher: nachher ? nachher.kennzeichen : "nicht zugewiesen", grund: ""
+          });
+        }
+        wechselStand = null;
+        R.dialogOeffnen(fahrtDialog(f.id));
+        return;
+      }
 
       case "plan-heute":
         R.zustand.planDatum = D.alsIso(D.heute); R.zustand.planEntwurf = null; R.zeichnen(); return;

@@ -139,20 +139,80 @@ console.log("\n── 1. Jede Schicht einzeln ──");
   const { ctx, page, fehler } = await seite("admin");
   await tagesansicht(page);
   const liste = await eintraege(page);
-  const schichten = liste.filter((x) => /^Schicht/.test(x.text));
-  pruefe(schichten.length > 0, `es gibt einzelne Schichteinträge (${schichten.length})`);
+
+  /*
+    GEAENDERTE ERWARTUNG - Begruendung in Abschnitt 63 der
+    Dokumentation.
+
+    Alt: "es gibt einzelne Schichteintraege", gezaehlt wurden Eintraege
+    unter der Kategorie "Schicht".
+
+    Weshalb das nicht mehr gilt: Der Kalender fragt seit dem achten
+    Durchgang denselben Konfliktbestand wie Planung und Uebersicht. An
+    diesem Testtag sind ALLE vier Schichtzeilen konfliktbehaftet - das
+    doppelt vergebene Fahrzeug betrifft zwei von ihnen. Konfliktbehaf-
+    tete Schichten duerfen ausdruecklich NICHT als gewoehnliche
+    Schichten erscheinen; die alte Erwartung hat genau das verlangt.
+
+    Neu und strenger: Geprueft wird, dass JEDE Schichtzeile ihren
+    eigenen Eintrag hat und dass dieser Eintrag alle Angaben traegt -
+    ob er unter "Schicht" oder unter "Konflikt" steht. Zusaetzlich die
+    Gegenprobe an einem konfliktfreien Tag: Dort muessen Schichten
+    wieder als Schichten erscheinen.
+  */
+  const schichtzeilen = liste.filter((x) => /^(Schicht|Konflikt)/.test(x.text)
+    && /\d\d:\d\d–\d\d:\d\d/.test(x.text));
+  pruefe(schichtzeilen.length === 4,
+    `jede Schichtzeile des Tages hat einen eigenen Eintrag (${schichtzeilen.length})`);
   pruefe(!liste.some((x) => /^Schicht \d+ Schicht/.test(x.text)),
     "keine Sammelangabe „4 Schichten“ mehr");
 
-  const erste = schichten[0].text;
+  const erste = schichtzeilen[0].text;
   pruefe(/Testfahrer \d\d/.test(erste), `mit Mitarbeiternamen (${erste.slice(0, 60)})`);
   pruefe(/\d\d:\d\d–\d\d:\d\d/.test(erste), "mit Zeit von/bis");
   pruefe(/GER-TEST|kein Fahrzeug/.test(erste), "mit Fahrzeug oder „kein Fahrzeug“");
   pruefe(/Im Dienst|Frei|Krank|Urlaub/.test(erste), "mit Zustand des Mitarbeiters");
   pruefe(/Entwurf|veröffentlicht/.test(erste), "und mit dem Planstatus");
+  pruefe(schichtzeilen.every((x) => /Entwurf|veröffentlicht/.test(x.text)),
+    "und zwar jeder Eintrag, auch ein konfliktbehafteter");
 
-  pruefe(schichten.some((x) => /kein Fahrzeug/.test(x.text)),
+  pruefe(schichtzeilen.some((x) => /kein Fahrzeug/.test(x.text)),
     "ein Eintrag ohne Fahrzeug sagt das ausdrücklich");
+
+  /* An diesem Tag ist keine Schicht konfliktfrei - und keine steht
+     deshalb unter "Schicht". */
+  const betroffen = await page.evaluate(() => {
+    const D = window.ProbeDaten;
+    const iso = D.alsIso(D.heute);
+    return [...D.konfliktZeilen(D.konflikteFuer(iso))].length;
+  });
+  pruefe(betroffen === 4, `die zentrale Ermittlung nennt vier betroffene Zeilen (${betroffen})`);
+  pruefe(liste.filter((x) => /^Schicht/.test(x.text)).length === 0,
+    "keine davon erscheint als gewöhnliche Schicht");
+
+  /* ---- Gegenprobe: ein konfliktfreier Tag ---- */
+  const sauberTag = await page.evaluate(() => {
+    const D = window.ProbeDaten;
+    const iso = D.alsIso(D.tagAls(9));
+    D.planung[iso] = {
+      veroeffentlicht: false, veroeffentlichtUm: null, geaendertSeitdem: false,
+      zeilen: [
+        { mitarbeiterId: "M01", imDienst: true, vorlage: null, von: "06:00", bis: "14:00", fahrzeugId: "F01" },
+        { mitarbeiterId: "M04", imDienst: true, vorlage: null, von: "14:00", bis: "22:00", fahrzeugId: "F02" }
+      ]
+    };
+    return { iso, konflikte: D.konflikteFuer(iso).length };
+  });
+  pruefe(sauberTag.konflikte === 0,
+    `der vorbereitete Tag ist konfliktfrei (${sauberTag.konflikte})`);
+  await tagesansicht(page, sauberTag.iso);
+  const sauberListe = await eintraege(page);
+  const alsSchicht = sauberListe.filter((x) => /^Schicht/.test(x.text));
+  pruefe(alsSchicht.length === 2,
+    `dort erscheinen beide Schichten als Schicht (${alsSchicht.length})`);
+  pruefe(!sauberListe.some((x) => /^Konflikt/.test(x.text)),
+    "und kein einziger Konflikt");
+
   pruefe(fehler.length === 0, `keine Skriptfehler${fehler.length ? " (" + fehler[0] + ")" : ""}`);
   await ctx.close();
 }
@@ -194,9 +254,26 @@ console.log("\n── 2. Null gültige Schichten bei lauter Abwesenheit ──")
   });
   await tagesansicht(page, tag2);
   const heuteListe = await eintraege(page);
-  const krankKonflikt = heuteListe.find((x) => /ist krank/.test(x.text));
+  /*
+    GEAENDERTE ERWARTUNG - Begruendung in Abschnitt 63 der
+    Dokumentation.
+
+    Alt gesucht wurde der Wortlaut "ist krank". Der stammte aus
+    schichtbefund() ("Ungueltige Schicht - Mitarbeiter ist krank"), das
+    der Kalender nicht mehr fuer Konflikte verwendet. Der zentrale
+    Bestand nennt denselben Fall "Abwesend, Schicht noch im Plan" und
+    traegt den Zustand "Krank" aus STATUS_IM_KALENDER daneben.
+
+    Geprueft wird jetzt die Sache, nicht der alte Wortlaut: Die Zeile
+    des kranken Mitarbeiters steht unter "Konflikt", nennt den Grund
+    und nennt seinen Zustand.
+  */
+  const krankKonflikt = heuteListe.find((x) =>
+    /^Konflikt/.test(x.text) && /Abwesend, Schicht noch im Plan/.test(x.text));
   pruefe(Boolean(krankKonflikt), "eine Schicht bei Krankheit erscheint als Konflikt");
-  pruefe(/^Konflikt/.test(krankKonflikt.text), "und nicht als Schicht");
+  pruefe(/Krank/.test(krankKonflikt.text), "und nennt den Zustand des Mitarbeiters");
+  pruefe(!heuteListe.some((x) => /^Schicht/.test(x.text)
+    && /Krank/.test(x.text)), "und keine Schicht trägt den Zustand „Krank“");
 
   /* Die Bewertung ist dieselbe wie in der Planung. */
   const gleich = await page.evaluate(() => {

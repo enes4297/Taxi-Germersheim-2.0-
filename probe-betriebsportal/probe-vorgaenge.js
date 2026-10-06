@@ -3173,6 +3173,16 @@
     .filter((x) => sichtbarFuerMich(x) && x.zustand !== "erledigt" && x.zustand !== "archiviert");
 
   /*
+    Die Nachrichten, die ich sehen darf - fuer die eingeschraenkte
+    Uebersicht. Dieselbe Sichtbarkeitspruefung wie ueberall sonst,
+    keine zweite Rechnung nebenher. Eine Nachricht an alle
+    Mitarbeiter traegt sichtbar: ["self.read"] und bleibt deshalb
+    auch fuer einen Mitarbeiter sichtbar.
+  */
+  const nachrichtenFuerMich = () => alleVorgaenge()
+    .filter((x) => sichtbarFuerMich(x) && x.art === "nachricht");
+
+  /*
     Ein Sprung von einer Kennzahl. Der Reiter wird VOR dem Zeichnen
     gesetzt, damit die Zielliste genau die Menge zeigt, deren Zahl auf
     der Karte stand - und nicht den zuletzt gewaehlten Reiter.
@@ -3222,6 +3232,6 @@
 
   window.ProbeVorgaenge = {
     offeneWarnungen, sprungziel, nachZeichnen, sichtbareZuAbwesenheit,
-    anmelden, zeichne, tun, geaendert, datum, glocke, ungesehen, offeneEingabe, offeneFuerMich
+    anmelden, zeichne, tun, geaendert, datum, glocke, ungesehen, offeneEingabe, offeneFuerMich, nachrichtenFuerMich
   };
 })();

@@ -79,7 +79,12 @@
 
   /* Wer faehrt dieses Fahrzeug am gewaehlten Tag? */
   function fahrerZuFahrzeug(e, fahrzeugId) {
-    const zeile = e.zeilen.find((z) => z.fahrzeugId === fahrzeugId && P.arbeitetAmTag(e, z));
+    /* Ueber die zentrale Tageszuweisung - nicht ueber die rohe
+       Kennung. Wer nicht faehrt, belegt kein Fahrzeug. */
+    const zeile = e.zeilen.find((z) => {
+      const f = D.fahrzeugAktiv(e.iso, z);
+      return f && f.id === fahrzeugId;
+    });
     return zeile ? { zeile, mitarbeiter: mitarbeiterVon(zeile.mitarbeiterId) } : null;
   }
 
@@ -93,8 +98,12 @@
   */
   function einsatzAmTag(fahrzeugId, iso) {
     if (!iso) return null;
-    const treffer = D.schichtenAmTag(iso)
-      .filter((x) => x.zeile.fahrzeugId === fahrzeugId);
+    /* Ueber die zentrale Tageszuweisung: Eine Zeile, deren Person an
+       diesem Tag nicht faehrt, belegt das Fahrzeug nicht. */
+    const treffer = D.schichtenAmTag(iso).filter((x) => {
+      const f = D.fahrzeugAktiv(iso, x.zeile);
+      return f && f.id === fahrzeugId;
+    });
     if (!treffer.length) return null;
     return treffer;
   }
@@ -146,7 +155,19 @@
     const m = mitarbeiterVon(z.mitarbeiterId);
     const name = m ? m.name : z.mitarbeiterId;
     const status = P.tagesstatus(e, z);
-    const fz = z.fahrzeugId ? fahrzeugVon(z.fahrzeugId) : null;
+    /*
+      GEMESSENER AUSGANGSFEHLER: Hier stand
+        z.fahrzeugId ? fahrzeugVon(z.fahrzeugId) : null
+      - die rohe Kennung aus der Planzeile, ohne zu fragen, ob die
+      Person an diesem Tag ueberhaupt faehrt. Fuer den kranken
+      Testfahrer 02 zeigte die Karte deshalb "Testwagen 02", die
+      Planung "kein Fahrzeug" und die Fahrzeugkarte "frei".
+
+      fahrzeugAktiv() gibt null, wenn die Person nicht faehrt - das ist
+      dieselbe Quelle, aus der Planung, Fahrzeugkarte, Uebersicht und
+      Kalender lesen.
+    */
+    const fz = D.fahrzeugAktiv(e.iso, z);
     const dok = D.dokumentstand(z.mitarbeiterId);
     const aend = D.letzteAenderung(name);
     const arbeitet = status === "dienst";
@@ -563,7 +584,8 @@
     const status = P.tagesstatus(e, z);
     const abw = D.abwesenheitFuer(id, e.iso);
     const dok = D.dokumentstand(id);
-    const fz = z.fahrzeugId ? fahrzeugVon(z.fahrzeugId) : null;
+    /* Dieselbe zentrale Tageszuweisung wie Planung und Fahrzeugkarte. */
+    const fz = D.fahrzeugAktiv(e.iso, z);
     const morgen = D.planung[D.alsIso(D.tagAls(1))];
     const morgenZeile = morgen ? morgen.zeilen.find((x) => x.mitarbeiterId === id) : null;
 

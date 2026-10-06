@@ -754,6 +754,10 @@
       fahrerId: null,
       fahrzeugId: null,
       hinweis: stand.hinweis || "",
+      /* Die im Schritt 5 erfasste Leistungsart wandert mit an die
+         Fahrt - sonst waere sie nach dem Speichern verloren und die
+         Einzelansicht muesste "nicht erfasst" behaupten. */
+      leistung: stand.leistung,
       nurProbe: true,
       rollstuhl: stand.rollstuhl,
       gepaeck: stand.gepaeck
@@ -804,7 +808,34 @@
   /* ============================================================
      Aussenschnittstelle
      ============================================================ */
+  /*
+    GEMESSENER AUSGANGSFEHLER: starten() hat geoeffnet, wen auch
+    immer es aufrief. Die Buchhaltung kam ueber die Schnellaktion
+    "Neue Fahrt" in Schritt 1 - mit Kundensuche, letzten Kunden,
+    Telefonnummern und Adressen, obwohl ihr operations.write fehlt.
+
+    Die Pruefung gehoert HIERHER, an den Einstiegspunkt. Ein
+    fehlender Knopf ist keine Sperre: Wer starten() von Hand aufruft,
+    bekommt eine klare Absage und keinen Schritt 1.
+
+    Eine Fahrt aufzunehmen ist ein Eingriff in die Disposition -
+    operations.write. Das ist dieselbe Faehigkeit, die auch
+    "ak-kunde-fahrt" aus der Kundenakte schon verlangt.
+  */
   function starten(vorgewaehlt) {
+    if (!R.darf("operations.write")) {
+      R.dialogOeffnen(`
+        <div class="dialog-hinter" data-dialog-zu></div>
+        <div class="dialog-kasten" role="dialog" aria-modal="true" aria-label="Keine Berechtigung">
+          <header class="dialog-kopf"><h2>Keine Berechtigung</h2>
+            <button class="knopf klein" type="button" data-dialog-zu aria-label="Schließen">✕ Schließen</button></header>
+          <div class="dialog-rumpf">${R.kastenKeinRecht("das Aufnehmen von Fahrten")}</div>
+          <footer class="dialog-fuss">
+            <button class="knopf haupt-knopf" type="button" data-dialog-zu>Verstanden</button>
+          </footer>
+        </div>`);
+      return;
+    }
     const entwurf = entwurfLesen();
     if (entwurf) {
       const alter = Math.round((Date.now() - entwurf.zeit) / 60000);
@@ -839,7 +870,11 @@
     zeichnen();
   }
 
+  /* Dieselbe Sperre fuer jeden Schritt: Zwischen Schritt 1 und
+     Schritt 6 kann das Recht entzogen worden sein, und ein Entwurf
+     im Speicher ist kein Freibrief. */
   function tun(name, wert) {
+    if (!R.darf("operations.write")) return;
     switch (name) {
       case "fa-weiter":   weiter(); return true;
       case "fa-zurueck":  zurueck(); return true;

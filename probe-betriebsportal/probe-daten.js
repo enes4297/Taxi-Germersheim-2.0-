@@ -482,6 +482,279 @@
       .sort((a, b) => String(a.zeile.von).localeCompare(String(b.zeile.von)));
   }
 
+  /* ============================================================
+     EINE TAGESWAHRHEIT
+     ============================================================
+     GEMESSENE AUSGANGSFEHLER des manuellen Rundgangs - alle vier aus
+     derselben Wurzel:
+
+     2. Die Uebersicht zeigte vier Fahrer im Dienst, die Planung drei.
+        Sie zaehlte plan.zeilen.filter(z => z.imDienst) - also das rohe
+        Kennzeichen aus dem gespeicherten Plan, ohne die Abwesenheit zu
+        fragen. Der kranke Testfahrer 02 hatte noch eine alte Schicht
+        im Plan und wurde mitgezaehlt.
+
+     3. Der Konfliktzaehler der Planung zeigte drei, der Filter
+        darunter vier Zeilen. Der Zaehler nahm die Anzahl der
+        KONFLIKTEINTRAEGE, der Filter die Anzahl der BETROFFENEN
+        ZEILEN - und ein doppelt vergebenes Fahrzeug nennt in EINEM
+        Eintrag ZWEI Fahrer.
+
+     4. Die Fahrerkarte zeigte fuer den kranken Testfahrer 02
+        "Testwagen 02", die Planung "kein Fahrzeug", die Fahrzeugkarte
+        "frei". Die Fahrerkarte las z.fahrzeugId direkt, ohne zu
+        fragen, ob die Person an diesem Tag ueberhaupt faehrt.
+
+     5. Der Kalender zeigte nur einen Konflikt. Er leitete sie aus
+        schichtbefund() ab - und das bewertet eine EINZELNE Zeile. Ein
+        doppelt vergebenes Fahrzeug und ein Fahrer ohne Fahrzeug sind
+        aber Befunde, die mehrere Zeilen beziehungsweise den Tag als
+        Ganzes betreffen. Sie konnten dort gar nicht auffallen.
+
+     Deshalb steht die Tageswahrheit jetzt HIER, einmal:
+
+       tagesstatusAm(iso, zeile)   Im Dienst, Frei, Krank, Urlaub
+       arbeitetAm(iso, zeile)      faehrt die Person an diesem Tag?
+       fahrzeugAktiv(iso, zeile)   das WIRKSAM zugewiesene Fahrzeug
+       imDienstAm(iso)             die Zeilen, die wirklich fahren
+       konflikteFuer(iso, zeilen)  die Konflikte des Tages
+       konfliktZeilen(liste)       die betroffenen Kennungen
+
+     Planung, Fahrerkarte, Fahrzeugkarte, Uebersicht, Kalender und
+     Meldungen fragen alle diese Funktionen. Die Planung uebergibt
+     dabei ihren ENTWURF, die uebrigen den gespeicherten Plan - die
+     Regeln sind dieselben, nur die Zeilen verschieden.
+  */
+
+  /* Der Tagesstatus einer Planzeile. Eine begruendete Ausnahme zaehlt
+     als Dienst - das ist eine bestehende fachliche Entscheidung. */
+  function tagesstatusAm(iso, zeile) {
+    const abw = abwesenheitFuer(zeile.mitarbeiterId, iso);
+    if (abw.wirksam && !zeile.ausnahme) return abw.wirksam.art;
+    return zeile.imDienst ? "dienst" : "frei";
+  }
+
+  const arbeitetAm = (iso, zeile) => tagesstatusAm(iso, zeile) === "dienst";
+
+  /*
+    Das WIRKSAM zugewiesene Fahrzeug einer Zeile.
+
+    Wer an diesem Tag nicht faehrt, belegt kein Fahrzeug - auch wenn in
+    der Zeile noch eine alte Kennung steht. Genau daraus entstand der
+    Widerspruch "Fahrerkarte: Testwagen 02 / Fahrzeugkarte: frei".
+  */
+  function fahrzeugAktiv(iso, zeile) {
+    if (!zeile || !zeile.fahrzeugId) return null;
+    if (!arbeitetAm(iso, zeile)) return null;
+    return fahrzeuge.find((f) => f.id === zeile.fahrzeugId) || null;
+  }
+
+  /* Die Zeilen eines Tages - aus dem gespeicherten Plan. */
+  const planzeilenAm = (iso) => (planung[iso] ? planung[iso].zeilen : []);
+
+  /* Wer faehrt an diesem Tag wirklich? */
+  const imDienstAm = (iso, zeilen) =>
+    (zeilen || planzeilenAm(iso)).filter((z) => arbeitetAm(iso, z));
+
+  /* ---- Zeitrechnung fuer die Fahrzeugpruefung ---- */
+  function minutenVon(zeit) {
+    if (!zeit || !/^\d{2}:\d{2}$/.test(zeit)) return null;
+    const [s, m] = zeit.split(":").map(Number);
+    return s * 60 + m;
+  }
+  /* Eine Schicht ueber Mitternacht wird in zwei Stuecke zerlegt. */
+  function abschnitteVon(von, bis) {
+    const a = minutenVon(von);
+    const b = minutenVon(bis);
+    if (a === null || b === null) return [];
+    if (b > a) return [[a, b]];
+    /* Gleiche Anfangs- und Endzeit: ein Augenblick, aber ein belegtes
+       Fahrzeug. Ohne diese Zeile wuerden zwei solche Schichten am
+       selben Fahrzeug nicht als Konflikt auffallen. */
+    if (b === a) return [[a, a + 1]];
+    return [[a, 1440], [0, b]];
+  }
+  const ueberschneidetSich = (x, y) =>
+    abschnitteVon(x.von, x.bis).some(([a1, b1]) =>
+      abschnitteVon(y.von, y.bis).some(([a2, b2]) => a1 < b2 && a2 < b1));
+
+  /* Deckt die Abwesenheit die Schicht nur teilweise ab? Bei einer
+     Nachtschicht faellt der Teil nach Mitternacht auf den Folgetag. */
+  function nurTeilweise(iso, zeile, abw) {
+    if (!abw || !abw.wirksam) return false;
+    if (!zeile.von || !zeile.bis) return false;
+    if (!(minutenVon(zeile.bis) !== null && minutenVon(zeile.von) !== null
+      && minutenVon(zeile.bis) < minutenVon(zeile.von))) return false;
+    const folgetag = alsIso(new Date(new Date(iso + "T00:00:00").getTime() + 86400000));
+    return !(folgetag >= abw.wirksam.von && folgetag <= abw.wirksam.bis);
+  }
+
+  /*
+    DIE KONFLIKTE EINES TAGES.
+
+    `zeilen` ist entweder der gespeicherte Plan oder ein Entwurf der
+    Planung; `zeitfehler` sind die Eingabefehler des Entwurfs und
+    bleiben beim gespeicherten Plan leer.
+
+    Zwei Arten, weil sie verschieden schwer wiegen:
+      "technisch"   - die Daten sind nicht verwendbar.
+      "betrieblich" - fachlich unguenstig, aber entscheidbar.
+
+    Jeder Eintrag nennt die betroffene Kennung, ein doppelt vergebenes
+    Fahrzeug zwei. Wer ZEILEN zaehlen will, nimmt konfliktZeilen().
+  */
+  function konflikteFuer(iso, zeilen, zeitfehler) {
+    const reihen = zeilen || planzeilenAm(iso);
+    const fehler = zeitfehler || {};
+    const liste = [];
+    const tagText = alsText(new Date(iso + "T00:00:00"));
+    const fahrend = reihen.filter((z) => arbeitetAm(iso, z));
+    const mVon = (id) => mitarbeiter.find((x) => x.id === id) || null;
+    const fVon = (id) => fahrzeuge.find((x) => x.id === id) || null;
+
+    for (const z of reihen) {
+      const m = mVon(z.mitarbeiterId);
+      const name = m ? m.name : z.mitarbeiterId;
+
+      if (!m) {
+        liste.push({
+          art: "technisch", kennung: z.mitarbeiterId, kurz: "Mitarbeiter unbekannt",
+          text: `Zu der Kennung ${z.mitarbeiterId} gibt es keinen Mitarbeiterdatensatz.`
+        });
+        continue;
+      }
+      const abw = abwesenheitFuer(z.mitarbeiterId, iso);
+
+      if (abw.widerspruch) {
+        liste.push({
+          art: "technisch", kennung: z.mitarbeiterId, kurz: "Krank und Urlaub zugleich",
+          text: `${name} ist am ${tagText} gleichzeitig krank gemeldet und im genehmigten Urlaub. Diese beiden Angaben widersprechen sich.`
+        });
+        continue;
+      }
+
+      if (abw.wirksam) {
+        const artName = abw.wirksam.art === "krank" ? "krank gemeldet" : "im genehmigten Urlaub";
+        const schicht = z.von && z.bis ? `${z.von}–${z.bis}` : "ohne Zeit";
+        const fz = z.fahrzeugId ? fVon(z.fahrzeugId) : null;
+        if (z.ausnahme) {
+          liste.push({
+            art: "betrieblich", kennung: z.mitarbeiterId,
+            kurz: abw.wirksam.art === "krank" ? "Krank, trotzdem im Dienst" : "Urlaub, trotzdem im Dienst",
+            text: `${name} ist am ${tagText} ${artName} (${zeitraumText(abw.wirksam)}), ist aber für ${schicht}${fz ? ` mit ${fz.kennzeichen}` : ""} eingeplant.`,
+            ausnahme: z.ausnahme.grund
+          });
+        } else if (z.imDienst || z.von || z.bis || z.fahrzeugId) {
+          liste.push({
+            art: "betrieblich", kennung: z.mitarbeiterId,
+            kurz: "Abwesend, Schicht noch im Plan",
+            text: `${name} ist am ${tagText} ${artName} (${zeitraumText(abw.wirksam)}), im Plan steht aber noch ${schicht}${fz ? ` mit ${fz.kennzeichen}` : ""}. Diese Schicht ist nicht aktiv — bitte auf „${ABWESENHEIT_NAMEN[abw.wirksam.art]}“ setzen oder eine Ausnahme begründen.`
+          });
+        }
+      }
+
+      if (nurTeilweise(iso, z, abw)) {
+        liste.push({
+          art: "betrieblich", kennung: z.mitarbeiterId, kurz: "Abwesenheit deckt nur einen Teil",
+          text: `${name}: Die Schicht ${z.von}–${z.bis} geht über Mitternacht hinaus, die eingetragene Abwesenheit endet aber am ${tagText}.`
+        });
+      }
+
+      /*
+        Zeit steht, Dienst nicht - und keine Abwesenheit, die das
+        erklaert. Das ist ein Befund, keine Schicht.
+
+        Diese Regel stand vorher ausschliesslich in schichtbefund()
+        und war damit nur im Kalender wirksam. Der bestehende Lauf
+        probe-kalenderwege hat genau diese Luecke gefunden, als der
+        Kalender auf den zentralen Bestand umgestellt wurde.
+      */
+      if (!abw.wirksam && !arbeitetAm(iso, z) && z.von && z.bis) {
+        liste.push({
+          art: "betrieblich", kennung: z.mitarbeiterId,
+          kurz: "Schicht im Plan, Mitarbeiter steht auf Frei",
+          text: `${name}: Für ${z.von}–${z.bis} steht eine Schicht im Plan, ${name} steht an diesem Tag aber auf Frei.`
+        });
+      }
+
+      if (!arbeitetAm(iso, z)) continue;
+
+      if (fehler[z.mitarbeiterId]) {
+        liste.push({
+          art: "technisch", kennung: z.mitarbeiterId, kurz: "Uhrzeit ungültig",
+          text: `${name}: ${fehler[z.mitarbeiterId]}`
+        });
+        continue;
+      }
+      if (!z.von || !z.bis || minutenVon(z.von) === null || minutenVon(z.bis) === null) {
+        liste.push({
+          art: "technisch", kennung: z.mitarbeiterId, kurz: "Uhrzeit unvollständig",
+          text: `${name}: Die individuelle Uhrzeit ist unvollständig.`
+        });
+        continue;
+      }
+      if (z.fahrzeugId && !fVon(z.fahrzeugId)) {
+        liste.push({
+          art: "technisch", kennung: z.mitarbeiterId, kurz: "Fahrzeug unbekannt",
+          text: `${name}: Die Fahrzeugkennung ${z.fahrzeugId} gehört zu keinem Fahrzeug.`
+        });
+        continue;
+      }
+      if (!z.fahrzeugId) {
+        liste.push({
+          art: "betrieblich", kennung: z.mitarbeiterId, kurz: "kein Fahrzeug",
+          text: `${name} ist im Dienst, aber es wurde kein Fahrzeug zugewiesen.`
+        });
+        continue;
+      }
+      const fz = fVon(z.fahrzeugId);
+      if (fz.zustand !== "verfuegbar") {
+        liste.push({
+          art: "betrieblich", kennung: z.mitarbeiterId, kurz: "Fahrzeug nicht verfügbar",
+          text: `${name} soll ${fz.name} · ${fz.kennzeichen} fahren, das Fahrzeug steht aber in der Werkstatt.`
+        });
+      }
+    }
+
+    /* Dasselbe Fahrzeug zur selben Zeit. Nur unter den Fahrenden -
+       wer krank ist, belegt kein Fahrzeug. */
+    for (let i = 0; i < fahrend.length; i += 1) {
+      for (let j = i + 1; j < fahrend.length; j += 1) {
+        const a = fahrend[i];
+        const b = fahrend[j];
+        if (!a.fahrzeugId || a.fahrzeugId !== b.fahrzeugId) continue;
+        if (!ueberschneidetSich(a, b)) continue;
+        const fz = fVon(a.fahrzeugId);
+        const na = mVon(a.mitarbeiterId);
+        const nb = mVon(b.mitarbeiterId);
+        if (!fz || !na || !nb) continue;
+        liste.push({
+          art: "betrieblich", kennung: a.mitarbeiterId, zweiteKennung: b.mitarbeiterId,
+          kurz: "Fahrzeug doppelt",
+          text: `${na.name} und ${nb.name} verwenden gleichzeitig ${fz.kennzeichen}.`
+        });
+      }
+    }
+    return liste;
+  }
+
+  /*
+    Die betroffenen Kennungen eines Konfliktbestandes.
+
+    Gemessener Fehler: Der Zaehler "Nur Konflikte" nahm die Anzahl der
+    EINTRAEGE, der Filter zeigte ZEILEN. Ein doppelt vergebenes
+    Fahrzeug nennt in einem Eintrag zwei Fahrer - daher drei gegen
+    vier. Wer Zeilen filtert, muss Zeilen zaehlen.
+  */
+  function konfliktZeilen(liste) {
+    const menge = new Set();
+    for (const k of liste) {
+      menge.add(k.kennung);
+      if (k.zweiteKennung) menge.add(k.zweiteKennung);
+    }
+    return menge;
+  }
+
   /* Alle Eintraege eines Mitarbeiters an einem Tag. */
   const abwesenheitenAmTag = (mitarbeiterId, iso) =>
     abwesenheiten.filter((a) => a.mitarbeiterId === mitarbeiterId && imZeitraum(iso, a.von, a.bis));
@@ -550,19 +823,19 @@
 
   /* ---- Fahrten. Nur Testkunden, keine Gesundheitsangaben. ---- */
   const fahrten = [
-    { id: "FA-0001", zustand: "eingang",      zeit: "10:40", kunde: "Testkunde 01", von: "Teststrasse 1, Germersheim", nach: "Testziel A", fahrerId: null,  fahrzeugId: null,  kundeId: "K0001", fahrgast: "", hinweis: "über Telefon aufgenommen" },
+    { id: "FA-0001", leistung: "normal", zustand: "eingang",      zeit: "10:40", kunde: "Testkunde 01", von: "Teststrasse 1, Germersheim", nach: "Testziel A", fahrerId: null,  fahrzeugId: null,  kundeId: "K0001", fahrgast: "", hinweis: "über Telefon aufgenommen" },
     /* Diese Anfrage hat KEINE geklaerte Abholzeit. Sie darf nicht
        zwischen Uhrzeiten einsortiert werden - sonst behauptet die
        Liste eine Reihenfolge, die es nicht gibt. */
-    { id: "FA-0002", zustand: "eingang",      zeit: "",      kunde: "Gastfahrt",    von: "Testplatz 2, Germersheim",   nach: "Testziel B", fahrerId: null,  fahrzeugId: null,  kundeId: "", fahrgast: "", hinweis: "Rückfrage zur Uhrzeit offen" },
-    { id: "FA-0003", zustand: "ungeplant",    zeit: "12:00", kunde: "Testkunde 02", von: "Testweg 3",                  nach: "Testziel C", fahrerId: null,  fahrzeugId: null,  kundeId: "K0002", fahrgast: "", hinweis: "" },
-    { id: "FA-0004", zustand: "ungeplant",    zeit: "12:30", kunde: "Testkunde 03", von: "Testallee 4",                nach: "Testziel A", fahrerId: null,  fahrzeugId: null,  kundeId: "K0003", fahrgast: "", hinweis: "8 Plätze nötig" },
-    { id: "FA-0005", zustand: "geplant",      zeit: "13:00", kunde: "Testkunde 01", von: "Teststrasse 1",              nach: "Testziel D", fahrerId: "M02", fahrzeugId: "F02", kundeId: "K0001", fahrgast: "", hinweis: "" },
-    { id: "FA-0006", zustand: "geplant",      zeit: "13:20", kunde: "Testkunde 04", von: "Testring 5",                 nach: "Testziel B", fahrerId: "M03", fahrzeugId: "F03", kundeId: "K0004", fahrgast: "Testfahrgast Werk 2", hinweis: "" },
-    { id: "FA-0007", zustand: "unterwegs",    zeit: "09:50", kunde: "Testkunde 02", von: "Testweg 3",                  nach: "Testziel C", fahrerId: "M01", fahrzeugId: "F01", kundeId: "K0002", fahrgast: "", hinweis: "" },
-    { id: "FA-0008", zustand: "abgeschlossen",zeit: "08:10", kunde: "Testkunde 05", von: "Testplatz 2",                nach: "Testziel A", fahrerId: "M05", fahrzeugId: "F01", kundeId: "K0005", fahrgast: "", hinweis: "" },
-    { id: "FA-0009", zustand: "storniert",    zeit: "08:40", kunde: "Testkunde 03", von: "Testallee 4",                nach: "Testziel D", fahrerId: null,  fahrzeugId: null,  kundeId: "K0003", fahrgast: "", hinweis: "Kunde hat abgesagt" },
-    { id: "FA-0010", zustand: "klaerung",     zeit: "14:00", kunde: "Testkunde 06", von: "Testort 6",                  nach: "Testziel E", fahrerId: null,  fahrzeugId: null,  kundeId: "K0006", fahrgast: "", hinweis: "Adresse unvollständig" }
+    { id: "FA-0002", leistung: "", zustand: "eingang",      zeit: "",      kunde: "Gastfahrt",    von: "Testplatz 2, Germersheim",   nach: "Testziel B", fahrerId: null,  fahrzeugId: null,  kundeId: "", fahrgast: "", hinweis: "Rückfrage zur Uhrzeit offen" },
+    { id: "FA-0003", leistung: "normal", zustand: "ungeplant",    zeit: "12:00", kunde: "Testkunde 02", von: "Testweg 3",                  nach: "Testziel C", fahrerId: null,  fahrzeugId: null,  kundeId: "K0002", fahrgast: "", hinweis: "" },
+    { id: "FA-0004", leistung: "flughafen", zustand: "ungeplant",    zeit: "12:30", kunde: "Testkunde 03", von: "Testallee 4",                nach: "Testziel A", fahrerId: null,  fahrzeugId: null,  kundeId: "K0003", fahrgast: "", hinweis: "8 Plätze nötig" },
+    { id: "FA-0005", leistung: "serie", zustand: "geplant",      zeit: "13:00", kunde: "Testkunde 01", von: "Teststrasse 1",              nach: "Testziel D", fahrerId: "M02", fahrzeugId: "F02", kundeId: "K0001", fahrgast: "", hinweis: "" },
+    { id: "FA-0006", leistung: "normal", zustand: "geplant",      zeit: "13:20", kunde: "Testkunde 04", von: "Testring 5",                 nach: "Testziel B", fahrerId: "M03", fahrzeugId: "F03", kundeId: "K0004", fahrgast: "Testfahrgast Werk 2", hinweis: "" },
+    { id: "FA-0007", leistung: "kranken", zustand: "unterwegs",    zeit: "09:50", kunde: "Testkunde 02", von: "Testweg 3",                  nach: "Testziel C", fahrerId: "M01", fahrzeugId: "F01", kundeId: "K0002", fahrgast: "", hinweis: "" },
+    { id: "FA-0008", leistung: "normal", zustand: "abgeschlossen",zeit: "08:10", kunde: "Testkunde 05", von: "Testplatz 2",                nach: "Testziel A", fahrerId: "M05", fahrzeugId: "F01", kundeId: "K0005", fahrgast: "", hinweis: "" },
+    { id: "FA-0009", leistung: "normal", zustand: "storniert",    zeit: "08:40", kunde: "Testkunde 03", von: "Testallee 4",                nach: "Testziel D", fahrerId: null,  fahrzeugId: null,  kundeId: "K0003", fahrgast: "", hinweis: "Kunde hat abgesagt" },
+    { id: "FA-0010", leistung: "normal", zustand: "klaerung",     zeit: "14:00", kunde: "Testkunde 06", von: "Testort 6",                  nach: "Testziel E", fahrerId: null,  fahrzeugId: null,  kundeId: "K0006", fahrgast: "", hinweis: "Adresse unvollständig" }
   ];
 
   const fahrtZustaende = [
@@ -1534,6 +1807,9 @@
     kundeVon, kundeAnlegen, fahrtenVonKunde, rechnungenVonKunde, rewardsVonKunde,
     abwesenheiten, abwesenheitFuer, abwesenheitenAmTag, istWirksam,
     schichtbefund, schichtenAmTag, STATUS_IM_KALENDER,
+    /* Die eine Tageswahrheit - siehe Kommentar oben. */
+    tagesstatusAm, arbeitetAm, fahrzeugAktiv, planzeilenAm, imDienstAm,
+    konflikteFuer, konfliktZeilen, ueberschneidetSich, minutenVon,
     vorgaengeZuAbwesenheit,
     FAHRZEUG_ZUSTAENDE, istEinsatzbereit,
     fahrerDokumente, dokumentstand, DOKUMENT_LAGE, DOKUMENT_PFLICHT,
