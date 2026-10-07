@@ -812,8 +812,108 @@ console.log("\n── 11. Eine Quelle, nicht fünf ──");
   }
 }
 
-/* ═══ 12. Rechte und Navigation unverändert ════════════════════ */
-console.log("\n── 12. Keine Rechte, keine Bereiche verschoben ──");
+/* ═══ 12. Gesperrte Bereiche beim direkten Sprung ══════════════ */
+console.log("\n── 12. Ein gesperrter Bereich nimmt den Zustand nicht an ──");
+{
+  /*
+    GEMESSENER AUSGANGSFEHLER: geheZu() prüfte nur, ob es den Bereich
+    GIBT - nicht, ob die Rolle ihn sehen darf. Ein direkter Aufruf
+    setzte deshalb auch als Mitarbeiter den Navigationszustand auf
+    "fahrten". Ausgeliefert wurde nichts, die Sperre fehlte aber am
+    Einstiegspunkt.
+
+    Geprüft wird jede gesperrte Rolle/Bereich-Kombination über BEIDE
+    Einstiege - geheZu() und geheZuMitHerkunft() - auf drei Dinge:
+    der Zustand bleibt stehen, es erscheint kein geschützter Inhalt,
+    und zwar auch nicht verborgen im DOM.
+  */
+  const ALLE = ["uebersicht", "fahrten", "planung", "team", "kalender", "meldungen",
+    "kunden", "personal", "lohn", "finanzen", "rewards", "analyse", "einstellungen"];
+  /* Verräterische Zeichenfolgen aus den Testdaten. */
+  const LECK = [
+    ["Kundenname", /Testkunde 0\d/],
+    ["Abholort oder Ziel", /Teststrasse 1|Testplatz 2|Testweg 3|Testallee 4|Testziel [A-E]/],
+    ["Kennzeichen", /GER-TEST \d{3}/],
+    ["Mitarbeitername", /Testfahrer 0\d/],
+    ["Fahrtnummer", /FA-00\d\d/],
+    ["Vorgangsnummer", /V000\d/],
+    ["Lohnangabe", /Bruttolohn|Lohnabrechnung/],
+    ["Rechnungsnummer", /RE-2026-\d{4}/]
+  ];
+
+  const { ctx, page, fehler } = await seite("admin");
+  let geprueft = 0;
+
+  for (const rolle of ["employee", "accounting", "dispatcher", "personal"]) {
+    await page.selectOption("[data-rolle]", rolle);
+    await page.waitForTimeout(320);
+    const erlaubt = await page.evaluate(() =>
+      window.ProbeRahmen.sichtbareBereiche().map((b) => b.id));
+    const verboten = ALLE.filter((x) => !erlaubt.includes(x));
+    pruefe(verboten.length > 0, `${rolle} hat gesperrte Bereiche (${verboten.length})`);
+
+    for (const id of verboten) {
+      for (const weg of ["geheZu", "geheZuMitHerkunft"]) {
+        /* Von einem erlaubten Bereich aus starten, damit ein Wechsel
+           überhaupt sichtbar wäre. */
+        await page.evaluate((x) => window.ProbeRahmen.geheZu(x), erlaubt[0]);
+        await page.waitForTimeout(120);
+        await page.evaluate(([fn, x]) => {
+          if (fn === "geheZu") window.ProbeRahmen.geheZu(x);
+          else window.ProbeRahmen.geheZuMitHerkunft(x, { bereich: "uebersicht", name: "Übersicht" });
+        }, [weg, id]);
+        await page.waitForTimeout(160);
+
+        const jetzt = await page.evaluate(() => window.ProbeRahmen.zustand.bereich);
+        pruefe(jetzt !== id,
+          `${rolle} · ${weg}("${id}") übernimmt den Zustand nicht (steht auf „${jetzt}“)`);
+
+        /*
+          Geprüft wird der HAUPTBEREICH, nicht das ganze Dokument.
+
+          Erster Versuch war falsch: Er suchte die Leckmuster im ganzen
+          DOM. Für die Disposition stand dort aber die ERLAUBTE
+          Übersicht mit Tagesverlauf — Kundennamen und Kennzeichen
+          gehören da hin. Der Test hat sich an erlaubtem Inhalt
+          verschluckt.
+
+          Die genaue Eigenschaft: Nach einer Abweisung steht im
+          Hauptbereich die Abweisung — und darin nichts Geschütztes.
+        */
+        const haupt = await page.evaluate(() => {
+          const el = document.querySelector("[data-haupt]");
+          return el ? el.innerHTML : "";
+        });
+        pruefe(/Kein Zugriff|Keine Berechtigung/.test(haupt),
+          `${rolle} · ${weg}("${id}") wird sichtbar abgewiesen`);
+        const lecks = LECK.filter(([, r]) => r.test(haupt)).map(([n]) => n);
+        pruefe(lecks.length === 0,
+          `${rolle} · ${weg}("${id}") liefert keinen geschützten Inhalt`
+          + (lecks.length ? " — LECK: " + lecks.join(", ") : ""));
+        geprueft += 1;
+      }
+    }
+  }
+  pruefe(geprueft >= 60,
+    `genug Kombinationen geprüft (${geprueft} Rolle/Bereich/Einstieg-Fälle)`);
+
+  /* Gegenprobe: Ein ERLAUBTER Bereich wird weiterhin angenommen -
+     die Sperre darf die Navigation nicht lahmlegen. */
+  await page.selectOption("[data-rolle]", "accounting");
+  await page.waitForTimeout(320);
+  for (const id of ["kunden", "finanzen", "analyse", "meldungen", "uebersicht"]) {
+    await page.evaluate((x) => window.ProbeRahmen.geheZu(x), id);
+    await page.waitForTimeout(140);
+    const jetzt = await page.evaluate(() => window.ProbeRahmen.zustand.bereich);
+    pruefe(jetzt === id, `die Buchhaltung kommt weiterhin nach „${id}“ (${jetzt})`);
+  }
+
+  pruefe(fehler.length === 0, `keine Fehler in der Konsole (${fehler.join(" | ")})`);
+  await ctx.close();
+}
+
+/* ═══ 13. Rechte und Navigation unverändert ════════════════════ */
+console.log("\n── 13. Keine Rechte, keine Bereiche verschoben ──");
 {
   /*
     Die beiden Darstellungskorrekturen durften an den Faehigkeiten und

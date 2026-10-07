@@ -51,6 +51,28 @@
 
   let planningLoadError = "";
 
+  /*
+    Echtes HTML-Escaping fuer Werte aus der Datenbank.
+
+    GEMESSENER AUSGANGSFEHLER: Der Schichtdialog setzte Mitarbeiter-
+    namen, Fahrzeugnamen, Kennzeichen, Fahrzeugart und Vorlagennamen
+    unmaskiert in innerHTML - auch in Attribute. Ein Name wie
+    "Mueller & Sohn" wurde dadurch falsch dargestellt, ein Wert mit
+    einem Anfuehrungszeichen brach das Attribut auf.
+
+    Dieselbe Funktion steht in fahrer/mitarbeiter.js. Fuer IDs und
+    Datenbankinhalte wird sie immer verwendet - auch dort, wo der
+    Wert heute harmlos aussieht.
+  */
+  function escHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function safeParse(raw) {
     try {
       return JSON.parse(raw);
@@ -961,9 +983,9 @@
         || (!dialog.vorlageId && dialog.start === t.start && dialog.ende === t.end);
       return `
         <button class="shift-pick-card${gewaehlt ? " is-selected" : ""}" type="button"
-          data-dialog-template="${t.id}" aria-pressed="${gewaehlt ? "true" : "false"}">
-          <strong>${t.name}</strong>
-          <span>${t.start} – ${t.end} Uhr</span>
+          data-dialog-template="${escHtml(t.id)}" aria-pressed="${gewaehlt ? "true" : "false"}">
+          <strong>${escHtml(t.name)}</strong>
+          <span>${escHtml(t.start)} – ${escHtml(t.end)} Uhr</span>
         </button>`;
     }).join("");
 
@@ -973,16 +995,16 @@
       const gewaehlt = String(dialog.fahrzeugId) === kennung;
       return `
         <button class="shift-pick-card${gewaehlt ? " is-selected" : ""}" type="button"
-          data-dialog-vehicle="${kennung}" aria-pressed="${gewaehlt ? "true" : "false"}">
-          <strong>${v.name || v.plate}</strong>
-          <span>${v.plate}</span>
-          <small>${v.type}</small>
+          data-dialog-vehicle="${escHtml(kennung)}" aria-pressed="${gewaehlt ? "true" : "false"}">
+          <strong>${escHtml(v.name || v.plate)}</strong>
+          <span>${escHtml(v.plate)}</span>
+          <small>${escHtml(v.type)}</small>
         </button>`;
     }).join("");
     const ohneFahrzeug = !dialog.fahrzeugId;
 
     const zusammenfassung = dialogZusammenfassung(emp, tag).map(([k, w]) => `
-      <div><dt>${k}</dt><dd>${w}</dd></div>`).join("");
+      <div><dt>${escHtml(k)}</dt><dd>${escHtml(w)}</dd></div>`).join("");
 
     huelle.hidden = false;
     document.body.classList.add("shift-dialog-open");
@@ -991,15 +1013,15 @@
       <div class="shift-dialog-box" role="dialog" aria-modal="true" aria-labelledby="shiftDialogTitel">
         <header class="shift-dialog-head">
           <div>
-            <p class="shift-dialog-kicker">${tag.name === "heute" ? "Heute" : "Morgen"} · ${formatDate(tag.datum)}</p>
-            <h2 id="shiftDialogTitel">Schicht für ${employeeName(emp)}</h2>
+            <p class="shift-dialog-kicker">${tag.name === "heute" ? "Heute" : "Morgen"} · ${escHtml(formatDate(tag.datum))}</p>
+            <h2 id="shiftDialogTitel">Schicht für ${escHtml(employeeName(emp))}</h2>
           </div>
           <button class="admin-btn admin-btn-secondary" type="button" data-dialog-cancel>Abbrechen</button>
         </header>
 
         <div class="shift-dialog-body">
           <section class="shift-dialog-step">
-            <h3>1. Arbeitet ${employeeName(emp)} an diesem Tag?</h3>
+            <h3>1. Arbeitet ${escHtml(employeeName(emp))} an diesem Tag?</h3>
             <div class="shift-pick-grid shift-pick-grid-zwei">
               <button class="shift-pick-card${dialog.imDienst ? " is-selected" : ""}" type="button"
                 data-dialog-duty="ja" aria-pressed="${dialog.imDienst ? "true" : "false"}">
@@ -1026,10 +1048,10 @@
             </div>
             <div class="shift-picker-times"${eigeneGewaehlt ? "" : " hidden"}>
               <label>Beginn
-                <input type="time" data-dialog-start value="${dialog.start}">
+                <input type="time" data-dialog-start value="${escHtml(dialog.start)}">
               </label>
               <label>Ende
-                <input type="time" data-dialog-end value="${dialog.ende}">
+                <input type="time" data-dialog-end value="${escHtml(dialog.ende)}">
               </label>
             </div>
           </section>
@@ -1051,7 +1073,7 @@
             <dl class="shift-dialog-summary">${zusammenfassung}</dl>
           </section>
 
-          <p class="shift-dialog-error"${dialog.fehler ? "" : " hidden"} role="alert" data-dialog-error>${dialog.fehler}</p>
+          <p class="shift-dialog-error"${dialog.fehler ? "" : " hidden"} role="alert" data-dialog-error>${escHtml(dialog.fehler)}</p>
         </div>
 
         <footer class="shift-dialog-foot">

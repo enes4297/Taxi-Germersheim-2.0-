@@ -1126,7 +1126,22 @@
           preview.innerHTML = `<img src="${url}" alt="Vorschau" />`;
           preview.hidden = false;
         } else {
-          preview.innerHTML = `<div class="upload-file-pill">${file.name}</div>`;
+          /*
+            GEMESSENER AUSGANGSFEHLER: Hier stand
+              preview.innerHTML = `<div class="upload-file-pill">${file.name}</div>`
+            - der Dateiname unmaskiert in innerHTML. Der Name kommt aus dem
+            eigenen Dateidialog, es war also kein nutzeruebergreifender Weg;
+            falsch dargestellt wurde er trotzdem, und die Projektregel
+            verlangt beim Einfuegen in HTML immer eine Maskierung.
+
+            textContent setzt den Namen als TEXT - damit gibt es nichts zu
+            maskieren und nichts zu vergessen.
+          */
+          preview.innerHTML = "";
+          const pille = document.createElement("div");
+          pille.className = "upload-file-pill";
+          pille.textContent = file.name;
+          preview.appendChild(pille);
           preview.hidden = false;
         }
       };

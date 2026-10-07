@@ -7173,3 +7173,144 @@ Die 27 zusätzlichen Zusicherungen in `probe-tagwahrheit` verteilen sich auf:
   Satz — ihm fehlt `customers.read` tatsächlich.
 - **Abschnitt 12 (neu):** Fähigkeitszahl und Bereichsliste aller fünf Rollen
   gegen eine festgeschriebene Erwartung.
+
+---
+
+## 67. Drei Befunde der Abschlussprüfung behoben
+
+Die rein lesende Codeprüfung von PR #188 hat keine Blocker gefunden. Drei
+Befunde wurden vor dem Merge umgesetzt — und nur diese drei.
+
+### 67.1 S2-1 · Maskierung im neuen Schichtdialog
+
+`admin/schichtplanung.js` hatte **keinen** Maskierungshelfer, der neue
+Schichtdialog setzte Datenbankwerte unmaskiert in `innerHTML` — auch in
+Attribute. Derselbe PR führt in `fahrer/mitarbeiter.js` `escHtml()` ein, mit
+dem ausdrücklichen Hinweis, dass Datenbankinhalte immer zu maskieren sind. Im
+neuen Admin-Code war dieser eigene Standard nicht angewandt.
+
+`escHtml()` ist jetzt wortgleich auch in `admin/schichtplanung.js` vorhanden
+und deckt im Dialog **zehn** Stellen ab:
+
+| Stelle | Wert |
+|---|---|
+| `data-dialog-template="…"` | Vorlagenkennung (Attribut) |
+| `<strong>…</strong>` | Vorlagenname |
+| `<span>… – … Uhr</span>` | Beginn und Ende der Vorlage |
+| `data-dialog-vehicle="…"` | Fahrzeugkennung (Attribut) |
+| `<strong>…</strong>` | Fahrzeugname beziehungsweise Kennzeichen |
+| `<span>…</span>` | Kennzeichen |
+| `<small>…</small>` | Fahrzeugart |
+| `<dt>…</dt><dd>…</dd>` | Zusammenfassung — deckt Mitarbeitername, Datum und Fahrzeugbeschriftung an einer Stelle ab |
+| Kopfzeile und Frage 1 | Mitarbeitername, formatiertes Datum |
+| `value="…"` zweimal | eigene Schichtzeiten (Attribut) |
+
+**Bewusst nicht angefasst:** Die zweite Stelle mit `${t.name}` in der
+vorbestehenden Vorlagenliste (Zeile 1326). Der Auftrag nennt den **neuen
+Dialog**; die übrigen `innerHTML`-Stellen dieser Datei bleiben unverändert.
+Festverdrahtete Oberflächentexte wurden nicht verändert.
+
+### 67.2 S4-1 und S4-2 · Berechtigung am Einstiegspunkt
+
+`ProbeRahmen.geheZu()` prüfte nur, ob es den Bereich **gibt**. Ein direkter
+Aufruf setzte deshalb auch als Mitarbeiter `zustand.bereich = "fahrten"` —
+ausgeliefert wurde nichts, aber der Zustand war falsch.
+
+Beide Einstiege prüfen jetzt über `darfBereich()` und übernehmen einen
+gesperrten Bereich nicht.
+
+**Dabei ist ein echter Zielkonflikt aufgetreten — und er ist aufgelöst, nicht
+weggedrückt.** Die erste Fassung kehrte stillschweigend zurück. Damit fielen
+`probe-berechtigung` (4 Prüfungen) und `probe-rechte` (1 Prüfung) aus: Sie
+verlangen ausdrücklich, dass ein direkter Sprung **sichtbar abgewiesen** wird
+— „Verstecken allein wäre kein Schutz". Ein stilles Nichts hätte diese
+Zusicherung verloren.
+
+Die Abweisung steht deshalb jetzt in **einem** Baustein `abweisungZeichnen()`,
+den beide Wege benutzen:
+
+- `zeichnen()` — wenn der gespeicherte Bereich nicht (mehr) erlaubt ist
+- `geheZu()` und `geheZuMitHerkunft()` — wenn ein Sprung abgewiesen wird;
+  dabei bleibt `zustand.bereich` unverändert
+
+Damit gilt beides: Der gesperrte Bereich wird nicht übernommen, **und** die
+Abweisung wird gesagt. Die bestehenden fünf Zusicherungen bestehen
+unverändert — ihr Wortlaut wurde nicht angepasst.
+
+**Folge, die benannt sein soll:** Nach einer Abweisung zeigt der Hauptbereich
+„Kein Zugriff", während die Navigation weiterhin den zuletzt gültigen Bereich
+hervorhebt. Das ist gewollt — man wurde abgewiesen und ist nicht umgezogen.
+
+### 67.3 Ein Fehler in meinem eigenen neuen Test
+
+Abschnitt 12 von `probe-tagwahrheit` prüfte zunächst, dass **nirgends im
+Dokument** ein geschützter Inhalt steht. Das war falsch: Für die Disposition
+stand dort die **erlaubte** Übersicht mit Tagesverlauf — Kundennamen und
+Kennzeichen gehören da hin. Der Test hat sich an erlaubtem Inhalt verschluckt
+und 14-mal gemeldet.
+
+Geprüft wird jetzt die genaue Eigenschaft: Nach einer Abweisung steht im
+**Hauptbereich** die Abweisung, und darin nichts Geschütztes. Das ist
+rollenunabhängig richtig und strenger als die erste Fassung.
+
+Abschnitt 12 fährt alle gesperrten Rolle/Bereich-Kombinationen für vier
+Rollen (Mitarbeiter, Buchhaltung, Disposition, Personal) über **beide**
+Einstiege und prüft je Fall drei Dinge: Zustand nicht übernommen, sichtbar
+abgewiesen, kein geschützter Inhalt. Dazu die Gegenprobe, dass erlaubte
+Bereiche weiterhin angenommen werden — die Sperre darf die Navigation nicht
+lahmlegen. Der Lauf wächst dadurch von 184 auf **393** Zusicherungen.
+
+### 67.4 S2-9 · Dateiname in der Upload-Vorschau
+
+`fahrer/mitarbeiter.js` setzte den Dateinamen unmaskiert über `innerHTML`.
+Der Name stammt aus dem eigenen Dateidialog, es war also kein
+nutzerübergreifender Weg — falsch dargestellt wurde er trotzdem, und die
+Projektregel verlangt beim Einfügen in HTML immer eine Maskierung. Die Pille
+wird jetzt über `createElement` und `textContent` gesetzt: Damit gibt es
+nichts zu maskieren und nichts zu vergessen.
+
+Die Zeile stand unverändert schon in `dev` — es war keine Regression dieses
+PR, sondern ein vorbestehender Punkt, der auf ausdrückliche Anweisung
+mitbehoben wurde.
+
+### 67.5 Was ausdrücklich nicht geändert wurde
+
+- Die neun alten Wurzelseiten (Befund S1-1) — **nicht gelöscht, nicht
+  verändert**
+- `CLAUDE.md` — unverändert
+- Die vorbestehenden unmaskierten `note`-Ausgaben in anderen `admin/`-Dateien,
+  die dieser PR nicht anfasst
+- Alle übrigen Befunde der Prüfung
+
+### 67.6 Alle vierzig Prüfläufe nach den drei Korrekturen
+
+Stand 07.10.2026, nach der letzten Änderung vollständig von vorn.
+
+| Gruppe | Läufe | Zusicherungen |
+|---|---|---|
+| Öffentliche Website, Spiele, Grundlagen | 10 | 611 |
+| Flotte, Konto, Anmeldung, admin/fahrer | 11 | 1 153 |
+| Designprobe Betriebsportal | 19 | 2 886 |
+| **Summe** | **40** | **4 650 bestanden, 0 fehlgeschlagen** |
+
+Gegenüber dem Stand vor den Korrekturen (4 441) sind es **209 Zusicherungen
+mehr** — genau der neue Abschnitt 12 in `probe-tagwahrheit`, der von 184 auf
+393 wächst. Kein anderer Lauf hat sich in seiner Zahl verändert.
+
+**Ein Lauf ist zwischendurch ausgefallen — die Ursache war der veraltete
+Ausgabeordner, nicht der Code.** `ausgabe-pruefen` vergleicht jede `admin/`-
+und `fahrer/`-Quelldatei **bytegleich** gegen ihre Kopie in
+`dist-oeffentlich/`. Da die Korrekturen `admin/schichtplanung.js` und
+`fahrer/mitarbeiter.js` geändert haben, der Ausgabeordner aber von vor diesen
+Änderungen stammte, meldete der Lauf zwei Abweichungen:
+
+```
+FEHL admin:  alle 164 Bestandsdateien bytegleich
+FEHL fahrer: alle 8 Bestandsdateien bytegleich
+```
+
+Gegenprobe vor dem Neubau: Genau diese **zwei** Dateien wichen ab,
+Stichproben wie `admin/sidebar.js`, `admin/admin.css`, `fahrer/app.css` und
+`fahrer/employee-supabase.js` waren identisch. Nach `npm run build` steht der
+Lauf wieder bei **56 bestanden, 0 fehlgeschlagen**. Die Erwartung wurde nicht
+angepasst — es wurde gebaut, was sie prüft.

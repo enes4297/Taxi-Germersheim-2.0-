@@ -577,14 +577,33 @@
     </div>`;
   }
 
+  /*
+    Die sichtbare Abweisung - an EINER Stelle.
+
+    Sie wird von zwei Wegen gebraucht: von zeichnen(), wenn der
+    gespeicherte Bereich nicht (mehr) erlaubt ist, und von geheZu(),
+    wenn ein Sprung abgewiesen wird. Im zweiten Fall bleibt
+    `zustand.bereich` unveraendert - der gesperrte Bereich wird nicht
+    uebernommen, die Abweisung aber gesagt.
+
+    Ein stilles Nichts waere hier falsch: Die Pruefung
+    probe-berechtigung verlangt ausdruecklich, dass ein direkter
+    Sprung ABGEWIESEN wird - "Verstecken allein waere kein Schutz".
+  */
+  function abweisungZeichnen() {
+    const ziel = document.querySelector("[data-haupt]");
+    if (!ziel) return;
+    ziel.innerHTML = portalkopf() + `<div class="bereichskopf"><h1>Kein Zugriff</h1></div>
+      ${kastenKeinRecht("diesen Bereich")}`;
+  }
+
   function zeichnen() {
     const merker = fokusMerken();
     navigationZeichnen();
     const bereich = BEREICHE.find((b) => b.id === zustand.bereich);
     const ziel = document.querySelector("[data-haupt]");
     if (!bereich || !darf(bereich.braucht)) {
-      ziel.innerHTML = portalkopf() + `<div class="bereichskopf"><h1>Kein Zugriff</h1></div>
-        ${kastenKeinRecht("diesen Bereich")}`;
+      abweisungZeichnen();
       return;
     }
     ziel.innerHTML = portalkopf() + window.ProbeBereiche.zeichne(zustand.bereich);
@@ -595,8 +614,32 @@
     if (!merker) { ziel.scrollTop = 0; window.scrollTo(0, 0); }
   }
 
+  /*
+    Ein gesperrter Bereich wird nicht einmal zum Navigationszustand.
+
+    GEMESSENER AUSGANGSFEHLER: Hier stand nur die Frage, ob es den
+    Bereich GIBT. Ein direkter Aufruf wie
+      window.ProbeRahmen.geheZu("fahrten")
+    setzte deshalb auch als Mitarbeiter `zustand.bereich = "fahrten"`.
+    Ausgeliefert wurde nichts - zeichnen() prueft `darf(bereich.braucht)`
+    noch einmal und zeigt "Keine Berechtigung" -, aber die Sperre fehlte
+    am Einstiegspunkt. Gemessen waren 19 von 19 gesperrten Kombinationen
+    ohne Datenabfluss; der Zustand stimmte trotzdem nicht.
+
+    Jetzt wird HIER geprueft. Die Pruefung in zeichnen() bleibt: zwischen
+    Hinweg und Zeichnen kann ein Recht entzogen worden sein.
+  */
+  function darfBereich(bereichId) {
+    const b = BEREICHE.find((x) => x.id === bereichId);
+    return Boolean(b) && darf(b.braucht);
+  }
+
   function geheZu(bereichId) {
-    if (!BEREICHE.some((b) => b.id === bereichId)) return;
+    if (!darfBereich(bereichId)) {
+      /* Zustand NICHT uebernehmen - aber sagen, dass abgewiesen wurde. */
+      abweisungZeichnen();
+      return;
+    }
     /* Wer selbst woandershin geht, gibt die Herkunft auf - sonst
        sprang das Schliessen eines spaeteren Fensters zurueck in einen
        Bereich, den der Mensch laengst verlassen hat. */
@@ -612,7 +655,13 @@
     bestehen.
   */
   function geheZuMitHerkunft(bereichId, h) {
-    if (!BEREICHE.some((b) => b.id === bereichId)) return;
+    /* Dieselbe Sperre wie in geheZu() - ein festgehaltener Rueckweg ist
+       kein Freibrief. Auch hier wird die Abweisung gezeigt, nicht
+       verschwiegen. */
+    if (!darfBereich(bereichId)) {
+      abweisungZeichnen();
+      return;
+    }
     herkunft = null;
     if (dialogOffen()) dialogSchliessen(true);
     herkunft = h || null;
