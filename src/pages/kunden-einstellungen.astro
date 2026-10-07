@@ -1,0 +1,406 @@
+---
+/**
+ * Konto und Einstellungen — unter derselben Adresse wie bisher
+ * (kunden-einstellungen.html).
+ *
+ * ═══════════════════════════════════════════════════════════════════════
+ * DIE EINZIGE KONTOSEITE, DIE ETWAS SPEICHERT
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * Genau eine Aenderung geht von hier weg, unveraendert aus dem Bestand:
+ *
+ *     client.auth.updateUser({ password })
+ *
+ * Das ist der Supabase-Aufruf zum Passwortwechsel. Sonst speichert die
+ * Seite nichts: E-Mail und Telefon werden nur ANGEZEIGT, sie sind hier
+ * nicht aenderbar - auch im Bestand nicht.
+ *
+ * Ebenfalls unveraendert:
+ *   - die drei Passwortregeln (8 Zeichen, ein Grossbuchstabe, eine Zahl)
+ *   - die Staerkeanzeige in drei Stufen (Schwach / Mittel / Stark)
+ *   - die Bestaetigung des Passworts und der Vergleich beider Felder
+ *   - alle vier Meldungen, wortgleich
+ *
+ * ── WAS HIER BESSER WURDE ────────────────────────────────────────────
+ *
+ * Der Bestand benutzte ein <dialog> ohne Ruecksprung des Fokus und ohne
+ * Escape-Behandlung ueber die Browservorgabe hinaus. Hier kehrt der
+ * Fokus nach dem Schliessen auf den oeffnenden Knopf zurueck.
+ *
+ * Und: Die Seite behauptete unten "Sie sind aktuell angemeldet." als
+ * festen Text. Das stand auch dann da, wenn die Sitzungsabfrage gerade
+ * gescheitert war. Der Satz steht jetzt nur noch dort, wo er stimmt -
+ * hinter der Sperre, die ohne Sitzung gar nichts zeigt.
+ */
+import Kontoseite from '../components/Kontoseite.astro';
+
+/** Die Verweise der rechten Spalte, Ziele wie im Bestand. */
+const RECHTLICHES = [
+  { text: 'Datenschutz', ziel: 'datenschutz.html' },
+  { text: 'Impressum', ziel: 'impressum.html' },
+];
+
+/** Die drei Regeln - Schluessel und Texte wie im Bestand. */
+const REGELN = [
+  { schluessel: 'length', text: 'Mindestens 8 Zeichen' },
+  { schluessel: 'uppercase', text: 'Mindestens ein Großbuchstabe' },
+  { schluessel: 'number', text: 'Mindestens eine Zahl' },
+];
+---
+
+<Kontoseite
+  titel="Konto & Einstellungen | Taxi Germersheim GmbH"
+  beschreibung="Verwalten Sie Ihr Taxi-Germersheim-Konto, Ihre Sicherheit und Ihre Sitzung."
+  pfad="kunden-einstellungen.html"
+  label="Ihr Taxi-Germersheim-Konto"
+  ueberschrift="Konto & Einstellungen"
+  text="Verwalten Sie Ihr Konto, Ihre Sicherheit und Ihre Sitzung."
+  bereichId="customer-settings-page"
+  bereichName="Konto und Einstellungen"
+>
+  <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pb-20 lg:pb-28">
+    <div class="mt-10 grid gap-5 lg:grid-cols-2">
+      {/* ── Kontaktdaten ───────────────────────────────────────── */}
+      <article class="border border-border bg-card p-6 lg:p-8">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Ihr Konto</p>
+        <h2 class="mt-2 text-[22px] font-semibold tracking-[-0.02em] text-foreground">Kontaktdaten</h2>
+
+        <dl class="mt-6 divide-y divide-border/70 border-y border-border/70">
+          <div class="flex items-center justify-between gap-4 py-3.5">
+            <dt class="text-sm text-muted-foreground">E-Mail</dt>
+            <dd class="break-all text-right text-[15px] text-foreground" data-konto-persoenlich data-feld="email">—</dd>
+          </div>
+          <div class="flex items-center justify-between gap-4 py-3.5">
+            <dt class="text-sm text-muted-foreground">Telefon</dt>
+            <dd class="text-[15px] text-foreground" data-konto-persoenlich data-feld="telefon">—</dd>
+          </div>
+        </dl>
+
+        <a
+          href="meinkonto.html"
+          class="mt-6 inline-flex items-center gap-2 text-sm text-primary underline-offset-4 transition-colors duration-150 hover:underline"
+        >Persönliche Daten ansehen <span aria-hidden="true">›</span></a>
+      </article>
+
+      {/* ── Sicherheit ─────────────────────────────────────────── */}
+      <article class="border border-border bg-card p-6 lg:p-8">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sicherheit</p>
+        <h2 class="mt-2 text-[22px] font-semibold tracking-[-0.02em] text-foreground">Kontosicherheit</h2>
+
+        <button
+          type="button"
+          id="passwortOeffnen"
+          class="mt-6 flex w-full items-center justify-between gap-4 border border-border px-4 py-3.5 text-left transition-colors duration-150 hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          <span>
+            <strong class="block text-[15px] font-medium text-foreground">Passwort</strong>
+            <span class="mt-0.5 block text-sm text-muted-foreground">Passwort für Ihr Konto ändern</span>
+          </span>
+          <span aria-hidden="true" class="text-muted-foreground">›</span>
+        </button>
+      </article>
+
+      {/* ── Rechtliches ────────────────────────────────────────── */}
+      <article class="border border-border bg-card p-6 lg:p-8">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Informationen</p>
+        <h2 class="mt-2 text-[22px] font-semibold tracking-[-0.02em] text-foreground">Datenschutz & Recht</h2>
+        <ul class="mt-6 divide-y divide-border/70 border-y border-border/70">
+          {RECHTLICHES.map((r) => (
+            <li>
+              <a
+                href={r.ziel}
+                class="flex items-center justify-between gap-4 py-3.5 text-[15px] text-foreground transition-colors duration-150 hover:text-primary"
+              >{r.text} <span aria-hidden="true" class="text-muted-foreground">›</span></a>
+            </li>
+          ))}
+          <li>
+            <a
+              href="hilfe-kontakt.html"
+              class="flex items-center justify-between gap-4 py-3.5 transition-colors duration-150 hover:text-primary"
+            >
+              <span>
+                <strong class="block text-[15px] font-medium text-foreground">Hilfe & Kontakt</strong>
+                <span class="mt-0.5 block text-sm text-muted-foreground">Fragen zu Ihrem Konto oder einer Buchung?</span>
+              </span>
+              <span aria-hidden="true" class="text-muted-foreground">›</span>
+            </a>
+          </li>
+        </ul>
+      </article>
+
+      {/* ── Sitzung ────────────────────────────────────────────── */}
+      <article class="border border-border bg-card p-6 lg:p-8">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sitzung</p>
+        <h2 class="mt-2 text-[22px] font-semibold tracking-[-0.02em] text-foreground">Abmelden</h2>
+        <p class="mt-4 text-[15px] leading-relaxed text-muted-foreground">
+          Beenden Sie Ihre aktuelle Anmeldung auf diesem Gerät.
+        </p>
+        <button
+          type="button"
+          id="kontoAbmelden"
+          class="mt-6 border border-border px-5 py-2.5 text-sm text-foreground transition-colors duration-150 hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >Abmelden</button>
+        <p
+          id="kontoAbmeldefehler"
+          class="mt-4 border border-primary/40 bg-primary/[0.07] px-4 py-3 text-sm text-foreground"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></p>
+      </article>
+    </div>
+  </div>
+
+  {/* ── Der Passwortdialog ─────────────────────────────────────── */}
+  <dialog
+    id="passwortDialog"
+    class="w-[min(30rem,calc(100vw-2rem))] border border-border bg-card p-0 text-foreground backdrop:bg-black/70"
+    aria-labelledby="passwortDialogTitel"
+  >
+    <form id="passwortForm" novalidate class="p-6 lg:p-8">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sicherheit</p>
+          <h2 id="passwortDialogTitel" class="mt-2 text-[22px] font-semibold tracking-[-0.02em]">
+            Passwort ändern
+          </h2>
+        </div>
+        <button
+          type="button"
+          id="passwortSchliessen"
+          class="-mt-1 shrink-0 px-2 py-1 text-xl leading-none text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          aria-label="Dialog schließen"
+        >×</button>
+      </div>
+
+      <p class="mt-4 text-sm leading-relaxed text-muted-foreground">
+        Legen Sie ein neues Passwort für Ihr Taxi-Germersheim-Konto fest.
+      </p>
+
+      <p
+        id="passwortMeldung"
+        class="mt-5 border px-4 py-3 text-sm"
+        role="status"
+        aria-live="polite"
+        hidden
+      ></p>
+
+      <div class="mt-5">
+        <label for="newPassword" class="block text-sm font-medium text-muted-foreground mb-1.5">
+          Neues Passwort
+        </label>
+        <div class="relative">
+          <input
+            id="newPassword"
+            name="newPassword"
+            type="password"
+            minlength="8"
+            autocomplete="new-password"
+            required
+            class="w-full border border-border bg-background px-3.5 py-2.5 pr-24 text-[15px] text-foreground outline-none transition-colors duration-150 focus:border-primary"
+          />
+          <button
+            type="button"
+            data-passwort-zeigen="newPassword"
+            class="absolute inset-y-0 right-0 px-3 text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            aria-label="Neues Passwort anzeigen"
+          >Anzeigen</button>
+        </div>
+      </div>
+
+      <div id="passwortStaerke" class="mt-3" hidden>
+        <div class="h-1 w-full bg-border">
+          <i id="passwortStaerkeBalken" class="block h-full bg-primary transition-[width] duration-200" style="width:0%"></i>
+        </div>
+        <span id="passwortStaerkeText" class="mt-1.5 block text-xs text-muted-foreground"></span>
+      </div>
+
+      <ul class="mt-4 space-y-1.5" aria-label="Passwortregeln">
+        {REGELN.map((r) => (
+          <li
+            data-passwort-regel={r.schluessel}
+            class="flex items-center gap-2 text-sm text-muted-foreground"
+          >
+            <span aria-hidden="true" class="text-xs">○</span>{r.text}
+          </li>
+        ))}
+      </ul>
+
+      <div class="mt-5">
+        <label for="confirmPassword" class="block text-sm font-medium text-muted-foreground mb-1.5">
+          Passwort bestätigen
+        </label>
+        <div class="relative">
+          <input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            minlength="8"
+            autocomplete="new-password"
+            required
+            class="w-full border border-border bg-background px-3.5 py-2.5 pr-24 text-[15px] text-foreground outline-none transition-colors duration-150 focus:border-primary"
+          />
+          <button
+            type="button"
+            data-passwort-zeigen="confirmPassword"
+            class="absolute inset-y-0 right-0 px-3 text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            aria-label="Bestätigung anzeigen"
+          >Anzeigen</button>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        class="mt-6 w-full border border-primary bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity duration-150 hover:opacity-90 disabled:opacity-60"
+      >Passwort speichern</button>
+    </form>
+  </dialog>
+
+  <script is:inline slot="skript">
+    (async function () {
+      const { gesperrt, auth } = await window.tgKontoBereit;
+      if (gesperrt) return;
+
+      /* ── 1. Anzeigen aus der Sitzung ─────────────────────────────── */
+      const profil = auth && typeof auth.getProfile === 'function' ? auth.getProfile() : {};
+      const schnappschuss = auth && typeof auth.getSessionSnapshot === 'function'
+        ? auth.getSessionSnapshot() : null;
+      const nutzer = schnappschuss && schnappschuss.user ? schnappschuss.user : null;
+
+      const feld = (n) => document.querySelector('[data-feld="' + n + '"]');
+      const setze = (k, v) => { if (k) k.textContent = v && String(v).trim() ? String(v).trim() : '—'; };
+
+      setze(feld('email'), profil.email || (nutzer && nutzer.email));
+      setze(feld('telefon'), profil.phone || (nutzer && nutzer.user_metadata && nutzer.user_metadata.phone));
+
+      /* ── 2. Der Passwortdialog ───────────────────────────────────── */
+      const dialog = document.getElementById('passwortDialog');
+      const form = document.getElementById('passwortForm');
+      const oeffnen = document.getElementById('passwortOeffnen');
+      const schliessen = document.getElementById('passwortSchliessen');
+      const neu = document.getElementById('newPassword');
+      const bestaetigung = document.getElementById('confirmPassword');
+      const meldung = document.getElementById('passwortMeldung');
+      const staerke = document.getElementById('passwortStaerke');
+      const balken = document.getElementById('passwortStaerkeBalken');
+      const staerkeText = document.getElementById('passwortStaerkeText');
+
+      /** Die drei Regeln, unveraendert aus dem Bestand. */
+      function pruefe(passwort) {
+        const regeln = {
+          length: passwort.length >= 8,
+          uppercase: /[A-Z]/.test(passwort),
+          number: /\d/.test(passwort),
+        };
+        return { regeln, punkte: Object.values(regeln).filter(Boolean).length };
+      }
+
+      function zeichneRegeln() {
+        const ergebnis = pruefe(neu ? neu.value : '');
+        document.querySelectorAll('[data-passwort-regel]').forEach((li) => {
+          const erfuellt = Boolean(ergebnis.regeln[li.dataset.passwortRegel]);
+          li.classList.toggle('text-primary', erfuellt);
+          li.classList.toggle('text-muted-foreground', !erfuellt);
+          const zeichen = li.firstElementChild;
+          if (zeichen) zeichen.textContent = erfuellt ? '●' : '○';
+        });
+        const hatText = Boolean(neu && neu.value);
+        if (staerke) staerke.hidden = !hatText;
+        if (balken) balken.style.width = String((ergebnis.punkte / 3) * 100) + '%';
+        if (staerkeText) {
+          staerkeText.textContent = ergebnis.punkte < 2 ? 'Schwach' : (ergebnis.punkte < 3 ? 'Mittel' : 'Stark');
+        }
+        return ergebnis;
+      }
+
+      function zeigeMeldung(text, gut) {
+        if (!meldung) return;
+        meldung.hidden = false;
+        meldung.textContent = text;
+        meldung.className = 'mt-5 border px-4 py-3 text-sm '
+          + (gut
+            ? 'border-primary/40 bg-primary/[0.07] text-foreground'
+            : 'border-destructive/50 bg-destructive/[0.08] text-foreground');
+      }
+
+      function zuruecksetzen() {
+        if (form) form.reset();
+        document.querySelectorAll('[data-passwort-zeigen]').forEach((knopf) => {
+          const ziel = document.getElementById(knopf.dataset.passwortZeigen);
+          if (ziel) ziel.type = 'password';
+          knopf.textContent = 'Anzeigen';
+        });
+        if (meldung) { meldung.hidden = true; meldung.textContent = ''; }
+        zeichneRegeln();
+      }
+
+      if (neu) neu.addEventListener('input', zeichneRegeln);
+
+      document.querySelectorAll('[data-passwort-zeigen]').forEach((knopf) => {
+        knopf.addEventListener('click', () => {
+          const ziel = document.getElementById(knopf.dataset.passwortZeigen);
+          if (!ziel) return;
+          const sichtbar = ziel.type === 'text';
+          ziel.type = sichtbar ? 'password' : 'text';
+          knopf.textContent = sichtbar ? 'Anzeigen' : 'Verbergen';
+          ziel.focus();
+        });
+      });
+
+      if (oeffnen && dialog) {
+        oeffnen.addEventListener('click', () => {
+          zuruecksetzen();
+          dialog.showModal();
+          if (neu) neu.focus();
+        });
+      }
+
+      // Nach dem Schliessen zurueck auf den Knopf, der geoeffnet hat -
+      // sonst steht der Fokus am Seitenanfang und die Tastaturbedienung
+      // beginnt von vorn. Gilt auch fuer Escape (close-Ereignis).
+      if (schliessen && dialog) schliessen.addEventListener('click', () => dialog.close());
+      if (dialog) dialog.addEventListener('close', () => { if (oeffnen) oeffnen.focus(); });
+
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const passwort = neu ? neu.value : '';
+          const wiederholung = bestaetigung ? bestaetigung.value : '';
+          const ergebnis = zeichneRegeln();
+          const knopf = form.querySelector('[type="submit"]');
+
+          if (!Object.values(ergebnis.regeln).every(Boolean)) {
+            zeigeMeldung('Das Passwort erfüllt noch nicht alle Regeln.', false);
+            return;
+          }
+          if (passwort !== wiederholung) {
+            zeigeMeldung('Passwort und Bestätigung stimmen nicht überein.', false);
+            return;
+          }
+
+          if (knopf) { knopf.disabled = true; knopf.textContent = 'Wird gespeichert …'; }
+          try {
+            const client = auth && typeof auth.getClient === 'function' ? await auth.getClient() : null;
+            if (!client || !client.auth || typeof client.auth.updateUser !== 'function') {
+              throw new Error('PASSWORD_UPDATE_UNAVAILABLE');
+            }
+            const antwort = await client.auth.updateUser({ password: passwort });
+            if (antwort.error) throw antwort.error;
+
+            zeigeMeldung('Passwort wurde geändert.', true);
+            if (neu) neu.value = '';
+            if (bestaetigung) bestaetigung.value = '';
+            zeichneRegeln();
+          } catch (_e) {
+            zeigeMeldung('Das Passwort konnte gerade nicht geändert werden. Bitte versuchen Sie es erneut.', false);
+          } finally {
+            if (knopf) { knopf.disabled = false; knopf.textContent = 'Passwort speichern'; }
+          }
+        });
+      }
+
+      /* ── 3. Abmelden ─────────────────────────────────────────────── */
+      window.tgKontoAbmelden(document.getElementById('kontoAbmelden'));
+    })();
+  </script>
+</Kontoseite>

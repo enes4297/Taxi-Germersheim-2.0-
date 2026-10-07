@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#050505">
   <title>Mein Konto | Taxi Germersheim GmbH</title>
   <meta name="description" content="Mein Konto von Taxi Germersheim: Profil, Rewards und Schnellzugriff für eingeloggte Kunden.">
-  <meta name="robots" content="index,follow">
+  <meta name="robots" content="noindex,follow">
   <link rel="canonical" href="meinkonto.html">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="de_DE">
@@ -798,7 +798,7 @@
       const gated = !auth || typeof auth.requireLogin !== "function" || auth.requireLogin({
         targetSelector: '#customer-account',
         pageTitle: 'Mein Konto',
-        gateDescription: 'Melde dich an, um diesen Bereich zu sehen.'
+        gateDescription: 'Melden Sie sich an, um diesen Bereich zu sehen.'
       });
       document.body.classList.remove('auth-pending');
 

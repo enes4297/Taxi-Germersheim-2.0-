@@ -73,6 +73,32 @@
   }
 
   function normalizeShell() {
+    /*
+      Steht die freigegebene Kopfzeile schon da, wird sie nicht angefasst.
+
+      Seit Schritt 025 setzt tools/kopfzeile-bestand.mjs beim Bauen die
+      echte Kopfzeile aus dem Astro-Build in spiele.html ein - dieselbe
+      wie auf allen uebrigen Seiten. Ohne diese Abfrage wuerde sie hier
+      beim Laden sofort durch die alte ersetzt, und der Kunde saehe fuer
+      einen Moment die richtige und danach die falsche.
+
+      Erkannt wird sie an `data-kopf` - derselben Kennung, an der auch ihr
+      Bedienskript haengt.
+    */
+    const freigegeben = document.querySelector('header[data-kopf]');
+    if (freigegeben) {
+      const activePage = inferActivePage();
+      let footer = document.querySelector('.tg-public-footer');
+      if (!body.classList.contains('public-home')) {
+        const currentFooter = document.querySelector('body > footer, main + footer');
+        footer = createElement(footerMarkup());
+        if (currentFooter) currentFooter.replaceWith(footer);
+        else body.appendChild(footer);
+      }
+      void activePage;
+      return { header: freigegeben, footer };
+    }
+
     const currentHeader = document.querySelector('.tg-public-header, header.topbar, header.public-auth-header, header.container.nav, body.live-ride-body > header, nav.public-compact-nav');
     const header = createElement(headerMarkup());
     if (currentHeader) currentHeader.replaceWith(header);

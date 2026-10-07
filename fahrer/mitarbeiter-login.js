@@ -30,26 +30,22 @@
     btn.textContent = loading ? "Anmeldung läuft …" : "Anmelden";
   }
 
-  /* ------------------------------------------------------------------ */
-  /* Demo-Fallback (nur wenn Supabase NICHT konfiguriert ist)           */
-  /* ------------------------------------------------------------------ */
-
-  function saveDemoSession() {
-    localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify({
-      authenticated: true,
-      provider: "demo",
-      employeeId: "MA-101"
-    }));
-  }
-
-  function handleDemoLogin(identifier, password) {
-    if (identifier === "demo" && password === "demo") {
-      saveDemoSession();
-      window.location.assign("mitarbeiter.html");
-    } else {
-      setMessage("Benutzername oder Passwort falsch.", "error");
-    }
-  }
+  /* ------------------------------------------------------------------ *
+   * KEIN DEMO-ZUGANG MEHR
+   *
+   * Hier stand ein Rueckfall: War Supabase nicht eingerichtet, kam man mit
+   * "demo" / "demo" hinein, und eine Marke im Browserspeicher galt danach
+   * als Anmeldung. Das Portal zeigte dann erfundene Personen aus den
+   * Vorgabedaten.
+   *
+   * In der Messung liess sich der Zugang zwar nicht ausloesen - das
+   * E-Mail-Feld weist "demo" als ungueltig ab, bevor das Formular
+   * absendet. Wirksam war aber der Hinweis darunter: Er nannte
+   * Zugangsdaten, sobald die Konfiguration ausfiel.
+   *
+   * Beides ist entfernt. Ohne eingerichtete Verbindung gibt es keine
+   * Anmeldung, und das wird gesagt, statt sie vorzutaeuschen.
+   * ------------------------------------------------------------------ */
 
   /* ------------------------------------------------------------------ */
   /* Supabase-Login                                                      */
@@ -62,10 +58,15 @@
       await window.EmployeeSupabase.signIn(email, password);
       /* Supabase verwahrt die Session selbst (localStorage via GoTrueClient). */
       /* Nur ein minimaler Marker für den Reload-Schutz. */
-      localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify({
-        authenticated: true,
-        provider: "supabase"
-      }));
+      /* Nur Bequemlichkeit, keine Entscheidung — siehe portalSperren() in
+         mitarbeiter.js. Bei gesperrtem Browserspeicher geht es ohne
+         weiter, statt die Anmeldung abzubrechen. */
+      try {
+        localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify({
+          authenticated: true,
+          provider: "supabase"
+        }));
+      } catch { /* gesperrter Browserspeicher */ }
       window.location.assign("mitarbeiter.html");
     } catch (err) {
       setLoading(false);
@@ -93,11 +94,14 @@
     const ES = window.EmployeeSupabase;
 
     if (ES && ES.isConfigured()) {
-      /* Supabase ist konfiguriert – echter Login, kein Demo-Fallback */
       await handleSupabaseLogin(emailOrUser, password);
     } else {
-      /* Supabase nicht konfiguriert – Demo-Modus für lokale Entwicklung */
-      handleDemoLogin(emailOrUser, password);
+      /* Kein Ersatzweg. Ehrlich sagen, woran es liegt. */
+      setMessage(
+        "Die Anmeldung ist gerade nicht möglich, weil die Verbindung zum "
+        + "System nicht eingerichtet ist. Bitte wenden Sie sich an die Zentrale.",
+        "error"
+      );
     }
   }
 
@@ -105,19 +109,67 @@
   /* Init                                                                */
   /* ------------------------------------------------------------------ */
 
+  /**
+   * Grund einer Rueckleitung aus dem Portal anzeigen.
+   *
+   * Das Portal haengt bei einer Sperre `?grund=…` an. Die Texte sagen, was
+   * los ist, ohne etwas zu verraten: kein Dienstwortlaut, keine Kennung,
+   * keine Auskunft darueber, ob es ein Konto gibt.
+   */
+  function grundAnzeigen() {
+    const params = new URLSearchParams(window.location.search);
+    const grund = params.get("grund");
+    if (params.get("abmeldung") === "unbestaetigt") {
+      setMessage(
+        "Sie sind auf diesem Gerät abgemeldet. Der Abschluss der Abmeldung "
+        + "wurde allerdings nicht bestätigt — falls Sie an weiteren Geräten "
+        + "angemeldet sind, melden Sie sich dort bitte ebenfalls ab.",
+        "error"
+      );
+      return;
+    }
+    if (grund === "nicht-eingerichtet") {
+      setMessage(
+        "Die Verbindung zum System ist nicht eingerichtet. Bitte wenden Sie "
+        + "sich an die Zentrale.",
+        "error"
+      );
+    } else if (grund === "nicht-erreichbar") {
+      setMessage(
+        "Das System war gerade nicht erreichbar. Bitte melden Sie sich neu an.",
+        "error"
+      );
+    } else if (grund === "abgemeldet") {
+      setMessage("Bitte melden Sie sich an.");
+    }
+    if (grund || params.get("abmeldung")) {
+      /* Den Grund aus der Adresszeile nehmen - er gehoert nicht in den
+         Verlauf und nicht in ein Bildschirmfoto. */
+      if (window.history?.replaceState) {
+        window.history.replaceState(null, document.title, window.location.pathname);
+      }
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     const ES = window.EmployeeSupabase;
-    if (ES && ES.isConfigured()) {
-      /* Demo-Hinweis ausblenden, wenn Supabase aktiv */
-      if (demoHintNode) demoHintNode.hidden = true;
 
-      /* E-Mail-Feld-Label anpassen */
+    /* Der Demo-Hinweis nannte Zugangsdaten. Er wird nie mehr gezeigt und
+       zur Sicherheit auch aus dem Dokument genommen. */
+    if (demoHintNode) demoHintNode.remove();
+
+    if (ES && ES.isConfigured()) {
       const emailInput = loginForm?.querySelector('[name="email"]');
       if (emailInput) emailInput.placeholder = "mitarbeiter@taxi-germersheim.de";
     } else {
-      /* Demo-Modus: Hinweis zeigen */
-      if (demoHintNode) demoHintNode.hidden = false;
+      setMessage(
+        "Die Anmeldung ist gerade nicht möglich, weil die Verbindung zum "
+        + "System nicht eingerichtet ist. Bitte wenden Sie sich an die Zentrale.",
+        "error"
+      );
     }
+
+    grundAnzeigen();
 
     if (loginForm) {
       loginForm.addEventListener("submit", handleSubmit);

@@ -16,6 +16,75 @@
     }
   }
 
+  /* ═════════════════════════════════════════════════════════════════════
+     Der Browserspeicher darf die Anmeldung nicht aufhalten
+     ═════════════════════════════════════════════════════════════════════
+
+     GEMESSENER BEFUND (Schritt 021): Ist localStorage gesperrt, wirft
+     schon der Zugriff - nicht erst das Schreiben. Das geschah in
+     persistProfile(), das aus syncSessionState() und damit aus
+     hydrateSession() heraus lief. Die Ausnahme riss hydrateSession() ab,
+     und weil die Kontoseiten darauf warten, wurde
+     `document.body.classList.remove('auth-pending')` nie erreicht.
+
+     Ergebnis: Vier von fuenf Kontoseiten blieben DAUERHAFT auf
+     "Konto wird geladen …" stehen - ein schwarzer Bildschirm mit einem
+     Satz, zwei unbehandelte Fehler in der Konsole, und kein Weg weiter.
+
+     Gesperrt ist der Speicher zum Beispiel, wenn Cookies und Websitedaten
+     blockiert sind, in manchen privaten Fenstern, bei strengen
+     Unternehmenseinstellungen - oder wenn er schlicht voll ist.
+
+     Deshalb geht ab hier JEDER Zugriff ueber diese drei Funktionen. Sie
+     werfen nie. Schlaegt der Speicher fehl, merkt sich die Seite den
+     Stand nur fuer diesen Besuch (`cachedProfile`, `speicherErsatz`) -
+     die Anmeldung funktioniert, sie ueberlebt nur kein Neuladen.
+
+     `speicherGesperrt` haelt fest, ob es einmal geklemmt hat. Die
+     Kontoseiten fragen das ueber `CustomerAuth.speicherGesperrt()` ab
+     und sagen dem Kunden verstaendlich, was los ist - statt ihn vor
+     einer haengenden Seite sitzen zu lassen.
+  */
+  let speicherFehlgeschlagen = false;
+  /** Ersatzablage fuer diesen Besuch, wenn der echte Speicher nicht geht. */
+  const speicherErsatz = new Map();
+
+  function speicherLesen(schluessel) {
+    try {
+      return localStorage.getItem(schluessel);
+    } catch (_error) {
+      speicherFehlgeschlagen = true;
+      return speicherErsatz.has(schluessel) ? speicherErsatz.get(schluessel) : null;
+    }
+  }
+
+  function speicherSchreiben(schluessel, wert) {
+    speicherErsatz.set(schluessel, wert);
+    try {
+      localStorage.setItem(schluessel, wert);
+      return true;
+    } catch (_error) {
+      speicherFehlgeschlagen = true;
+      return false;
+    }
+  }
+
+  function speicherLoeschen(schluessel) {
+    speicherErsatz.delete(schluessel);
+    try {
+      localStorage.removeItem(schluessel);
+      return true;
+    } catch (_error) {
+      speicherFehlgeschlagen = true;
+      return false;
+    }
+  }
+
+  /** Hat der Browserspeicher in diesem Besuch geklemmt? */
+  function speicherGesperrt() {
+    return speicherFehlgeschlagen;
+  }
+
   function normalizeConfigFromWindow() {
     if (window.TaxiSupabaseConfig && typeof window.TaxiSupabaseConfig === "object") {
       return window.TaxiSupabaseConfig;
@@ -53,14 +122,26 @@
         return;
       }
 
-      const existingScript = document.querySelector('script[src*="@supabase/supabase-js"]');
+      // Die Bibliothek wird SELBST MITGELIEFERT, fest auf eine Version
+      // genagelt - kein Aufruf an ein fremdes CDN. Herkunft, Version und
+      // Pruefsumme stehen in vendor/HERKUNFT.md.
+      //
+      // Warum: Bis Schritt 017 kam sie von jsdelivr unter "@2", also jeweils
+      // der neuesten 2.x. Bei gesperrtem CDN meldeten 19 von 20 oeffentlichen
+      // Seiten Skriptfehler und die Anmeldung war nicht bedienbar. Dazu ging
+      // die IP-Adresse jedes Besuchers an einen Dritten.
+      const BIBLIOTHEK = "vendor/supabase-js-2.117.0.js";
+
+      const existingScript = document.querySelector(
+        'script[src*="@supabase/supabase-js"], script[src*="supabase-js-"]'
+      );
       if (existingScript) {
         existingScript.addEventListener("load", () => resolve(window.supabase), { once: true });
         return;
       }
 
       const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+      script.src = BIBLIOTHEK;
       script.async = false;
       script.onload = () => resolve(window.supabase);
       script.onerror = () => resolve(null);
@@ -106,9 +187,9 @@
   function persistProfile(profile) {
     cachedProfile = profile || null;
     if (profile) {
-      localStorage.setItem(STORE_KEYS.profile, JSON.stringify(profile));
+      speicherSchreiben(STORE_KEYS.profile, JSON.stringify(profile));
     } else {
-      localStorage.removeItem(STORE_KEYS.profile);
+      speicherLoeschen(STORE_KEYS.profile);
     }
   }
 
@@ -116,20 +197,20 @@
     if (cachedProfile) {
       return cachedProfile;
     }
-    const stored = localStorage.getItem(STORE_KEYS.profile);
+    const stored = speicherLesen(STORE_KEYS.profile);
     const parsed = safeParse(stored, null);
     cachedProfile = parsed || null;
     return cachedProfile;
   }
 
   function persistPreferences(preferences) {
-    const previous = safeParse(localStorage.getItem(STORE_KEYS.preferences) || "{}", {});
+    const previous = safeParse(speicherLesen(STORE_KEYS.preferences) || "{}", {});
     const merged = Object.assign({}, previous, preferences || {});
-    localStorage.setItem(STORE_KEYS.preferences, JSON.stringify(merged));
+    speicherSchreiben(STORE_KEYS.preferences, JSON.stringify(merged));
   }
 
   function readStoredPreferences() {
-    return safeParse(localStorage.getItem(STORE_KEYS.preferences) || "{}", {});
+    return safeParse(speicherLesen(STORE_KEYS.preferences) || "{}", {});
   }
 
   function getSessionSnapshot() {
@@ -173,7 +254,7 @@
       });
     } else {
       persistProfile(null);
-      localStorage.removeItem(STORE_KEYS.preferences);
+      speicherLoeschen(STORE_KEYS.preferences);
     }
   }
 
@@ -247,16 +328,16 @@
     const { data, error } = await client.rpc("claim_customer_account");
     if (error) {
       if (error.message === "CUSTOMER_EMAIL_NOT_VERIFIED") {
-        throw new Error("Bitte bestätige zuerst deine E-Mail-Adresse.");
+        throw new Error("Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.");
       }
       if (error.message === "CUSTOMER_NOT_FOUND") {
-        throw new Error("Dein Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte kontaktiere uns.");
+        throw new Error("Ihr Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte wenden Sie sich an uns.");
       }
       if (error.message === "CUSTOMER_EMAIL_AMBIGUOUS") {
-        throw new Error("Dein Kundenkonto konnte nicht automatisch zugeordnet werden. Bitte kontaktiere uns.");
+        throw new Error("Ihr Kundenkonto konnte nicht automatisch zugeordnet werden. Bitte wenden Sie sich an uns.");
       }
       if (error.message === "CUSTOMER_ALREADY_LINKED" || error.message === "AUTH_USER_ALREADY_LINKED") {
-        throw new Error("Dein Kundenkonto konnte nicht automatisch zugeordnet werden. Bitte kontaktiere uns.");
+        throw new Error("Ihr Kundenkonto konnte nicht automatisch zugeordnet werden. Bitte wenden Sie sich an uns.");
       }
       throw new Error("E-Mail oder Passwort ist falsch.");
     }
@@ -335,7 +416,28 @@
       if (claimError && claimError.message) {
         throw claimError;
       }
-      throw new Error("Dein Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte kontaktiere uns.");
+      throw new Error("Ihr Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte wenden Sie sich an uns.");
+    }
+  }
+
+  /**
+   * Wohin die Bestaetigungsmail zurueckfuehren soll.
+   *
+   * Dieselbe Bauart wie beim Passwort-Reset: die eigene Herkunft plus die
+   * vorgesehene Seite. Damit stimmt das Ziel in jeder Umgebung - lokal, im
+   * WLAN und spaeter unter der echten Domain -, ohne dass irgendwo eine
+   * Adresse fest eingetragen werden muesste.
+   *
+   * Bei `file://` gibt es keine brauchbare Herkunft. Dann wird KEIN Ziel
+   * mitgegeben; die Registrierung selbst bleibt moeglich.
+   */
+  function bestaetigungsAdresse() {
+    try {
+      const schema = window.location.protocol;
+      if (schema !== "http:" && schema !== "https:") return null;
+      return new URL("/anmelden.html?bestaetigt=1", window.location.origin).href;
+    } catch (_error) {
+      return null;
     }
   }
 
@@ -345,41 +447,136 @@
       throw new Error("Supabase ist noch nicht konfiguriert.");
     }
 
+    /*
+      Das Ziel der Bestaetigungsmail wird MITGEGEBEN.
+
+      Ohne `emailRedirectTo` nimmt Supabase die im Projekt hinterlegte
+      "Site URL". Die ist projektweit und kann nur auf EINEN Weg zeigen -
+      gemessen am 28.09.2026 zeigte sie auf die Anmeldeseite der
+      Verwaltung, weil diese ebenfalls eine Recovery-Landeseite ist. Ein
+      Kunde waere nach dem Klick in der Bestaetigungsmail also dort
+      gelandet, nicht im eigenen Konto.
+
+      Mit einem eigenen Ziel ist die Site URL fuer diesen Weg gleichgueltig.
+      Voraussetzung: Die Adresse steht in der Erlaubnisliste des Projekts
+      ("Redirect URLs"). Steht sie nicht dort, faellt Supabase weiterhin auf
+      die Site URL zurueck - das ist eine Projekteinstellung und laesst sich
+      von hier aus nicht erzwingen.
+
+      Ziel ist `anmelden.html?bestaetigt=1`: Die Seite wertet diesen Wert
+      aus und nimmt auch eine Sitzung entgegen, die beim Bestaetigen
+      entstanden ist.
+    */
+    const options = {
+      data: {
+        first_name: metadata.firstName || "",
+        last_name: metadata.lastName || "",
+        full_name: metadata.fullName || "",
+        phone: metadata.phone || ""
+      }
+    };
+
+    const rueckkehr = bestaetigungsAdresse();
+    if (rueckkehr) options.emailRedirectTo = rueckkehr;
+
     const { data, error } = await client.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          first_name: metadata.firstName || "",
-          last_name: metadata.lastName || "",
-          full_name: metadata.fullName || "",
-          phone: metadata.phone || ""
-        }
-      }
+      options: options
     });
 
     if (error) {
       throw new Error(error.message || "Registrierung fehlgeschlagen.");
     }
 
-    if (data?.user && !data.session) {
-      throw new Error("Bitte bestätige zuerst deine E-Mail-Adresse.");
-    }
-
+    // KEIN Fehler, wenn noch keine Sitzung entstanden ist.
+    //
+    // Verlangt das Supabase-Projekt eine Bestaetigung per E-Mail, liefert
+    // signUp einen Benutzer OHNE Sitzung zurueck. Die Registrierung ist
+    // damit GEGLUECKT - sie wartet nur noch auf den Klick in der Mail.
+    // Bis Schritt 017 wurde hier geworfen, und registrieren.html schrieb
+    // den Text in den roten Fehlerkasten: Der Kunde hielt eine geglueckte
+    // Registrierung fuer gescheitert.
+    //
+    // Die Entscheidung, was angezeigt wird, gehoert an die Seite. Sie
+    // erkennt den Fall an data.session === null.
     return data;
   }
 
+  /**
+   * Abmelden - und zwar ehrlich.
+   *
+   * ───────────────────────────────────────────────────────────────────────
+   * WAS HIER FRUEHER FALSCH WAR
+   * ───────────────────────────────────────────────────────────────────────
+   *
+   * Der Aufruf stand in einem try/catch, das den Fehler verschluckte, und
+   * die Funktion meldete anschliessend in jedem Fall Erfolg. Die Oberflaeche
+   * sagte dann "abgemeldet", obwohl der Dienst die Sitzung gar nicht
+   * widerrufen hatte. Fuer eine Sicherheitshandlung ist das die falsche
+   * Auskunft: Auf anderen Geraeten waere die Anmeldung weiter gueltig
+   * gewesen, ohne dass es jemand erfahren haette.
+   *
+   * Der mitgelieferte Client verschluckt zudem selbst die Antworten 401,
+   * 403 und 404 vom Abmelde-Endpunkt und raeumt trotzdem lokal auf. Ein
+   * ausbleibender Ausnahmefehler ist also KEIN Beleg fuer einen Widerruf.
+   *
+   * ───────────────────────────────────────────────────────────────────────
+   * WIE ES JETZT LAEUFT
+   * ───────────────────────────────────────────────────────────────────────
+   *
+   * Geprueft werden BEIDE Wege, auf denen ein Fehlschlag ankommen kann:
+   * eine geworfene Ausnahme UND ein zurueckgegebenes `{ error }`.
+   *
+   * Oertlich aufgeraeumt wird IMMER - niemand soll hier angemeldet
+   * aussehen, wenn er es nicht mehr sein will. Erst danach wird der Fehler
+   * weitergereicht, damit die Seite ihn anzeigen kann.
+   *
+   * Der Geltungsbereich bleibt der Vorgabewert 'global': Der Client setzt
+   * ihn selbst (nachgesehen in vendor/supabase-js-2.117.0.js:
+   * `signOut(e = {scope:'global'})`), und die offizielle Dokumentation
+   * nennt ihn ebenfalls als Vorgabe. Damit verfallen ALLE Refresh-Tokens
+   * des Kontos.
+   *
+   * ACHTUNG, GRENZE: Ein bereits ausgestellter Access-Token bleibt bis zu
+   * seinem Ablauf gueltig - ein signiertes JWT laesst sich nicht
+   * zurueckholen. Der Widerruf trifft die Refresh-Tokens.
+   *
+   * @returns {Promise<true>} bei erfolgreichem Widerruf
+   * @throws {Error} wenn der Dienst den Widerruf NICHT bestaetigt hat.
+   *                 Oertlich ist dann trotzdem aufgeraeumt.
+   */
   async function signOut() {
     const client = await getClient();
+    let fehler = null;
+
     if (client && client.auth && typeof client.auth.signOut === "function") {
       try {
-        await client.auth.signOut();
-      } catch (_error) {
-        // ignore and continue with local cleanup
+        const ergebnis = await client.auth.signOut();
+        // Der Client meldet Fehler als Rueckgabewert, nicht als Ausnahme.
+        if (ergebnis && ergebnis.error) fehler = ergebnis.error;
+      } catch (ausnahme) {
+        fehler = ausnahme;
       }
+    } else {
+      fehler = new Error("Abmelden ist nicht verfuegbar.");
     }
 
+    // Immer zuerst: hier soll nichts Persoenliches stehen bleiben.
     syncSessionState(null);
+
+    if (fehler) {
+      const text = (fehler && fehler.message) || "";
+      const weiter = new Error(
+        "Die Abmeldung wurde vom Dienst nicht bestaetigt. Oertlich ist die "
+        + "Sitzung beendet; auf anderen Geraeten kann sie noch gelten."
+      );
+      // Der urspruengliche Grund bleibt fuer die Fehlersuche erhalten,
+      // wandert aber nicht in die Oberflaeche.
+      weiter.grund = text;
+      throw weiter;
+    }
+
     return true;
   }
 
@@ -516,8 +713,19 @@
   }
 
   async function bootstrap() {
-    await hydrateSession();
-    patchNav();
+    // Nie unbehandelt scheitern lassen. Schlaegt die Sitzungsabfrage fehl
+    // - kein Netz, gesperrter Speicher, fehlende Konfiguration -, soll die
+    // Navigation trotzdem in einen ehrlichen Zustand kommen: abgemeldet.
+    try {
+      await hydrateSession();
+    } catch (_error) {
+      /* Der Aufrufer der Seite entscheidet, was er anzeigt. */
+    }
+    try {
+      patchNav();
+    } catch (_error) {
+      /* Navigation ist Beiwerk; sie darf nichts abreissen. */
+    }
   }
 
   if (document.readyState === "loading") {
@@ -548,7 +756,10 @@
     logout: signOut,
     normalizeText,
     persistProfile,
-    persistPreferences
+    persistPreferences,
+    // Neu in Schritt 021: Die Kontoseiten fragen damit ab, ob der
+    // Browserspeicher geklemmt hat, und sagen es dem Kunden.
+    speicherGesperrt
   };
 
   window.CustomerAuthDemo = window.CustomerAuth;

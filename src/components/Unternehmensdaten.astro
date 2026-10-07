@@ -1,0 +1,93 @@
+---
+/**
+ * Strukturierte Unternehmensdaten (schema.org, JSON-LD).
+ *
+ * Damit versteht eine Suchmaschine, dass hier ein oertliches Taxiunternehmen
+ * mit Anschrift, Rufnummer und Einsatzgebiet steht. Fuer einen Betrieb, der
+ * ueber die Ortssuche gefunden wird, ist das der groesste einzelne Hebel.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * REGEL FUER DIESE DATEI: NUR BELEGTE ANGABEN
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Jeder Wert hier stammt aus `inhalte.ts` und steht damit schon sichtbar auf
+ * der Seite oder im Impressum. Es wird nichts ergaenzt, was wir nicht belegen
+ * koennen - eine Suchmaschine ist kein Grund, Angaben zu erfinden.
+ *
+ * AUSDRUECKLICH NICHT AUFGENOMMEN, und warum:
+ *
+ *   aggregateRating   BEWERTUNG in inhalte.ts traegt 5,0 aus 230+
+ *                     Google-Bewertungen. Das ist die Angabe einer fremden
+ *                     Plattform, von uns nicht nachgeprueft und laufend in
+ *                     Bewegung. Eine selbst ausgezeichnete Bewertung auf der
+ *                     eigenen Seite ist zudem genau das, was Suchmaschinen
+ *                     als unzulaessige Selbstauszeichnung behandeln. Sie
+ *                     bleibt sichtbarer Text und wird nicht ausgezeichnet.
+ *
+ *   geo               Wir haben keine gepruefte Koordinate. Die Anschrift
+ *                     reicht; eine geratene Koordinate waere schlechter als
+ *                     keine.
+ *
+ *   priceRange        Es gibt im Projekt keine hinterlegten Preise, und die
+ *                     Seite nennt bewusst keine. Also auch hier nicht.
+ *
+ *   vatID             Im Impressum steht eine Steuernummer, keine
+ *                     Umsatzsteuer-Identifikationsnummer. Das sind zwei
+ *                     verschiedene Dinge - die Steuernummer gehoert nicht
+ *                     veroeffentlicht ausgezeichnet.
+ *
+ *   openingHours      Aufgenommen als 24/7, aber NUR weil die Seite das
+ *                     selbst schon sagt: HERO.eyebrow "24/7 erreichbar",
+ *                     HERO.satz "Rund um die Uhr", und die Leistungstexte
+ *                     nennen es ebenfalls. Die Auszeichnung wiederholt also
+ *                     eine bestehende Aussage des Unternehmens, sie trifft
+ *                     keine neue.
+ */
+import { FIRMA, LEISTUNGEN, REGION } from '../inhalte';
+
+const wurzel = (Astro.site ?? new URL('https://taxigermersheim.de')).origin;
+
+const daten = {
+  '@context': 'https://schema.org',
+  '@type': 'TaxiService',
+  '@id': `${wurzel}/#unternehmen`,
+  name: FIRMA.name,
+  url: `${wurzel}/`,
+  telephone: FIRMA.telefonLink.replace('tel:', ''),
+  email: FIRMA.email,
+  image: `${wurzel}/teilen-vorschau.jpg`,
+  logo: `${wurzel}/favicon-512.png`,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: FIRMA.strasse,
+    postalCode: FIRMA.plz,
+    addressLocality: FIRMA.ort,
+    addressCountry: 'DE',
+  },
+  // Steht so im Impressum.
+  legalName: FIRMA.name,
+  // Die Orte, die der Regionsabschnitt der Startseite nennt.
+  areaServed: REGION.orte.filter((o) => o !== 'Umgebung').map((ort) => ({
+    '@type': 'City',
+    name: ort,
+  })),
+  // Siehe Kopf dieser Datei: wiederholt nur, was die Seite selbst sagt.
+  openingHoursSpecification: {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    opens: '00:00',
+    closes: '23:59',
+  },
+  // Genau die sieben Leistungen, die auch im Anfragedialog stehen.
+  hasOfferCatalog: {
+    '@type': 'OfferCatalog',
+    name: 'Leistungen',
+    itemListElement: LEISTUNGEN.map((l) => ({
+      '@type': 'Offer',
+      itemOffered: { '@type': 'Service', name: l.label, description: l.beschreibung },
+    })),
+  },
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(daten)} is:inline />

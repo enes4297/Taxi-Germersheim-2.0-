@@ -1,0 +1,539 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Taxi Rush — Gestaltung nach der freigegebenen Vorlage
+   design-vorlagen/Taxi-Rush.html
+   ═══════════════════════════════════════════════════════════════════════
+
+   ── ALLES HIER IST AUF DAS SPIEL BEGRENZT ────────────────────────────
+
+   Die Vorlage ist eine eigenstaendige Seite und beginnt entsprechend:
+
+       *{box-sizing:border-box}
+       html,body{margin:0;background:#0b1117;…}
+       button{font:inherit;cursor:pointer;…}
+       button:focus-visible{outline:3px solid #fff;…}
+
+   NICHTS davon ist uebernommen. Diese vier Regeln haetten jede Seite der
+   Spielewelt getroffen - jeden Knopf, jeden Fokusring, den Seitengrund.
+   Stattdessen traegt jede Regel hier den Praefix `.tr-` und steht unter
+   `.tr-app`, der Huelle des Spiels.
+
+   Wo die Vorlage Elementnamen benutzt (button, canvas), steht hier eine
+   Klasse. Wo sie globale Eigenschaften setzt, setzt diese Datei sie an
+   der Huelle und vererbt sie nach innen.
+*/
+
+.tr-app {
+  /* box-sizing statt global: gilt fuer die Huelle und alles darin. */
+  box-sizing: border-box;
+  /* Der Seitenkopf klebt oben und liegt auf z-index 100 - er gewinnt
+     gegen alles im Spiel, und das soll er auch. Damit er aber nicht die
+     Punkteanzeige, den Ton- und den Pausenknopf verdeckt, haelt das
+     Anspringen dieses Abschnitts Abstand nach oben.
+
+     ACHTUNG, DAS ADDIERT SICH: style.css setzt am html-Element
+     scroll-padding-top: 84px. Der Browser rechnet beides zusammen. Der
+     Kopf misst am Schreibtisch 114 px plus 12 px Versatz, also 126;
+     dazu die 35 px der eigenen Kopfzeile des Spiels, die den Satz
+     "NUR SPIELSCORE · KEINE REWARDS" traegt und deshalb sichtbar
+     bleiben muss. Bleiben 77.
+
+     Ein voller Wert von 130 stuende in Wahrheit bei 214 und schoebe
+     unten die Bedienleiste aus dem Bild. Genau das war hier gemessen
+     worden. */
+  scroll-margin-top: 77px;
+  max-width: 1460px;
+  margin: 0 auto;
+  padding: 22px 32px 15px;
+  color: #f4f1e7 !important;
+  /* Was in der Vorlage an html und body stand, steht hier an der Huelle
+     des Spiels - sonst erbt es die Schrift der Seite, und alles, was die
+     Vorlage nicht ausdruecklich bemasst (die Knoepfe zum Beispiel),
+     saehe anders aus als freigegeben. */
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: normal !important;
+}
+
+.tr-app *,
+.tr-app *::before,
+.tr-app *::after {
+  box-sizing: border-box;
+}
+
+/* ── Die Seite ausserhalb halten ───────────────────────────────────────
+
+   Die Vorlage stand allein auf einer Seite und kam mit drei globalen
+   Regeln aus. Hier liegt das Spiel in einer Seite, die ihr eigenes
+   Gestaltungssystem mitbringt - und dieses System arbeitet mit
+   !important auf Elementnamen:
+
+     style.css:1334  button, .button, ...
+                     min-height / border-radius / font-size /
+                     font-weight   jeweils !important
+     style.css:1317  p, li, small, label
+                     color / line-height   jeweils !important
+     public-system.css:72
+                     body.tg-public :where(a, button, ...)
+                     font-family
+
+   !important schlaegt jede normale Regel, egal wie genau sie trifft.
+   Ohne Gegenwehr saehen die Knoepfe des Spiels aus wie Seitenknoepfe
+   (15 px, Schriftstaerke 850, 16 px Radius, 52 px hoch statt 46) und
+   die kleinen Zeilen im Auftragsfenster haetten die Grautoene der
+   Seite statt des Goldes der Vorlage. Gemessen und Element fuer
+   Element gegen die Vorlage verglichen.
+
+   Deshalb hier ebenfalls !important - aber ausschliesslich innerhalb
+   von .tr-app und nur fuer genau die Eigenschaften, die die Seite
+   erzwingt. Nach aussen aendert das nichts.
+*/
+.tr-app button {
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* :where() zaehlt bei der Genauigkeit nicht mit; dieser Zuruecksetzer
+   steht damit auf der Stufe einer einzelnen Klasse - hoch genug gegen
+   die Elementregeln der Seite.
+
+   Weil er !important traegt, schlaegt er auch die eigenen Regeln des
+   Spiels. Ueberall dort, wo eine .tr-Regel eine dieser fuenf bzw. zwei
+   Eigenschaften selbst setzt, traegt sie deshalb ebenfalls !important -
+   und NUR dort. Eine pauschale Vergabe waere falsch: Sie wuerde die
+   Rangfolge INNERHALB der Vorlage verdrehen. In der Vorlage schlaegt
+   zum Beispiel .help (wichtig) das allgemeinere .hero p (normal) - mit
+   !important auf beiden gewaenne ploetzlich .hero p. */
+.tr-app :where(button) {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  min-height: auto !important;
+  border-radius: 0 !important;
+}
+
+.tr-app :where(p, li, small, label) {
+  color: inherit !important;
+  line-height: normal !important;
+}
+
+.tr-app button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+
+/* ── Kopfzeile des Spiels ──────────────────────────────────────────── */
+.tr-app .tr-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 19px;
+}
+
+.tr-app .tr-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.tr-app .tr-brand img { height: 35px; width: 29px; object-fit: contain; }
+
+.tr-app .tr-edition { font-size: 10px; color: #a9b5bf; letter-spacing: 2px; }
+
+.tr-app .tr-tag {
+  border: 1px solid #35404a;
+  padding: 7px 12px;
+  border-radius: 30px;
+  color: #bcc7ce;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+/* ── Die Spielflaeche ──────────────────────────────────────────────── */
+.tr-app .tr-game {
+  position: relative;
+  /* 250 statt der 210 der Vorlage. Dort stand das Spiel allein auf der
+     Seite; hier kommen der klebende Seitenkopf und der Abstand aus
+     scroll-margin-top dazu. Mit 210 lag die Fusszeile des Spiels bei
+     1440 x 900 unter dem Bildrand - gemessen. Die 22 px Polsterung
+     der Huelle oben und 15 px unten (beides aus der Vorlage) sind in
+     den 280 mit enthalten. */
+  height: min(790px, calc(100dvh - 280px));
+  min-height: 510px;
+  overflow: hidden;
+  border: 1px solid #39444a;
+  border-radius: 20px;
+  background: #15232c;
+  isolation: isolate;
+  box-shadow: 0 24px 80px #0005;
+}
+
+.tr-app .tr-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Nur hier: Wischen im Spiel soll nicht die Seite scrollen. Ausserhalb
+     des Spiels bleibt das Scrollen unberuehrt. */
+  touch-action: none;
+}
+
+.tr-app .tr-hud {
+  position: absolute;
+  top: 20px;
+  left: 22px;
+  right: 22px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.tr-app .tr-panel {
+  background: #0a121bea;
+  border: 1px solid #70808e33;
+  border-radius: 12px;
+  padding: 12px 17px;
+}
+
+.tr-app .tr-label {
+  display: block;
+  color: #91a8b9 !important;
+  font-size: 9px;
+  letter-spacing: 2px !important;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.tr-app .tr-num {
+  font-size: 25px;
+  line-height: 1.1;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.tr-app .tr-gold { color: #f2ca72; }
+.tr-app .tr-stats { display: flex; gap: 24px; }
+.tr-app .tr-hud-right { display: flex; align-items: flex-start; gap: 10px; }
+
+.tr-app .tr-small-btn {
+  pointer-events: auto;
+  border: 1px solid #77849150;
+  background: #111d28;
+  color: #f4f0df !important;
+  border-radius: 10px !important;
+  min-height: 46px !important;
+  min-width: 46px;
+  padding: 10px;
+}
+
+.tr-app .tr-health { white-space: nowrap; font-size: 14px; }
+
+.tr-app .tr-mission {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0c1824ed;
+  border: 1px solid #bcac6650;
+  border-radius: 12px;
+  text-align: center;
+  padding: 10px 20px;
+  width: 300px;
+  min-width: 230px;
+  max-width: calc(100% - 28px);
+  pointer-events: none;
+}
+
+.tr-app .tr-mission small { display: block; color: #e5bd66 !important; font-size: 9px; letter-spacing: 2px !important; line-height: 1.4 !important; }
+.tr-app .tr-mission b { font-size: 13px; display: block; margin-top: 5px; overflow-wrap: anywhere; }
+
+.tr-app .tr-route-line {
+  display: block;
+  font-size: 10px;
+  color: #a9bac4;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.tr-app .tr-track { height: 3px; background: #40505a; border-radius: 5px; margin-top: 9px; overflow: hidden; }
+.tr-app .tr-track i { height: 100%; width: 0; background: #eac779; display: block; }
+
+.tr-app .tr-toast {
+  position: absolute;
+  top: 39%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #101c26e8;
+  color: #f8d48a;
+  border: 1px solid #ebc57466;
+  padding: 11px 20px;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.tr-app .tr-toast.is-on { opacity: 1; }
+
+.tr-app .tr-controls {
+  position: absolute;
+  bottom: 22px;
+  left: 22px;
+  right: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.tr-app .tr-directions { display: flex; gap: 10px; }
+
+.tr-app .tr-drive {
+  width: 60px;
+  height: 58px;
+  background: #101d29ea;
+  color: #d6e0e8;
+  border: 1px solid #71899870;
+  border-radius: 15px !important;
+  font-size: 24px !important;
+  box-shadow: 0 5px 0 #07101a;
+}
+
+.tr-app .tr-boost {
+  border: 1px solid #e6c36a;
+  color: #f5d68e;
+  background: #23251fe8;
+  border-radius: 15px !important;
+  width: 116px;
+  height: 58px;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+}
+
+.tr-app .tr-boost span { position: relative; z-index: 1; }
+.tr-app .tr-boost i { position: absolute; left: 0; bottom: 0; height: 5px; background: #efd085; width: 100%; }
+
+.tr-app .tr-speed {
+  font-size: 10px;
+  color: #a5b4c0;
+  letter-spacing: 2px;
+  position: absolute;
+  bottom: 23px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* ── Die Einblendungen: Start, Pause, Ergebnis ─────────────────────── */
+.tr-app .tr-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  padding: 55px;
+  background: linear-gradient(90deg, #081119fc 0%, #081119ee 32%, #08111955 65%, #08111915 100%);
+  /* Auf kleinen und flachen Bildschirmen muss der Inhalt erreichbar
+     bleiben - sonst liegt der Startknopf ausserhalb. */
+  overflow-y: auto;
+}
+
+.tr-app .tr-overlay[hidden] { display: none; }
+
+.tr-app .tr-hero { max-width: 430px; }
+.tr-app .tr-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 3px; color: #ecc777; }
+
+.tr-app .tr-h1 {
+  font-size: clamp(54px, 6.5vw, 88px);
+  font-style: italic;
+  font-weight: 950;
+  line-height: 0.87;
+  letter-spacing: -5px;
+  margin: 26px 0 20px;
+}
+
+.tr-app .tr-h1 span { display: block; color: #edc16c; }
+.tr-app .tr-h2 { font-size: 34px; margin: 16px 0; }
+.tr-app .tr-hero p { font-size: 14px; line-height: 1.8 !important; color: #aabcc9 !important; max-width: 335px; }
+
+.tr-app .tr-cars { display: flex; gap: 8px; margin: 25px 0 19px; }
+
+.tr-app .tr-car-choice {
+  background: #14212c;
+  border: 1px solid #415260;
+  border-radius: 12px !important;
+  padding: 12px 16px;
+  color: #b7c5ce;
+  text-align: left;
+}
+
+.tr-app .tr-car-choice[aria-pressed='true'] { border-color: #dfb763; color: #f2d698; background: #332e21; }
+.tr-app .tr-car-choice strong { font-size: 12px !important; display: block; }
+.tr-app .tr-car-choice small { font-size: 10px !important; display: block; margin-top: 3px; color: #a2adb2 !important; }
+
+.tr-app .tr-primary {
+  border: 1px solid #f4d890;
+  background: linear-gradient(110deg, #f4d58d, #d4a54b);
+  color: #201b13;
+  min-height: 54px !important;
+  border-radius: 10px !important;
+  padding: 15px 28px;
+  font-weight: 800 !important;
+  width: 100%;
+  max-width: 335px;
+}
+
+.tr-app .tr-help { font-size: 10px !important; line-height: 1.8 !important; letter-spacing: 0.2px !important; margin-top: 18px !important; }
+.tr-app .tr-best { margin: 20px 0; color: #c1cbd0 !important; font-size: 12px; }
+.tr-app .tr-best b { color: #f0cd7d !important; }
+
+/* Der Hinweis, dass ein alter Bestwert nicht uebernommen wird. */
+.tr-app .tr-oldbest {
+  margin: 12px 0 0;
+  font-size: 10px !important;
+  line-height: 1.7 !important;
+  color: #93a4b0 !important;
+  max-width: 335px;
+}
+
+.tr-app .tr-scorecard { display: flex; gap: 35px; margin: 23px 0; }
+.tr-app .tr-scorecard b { display: block; font-size: 30px; color: #f0cd7d; }
+.tr-app .tr-scorecard small { color: #a6b6c0 !important; font-size: 11px; }
+
+.tr-app .tr-secondary {
+  display: block;
+  border: 0;
+  background: none;
+  color: #b8c6cf;
+  text-decoration: underline;
+  margin: 18px 0 0;
+  padding: 8px 0;
+}
+
+.tr-app .tr-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #758794;
+  margin: 13px 2px 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tr-app .tr-live .tr-overlay { display: none; }
+.tr-app .tr-low-time { color: #ff9d8b; }
+
+.tr-app .tr-flash {
+  position: absolute;
+  inset: 0;
+  border: 7px solid #d87952;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.tr-app .tr-flash.is-hit { animation: tr-hit 0.35s ease-out; }
+
+@keyframes tr-hit {
+  0% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+/* ── Kleine Displays ───────────────────────────────────────────────── */
+/* Auf schmalen UND auf flachen Bildschirmen ist der Seitenkopf nur
+   88 px hoch statt 114 - der Abschnitt darf also hoeher angesprungen
+   werden. Mit den 84 px aus style.css macht das 100 px Abstand. Jedes
+   Pixel zaehlt hier: es fehlt unten bei der Bedienung. */
+@media (max-width: 650px), (max-height: 620px) {
+  .tr-app { scroll-margin-top: 16px; }
+}
+
+@media (max-width: 650px) {
+  .tr-app { padding: 12px 10px 7px; }
+  .tr-app .tr-top { margin: 0 4px 12px; }
+  .tr-app .tr-brand { font-size: 9px; letter-spacing: 1.2px; }
+  .tr-app .tr-brand img { height: 29px; width: 23px; }
+  .tr-app .tr-edition { display: none; }
+  .tr-app .tr-tag { font-size: 8px; }
+  /* 210 statt der 180 der Vorlage: Dort stand das Spiel allein auf der
+     Seite. Hier kommt der klebende Seitenkopf dazu, und der Abschnitt
+     wird 104 px tief angesprungen (siehe scroll-margin-top unten).
+     Mit 180 lagen Boost und Lenkpfeile auf dem Handy unter dem
+     Bildrand - gemessen bei 390 x 844. */
+  .tr-app .tr-game { height: calc(100dvh - 210px); min-height: 480px; border-radius: 15px; }
+  .tr-app .tr-hud { top: 12px; left: 10px; right: 10px; gap: 6px; }
+  .tr-app .tr-panel { padding: 10px 12px; }
+  .tr-app .tr-stats { gap: 16px; }
+  .tr-app .tr-num { font-size: 20px; }
+  .tr-app .tr-label { font-size: 8px; letter-spacing: 1px !important; }
+  .tr-app .tr-small-btn { min-width: 40px; min-height: 40px !important; padding: 8px; font-size: 12px !important; }
+  .tr-app .tr-hud-right { gap: 5px; }
+  .tr-app .tr-mission { top: 89px; padding: 8px 13px; min-width: 210px; }
+  .tr-app .tr-mission b { font-size: 12px; }
+  .tr-app .tr-overlay { padding: 25px; align-items: center; background: linear-gradient(90deg, #081119ef, #081119c0 75%, #08111980); }
+  .tr-app .tr-hero { width: 100%; }
+  .tr-app .tr-h1 { font-size: 66px; margin: 22px 0; letter-spacing: -4px; }
+  .tr-app .tr-h2 { font-size: 29px; }
+  .tr-app .tr-hero p { font-size: 13px; max-width: 290px; }
+  .tr-app .tr-hero .tr-help { font-size: 9px !important; }
+  .tr-app .tr-cars { margin: 19px 0 15px; }
+  .tr-app .tr-car-choice { padding: 10px 12px; flex: 1; }
+  .tr-app .tr-controls { bottom: 18px; left: 13px; right: 13px; }
+  .tr-app .tr-drive { width: 55px; height: 55px; }
+  .tr-app .tr-boost { width: 100px; height: 55px; }
+  .tr-app .tr-speed { bottom: 86px; font-size: 9px; }
+  .tr-app .tr-footer { font-size: 8px; }
+  .tr-app .tr-toast { font-size: 12px; max-width: 94%; padding: 10px 13px; }
+  .tr-app .tr-best { margin: 16px 0; }
+}
+
+@media (max-width: 380px) {
+  .tr-app .tr-hud { left: 8px; right: 8px; }
+  .tr-app .tr-panel { padding: 9px; }
+  .tr-app .tr-stats { gap: 10px; }
+  .tr-app .tr-num { font-size: 18px; }
+  .tr-app .tr-hud-right { gap: 4px; }
+  .tr-app .tr-health { font-size: 12px; letter-spacing: -1px; }
+  .tr-app .tr-small-btn { min-width: 34px; padding: 7px; font-size: 11px !important; }
+  .tr-app .tr-mission { width: 260px; }
+  .tr-app .tr-route-line { font-size: 9px; }
+}
+
+/* ── Querformat und flache Fenster ─────────────────────────────────────
+   Hier wird es eng. Die Einblendung darf nicht abgeschnitten werden -
+   Anleitung, Start, Pause und Ergebnis muessen erreichbar bleiben; die
+   Einblendung scrollt dafuer in sich selbst (overflow-y: auto).
+
+   OFFEN UND SO GEMESSEN: Im Querformat eines Handys (844 x 390) passt
+   das Spiel samt Bedienleiste NICHT vollstaendig ins Bild - 390 px
+   Hoehe minus Seitenkopf lassen zu wenig uebrig. Boost und Lenkpfeile
+   sind dann nur nach kurzem Scrollen zu sehen; Wischen ueber dem
+   Spielfeld lenkt weiterhin ohne Scrollen. Hochkant passt alles. */
+@media (max-height: 620px) {
+  .tr-app .tr-game { min-height: 340px; height: min(790px, calc(100dvh - 195px)); }
+  .tr-app .tr-overlay { padding: 20px 28px; align-items: flex-start; }
+  .tr-app .tr-hero { padding: 6px 0 14px; }
+  .tr-app .tr-h1 { font-size: 46px; margin: 10px 0; letter-spacing: -3px; }
+  .tr-app .tr-h2 { font-size: 26px; margin: 8px 0; }
+  .tr-app .tr-hero p { margin: 8px 0; line-height: 1.6 !important; }
+  .tr-app .tr-cars { margin: 12px 0; }
+  .tr-app .tr-help { margin: 8px 0 !important; }
+  .tr-app .tr-best { margin: 10px 0; }
+  .tr-app .tr-scorecard { margin: 12px 0; gap: 24px; }
+  .tr-app .tr-scorecard b { font-size: 24px; }
+  .tr-app .tr-mission { top: 78px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tr-app .tr-toast { transition: none; }
+  .tr-app .tr-flash.is-hit { animation: none; }
+}

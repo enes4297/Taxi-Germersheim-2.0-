@@ -1,9 +1,68 @@
 (() => {
-  const P = window.AdminPersonnelDemo;
+  /*
+    ══ KEIN admin/personal-shared.js MEHR ═══════════════════════════════
+
+    Das Portal hing an einer Datei des Verwaltungsbereichs, die oertliche
+    Vorgabedaten mit ERFUNDENEN Personen mitbringt.
+
+    Gemessen, was davon im Betrieb wirklich aufgerufen wurde - mit einem
+    Stellvertreter, der jeden Zugriff mitschrieb, ueber alle Bereiche
+    hinweg: genau ZWEI Funktionen.
+
+      loadState()    lieferte die Vorgabedaten - die das Portal danach
+                     nie anzeigte
+      getEmployee()  lieferte NULL, weil die echte Mitarbeiterkennung
+                     aus der Sitzung nie zu den Vorgabekennungen
+                     (MA-1xx) passt
+
+    Beides trug also nichts bei. Alle uebrigen Aufrufe lagen in
+    Rueckfallzweigen fuer "kein Backend verfuegbar" - und die sind seit
+    Schritt 028 unerreichbar, weil das Portal ohne eingerichtete
+    Verbindung gar nicht mehr oeffnet (siehe portalSperren).
+
+    Die Abhaengigkeit ist deshalb entfernt: kein Skript-Verweis mehr in
+    mitarbeiter.html, keine Vorgabedaten im Speicher, keine Adminlogik
+    im Fahrerbereich.
+  */
+
+  /** Heutiges Datum als ISO-Tag. Frueher heuteIso(). */
+  function heuteIso() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
   const ES = window.EmployeeSupabase || null;
   const STORAGE_KEY = "tgEmployeeDemoSession";
+  /*
+    Der oertliche Altbestand - und warum er abgesichert werden musste.
+
+    `AdminPersonnelDemo.loadState()` liest aus dem Browserspeicher. Bei
+    gesperrtem Speicher (privates Fenster, blockierte Website-Daten) warf
+    der Aufruf eine Ausnahme, und das Portal brach beim Laden ab - gemessen,
+    die Ausnahme kam aus admin/personal-shared.js:835.
+
+    Faellt der Aufruf aus, wird mit einer LEEREN Struktur weitergearbeitet:
+    Dann fehlen nur die oertlichen Zusatzhinweise (etwa "noch nicht
+    uebermittelt"); alles Echte kommt ohnehin aus Supabase.
+
+    OFFEN: Dieses Modul bringt Vorgabedaten mit erfundenen Personen mit.
+    Sie erscheinen im Portal nicht, weil jede Anzeige auf die
+    Mitarbeiterkennung aus der geprueften Sitzung filtert und die
+    Vorgabekennungen (MA-1xx) nie passen - nachgemessen. Das Modul ganz
+    abzuloesen beruehrt 26 Stellen und gehoert in einen eigenen Schritt.
+  */
+  /**
+   * Die oertliche Struktur - jetzt immer leer.
+   *
+   * Die Felder bleiben, weil mehrere Anzeigen sie noch lesen (und dabei
+   * auf leere Listen treffen). Gefuellt werden sie nicht mehr: Alles
+   * Echte kommt aus Supabase.
+   */
+  function oertlicherBestand() {
+    return { employees: [], documents: [], vacations: [], absences: [], messages: [] };
+  }
+
   const state = {
-    data: P ? P.loadState() : { employees: [], documents: [], vacations: [], absences: [], messages: [] },
+    data: oertlicherBestand(),
     employeeId: "MA-101",
     activeSection: "dienstplan",
     supabaseEmployee: null, /* { id, first_name, last_name, ... } */
@@ -35,29 +94,125 @@
     return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
   }
 
-  function requireDemoSession() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) { window.location.replace("index.html"); return false; }
-      const session = JSON.parse(raw);
-      if (!session || !session.authenticated) { window.location.replace("index.html"); return false; }
-      return true;
-    } catch {
-      window.location.replace("index.html");
-      return false;
+  /*
+    ══ ES GIBT NUR EINEN WEG INS PORTAL ═══════════════════════════════════
+
+    Frueher stand hier `requireDemoSession()`: Sie las eine Marke aus dem
+    Browserspeicher und liess durch, wenn darin `authenticated: true`
+    stand. Gemessen und nachgestellt: Eine einzige Zeile im Speicher
+    genuegte, um `mitarbeiter.html` direkt aufzurufen und den vollen
+    Portalinhalt zu sehen.
+
+    Schlimmer noch: Fiel `admin/supabase-config.js` aus - 404, gesperrt,
+    Netz weg -, schaltete das Portal von sich aus in einen "Demo-Modus"
+    um, in dem genau diese Marke die einzige Pruefung war. Der Inhalt kam
+    dann aus `AdminPersonnelDemo` und zeigte ERFUNDENE Personen.
+
+    Beides ist entfernt. Es gibt nur noch eine Eintrittspruefung:
+    `EmployeeSupabase.checkSession()`. Sie prueft die echte Sitzung UND
+    das Profil (aktiv, mit Mitarbeiterkennung). Faellt die Konfiguration
+    aus, kommt niemand hinein - und es wird ehrlich gesagt, warum.
+
+    Die Marke im Speicher bleibt als reine Bequemlichkeit bestehen (sie
+    erspart beim Neuladen ein Flackern), traegt aber KEINE Entscheidung
+    mehr.
+  */
+  /*
+    ══ DER SITZUNGSSTAND ═══════════════════════════════════════════════════
+
+    Eine Abfrage, die vor dem Abmelden losgeschickt wurde, kann danach
+    antworten. Ohne Gegenmittel zeichnet sie persoenliche Angaben zurueck
+    auf einen Bildschirm, der schon geleert war.
+
+    Jede Abmeldung zaehlt diesen Stand hoch. Wer eine Antwort verarbeiten
+    will, fragt vorher `nochGueltig(stand)` - stimmt der Stand nicht mehr,
+    wird die Antwort verworfen.
+
+    Dasselbe Mittel wie auf den Kontoseiten der oeffentlichen Webseite
+    (Schritt 024), dort nach demselben gemessenen Befund eingefuehrt.
+  */
+  let sitzungsstand = 0;
+  const standJetzt = () => sitzungsstand;
+  const nochGueltig = (stand) => stand === sitzungsstand;
+
+  /** Alles Persoenliche sofort vom Bildschirm nehmen. */
+  function persoenlichesLeeren() {
+    sitzungsstand += 1;
+    state.supabaseEmployee = null;
+    state.supabaseShifts = [];
+    state.supabaseVehicles = {};
+    state.supabaseVacationRequests = [];
+    state.supabaseSicknessReports = [];
+    state.supabaseDocumentSubmissions = [];
+    state.data = oertlicherBestand();
+
+    /* Der sichtbare Teil: Name, Kuerzel, Begruessung und jede Flaeche, die
+       aus den Daten gezeichnet wurde. */
+    document.querySelectorAll("[data-portal-name]").forEach((el) => { el.textContent = "—"; });
+    const kuerzel = document.querySelector("[data-portal-avatar]");
+    if (kuerzel) kuerzel.textContent = "—";
+    const gruss = document.querySelector("[data-portal-greeting]");
+    if (gruss) gruss.textContent = "Abmeldung läuft …";
+    for (const sel of [
+      "[data-portal-hero]", "[data-portal-tomorrow]", "[data-portal-shift-list]",
+      "[data-portal-message-summary]", "[data-portal-vac-list]", "[data-portal-doc-list]",
+      "[data-portal-absence-list]", "[data-portal-message-list]", "[data-portal-profile]",
+    ]) {
+      document.querySelectorAll(sel).forEach((el) => { el.innerHTML = ""; });
     }
   }
 
+  function portalSperren(grund) {
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* gesperrter Speicher */ }
+    const ziel = grund ? `index.html?grund=${encodeURIComponent(grund)}` : "index.html";
+    window.location.replace(ziel);
+  }
+
+  /**
+   * Abmelden - und ehrlich sagen, wenn der Widerruf nicht bestaetigt wurde.
+   *
+   * Oertlich aufgeraeumt wird IMMER: Niemand soll angemeldet aussehen, wenn
+   * er es nicht mehr sein will. Bestaetigt der Dienst den Widerruf nicht,
+   * erfaehrt der Mitarbeiter das - denn auf einem anderen Geraet kann die
+   * Anmeldung dann noch gelten.
+   */
   function logout() {
-    if (ES && ES.isConfigured()) {
-      ES.signOut().finally(() => {
-        localStorage.removeItem(STORAGE_KEY);
-        window.location.replace("index.html");
-      });
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
+    /*
+      ZUERST raeumen, dann abmelden.
+
+      Vorher wurde erst `ES.signOut()` abgewartet und danach zur
+      Anmeldeseite gesprungen. Das Abmelden kann Sekunden dauern oder
+      scheitern - und in dieser Zeit stand der Name samt Schicht und
+      Fahrzeug weiter auf dem Bildschirm. Eine in diesem Moment
+      eintreffende Antwort konnte sogar neue persoenliche Angaben
+      nachzeichnen.
+
+      Jetzt wird der Bildschirm sofort geleert und der Sitzungsstand
+      hochgezaehlt; jede spaeter eintreffende Antwort gehoert damit zu
+      einer Sitzung, die es nicht mehr gibt (siehe nochGueltig()).
+    */
+    persoenlichesLeeren();
+
+    const oertlichRaeumen = () => {
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* gesperrter Speicher */ }
+    };
+
+    if (!ES || !ES.isConfigured()) {
+      oertlichRaeumen();
       window.location.replace("index.html");
+      return;
     }
+
+    ES.signOut()
+      .then(() => {
+        oertlichRaeumen();
+        window.location.replace("index.html");
+      })
+      .catch(() => {
+        /* Erst raeumen, dann melden - in dieser Reihenfolge. */
+        oertlichRaeumen();
+        window.location.replace("index.html?abmeldung=unbestaetigt");
+      });
   }
 
   function formatDate(value) {
@@ -108,16 +263,38 @@
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   }
 
-  function portalSnapshot(employeeId) {
-    return P.getEmployeePortalSnapshot ? P.getEmployeePortalSnapshot(state.data, employeeId) : P.getPortalSnapshot(state.data, employeeId);
+  /* Die Momentaufnahme kam aus den Vorgabedaten und war damit immer
+     leer. Die Anzeigen, die sie lasen, haben seit Schritt 028 einen
+     eigenen Supabase-Zweig. */
+  function portalSnapshot() {
+    return null;
   }
 
-  function vacationQuota(employeeId) {
-    return P.getVacationQuota(state.data, employeeId);
+  /* Das Urlaubskontingent lag nur in den Vorgabedaten. Ein echtes
+     Kontingent gibt es im Backend bislang nicht - siehe die offene
+     Liste in der Abschlussunterlage. */
+  function vacationQuota() {
+    return null;
   }
 
+  /**
+   * Die angemeldete Person - aus der geprueften Sitzung.
+   *
+   * Frueher aus den oertlichen Vorgabedaten; das lieferte gemessen immer
+   * null, weil die echte Kennung nie zu einer Vorgabekennung passt.
+   * Zurueckgegeben wird jetzt die Gestalt, die die uebrigen Anzeigen
+   * erwarten - mit der ECHTEN Kennung.
+   */
   function emp() {
-    return P.getEmployee(state.data, state.employeeId);
+    const se = state.supabaseEmployee;
+    if (!se) return null;
+    return {
+      id: state.employeeId,
+      firstName: se.first_name || "",
+      lastName: se.last_name || "",
+      employmentType: se.employment_type || "",
+      status: se.status || "",
+    };
   }
 
   function displayTypeLabel(type) {
@@ -292,7 +469,7 @@
       <div class="panel-head">
         <div>
           <p class="panel-kicker">Heute</p>
-          <h2>${weekdayDateLabel(P.todayIso())}</h2>
+          <h2>${weekdayDateLabel(heuteIso())}</h2>
         </div>
         <span class="status-pill ${isFreeToday ? "neutral" : "active"}">${isFreeToday ? "Heute frei" : "Heute geplant"}</span>
       </div>
@@ -394,7 +571,7 @@
     if (!e) return;
     const node = document.querySelector("[data-portal-shift-list]");
     if (!node) return;
-    const today = P.todayIso();
+    const today = heuteIso();
     const todayDate = new Date(`${today}T00:00:00`);
     const dowToday = todayDate.getDay();
     const diffToMonday = (dowToday === 0 ? -6 : 1 - dowToday);
@@ -407,7 +584,7 @@
     });
 
     node.innerHTML = `<div class="week-list">${days.map((day) => {
-      const plan = P.getEmployeeDayPlan ? P.getEmployeeDayPlan(state.data, e.id, day) : null;
+      const plan = null;
       const shiftText = formatShiftLabel(plan?.shiftText || "Frei");
       const vehicleText = plan?.vehicleText || "";
       const isWorking = !/frei|urlaub|krank|kein dienst|nicht veröffentlicht/i.test(`${plan?.status || ""} ${shiftText}`) && shiftText !== "-";
@@ -525,7 +702,9 @@
       <p>Krank · ${sicknessStatusText(r.status)}</p>
       ${r.note ? `<p>${visibleLabel(r.note)}</p>` : ""}
       <span class="status-pill active">Übermittelt</span>
-      <span class="status-pill neutral">Ohne Anhang</span>
+      ${r.document_submission_id
+        ? '<span class="status-pill info">Mit Anhang</span>'
+        : '<span class="status-pill neutral">Ohne Anhang</span>'}
     </article>`).join("");
 
     /* Aeltere Eintraege, die nur auf diesem Geraet liegen. Sie werden NICHT
@@ -665,11 +844,16 @@
    */
   async function loadSupabaseData() {
     if (!ES || !ES.isConfigured()) return;
+    /* Der Stand zum Zeitpunkt des Losschickens. Jede Zuweisung unten
+       prueft ihn - eine Antwort, die nach dem Abmelden eintrifft, darf
+       nichts mehr zurueckschreiben. */
+    const stand = standJetzt();
     try {
       const [employee, shifts] = await Promise.all([
         ES.getMyEmployee(),
         ES.getMyPublishedShifts()
       ]);
+      if (!nochGueltig(stand)) return;
       state.supabaseEmployee = employee;
       state.supabaseShifts = Array.isArray(shifts) ? shifts : [];
 
@@ -678,27 +862,32 @@
         state.supabaseShifts.map((s) => s.vehicle_id).filter(Boolean)
       )];
       const vehicleResults = await Promise.all(vehicleIds.map((id) => ES.getVehicle(id)));
+      if (!nochGueltig(stand)) return;
       vehicleIds.forEach((id, i) => {
         if (vehicleResults[i]) state.supabaseVehicles[id] = vehicleResults[i];
       });
 
       const vacationRequests = await ES.getMyVacationRequests();
+      if (!nochGueltig(stand)) return;
       state.supabaseVacationRequests = Array.isArray(vacationRequests) ? vacationRequests : [];
 
       /* Eigene Krankmeldungen. Damit stehen sie auch nach einem Neuladen
          wieder zur Verfuegung. */
       if (typeof ES.getMySicknessReports === "function") {
         const sickness = await ES.getMySicknessReports();
+        if (!nochGueltig(stand)) return;
         state.supabaseSicknessReports = Array.isArray(sickness) ? sickness : [];
       }
 
       /* Dokumenttypen und eigene Einreichungen. */
       if (typeof ES.getDocumentTypes === "function") {
         const types = await ES.getDocumentTypes();
+        if (!nochGueltig(stand)) return;
         state.supabaseDocumentTypes = Array.isArray(types) ? types : [];
       }
       if (typeof ES.getMyDocumentSubmissions === "function") {
         const subs = await ES.getMyDocumentSubmissions();
+        if (!nochGueltig(stand)) return;
         state.supabaseDocumentSubmissions = Array.isArray(subs) ? subs : [];
       }
     } catch (err) {
@@ -937,7 +1126,22 @@
           preview.innerHTML = `<img src="${url}" alt="Vorschau" />`;
           preview.hidden = false;
         } else {
-          preview.innerHTML = `<div class="upload-file-pill">${file.name}</div>`;
+          /*
+            GEMESSENER AUSGANGSFEHLER: Hier stand
+              preview.innerHTML = `<div class="upload-file-pill">${file.name}</div>`
+            - der Dateiname unmaskiert in innerHTML. Der Name kommt aus dem
+            eigenen Dateidialog, es war also kein nutzeruebergreifender Weg;
+            falsch dargestellt wurde er trotzdem, und die Projektregel
+            verlangt beim Einfuegen in HTML immer eine Maskierung.
+
+            textContent setzt den Namen als TEXT - damit gibt es nichts zu
+            maskieren und nichts zu vergessen.
+          */
+          preview.innerHTML = "";
+          const pille = document.createElement("div");
+          pille.className = "upload-file-pill";
+          pille.textContent = file.name;
+          preview.appendChild(pille);
           preview.hidden = false;
         }
       };
@@ -1065,35 +1269,23 @@
         return;
       }
 
-      const withdraw = event.target.closest("[data-portal-vac-withdraw]");
-      if (withdraw) {
-        const row = state.data.vacations.find((v) => v.id === withdraw.getAttribute("data-portal-vac-withdraw"));
-        if (!row) return;
-        row.status = "zurueckgezogen";
-        P.saveState(state.data);
-        state.data = P.loadState();
-        renderVacations();
-        return;
-      }
+      /*
+        Zurueckziehen und Mitteilungen quittieren: ersatzlos entfallen.
 
-      const read = event.target.closest("[data-portal-msg-read]");
-      if (read) {
-        const id = read.getAttribute("data-portal-msg-read") || "";
-        P.pushMessageRead(state.data, id, state.employeeId, "read");
-        state.data = P.loadState();
-        renderMessages();
-        return;
-      }
+        Beide arbeiteten auf den oertlichen Vorgabedaten. Die Listen, an
+        denen die Schaltflaechen hingen, sind seit Schritt 028 immer leer -
+        die Schaltflaechen entstehen also gar nicht mehr.
 
-      const conf = event.target.closest("[data-portal-msg-confirm]");
-      if (conf) {
-        const id = conf.getAttribute("data-portal-msg-confirm") || "";
-        P.pushMessageRead(state.data, id, state.employeeId, "confirm");
-        P.pushMessageRead(state.data, id, state.employeeId, "read");
-        state.data = P.loadState();
-        renderMessages();
-        return;
-      }
+        Ein Zurueckziehen im Backend gibt es bislang nicht: Die Tabelle
+        `vacation_requests` erlaubt Mitarbeitern nur INSERT und SELECT
+        (Policies `vacation_requests_employee_insert` und
+        `..._select_self`), das Aendern liegt bei der Verwaltung. Ebenso
+        gibt es keine Anbindung fuer Mitteilungen.
+
+        Beides steht als offener Punkt in der Abschlussunterlage. Etwas
+        oertlich als "zurueckgezogen" zu markieren, waere eine Auskunft,
+        die niemand einloesen kann.
+      */
     });
 
     /* ESC schließt das Benutzermenü */
@@ -1125,6 +1317,31 @@
           return;
         }
 
+        /*
+          Doppeltes Absenden sperren.
+
+          Krankmeldung und Dokumentenupload taten das bereits; beim
+          Urlaubsantrag fehlte es. Zwei schnelle Klicks haetten zwei
+          Antraege erzeugt - und `vacation_requests` hat keinen
+          Doppelschutz wie die Krankmeldung (dort sorgt eine
+          Vorgangskennung dafuer).
+
+          Der Knopf sagt ausserdem, dass etwas laeuft, statt stumm zu
+          bleiben.
+        */
+        const vacBtn = vacForm.querySelector('button[type="submit"]');
+        if (vacBtn && vacBtn.disabled) return;
+        const vacBtnText = vacBtn ? vacBtn.textContent : "";
+        if (vacBtn) {
+          vacBtn.disabled = true;
+          vacBtn.textContent = "Wird gesendet …";
+        }
+        const vacBtnFrei = () => {
+          if (!vacBtn) return;
+          vacBtn.disabled = false;
+          vacBtn.textContent = vacBtnText;
+        };
+
         if (ES && ES.isConfigured()) {
           try {
             const result = await ES.createVacationRequest({ startDate, endDate, note });
@@ -1140,38 +1357,44 @@
             const requests = await ES.getMyVacationRequests();
             state.supabaseVacationRequests = Array.isArray(requests) ? requests : [];
             renderVacations();
-            reportTransmitted("[data-portal-vac-feedback]", "Urlaubsantrag übermittelt", "Urlaubsantrag wurde übermittelt und liegt der Zentrale vor.");
+            /* Die Erfolgsmeldung nennt den Zeitraum, damit erkennbar ist,
+               WAS eingereicht wurde. */
+            reportTransmitted(
+              "[data-portal-vac-feedback]",
+              "Urlaubsantrag übermittelt",
+              `Urlaub vom ${formatDate(startDate)} bis ${formatDate(endDate)} wurde übermittelt und liegt der Zentrale vor.`
+            );
             return;
           } catch (err) {
-            console.error("Urlaubsantrag konnte nicht uebermittelt werden.", err?.message || err);
+            /* Nur die Kennung des Dienstes ins Protokoll, nie sein
+               Wortlaut - der koennte Kennungen oder Felder nennen. */
+            console.error("Urlaubsantrag konnte nicht uebermittelt werden.", err?.code || "unbekannt");
             reportError("[data-portal-vac-feedback]", "Urlaubsantrag konnte nicht übermittelt werden. Bitte versuche es noch einmal oder melde dich direkt bei der Zentrale.");
             return;
+          } finally {
+            /* Immer wieder freigeben - auch im Fehlerfall muss ein
+               sicherer zweiter Versuch moeglich sein. */
+            vacBtnFrei();
           }
         }
 
-        P.addVacationRequest(state.data, {
-          employeeId: state.employeeId,
-          start: startDate,
-          end: endDate,
-          halfDay: false,
-          workDaysDemo: 1,
-          type: "Erholungsurlaub",
-          replacementId: "",
-          comment: note,
-          internalNote: "Portal-Antrag",
-          requester: state.employeeId,
-          createdAt: P.todayIso(),
-          status: "beantragt"
-        });
-        /* Kein Backend verfuegbar: Der Antrag bleibt auf diesem Geraet.
-           Er wird gespeichert, damit nichts verloren geht - aber er darf
-           nicht als gesendet ausgegeben werden. */
-        state.data = P.loadState();
-        renderVacations();
-        renderHome();
-        renderMessageSummary();
-        vacForm.reset();
-        reportNotTransmitted("[data-portal-vac-feedback]", "Dein Urlaubsantrag");
+        /*
+          Hierher kommt man nicht mehr.
+
+          Der Zweig darueber greift, sobald die Verbindung eingerichtet ist -
+          und ohne eingerichtete Verbindung oeffnet das Portal seit Schritt
+          028 gar nicht erst (siehe portalSperren). Frueher wurde der Antrag
+          hier oertlich abgelegt; das ist ersatzlos entfallen, denn ein
+          Antrag, den niemand erhaelt, hilft niemandem.
+
+          Statt still zu speichern: sagen, dass nichts gesendet wurde.
+        */
+        reportError(
+          "[data-portal-vac-feedback]",
+          "Der Urlaubsantrag konnte nicht gesendet werden, weil gerade keine "
+          + "Verbindung zum System besteht. Bitte melde dich bei der Zentrale."
+        );
+        vacBtnFrei();
       });
     }
 
@@ -1300,27 +1523,15 @@
           }
         }
 
-        /* Ohne Backend: Der Eintrag bleibt auf diesem Geraet und wird
-           ausdruecklich als nicht uebermittelt gekennzeichnet. */
-        P.addAbsence(state.data, {
-          employeeId: state.employeeId,
-          kind: "Krank",
-          start: startDate || P.todayIso(),
-          expectedEnd: expectedEnd || startDate || P.todayIso(),
-          receivedAt: P.todayIso(),
-          via: "Mitarbeiterportal",
-          proofStatus: "angefordert",
-          note: note,
-          status: "gemeldet",
-          transmitted: false,
-          affectedShifts: []
-        });
-        state.data = P.loadState();
-        renderAbsences();
-        renderHome();
-        renderMessageSummary();
-        absenceForm.reset();
-        reportNotTransmitted("[data-portal-absence-feedback]", "Deine Krankmeldung");
+        /* Unerreichbar - siehe die Begruendung beim Urlaubsantrag. Eine
+           Krankmeldung, die nur auf dem Geraet liegt, erreicht die Zentrale
+           nicht; sie still abzulegen waere die gefaehrlichere Auskunft. */
+        reportError(
+          "[data-portal-absence-feedback]",
+          "Die Krankmeldung konnte nicht gesendet werden, weil gerade keine "
+          + "Verbindung zum System besteht. Bitte melde dich telefonisch bei "
+          + "der Zentrale."
+        );
       });
     }
 
@@ -1387,22 +1598,15 @@
            nicht die Datei. Ob serverseitig ein Storage-Ziel existiert, laesst
            sich aus dem Client-Code nicht ableiten - genutzt wird es hier
            nicht. Der Eintrag bleibt lokal und wird entsprechend markiert. */
-        P.submitEmployeeDocument(state.data, {
-          employeeId: state.employeeId,
-          type: String(fd.get("type") || "Sonstiges"),
-          note: String(fd.get("note") || ""),
-          demoFile: file ? file.name : "",
-          demoFileName: file ? file.name : "",
-          demoFileType: file ? file.type : "",
-          transmitted: false
-        });
-        state.data = P.loadState();
-        docForm.reset();
-        renderDocs();
-        renderHome();
-        renderMessageSummary();
-        selectFirstDocumentType();
-        reportNotTransmitted("[data-portal-doc-feedback]", "Dein Dokument");
+        /* Unerreichbar - siehe die Begruendung beim Urlaubsantrag. Vorher
+           wurde hier nur der DATEINAME abgelegt, nicht die Datei; der
+           Eintrag sah nach Einreichung aus und war keine. */
+        reportError(
+          "[data-portal-doc-feedback]",
+          "Das Dokument konnte nicht gesendet werden, weil gerade keine "
+          + "Verbindung zum System besteht. Bitte versuche es später noch "
+          + "einmal."
+        );
       });
     }
   }
@@ -1411,24 +1615,36 @@
     /* Seite ist zunächst ausgeblendet (data-portal-loading am body). */
     /* Nach Auth-Prüfung wird das Attribut entfernt. */
 
-    const isSupabase = ES && ES.isConfigured();
+    /*
+      EINE einzige Eintrittspruefung - siehe portalSperren() weiter oben.
 
-    if (isSupabase) {
-      /* ---- Supabase-Session prüfen ---- */
-      const sessionResult = await ES.checkSession();
-      if (!sessionResult) {
-        localStorage.removeItem("tgEmployeeDemoSession");
-        window.location.replace("index.html");
-        return;
-      }
-      state.employeeId = sessionResult.employeeId;
-
-      /* Schichten und Mitarbeiterdaten laden */
-      await loadSupabaseData();
-    } else {
-      /* ---- Demo-Modus ---- */
-      if (!requireDemoSession()) return;
+      Ist die Verbindung nicht eingerichtet, gibt es keinen Ersatzweg mehr.
+      Frueher sprang das Portal hier in einen Demo-Modus mit erfundenen
+      Personen; das war der Weg, ueber den eine Zeile im Browserspeicher
+      genuegte.
+    */
+    if (!ES || !ES.isConfigured()) {
+      portalSperren("nicht-eingerichtet");
+      return;
     }
+
+    let sessionResult = null;
+    try {
+      sessionResult = await ES.checkSession();
+    } catch {
+      /* Antwortet der Dienst nicht, ist die Sitzung UNGEPRUEFT. Ungeprueft
+         ist nicht dasselbe wie gueltig. */
+      portalSperren("nicht-erreichbar");
+      return;
+    }
+    if (!sessionResult) {
+      portalSperren("abgemeldet");
+      return;
+    }
+    state.employeeId = sessionResult.employeeId;
+
+    /* Schichten und Mitarbeiterdaten laden */
+    await loadSupabaseData();
 
     /* Ladestate aufheben */
     document.body.removeAttribute("data-portal-loading");
@@ -1447,7 +1663,10 @@
     setActiveSection("dienstplan", { scroll: false });
 
     /* Auto-Logout nur für Supabase-Nutzer starten */
-    if (isSupabase) initIdleTimer();
+    /* Die Abmeldung bei Untaetigkeit gilt ab hier immer: Wer bis hierher
+       kommt, hat eine geprüfte Sitzung. Frueher hing das an `isSupabase`;
+       die Variable gibt es seit dem Wegfall des Demo-Modus nicht mehr. */
+    initIdleTimer();
   });
 
   /* ------------------------------------------------------------------ */
@@ -1463,9 +1682,33 @@
     let warnShown  = false;
     let tickHandle = null;
 
+    /*
+      Speicherzugriffe, die nie werfen.
+
+      Gemessen: Bei gesperrtem Browserspeicher (privates Fenster, blockierte
+      Website-Daten) warf der Zugriff hier eine Ausnahme, und das Portal
+      brach ab. Ein gesperrter Speicher ist aber kein Fehler, sondern eine
+      Einstellung des Browsers - sie darf die Bedienung nicht verhindern.
+
+      Faellt er aus, haelt ein Wert im Arbeitsspeicher her: Der Zaehler
+      wirkt dann nur in diesem Tab, aber das Portal laeuft weiter.
+    */
+    let stempelErsatz = null;
+    const stempelLesen = () => {
+      try { return localStorage.getItem(STAMP_KEY); } catch { return stempelErsatz; }
+    };
+    const stempelSchreiben = (wert) => {
+      stempelErsatz = wert;
+      try { localStorage.setItem(STAMP_KEY, wert); } catch { /* gesperrt */ }
+    };
+    const stempelLoeschen = () => {
+      stempelErsatz = null;
+      try { localStorage.removeItem(STAMP_KEY); } catch { /* gesperrt */ }
+    };
+
     /* --- Zeitstempel setzen / Warnung ggf. wegblenden --- */
     function touch() {
-      localStorage.setItem(STAMP_KEY, String(Date.now()));
+      stempelSchreiben(String(Date.now()));
       if (warnShown) {
         warnShown = false;
         const banner = document.querySelector("[data-portal-idle-warning]");
@@ -1483,7 +1726,7 @@
 
     /* --- Prüfen ob Timeout abgelaufen --- */
     async function check() {
-      const raw = localStorage.getItem(STAMP_KEY);
+      const raw = stempelLesen();
       if (!raw) return; /* Noch nicht initialisiert */
       const elapsed = Date.now() - Number(raw);
 
@@ -1491,7 +1734,7 @@
         clearInterval(tickHandle);
         const banner = document.querySelector("[data-portal-idle-warning]");
         if (banner) banner.hidden = true;
-        localStorage.removeItem(STAMP_KEY);
+        stempelLoeschen();
         await ES.signOut();
         window.location.replace("index.html");
         return;

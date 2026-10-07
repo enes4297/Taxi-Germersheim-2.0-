@@ -1,0 +1,65 @@
+---
+/**
+ * Gezielte Enthuellung beim Scrollen.
+ *
+ * Uebernommen aus Reveal() der Vorschau (site-ui.tsx), hier ohne Framework.
+ * Drei Eigenschaften der Vorlage bleiben erhalten, weil sie dort jeweils
+ * aus einem Fehler gelernt wurden:
+ *
+ *   1. Je Element laeuft es genau EINMAL. Der Beobachter meldet sich danach
+ *      ab - beim Zurueckscrollen passiert nichts mehr.
+ *   2. Was beim Laden schon im Bild steht, wird sofort sichtbar gesetzt,
+ *      ohne Uebergang. Sonst blitzt dort eine leere dunkle Flaeche auf.
+ *   3. rootMargin 260px nach unten: Der Block beginnt zu erscheinen, waehrend
+ *      er sich dem Bild noch naehert. Beim schnellen Scrollen waren sonst
+ *      mehrere Bloecke gleichzeitig unsichtbar.
+ *
+ * Ohne JavaScript bleibt alles sichtbar: Der Wartezustand wird erst vom
+ * Skript gesetzt, nicht vom Markup.
+ */
+interface Props {
+  /** Verzoegerung in Millisekunden. */
+  verzoegerung?: number;
+  class?: string;
+}
+const { verzoegerung = 0, class: klasse = '' } = Astro.props;
+---
+
+<div class={klasse} data-enthuellen-ziel data-verzoegerung={verzoegerung}>
+  <slot />
+</div>
+
+<script>
+  // Laeuft einmal je Seite und bedient alle Ziele.
+  const ruhig = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ziele = document.querySelectorAll<HTMLElement>('[data-enthuellen-ziel]');
+
+  for (const el of ziele) {
+    if (ruhig) {
+      el.dataset.enthuellen = 'zeigen';
+      continue;
+    }
+
+    // Schon im Bild: sofort zeigen, ohne Uebergang und ohne Beobachter.
+    if (el.getBoundingClientRect().top < window.innerHeight * 1.05) {
+      el.dataset.enthuellen = 'zeigen';
+      el.style.transition = 'none';
+      continue;
+    }
+
+    el.dataset.enthuellen = 'warten';
+    const verzoegerung = Number(el.dataset.verzoegerung || 0);
+
+    const beobachter = new IntersectionObserver(
+      (eintraege) => {
+        if (!eintraege[0].isIntersecting) return;
+        beobachter.disconnect();
+        window.setTimeout(() => {
+          el.dataset.enthuellen = 'zeigen';
+        }, verzoegerung);
+      },
+      { rootMargin: '0px 0px 260px 0px', threshold: 0 },
+    );
+    beobachter.observe(el);
+  }
+</script>

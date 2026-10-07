@@ -217,7 +217,16 @@
   }
 
   function enhanceDateField(wrap, input) {
+    // Das echte Feld ist nur noch ein unsichtbarer Stellvertreter (1 x 1 px,
+    // opacity 0) hinter der sichtbaren Schaltflaeche. Es bleibt aber in der
+    // Tabulatorfolge - wer mit der Tastatur bedient, landet dann auf etwas,
+    // das er nicht sieht: der Fokus verschwindet. Gemessen in Schritt 017,
+    // die einzigen zwei solchen Stellen im oeffentlichen Bereich.
+    //
+    // tabIndex = -1 nimmt es aus der Tabulatorfolge heraus. focus() und
+    // showPicker() aus dem Klickhandler wirken unveraendert weiter.
     input.classList.add("special-native-date");
+    input.tabIndex = -1;
     var display = document.createElement("button");
     display.type = "button";
     display.className = "special-date-display is-placeholder";
@@ -235,7 +244,16 @@
   }
 
   function enhanceSelect(wrap, select) {
+    // Das echte Feld ist nur noch ein unsichtbarer Stellvertreter (1 x 1 px,
+    // opacity 0) hinter der sichtbaren Schaltflaeche. Es bleibt aber in der
+    // Tabulatorfolge - wer mit der Tastatur bedient, landet dann auf etwas,
+    // das er nicht sieht: der Fokus verschwindet. Gemessen in Schritt 017,
+    // die einzigen zwei solchen Stellen im oeffentlichen Bereich.
+    //
+    // tabIndex = -1 nimmt es aus der Tabulatorfolge heraus. focus() und
+    // showPicker() aus dem Klickhandler wirken unveraendert weiter.
     select.classList.add("special-native-select");
+    select.tabIndex = -1;
     var trigger = document.createElement("button");
     trigger.type = "button";
     trigger.className = "special-select-trigger is-placeholder";

@@ -36,34 +36,6 @@ body.gameworld-body::after {
   background: linear-gradient(180deg, #050505 0%, #050505 calc(100% - 12px), rgba(5, 5, 5, 0));
 }
 
-html.taxi-rush-focus-active,
-body.gameworld-body.taxi-rush-focus-active {
-  overflow: hidden;
-  overscroll-behavior: none;
-}
-
-html.taxi-rush-focus-active {
-  scrollbar-gutter: auto;
-}
-
-body.gameworld-body.taxi-rush-focus-active {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-}
-
-body.gameworld-body.taxi-rush-focus-active::after {
-  opacity: 0;
-}
-
-body.gameworld-body.taxi-rush-focus-active .tg-public-header {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: translateY(calc(-100% - 24px));
-  transition: opacity 240ms ease, transform 320ms cubic-bezier(0.22, 0.8, 0.22, 1), visibility 240ms step-end;
-}
-
 .gameworld-main {
   width: min(1440px, calc(100% - 24px));
   margin: 0 auto;
@@ -88,7 +60,7 @@ body.gameworld-body.taxi-rush-focus-active .tg-public-header {
   background:
     linear-gradient(90deg, rgba(5, 5, 5, 0.98) 0%, rgba(5, 5, 5, 0.78) 42%, rgba(5, 5, 5, 0.1) 78%),
     linear-gradient(0deg, rgba(5, 5, 5, 0.94) 0%, rgba(5, 5, 5, 0.1) 45%, rgba(5, 5, 5, 0.34) 100%),
-    url("admin/images/mercedes-v-klasse-ger-tx-800-premium.jpg.png") 76% 48% / min(880px, 68vw) auto no-repeat,
+    url("assets/spielewelt/ger-tx-800-hintergrund.webp") 76% 48% / min(880px, 68vw) auto no-repeat,
     #080909;
 }
 
@@ -200,10 +172,10 @@ body.gameworld-body.taxi-rush-focus-active .tg-public-header {
   border-color: var(--gw-gold-soft);
 }
 
+/* Die beiden Selektoren der alten Spielfassung sind hier entfallen; das
+   neue Taxi Rush bringt seine Fokusringe in taxi-rush.css selbst mit. */
 .gw-button:focus-visible,
-.gw-text-link:focus-visible,
-.gw-rush-controls button:focus-visible,
-.gw-rush-viewport canvas:focus-visible {
+.gw-text-link:focus-visible {
   outline: 2px solid var(--gw-gold-soft);
   outline-offset: 4px;
 }
@@ -394,127 +366,263 @@ body.gameworld-body.taxi-rush-focus-active .tg-public-header {
   min-width: 0;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Glücksrad — Gestaltung nach der freigegebenen Vorlage
+   design-vorlagen/Taxi-Germersheim-Gluecksrad.html
+   ═══════════════════════════════════════════════════════════════════════
+
+   Die Klassennamen bleiben, wie sie waren (gw-wheel-*), damit spiele.js
+   unverändert weiterarbeitet. Getauscht ist allein das Aussehen.
+
+   Aufbau, von außen nach innen:
+
+     .gw-wheel-shell     Bühne, quadratisch
+       .gw-wheel-pointer Zeiger, oben, fest
+       .gw-wheel-rim     Goldring, FEST - dreht sich nicht mit
+         .gw-wheel-svg   die Scheibe, DAS EINZIGE, was sich dreht
+       .gw-wheel-hub     Nabe mit dem Bildzeichen, fest
+
+   Warum nur die Scheibe rotiert: Ein mitdrehender Ring sähe aus wie ein
+   Fehler, und der Zeiger muss stehen bleiben, sonst zeigt er nirgendwohin.
+   In der Vorlage ist es genauso gelöst ("one animated rotor").
+*/
+
+/* Der klebende Seitenkopf ist 88 px hoch. Ohne diesen Abstand liegt der
+   Zeiger dahinter, sobald jemand den Radbereich anspringt - gemessen:
+   Der Zeiger sitzt 31 px unter dem Anfang des Bereichs. */
+.gw-wheel-feature {
+  scroll-margin-top: 104px;
+}
+
 .gw-wheel-visual {
-  padding: 58px 0;
+  padding: 48px 0;
   display: grid;
   place-items: center;
 }
 
 .gw-wheel-shell {
   position: relative;
-  width: min(100%, 570px);
+  width: min(100%, 540px);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
+  isolation: isolate;
 }
 
-.gw-wheel-shell::before,
+/* Warmer Schein hinter dem Rad. */
+.gw-wheel-shell::before {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(211, 168, 74, 0.12) 0, rgba(186, 138, 49, 0.06) 45%, transparent 68%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Feiner Außenkreis. */
 .gw-wheel-shell::after {
   content: "";
   position: absolute;
+  inset: -17px;
+  border: 1px solid rgba(192, 161, 91, 0.15);
   border-radius: 50%;
+  box-shadow: 0 0 0 8px rgba(209, 173, 89, 0.015);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── Der Goldring ────────────────────────────────────────────────────
+   Ein Kegelverlauf mit hellen und dunklen Stellen erzeugt den Eindruck
+   von poliertem Metall - ohne Bild, ohne Filter. */
+/*
+   WARUM DER RING ABSOLUT LIEGT UND KEIN EIGENES SEITENVERHAELTNIS HAT
+
+   Vorher stand hier `width: 100%; aspect-ratio: 1` - der Ring war ein
+   Gitterelement der Buehne und rechnete sich seine Hoehe selbst aus.
+   Damit haengen zwei Groessen voneinander ab: Die Zeilenhoehe des
+   Gitters richtet sich nach dem Element, und die Hoehe des Elements
+   richtet sich nach dem Gitter. Wie ein Browser diesen Ringschluss
+   aufloest, ist nicht ueberall gleich - auf einem iPhone wurde das Rad
+   dadurch oval, waehrend es in der Messung hier rund blieb.
+
+   Jetzt liegt der Ring absolut auf der Buehne (`inset: 0`) und
+   uebernimmt deren Kasten unveraendert. Die Buehne ist quadratisch
+   (`width: min(100%, 540px); aspect-ratio: 1`), und weil ausser ihr
+   kein Element mehr im Fluss steht, kann nichts mehr auf ihre Hoehe
+   zurueckwirken. Rund bleibt rund - unabhaengig vom Browser.
+
+   Zeiger und Nabe lagen ohnehin schon absolut; am Aussehen aendert
+   sich nichts.
+*/
+.gw-wheel-rim {
+  position: absolute;
+  inset: 0;
+  padding: 25px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 10deg,
+    #624820 0deg, #e2c27b 24deg, #fff4ce 45deg, #a9803b 75deg,
+    #4c3619 112deg, #b59558 142deg, #f7e2a5 180deg, #a57d36 216deg,
+    #44321b 255deg, #e1bc6e 305deg, #fce9b4 332deg, #624820 360deg
+  );
+  box-shadow:
+    0 32px 50px rgba(0, 0, 0, 0.67),
+    0 4px 0 #695329,
+    0 8px 0 #292218,
+    inset 0 0 0 1px #ffe6a9,
+    inset 0 0 0 5px #171813,
+    inset 0 0 0 6px #af9560,
+    inset 0 0 0 11px rgba(16, 15, 9, 0.4),
+    inset 0 0 0 12px rgba(245, 219, 154, 0.4);
+}
+
+/* Feine Riffelung auf dem Ring. */
+.gw-wheel-rim::before {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 238, 174, 0.53) 0deg 0.18deg, transparent 0.18deg 2deg);
+  -webkit-mask: radial-gradient(transparent 68.9%, #000 69.3%);
+  mask: radial-gradient(transparent 68.9%, #000 69.3%);
   pointer-events: none;
 }
 
-.gw-wheel-shell::before {
-  inset: 4%;
-  border: 1px solid rgba(240, 217, 149, 0.42);
-  box-shadow: 0 0 55px rgba(213, 180, 95, 0.12), inset 0 0 45px rgba(0, 0, 0, 0.62);
+/* Innere Fassung. */
+.gw-wheel-rim::after {
+  content: "";
+  position: absolute;
+  inset: 24px;
+  border: 2px solid #e4c582;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 4px #0a0d0b, inset 0 0 20px rgba(0, 0, 0, 0.67);
+  pointer-events: none;
 }
 
-.gw-wheel-shell::after {
-  inset: 0;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
+/* ── Die Scheibe: das Einzige, was sich dreht ──────────────────────── */
 .gw-wheel-svg {
-  width: 92%;
-  height: 92%;
-  overflow: visible;
-  filter: drop-shadow(0 28px 38px rgba(0, 0, 0, 0.34));
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 4px solid #171b14;
+  border-radius: 50%;
+  background: #151a15;
+  overflow: hidden;
 }
 
 .gw-wheel-segment {
-  stroke: rgba(243, 240, 232, 0.15);
+  stroke: #b8a06b;
+  stroke-opacity: 0.35;
   stroke-width: 1;
+  fill: url(#gwSegmentDark);
 }
 
-.gw-wheel-segment:nth-of-type(3n + 1) { fill: #16191a; }
-.gw-wheel-segment:nth-of-type(3n + 2) { fill: #26231c; }
-.gw-wheel-segment:nth-of-type(3n) { fill: #202426; }
-.gw-wheel-segment.is-featured { fill: #6f5b2f; }
-.gw-wheel-segment.is-box { fill: #4d3927; }
+.gw-wheel-segment.is-bright { fill: url(#gwSegmentBright); }
+.gw-wheel-segment.is-featured { fill: url(#gwSegmentSpecial); }
+.gw-wheel-segment.is-box { fill: url(#gwSegmentSpecial); }
 
 .gw-wheel-label {
-  fill: var(--gw-paper);
-  font-family: var(--tg-sans, "Avenir Next", "Segoe UI", sans-serif);
-  font-size: 15px;
-  font-weight: 760;
+  fill: #f4e7c7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 39px;
   text-anchor: middle;
-  dominant-baseline: middle;
-  letter-spacing: 0;
 }
+
+/* Yumaks Box steht als Wort da und braucht deshalb weniger Größe. */
+.gw-wheel-label.is-word { font-size: 29px; }
+.gw-wheel-label.on-special { fill: #ffedba; }
 
 .gw-wheel-label-unit {
-  fill: rgba(243, 240, 232, 0.58);
-  font-size: 8px;
-  font-weight: 650;
-  text-transform: uppercase;
+  fill: #d7c9a8;
+  font-family: var(--tg-sans, Arial, sans-serif);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-anchor: middle;
 }
 
+.gw-wheel-dot {
+  fill: #f2dca5;
+  fill-opacity: 0.85;
+}
+
+/* ── Die Nabe mit dem Bildzeichen ──────────────────────────────────── */
 .gw-wheel-hub {
   position: absolute;
-  width: 27%;
-  aspect-ratio: 1;
+  inset: 37.5%;
+  z-index: 3;
   display: grid;
-  place-content: center;
-  text-align: center;
-  border: 1px solid rgba(240, 217, 149, 0.5);
+  place-items: center;
+  padding: 11px;
+  border: 0;
   border-radius: 50%;
-  background: #0b0c0d;
-  box-shadow: 0 0 0 8px rgba(5, 5, 5, 0.78), 0 12px 28px rgba(0, 0, 0, 0.45);
+  background: conic-gradient(from 35deg, #fff0b7, #84632f 22%, #e5cc8e 40%, #fff4c8 49%, #6a4d25 71%, #d1b576 90%, #fff0b7);
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.67), inset 0 0 0 1px #fff0c4;
+  isolation: isolate;
 }
 
-.gw-wheel-hub span,
-.gw-wheel-hub strong {
-  display: block;
-  letter-spacing: 0;
-  text-transform: uppercase;
+.gw-wheel-hub::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 32% 13%, #373c2e, #131a14 65%, #090e0b);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), inset 0 0 0 2px #272d21;
+  z-index: -1;
 }
 
-.gw-wheel-hub span {
-  color: var(--gw-gold-soft);
-  font-size: clamp(0.58rem, 1vw, 0.74rem);
-  font-weight: 780;
+.gw-wheel-hub img {
+  width: 69%;
+  height: 86%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.53));
 }
 
-.gw-wheel-hub strong {
-  margin-top: 3px;
-  color: var(--gw-paper);
-  font-size: clamp(0.5rem, 0.8vw, 0.64rem);
-  font-weight: 650;
-}
-
+/* ── Der Zeiger ────────────────────────────────────────────────────── */
 .gw-wheel-pointer {
   position: absolute;
-  top: -1%;
+  top: -15px;
   left: 50%;
   z-index: 4;
-  width: 22px;
-  height: 42px;
+  width: 35px;
+  height: 57px;
   transform: translateX(-50%);
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  background: var(--gw-gold-soft);
-  filter: drop-shadow(0 8px 9px rgba(0, 0, 0, 0.5));
+  background: linear-gradient(100deg, #7a5727 0%, #ecd397 33%, #fff3c2 49%, #b79651 51%, #e9ce8e 100%);
+  clip-path: polygon(10% 0, 90% 0, 100% 28%, 88% 50%, 50% 100%, 12% 50%, 0 28%);
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.5));
 }
 
-.gw-wheel-orbit {
-  position: absolute;
-  inset: 1%;
-  border: 1px dashed rgba(240, 217, 149, 0.18);
-  border-radius: 50%;
-  animation: gw-orbit 24s linear infinite;
+/* ── Auf dem Handy ─────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .gw-wheel-visual { padding: 32px 0; }
+  .gw-wheel-rim { padding: 17px; }
+  .gw-wheel-rim::after { inset: 16px; }
+  .gw-wheel-rim::before { inset: 10px; }
+  .gw-wheel-shell::after { inset: -10px; }
+  .gw-wheel-rim {
+    box-shadow:
+      0 20px 35px rgba(0, 0, 0, 0.67),
+      0 3px 0 #695329,
+      0 5px 0 #292218,
+      inset 0 0 0 1px #ffe6a9,
+      inset 0 0 0 4px #171813,
+      inset 0 0 0 5px #af9560;
+  }
+  .gw-wheel-svg { border-width: 2px; }
+  .gw-wheel-hub { padding: 8px; }
+  .gw-wheel-hub::before { inset: 5px; }
+  .gw-wheel-pointer { width: 25px; height: 41px; top: -11px; }
 }
+
+/* ── Reduzierte Bewegung ───────────────────────────────────────────────
+   Die Drehung selbst wird in spiele.js auf die Dauer 0 gesetzt: Das
+   Ergebnis erscheint dann sofort am richtigen Feld, statt dass jemand
+   eine Bewegung sieht, die er abgestellt hat. Hier bleibt nur, was
+   sonst noch liefe. */
+@media (prefers-reduced-motion: reduce) {
+  .gw-wheel-svg { transition: none !important; }
+}
+
 
 .gw-wheel-copy {
   padding: 64px clamp(18px, 4vw, 58px) 64px 0;
@@ -603,101 +711,6 @@ body.gameworld-body.taxi-rush-focus-active .tg-public-header {
     radial-gradient(circle at 22% 72%, rgba(213, 180, 95, 0.045), transparent 28rem);
 }
 
-.gw-rush-focus-bar {
-  display: none;
-}
-
-body.gameworld-body.taxi-rush-focus-active .gw-rush-game {
-  position: fixed;
-  inset: 0;
-  z-index: 220;
-  width: 100vw;
-  max-width: none;
-  margin: 0;
-  padding: clamp(10px, 1.8dvh, 20px) clamp(12px, 2.4vw, 38px);
-  display: grid;
-  grid-template-rows: 38px minmax(0, 1fr);
-  gap: clamp(8px, 1.4dvh, 16px);
-  border: 0;
-  background:
-    radial-gradient(circle at 50% 44%, rgba(117, 156, 146, 0.07), transparent 46%),
-    radial-gradient(circle at 50% 78%, rgba(213, 180, 95, 0.055), transparent 34%),
-    #020304;
-  opacity: 1 !important;
-  transform: none !important;
-  animation: gw-rush-focus-in 320ms cubic-bezier(0.22, 0.8, 0.22, 1) both;
-}
-
-body.gameworld-body.taxi-rush-focus-active .gw-rush-focus-bar {
-  width: min(96vw, 1540px);
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: rgba(243, 240, 232, 0.5);
-  font-size: 0.62rem;
-  font-weight: 760;
-  text-transform: uppercase;
-}
-
-.gw-rush-focus-bar button,
-.gw-rush-exit-link {
-  padding: 8px 0;
-  border: 0;
-  background: transparent;
-  color: rgba(243, 240, 232, 0.58);
-  font: inherit;
-  font-size: 0.64rem;
-  font-weight: 720;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.gw-rush-focus-bar button {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.gw-rush-focus-bar button > span {
-  color: var(--gw-gold-soft);
-  font-size: 1.05rem;
-  line-height: 0;
-}
-
-.gw-rush-focus-bar button:hover,
-.gw-rush-focus-bar button:focus-visible,
-.gw-rush-exit-link:hover,
-.gw-rush-exit-link:focus-visible {
-  color: var(--gw-paper);
-}
-
-body.gameworld-body.taxi-rush-focus-active .gw-rush-header,
-body.gameworld-body.taxi-rush-focus-active .gw-rush-description {
-  display: none;
-}
-
-body.gameworld-body.taxi-rush-focus-active .gw-rush-frame {
-  width: min(96vw, 1540px);
-  height: min(86dvh, 900px);
-  min-height: 0;
-  margin: auto;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr);
-  border-color: rgba(240, 217, 149, 0.16);
-  box-shadow:
-    0 34px 110px rgba(0, 0, 0, 0.72),
-    0 0 0 1px rgba(240, 217, 149, 0.025),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.025);
-  transform-origin: 50% 50%;
-  animation: gw-rush-stage-focus 360ms cubic-bezier(0.22, 0.8, 0.22, 1) both;
-}
-
-body.gameworld-body.taxi-rush-focus-active .gw-rush-viewport {
-  height: auto;
-  min-height: 0;
-}
-
 .gw-rush-header {
   margin-bottom: clamp(34px, 5vw, 58px);
   display: grid;
@@ -738,535 +751,8 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-viewport {
   font-size: 0.92rem;
 }
 
-.gw-rush-frame {
-  overflow: hidden;
-  border: 1px solid rgba(224, 228, 225, 0.09);
-  border-radius: 3px;
-  background: #050708;
-  box-shadow:
-    0 38px 100px rgba(0, 0, 0, 0.46),
-    inset 0 0 0 1px rgba(213, 180, 95, 0.018);
-}
-
-.gw-rush-viewport {
-  position: relative;
-  height: clamp(500px, 50vw, 680px);
-  overflow: hidden;
-  isolation: isolate;
-  background: #050708;
-}
-
-.gw-rush-viewport::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 0 42px rgba(0, 0, 0, 0.22);
-}
-
-.gw-rush-game.is-crashing .gw-rush-viewport {
-  animation: gw-rush-crash-shake 90ms linear;
-}
-
-.gw-rush-game.is-crashing .gw-rush-viewport::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-  background: rgba(240, 217, 149, 0.28);
-  animation: gw-rush-impact-flash 90ms ease-out both;
-}
-
-.gw-rush-game.is-crashing .gw-rush-viewport canvas {
-  animation: gw-rush-light-flicker 90ms linear;
-}
-
-.gw-rush-viewport canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  outline-offset: -4px;
-  touch-action: none;
-}
-
-.gw-rush-hud {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 4;
-  min-height: 86px;
-  padding: 17px clamp(18px, 3vw, 38px) 30px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(18px, 4vw, 64px);
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(4, 6, 7, 0.93) 0%, rgba(4, 6, 7, 0.62) 58%, transparent 100%);
-  transition: opacity 180ms ease;
-}
-
-.gw-rush-hud div {
-  display: grid;
-  gap: 3px;
-}
-
-.gw-rush-hud div:nth-child(2) {
-  justify-items: center;
-}
-
-.gw-rush-hud div:last-child {
-  justify-items: end;
-}
-
-.gw-rush-hud span {
-  color: rgba(208, 214, 211, 0.6);
-  font-size: 0.64rem;
-  font-weight: 760;
-  text-transform: uppercase;
-}
-
-.gw-rush-hud strong {
-  color: var(--gw-paper);
-  font-size: 1.48rem;
-  font-weight: 680;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.gw-rush-hud div:first-child strong,
-.gw-rush-hud div:nth-child(2) strong {
-  color: var(--gw-gold-soft);
-}
-
-.gw-rush-objective {
-  position: absolute;
-  top: 88px;
-  left: 50%;
-  z-index: 4;
-  width: min(330px, calc(100% - 36px));
-  display: grid;
-  justify-items: center;
-  gap: 3px;
-  transform: translateX(-50%);
-  pointer-events: none;
-  text-align: center;
-  text-shadow: 0 2px 12px #000;
-  transition: opacity 180ms ease;
-}
-
-.gw-rush-objective span {
-  color: rgba(208, 214, 211, 0.54);
-  font-size: 0.58rem;
-  font-weight: 760;
-  text-transform: uppercase;
-}
-
-.gw-rush-objective strong {
-  color: var(--gw-gold-soft);
-  font-size: 0.8rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.gw-rush-passenger {
-  margin-top: 4px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: rgba(243, 240, 232, 0.58);
-  font-size: 0.54rem;
-  font-style: normal;
-  font-weight: 720;
-  text-transform: uppercase;
-}
-
-.gw-rush-passenger[hidden] {
-  display: none;
-}
-
-.gw-rush-passenger i {
-  position: relative;
-  width: 9px;
-  height: 9px;
-  border: 1px solid rgba(240, 217, 149, 0.72);
-  border-radius: 50% 50% 42% 42%;
-}
-
-.gw-rush-passenger i::after {
-  content: "";
-  position: absolute;
-  left: 1px;
-  right: 1px;
-  bottom: -4px;
-  height: 4px;
-  border: 1px solid rgba(240, 217, 149, 0.52);
-  border-top: 0;
-}
-
-.gw-rush-game[data-taxi-rush-state="idle"] .gw-rush-hud,
-.gw-rush-game[data-taxi-rush-state="idle"] .gw-rush-objective,
-.gw-rush-game[data-taxi-rush-state="ended"] .gw-rush-hud,
-.gw-rush-game[data-taxi-rush-state="ended"] .gw-rush-objective {
-  opacity: 0;
-}
-
-.gw-rush-event {
-  position: absolute;
-  top: 132px;
-  left: 50%;
-  z-index: 5;
-  min-width: 190px;
-  padding: 11px 18px;
-  transform: translateX(-50%);
-  border-top: 1px solid rgba(240, 217, 149, 0.46);
-  border-bottom: 1px solid rgba(240, 217, 149, 0.46);
-  background: linear-gradient(90deg, transparent, rgba(5, 7, 8, 0.88) 18%, rgba(5, 7, 8, 0.88) 82%, transparent);
-  color: var(--gw-gold-soft);
-  font-size: 0.7rem;
-  font-weight: 760;
-  text-align: center;
-  text-transform: uppercase;
-  text-shadow: 0 2px 10px #000;
-  animation: gw-rush-event-in 260ms ease both;
-}
-
-.gw-rush-event[hidden] {
-  display: none;
-}
-
-.gw-rush-countdown {
-  position: absolute;
-  inset: 0;
-  z-index: 8;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-  background: radial-gradient(circle at 50% 50%, rgba(5, 7, 8, 0.14), rgba(5, 7, 8, 0.62));
-}
-
-.gw-rush-countdown[hidden] {
-  display: none;
-}
-
-.gw-rush-countdown span {
-  color: var(--gw-paper);
-  font-family: var(--tg-display, Georgia, serif);
-  font-size: clamp(5rem, 15vmin, 10rem);
-  font-weight: 300;
-  line-height: 1;
-  text-shadow: 0 8px 36px rgba(0, 0, 0, 0.76);
-}
-
-.gw-rush-countdown span.is-active {
-  animation: gw-rush-countdown-step 400ms cubic-bezier(0.2, 0.72, 0.24, 1) both;
-}
-
-.gw-rush-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 6;
-  padding: clamp(34px, 6vw, 82px);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  flex-direction: column;
-  background:
-    linear-gradient(90deg, rgba(4, 6, 7, 0.96) 0%, rgba(4, 6, 7, 0.76) 42%, rgba(4, 6, 7, 0.08) 78%),
-    linear-gradient(0deg, rgba(4, 6, 7, 0.46), transparent 48%);
-}
-
-.gw-rush-overlay[hidden],
-.gw-rush-pause[hidden] {
-  display: none;
-}
-
-.gw-rush-overlay > strong {
-  max-width: 620px;
-  margin-top: 12px;
-  color: var(--gw-paper);
-  font-family: var(--tg-display, Georgia, serif);
-  font-size: clamp(3.5rem, 6.4vw, 6.4rem);
-  font-weight: 300;
-  line-height: 0.9;
-}
-
-.gw-rush-overlay > span {
-  max-width: 430px;
-  margin-top: 22px;
-  color: rgba(243, 240, 232, 0.76);
-  font-size: 0.84rem;
-  line-height: 1.8;
-}
-
-.gw-rush-overlay .gw-button {
-  margin-top: 24px;
-  min-width: 158px;
-  text-transform: uppercase;
-}
-
-.gw-rush-start-note {
-  margin-top: 14px;
-  color: rgba(243, 240, 232, 0.42);
-  font-size: 0.58rem;
-  font-weight: 650;
-  text-transform: uppercase;
-}
-
 .gw-rush-game .gw-button:active {
   transform: translateY(0) scale(0.985);
-}
-
-.gw-rush-control-hint {
-  margin: 20px 0 0;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: rgba(243, 240, 232, 0.5);
-  font-size: 0.64rem;
-  text-transform: uppercase;
-}
-
-.gw-rush-control-hint kbd {
-  width: 28px;
-  height: 25px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(240, 217, 149, 0.28);
-  border-radius: 2px;
-  background: rgba(5, 7, 8, 0.46);
-  color: var(--gw-gold-soft);
-  font-family: inherit;
-  font-size: 0.8rem;
-  box-shadow: inset 0 -2px rgba(0, 0, 0, 0.42);
-}
-
-.gw-rush-control-hint span {
-  margin-left: 4px;
-}
-
-.gw-rush-result {
-  align-items: center;
-  text-align: center;
-  background:
-    linear-gradient(180deg, rgba(3, 5, 6, 0.7), rgba(3, 5, 6, 0.82)),
-    radial-gradient(circle at 50% 62%, rgba(213, 180, 95, 0.08), transparent 38%);
-  backdrop-filter: blur(2px) saturate(0.7);
-}
-
-.gw-rush-result .gw-rush-result-title {
-  margin-top: 8px;
-  font-family: var(--tg-display, Georgia, serif);
-  font-size: clamp(2.2rem, 4.8vw, 4.4rem);
-  line-height: 0.95;
-}
-
-.gw-rush-result-score {
-  margin-top: 22px;
-  display: grid;
-  justify-items: center;
-  gap: 3px;
-}
-
-.gw-rush-result-score span {
-  color: var(--gw-muted);
-  font-size: 0.58rem;
-  font-weight: 760;
-  text-transform: uppercase;
-}
-
-.gw-rush-result-score b {
-  color: var(--gw-gold-soft);
-  font-family: var(--tg-sans, "Avenir Next", "Segoe UI", sans-serif);
-  font-size: clamp(3.8rem, 8vw, 6.5rem);
-  font-weight: 300;
-  font-variant-numeric: tabular-nums;
-  line-height: 0.88;
-}
-
-.gw-rush-result-best {
-  min-width: 190px;
-  margin: 18px 0 0;
-  padding: 11px 20px;
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  border-top: 1px solid rgba(243, 240, 232, 0.11);
-  border-bottom: 1px solid rgba(243, 240, 232, 0.11);
-}
-
-.gw-rush-result-best span {
-  color: var(--gw-muted);
-  font-size: 0.6rem;
-  font-weight: 760;
-  text-transform: uppercase;
-}
-
-.gw-rush-result-best b {
-  color: var(--gw-paper);
-  font-size: 1.14rem;
-  font-weight: 680;
-  font-variant-numeric: tabular-nums;
-}
-
-.gw-rush-record {
-  margin: 10px 0 0;
-  color: var(--gw-gold-soft);
-  font-size: 0.64rem;
-  font-weight: 820;
-  text-transform: uppercase;
-}
-
-.gw-rush-record[hidden] {
-  display: none;
-}
-
-.gw-rush-record-gap {
-  margin: 10px 0 0;
-  color: rgba(243, 240, 232, 0.56);
-  font-size: 0.62rem;
-  font-weight: 720;
-  text-transform: uppercase;
-}
-
-.gw-rush-record-gap[hidden] {
-  display: none;
-}
-
-.gw-rush-result-actions {
-  margin-top: 22px;
-  display: grid;
-  justify-items: center;
-  gap: 5px;
-}
-
-.gw-rush-result-actions .gw-button {
-  margin-top: 0;
-}
-
-.gw-rush-exit-link {
-  min-height: 34px;
-}
-
-.gw-rush-result-stats {
-  width: min(500px, 100%);
-  margin: 22px 0 0;
-  padding: 16px 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  border-top: 1px solid rgba(243, 240, 232, 0.14);
-  border-bottom: 1px solid rgba(243, 240, 232, 0.14);
-}
-
-.gw-rush-result-stats div {
-  min-width: 0;
-  display: grid;
-  gap: 5px;
-}
-
-.gw-rush-result-stats div + div {
-  border-left: 1px solid rgba(243, 240, 232, 0.12);
-}
-
-.gw-rush-result-stats dt {
-  color: var(--gw-muted);
-  font-size: 0.6rem;
-  font-weight: 760;
-  text-transform: uppercase;
-}
-
-.gw-rush-result-stats dd {
-  margin: 0;
-  color: var(--gw-paper);
-  font-size: 1rem;
-  font-weight: 680;
-  font-variant-numeric: tabular-nums;
-}
-
-.gw-rush-pause {
-  position: absolute;
-  inset: 0;
-  z-index: 7;
-  display: grid;
-  place-items: center;
-  background: rgba(5, 5, 5, 0.78);
-  color: var(--gw-paper);
-  font-family: var(--tg-display, Georgia, serif);
-  font-size: clamp(2.5rem, 6vw, 5rem);
-}
-
-.gw-rush-exit-confirm {
-  position: absolute;
-  inset: 0;
-  z-index: 9;
-  padding: 28px;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  text-align: center;
-  background: rgba(3, 5, 6, 0.88);
-  backdrop-filter: blur(5px);
-}
-
-.gw-rush-exit-confirm[hidden] {
-  display: none;
-}
-
-.gw-rush-exit-confirm > span {
-  color: var(--gw-gold-soft);
-  font-size: 0.62rem;
-  font-weight: 760;
-  text-transform: uppercase;
-}
-
-.gw-rush-exit-confirm > strong {
-  margin-top: 10px;
-  color: var(--gw-paper);
-  font-family: var(--tg-display, Georgia, serif);
-  font-size: clamp(2.2rem, 5vw, 4rem);
-  font-weight: 300;
-}
-
-.gw-rush-exit-confirm > p {
-  margin: 12px 0 0;
-  color: var(--gw-muted);
-  font-size: 0.76rem;
-}
-
-.gw-rush-exit-confirm > div {
-  margin-top: 24px;
-  display: grid;
-  justify-items: center;
-  gap: 7px;
-}
-
-.gw-rush-exit-confirm .gw-button {
-  margin-top: 0;
-}
-
-body.gameworld-body.taxi-rush-focus-active .gw-rush-hud {
-  min-height: 94px;
-  padding-top: 19px;
-}
-
-body.gameworld-body.taxi-rush-focus-active .gw-rush-hud strong {
-  font-size: clamp(1.45rem, 2.3vw, 2rem);
-}
-
-body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
-  top: 94px;
-}
-
-.gw-rush-controls {
-  display: none;
-}
-
-.gw-rush-controls button:disabled {
-  cursor: not-allowed;
-  opacity: 0.38;
 }
 
 @keyframes gw-rush-crash-shake {
@@ -1292,11 +778,6 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 
-@keyframes gw-rush-focus-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 @keyframes gw-rush-stage-focus {
   from { opacity: 0.46; transform: translateY(10px) scale(0.965); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -1307,55 +788,6 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
   28% { opacity: 1; transform: scale(1); }
   78% { opacity: 1; transform: scale(0.98); }
   100% { opacity: 0; transform: scale(0.94); }
-}
-
-.gw-rush-description {
-  margin: 16px 4px 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  color: rgba(170, 169, 163, 0.72);
-  font-size: 0.65rem;
-  font-weight: 650;
-  text-transform: uppercase;
-}
-
-.gw-rush-description-keyboard,
-.gw-rush-description-touch {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.gw-rush-description-keyboard b,
-.gw-rush-description-touch b {
-  margin-right: 5px;
-  color: rgba(243, 240, 232, 0.82);
-  font-size: 0.62rem;
-}
-
-.gw-rush-description-keyboard kbd {
-  min-width: 24px;
-  height: 22px;
-  padding-inline: 5px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(240, 217, 149, 0.2);
-  border-radius: 2px;
-  background: rgba(240, 217, 149, 0.025);
-  color: var(--gw-gold-soft);
-  font-family: inherit;
-  font-size: 0.72rem;
-  box-shadow: inset 0 -1px rgba(0, 0, 0, 0.5);
-}
-
-.gw-rush-description-touch {
-  display: none;
-}
-
-.gw-rush-description-note {
-  color: rgba(170, 169, 163, 0.56);
 }
 
 .gw-visually-hidden {
@@ -1724,7 +1156,7 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
   border-top: 1px solid var(--gw-line);
   background:
     linear-gradient(90deg, rgba(5, 5, 5, 0.98), rgba(5, 5, 5, 0.54)),
-    url("admin/images/mercedes-e-klasse-ger-tx-100-premium.jpg.png") 84% 52% / min(640px, 52vw) auto no-repeat,
+    url("assets/spielewelt/ger-tx-100-hintergrund.webp") 84% 52% / min(640px, 52vw) auto no-repeat,
     #080909;
 }
 
@@ -1734,10 +1166,6 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
 
 @keyframes gw-skeleton {
   to { background-position: -240% 0; }
-}
-
-@keyframes gw-orbit {
-  to { transform: rotate(360deg); }
 }
 
 @keyframes gw-box-float {
@@ -1761,7 +1189,7 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
     background:
       linear-gradient(90deg, rgba(5, 5, 5, 0.98), rgba(5, 5, 5, 0.65) 58%, rgba(5, 5, 5, 0.2)),
       linear-gradient(0deg, rgba(5, 5, 5, 0.96), transparent 54%),
-      url("admin/images/mercedes-v-klasse-ger-tx-800-premium.jpg.png") 82% 36% / min(760px, 82vw) auto no-repeat,
+      url("assets/spielewelt/ger-tx-800-hintergrund.webp") 82% 36% / min(760px, 82vw) auto no-repeat,
       #080909;
   }
 
@@ -1821,7 +1249,7 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
     align-items: flex-end;
     background:
       linear-gradient(0deg, rgba(5, 5, 5, 0.98) 0%, rgba(5, 5, 5, 0.78) 48%, rgba(5, 5, 5, 0.22) 100%),
-      url("admin/images/mercedes-v-klasse-ger-tx-800-premium.jpg.png") 54% 18% / 620px auto no-repeat,
+      url("assets/spielewelt/ger-tx-800-hintergrund.webp") 54% 18% / 620px auto no-repeat,
       #080909;
   }
 
@@ -1917,126 +1345,6 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
     gap: 24px;
   }
 
-  .gw-rush-viewport {
-    height: min(145vw, 540px);
-  }
-
-  .gw-rush-overlay {
-    padding: 30px 24px;
-  }
-
-  .gw-rush-overlay > strong {
-    font-size: clamp(3rem, 14vw, 4.4rem);
-  }
-
-  .gw-rush-overlay > span {
-    font-size: 0.76rem;
-    line-height: 1.65;
-  }
-
-  .gw-rush-result {
-    padding-block: 24px;
-  }
-
-  .gw-rush-result .gw-rush-result-title {
-    font-size: clamp(2rem, 10vw, 3rem);
-  }
-
-  .gw-rush-result-score {
-    margin-top: 16px;
-  }
-
-  .gw-rush-result-score b {
-    font-size: clamp(3.5rem, 18vw, 5rem);
-  }
-
-  .gw-rush-result-stats {
-    margin-top: 16px;
-    padding-block: 13px;
-  }
-
-  .gw-rush-controls {
-    padding: 10px;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    border-top: 1px solid rgba(240, 217, 149, 0.1);
-    background: linear-gradient(180deg, #0a0d0f, #060809);
-    touch-action: none;
-  }
-
-  body.gameworld-body.taxi-rush-focus-active .gw-rush-game {
-    padding: 6px 8px 8px;
-    grid-template-rows: 34px minmax(0, 1fr);
-    gap: 5px;
-  }
-
-  body.gameworld-body.taxi-rush-focus-active .gw-rush-focus-bar,
-  body.gameworld-body.taxi-rush-focus-active .gw-rush-frame {
-    width: 100%;
-  }
-
-  body.gameworld-body.taxi-rush-focus-active .gw-rush-frame {
-    height: calc(100dvh - 53px);
-    grid-template-rows: minmax(0, 1fr) 90px;
-  }
-
-  body.gameworld-body.taxi-rush-focus-active .gw-rush-controls {
-    min-height: 0;
-    padding: 0;
-    gap: 1px;
-    border-top-color: rgba(240, 217, 149, 0.16);
-    background: #060809;
-  }
-
-  body.gameworld-body.taxi-rush-focus-active .gameworld-main .gw-rush-controls button {
-    height: 90px;
-    min-height: 0;
-    border: 0;
-    border-radius: 0;
-    background:
-      radial-gradient(circle at 50% 52%, rgba(240, 217, 149, 0.1), transparent 56%),
-      rgba(255, 255, 255, 0.018);
-    font-size: 2.05rem;
-    transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
-  }
-
-  body.gameworld-body.taxi-rush-focus-active .gameworld-main .gw-rush-controls button + button {
-    border-left: 1px solid rgba(240, 217, 149, 0.12);
-  }
-
-  body.gameworld-body.taxi-rush-focus-active .gameworld-main .gw-rush-controls button:active {
-    background-color: rgba(240, 217, 149, 0.12);
-    color: #fff8df;
-    transform: scale(0.985);
-  }
-
-  .gameworld-main .gw-rush-controls button {
-    height: 72px;
-    min-height: 72px;
-    border: 1px solid rgba(240, 217, 149, 0.24);
-    border-radius: 2px;
-    background: linear-gradient(180deg, rgba(240, 217, 149, 0.075), rgba(240, 217, 149, 0.025));
-    color: var(--gw-gold-soft);
-    font-size: 1.8rem;
-    cursor: pointer;
-    touch-action: none;
-  }
-
-  .gw-rush-description {
-    margin-inline: 2px;
-    font-size: 0.62rem;
-  }
-
-  .gw-rush-description-keyboard,
-  .gw-rush-control-hint {
-    display: none;
-  }
-
-  .gw-rush-description-touch {
-    display: flex;
-  }
-
   .gw-box-game {
     min-height: 0;
     grid-template-columns: 1fr;
@@ -2061,39 +1369,8 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
     min-height: 540px;
     background:
       linear-gradient(0deg, rgba(5, 5, 5, 0.98), rgba(5, 5, 5, 0.5)),
-      url("admin/images/mercedes-e-klasse-ger-tx-100-premium.jpg.png") 64% 20% / 560px auto no-repeat,
+      url("assets/spielewelt/ger-tx-100-hintergrund.webp") 64% 20% / 560px auto no-repeat,
       #080909;
-  }
-}
-
-@media (max-height: 520px) and (max-width: 900px) {
-  body.gameworld-body.taxi-rush-focus-active .gw-rush-game {
-    grid-template-rows: 30px minmax(0, 1fr);
-    padding: 4px 6px 6px;
-  }
-
-  body.gameworld-body.taxi-rush-focus-active .gw-rush-frame {
-    height: calc(100dvh - 41px);
-    grid-template-columns: minmax(0, 1fr) 136px;
-    grid-template-rows: minmax(0, 1fr);
-  }
-
-  body.gameworld-body.taxi-rush-focus-active .gw-rush-controls {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(2, minmax(0, 1fr));
-    border-top: 0;
-    border-left: 1px solid rgba(240, 217, 149, 0.16);
-  }
-
-  body.gameworld-body.taxi-rush-focus-active .gameworld-main .gw-rush-controls button {
-    width: 100%;
-    height: auto;
-  }
-
-  body.gameworld-body.taxi-rush-focus-active .gameworld-main .gw-rush-controls button + button {
-    border-top: 1px solid rgba(240, 217, 149, 0.12);
-    border-left: 0;
   }
 }
 
@@ -2130,43 +1407,6 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
     gap: 10px;
   }
 
-  .gw-wheel-label {
-    font-size: 13px;
-  }
-
-  .gw-rush-hud {
-    min-height: 76px;
-    padding: 14px 12px 28px;
-    gap: 8px;
-  }
-
-  .gw-rush-hud strong {
-    font-size: 0.98rem;
-  }
-
-  .gw-rush-hud span {
-    font-size: 0.53rem;
-  }
-
-  .gw-rush-objective {
-    top: 76px;
-    width: calc(100% - 24px);
-  }
-
-  .gw-rush-objective strong {
-    max-width: 240px;
-    font-size: 0.66rem;
-  }
-
-  .gw-rush-event {
-    top: 116px;
-    min-width: 178px;
-  }
-
-  .gw-rush-control-hint {
-    margin-top: 15px;
-  }
-
   .gw-history-list li {
     grid-template-columns: 14px minmax(0, 1fr);
     gap: 8px 12px;
@@ -2190,4 +1430,18 @@ body.gameworld-body.taxi-rush-focus-active .gw-rush-objective {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Hinweis zu den Feldgroessen - siehe die Begruendung in spiele.html. */
+.gw-wheel-oddsnote {
+  margin: 10px 0 0;
+  max-width: 46em;
+  color: rgba(243, 240, 232, 0.55);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.gw-wheel-oddsnote a {
+  color: var(--gw-gold-soft, #e8bd61);
+  text-underline-offset: 3px;
 }

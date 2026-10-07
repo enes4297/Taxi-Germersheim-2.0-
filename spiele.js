@@ -1,15 +1,6 @@
 (function () {
   'use strict';
 
-  const wheelSegments = [
-    { label: '5', unit: 'Punkte' },
-    { label: '10', unit: 'Punkte' },
-    { label: '20', unit: 'Punkte' },
-    { label: '30', unit: 'Punkte' },
-    { label: '50', unit: 'Punkte', featured: true },
-    { label: '20 €', unit: 'Gutschein', featured: true },
-    { label: 'Box', unit: 'Yumaks', box: true }
-  ];
 
   const statusLoading = document.querySelector('[data-gw-status-loading]');
   const statusGuest = document.querySelector('[data-gw-status-guest]');
@@ -43,70 +34,20 @@
     boxAction.disabled = true;
   }
 
-  function polarPoint(center, radius, angleDegrees) {
-    const angle = (angleDegrees - 90) * Math.PI / 180;
-    return {
-      x: center + radius * Math.cos(angle),
-      y: center + radius * Math.sin(angle)
-    };
-  }
+  /* ── Das Gluecksrad ───────────────────────────────────────────────
+     Zeichnung und Drehung stehen in gluecksrad.js und werden dort unter
+     window.TaxiGluecksrad bereitgestellt. Dieselbe Datei benutzt die
+     Designprobe unter sichtproben/gluecksrad.html.
 
-  function createSvgNode(name, attributes) {
-    const node = document.createElementNS('http://www.w3.org/2000/svg', name);
-    Object.keys(attributes || {}).forEach(function (key) {
-      node.setAttribute(key, attributes[key]);
-    });
-    return node;
-  }
+     DER BROWSER BESTIMMT NIEMALS DEN GEWINN: stoppeAuf() nimmt einen
+     bestaetigten Gewinntyp entgegen. Hier wird sie NICHT aufgerufen -
+     das Rad ist fuer Kunden gesperrt, siehe den Stand unten. */
+  const gluecksrad = window.TaxiGluecksrad || null;
 
   function renderWheel() {
-    const svg = document.querySelector('[data-gw-wheel-svg]');
-    if (!svg) return;
-    const center = 200;
-    const radius = 174;
-    const labelRadius = 122;
-    const slice = 360 / wheelSegments.length;
-
-    wheelSegments.forEach(function (segment, index) {
-      const startAngle = index * slice;
-      const endAngle = (index + 1) * slice;
-      const start = polarPoint(center, radius, startAngle);
-      const end = polarPoint(center, radius, endAngle);
-      const path = createSvgNode('path', {
-        d: 'M ' + center + ' ' + center + ' L ' + start.x.toFixed(3) + ' ' + start.y.toFixed(3) +
-          ' A ' + radius + ' ' + radius + ' 0 0 1 ' + end.x.toFixed(3) + ' ' + end.y.toFixed(3) + ' Z',
-        class: 'gw-wheel-segment' + (segment.featured ? ' is-featured' : '') + (segment.box ? ' is-box' : '')
-      });
-      svg.appendChild(path);
-
-      const middleAngle = startAngle + slice / 2;
-      const labelPoint = polarPoint(center, labelRadius, middleAngle);
-      const label = createSvgNode('text', {
-        x: labelPoint.x.toFixed(3),
-        y: (labelPoint.y - 5).toFixed(3),
-        class: 'gw-wheel-label'
-      });
-      label.textContent = segment.label;
-      svg.appendChild(label);
-
-      const unit = createSvgNode('text', {
-        x: labelPoint.x.toFixed(3),
-        y: (labelPoint.y + 10).toFixed(3),
-        class: 'gw-wheel-label gw-wheel-label-unit'
-      });
-      unit.textContent = segment.unit;
-      svg.appendChild(unit);
-    });
-
-    svg.appendChild(createSvgNode('circle', {
-      cx: center,
-      cy: center,
-      r: radius,
-      fill: 'none',
-      stroke: 'rgba(240, 217, 149, 0.5)',
-      'stroke-width': '2'
-    }));
+    if (gluecksrad) gluecksrad.zeichne();
   }
+
 
   function formatNumber(value) {
     const numeric = Number(value);
@@ -146,14 +87,14 @@
     setHidden(voucherLink, true);
     setHidden(wheelLogin, false);
     setHidden(wheelAction, true);
-    wheelStatus.textContent = 'Dein persönlicher Drehstatus wartet nach der Anmeldung.';
+    wheelStatus.textContent = 'Ihr persönlicher Drehstatus wartet nach der Anmeldung.';
     wheelDetail.textContent = 'Es werden keine Beispielwerte angezeigt.';
     historyGuest.hidden = false;
     setHidden(historyLoading, true);
     setHidden(historyList, true);
     setHidden(historyEmpty, true);
     setHidden(historyError, true);
-    setBoxState('guest', 'Status nach Anmeldung verfügbar', 'Melde dich an, um deinen echten Box-Status zu sehen.', false);
+    setBoxState('guest', 'Status nach Anmeldung verfügbar', 'Melden Sie sich an, um Ihren echten Box-Status zu sehen.', false);
   }
 
   function renderMemberStatus(rewards) {
@@ -175,7 +116,7 @@
 
     if (status === 'paused' || status === 'blocked') {
       wheelFeature.dataset.gwWheelState = 'unavailable';
-      wheelStatus.textContent = status === 'paused' ? 'Dein Rewards-Konto ist pausiert.' : 'Dein Rewards-Konto ist gesperrt.';
+      wheelStatus.textContent = status === 'paused' ? 'Ihr Rewards-Konto ist pausiert.' : 'Ihr Rewards-Konto ist gesperrt.';
       wheelDetail.textContent = 'Das Glücksrad ist für dieses Konto nicht verfügbar.';
       wheelAction.textContent = 'Nicht verfügbar';
       return;
@@ -184,14 +125,14 @@
     if (spins > 0) {
       wheelFeature.dataset.gwWheelState = 'available';
       wheelStatus.textContent = spins === 1 ? '1 Dreh verfügbar' : formatNumber(spins) + ' Drehs verfügbar';
-      wheelDetail.textContent = 'Dein Dreh bleibt erhalten. Die sichere Kundenspielfreigabe folgt.';
+      wheelDetail.textContent = 'Ihr Dreh bleibt erhalten. Die sichere Kundenspielfreigabe folgt.';
       wheelAction.textContent = 'Bald verfügbar';
       return;
     }
 
     wheelFeature.dataset.gwWheelState = 'empty';
     wheelStatus.textContent = 'Derzeit kein Dreh verfügbar';
-    wheelDetail.textContent = 'Dein Rewards-Konto weist aktuell keinen verfügbaren Dreh aus.';
+    wheelDetail.textContent = 'Ihr Rewards-Konto weist aktuell keinen verfügbaren Dreh aus.';
     wheelAction.textContent = 'Kein Dreh verfügbar';
   }
 
@@ -207,7 +148,7 @@
     wheelAction.disabled = true;
     wheelAction.textContent = 'Nicht verfügbar';
     wheelStatus.textContent = 'Das Glücksrad ist gerade nicht verfügbar.';
-    wheelDetail.textContent = 'Deine echten Rewards-Daten konnten nicht geladen werden.';
+    wheelDetail.textContent = 'Ihre echten Rewards-Daten konnten nicht geladen werden.';
   }
 
   function resetHistoryStates() {
@@ -262,9 +203,9 @@
     if (!boxWin) {
       setBoxState('locked', 'Derzeit keine Box verfügbar', 'Eine Box erscheint hier nur nach einem bestätigten Gewinn.', false);
     } else if (['fulfilled', 'completed', 'delivered'].includes(String(boxWin.fulfillment_status || '').toLowerCase())) {
-      setBoxState('complete', 'Deine Box wurde bearbeitet', 'Der bestätigte Box-Gewinn ist bereits abgeschlossen.', false);
+      setBoxState('complete', 'Ihre Box wurde bearbeitet', 'Der bestätigte Box-Gewinn ist bereits abgeschlossen.', false);
     } else {
-      setBoxState('available', 'Deine Box ist bereit', 'Der Gewinn ist bestätigt. Die sichere Kundenöffnung ist noch nicht freigeschaltet.', true);
+      setBoxState('available', 'Ihre Box ist bereit', 'Der Gewinn ist bestätigt. Die sichere Kundenöffnung ist noch nicht freigeschaltet.', true);
     }
 
     historyList.hidden = false;

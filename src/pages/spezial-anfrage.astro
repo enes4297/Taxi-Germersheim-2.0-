@@ -1,0 +1,213 @@
+---
+/**
+ * Spezialanfrage — unter derselben Adresse wie bisher
+ * (spezial-anfrage.html).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * WAS AUS DEM BESTAND UEBERNOMMEN WURDE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Die neun Fahrtarten, ihre Beschreibungen, Vorteile und Hinweise stehen
+ * wortgleich in FAHRTARTEN (inhalte.ts) - uebernommen aus SERVICE_CONFIG in
+ * special-services.js. Ebenso alle Felder, ihre Beschriftungen,
+ * Auswahlmoeglichkeiten und Pflichtangaben.
+ *
+ * ERHALTEN GEBLIEBEN:
+ *   - der Direktlink `?service=<schluessel>` fuer alle neun Fahrtarten
+ *   - die Sprungmarke `#specialRequest`
+ *   - die Vorbelegung bei Dialyse und Chemo (rideType)
+ *   - die Pruefregeln: Pflichtfeld nicht leer, E-Mail mit @, Telefonnummer
+ *     mindestens sechs Zeichen, Mehrfachauswahl mindestens eine Option
+ *   - der Satz „Die Angaben werden nicht online versendet."
+ *
+ * GEAENDERT, und zwar ausdruecklich:
+ *   Das eigene Formular mit eigener Pruefung entfaellt. Die Angaben werden
+ *   im GEMEINSAMEN Anfragedialog erfasst - eine Formularlogik statt zwei.
+ *   Abholadresse, Zieladresse und Zeitpunkt erfasst der Dialog ohnehin
+ *   schon; sie standen im Bestand zusaetzlich in jedem Feldsatz und haetten
+ *   sonst doppelt auf der Seite gestanden.
+ *
+ * Der vollstaendige Vergleich - Feld fuer Feld - steht in
+ * ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md, Abschnitt 10.2.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
+import Unterseitenkopf from '../components/Unterseitenkopf.astro';
+import Anfragedialog from '../components/Anfragedialog.astro';
+import Enthuellen from '../components/Enthuellen.astro';
+import Symbol from '../components/Symbol.astro';
+import { ANFRAGE_SEITE, FAHRTARTEN, FIRMA, VOM_DIALOG_ERFASST } from '../inhalte';
+---
+
+<Grundlage
+  titel="Spezialanfrage vorbereiten | Taxi Germersheim GmbH"
+  beschreibung="Bereiten Sie die Angaben für eine Krankenfahrt, Dialyse, Rollstuhlfahrt, Serienfahrt, einen Flughafentransfer, eine Schüler-, Firmen- oder Kurierfahrt vor."
+  pfad="spezial-anfrage.html"
+>
+  <Sprungmarken />
+  <Kopfbereich startseite={false} />
+
+  <main id="inhalt" class="pt-16 lg:pt-20">
+    <Unterseitenkopf
+      label={ANFRAGE_SEITE.label}
+      titel={ANFRAGE_SEITE.titel}
+      text={ANFRAGE_SEITE.text}
+      zurueck="Spezialfahrten"
+      zurueckZiel="spezialfahrten.html"
+    />
+
+    <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pb-20 lg:pb-28" id="specialRequest" style="scroll-margin-top: 6rem">
+      {/* ── Fahrtart wählen ──────────────────────────────────────────── */}
+      <Enthuellen>
+        <div class="mt-10">
+          <h2 class="text-[11px] font-semibold tracking-[0.3em] uppercase text-primary">Leistung wählen</h2>
+          <div class="mt-4 flex flex-wrap gap-2" role="group" aria-label="Fahrtart wählen" data-art-leiste>
+            {FAHRTARTEN.map((a, i) => (
+              <button
+                type="button"
+                data-art={a.id}
+                aria-pressed={i === 0 ? 'true' : 'false'}
+                class="px-4 py-2.5 border text-sm font-medium transition-colors duration-150 border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground aria-pressed:border-primary aria-pressed:bg-primary/8 aria-pressed:text-foreground"
+              >
+                {a.titel}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Enthuellen>
+
+      {/* ── Beschreibung der gewählten Fahrtart ──────────────────────── */}
+      <div class="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] items-start">
+        <div>
+          {FAHRTARTEN.map((a, i) => (
+            <section data-art-text={a.id} hidden={i !== 0} aria-live="polite">
+              <h3 class="font-semibold tracking-[-0.02em] text-foreground leading-tight" style="font-size: clamp(1.5rem, 2.6vw, 2.25rem)">
+                {a.titel}
+              </h3>
+              <p class="mt-3 max-w-[46em] text-[15px] leading-relaxed text-muted-foreground">{a.beschreibung}</p>
+
+              <ul class="mt-6 space-y-2.5">
+                {a.vorteile.map((v) => (
+                  <li class="flex items-start gap-2.5 text-[15px] text-muted-foreground">
+                    <Symbol name="haken" class="w-4 h-4 shrink-0 mt-1 text-primary" />
+                    <span>{v}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Der Hinweis des Bestands, wortgleich. Bei Krankenfahrten
+                  steht hier ausdruecklich, dass eine Kostenuebernahme NICHT
+                  zugesagt werden kann - dieser Satz bleibt. */}
+              <p class="mt-6 max-w-[46em] border-l-2 border-primary/40 pl-4 text-[15px] leading-relaxed text-muted-foreground">
+                {a.hinweis}
+              </p>
+
+              <p class="mt-6 max-w-[46em] text-sm text-muted-foreground">
+                Angaben für diese Fahrt:
+                <span class="text-foreground">{a.felder.length} Felder</span>, dazu Abholadresse,
+                Zieladresse und Zeitpunkt im Anfrageformular.
+              </p>
+
+              <button
+                type="button"
+                class="mt-6 inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold hover:bg-[#d4b87d] transition-colors duration-150 tg-press"
+                data-anfrage-oeffnen
+                data-fahrtart={a.id}
+              >
+                Anfrage vorbereiten
+                <Symbol name="pfeil" class="w-4 h-4" />
+              </button>
+            </section>
+          ))}
+        </div>
+
+        {/* ── Was hier geschieht — und was nicht ─────────────────────── */}
+        <Enthuellen verzoegerung={80}>
+          <aside class="bg-card border border-border p-6" aria-labelledby="ablauf">
+            <h3 id="ablauf" class="text-[11px] font-semibold tracking-[0.3em] uppercase text-primary">Ablauf</h3>
+            <dl class="mt-5 space-y-4 text-sm">
+              <div>
+                <dt class="text-muted-foreground/70">Planung</dt>
+                <dd class="mt-0.5 text-foreground">Angaben im Formular vorbereiten</dd>
+              </div>
+              <div>
+                <dt class="text-muted-foreground/70">Übertragung</dt>
+                <dd class="mt-0.5 text-foreground">Keine automatische Versendung</dd>
+              </div>
+              <div>
+                <dt class="text-muted-foreground/70">Abschluss</dt>
+                <dd class="mt-0.5 text-foreground">Persönliche Bestätigung erforderlich</dd>
+              </div>
+            </dl>
+
+            <p class="mt-6 text-sm leading-relaxed text-muted-foreground">{ANFRAGE_SEITE.keineUebermittlung}</p>
+
+            <div class="mt-6 pt-5 border-t border-border flex flex-col gap-2.5">
+              <a href={FIRMA.telefonLink} class="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors duration-150">
+                <Symbol name="telefon" class="w-4 h-4" />
+                {FIRMA.telefon} anrufen
+              </a>
+              <a href={FIRMA.whatsapp} target="_blank" rel="noreferrer" class="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors duration-150">
+                <Symbol name="whatsapp" class="w-4 h-4 text-primary" />
+                WhatsApp öffnen
+              </a>
+            </div>
+          </aside>
+        </Enthuellen>
+      </div>
+
+      {/* ── Welche Angabe wo erfasst wird ────────────────────────────── */}
+      <Enthuellen verzoegerung={140}>
+        <p class="mt-14 max-w-[46em] text-sm leading-relaxed text-muted-foreground">
+          Abholadresse, Zieladresse und Zeitpunkt werden im Anfrageformular selbst erfasst
+          ({Object.keys(VOM_DIALOG_ERFASST).length} Angaben). Alle weiteren Felder erscheinen dort
+          unter „Angaben zur Fahrt", sobald Sie eine Fahrtart gewählt haben.
+        </p>
+      </Enthuellen>
+    </div>
+  </main>
+
+  <Fusszeile startseite={false} />
+  <Anfragedialog arten={FAHRTARTEN} pflichtDetails />
+</Grundlage>
+
+<script>
+  import { FAHRTARTEN } from '../inhalte';
+
+  const leiste = document.querySelector<HTMLElement>('[data-art-leiste]');
+  if (leiste) {
+    const knoepfe = [...leiste.querySelectorAll<HTMLButtonElement>('[data-art]')];
+    const gueltig = new Set(FAHRTARTEN.map((a) => a.id));
+
+    function zeigen(id: string, adresseMitschreiben: boolean) {
+      for (const b of knoepfe) b.setAttribute('aria-pressed', String(b.dataset.art === id));
+      for (const s of document.querySelectorAll<HTMLElement>('[data-art-text]')) {
+        s.hidden = s.dataset.artText !== id;
+      }
+      // Wie im Bestand: Die Adresse traegt die gewaehlte Fahrtart mit, damit
+      // ein Verweis auf genau diesen Stand wieder auffindbar ist.
+      if (adresseMitschreiben) {
+        const u = new URL(window.location.href);
+        u.searchParams.set('service', id);
+        history.replaceState(null, '', u.toString());
+      }
+    }
+
+    for (const b of knoepfe) {
+      b.addEventListener('click', () => zeigen(b.dataset.art!, true));
+    }
+
+    // Direktlink ?service=… - alle neun Schluessel des Bestands gelten
+    // weiter. Ein unbekannter Wert faellt wie bisher auf „medical" zurueck.
+    const gewuenscht = new URLSearchParams(window.location.search).get('service') || '';
+    const start = gueltig.has(gewuenscht) ? gewuenscht : 'medical';
+    zeigen(start, false);
+
+    // Der Bestand kannte zusaetzlich `#specialRequest` als Sprungziel.
+    if (window.location.hash === '#specialRequest') {
+      document.getElementById('specialRequest')?.scrollIntoView({ block: 'start' });
+    }
+  }
+</script>

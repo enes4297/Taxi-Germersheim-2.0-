@@ -1,0 +1,1813 @@
+/* ============================================================
+   Designprobe Betriebsportal - Design-System
+   ============================================================
+   Alle Farb- und Schriftwerte stammen aus src/styles/design.css der
+   freigegebenen oeffentlichen Webseite. Es ist nichts neu erfunden.
+
+   Diese Datei ist NICHT Teil der Produktionsausgabe. Sie gehoert zur
+   getrennten Designprobe.
+   ============================================================ */
+
+/* ---- Schriften, lokal. Kein CDN. ---- */
+@font-face {
+  font-family: "Outfit";
+  src: url("/schriften/outfit-400-latin.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("/schriften/outfit-500-latin.woff2") format("woff2");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("/schriften/outfit-600-latin.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("/schriften/outfit-700-latin.woff2") format("woff2");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+
+:root {
+  --grund:        #18181b;
+  --flaeche:      #1f1f23;
+  --flaeche-2:    #252528;
+  --linie:        #2e2e32;
+  --schrift:      #f0ebe0;
+  --gedaempft:    #8d8a82;
+  --gold:         #c8a96e;
+  --gold-hell:    #f0c96b;
+  --auf-gold:     #18181b;
+  --rot:          #e06c5a;
+  --gruen:        #6fae7c;
+  --radius:       0.125rem;
+  --radius-gross: 0.25rem;
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--grund);
+  color: var(--schrift);
+  font-family: "Outfit", system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+
+/* Sichtbarer Fokus auf allem Bedienbaren - ausnahmslos. */
+:is(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--gold-hell);
+  outline-offset: 3px;
+}
+/* Zeitfelder verlieren in Chrome beim Wechsel zwischen Stunde und
+   Minute ":focus-visible". Deshalb hier zusaetzlich der einfache Fokus. */
+input:focus {
+  outline: 2px solid var(--gold-hell);
+  outline-offset: 3px;
+}
+
+/* ============================================================
+   Das Banner. Dauerhaft, nicht wegklickbar.
+   ============================================================ */
+.probe-banner {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 10px 16px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  background: repeating-linear-gradient(
+    135deg, #3a2f18 0 14px, #342a15 14px 28px
+  );
+  border-bottom: 2px solid var(--gold);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.probe-banner strong { color: var(--gold-hell); }
+.probe-banner span { font-weight: 400; color: #d8cfb8; }
+
+/* ============================================================
+   Rahmen
+   ============================================================ */
+.portal {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  min-height: 100vh;
+}
+
+.seitenleiste {
+  border-right: 1px solid var(--linie);
+  background: var(--flaeche);
+  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.marke {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+}
+.marke img { width: 34px; height: 34px; object-fit: contain; }
+.marke b { display: block; font-size: 15px; font-weight: 700; }
+.marke small { display: block; font-size: 12px; color: var(--gedaempft); }
+
+.navigation { display: flex; flex-direction: column; gap: 2px; }
+.nav-knopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--schrift);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.nav-knopf:hover { background: var(--flaeche-2); }
+.nav-knopf[aria-current="page"] {
+  background: var(--flaeche-2);
+  border-left-color: var(--gold);
+  font-weight: 600;
+}
+.nav-knopf .zaehler {
+  margin-left: auto;
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: var(--radius-gross);
+  background: var(--gold);
+  color: var(--auf-gold);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.nav-knopf svg { flex: 0 0 20px; }
+
+.rollenwahl {
+  margin-top: auto;
+  padding: 12px;
+  border: 1px dashed var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+}
+.rollenwahl h2 { margin: 0 0 4px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gedaempft); }
+.rollenwahl p { margin: 0 0 8px; font-size: 12px; color: var(--gedaempft); }
+.rollenwahl select { width: 100%; }
+
+/* ============================================================
+   Hauptbereich
+   ============================================================ */
+.haupt { padding: 20px 22px 80px; min-width: 0; }
+
+.bereichskopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 18px;
+  margin-bottom: 18px;
+}
+.bereichskopf h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.bereichskopf .wichtig { margin: 4px 0 0; font-size: 15px; color: var(--gedaempft); }
+.bereichskopf .hauptaktion { margin-left: auto; }
+
+/* ---- Flaechen ---- */
+.flaeche {
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  padding: 16px;
+}
+.flaeche + .flaeche { margin-top: 14px; }
+.flaeche > h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.flaeche > h2 .offen {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gedaempft);
+}
+
+/* ---- Knoepfe ---- */
+.knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche-2);
+  color: var(--schrift);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.knopf:hover { border-color: var(--gedaempft); }
+.knopf.haupt-knopf {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--auf-gold);
+}
+.knopf.haupt-knopf:hover { background: var(--gold-hell); border-color: var(--gold-hell); }
+.knopf.still { background: transparent; }
+.knopf[disabled] { opacity: 0.5; cursor: not-allowed; }
+.knopf.klein { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+
+/* ---- Eingaben: am Handy nie unter 16 px ---- */
+input, select, textarea {
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  color: var(--schrift);
+  font: inherit;
+  font-size: 16px;
+}
+label { display: block; font-size: 14px; color: var(--gedaempft); }
+label > input, label > select, label > textarea { margin-top: 4px; width: 100%; }
+
+/* ============================================================
+   Kennzahlen - anklickbar, fuehren zur gefilterten Liste
+   ============================================================ */
+.kennzahlen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.kennzahl {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 84px;
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  color: var(--schrift);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.kennzahl:hover { background: var(--flaeche-2); }
+.kennzahl .wert { font-size: 28px; font-weight: 700; line-height: 1.1; }
+.kennzahl .name { font-size: 13px; color: var(--gedaempft); }
+.kennzahl.ist-warnung { border-left-color: var(--rot); }
+.kennzahl.ist-warnung .wert { color: var(--rot); }
+.kennzahl.ist-gut { border-left-color: var(--gruen); }
+.kennzahl.ist-marke { border-left-color: var(--gold); }
+
+/* ============================================================
+   Tabelle / Liste
+   ============================================================ */
+.tabelle-huelle { overflow-x: auto; }
+table.liste { width: 100%; border-collapse: collapse; font-size: 15px; }
+table.liste th {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--linie);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+  text-align: left;
+  white-space: nowrap;
+}
+table.liste td { padding: 10px; border-bottom: 1px solid var(--linie); vertical-align: middle; }
+table.liste tr:last-child td { border-bottom: 0; }
+table.liste tbody tr:hover { background: var(--flaeche-2); }
+
+/* ============================================================
+   Zustaende - Farbe nie allein, immer mit Text und Symbol
+   ============================================================ */
+.marke-zustand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.marke-zustand::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+.marke-zustand.gut     { color: var(--gruen); border-color: rgba(111, 174, 124, 0.4); }
+.marke-zustand.warnung { color: var(--rot);   border-color: rgba(224, 108, 90, 0.4); }
+.marke-zustand.aktiv   { color: var(--gold-hell); border-color: rgba(240, 201, 107, 0.4); }
+.marke-zustand.ruhig   { color: var(--gedaempft); }
+
+/* Die grossen Zustandskaesten. Ein Ladefehler sieht NIE aus wie leer. */
+.zustand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 22px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--gedaempft);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+.zustand h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.zustand p { margin: 0; font-size: 15px; color: var(--gedaempft); max-width: 62ch; }
+.zustand.leer         { border-left-color: var(--gedaempft); }
+.zustand.fehler       { border-left-color: var(--rot); background: rgba(224, 108, 90, 0.07); }
+.zustand.fehler h3    { color: var(--rot); }
+.zustand.keinrecht    { border-left-color: var(--gold); background: rgba(200, 169, 110, 0.07); }
+.zustand.keinrecht h3 { color: var(--gold-hell); }
+.zustand.vorbereitet  { border-left-color: var(--gold); border-style: dashed; }
+.zustand.laedt        { border-left-color: var(--linie); }
+
+.laedt-balken {
+  height: 10px;
+  width: 100%;
+  max-width: 280px;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--flaeche-2) 25%, var(--linie) 50%, var(--flaeche-2) 75%);
+  background-size: 200% 100%;
+  animation: laufen 1.2s linear infinite;
+}
+@keyframes laufen { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .laedt-balken { animation: none; }
+}
+
+/* ============================================================
+   Planung
+   ============================================================ */
+.tagleiste {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-bottom: 14px;
+}
+.tagumschalter {
+  display: inline-flex;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.tagumschalter button {
+  min-height: 46px;
+  padding: 8px 20px;
+  border: 0;
+  background: transparent;
+  color: var(--schrift);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tagumschalter button[aria-pressed="true"] {
+  background: var(--gold);
+  color: var(--auf-gold);
+}
+.tagdatum { font-size: 15px; color: var(--gedaempft); }
+
+.plan-zeile td { padding: 8px 10px; }
+.plan-zeile.ist-geaendert { background: rgba(200, 169, 110, 0.09); }
+.plan-zeile.ist-geaendert td:first-child { box-shadow: inset 3px 0 0 var(--gold); }
+.plan-zeile select { min-width: 132px; }
+.plan-zeile .zeitpaar { display: inline-flex; gap: 6px; align-items: center; }
+.plan-zeile .zeitpaar input { width: 104px; min-width: 0; }
+
+.aktionsleiste {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 14px;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  background: var(--flaeche);
+}
+.aktionsleiste .stand { font-size: 14px; color: var(--gedaempft); margin-right: auto; }
+
+/* ============================================================
+   Dialog - genau eine Ebene, nie verschachtelt
+   ============================================================ */
+.dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.dialog-hinter { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.66); }
+.dialog-kasten {
+  position: relative;
+  width: min(620px, 100%);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  background: var(--flaeche);
+}
+.dialog-kopf, .dialog-fuss {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+}
+.dialog-kopf { border-bottom: 1px solid var(--linie); }
+.dialog-fuss { border-top: 1px solid var(--linie); justify-content: flex-end; }
+.dialog-kopf h2 { margin: 0; font-size: 18px; }
+.dialog-kopf .knopf { margin-left: auto; }
+.dialog-rumpf { padding: 18px; overflow-y: auto; display: grid; gap: 20px; }
+.dialog-schritt h3 { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
+
+.wahlraster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 8px;
+}
+.wahlkarte {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 60px;
+  padding: 10px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  color: var(--schrift);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wahlkarte:hover { border-color: var(--gedaempft); }
+.wahlkarte strong { font-size: 15px; font-weight: 600; }
+.wahlkarte span { font-size: 13px; color: var(--gedaempft); }
+.wahlkarte[aria-pressed="true"] {
+  border-color: var(--gold-hell);
+  border-width: 2px;
+  background: rgba(200, 169, 110, 0.12);
+}
+.wahlkarte[aria-pressed="true"] strong { color: var(--gold-hell); }
+
+.zusammenfassung { display: grid; gap: 6px; }
+.zusammenfassung div { display: flex; gap: 10px; font-size: 15px; }
+.zusammenfassung dt { min-width: 116px; color: var(--gedaempft); }
+.zusammenfassung dd { margin: 0; font-weight: 600; }
+
+/* ============================================================
+   Schritt-fuer-Schritt-Formular (neue Fahrt)
+   ============================================================ */
+.schrittleiste { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.schrittleiste li {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  font-size: 13px;
+  color: var(--gedaempft);
+  list-style: none;
+}
+.schrittleiste li.ist-jetzt { border-color: var(--gold); color: var(--gold-hell); font-weight: 600; }
+.schrittleiste li.ist-fertig { color: var(--gruen); border-color: rgba(111, 174, 124, 0.4); }
+
+.feldpaar { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+
+/* ============================================================
+   Handy
+   ============================================================ */
+.handyleiste { display: none; }
+
+@media (max-width: 900px) {
+  .portal { grid-template-columns: 1fr; }
+  .seitenleiste { display: none; }
+  .haupt { padding: 16px 14px 96px; }
+  .bereichskopf h1 { font-size: 22px; }
+  .bereichskopf .hauptaktion { margin-left: 0; width: 100%; }
+  .bereichskopf .hauptaktion .knopf { width: 100%; }
+
+  .handyleiste {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 50;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    border-top: 1px solid var(--linie);
+    background: var(--flaeche);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .handyleiste button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 56px;
+    padding: 6px 2px;
+    border: 0;
+    border-top: 2px solid transparent;
+    background: transparent;
+    color: var(--gedaempft);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .handyleiste button[aria-current="page"] { color: var(--gold-hell); border-top-color: var(--gold); }
+  .aktionsleiste { bottom: 58px; }
+}
+
+@media (max-width: 560px) {
+  .probe-banner { font-size: 13px; padding: 8px 12px; }
+  .kennzahlen { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
+  .dialog { padding: 8px; }
+  .dialog-kasten { max-height: calc(100vh - 16px); }
+  .dialog-fuss { flex-direction: column-reverse; align-items: stretch; }
+  .dialog-fuss .knopf { width: 100%; }
+  .aktionsleiste { flex-direction: column; align-items: stretch; }
+  .aktionsleiste .stand { margin-right: 0; }
+  .aktionsleiste .knopf { width: 100%; }
+  .tagumschalter { width: 100%; }
+  .tagumschalter button { flex: 1; }
+}
+
+/* ── Rollenwahl im Banner ──────────────────────────────────────────────
+   Gemessener Befund: In der Seitenleiste war sie am Handy nicht
+   erreichbar, weil die Leiste unter 900 px ausgeblendet ist. Im Banner
+   ist sie auf jeder Breite da. */
+.banner-rolle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: #d8cfb8;
+  white-space: nowrap;
+}
+.banner-rolle select {
+  min-height: 36px;
+  padding: 5px 10px;
+  font-size: 16px;
+  font-weight: 600;
+  background: var(--grund);
+  border-color: var(--gold);
+}
+@media (max-width: 720px) {
+  .banner-rolle { margin-left: 0; width: 100%; }
+  .banner-rolle select { flex: 1; min-width: 0; }
+}
+.rollenwahl p[data-rollenname] {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gold-hell);
+}
+
+/* Gemessen bei 320 px: Der Standhinweis in der Tagleiste lief 78 px
+   hinaus, weil "marke-zustand" grundsaetzlich nicht umbricht. Fuer die
+   kurzen Marken in Tabellen ist das richtig - fuer den langen Satz in
+   der Tagleiste nicht. */
+.tagleiste .marke-zustand {
+  white-space: normal;
+  max-width: 100%;
+}
+
+/* ============================================================
+   Fahrtassistent
+   ============================================================ */
+
+/* Fehler im Schritt - steht ueber dem Feld, nicht am Seitenrand. */
+.feldfehler {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(224, 108, 90, 0.5);
+  border-left: 3px solid var(--rot);
+  border-radius: var(--radius);
+  background: rgba(224, 108, 90, 0.09);
+  color: var(--rot);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.schritt-hinweis {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--gedaempft);
+  max-width: 62ch;
+}
+
+.unterueberschrift {
+  margin: 14px 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gedaempft);
+}
+
+.dialog-schritt.geschuetzt {
+  padding: 14px;
+  border: 1px dashed var(--gold);
+  border-radius: var(--radius);
+  background: rgba(200, 169, 110, 0.05);
+}
+
+.band-gold, .band-warnung {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: var(--radius-gross);
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.band-gold { background: rgba(200, 169, 110, 0.18); color: var(--gold-hell); }
+.band-warnung { background: rgba(224, 108, 90, 0.16); color: var(--rot); }
+
+/* Suche und Treffer */
+.suchhinweis {
+  margin: 12px 0 6px;
+  font-size: 14px;
+  color: var(--gedaempft);
+}
+
+.trefferliste {
+  display: grid;
+  gap: 6px;
+}
+.treffer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 52px;
+  padding: 9px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  color: var(--schrift);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.treffer:hover { border-color: var(--gedaempft); }
+.treffer strong { font-size: 15px; font-weight: 600; }
+.treffer span { font-size: 13px; color: var(--gedaempft); }
+/* Die Markierung muss ohne Farbe erkennbar sein - deshalb auch der
+   Balken links und die fettere Schrift. */
+.treffer.ist-markiert {
+  border-color: var(--gold-hell);
+  border-left-width: 4px;
+  background: rgba(200, 169, 110, 0.12);
+}
+.treffer.ist-markiert strong { color: var(--gold-hell); }
+
+/* Gewaehlter Kunde / gespeicherte Adresse */
+.gewaehlt-kasten, .vorschlag-kasten {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 14px;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  background: rgba(200, 169, 110, 0.08);
+}
+.gewaehlt-kasten > div, .vorschlag-kasten { flex-direction: column; align-items: flex-start; }
+.gewaehlt-kasten > div { display: flex; }
+.gewaehlt-kasten strong, .vorschlag-kasten strong { font-size: 16px; }
+.gewaehlt-kasten span, .vorschlag-kasten span { font-size: 14px; color: var(--gedaempft); }
+.gewaehlt-kasten .knopf { margin-left: auto; }
+.vorschlag-band {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: var(--radius-gross);
+  background: rgba(200, 169, 110, 0.18);
+  color: var(--gold-hell) !important;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.knopfzeile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.knopfzeile .knopf { flex: 1 1 auto; min-width: 0; }
+
+.unterfeld {
+  margin-top: 12px;
+  padding: 12px;
+  border-left: 3px solid var(--gold);
+  background: var(--flaeche-2);
+  border-radius: var(--radius);
+}
+
+.kaestchen {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 15px;
+  color: var(--schrift);
+}
+.kaestchen input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--gold);
+}
+
+textarea {
+  min-height: 84px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* Zusammenfassung mit "Bearbeiten" je Abschnitt */
+.pruef-block {
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+}
+.pruef-block + .pruef-block { margin-top: 10px; }
+.pruef-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.pruef-kopf h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+.pruef-kopf .knopf { margin-left: auto; }
+
+.knopf-schliessen { margin-left: auto; }
+
+@media (max-width: 560px) {
+  .gewaehlt-kasten .knopf, .knopfzeile .knopf { margin-left: 0; width: 100%; }
+  .pruef-kopf { flex-wrap: wrap; }
+  .pruef-kopf .knopf { margin-left: 0; width: 100%; }
+}
+
+/* ============================================================
+   Kontrolliertes Zeitfeld
+   ============================================================
+   Ersetzt <input type="time">. Grund steht in probe-zeitfeld.js:
+   das eingebaute Feld springt nach der ersten Ziffer weiter. */
+.zeitfeld {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.zeitfeld input {
+  width: 96px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.zeitfeld.hat-fehler input {
+  border-color: var(--rot);
+  border-width: 2px;
+}
+.zeitfehler {
+  max-width: 220px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--rot);
+  font-weight: 600;
+}
+
+/* ============================================================
+   Konfliktprüfung
+   ============================================================ */
+.konfliktliste {
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+}
+.konfliktliste li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--gedaempft);
+  border-radius: var(--radius);
+  background: var(--grund);
+}
+.konfliktliste li strong {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.konfliktliste li span { font-size: 15px; }
+.konfliktliste.technisch li { border-left-color: var(--rot); }
+.konfliktliste.technisch li strong { color: var(--rot); }
+.konfliktliste.betrieblich li { border-left-color: var(--gold); }
+.konfliktliste.betrieblich li strong { color: var(--gold-hell); }
+
+/* Die zurueckhaltende Nebenaktion. Sie ist erreichbar und gut lesbar,
+   aber sie zieht den Blick nicht auf sich - anders als die sichere
+   Hauptaktion daneben. */
+.knopf.leise {
+  background: transparent;
+  border-color: var(--linie);
+  color: var(--gedaempft);
+  font-weight: 500;
+}
+.knopf.leise:hover {
+  color: var(--schrift);
+  border-color: var(--gedaempft);
+}
+
+/* Gelöster Zustand - kein Fehler, kein leerer Datenbestand. */
+.zustand.gut-geloest {
+  border-left-color: var(--gruen);
+  background: rgba(111, 174, 124, 0.07);
+}
+.zustand.gut-geloest h3 { color: var(--gruen); }
+.zustand .knopfzeile { margin-top: 4px; }
+
+@media (max-width: 560px) {
+  .zeitfeld input { width: 100%; }
+  .zeitpaar { flex-wrap: wrap; }
+}
+
+/* Die Nebenaktionen der Planung stehen im Fluss, nicht in der
+   klebenden Leiste. Gemessen bei 320 x 568: vier gestapelte
+   Schaltflaechen verdeckten dort die Filter darueber. */
+.plan-nebenaktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+@media (max-width: 560px) {
+  .plan-nebenaktionen .knopf { flex: 1 1 100%; }
+}
+
+/* ============================================================
+   Abwesenheiten in der Planzeile
+   ============================================================ */
+.abw-hinweis {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--gedaempft);
+  border-radius: var(--radius);
+  background: var(--grund);
+  max-width: 260px;
+}
+.abw-hinweis strong { font-size: 13px; font-weight: 700; }
+.abw-hinweis span { font-size: 12px; color: var(--gedaempft); }
+/* Rot bedeutet hier: Achtung, die Person ist nicht verfuegbar.
+   Zusaetzlich steht es im Klartext da - Farbe allein traegt nie. */
+.abw-hinweis.ist-krank {
+  border-left-color: var(--rot);
+  background: rgba(224, 108, 90, 0.09);
+}
+.abw-hinweis.ist-krank strong { color: var(--rot); }
+.abw-hinweis.ist-urlaub {
+  border-left-color: var(--gold);
+  background: rgba(200, 169, 110, 0.09);
+}
+.abw-hinweis.ist-urlaub strong { color: var(--gold-hell); }
+.abw-hinweis.ist-beantragt { border-left-color: var(--gedaempft); }
+.abw-hinweis.ist-ausnahme {
+  border-left-color: var(--gold);
+  border-style: dashed;
+}
+.abw-hinweis.ist-ausnahme strong { color: var(--gold-hell); }
+.abw-hinweis .knopf { margin-top: 6px; align-self: flex-start; }
+
+.plan-zeile.ist-abwesend td:first-child { box-shadow: inset 3px 0 0 var(--rot); }
+.plan-zeile.ist-geaendert.ist-abwesend td:first-child {
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.konfliktliste li.ist-ausnahme { border-style: dashed; }
+
+/* ============================================================
+   Filterzeile - sieben Zustaende, die umbrechen duerfen
+   ============================================================ */
+.filterzeile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.filterchip {
+  min-height: 40px;
+  padding: 6px 14px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-gross);
+  background: var(--flaeche-2);
+  color: var(--schrift);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.filterchip:hover { border-color: var(--gedaempft); }
+.filterchip[aria-pressed="true"] {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--auf-gold);
+}
+
+/* ============================================================
+   Fahrer & Fahrzeuge
+   ============================================================ */
+.fahrerraster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+.fahrerkarte {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  color: var(--schrift);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fahrerkarte:hover { background: var(--flaeche-2); border-color: var(--gedaempft); }
+.fahrerkarte[data-status="dienst"] { border-left-color: var(--gruen); }
+.fahrerkarte[data-status="krank"]  { border-left-color: var(--rot); }
+.fahrerkarte[data-status="urlaub"] { border-left-color: var(--gold); }
+
+.fk-kopf { display: flex; align-items: center; gap: 10px; }
+.fk-initialen {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px; height: 38px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--flaeche-2);
+  border: 1px solid var(--linie);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.fk-name { display: flex; flex-direction: column; min-width: 0; }
+.fk-name strong { font-size: 15px; }
+.fk-name span { font-size: 12px; color: var(--gedaempft); }
+.fk-kopf .marke-zustand { margin-left: auto; }
+
+.fk-zeilen { display: grid; gap: 3px; font-size: 14px; }
+.fk-zeilen > span { display: flex; gap: 8px; }
+.fk-titel {
+  min-width: 78px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+.fk-warnung {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gedaempft);
+}
+.fk-warnung.ist-warnung { color: var(--rot); }
+.fk-protokoll {
+  font-size: 12px;
+  color: var(--gedaempft);
+  border-top: 1px solid var(--linie);
+  padding-top: 6px;
+}
+
+.fahrzeugraster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 10px;
+}
+.fahrzeugkarte {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+.fahrzeugkarte[data-lage="verfuegbar"] { border-left-color: var(--gruen); }
+.fahrzeugkarte[data-lage="zugewiesen"],
+.fahrzeugkarte[data-lage="unterwegs"]  { border-left-color: var(--gold); }
+.fahrzeugkarte[data-lage="werkstatt"],
+.fahrzeugkarte[data-lage="gesperrt"]   { border-left-color: var(--rot); }
+
+.fz-kopf { display: flex; align-items: center; gap: 10px; }
+.fz-kopf strong { display: block; font-size: 16px; }
+.fz-kennzeichen {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 1px 8px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+.fz-kopf .marke-zustand { margin-left: auto; }
+
+.fz-daten { display: grid; gap: 3px; margin: 0; font-size: 14px; }
+.fz-daten div { display: flex; gap: 8px; }
+.fz-daten dt {
+  min-width: 118px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+.fz-daten dd { margin: 0; }
+
+.fz-termine { display: flex; flex-wrap: wrap; gap: 6px; }
+.fz-termin {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 9px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  font-size: 13px;
+}
+.fz-termin.ist-laeuft-ab { border-color: rgba(200, 169, 110, 0.5); color: var(--gold-hell); }
+.fz-termin.ist-abgelaufen { border-color: rgba(224, 108, 90, 0.5); color: var(--rot); }
+
+.fz-sperrgrund {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--rot);
+  background: rgba(224, 108, 90, 0.09);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+.fz-sperrgrund.ist-termin { border-left-color: var(--gold); background: rgba(200, 169, 110, 0.09); }
+
+.fz-aktionen { display: flex; flex-wrap: wrap; gap: 6px; }
+.fz-hinweis { font-size: 13px; color: var(--gedaempft); }
+
+.dialog-kopf .fk-initialen { width: 34px; height: 34px; font-size: 13px; }
+
+@media (max-width: 560px) {
+  .fahrerraster, .fahrzeugraster { grid-template-columns: 1fr; }
+  .fz-aktionen .knopf { flex: 1 1 100%; }
+  .fk-titel, .fz-daten dt { min-width: 92px; }
+}
+
+/* ============================================================
+   Portalkopf mit Glocke
+   ============================================================ */
+.portal-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--linie);
+}
+.pk-rolle { font-size: 14px; color: var(--gedaempft); }
+.pk-rolle strong { color: var(--schrift); }
+.pk-glocke {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  color: var(--gedaempft);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pk-glocke:hover { border-color: var(--gedaempft); color: var(--schrift); }
+.pk-glocke.hat-neue { border-color: var(--gold); color: var(--gold-hell); }
+.pk-zahl {
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: var(--radius-gross);
+  background: var(--flaeche-2);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.pk-glocke.hat-neue .pk-zahl { background: var(--gold); color: var(--auf-gold); }
+
+/* ============================================================
+   Vorgangsliste
+   ============================================================ */
+.vorgangsliste {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 10px;
+}
+.vorgang {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+.vorgang[data-art="warnung"]   { border-left-color: var(--rot); }
+.vorgang[data-art="aufgabe"]   { border-left-color: var(--gold); }
+.vorgang[data-art="meldung"]   { border-left-color: var(--gedaempft); }
+.vorgang[data-art="nachricht"] { border-left-color: var(--gruen); }
+.vorgang[data-zustand="erledigt"],
+.vorgang[data-zustand="archiviert"] { opacity: 0.72; }
+
+.vg-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.vg-thema {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+/* Der Punkt ist nur eine Zugabe - "Neu" steht zusaetzlich im Text. */
+.vg-punkt {
+  width: 9px; height: 9px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--gold);
+}
+.vg-titel { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.35; }
+
+.vg-daten { display: grid; gap: 2px; margin: 0; font-size: 14px; }
+.vg-daten div { display: flex; gap: 8px; }
+.vg-daten dt {
+  min-width: 92px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+.vg-daten dd { margin: 0; }
+.vg-aktionen { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.zusatz-schalter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px dashed var(--gold);
+  border-radius: var(--radius);
+  background: rgba(200, 169, 110, 0.06);
+}
+.zusatz-schalter strong { display: block; font-size: 15px; }
+.zusatz-schalter span { display: block; font-size: 13px; color: var(--gedaempft); max-width: 62ch; }
+.zusatz-schalter .knopf { margin-left: auto; }
+
+@media (max-width: 560px) {
+  .vorgangsliste { grid-template-columns: 1fr; }
+  .vg-aktionen .knopf { flex: 1 1 100%; }
+  .zusatz-schalter .knopf { margin-left: 0; width: 100%; }
+  .portal-kopf { flex-wrap: wrap; }
+  .pk-glocke { margin-left: auto; }
+}
+
+/* ============================================================
+   Freie Tageswahl der Planung
+   ============================================================ */
+.tageswahl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 10px;
+  margin-bottom: 14px;
+}
+.tageswahl .knopf { flex: 0 0 auto; }
+.tageswahl .knopf[aria-pressed="true"] {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.tagfeld {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+  min-width: 0;
+}
+.tagfeld input {
+  min-width: 0;
+  /* Mindestens 16px: darunter zoomt iOS beim Fokus in das Feld
+     hinein und verschiebt die ganze Ansicht. */
+  font-size: 16px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* ============================================================
+   Teilschritte eines Vorgangs
+   ============================================================ */
+.vg-teile {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.vg-teile li {
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, .02);
+  display: grid;
+  gap: 3px;
+}
+.vg-teile li.ist-erledigt { border-left-color: #5c8f63; }
+.vg-teile li.ist-offen { border-left-color: var(--gold); }
+.vg-teile li.meiner { background: rgba(200, 169, 110, .07); }
+.vg-teile strong { font-size: 14px; }
+.vg-teile span {
+  font-size: 13px;
+  color: var(--gedaempft);
+}
+.vg-teile .teil-schritte,
+.vg-teile .teil-letzter { font-size: 12px; }
+.vg-teile.breit li { padding: 10px 14px; }
+
+@media (max-width: 520px) {
+  .tageswahl .knopf,
+  .tagfeld { flex: 1 1 100%; }
+  .tageswahl { gap: 8px; }
+}
+
+/* ============================================================
+   Kalender
+   ============================================================ */
+.kal-kopfzeile {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin: 6px 0 4px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+  text-align: center;
+}
+.kal-monat,
+.kal-woche {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.kal-tag {
+  min-height: 78px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .02);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.kal-tag:hover { border-color: var(--gold); }
+.kal-tag:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.kal-tag.fremd { opacity: .45; }
+.kal-tag.heute { border-color: var(--gold); }
+.kal-tag.gewaehlt { background: rgba(200, 169, 110, .1); }
+.kal-zahl { font-size: 15px; font-weight: 600; }
+.kal-punkte { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+.kal-punkte i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gedaempft);
+}
+.kal-punkte i.art-fahrt       { background: var(--gold); }
+.kal-punkte i.art-schicht     { background: #6f87a8; }
+.kal-punkte i.art-abwesenheit { background: #b6764e; }
+.kal-punkte i.art-fahrzeug    { background: #5c8f63; }
+.kal-punkte i.art-dokument    { background: #a8607a; }
+.kal-punkte em { font-size: 11px; font-style: normal; color: var(--gedaempft); }
+.kal-erst {
+  font-size: 11px;
+  color: var(--gedaempft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.kal-tagesliste {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.kal-tagesliste li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.kal-tagesliste strong { font-size: 14px; }
+.kal-tagesliste span { font-size: 13px; color: var(--gedaempft); }
+.kal-tagesliste .knopf { margin-left: auto; }
+
+@media (max-width: 560px) {
+  /* Auf schmalen Geraeten wird die Woche zur Liste - sieben Spalten
+     auf 320px waeren unlesbar und nicht treffsicher zu tippen. */
+  .kal-woche { grid-template-columns: 1fr; }
+  /* Nur die Wochenueberschrift entfaellt - im Monat bleiben die
+     Wochentage stehen, sonst ist das Raster nicht zu lesen. */
+  .kal-kopfzeile.fuer-woche { display: none; }
+  .kal-kopfzeile { font-size: 10px; gap: 3px; }
+  .kal-woche .kal-tag { min-height: 0; flex-direction: row; align-items: center; }
+  .kal-monat { gap: 3px; }
+  .kal-tag { min-height: 58px; padding: 5px; }
+  .kal-erst { display: none; }
+  .kal-tagesliste .knopf { margin-left: 0; width: 100%; }
+}
+
+/* Aktionen am einzelnen Teilschritt. */
+.teil-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+@media (max-width: 520px) {
+  .teil-aktionen .knopf { flex: 1 1 100%; }
+}
+
+/* ============================================================
+   Dokumentpruefung: ansehen, bewerten, abschliessen
+   ============================================================ */
+.pruefkette {
+  list-style: none;
+  counter-reset: schritt;
+  margin: 10px 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.pruefkette li {
+  display: grid;
+  gap: 5px;
+  justify-items: start;
+  padding: 10px 12px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--linie);
+  border-radius: 8px;
+}
+.pruefkette li.erledigt { border-left-color: #5c8f63; }
+.pruefkette li.dran     { border-left-color: var(--gold); }
+.pruefkette li.spaeter  { opacity: .55; }
+.pruefkette strong { font-size: 14px; }
+.pruefkette span   { font-size: 13px; color: var(--gedaempft); }
+.pruefkette .wahlraster { width: 100%; }
+
+.teil-sperre {
+  display: block;
+  font-size: 12px;
+  color: var(--gedaempft);
+  margin-top: 4px;
+}
+
+/* Der Dateiname ist ein Knopf, sieht aber wie ein Verweis aus -
+   er oeffnet die Bescheinigung. */
+.alslink {
+  background: none;
+  border: 0;
+  /* Mindestens 36px hoch: ein Verweis, der wie Text aussieht, muss
+     trotzdem mit dem Finger zu treffen sein. */
+  min-height: 36px;
+  padding: 6px 0;
+  text-align: left;
+  font: inherit;
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.alslink:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* Platzhalter fuer die Anzeige der Bescheinigung. */
+.belegrahmen {
+  border: 1px dashed var(--linie);
+  border-radius: 10px;
+  padding: 18px 16px;
+  margin: 12px 0;
+  display: grid;
+  gap: 8px;
+  background: rgba(255, 255, 255, .02);
+}
+.belegrahmen p { font-size: 13px; color: var(--gedaempft); margin: 0; }
+.beleg-band {
+  justify-self: start;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.knopf[disabled] {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   Dialogkopf mit zwei Wegen hinaus
+   ============================================================
+   Die Dokumentvorschau hat zwei getrennte Ausgaenge: zurueck in den
+   Vorgang und ganz hinaus. Mit der alten Regel bekaeme JEDER Knopf
+   "margin-left: auto" und sie wuerden auseinandergezogen. Nur der
+   erste nach der Ueberschrift schiebt, die uebrigen folgen ihm. */
+.dialog-kopf h2 ~ .knopf { margin-left: 0; }
+.dialog-kopf h2 + .knopf { margin-left: auto; }
+
+@media (max-width: 560px) {
+  /* Auf schmalen Geraeten umbricht der Kopf, statt die Ueberschrift
+     zu quetschen. */
+  .dialog-kopf { flex-wrap: wrap; }
+  .dialog-kopf h2 { flex: 1 1 100%; }
+  .dialog-kopf h2 + .knopf { margin-left: 0; }
+  .dialog-kopf .knopf { flex: 1 1 auto; }
+}
+
+/* ============================================================
+   Abschnitt fuer Fahrten ohne geklaerte Zeit
+   ============================================================
+   Sie stehen bewusst NICHT zwischen den Uhrzeiten - eine Reihenfolge
+   waere dort erfunden. Der eigene Abschnitt sagt das auch. */
+.abschnitt-offen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Kein zugehoeriger Vorgang - ehrlich gesagt statt irgendwohin
+   gesprungen. */
+.kal-kein-ziel {
+  font-size: 12px;
+  color: var(--gedaempft);
+  font-style: italic;
+  margin-left: auto;
+  max-width: 34ch;
+  text-align: right;
+}
+@media (max-width: 560px) {
+  .kal-kein-ziel { margin-left: 0; text-align: left; max-width: 100%; }
+}
+
+/* ============================================================
+   Aktenlisten - Zeilen, die wirklich bedienbar sind
+   ============================================================
+   Der manuelle Rundgang hat in vier Bereichen denselben Befund
+   ergeben: Die Zeilen leuchten beim Darueberfahren, lassen sich aber
+   nicht anklicken. Deshalb sind diese Zeilen <button> und keine
+   Tabellenzeilen mit Klickhorcher - Tastatur, Fokus und Enter kommen
+   damit von selbst.
+
+   Umgekehrt gilt: Was NICHT bedienbar ist, bekommt hier auch keine
+   Hover-Optik. */
+.aktenliste {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+}
+.az-kopf,
+.aktenzeile {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.6fr) repeat(5, minmax(90px, 1fr)) minmax(100px, 1.2fr);
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  padding: 10px 12px;
+}
+.az-kopf {
+  font-size: 11px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+  padding-bottom: 2px;
+}
+.aktenzeile {
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .02);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  min-height: 44px;
+}
+.aktenzeile:hover { border-color: var(--gold); background: rgba(200, 169, 110, .06); }
+.aktenzeile:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.az-feld {
+  font-size: 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.az-feld strong { font-size: 14px; }
+
+@media (max-width: 900px) {
+  /* Auf schmalen Geraeten wird die Zeile zum Block. Sieben Spalten auf
+     320px waeren unlesbar. */
+  .az-kopf { display: none; }
+  .aktenzeile {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    padding: 12px;
+  }
+  .az-feld { white-space: normal; }
+}
+
+/* Eine Anzeigezeile ist KEINE Schaltflaeche. Sie erbt das Raster der
+   Aktenzeile, aber nicht deren Klickoptik - genau das war der Befund
+   des Rundgangs an vier Stellen. */
+.aktenzeile.ist-anzeige {
+  cursor: default;
+  background: none;
+}
+.aktenzeile.ist-anzeige:hover {
+  border-color: var(--linie);
+  background: none;
+}
+
+/* ============================================================
+   Analyse: Anzeigekachel und Balken
+   ============================================================
+   .kennzahl ist als Schaltflaeche gebaut - cursor: pointer und
+   Hover. In der Analyse fuehrt keine Kachel irgendwohin, also darf
+   sie auch nicht so aussehen. Das ist dieselbe Regel wie bei
+   .aktenzeile.ist-anzeige. */
+.kennzahl.ist-anzeige { cursor: default; }
+.kennzahl.ist-anzeige:hover { background: var(--flaeche); }
+
+.balken { display: grid; gap: 8px; }
+.balkenzeile {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 2fr auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 15px;
+}
+.balkenstab {
+  height: 8px;
+  border-radius: 2px;
+  background: var(--flaeche-2);
+  overflow: hidden;
+}
+.balkenstab i { display: block; height: 100%; border-radius: 2px; background: var(--gold); }
+.balkenwert { font-weight: 700; }
+@media (max-width: 560px) {
+  .balkenzeile { grid-template-columns: 1fr auto; }
+  .balkenstab { grid-column: 1 / -1; }
+}
+
+/* ============================================================
+   Kontrolliertes Datumsfeld
+   ============================================================
+   Ersetzt <input type="date"> portalweit. Grund steht in
+   probe-datumsfeld.js: Das eingebaute Feld hat drei Abschnitte und
+   springt beim Tippen des Jahres zurueck zum Tag. Dasselbe Muster wie
+   beim Zeitfeld. */
+.datumsfeld {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.datumsfeld input {
+  width: 128px;
+  min-width: 0;
+  /* Mindestens 16px: darunter zoomt iOS beim Fokus in das Feld hinein
+     und verschiebt die ganze Ansicht. */
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  text-align: center;
+  text-transform: none;
+}
+.datumsfeld.hat-fehler input {
+  border-color: var(--rot);
+  border-width: 2px;
+}
+.datumsfehler {
+  max-width: 240px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--rot);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+}
+/* Ein Datumsfeld innerhalb einer Beschriftung erbt deren
+   Grossschreibung nicht - die Ziffern sollen normal stehen. */
+.tagfeld .datumsfeld input { text-transform: none; }
+
+@media (max-width: 560px) {
+  .datumsfeld { width: 100%; }
+  .datumsfeld input { width: 100%; }
+}
+
+/* Die kleine Erläuterung unter einem Wert. Sie sagt, auf welchen Tag
+   oder welche Quelle sich der Wert bezieht - genau das fehlte in der
+   Fahrzeugakte und erzeugte dort einen Widerspruch. */
+.feldnotiz {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--gedaempft);
+  font-weight: 400;
+}
+
+/* ============================================================
+   Kurze Rückmeldung mit Rückgängig
+   ============================================================
+   Nach dem Entfernen aus der Erledigt-Liste. Sie verschwindet NICHT
+   von selbst: Eine Meldung, die nach fuenf Sekunden weg ist, hat
+   jemand, der langsamer liest, nie gesehen. */
+.rueckmeldung {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--linie);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+.rueckmeldung > div:first-child { display: grid; gap: 3px; min-width: 0; }
+.rueckmeldung strong { font-size: 15px; }
+.rueckmeldung span { font-size: 13px; line-height: 1.45; color: var(--gedaempft); }
+.rueckmeldung-aktionen { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 560px) {
+  .rueckmeldung { flex-direction: column; align-items: stretch; }
+  .rueckmeldung-aktionen .knopf { flex: 1 1 auto; }
+}
+
+/* ============================================================
+   Einstellungen: Rechteliste
+   ============================================================
+   Eine Zeile je Fähigkeit. Was aus der Rolle kommt, ist gesperrt und
+   abgesetzt - es soll sichtbar sein, dass es nicht hier entschieden
+   wird, sondern an der Rolle. */
+.rechteliste { display: grid; gap: 6px; margin-top: 8px; }
+.rechtezeile {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--grund);
+  cursor: pointer;
+  font-size: 15px;
+}
+.rechtezeile:hover { background: var(--flaeche-2); }
+.rechtezeile input { margin-top: 2px; flex: 0 0 auto; width: 18px; height: 18px; }
+.rechtezeile > span { display: grid; gap: 2px; min-width: 0; }
+.rechtezeile strong { font-weight: 600; }
+.rechtezeile.ist-aus-rolle {
+  cursor: default;
+  border-left: 3px solid var(--gedaempft);
+  opacity: 0.75;
+}
+.rechtezeile.ist-aus-rolle:hover { background: var(--grund); }
+
+/* ============================================================
+   Bedienbare Zeile in einer Konfliktliste
+   ============================================================
+   Gemessener Fehler: In der Kundenakte stand die Rechnungsnummer als
+   <li> - nicht anklickbar und mit der Tastatur nicht erreichbar.
+
+   Die Liste behält ihr Aussehen; die Zeile wird zur Schaltfläche. Nur
+   wo .ist-bedienbar steht - eine Liste, die nur anzeigt, soll auch
+   nicht nach Bedienung aussehen. */
+.konfliktliste.ist-bedienbar li { padding: 0; }
+.zeilenknopf {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  min-height: 36px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.zeilenknopf:hover { background: var(--flaeche-2); }
+.zeilenknopf strong {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.zeilenknopf span { font-size: 15px; }
+
+/* Ein Pflichtfeld mit Fehler. Der Text steht am Feld, nicht nur oben -
+   eine Sammelmeldung lässt offen, welches Feld gemeint ist. */
+label.hat-fehler > textarea,
+label.hat-fehler > input,
+label.hat-fehler > select {
+  border-color: var(--rot);
+  border-width: 2px;
+}
+label > .feldfehler:empty { display: none; }
+label > .feldfehler {
+  margin: 6px 0 0;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: normal;
+}

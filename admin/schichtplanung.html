@@ -39,7 +39,6 @@
         <div class="admin-topbar-actions">
           <button class="admin-btn" type="button" data-plan-generate>Planung für morgen erstellen</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-plan-accept-all>Kompletten Plan übernehmen</button>
-          <button class="admin-btn admin-btn-secondary" type="button" data-plan-publish>Plan veröffentlichen</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-plan-save>Planung speichern</button>
         </div>
       </header>
@@ -110,8 +109,26 @@
         </div>
       </section>
 
+      <!-- Welcher Tag gerade bearbeitet wird, steht direkt ueber den
+           Mitarbeiterkarten - und derselbe Tag wird veroeffentlicht.
+           Ein zweiter Ort zum Umstellen gibt es nicht, damit nie ein
+           anderer Tag gemeint sein kann als der angezeigte. -->
+      <section class="admin-panel shift-day-bar" aria-label="Tag der Planung">
+        <div class="shift-day-choice">
+          <span class="shift-day-label">Tag bearbeiten</span>
+          <select data-publish-day aria-label="Tag der Planung wählen">
+            <option value="today" selected data-publish-day-option="today">heute</option>
+            <option value="tomorrow" data-publish-day-option="tomorrow">morgen</option>
+          </select>
+        </div>
+        <p class="shift-day-state" data-plan-day-state>Noch nicht veröffentlicht</p>
+        <button class="admin-btn shift-day-publish" type="button" data-plan-publish>
+          Tagesplan veröffentlichen
+        </button>
+      </section>
+
       <section class="shift-layout">
-        <section class="shift-driver-grid" aria-label="Heute im Dienst Liste" data-shift-driver-grid></section>
+        <section class="shift-driver-grid" aria-label="Mitarbeiter des gewählten Tages" data-shift-driver-grid></section>
 
         <section class="admin-panel shift-side-panel" aria-label="Warnungen und Fahrzeugzuordnung">
           <div class="shift-side-block">
@@ -163,6 +180,9 @@
   </div>
 
   <script src="schichtplanung.js"></script>
+  <!-- Das Fenster fuer "Schicht planen". Der Inhalt wird von
+       schichtplanung.js gezeichnet; hier steht nur die Huelle. -->
+  <div class="shift-dialog" data-shift-dialog hidden></div>
 </body>
 </html>
 

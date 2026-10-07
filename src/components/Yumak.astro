@@ -1,0 +1,395 @@
+---
+/**
+ * Yumak — wiederverwendbare Figur mit zentralem Controller.
+ *
+ * Die Komponente bringt nur die Buehne mit. Gesteuert wird alles ueber einen
+ * Controller, den das Skript unten an `window.Yumak` haengt:
+ *
+ *     Yumak.spiele('wave' | 'idle' | 'curious')
+ *     Yumak.sage('Text', dauerMs?)
+ *     Yumak.ruhe()          zurueck auf idle, Blase weg
+ *     Yumak.anhalten()      Bewegung aus, Standbild steht
+ *     Yumak.fortsetzen()
+ *
+ * Eine Stelle statt verstreuter Ereignislogik: Wer spaeter aus dem
+ * Rewards-Bereich heraus reagieren will, ruft den Controller auf.
+ *
+ * WAS HIER FESTGELEGT IST UND WARUM
+ *
+ *   Nur drei Zustaende. happy, reach, box, sleep und walk-right sind bewusst
+ *   nicht angeschlossen: Ihre Fellfarbe ist noch nicht korrigiert, und beim
+ *   Laufclip aendern sich Fliege und Fellzeichnung sichtbar.
+ *
+ *   Graue Fassungen. Yumak ist in Wirklichkeit grau; die Originale wirken
+ *   warm-braun.
+ *
+ *   mix-blend-mode: lighten. Die Clips haben keinen Alphakanal. Der
+ *   Studiohintergrund ist dunkler als der Seitengrund und verschwindet
+ *   dadurch. GRENZE: Das funktioniert nur auf DUNKLEM Grund. Auf einer
+ *   hellen Flaeche wuerde die Figur vollstaendig verschwinden.
+ *
+ *   Bodenmaske unterhalb der gemessenen Standlinie. Ohne sie bleibt unter den
+ *   Pfoten ein Rechteck Studioboden stehen.
+ *
+ *   Kein harter Dauerlauf. Gemessen springt jeder Clip am Schleifenpunkt;
+ *   idle laeuft deshalb mit einer kurzen Blende neu an.
+ *
+ *   Standbild statt Video bei reduzierter Bewegung, abgelehntem Autoplay und
+ *   Ladefehler. Ein laufendes idle waere dafuer kein Rueckfall.
+ *
+ *   Pause ausserhalb des Bildes und bei verborgenem Tab. Und eine sichtbare
+ *   Schaltflaeche, mit der sich die Bewegung anhalten laesst.
+ *
+ * Die Sprechblase ist HTML. Sie sagt nie etwas ueber Punkte oder Gewinne -
+ * solche Angaben duerfen ausschliesslich aus den echten Datenquellen kommen
+ * und stehen an ihrer eigenen Stelle auf der Seite.
+ *
+ * ═══════════════════════════════════════════════════════════════════════
+ * OFFENER FEHLER - NICHT BEHOBEN (Stand 21.09.2026)
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * Beobachtung des Auftraggebers: Nach dem Neuladen der Seite bewegt sich
+ * Yumak nicht. Erst "Bewegung anhalten" und danach "Bewegung fortsetzen"
+ * startet die Animation.
+ *
+ * Das heisst: Der erste selbsttaetige Start nach dem Laden greift nicht,
+ * waehrend derselbe Weg ueber fortsetzen() funktioniert. Die Ursache ist
+ * NICHT gesucht und NICHT gefunden. Die automatisierte Pruefung hatte den
+ * Start gemeldet - sie hat den Fehler also nicht erfasst; auch das ist
+ * offen.
+ *
+ * ZWISCHENSTAND, auf Anweisung: Die Figur zeigt vorerst nur das freigegebene
+ * graue Standbild. Die Animationsbedienung ist aus der Kundenansicht
+ * entfernt. Controller, Videos und die gesamte Ablauflogik bleiben erhalten -
+ * ein Umschalten von STANDBILD_NUR auf false bringt alles zurueck, ohne dass
+ * etwas neu gebaut werden muesste.
+ */
+
+/**
+ * Solange der offene Fehler oben nicht geklaert ist: nur das Standbild.
+ * Auf false gesetzt laeuft wieder die volle Figur - dann aber erst nach
+ * einer Fehlersuche.
+ */
+import lage from '../../sichtproben/yumak-lage.json';
+
+const STANDBILD_NUR = true;
+
+interface Props {
+  /** Beschriftung fuer Screenreader. */
+  beschreibung?: string;
+  class?: string;
+}
+const { beschreibung = 'Yumak, das Maskottchen von Taxi Germersheim', class: klasse = '' } = Astro.props;
+
+// Die Buehne in Punkten. Der Massstab in yumak-lage.json ist auf 360x320
+// gerechnet; das Skript rechnet kleinere Buehnen anteilig um.
+const BUEHNE = { breite: 320, hoehe: 285 };
+---
+
+<div
+  class={`yumak-szene ${klasse}`}
+  data-yumak
+  data-standbild-nur={STANDBILD_NUR ? 'ja' : 'nein'}
+  data-lage={JSON.stringify(lage)}
+  style={`--yumak-breite:${BUEHNE.breite}px; --yumak-hoehe:${BUEHNE.hoehe}px`}
+>
+  <div class="yumak-blase" data-yumak-blase role="status" aria-live="polite" hidden></div>
+
+  <div class="yumak-buehne" data-yumak-buehne>
+    <img class="yumak-figur" data-yumak-standbild alt={beschreibung} src="/assets/yumak/idle-grau-standbild.jpg" />
+  </div>
+
+  {!STANDBILD_NUR && (
+    <button type="button" class="yumak-schalter" data-yumak-schalter aria-pressed="false">
+      <span data-yumak-schaltertext>Bewegung anhalten</span>
+    </button>
+  )}
+</div>
+
+<style>
+  .yumak-szene {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: min(var(--yumak-breite), 100%);
+  }
+
+  .yumak-blase {
+    position: relative;
+    max-width: 17rem;
+    margin-bottom: 0.4rem;
+    background: var(--color-card);
+    border: 1px solid rgb(200 169 110 / 0.4);
+    padding: 0.7rem 1rem;
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--color-foreground);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 280ms ease-out, transform 280ms ease-out;
+  }
+  .yumak-blase[data-sichtbar='ja'] { opacity: 1; transform: translateY(0); }
+  .yumak-blase::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    width: 10px;
+    height: 10px;
+    transform: translateX(-50%) rotate(45deg);
+    background: var(--color-card);
+    border-right: 1px solid rgb(200 169 110 / 0.4);
+    border-bottom: 1px solid rgb(200 169 110 / 0.4);
+  }
+
+  .yumak-buehne {
+    position: relative;
+    width: min(var(--yumak-breite), 100%);
+    aspect-ratio: 320 / 285;
+  }
+  /* Die Figur traegt lighten: Der dunkle Studiogrund loest sich auf dem
+     dunklen Seitengrund auf. Nur auf dunklem Grund einsetzen. */
+  .yumak-buehne :global(video),
+  .yumak-buehne :global(img.yumak-figur) {
+    position: absolute;
+    display: block;
+    mix-blend-mode: lighten;
+  }
+
+  .yumak-schalter {
+    margin-top: 0.75rem;
+    font: inherit;
+    font-size: 12.5px;
+    color: var(--color-muted-foreground);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    padding: 0.3rem 0.8rem;
+    cursor: pointer;
+    transition: color 150ms, border-color 150ms;
+  }
+  .yumak-schalter:hover { color: var(--color-foreground); border-color: rgb(240 235 224 / 0.4); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .yumak-blase { transition: none; }
+  }
+</style>
+
+<script>
+  type Zustand = 'idle' | 'wave' | 'curious';
+
+  interface Messwert {
+    quelle: { breite: number; hoehe: number };
+    grund: number;
+    mitte: number;
+  }
+
+  const szenen = document.querySelectorAll<HTMLElement>('[data-yumak]');
+  if (szenen.length) aufsetzen();
+
+  function aufsetzen() {
+    const ruhig = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // Der Controller fuehrt alle Szenen gemeinsam. Auf der Rewards-Seite ist
+    // es genau eine; die Mehrzahl kostet nichts und erspart spaeter Umbau.
+    const figuren = [...szenen].map((szene) => figurAufsetzen(szene, ruhig));
+
+    const api = {
+      spiele: (z: Zustand) => figuren.forEach((f) => f.spiele(z)),
+      sage: (text: string, dauer?: number) => figuren.forEach((f) => f.sage(text, dauer)),
+      ruhe: () => figuren.forEach((f) => f.ruhe()),
+      anhalten: () => figuren.forEach((f) => f.anhalten()),
+      fortsetzen: () => figuren.forEach((f) => f.fortsetzen()),
+    };
+    (window as unknown as { Yumak: typeof api }).Yumak = api;
+
+    // Verborgener Tab: nichts laeuft weiter.
+    document.addEventListener('visibilitychange', () => {
+      figuren.forEach((f) => (document.hidden ? f.schlafen() : f.wecken()));
+    });
+  }
+
+  function figurAufsetzen(szene: HTMLElement, ruhig: MediaQueryList) {
+    // Solange der offene Startfehler nicht geklaert ist: nur das Standbild.
+    // Die Bedienung ist dann gar nicht erst im Markup.
+    const nurStandbild = szene.dataset.standbildNur === 'ja';
+
+    const lage = JSON.parse(szene.dataset.lage!) as Record<string, Messwert> & {
+      __buehne: { breite: number; hoehe: number; faktor: number; ankerX: number; ankerY: number };
+    };
+    const B = lage.__buehne;
+    const buehne = szene.querySelector<HTMLElement>('[data-yumak-buehne]')!;
+    const blase = szene.querySelector<HTMLElement>('[data-yumak-blase]')!;
+    const schalter = szene.querySelector<HTMLButtonElement>('[data-yumak-schalter]');
+    const schalterText = szene.querySelector<HTMLElement>('[data-yumak-schaltertext]');
+    const ersteBild = szene.querySelector<HTMLImageElement>('[data-yumak-standbild]')!;
+
+    let zustand: Zustand = 'idle';
+    let angehalten = false;   // vom Menschen angehalten
+    let imBild = false;
+    let blasenUhr = 0;
+
+    /** Kleinere Buehnen bekommen den Massstab anteilig - die Figur schrumpft
+     *  mit, statt angeschnitten zu werden. */
+    function lageFuer(id: Zustand) {
+      const m = lage[id];
+      const bb = buehne.clientWidth || B.breite;
+      const bh = buehne.clientHeight || B.hoehe;
+      const f = B.faktor * Math.min(bb / B.breite, bh / B.hoehe);
+      const br = m.quelle.breite * f;
+      const hr = m.quelle.hoehe * f;
+      return {
+        width: `${Math.round(br)}px`,
+        height: `${Math.round(hr)}px`,
+        left: `${Math.round(bb * B.ankerX - m.mitte * br)}px`,
+        top: `${Math.round(bh * B.ankerY - m.grund * hr)}px`,
+      };
+    }
+
+    /** Verlauf, der AUSSCHLIESSLICH unterhalb der Standlinie greift. Das Ende
+     *  muss innerhalb des Elements liegen, sonst wird es nie durchsichtig. */
+    function bodenmaske(id: Zustand) {
+      const g = lage[id].grund * 100;
+      return `linear-gradient(to bottom, #000 0%, #000 ${(g + 1).toFixed(1)}%, transparent ${Math.min(100, g + 12).toFixed(1)}%)`;
+    }
+
+    function lagenSetzen(el: HTMLElement, id: Zustand) {
+      Object.assign(el.style, lageFuer(id));
+      el.style.maskImage = bodenmaske(id);
+      (el.style as unknown as { webkitMaskImage: string }).webkitMaskImage = bodenmaske(id);
+    }
+
+    function altesWeg(ausser: Element) {
+      for (const el of [...buehne.querySelectorAll('video, img')]) {
+        if (el === ausser) continue;
+        if (el instanceof HTMLVideoElement) {
+          el.pause();
+          el.removeAttribute('src');
+          el.load();
+        }
+        el.remove();
+      }
+    }
+
+    /** Standbild - der einzige echte Rueckfall. */
+    function standbild(id: Zustand) {
+      const img = document.createElement('img');
+      img.className = 'yumak-figur';
+      img.src = `/assets/yumak/${id}-grau-standbild.jpg`;
+      img.alt = ersteBild.alt;
+      img.decoding = 'async';
+      lagenSetzen(img, id);
+      buehne.appendChild(img);
+      altesWeg(img);
+      return img;
+    }
+
+    function video(id: Zustand, danach?: () => void) {
+      const v = document.createElement('video');
+      v.muted = true;
+      v.playsInline = true;
+      v.setAttribute('playsinline', '');
+      v.preload = 'none';
+      v.poster = `/assets/yumak/${id}-grau-standbild.jpg`;
+      v.src = `/assets/yumak/${id}-grau-gross.mp4`;
+      v.setAttribute('aria-hidden', 'true');
+      v.style.opacity = '0';
+      v.style.transition = 'opacity 260ms ease-out';
+      lagenSetzen(v, id);
+      buehne.appendChild(v);
+
+      v.addEventListener('playing', () => {
+        v.style.opacity = '1';
+        window.setTimeout(() => altesWeg(v), 280);
+      }, { once: true });
+      v.addEventListener('error', () => standbild(id), { once: true });
+      if (danach) v.addEventListener('ended', danach, { once: true });
+
+      v.play().catch(() => standbild(id));
+      return v;
+    }
+
+    /** idle laeuft NICHT hart in der Schleife - jeder Clip springt am Ende. */
+    function idleLaufen() {
+      zustand = 'idle';
+      if (nurStandbild || ruhig.matches || angehalten || !imBild) { standbild('idle'); return; }
+      video('idle', idleLaufen);
+    }
+
+    function spiele(z: Zustand) {
+      zustand = z;
+      if (nurStandbild) { standbild('idle'); return; }
+      if (ruhig.matches || angehalten || !imBild) { standbild(z); return; }
+      if (z === 'idle') { idleLaufen(); return; }
+      video(z, idleLaufen);
+    }
+
+    function sage(text: string, dauer = 5200) {
+      window.clearTimeout(blasenUhr);
+      if (!text) { blase.hidden = true; blase.dataset.sichtbar = 'nein'; return; }
+      blase.hidden = false;
+      blase.textContent = text;
+      // Erst im naechsten Bild einblenden, sonst laeuft der Uebergang nicht.
+      requestAnimationFrame(() => { blase.dataset.sichtbar = 'ja'; });
+      if (dauer > 0) {
+        blasenUhr = window.setTimeout(() => {
+          blase.dataset.sichtbar = 'nein';
+          window.setTimeout(() => { blase.hidden = true; }, 300);
+        }, dauer);
+      }
+    }
+
+    function ruhe() { sage(''); idleLaufen(); }
+
+    function anhalten() {
+      angehalten = true;
+      schalter?.setAttribute('aria-pressed', 'true');
+      if (schalterText) schalterText.textContent = 'Bewegung fortsetzen';
+      standbild(zustand);
+    }
+
+    function fortsetzen() {
+      angehalten = false;
+      schalter?.setAttribute('aria-pressed', 'false');
+      if (schalterText) schalterText.textContent = 'Bewegung anhalten';
+      idleLaufen();
+    }
+
+    /** Ausserhalb des Bildes oder verborgener Tab: anhalten, nicht entladen. */
+    function schlafen() { for (const v of buehne.querySelectorAll('video')) v.pause(); }
+    function wecken() {
+      if (angehalten || ruhig.matches || !imBild) return;
+      for (const v of buehne.querySelectorAll('video')) v.play().catch(() => {});
+    }
+
+    schalter?.addEventListener('click', () => (angehalten ? fortsetzen() : anhalten()));
+
+    // Groesse aendert sich: Lage der laufenden Figur nachfuehren.
+    new ResizeObserver(() => {
+      for (const el of buehne.querySelectorAll<HTMLElement>('video, img')) lagenSetzen(el, zustand);
+    }).observe(buehne);
+
+    // Erstes sichtbares Erscheinen: einmal gruessen, danach idle.
+    // Im Standbildmodus gibt es nichts zu starten - dann steht das Bild
+    // einfach da, und es laeuft kein Beobachter mit.
+    let begruesst = false;
+    if (!nurStandbild) new IntersectionObserver((eintraege) => {
+      for (const e of eintraege) {
+        imBild = e.isIntersecting;
+        if (!imBild) { schlafen(); continue; }
+        if (!begruesst) {
+          begruesst = true;
+          spiele('wave');
+          sage('Schön, dass Sie da sind.');
+        } else {
+          wecken();
+        }
+      }
+    }, { rootMargin: '80px', threshold: 0.1 }).observe(buehne);
+
+    // Bei reduzierter Bewegung steht von Anfang an das Standbild.
+    lagenSetzen(ersteBild, 'idle');
+
+    return { spiele, sage, ruhe, anhalten, fortsetzen, schlafen, wecken };
+  }
+</script>

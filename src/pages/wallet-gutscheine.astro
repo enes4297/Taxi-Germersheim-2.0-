@@ -1,0 +1,240 @@
+---
+/**
+ * Wallet & Gutscheine — unter derselben Adresse wie bisher
+ * (wallet-gutscheine.html).
+ *
+ * ═══════════════════════════════════════════════════════════════════════
+ * DIE EINZIGE KONTOSEITE, DIE WIRKLICH DATEN LAEDT
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * Unveraendert aus dem Bestand uebernommen:
+ *
+ *     client.from('rewards_vouchers')
+ *           .select('code, value_cents, status, valid_until, redeemed_at, issued_at')
+ *           .order('issued_at', { ascending: false })
+ *
+ * Dieselbe Tabelle, dieselben sechs Spalten, dieselbe Sortierung.
+ * GESCHRIEBEN WIRD NICHTS - kein Einloesen, kein Sperren, kein Anlegen.
+ *
+ * Ebenfalls unveraendert die Einstufung eines Gutscheins:
+ *   status 'redeemed'                  → Eingelöst
+ *   status 'blocked'                   → Gesperrt
+ *   valid_until vor heute 23:59:59     → Abgelaufen
+ *   sonst                              → Verfügbar
+ * und die Aufteilung: 'open' + 'Verfügbar' oben, alles andere in den
+ * Verlauf.
+ *
+ * ── WAS DER BESTAND HIER SCHON RICHTIG MACHTE ────────────────────────
+ *
+ * Diese Seite unterschied als EINZIGE der fuenf sauber zwischen
+ * "keine Gutscheine" und "konnte nicht geladen werden". Das bleibt, samt
+ * der beiden Texte. Dazu kommt ein Knopf zum erneuten Versuchen und ein
+ * sichtbarer Ladezustand - im Bestand gab es dafuer nur `aria-busy`,
+ * also nichts Sichtbares.
+ *
+ * ── UNGEPRUEFT UND SO BENANNT ────────────────────────────────────────
+ *
+ * Ob ein angemeldeter Kunde `rewards_vouchers` ueberhaupt lesen darf,
+ * steht in den Grants und Policies der produktiven Instanz. Das ist hier
+ * NICHT geprueft worden und bleibt offen - dieselbe offene Frage wie in
+ * Schritt 022 zum Gluecksrad.
+ */
+import Kontoseite from '../components/Kontoseite.astro';
+---
+
+<Kontoseite
+  titel="Wallet & Gutscheine | Taxi Germersheim GmbH"
+  beschreibung="Ihre verfügbaren und bereits verwendeten Gutscheine bei Taxi Germersheim."
+  pfad="wallet-gutscheine.html"
+  label="Ihr Taxi-Germersheim-Konto"
+  ueberschrift="Gutscheine"
+  text="Hier finden Sie Ihre verfügbaren und bereits verwendeten Gutscheine."
+  bereichId="customer-wallet"
+  bereichName="Wallet & Gutscheine"
+>
+  <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pb-20 lg:pb-28">
+    <div id="gutscheinListe" class="mt-10" aria-busy="true" aria-live="polite" data-konto-liste>
+      {/* Der Ladezustand steht im Markup, damit er sofort sichtbar ist. */}
+      <p class="text-[15px] text-muted-foreground">Ihre Gutscheine werden geladen …</p>
+    </div>
+  </div>
+
+  <script is:inline slot="skript">
+    (async function () {
+      const { gesperrt, auth } = await window.tgKontoBereit;
+      if (gesperrt) return;
+
+      const liste = document.getElementById('gutscheinListe');
+      if (!liste) return;
+
+      /* ── Darstellungshelfer, Logik wie im Bestand ────────────────── */
+      const geld = (cent) =>
+        new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' })
+          .format(Number(cent || 0) / 100);
+
+      const datum = (wert) => {
+        if (!wert) return '';
+        const d = new Date(wert.length === 10 ? wert + 'T00:00:00' : wert);
+        return Number.isNaN(d.getTime())
+          ? ''
+          : new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
+      };
+
+      /** Unveraendert aus dem Bestand: vier Zustaende, dieselbe Reihenfolge. */
+      function einstufen(g) {
+        if (g.status === 'redeemed') return 'Eingelöst';
+        if (g.status === 'blocked') return 'Gesperrt';
+        const bis = new Date(g.valid_until + 'T23:59:59');
+        if (!Number.isNaN(bis.getTime()) && bis < new Date()) return 'Abgelaufen';
+        return 'Verfügbar';
+      }
+
+      const ELEMENT = (tag, klasse, text) => {
+        const e = document.createElement(tag);
+        if (klasse) e.className = klasse;
+        if (text !== undefined) e.textContent = text;
+        return e;
+      };
+
+      function karte(g, verlauf) {
+        const zustand = einstufen(g);
+        const k = ELEMENT('article',
+          'border border-border bg-card p-5' + (verlauf ? ' opacity-70' : ''));
+
+        const kopf = ELEMENT('div', 'flex items-start justify-between gap-4');
+        const links = ELEMENT('div');
+        links.append(
+          ELEMENT('span', 'block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground', 'Gutschein'),
+          ELEMENT('strong', 'mt-1 block text-2xl font-semibold text-primary', geld(g.value_cents)),
+        );
+        kopf.append(
+          links,
+          ELEMENT('span', 'shrink-0 border border-border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground', zustand),
+        );
+
+        const codeKasten = ELEMENT('div', 'mt-4 border border-border/70 bg-background/40 px-4 py-3');
+        codeKasten.append(
+          ELEMENT('span', 'block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground', 'Code'),
+          ELEMENT('code', 'mt-1 block font-mono text-[15px] tracking-wider text-foreground', g.code || '—'),
+        );
+
+        const zusatz = ELEMENT('dl', 'mt-4 grid gap-2 text-sm');
+        const zeile = (was, wert) => {
+          if (!wert) return;
+          const d = ELEMENT('div', 'flex justify-between gap-4');
+          d.append(
+            ELEMENT('dt', 'text-muted-foreground', was),
+            ELEMENT('dd', 'text-foreground', wert),
+          );
+          zusatz.appendChild(d);
+        };
+        zeile('Gültig bis', datum(g.valid_until));
+        zeile('Eingelöst am', datum(g.redeemed_at));
+
+        k.append(kopf, codeKasten);
+        if (zusatz.childElementCount) k.appendChild(zusatz);
+        return k;
+      }
+
+      function abschnitt(titel, gutscheine, verlauf) {
+        const s = ELEMENT('section', verlauf ? 'mt-10' : '');
+        s.appendChild(ELEMENT('h2', 'text-[22px] font-semibold tracking-[-0.02em] text-foreground', titel));
+        const raster = ELEMENT('div', 'mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3');
+        gutscheine.forEach((g) => raster.appendChild(karte(g, verlauf)));
+        s.appendChild(raster);
+        return s;
+      }
+
+      /* ── Die drei Zustaende, klar getrennt ───────────────────────── */
+      function zeigeLaden() {
+        liste.setAttribute('aria-busy', 'true');
+        liste.replaceChildren(
+          ELEMENT('p', 'text-[15px] text-muted-foreground', 'Ihre Gutscheine werden geladen …'),
+        );
+      }
+
+      function zeigeLeer() {
+        liste.setAttribute('aria-busy', 'false');
+        const s = ELEMENT('section', 'max-w-3xl border border-border bg-card p-8 lg:p-10');
+        s.append(
+          ELEMENT('h2', 'text-[26px] font-semibold tracking-[-0.02em] text-foreground', 'Noch keine Gutscheine'),
+          ELEMENT('p', 'mt-4 text-[15px] leading-relaxed text-muted-foreground',
+            'Sobald ein Gutschein für Ihr Konto verfügbar ist, finden Sie ihn hier.'),
+        );
+        const a = ELEMENT('a', 'mt-6 inline-block border border-border px-5 py-2.5 text-sm text-foreground transition-colors duration-150 hover:border-primary', 'Rewards ansehen');
+        a.href = 'rewards.html';
+        s.appendChild(a);
+        liste.replaceChildren(s);
+      }
+
+      /**
+       * Der Ladefehler. Er sagt ausdruecklich, dass er KEIN leeres Konto
+       * ist - sonst liest ihn jemand als "ich habe eben keine".
+       */
+      function zeigeFehler() {
+        liste.setAttribute('aria-busy', 'false');
+        const s = ELEMENT('section', 'max-w-3xl border border-primary/40 bg-primary/[0.07] p-8 lg:p-10');
+        s.append(
+          ELEMENT('h2', 'text-[26px] font-semibold tracking-[-0.02em] text-foreground', 'Gutscheine nicht verfügbar'),
+          ELEMENT('p', 'mt-4 text-[15px] leading-relaxed text-muted-foreground',
+            'Ihre Gutscheine konnten gerade nicht geladen werden. Bitte versuchen Sie es erneut.'),
+          ELEMENT('p', 'mt-2 text-[15px] leading-relaxed text-muted-foreground',
+            'Das ist ein Ladefehler. Er sagt nichts darüber aus, ob Sie Gutscheine haben.'),
+        );
+        const b = ELEMENT('button', 'mt-6 border border-border px-5 py-2.5 text-sm text-foreground transition-colors duration-150 hover:border-primary', 'Erneut versuchen');
+        b.type = 'button';
+        b.addEventListener('click', laden);
+        s.appendChild(b);
+        liste.replaceChildren(s);
+      }
+
+      async function laden() {
+        /*
+          Der Sitzungsstand VOR der Abfrage.
+
+          GEMESSENER BEFUND (Schritt 024): Ohne diese Pruefung schrieb
+          eine verspaetete Antwort die Gutscheine nach dem Abmelden
+          wieder auf den Bildschirm - Code, Betrag und alles. Gemessen
+          mit einer Antwortzeit von drei Sekunden.
+        */
+        const stand = window.tgKontoStand();
+        const nochGueltig = () => stand === window.tgKontoStand();
+
+        zeigeLaden();
+        try {
+          const client = auth && typeof auth.getClient === 'function' ? await auth.getClient() : null;
+          if (!nochGueltig()) return;
+          if (!client || typeof client.from !== 'function') { zeigeFehler(); return; }
+
+          const antwort = await client
+            .from('rewards_vouchers')
+            .select('code, value_cents, status, valid_until, redeemed_at, issued_at')
+            .order('issued_at', { ascending: false });
+
+          if (!nochGueltig()) return;
+          if (antwort.error || !Array.isArray(antwort.data)) { zeigeFehler(); return; }
+
+          const offen = [];
+          const verlauf = [];
+          antwort.data.forEach((g) => {
+            if (g.status === 'open' && einstufen(g) === 'Verfügbar') offen.push(g);
+            else verlauf.push(g);
+          });
+
+          if (!offen.length && !verlauf.length) { zeigeLeer(); return; }
+
+          liste.setAttribute('aria-busy', 'false');
+          const teile = [];
+          if (offen.length) teile.push(abschnitt('Verfügbare Gutscheine', offen, false));
+          if (verlauf.length) teile.push(abschnitt('Verlauf', verlauf, true));
+          liste.replaceChildren(...teile);
+        } catch (_e) {
+          if (!nochGueltig()) return;
+          zeigeFehler();
+        }
+      }
+
+      await laden();
+    })();
+  </script>
+</Kontoseite>

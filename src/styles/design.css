@@ -1,0 +1,289 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Freigegebene Design-Grundlage
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Uebernommen aus der Vorschau taxi-figma-vorschau (src/index.css,
+   Commit 113a73e). Die Vorschau bleibt die verbindliche Referenz - wer hier
+   etwas aendert, aendert es dort zuerst.
+
+   Zwei bewusste Abweichungen von der Vorschau:
+     1. Die Schriften werden oertlich ausgeliefert statt vom Google-CDN
+        geladen. Siehe schriften.css.
+     2. Keine Tailwind-Praeflight-Ueberschreibungen fuer den Bestand: Diese
+        Datei wird ausschliesslich in die neu gebauten Seiten eingebunden.
+        admin/, fahrer/ und dashboard/ bringen ihr eigenes CSS mit und werden
+        davon nicht beruehrt.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@import './schriften.css';
+@import 'tailwindcss';
+
+@theme {
+  --color-background: #18181b;
+  --color-foreground: #f0ebe0;
+  --color-card: #1f1f23;
+  --color-card-foreground: #f0ebe0;
+  --color-primary: #c8a96e;
+  --color-primary-foreground: #18181b;
+  --color-secondary: #252528;
+  --color-secondary-foreground: #9a9488;
+  --color-muted: #252528;
+  /* Angehoben am 18.09.2026. Der fruehere Wert #74726b ergab auf dem
+     Seitengrund nur 3,7:1 - unter den geforderten 4,5:1 fuer Fliesstext.
+     #8d8a82 misst 5,1:1 und bleibt trotzdem deutlich zweitrangig. */
+  --color-muted-foreground: #8d8a82;
+  --color-accent: #c8a96e;
+  --color-accent-foreground: #18181b;
+  --color-border: #2e2e32;
+  --color-ring: #c8a96e;
+
+  /* Heller Abschnitt - in der Vorschau als Literal gesetzt, hier benannt,
+     damit die beiden Werte nicht auseinanderlaufen. */
+  --color-hell: #f2ede2;
+  --color-hell-foreground: #17171a;
+  --color-hell-muted: #5c554a;
+  --color-hell-label: #8a7a52;
+
+  --font-sans: 'Outfit', system-ui, sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
+
+  --radius: 0.125rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Fokusrahmen.
+   Die Farbe steht hier ausdruecklich als Literal. Mit `var(--color-ring)` in
+   der Kurzschreibweise fiel `outline-color` im Test auf `currentColor`
+   zurueck - gemessen war `outlineColor` auf jedem Tab exakt gleich `color`.
+   Beim aktiven Tab ist die Schriftfarbe absichtlich durchsichtig (die goldene
+   Kopie darueber traegt den Text), der Fokusrahmen war dort also unsichtbar. */
+:focus-visible {
+  outline: 2px solid #c8a96e;
+  outline-offset: 2px;
+}
+
+/* Die Leistungsauswahl braucht einen eigenen Rahmen: Ein goldener Ring auf der
+   goldenen Auswahlflaeche waere nicht zu erkennen. Zweifarbig geloest - dunkle
+   Kante direkt an der Flaeche, goldener Ring nach aussen. */
+[role='tab']:focus-visible {
+  outline: 2px solid #17171a;
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px #c8a96e;
+  border-radius: 9999px;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Bewegung
+   ═══════════════════════════════════════════════════════════════════════
+   Alle Szenen laufen EINMAL. Nichts haengt an einem Scroll-Beobachter -
+   beim Zurueckscrollen startet deshalb keine Szene erneut. */
+
+@keyframes tg-fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tg-animate-in {
+  animation: tg-fade-rise 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.tg-animate-in-delay-1 {
+  animation: tg-fade-rise 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 80ms;
+}
+
+/* Texteintritt in hoechstens drei Gruppen mit kurzem Versatz. */
+.tg-in {
+  animation: tg-fade-rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.tg-d1 {
+  animation-delay: 90ms;
+}
+.tg-d2 {
+  animation-delay: 180ms;
+}
+.tg-d3 {
+  animation-delay: 260ms;
+}
+
+/* Kamerafahrt: einmalig, sehr langsam, endet ruhig.
+   WICHTIG: Diese Keyframes fassen ausschliesslich `transform` an - NICHT
+   `opacity`. Eine laufende Animation ueberschreibt sonst den Inline-Stil, mit
+   dem Bilder uebereinander geblendet werden. */
+@keyframes tg-kenburns {
+  from {
+    transform: scale(1.075);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.tg-kenburns {
+  animation: tg-kenburns 7600ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  will-change: transform;
+}
+
+@keyframes tg-kenburns-soft {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.tg-kenburns-soft {
+  animation: tg-kenburns-soft 6800ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  will-change: transform;
+}
+
+/* Eintritt des Bildrahmens - 700 ms, einmalig. */
+@keyframes tg-stage-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tg-stage-in {
+  animation: tg-stage-in 700ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Die Flotte ist durchgehend schwarz lackiert und vor dunklem Hintergrund
+   fotografiert. Ohne eine leichte Anhebung verschwindet das Fahrzeug im
+   dunklen Layout - das war der auffaelligste Mangel des ersten Entwurfs. */
+.tg-vehicle {
+  filter: brightness(1.16) contrast(1.06) saturate(1.04);
+}
+
+.tg-no-scrollbar {
+  scrollbar-width: none;
+}
+.tg-no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Yumak gruesst: ein kurzer, bewusst ausgeloester Moment. Laeuft nur auf
+   Tippen, nie von selbst und nie neben einer Eingabe. */
+@keyframes tg-yumak-gruss {
+  0% {
+    transform: rotate(0) scale(1);
+  }
+  22% {
+    transform: rotate(-9deg) scale(1.07);
+  }
+  46% {
+    transform: rotate(7deg) scale(1.07);
+  }
+  70% {
+    transform: rotate(-4deg) scale(1.03);
+  }
+  100% {
+    transform: rotate(0) scale(1);
+  }
+}
+
+.tg-yumak-gruss {
+  animation: tg-yumak-gruss 900ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* Gedrueckt-Rueckmeldung. Startwert laut Vorgabe: rund 120 ms, Skalierung auf
+   0,98. Bewusst als Uebergang, damit ein schneller zweiter Klick nicht auf das
+   Ende einer Animation warten muss. */
+.tg-press {
+  transition:
+    transform 120ms ease-out,
+    background-color 120ms ease-out,
+    border-color 120ms ease-out,
+    color 120ms ease-out;
+}
+.tg-press:active {
+  transform: scale(0.98);
+}
+
+/* ── Gezielte Enthuellung beim Scrollen ───────────────────────────────
+   Laeuft je Element genau EINMAL. Das Skript in Enthuellen.astro meldet den
+   Beobachter danach ab; beim Zurueckscrollen passiert nichts mehr.
+
+   Ohne Skript (JavaScript abgeschaltet) bleibt alles sichtbar: Der
+   Ausgangszustand wird erst gesetzt, wenn das Skript laeuft. */
+[data-enthuellen='warten'] {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+[data-enthuellen='zeigen'] {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 620ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Reduzierte Bewegung ──────────────────────────────────────────────
+   Eigene ruhige Ausfuehrung statt pauschaler Abschaltung: Das Standbild ist
+   sofort vollstaendig da, Text erscheint ohne Versatz, dekorative
+   Kamerafahrt startet nicht. Inhalt und Funktionen bleiben vollstaendig. */
+@media (prefers-reduced-motion: reduce) {
+  .tg-kenburns,
+  .tg-kenburns-soft,
+  .tg-stage-in,
+  .tg-in,
+  .tg-animate-in,
+  .tg-animate-in-delay-1 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  [data-enthuellen] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

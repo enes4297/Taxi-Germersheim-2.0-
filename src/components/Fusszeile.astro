@@ -1,0 +1,89 @@
+---
+/** Fusszeile. Uebernommen aus layout.tsx der Vorschau. */
+import { COPYRIGHT, FIRMA, FOOTER_LINKS, LEISTUNGEN, NAV } from '../inhalte';
+
+interface Props {
+  startseite?: boolean;
+}
+const { startseite = true } = Astro.props;
+
+const ziel = (href: string) => (startseite || !href.startsWith('#') ? href : `index.html${href}`);
+const heim = startseite ? '#hero' : 'index.html';
+---
+
+<footer class="bg-card border-t border-border">
+  <div class="mx-auto max-w-[1400px] px-5 lg:px-10 py-16 lg:py-20">
+    <div class="grid gap-12 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+      <div>
+        <a href={heim} aria-label={`${FIRMA.name} – ${startseite ? "zum Seitenanfang" : "zur Startseite"}`}>
+          <img src="/assets/brand/taxi-germersheim-logo.svg" alt={FIRMA.name} class="h-11 w-auto" />
+        </a>
+        <address class="mt-6 not-italic text-sm text-muted-foreground leading-relaxed">
+          {FIRMA.name}<br />
+          {FIRMA.strasse}<br />
+          {FIRMA.plz} {FIRMA.ort}<br />
+          {FIRMA.land}
+        </address>
+        <div class="mt-5 flex flex-col gap-1.5 text-sm">
+          <a href={FIRMA.telefonLink} class="text-foreground hover:text-primary transition-colors duration-150 tabular-nums">{FIRMA.telefon}</a>
+          <a href={`mailto:${FIRMA.email}`} class="text-foreground hover:text-primary transition-colors duration-150">{FIRMA.email}</a>
+        </div>
+      </div>
+
+      <div class="grid gap-10 sm:grid-cols-3">
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/60">Leistungen</p>
+          <ul class="mt-4 space-y-2.5">
+            {LEISTUNGEN.map((l) => (
+              <li>
+                <a href={ziel(`#leistung-${l.id.toLowerCase()}`)} class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">
+                  {l.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/60">Entdecken</p>
+          <ul class="mt-4 space-y-2.5">
+            {NAV.filter((n) => n.href !== '#leistungen').map((n) => (
+              <li>
+                <a href={ziel(n.href)} class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">{n.label}</a>
+              </li>
+            ))}
+            <li>
+              <a href="anmelden.html" class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150" data-konto-verweis><span data-konto-text>Anmelden</span></a>
+            </li>
+            <li>
+              <a href="hilfe-kontakt.html" class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">Hilfe und Kontakt</a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/60">Rechtliches</p>
+          <ul class="mt-4 space-y-2.5">
+            {FOOTER_LINKS.map((f) => (
+              <li>
+                <a href={ziel(f.href)} class="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150">{f.label}</a>
+              </li>
+            ))}
+          </ul>
+          <div class="mt-6 text-xs text-muted-foreground/70 leading-relaxed space-y-1">
+            <p>Geschäftsführung: {FIRMA.geschaeftsfuehrung.join(', ')}</p>
+            <p>{FIRMA.registergericht}</p>
+            <p class="tabular-nums">{FIRMA.registernummer}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-14 pt-7 border-t border-border flex flex-wrap items-center justify-between gap-4">
+      <p class="text-xs text-muted-foreground/70">{COPYRIGHT}</p>
+      <p class="text-xs text-muted-foreground/70">
+        Fahrtanfragen erreichen uns derzeit über WhatsApp oder Telefon.
+      </p>
+    </div>
+  </div>
+</footer>

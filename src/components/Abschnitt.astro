@@ -1,0 +1,22 @@
+---
+/**
+ * Abschnittsrahmen. Uebernommen aus Section() der Vorschau (site-ui.tsx).
+ * Zwei Grundfarben: dunkel (Standard) und hell.
+ */
+interface Props {
+  id?: string;
+  hell?: boolean;
+  class?: string;
+}
+const { id, hell = false, class: klasse = '' } = Astro.props;
+---
+
+<section
+  id={id}
+  class={`${hell ? 'bg-[var(--color-hell)] text-[var(--color-hell-foreground)]' : 'bg-background text-foreground'} ${klasse}`}
+  style="scroll-margin-top: 5rem"
+>
+  <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 py-20 lg:py-28">
+    <slot />
+  </div>
+</section>

@@ -1,0 +1,14 @@
+# Zeilenenden fuer mitgelieferte Fremdbibliotheken
+#
+# `core.autocrlf` steht in diesem Projekt auf `true`. Git wandelt beim
+# Auschecken also LF in CRLF um. Fuer unsere eigenen Dateien ist das in
+# Ordnung - fuer eine unveraendert uebernommene Fremdbibliothek nicht:
+#
+#   - Die Pruefsumme in vendor/HERKUNFT.md waere nach einem frischen Klon
+#     falsch, ohne dass jemand die Datei angefasst haette.
+#   - `npm run grundlagen-pruefen` vergleicht die Datei Byte fuer Byte gegen
+#     node_modules/. Dieser Vergleich schlaege auf einem anderen Rechner fehl.
+#
+# `-text` schaltet jede Umwandlung ab: Die Datei liegt ueberall genauso da,
+# wie sie aus dem Paket kam.
+vendor/** -text

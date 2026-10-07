@@ -1,0 +1,275 @@
+---
+/**
+ * Kopfbereich der Startseite. Uebernommen aus layout.tsx der Vorschau.
+ *
+ * Liegt ueber dem Hero-Film und ist von Anfang an bedienbar - der Film ist
+ * kein vorgeschalteter Ladebildschirm. Beim Scrollen legt sich ein Grund
+ * darunter, damit die Schrift lesbar bleibt.
+ */
+import { FIRMA, NAV } from '../inhalte';
+import Symbol from './Symbol.astro';
+
+interface Props {
+  /** Auf der Startseite zeigen Sprungmarken auf Abschnitte dieser Seite.
+   *  Auf Unterseiten muessen sie zuerst zur Startseite fuehren. */
+  startseite?: boolean;
+}
+const { startseite = true } = Astro.props;
+
+const ziel = (href: string) => (startseite || !href.startsWith('#') ? href : `index.html${href}`);
+const heim = startseite ? '#hero' : 'index.html';
+---
+
+<header
+  class="fixed top-0 inset-x-0 z-40 transition-[background-color,border-color,backdrop-filter] duration-300 bg-transparent border-b border-transparent"
+  data-kopf
+>
+  <div class="mx-auto max-w-[1400px] px-5 lg:px-10 h-16 lg:h-20 flex items-center justify-between gap-6">
+    <a href={heim} aria-label={`${FIRMA.name} – ${startseite ? "zum Seitenanfang" : "zur Startseite"}`} class="shrink-0">
+      <img
+        src="/assets/brand/taxi-germersheim-logo.svg"
+        alt={FIRMA.name}
+        class="w-auto h-10 lg:h-13 transition-all duration-300 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
+        data-kopf-logo
+      />
+    </a>
+
+    <nav class="hidden lg:flex items-center gap-7" aria-label="Hauptnavigation">
+      {NAV.map((n) => (
+        <a href={ziel(n.href)} class="text-sm text-white/72 hover:text-white transition-colors duration-150" data-kopf-link>
+          {n.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="hidden lg:flex items-center gap-1.5 shrink-0">
+      {/*
+        Konto-Einstieg. Steht bis zur Pruefung auf „Anmelden" und wird erst
+        auf „Mein Konto" umgestellt, wenn eine echte Sitzung festgestellt
+        wurde - siehe kontoEinstieg() weiter unten. Nie umgekehrt.
+      */}
+      <a
+        href="anmelden.html"
+        class="flex items-center gap-2 text-sm px-3 py-2 text-white/80 hover:text-white transition-colors duration-150"
+        data-kopf-link
+        data-konto-verweis
+      >
+        <Symbol name="konto" class="w-4 h-4" />
+        <span data-konto-text>Anmelden</span>
+      </a>
+      <a href={FIRMA.telefonLink} class="flex items-center gap-2 text-sm px-3 py-2 text-white/80 hover:text-white transition-colors duration-150" data-kopf-link>
+        <Symbol name="telefon" class="w-4 h-4" />
+        <span class="font-medium tabular-nums">{FIRMA.telefon}</span>
+      </a>
+      <a
+        href={FIRMA.whatsapp}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Per WhatsApp schreiben"
+        class="p-2.5 text-white/80 hover:text-primary transition-colors duration-150"
+        data-kopf-link
+      >
+        <Symbol name="whatsapp" class="w-[18px] h-[18px]" />
+      </a>
+      {startseite ? (
+        <button
+          type="button"
+          class="ml-1.5 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-[#d4b87d] tg-press"
+          data-anfrage-oeffnen
+        >
+          Fahrt anfragen
+        </button>
+      ) : (
+        <a
+          href="index.html?page=booking"
+          class="ml-1.5 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-[#d4b87d] tg-press"
+        >
+          Fahrt anfragen
+        </a>
+      )}
+    </div>
+
+    <button
+      type="button"
+      aria-label="Menü öffnen"
+      aria-expanded="false"
+      aria-controls="kopf-menue"
+      class="lg:hidden p-2 -mr-2 text-white tg-press"
+      data-menue-schalter
+    >
+      <span data-menue-zu><Symbol name="menue" /></span>
+      <span data-menue-auf hidden><Symbol name="schliessen" /></span>
+    </button>
+  </div>
+
+  <div id="kopf-menue" class="lg:hidden border-t border-border bg-card max-h-[calc(100svh-4rem)] overflow-y-auto" hidden data-menue>
+    {NAV.map((n) => (
+      <a href={ziel(n.href)} class="block px-5 py-3.5 text-[15px] border-b border-border text-muted-foreground" data-menue-link>
+        {n.label}
+      </a>
+    ))}
+    <div class="p-5 space-y-3">
+      {startseite ? (
+        <button
+          type="button"
+          class="w-full py-3.5 text-[15px] font-semibold bg-primary text-primary-foreground tg-press"
+          data-anfrage-oeffnen
+          data-menue-link
+        >
+          Fahrt anfragen
+        </button>
+      ) : (
+        <a
+          href="index.html?page=booking"
+          class="block w-full py-3.5 text-center text-[15px] font-semibold bg-primary text-primary-foreground tg-press"
+          data-menue-link
+        >
+          Fahrt anfragen
+        </a>
+      )}
+      <a
+        href="anmelden.html"
+        class="flex items-center justify-center gap-2 border border-border py-3 text-sm font-medium tg-press"
+        data-menue-link
+        data-konto-verweis
+      >
+        <Symbol name="konto" class="w-4 h-4" />
+        <span data-konto-text>Anmelden</span>
+      </a>
+      <div class="grid grid-cols-2 gap-3">
+        <a href={FIRMA.telefonLink} class="flex items-center justify-center gap-2 border border-border py-3 text-sm font-medium tg-press">
+          <Symbol name="telefon" class="w-4 h-4" /> Anrufen
+        </a>
+        <a href={FIRMA.whatsapp} target="_blank" rel="noreferrer" class="flex items-center justify-center gap-2 border border-border py-3 text-sm font-medium tg-press">
+          <Symbol name="whatsapp" class="w-4 h-4 text-primary" /> WhatsApp
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  const kopf = document.querySelector<HTMLElement>('[data-kopf]')!;
+  const logo = kopf.querySelector<HTMLImageElement>('[data-kopf-logo]')!;
+  const links = kopf.querySelectorAll<HTMLElement>('[data-kopf-link]');
+  const schalter = kopf.querySelector<HTMLButtonElement>('[data-menue-schalter]')!;
+  const menue = kopf.querySelector<HTMLElement>('[data-menue]')!;
+  const symbolZu = kopf.querySelector<HTMLElement>('[data-menue-zu]')!;
+  const symbolAuf = kopf.querySelector<HTMLElement>('[data-menue-auf]')!;
+
+  let offen = false;
+
+  /** Fest = mit Grund hinterlegt. Ueber dem Film transparent, sonst nicht. */
+  function zeichnen() {
+    const fest = window.scrollY > 40 || offen;
+    kopf.classList.toggle('bg-background/94', fest);
+    kopf.classList.toggle('backdrop-blur-md', fest);
+    kopf.classList.toggle('border-border', fest);
+    kopf.classList.toggle('bg-transparent', !fest);
+    kopf.classList.toggle('border-transparent', !fest);
+
+    logo.classList.toggle('h-9', fest);
+    logo.classList.toggle('lg:h-11', fest);
+    logo.classList.toggle('h-10', !fest);
+    logo.classList.toggle('lg:h-13', !fest);
+    logo.classList.toggle('drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]', !fest);
+
+    for (const l of links) {
+      l.classList.toggle('text-white/72', !fest);
+      l.classList.toggle('text-white/80', !fest);
+      l.classList.toggle('hover:text-white', !fest);
+      l.classList.toggle('text-muted-foreground', fest);
+      l.classList.toggle('hover:text-foreground', fest);
+    }
+
+    schalter.classList.toggle('text-white', !fest);
+    schalter.classList.toggle('text-foreground', fest);
+  }
+
+  function menueSetzen(neu: boolean) {
+    offen = neu;
+    menue.hidden = !offen;
+    symbolZu.hidden = offen;
+    symbolAuf.hidden = !offen;
+    schalter.setAttribute('aria-expanded', String(offen));
+    schalter.setAttribute('aria-label', offen ? 'Menü schließen' : 'Menü öffnen');
+    zeichnen();
+  }
+
+  schalter.addEventListener('click', () => menueSetzen(!offen));
+  for (const l of kopf.querySelectorAll('[data-menue-link]')) {
+    l.addEventListener('click', () => menueSetzen(false));
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && offen) menueSetzen(false);
+  });
+  window.addEventListener('scroll', zeichnen, { passive: true });
+  zeichnen();
+
+  // ── Konto-Einstieg ────────────────────────────────────────────────────
+  //
+  // „Mein Konto" erscheint NUR, wenn eine Sitzung tatsaechlich festgestellt
+  // wurde. Der Ausgangszustand ist „Anmelden"; es wird nie in die andere
+  // Richtung geraten. Faellt die Pruefung aus, bleibt „Anmelden" stehen -
+  // der Weg funktioniert dann immer noch, er ist nur einen Klick laenger.
+  //
+  // SPARSAM, und warum das trotzdem eine echte Feststellung ist:
+  // Eine Browser-Sitzung von Supabase liegt ausschliesslich im localStorage,
+  // unter einem Schluessel der Form `sb-<projekt>-auth-token`. Liegt dort
+  // nichts, gibt es sicher keine Sitzung - dann muss auch die 213-kB-
+  // Bibliothek nicht geladen werden. Erst wenn ein solcher Schluessel da ist,
+  // wird customer-auth.js geholt und hydrateSession() befragt. Das ist die
+  // gleiche Pruefung, die auch die Kontoseiten benutzen.
+  async function kontoEinstieg() {
+    let sitzungMoeglich = false;
+    try {
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const schluessel = localStorage.key(i);
+        if (schluessel && /^sb-.+-auth-token$/.test(schluessel)) {
+          sitzungMoeglich = true;
+          break;
+        }
+      }
+    } catch {
+      return; // kein Zugriff auf den Speicher: bei „Anmelden" bleiben
+    }
+    if (!sitzungMoeglich) return;
+
+    const auth = await bibliothekLaden();
+    if (!auth || typeof auth.hydrateSession !== 'function') return;
+
+    try {
+      await auth.hydrateSession();
+    } catch {
+      return;
+    }
+    if (typeof auth.isLoggedIn !== 'function' || !auth.isLoggedIn()) return;
+
+    for (const verweis of document.querySelectorAll<HTMLAnchorElement>('[data-konto-verweis]')) {
+      verweis.href = 'meinkonto.html';
+      const text = verweis.querySelector('[data-konto-text]');
+      if (text) text.textContent = 'Mein Konto';
+    }
+  }
+
+  /** customer-auth.js nachladen, falls die Seite es nicht ohnehin einbindet. */
+  function bibliothekLaden(): Promise<any> {
+    const vorhanden = (window as any).CustomerAuth;
+    if (vorhanden) return Promise.resolve(vorhanden);
+    return new Promise((fertig) => {
+      const schon = document.querySelector('script[src$="customer-auth.js"]');
+      if (schon) {
+        schon.addEventListener('load', () => fertig((window as any).CustomerAuth), { once: true });
+        window.setTimeout(() => fertig((window as any).CustomerAuth), 4000);
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = 'customer-auth.js';
+      s.onload = () => fertig((window as any).CustomerAuth);
+      s.onerror = () => fertig(null);
+      document.head.appendChild(s);
+    });
+  }
+
+  kontoEinstieg();
+</script>

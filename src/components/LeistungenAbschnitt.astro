@@ -1,0 +1,186 @@
+---
+/**
+ * Leistungen — ein Abschnitt fuer alle sieben Fahrten.
+ *
+ * Uebernommen aus sections.tsx der Vorschau. „Leistungen" und
+ * „Spezialfahrten" listeten frueher dieselben Fahrten fast wortgleich doppelt
+ * auf; die besonderen Fahrten stehen jetzt dort, wo sie hingehoeren — bei den
+ * Krankenfahrten.
+ *
+ * Jeder Anfrageknopf traegt data-anfrage-oeffnen mit seiner Leistung. Der
+ * Dialog oeffnet sich an Ort und Stelle, ohne Sprung durch die Seite.
+ */
+import { FIRMA, LEISTUNGEN, LEISTUNGEN_KOPF, LEISTUNGSBLOECKE, TRANSPORTSCHEIN, type Leistungsblock } from '../inhalte';
+import Abschnitt from './Abschnitt.astro';
+import AbschnittKopf from './AbschnittKopf.astro';
+import Enthuellen from './Enthuellen.astro';
+import Symbol from './Symbol.astro';
+
+const [taxi, kranken, rollstuhl, schueler, flughafen, ferngruppe, kurier] = LEISTUNGSBLOECKE;
+const marke = (b: Leistungsblock) => `leistung-${b.id.toLowerCase()}`;
+const paare: [Leistungsblock, Leistungsblock][] = [
+  [rollstuhl, schueler],
+  [flughafen, ferngruppe],
+];
+---
+
+<Abschnitt id="leistungen">
+  {/* Die alte Sprungmarke bleibt, damit aeltere Verweise auf
+      „#spezialfahrten" nicht ins Leere laufen. */}
+  <span id="spezialfahrten" aria-hidden="true" class="block" style="scroll-margin-top: 5rem"></span>
+
+  <Enthuellen>
+    <AbschnittKopf label={LEISTUNGEN_KOPF.label} titel={LEISTUNGEN_KOPF.titel} text={LEISTUNGEN_KOPF.text} />
+  </Enthuellen>
+
+  {/* Inhaltsverzeichnis, KEINE zweite Leistungsliste: Sieben Bloecke sind zu
+      viel, um sie am Stueck zu lesen. */}
+  <Enthuellen verzoegerung={40}>
+    <ul class="mt-10 flex flex-wrap gap-2">
+      {LEISTUNGSBLOECKE.map((b) => (
+        <li>
+          <a
+            href={`#${marke(b)}`}
+            class="inline-flex items-center gap-2 border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors duration-150 tg-press"
+          >
+            {LEISTUNGEN.find((l) => l.id === b.id)?.label ?? b.kopf}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </Enthuellen>
+
+  {/* ── Taxi- und Alltagsfahrten: Bild breit, Text daneben ─────────── */}
+  <Enthuellen verzoegerung={60}>
+    <div id={marke(taxi)} class="mt-14 grid lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] gap-8 lg:gap-12 items-center" style="scroll-margin-top: 6rem">
+      <div class="relative overflow-hidden bg-[#0e0e11]" style="aspect-ratio: 16 / 9">
+        <picture>
+          <source media="(max-width: 767px)" srcset={taxi.bild!.srcMobil} />
+          <img src={taxi.bild!.src} alt={taxi.bild!.alt} loading="lazy" decoding="async"
+            class="absolute inset-0 w-full h-full object-cover tg-vehicle" style={`object-position: ${taxi.bild!.objectPosition}`} />
+        </picture>
+        <span aria-hidden="true" class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to bottom, rgba(12,12,14,0.20) 0%, rgba(12,12,14,0) 30%, rgba(12,12,14,0) 68%, rgba(12,12,14,0.55) 100%)"></span>
+      </div>
+      <div>
+        <h3 class="font-semibold tracking-[-0.02em] leading-[1.12] text-foreground" style="font-size: clamp(1.5rem, 2.6vw, 2.25rem)">{taxi.kopf}</h3>
+        <p class="mt-4 text-[17px] text-muted-foreground leading-relaxed">{taxi.text}</p>
+        <ul class="mt-5 flex flex-wrap gap-x-5 gap-y-2">
+          {taxi.dazu.map((p) => (
+            <li class="flex items-center gap-2 text-[15px] text-muted-foreground">
+              <span aria-hidden="true" class="w-1.5 h-1.5 rounded-full bg-primary/70 shrink-0"></span>{p}
+            </li>
+          ))}
+        </ul>
+        <button type="button" data-anfrage-oeffnen data-leistung={taxi.id}
+          class="mt-6 group inline-flex items-center gap-2 text-[15px] font-medium text-primary hover:text-[#dcc189] tg-press">
+          {taxi.aktion}
+          <Symbol name="pfeil" class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+        </button>
+      </div>
+    </div>
+  </Enthuellen>
+
+  {/* ── Krankenfahrten: der ausfuehrlichste Block, mit Transportschein ── */}
+  <Enthuellen verzoegerung={60}>
+    <div id={marke(kranken)} class="mt-16 lg:mt-20 grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-8 lg:gap-12 items-start" style="scroll-margin-top: 6rem">
+      <div class="lg:order-2">
+        <div class="relative overflow-hidden bg-[#0e0e11]" style="aspect-ratio: 4 / 3">
+          <picture>
+            <source media="(max-width: 767px)" srcset={kranken.bild!.srcMobil} />
+            <img src={kranken.bild!.src} alt={kranken.bild!.alt} loading="lazy" decoding="async"
+              class="absolute inset-0 w-full h-full object-cover tg-vehicle" style={`object-position: ${kranken.bild!.objectPosition}`} />
+          </picture>
+          <span aria-hidden="true" class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to bottom, rgba(12,12,14,0.20) 0%, rgba(12,12,14,0) 30%, rgba(12,12,14,0) 68%, rgba(12,12,14,0.55) 100%)"></span>
+        </div>
+      </div>
+      <div class="lg:order-1">
+        <h3 class="font-semibold tracking-[-0.02em] leading-[1.12] text-foreground" style="font-size: clamp(1.4rem, 2.4vw, 2.1rem)">{kranken.kopf}</h3>
+        <p class="mt-4 text-[17px] text-muted-foreground leading-relaxed">{kranken.text}</p>
+        <ul class="mt-5 flex flex-wrap gap-x-5 gap-y-2">
+          {kranken.dazu.map((p) => (
+            <li class="flex items-center gap-2 text-[15px] text-muted-foreground">
+              <span aria-hidden="true" class="w-1.5 h-1.5 rounded-full bg-primary/70 shrink-0"></span>{p}
+            </li>
+          ))}
+        </ul>
+        <button type="button" data-anfrage-oeffnen data-leistung={kranken.id}
+          class="mt-6 group inline-flex items-center gap-2 text-[15px] font-medium text-primary hover:text-[#dcc189] tg-press">
+          {kranken.aktion}
+          <Symbol name="pfeil" class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+        </button>
+
+        {/* GRENZE, ABSICHTLICH: Hier steht, was wir ANNEHMEN und dass wir die
+            noetigen Unterlagen vorab klaeren. Es steht NICHT da, dass eine
+            Kasse die Fahrt bezahlt, dass sie genehmigt wird oder dass sie fuer
+            den Fahrgast kostenlos ist. Das entscheidet die jeweilige Stelle. */}
+        <div class="mt-8 border border-primary/30 bg-primary/[0.06] p-6 lg:p-7">
+          <h4 class="text-lg lg:text-xl font-semibold text-foreground">{TRANSPORTSCHEIN.titel}</h4>
+          {TRANSPORTSCHEIN.absaetze.map((a) => (
+            <p class="mt-3 text-[16px] text-muted-foreground leading-relaxed">{a}</p>
+          ))}
+          <a href={FIRMA.telefonLink} class="mt-6 inline-flex items-center gap-2.5 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold tg-press">
+            <Symbol name="telefon" class="w-[18px] h-[18px]" />
+            {TRANSPORTSCHEIN.aktion}
+            <span class="font-normal opacity-80">· {FIRMA.telefon}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </Enthuellen>
+
+  {/* ── Vier Bloecke als Paare ─────────────────────────────────────── */}
+  {paare.map(([links, rechts]) => (
+    <div id={marke(links)} style="scroll-margin-top: 6rem">
+      <span id={marke(rechts)} aria-hidden="true" class="block" style="scroll-margin-top: 6rem"></span>
+      <div class="mt-16 lg:mt-20 grid md:grid-cols-2 gap-8 lg:gap-12">
+        {[links, rechts].map((b, i) => (
+          <Enthuellen verzoegerung={i * 80}>
+            <div>
+              {b.bild && (
+                <div class="relative overflow-hidden bg-[#0e0e11]" style="aspect-ratio: 5 / 4">
+                  <picture>
+                    <source media="(max-width: 767px)" srcset={b.bild.srcMobil} />
+                    <img src={b.bild.src} alt={b.bild.alt} loading="lazy" decoding="async"
+                      class="absolute inset-0 w-full h-full object-cover tg-vehicle" style={`object-position: ${b.bild.objectPosition}`} />
+                  </picture>
+                  <span aria-hidden="true" class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to bottom, rgba(12,12,14,0.20) 0%, rgba(12,12,14,0) 30%, rgba(12,12,14,0) 68%, rgba(12,12,14,0.55) 100%)"></span>
+                </div>
+              )}
+              <h3 class="mt-6 text-xl lg:text-2xl font-semibold tracking-[-0.015em] text-foreground leading-snug">{b.kopf}</h3>
+              <p class="mt-3 text-[16px] text-muted-foreground leading-relaxed">{b.text}</p>
+              <ul class="mt-5 flex flex-wrap gap-x-5 gap-y-2">
+                {b.dazu.map((p) => (
+                  <li class="flex items-center gap-2 text-[15px] text-muted-foreground">
+                    <span aria-hidden="true" class="w-1.5 h-1.5 rounded-full bg-primary/70 shrink-0"></span>{p}
+                  </li>
+                ))}
+              </ul>
+              <button type="button" data-anfrage-oeffnen data-leistung={b.id}
+                class="mt-6 group inline-flex items-center gap-2 text-[15px] font-medium text-primary hover:text-[#dcc189] tg-press">
+                {b.aktion}
+                <Symbol name="pfeil" class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </button>
+            </div>
+          </Enthuellen>
+        ))}
+      </div>
+    </div>
+  ))}
+
+  {/* ── Kurierfahrten: eine Zeile, kein eigener Kasten ─────────────── */}
+  <Enthuellen verzoegerung={60}>
+    <div id={marke(kurier)} class="mt-16 border-t border-border pt-8 flex flex-wrap items-baseline gap-x-6 gap-y-2" style="scroll-margin-top: 6rem">
+      <h3 class="text-lg font-semibold text-foreground">{kurier.kopf}</h3>
+      <p class="text-[16px] text-muted-foreground flex-1 min-w-[16rem]">{kurier.text}</p>
+      <button type="button" data-anfrage-oeffnen data-leistung={kurier.id}
+        class="group inline-flex items-center gap-2 text-[15px] font-medium text-primary hover:text-[#dcc189] tg-press">
+        {kurier.aktion}
+        <Symbol name="pfeil" class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+      </button>
+    </div>
+  </Enthuellen>
+
+  {/* Welche Motive fehlen, steht bewusst NICHT auf der Seite. Das ist eine
+      Aussage ueber unseren Arbeitsstand, nicht ueber die Leistung. Die
+      Angaben bleiben intern im Feld `fehltMotiv` in src/inhalte.ts. */}
+</Abschnitt>
