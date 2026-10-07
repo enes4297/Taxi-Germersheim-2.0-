@@ -156,7 +156,33 @@
       for (const s of schichten) {
         const id = s.zeile.mitarbeiterId;
         const name = s.mitarbeiter ? s.mitarbeiter.name : id;
-        const wagen = s.fahrzeug ? s.fahrzeug.kennzeichen : "kein Fahrzeug";
+        /*
+          GEMESSENER AUSGANGSFEHLER: Hier stand nur das Kennzeichen.
+          Beim Konflikt des kranken Testfahrer 02 las sich der
+          Eintrag deshalb als
+            "... 09:00-17:00 · GER-TEST 002 · Krank ..."
+          und wirkte wie eine aktive Fahrzeugzuweisung. Testwagen 02
+          ist aber frei - das Kennzeichen stammt allein aus der
+          ungueltigen Restplanung.
+
+          Gefragt wird die zentrale Tageswahrheit, nicht eine zweite
+          Rechnung: fahrzeugAktiv() ist null, wenn die Person an
+          diesem Tag nicht faehrt. Zusammen mit dem Tagesstatus sagt
+          das, ob eine ABWESENHEIT die alte Zuweisung ungueltig
+          macht - nur dann wird "geplant:" vorangestellt. Eine
+          gueltige Zuweisung bleibt unverandert benannt.
+
+          Die Tageswahrheit selbst wird dabei nicht veraendert: Es
+          wird nur gelesen.
+        */
+        const tagesstatus = D.tagesstatusAm(isoTag, s.zeile);
+        const abwesend = tagesstatus === "krank" || tagesstatus === "urlaub";
+        const nurGeplant = abwesend
+          && Boolean(s.zeile.fahrzeugId)
+          && !D.fahrzeugAktiv(isoTag, s.zeile);
+        const wagen = s.fahrzeug
+          ? (nurGeplant ? "geplant: " + s.fahrzeug.kennzeichen : s.fahrzeug.kennzeichen)
+          : "kein Fahrzeug";
         const zeit = s.zeile.von + "–" + s.zeile.bis;
         const zustand = D.STATUS_IM_KALENDER[s.befund.status] || s.befund.status;
         /* Die Angaben der Schicht. Ein Konflikt kommt DAZU - er

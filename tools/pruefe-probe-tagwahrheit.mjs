@@ -51,7 +51,9 @@ const { chromium } = await import(
 
 const WURZEL = process.cwd();
 const PROBE = join(WURZEL, "probe-betriebsportal");
-const PORT = 5392;
+/* Eigener Port. Drei Prueflaeufe teilten sich vorher einen und
+   haben sich im Stapel gegenseitig die Navigation abgewuergt. */
+const PORT = 5384;
 const TYPEN = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8", ".png": "image/png", ".woff2": "font/woff2"
@@ -382,6 +384,63 @@ console.log("\n── 5. Der Kalender rechnet nicht selbst (Fehler 5) ──");
   pruefe(/Abwesend, Schicht noch im Plan/.test(kalText),
     "und die Restschicht des abwesenden Fahrers");
 
+  /*
+    Die alte Restplanung ist als solche gekennzeichnet.
+
+    GEMESSENER AUSGANGSFEHLER: Der Eintrag las sich
+      "Abwesend, Schicht noch im Plan · 09:00–17:00 · GER-TEST 002 · Krank"
+    und wirkte damit wie eine aktive Fahrzeugzuweisung - waehrend
+    Testwagen 02 tatsaechlich frei ist.
+  */
+  const zeileM02 = await page.evaluate(() => {
+    const el = [...document.querySelectorAll(".kal-tagesliste li")]
+      .find((x) => /Testfahrer 02/.test(x.textContent));
+    return el ? el.textContent.replace(/\s+/g, " ").trim() : "";
+  });
+  pruefe(zeileM02.length > 0, "der Eintrag zu Testfahrer 02 ist da");
+  pruefe(/geplant: GER-TEST 002/.test(zeileM02),
+    `GER-TEST 002 ist als geplante Restzuweisung gekennzeichnet (${zeileM02.slice(0, 110)})`);
+  pruefe(!/(^|[^:] )GER-TEST 002/.test(zeileM02.replace("geplant: GER-TEST 002", "")),
+    "und steht nicht noch ein zweites Mal ungekennzeichnet da");
+  /* Alle verlangten Angaben bleiben im Eintrag. */
+  pruefe(/Abwesend, Schicht noch im Plan/.test(zeileM02), "der Konfliktgrund steht darin");
+  pruefe(/09:00–17:00/.test(zeileM02), "die Zeit steht darin");
+  pruefe(/Krank/.test(zeileM02), "der Abwesenheitsstatus steht darin");
+  pruefe(/veröffentlicht|Entwurf/.test(zeileM02), "und der Veröffentlichungsstatus");
+
+  /* Gegenprobe: Ein aktiver Fahrer bekommt KEIN "geplant:". */
+  const zeileM01 = await page.evaluate(() => {
+    const el = [...document.querySelectorAll(".kal-tagesliste li")]
+      .find((x) => /Testfahrer 01/.test(x.textContent));
+    return el ? el.textContent.replace(/\s+/g, " ").trim() : "";
+  });
+  pruefe(/GER-TEST 001/.test(zeileM01) && !/geplant:/.test(zeileM01),
+    `die gültige Zuweisung von Testfahrer 01 wird nicht als alte Planung bezeichnet (${zeileM01.slice(0, 90)})`);
+  const geplantMarkierungen = await page.evaluate(() =>
+    [...document.querySelectorAll(".kal-tagesliste li")]
+      .filter((x) => /geplant:/.test(x.textContent)).length);
+  pruefe(geplantMarkierungen === 1,
+    `genau ein Eintrag trägt „geplant:“ (${geplantMarkierungen})`);
+
+  /* Und Testwagen 02 bleibt dreifach frei. */
+  const wagen02 = await page.evaluate(() => {
+    const D = window.ProbeDaten;
+    const iso = D.alsIso(D.heute);
+    const zeile = D.planzeilenAm(iso).find((z) => z.fahrzeugId === "F02");
+    const fz = D.fahrzeuge.find((f) => f.id === "F02");
+    return {
+      zustand: fz.zustand,
+      aktiv: zeile ? D.fahrzeugAktiv(iso, zeile) : null,
+      einsatz: D.schichtenAmTag(iso).filter((x) => {
+        const f = D.fahrzeugAktiv(iso, x.zeile);
+        return f && f.id === "F02";
+      }).length
+    };
+  });
+  pruefe(wagen02.zustand === "verfuegbar", "Testwagen 02 ist frei");
+  pruefe(wagen02.aktiv === null, "ohne aktuellen Fahrer");
+  pruefe(wagen02.einsatz === 0, "und ohne heutigen Einsatz");
+
   for (const id of w.konfliktZeilen) {
     pruefe(new RegExp(namen[id]).test(kalKonflikt),
       `${namen[id]} steht im Kalender bei den Konflikten`);
@@ -467,6 +526,23 @@ console.log("\n── 7. Die Buchhaltung (Fehler 7) ──");
   pruefe(!/Anfrage bearbeiten/.test(alleTun),
     "und keine „Anfrage bearbeiten“");
   pruefe(/Meldungen/.test(alleTun), "Meldungen bleiben erreichbar");
+
+  /*
+    Der Hinweis nennt nur, was wirklich fehlt.
+
+    GEMESSENER AUSGANGSFEHLER: Der Satz war fest und sprach der
+    Buchhaltung auch "Kundendaten" ab - obwohl sie customers.read hat
+    und den Bereich Kunden in der Navigation sieht.
+  */
+  const hinweisText = (await page.textContent("body")).replace(/\s+/g, " ");
+  pruefe(/Fahrten, Einsatzplanung und Flottendaten gehören zur/.test(hinweisText),
+    "der Hinweis nennt Fahrten, Einsatzplanung und Flottendaten");
+  pruefe(!/Kundendaten/.test(hinweisText),
+    "und behauptet nicht, dass Kundendaten nicht zugänglich seien");
+  const naviBuch = await page.$$eval("nav button, nav a",
+    (n) => n.map((x) => x.textContent.replace(/\s+/g, " ").trim()).join(" | "));
+  pruefe(/Kunden/.test(naviBuch),
+    `der Bereich Kunden steht weiterhin in der Navigation (${naviBuch})`);
 
   /* Keine betrieblichen Kennzahlen. */
   const bodyUeber = await ganzesMarkup(page);
@@ -567,6 +643,11 @@ console.log("\n── 8. Der Mitarbeiter (Fehler 8) ──");
     "und die Übersicht nennt ihn selbst");
   pruefe(/gehören zur\s+Disposition|nicht\s+enthalten/.test(sichtbar.replace(/\s+/g, " ")),
     "und sagt ehrlich, weshalb der Rest fehlt");
+  /* Dem Mitarbeiter fehlt customers.read tatsaechlich - bei ihm
+     gehoeren die Kundendaten in den Satz. */
+  pruefe(/Fahrten, Einsatzplanung, Flottendaten und Kundendaten gehören zur/
+    .test(sichtbar.replace(/\s+/g, " ")),
+    "sein Hinweis nennt zusätzlich die Kundendaten");
 
   /* Keine fremden Aufgaben, Warnungen, Krankheits- oder Dokumentvorgaenge. */
   pruefe(!/Krankmeldung|Führerschein läuft|Personenbeförderungsschein/.test(body),
@@ -729,6 +810,47 @@ console.log("\n── 11. Eine Quelle, nicht fünf ──");
     pruefe(!/fetch\s*\(|new XMLHttpRequest|createClient\s*\(/i.test(quelle),
       "kein Netzzugriff in diesem Modul");
   }
+}
+
+/* ═══ 12. Rechte und Navigation unverändert ════════════════════ */
+console.log("\n── 12. Keine Rechte, keine Bereiche verschoben ──");
+{
+  /*
+    Die beiden Darstellungskorrekturen durften an den Faehigkeiten und
+    an der Navigation nichts aendern. Geprueft wird deshalb gegen die
+    festgeschriebene Erwartung - nicht gegen den Bestand, der sich mit
+    aendern wuerde.
+  */
+  const ERWARTET = {
+    admin: { rechte: 22, bereiche: ["uebersicht", "fahrten", "planung", "team", "kalender",
+      "meldungen", "kunden", "personal", "lohn", "finanzen", "rewards", "analyse",
+      "einstellungen"] },
+    dispatcher: { rechte: 5, bereiche: ["uebersicht", "fahrten", "planung", "team",
+      "kalender", "meldungen"] },
+    personal: { rechte: 8, bereiche: ["uebersicht", "team", "kalender", "meldungen",
+      "personal", "lohn"] },
+    accounting: { rechte: 6, bereiche: ["uebersicht", "meldungen", "kunden", "finanzen",
+      "analyse"] },
+    employee: { rechte: 1, bereiche: ["uebersicht", "meldungen"] }
+  };
+  const { ctx, page, fehler } = await seite("admin");
+  for (const rolle of Object.keys(ERWARTET)) {
+    await page.selectOption("[data-rolle]", rolle);
+    await page.waitForTimeout(300);
+    const ist = await page.evaluate(() => {
+      const R = window.ProbeRahmen;
+      return {
+        rechte: R.rechteVon(R.aktuellesKonto()).length,
+        bereiche: R.sichtbareBereiche().map((b) => b.id)
+      };
+    });
+    pruefe(ist.rechte === ERWARTET[rolle].rechte,
+      `${rolle} hat ${ERWARTET[rolle].rechte} Fähigkeiten (${ist.rechte})`);
+    pruefe(ist.bereiche.join(",") === ERWARTET[rolle].bereiche.join(","),
+      `${rolle} sieht unverändert dieselben Bereiche (${ist.bereiche.join(", ")})`);
+  }
+  pruefe(fehler.length === 0, `keine Fehler in der Konsole (${fehler.join(" | ")})`);
+  await ctx.close();
 }
 
 pruefe(fremdeAnfragen.length === 0,

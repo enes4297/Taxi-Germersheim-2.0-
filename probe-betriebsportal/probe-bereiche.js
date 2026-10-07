@@ -169,6 +169,38 @@
     bleiben - und mit ihnen die Nachricht an alle Mitarbeiter, die
     ausdruecklich an alle gerichtet ist.
   */
+  /*
+    Der Hinweis, weshalb die betrieblichen Abschnitte fehlen.
+
+    GEMESSENER AUSGANGSFEHLER: Der Satz war fest und nannte immer
+    "Fahrten, Planung, Flotte und Kundendaten". Fuer die Buchhaltung
+    war das falsch: Sie hat customers.read und sieht den Bereich
+    Kunden in der Navigation. Der Hinweis hat ihr etwas abgesprochen,
+    was sie tatsaechlich darf.
+
+    Jetzt wird nur genannt, was an dieser Anmeldung wirklich fehlt.
+    Es werden dabei KEINE Rechte veraendert und keine Bereiche
+    freigegeben - der Satz liest die vorhandenen Faehigkeiten.
+  */
+  function fehlendeBereicheSatz() {
+    const fehlt = [
+      !R.darf("fahrten.read") ? "Fahrten" : "",
+      !R.darf("planung.read") ? "Einsatzplanung" : "",
+      !R.darf("fleet.read") ? "Flottendaten" : "",
+      !R.darf("customers.read") ? "Kundendaten" : ""
+    ].filter(Boolean);
+    if (!fehlt.length) return "";
+    /* "a, b und c" - mit "und" vor dem letzten. Dieser Hinweis
+       erscheint nur, wenn fahrten.read, planung.read UND fleet.read
+       alle fehlen - es sind also immer mindestens drei. Deshalb
+       braucht es keine Einzahlform. */
+    const aufzaehlung = fehlt.slice(0, -1).join(", ")
+      + " und " + fehlt[fehlt.length - 1];
+    return `<p class="schritt-hinweis">${h(aufzaehlung)} gehören zur
+      Disposition beziehungsweise zur Verwaltung. Sie sind in Ihrer Übersicht
+      nicht enthalten — das ist keine Störung.</p>`;
+  }
+
   function eigeneUebersicht(meldungen, nachrichten) {
     return `
       <div class="bereichskopf">
@@ -183,9 +215,7 @@
         <div class="kennzahlen">
           ${R.kennzahl(meldungen.length, "Meldungen für Sie", meldungen.length ? "warnung" : "gut", "meldungen")}
         </div>
-        <p class="schritt-hinweis">Fahrten, Planung, Flotte und Kundendaten gehören zur
-          Disposition beziehungsweise zur Verwaltung. Sie sind in Ihrer Übersicht nicht
-          enthalten — das ist keine Störung.</p>
+        ${fehlendeBereicheSatz()}
       </div>
 
       <div class="flaeche">

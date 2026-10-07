@@ -1,7 +1,7 @@
 # Betriebsportal — Bericht am verbindlichen Haltepunkt
 
 **Branch:** `feature/030-betriebsportal-neu`
-**Stand:** 06.10.2026 (achter Durchgang)
+**Stand:** 07.10.2026 (neunter Durchgang)
 **Phasen abgeschlossen:** 0, 1, 2, 3, 4, 19, 21
 **Kein echter Betriebsportalcode ist verändert.**
 
@@ -7006,3 +7006,170 @@ stehen oben im Banner. **Nichts davon verlässt den Browser.**
 **Fahrten**, in der Konsole `window.ProbeBereiche.tun("fahrt-zustand:fehler")`.
 Erwartung: „konnten nicht geladen werden" **und** der Satz, dass das nicht
 heißt, es gäbe keine Einträge. Mit `…:leer` umgekehrt: „Das ist kein Fehler."
+
+---
+
+## 66. Zwei Darstellungsprobleme nach dem Gegenlauf
+
+Der manuelle Gegenlauf zu Commit `540aa38` hat alle acht Korrekturen bestätigt
+und zwei **reine Darstellungsprobleme** gefunden. An den Fähigkeiten, an der
+Navigation und an der zentralen Tageswahrheit ist dafür nichts geändert
+worden.
+
+### 66.1 Der Kalender ließ die alte Restplanung wie eine Zuweisung aussehen
+
+**Gemessen:**
+
+```
+Abwesend, Schicht noch im Plan · 09:00–17:00 · GER-TEST 002 · Krank · veröffentlicht
+```
+
+**Ursache:** Der Kalender setzte das Kennzeichen unbeschriftet in den
+Eintrag. Für eine gültige Schicht ist das richtig — für den Konflikt des
+kranken Testfahrer 02 nicht: Testwagen 02 ist tatsächlich frei, das
+Kennzeichen stammt allein aus der ungültigen Restplanung. Der Eintrag war
+damit nicht falsch, aber missverständlich.
+
+**Abhilfe:** Der Kalender fragt die zentrale Tageswahrheit — keine zweite
+Rechnung:
+
+```js
+const tagesstatus = D.tagesstatusAm(isoTag, s.zeile);
+const abwesend = tagesstatus === "krank" || tagesstatus === "urlaub";
+const nurGeplant = abwesend
+  && Boolean(s.zeile.fahrzeugId)
+  && !D.fahrzeugAktiv(isoTag, s.zeile);
+```
+
+Nur wenn eine **Abwesenheit** die alte Zuweisung ungültig macht, steht
+`geplant:` davor:
+
+```
+Abwesend, Schicht noch im Plan · 09:00–17:00 · geplant: GER-TEST 002 · Krank · veröffentlicht
+```
+
+Der Eintrag behält alles: Konfliktgrund, Zeit, geplantes Fahrzeug,
+Abwesenheitsstatus und Veröffentlichungsstatus. Eine **gültige** Zuweisung
+wird nicht als alte Planung bezeichnet — Testfahrer 01 steht weiterhin mit
+`GER-TEST 001` ohne Zusatz da, obwohl auch seine Zeile einen Konflikt trägt
+(das doppelt vergebene Fahrzeug).
+
+**Nur gelesen, nichts gerechnet.** `fahrzeugAktiv()` und `tagesstatusAm()`
+sind unverändert; Testwagen 02 bleibt frei, ohne aktuellen Fahrer und ohne
+heutigen Einsatz.
+
+**Ausdrücklich nicht mitentschieden:** Eine Zeile, die auf **Frei** steht und
+trotzdem noch ein Fahrzeug im Plan trägt, bekommt **kein** `geplant:`. Die
+Vorgabe nennt ausdrücklich die Abwesenheit als Auslöser, und dieser Fall
+kommt in den Testdaten nicht vor. Er bleibt offen.
+
+### 66.2 Der Hinweis der eingeschränkten Übersicht war pauschal
+
+**Gemessen** (Rolle Buchhaltung):
+
+```
+Fahrten, Planung, Flotte und Kundendaten gehören zur Disposition
+beziehungsweise zur Verwaltung. Sie sind in Ihrer Übersicht nicht
+enthalten – das ist keine Störung.
+```
+
+**Ursache:** Der Satz stand fest im Markup. Die Buchhaltung hat aber
+`customers.read` und sieht den Bereich **Kunden** in der Navigation — der
+Hinweis sprach ihr etwas ab, was sie tatsächlich darf.
+
+**Abhilfe:** `fehlendeBereicheSatz()` liest die vorhandenen Fähigkeiten und
+nennt nur, was fehlt:
+
+| Rolle | Satz |
+|---|---|
+| Buchhaltung | „**Fahrten, Einsatzplanung und Flottendaten** gehören zur Disposition beziehungsweise zur Verwaltung. …" |
+| Mitarbeiter | „**Fahrten, Einsatzplanung, Flottendaten und Kundendaten** gehören zur Disposition beziehungsweise zur Verwaltung. …" |
+
+Der Hinweis erscheint nur in der eingeschränkten Übersicht, und die
+erscheint nur, wenn `fahrten.read`, `planung.read` **und** `fleet.read` alle
+fehlen. Es sind also immer mindestens drei Einträge — eine Einzahlform ist
+nicht nötig.
+
+**Keine Rechte geändert, kein Bereich freigegeben, keine Navigation
+angetastet.** Der neue Abschnitt 12 des Prüflaufs schreibt Fähigkeitszahl und
+Bereichsliste aller fünf Rollen fest und vergleicht gegen diese Erwartung —
+nicht gegen den Bestand, der sich mit ändern würde.
+
+### 66.3 Zwei Funde am Prüfwerkzeug selbst — nicht am Portal
+
+Beim Abschlusslauf sind zwei Dinge aufgefallen, die **nichts** mit den beiden
+Darstellungsproblemen zu tun haben. Beide lagen im Prüfwerkzeug, nicht in der
+Designprobe.
+
+**1. Eine zeitabhängige Prüferwartung in `probe-analyse`.** Die Prüfung
+„kein Zeitraum zeigt dieselben Zahlen wie ein anderer" verglich **alle**
+Paare. Am 7. eines Monats deckt „Letzte 7 Tage" aber genau dieselben
+Kalendertage wie „Dieser Monat" (01. bis 07.) — gleiche Zahlen sind dann die
+**richtige** Antwort. Die Prüfung ist beim Tageswechsel auf den 07.10.2026
+gescheitert, ohne dass sich an der Analyse etwas geändert hatte.
+
+Verglichen werden jetzt nur Paare mit **tatsächlich abweichender** Spanne, und
+zusätzlich wird geprüft, dass gleiche Zahlen **nur** bei deckungsgleichem
+Kalenderzeitraum auftreten. Damit fällt ein wirklich wirkungsloser Filter
+weiterhin auf. `probe-analyse` prüft danach **124** statt 123 Punkte.
+
+Das ist derselbe Fehlertyp, der in diesem Projekt schon mehrfach zugeschlagen
+hat: **ein festgeschriebenes Datum neben Daten, die aus „heute" abgeleitet
+sind.**
+
+**2. Drei Prüfläufe teilten sich Ports.** `probe-team` und `probe-teilung`
+lagen beide auf 5393, `probe-analyse` und `probe-wahrheit` beide auf 5379,
+und der neue `probe-tagwahrheit` lag auf 5392 wie `probe-regeln` — den
+letzten hatte ich selbst falsch gewählt. Im Stapel hintereinander gefahren
+hat das zweimal eine Navigation abgewürgt und einen Lauf ohne Bilanz enden
+lassen; einzeln gefahren bestand er sofort. Jeder Lauf hat jetzt einen
+eigenen Port.
+
+**Beides sind Änderungen am Prüfwerkzeug.** An der Designprobe wurde dafür
+nichts angefasst.
+
+### 66.4 Alle neunzehn Prüfläufe, erneut vollständig gefahren
+
+Stand 07.10.2026, nach der letzten Änderung noch einmal von vorn, jeder Lauf
+bis zur gedruckten Abschlussbilanz.
+
+| Prüflauf | Ergebnis | gegen 06.10. |
+|---|---|---|
+| `probe-portal-pruefen` | **114 bestanden, 0 offen** | — |
+| `probe-fahrt-pruefen` | **172 bestanden, 0 offen** | — |
+| `probe-planung-pruefen` | **171 bestanden, 0 offen** | — |
+| `probe-team-pruefen` | **197 bestanden, 0 offen** | — |
+| `probe-vorgaenge-pruefen` | **139 bestanden, 0 offen** | — |
+| `probe-teilung-pruefen` | **105 bestanden, 0 offen** | — |
+| `probe-dokument-pruefen` | **94 bestanden, 0 offen** | — |
+| `probe-regeln-pruefen` | **123 bestanden, 0 offen** | — |
+| `probe-zuordnung-pruefen` | **126 bestanden, 0 offen** | — |
+| `probe-karten-pruefen` | **88 bestanden, 0 offen** | — |
+| `probe-wahrheit-pruefen` | **78 bestanden, 0 offen** | — |
+| `probe-kalenderwege-pruefen` | **117 bestanden, 0 offen** | — |
+| `probe-akten-pruefen` | **243 bestanden, 0 offen** | — |
+| `probe-analyse-pruefen` | **124 bestanden, 0 offen** | +1 |
+| `probe-datum-pruefen` | **162 bestanden, 0 offen** | — |
+| `probe-rechte-pruefen` | **220 bestanden, 0 offen** | — |
+| `probe-aktenweg-pruefen` | **121 bestanden, 0 offen** | — |
+| `probe-berechtigung-pruefen` | **99 bestanden, 0 offen** | — |
+| `probe-tagwahrheit-pruefen` | **184 bestanden, 0 offen** | +27 |
+| **Summe** | **2 677 bestanden, 0 offen** | **+28** |
+
+In allen neunzehn Läufen: **null Anfragen nach außen.**
+
+Die 27 zusätzlichen Zusicherungen in `probe-tagwahrheit` verteilen sich auf:
+
+- **Abschnitt 5:** die Kennzeichnung `geplant: GER-TEST 002`, dass sie kein
+  zweites Mal ungekennzeichnet daneben steht, dass Konfliktgrund, Zeit,
+  Abwesenheitsstatus und Veröffentlichungsstatus im Eintrag bleiben, dass
+  **genau ein** Eintrag die Kennzeichnung trägt, dass die gültige Zuweisung
+  von Testfahrer 01 sie **nicht** trägt — und dass Testwagen 02 gleichzeitig
+  frei, ohne aktuellen Fahrer und ohne heutigen Einsatz ist.
+- **Abschnitt 7:** der Hinweis der Buchhaltung nennt Fahrten, Einsatzplanung
+  und Flottendaten, **nicht** die Kundendaten, und der Bereich Kunden steht
+  weiterhin in der Navigation.
+- **Abschnitt 8:** beim Mitarbeiter stehen die Kundendaten **sehr wohl** im
+  Satz — ihm fehlt `customers.read` tatsächlich.
+- **Abschnitt 12 (neu):** Fähigkeitszahl und Bereichsliste aller fünf Rollen
+  gegen eine festgeschriebene Erwartung.

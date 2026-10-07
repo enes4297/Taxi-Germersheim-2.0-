@@ -168,17 +168,54 @@ console.log("\n--- B. Jede Wahl aendert jede Zahl, und zwar gemeinsam ---\n");
     pruefe(koepfe[id].includes("Zeitraum"), `und der Kopf nennt den Zeitraum (${id})`);
   }
 
-  /* Kein Zeitraum darf dasselbe Zahlenbild liefern wie ein anderer -
-     sonst haette die Wahl keine Wirkung. */
+  /*
+    Kein Zeitraum darf dasselbe Zahlenbild liefern wie ein anderer -
+    sonst haette die Wahl keine Wirkung.
+
+    GEAENDERTE ERWARTUNG - mit Begruendung, siehe Abschnitt 66 der
+    Dokumentation.
+
+    Alt wurden ALLE Paare verglichen. Das war nur an den meisten Tagen
+    eines Monats richtig: Am 7. eines Monats deckt "Letzte 7 Tage"
+    genau dieselben Kalendertage wie "Dieser Monat" (01. bis 07.).
+    Gleiche Zahlen sind dann die RICHTIGE Antwort, kein Fehler - die
+    Pruefung ist am 07.10.2026 genau daran gescheitert, ohne dass sich
+    an der Analyse etwas geaendert hatte.
+
+    Neu und genauer: Verglichen werden nur Paare, deren Kalender-
+    zeitraum sich tatsaechlich unterscheidet. Umgekehrt wird jetzt
+    zusaetzlich geprueft, dass gleiche Zahlen NUR bei gleichem
+    Zeitraum vorkommen - damit faellt ein wirklich wirkungsloser
+    Filter weiterhin auf.
+  */
+  const spannen = await page.evaluate((ids) => {
+    const out = {};
+    for (const id of ids) {
+      const b = window.ProbeDaten.analyseBereich(id);
+      out[id] = b.von + ".." + b.bis;
+    }
+    return out;
+  }, Object.keys(bilder));
+
   const paare = Object.keys(bilder);
-  let gleich = [];
+  const gleich = [];
+  const gleicheSpanne = [];
   for (let i = 0; i < paare.length; i += 1) {
     for (let j = i + 1; j < paare.length; j += 1) {
-      if (bilder[paare[i]] === bilder[paare[j]]) gleich.push(paare[i] + "=" + paare[j]);
+      const a = paare[i];
+      const b = paare[j];
+      if (bilder[a] !== bilder[b]) continue;
+      if (spannen[a] === spannen[b]) gleicheSpanne.push(`${a}=${b} (${spannen[a]})`);
+      else gleich.push(`${a}=${b}`);
     }
   }
   pruefe(gleich.length === 0,
-    "kein Zeitraum zeigt dieselben Zahlen wie ein anderer (" + gleich.join(", ") + ")");
+    "kein Zeitraum zeigt dieselben Zahlen wie ein anderer mit abweichender Spanne ("
+    + gleich.join(", ") + ")");
+  pruefe(gleicheSpanne.every((x) => /\.\./.test(x)),
+    gleicheSpanne.length
+      ? `gleiche Zahlen nur bei deckungsgleichem Kalenderzeitraum (${gleicheSpanne.join(", ")})`
+      : "heute deckt sich kein Zeitraum mit einem anderen");
 
   /* Und zwar ALLE Kennzahlen, nicht nur eine. */
   const heute = bilder.heute.split(" // ")[0].split("|");

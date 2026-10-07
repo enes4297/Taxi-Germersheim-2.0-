@@ -34,7 +34,9 @@ const { chromium } = await import(
 
 const WURZEL = process.cwd();
 const PROBE = join(WURZEL, "probe-betriebsportal");
-const PORT = 5379;
+/* Eigener Port. Drei Prueflaeufe teilten sich vorher einen und
+   haben sich im Stapel gegenseitig die Navigation abgewuergt. */
+const PORT = 5386;
 const TYPEN = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8", ".png": "image/png", ".woff2": "font/woff2"
