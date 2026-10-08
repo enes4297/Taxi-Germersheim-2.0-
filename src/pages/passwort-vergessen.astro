@@ -1,0 +1,201 @@
+---
+/**
+ * Passwort vergessen — unter derselben Adresse wie bisher
+ * (passwort-vergessen.html).
+ *
+ * `customer-auth.js` liefert den Supabase-Client; aufgerufen wird
+ * `client.auth.resetPasswordForEmail(email, { redirectTo })` - derselbe
+ * Aufruf wie bisher.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DIE NEUTRALE RUECKMELDUNG IST ABSICHT UND BLEIBT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Die Seite sagt NIE, ob es zu einer Adresse ein Konto gibt. Auch wenn
+ * Supabase „user not found" meldet, erscheint dieselbe freundliche
+ * Bestaetigung wie bei Erfolg. Sonst liesse sich hier durchprobieren, wer
+ * Kunde ist - eine Auskunft, die niemand geben sollte.
+ *
+ * `isAccountLookupError` faengt genau diesen Fall ab. Die Logik ist
+ * unveraendert uebernommen.
+ *
+ * UNVERAENDERT: die Kennungen forgotForm, forgotEmail, forgotError,
+ * forgotSuccess; der Feldname `email`; die Pruefung auf gueltige
+ * E-Mail-Form; der Ladezustand „Wird gesendet …"; alle Meldungstexte.
+ *
+ * ZUM RUECKKEHRZIEL: `getRecoveryRedirectUrl()` baut
+ * `/passwort-zuruecksetzen.html` aus dem aktuellen Ursprung. Damit der Link
+ * in der Mail spaeter traegt, muss diese Adresse in den „Redirect URLs" des
+ * Supabase-Projekts stehen - das ist Angabe I2 an den IT-Dienstleister und
+ * von hier aus nicht pruefbar.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
+import Anmeldekarte from '../components/Anmeldekarte.astro';
+---
+
+<Grundlage
+  titel="Passwort vergessen | Taxi Germersheim GmbH"
+  beschreibung="Fordern Sie einen Link an, mit dem Sie ein neues Passwort für Ihr Taxi-Germersheim-Konto vergeben können."
+  pfad="passwort-vergessen.html"
+  nichtIndexieren
+>
+  <Sprungmarken />
+  <Kopfbereich startseite={false} />
+
+  <main id="inhalt" class="pt-16 lg:pt-20">
+    <Anmeldekarte
+      label="Passwort vergessen"
+      titel="Reset-Link anfordern"
+      text="Geben Sie die E-Mail-Adresse Ihres Kundenkontos ein. Wir senden Ihnen einen Link, mit dem Sie ein neues Passwort vergeben können."
+      formularTitel="Reset-Link anfordern"
+      formularText="Nutzen Sie die E-Mail-Adresse Ihres Kundenkontos."
+      hinweis="Passwort wieder eingefallen?"
+      hinweisZiel="anmelden.html"
+      hinweisText="Zur Anmeldung"
+      fusstext="Sicherer Passwort-Reset für Ihr Taxi-Germersheim-Konto"
+    >
+      {/* Erfolgsmeldung - bewusst NEUTRAL formuliert, siehe Kopf der Datei. */}
+      <div
+        id="forgotSuccess"
+        hidden
+        class="mb-6 border border-primary/30 bg-primary/[0.06] px-5 py-4"
+        role="status"
+        aria-live="polite"
+      >
+        <p class="text-sm font-semibold text-foreground">Reset-Link angefordert</p>
+        <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
+          Wenn die eingegebene E-Mail-Adresse mit einem Taxi-Germersheim-Kundenkonto
+          verknüpft ist, erhalten Sie in Kürze eine E-Mail mit einem Link zum
+          Zurücksetzen Ihres Passworts. Bitte prüfen Sie auch Ihren Spam-Ordner.
+        </p>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Keine E-Mail erhalten? Prüfen Sie bitte die eingegebene E-Mail-Adresse
+          und versuchen Sie es erneut.
+        </p>
+      </div>
+
+      <form id="forgotForm" novalidate class="space-y-5">
+        <div>
+          <label for="forgotEmail" class="block text-sm font-medium text-muted-foreground mb-1.5">E-Mail-Adresse</label>
+          <input
+            id="forgotEmail"
+            name="email"
+            type="email"
+            autocomplete="email"
+            inputmode="email"
+            autocapitalize="off"
+            spellcheck="false"
+            required
+            class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+          />
+        </div>
+
+        <p id="forgotError" class="tg-fehler text-sm text-red-400" role="alert" aria-live="assertive"></p>
+
+        <button
+          type="submit"
+          class="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold hover:bg-[#d4b87d] transition-colors duration-150 tg-press disabled:opacity-60"
+        >
+          <span data-knopf-text>Reset-Link senden</span>
+        </button>
+      </form>
+    </Anmeldekarte>
+  </main>
+
+  <Fusszeile startseite={false} />
+  <script is:inline src="/customer-auth.js"></script>
+</Grundlage>
+
+<style>
+  .tg-fehler:empty {
+    display: none;
+  }
+</style>
+
+<script>
+  const form = document.getElementById('forgotForm') as HTMLFormElement;
+  const error = document.getElementById('forgotError')!;
+  const erfolg = document.getElementById('forgotSuccess')!;
+  const knopf = form.querySelector<HTMLButtonElement>('[type="submit"]')!;
+  const knopfText = knopf.querySelector<HTMLElement>('[data-knopf-text]')!;
+
+  function rueckkehrAdresse() {
+    if (window.location.protocol !== 'http:' && window.location.protocol !== 'https:') {
+      throw new Error('PASSWORD_RESET_REQUIRES_HTTP_ORIGIN');
+    }
+    return new URL('/passwort-zuruecksetzen.html', window.location.origin).href;
+  }
+
+  /**
+   * Meldet Supabase, dass es die Adresse nicht gibt?
+   *
+   * Dann wird TROTZDEM die freundliche Bestaetigung gezeigt. Wer hier
+   * erfuehre, welche Adressen ein Konto haben, koennte die Kundschaft
+   * durchprobieren.
+   */
+  function istKontoAuskunft(fehler: any) {
+    const text = [fehler?.code, fehler?.message].filter(Boolean).join(' ').toLowerCase();
+    return (
+      text.includes('user_not_found') ||
+      text.includes('email_not_found') ||
+      /user.*not.*found|email.*not.*found|no user found/.test(text)
+    );
+  }
+
+  function neutralBestaetigen() {
+    erfolg.hidden = false;
+    form.reset();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (form.getAttribute('aria-busy') === 'true') return;
+
+    error.textContent = '';
+    erfolg.hidden = true;
+
+    const feld = form.elements.namedItem('email') as HTMLInputElement;
+    const email = (feld.value || '').trim();
+    feld.value = email;
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      error.textContent = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+      feld.focus();
+      return;
+    }
+
+    form.setAttribute('aria-busy', 'true');
+    knopf.disabled = true;
+    knopfText.textContent = 'Wird gesendet …';
+
+    try {
+      const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
+      const client = auth && typeof auth.getClient === 'function' ? await auth.getClient() : null;
+      if (!client?.auth || typeof client.auth.resetPasswordForEmail !== 'function') {
+        throw new Error('PASSWORD_RESET_UNAVAILABLE');
+      }
+
+      const ergebnis = await client.auth.resetPasswordForEmail(email, { redirectTo: rueckkehrAdresse() });
+      if (ergebnis.error) throw ergebnis.error;
+
+      neutralBestaetigen();
+    } catch (fehler: any) {
+      if (istKontoAuskunft(fehler)) {
+        neutralBestaetigen();
+      } else {
+        // Bewusst ohne die Adresse und ohne den Fehlertext des Dienstes im
+        // Protokoll - beides koennte personenbezogen sein.
+        console.error('Passwort-Reset konnte nicht angefordert werden.');
+        error.textContent =
+          'Der Reset-Link konnte gerade nicht gesendet werden. Bitte versuchen Sie es später erneut.';
+      }
+    } finally {
+      form.setAttribute('aria-busy', 'false');
+      knopf.disabled = false;
+      knopfText.textContent = 'Reset-Link senden';
+    }
+  });
+</script>

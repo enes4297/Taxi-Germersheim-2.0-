@@ -1,0 +1,987 @@
+---
+/**
+ * Die Fahrtanfrage.
+ *
+ * Uebernommen aus useBooking(), BookingContent() und MobileBookingDialog()
+ * der Vorschau (shared.tsx), hier ohne React.
+ *
+ * DREI DINGE, DIE AUS FEHLERN GELERNT SIND UND SO BLEIBEN MUESSEN:
+ *
+ *   1. EINE QUELLE FUER DIE ADRESSEN. Die Felder oben auf der Seite und die
+ *      Felder im Dialog sind DASSELBE. Vorher fuehrte die Seite einen eigenen
+ *      Zwischenstand, der beim Oeffnen kopiert wurde - wer im Dialog etwas
+ *      aenderte, zurueckging und erneut anfragte, bekam den alten Stand
+ *      uebergestuelpt.
+ *   2. DER DIALOG OEFFNET AN ORT UND STELLE. Die Anfrageknoepfe im
+ *      Leistungsabschnitt scrollten frueher bis zu 5236 Bildpunkte nach oben
+ *      zur Buchungsleiste - und dort stand dann kein Formular. Jetzt oeffnet
+ *      sich der Dialog dort, wo man steht.
+ *   3. DIE GEWAEHLTE LEISTUNG STEHT AB SCHRITT 1 DA. Wer auf
+ *      „Schuelerfahrt anfragen" drueckt, soll nicht bis Schritt 2 blaettern,
+ *      um zu sehen, dass sie uebernommen wurde.
+ *
+ * ABSCHLUSS: Es gibt im Backend keine Annahmestelle fuer Fahrtanfragen. Der
+ * Weg endet deshalb mit einer vorbereiteten WhatsApp-Nachricht; das Telefon
+ * bleibt gleichwertig daneben. Dass WhatsApp sich oeffnet, heisst weder, dass
+ * die Nachricht gesendet ist, noch dass eine Fahrt bestaetigt waere - genau
+ * so steht es auch auf der Seite. Entfernungen, Preise oder Fahrzeiten werden
+ * nirgends genannt.
+ *
+ * ── SCHRITT 019: ZUSATZANGABEN DER SPEZIALFAHRTEN ─────────────────────────
+ *
+ * Der Bestand hatte fuer Spezialfahrten ein ZWEITES Formular
+ * (spezial-anfrage.html mit special-services.js): neun Fahrtarten, je neun
+ * bis siebzehn Felder, eigene Pruefung. Diese Angaben sind nicht Beiwerk -
+ * ob eine Verordnung vorliegt oder ob der Rollstuhl faltbar ist, entscheidet,
+ * ob die Fahrt ueberhaupt durchfuehrbar ist.
+ *
+ * Statt daneben ein zweites Formular stehen zu lassen, erweitert dieser
+ * Dialog sich um einen zusaetzlichen Block. Eine Formularlogik, eine
+ * Pruefung, eine Nachricht.
+ *
+ * `arten` steuert, welche Fahrtarten eine Seite mitbringt:
+ *   - Startseite: LEER. Dort gab es nie Zusatzangaben, und die freigegebene
+ *     Startseite soll sich nicht aendern - weder im Ablauf noch im Gewicht.
+ *   - Spezialfahrten und Spezialanfrage: alle neun, mit `pflichtDetails`.
+ *
+ * Die Felder werden beim Bauen erzeugt, nicht im Browser. Das haelt sie
+ * pruefbar und sie ueberstehen ein Schliessen und erneutes Oeffnen von
+ * selbst, weil sie im Dokument stehen bleiben.
+ */
+import { FIRMA, LEISTUNGEN } from '../inhalte';
+import type { Fahrtart } from '../inhalte';
+import Symbol from './Symbol.astro';
+
+interface Props {
+  /** Fahrtarten, deren Zusatzangaben dieser Dialog mitbringt. */
+  arten?: readonly Fahrtart[];
+  /** Pflichtangaben durchsetzen - wie im Bestandsformular. */
+  pflichtDetails?: boolean;
+}
+const { arten = [], pflichtDetails = false } = Astro.props;
+---
+
+<div
+  class="fixed inset-0 z-50 flex flex-col transition-opacity duration-[240ms] opacity-0 pointer-events-none"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Fahrt anfragen"
+  data-anfrage-dialog
+  data-pflicht-details={pflichtDetails ? 'ja' : null}
+  hidden
+>
+  <div class="absolute inset-0 bg-background/80 backdrop-blur-sm" data-anfrage-hintergrund aria-hidden="true"></div>
+
+  <div
+    class="relative mt-auto bg-card border-t border-border max-h-[92dvh] overflow-y-auto transition-transform duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)] translate-y-full md:mt-auto md:mb-auto md:mx-auto md:w-[min(42rem,92vw)] md:border md:max-h-[86vh] md:shadow-[0_40px_120px_-30px_rgba(0,0,0,0.9)]"
+    data-anfrage-blatt
+  >
+    <div class="sticky top-0 bg-card border-b border-border flex items-center justify-between px-5 py-4 z-10">
+      <span class="text-sm font-semibold text-foreground">Fahrt anfragen</span>
+      <button type="button" class="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors duration-150" aria-label="Schließen" data-anfrage-schliessen>
+        <Symbol name="schliessen" class="w-5 h-5" />
+      </button>
+    </div>
+
+    <div class="p-5 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
+      {/* ══ Schritte 1 bis 3 ═══════════════════════════════════════════ */}
+      <div data-anfrage-formular>
+        <div class="flex items-center gap-0 mb-8">
+          {[1, 2, 3].map((i) => (
+            <div class="flex items-center">
+              <div class="flex items-center justify-center w-7 h-7 text-xs font-semibold border border-border text-muted-foreground transition-all duration-200" data-schrittmarke={i}>
+                <span data-schrittzahl>{i}</span>
+                <span hidden data-schritthaken><Symbol name="haken" class="w-3.5 h-3.5" /></span>
+              </div>
+              {i < 3 && <div class="w-8 h-px bg-border transition-colors duration-300" data-schrittlinie={i}></div>}
+            </div>
+          ))}
+          <span class="ml-4 text-sm text-muted-foreground" data-schrittname>Adressen</span>
+        </div>
+
+        <div class="mb-7 flex flex-wrap items-center gap-x-3 gap-y-1.5 border border-primary/30 bg-primary/[0.06] px-4 py-3" data-gewaehlte-leistung>
+          {LEISTUNGEN.map((l) => (
+            <span class="contents" data-leistungsanzeige={l.id} hidden>
+              <Symbol name={l.symbol} class="w-[18px] h-[18px] text-primary shrink-0" />
+              <span class="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Gewählte Leistung</span>
+              <strong class="text-[15px] font-semibold text-foreground">{l.label}</strong>
+            </span>
+          ))}
+          {/*
+            FAHRTARTEN OHNE FREIGEGEBENE LEISTUNG.
+
+            GEMESSENER BEFUND (Schritt 024): Serienfahrt und Firmenkonto
+            haben bewusst keine der sieben Leistungen. Trotzdem stand im
+            Dialog eine - entweder die Vorbelegung "Taxi" oder die zuvor
+            gewaehlte. Gemessen:
+              Serienfahrt ohne Vorwahl        → "Taxi"
+              Serienfahrt nach Flughafen      → "Flughafentransfer"
+              Firmenkonto nach Krankenfahrt   → "Krankenfahrten"
+            Der Kunde haette das weder gewaehlt noch gewollt, und die
+            Nachricht an die Zentrale haette es als seine Angabe gefuehrt.
+
+            Hier steht stattdessen die Fahrtart selbst - sie ist das, was
+            der Kunde tatsaechlich angeklickt hat.
+          */}
+          <span class="contents" data-leistungsanzeige="" hidden>
+            <Symbol name="taxi" class="w-[18px] h-[18px] text-primary shrink-0" />
+            <span class="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Ihre Anfrage</span>
+            <strong class="text-[15px] font-semibold text-foreground" data-fahrtart-anzeige>—</strong>
+          </span>
+        </div>
+
+        {/* ── Schritt 1: Adressen ─────────────────────────────────── */}
+        <div class="space-y-5" data-schritt="1">
+          <h3 class="text-lg font-semibold text-foreground">Abholung und Ziel</h3>
+          <div>
+            <label for="dlg-pickup" class="block text-sm font-medium text-muted-foreground mb-1.5">Abholadresse *</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"><Symbol name="abholung" class="w-4 h-4" /></span>
+              <input id="dlg-pickup" type="text" autocomplete="street-address" placeholder="Straße, Hausnummer, Ort"
+                class="w-full bg-secondary border border-border pl-11 pr-4 py-3 text-foreground placeholder-muted-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+                data-anfrage-feld="pickup" />
+            </div>
+            <p class="text-red-400 text-sm mt-1.5" hidden data-fehler="pickup">Bitte Abholadresse eingeben</p>
+          </div>
+          <div>
+            <label for="dlg-dest" class="block text-sm font-medium text-muted-foreground mb-1.5">Zieladresse *</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"><Symbol name="ziel" class="w-4 h-4" /></span>
+              <input id="dlg-dest" type="text" placeholder="Straße, Hausnummer, Ort"
+                class="w-full bg-secondary border border-border pl-11 pr-4 py-3 text-foreground placeholder-muted-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+                data-anfrage-feld="destination" />
+            </div>
+            <p class="text-red-400 text-sm mt-1.5" hidden data-fehler="destination">Bitte Zieladresse eingeben</p>
+          </div>
+        </div>
+
+        {/* ── Schritt 2: Leistung und Zeitpunkt ───────────────────── */}
+        <div class="space-y-7" data-schritt="2" hidden>
+          <div>
+            <h3 class="text-lg font-semibold text-foreground mb-4">Leistung und Zeitpunkt</h3>
+            <div class="grid grid-cols-2 gap-2">
+              {LEISTUNGEN.map((l) => (
+                <button type="button" aria-pressed="false" data-leistung-waehlen={l.id}
+                  class="flex items-center gap-3 px-4 py-3 border border-border text-left text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-all duration-150">
+                  <Symbol name={l.symbol} class="w-4 h-4 shrink-0" />
+                  <span class="text-sm font-medium">{l.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p class="text-sm font-medium text-muted-foreground mb-3">Wann möchten Sie fahren?</p>
+            <div class="flex gap-2">
+              <button type="button" aria-pressed="true" data-zeitpunkt="now"
+                class="flex-1 py-3 border text-sm font-medium transition-all duration-150 border-primary bg-primary/8 text-foreground">Jetzt</button>
+              <button type="button" aria-pressed="false" data-zeitpunkt="later"
+                class="flex-1 py-3 border text-sm font-medium transition-all duration-150 border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground">Zu einem Termin</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4" data-termin hidden>
+            <div>
+              <label for="dlg-date" class="block text-sm font-medium text-muted-foreground mb-1.5">Datum *</label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"><Symbol name="kalender" class="w-4 h-4" /></span>
+                <input id="dlg-date" type="date" data-anfrage-feld="date"
+                  class="w-full bg-secondary border border-border pl-11 pr-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary" />
+              </div>
+              <p class="text-red-400 text-sm mt-1.5" hidden data-fehler="date">Bitte Datum wählen</p>
+            </div>
+            <div>
+              <label for="dlg-time" class="block text-sm font-medium text-muted-foreground mb-1.5">Uhrzeit *</label>
+              <input id="dlg-time" type="time" data-anfrage-feld="time"
+                class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary" />
+              <p class="text-red-400 text-sm mt-1.5" hidden data-fehler="time">Bitte Uhrzeit angeben</p>
+            </div>
+          </div>
+
+          {/* ── Zusatzangaben der Spezialfahrten ──────────────────────
+              Nur vorhanden, wenn die Seite `arten` mitgibt. Auf der
+              Startseite steht hier nichts. */}
+          {arten.length > 0 && (
+            <div data-detail-block hidden>
+              <div class="border-t border-border pt-7">
+                <h3 class="text-lg font-semibold text-foreground">Angaben zur Fahrt</h3>
+                <p class="mt-1.5 text-sm text-muted-foreground" data-detail-hinweis></p>
+              </div>
+
+              {arten.map((art) => (
+                <div class="mt-5 space-y-4" data-detail-satz={art.id} hidden>
+                  {art.felder.map((f) => (
+                    <div>
+                      <label for={`dlg-${art.id}-${f.id}`} class="block text-sm font-medium text-muted-foreground mb-1.5">
+                        {f.label}{f.pflicht && pflichtDetails ? ' *' : ''}
+                      </label>
+
+                      {f.art === 'auswahl' ? (
+                        <select
+                          id={`dlg-${art.id}-${f.id}`}
+                          data-detail-feld={f.id}
+                          data-pflicht={f.pflicht ? 'ja' : null}
+                          class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+                        >
+                          <option value="">Bitte wählen</option>
+                          {(f.optionen ?? []).map((o) => <option value={o}>{o}</option>)}
+                        </select>
+                      ) : f.art === 'mehrfach' ? (
+                        <div
+                          class="grid grid-cols-2 gap-2"
+                          role="group"
+                          aria-labelledby={`dlg-${art.id}-${f.id}`}
+                          data-detail-feld={f.id}
+                          data-mehrfach
+                          data-pflicht={f.pflicht ? 'ja' : null}
+                        >
+                          {(f.optionen ?? []).map((o, n) => (
+                            <label for={`dlg-${art.id}-${f.id}-${n}`} class="flex items-center gap-2.5 border border-border px-3 py-2.5 text-sm text-muted-foreground cursor-pointer has-[:checked]:border-primary has-[:checked]:text-foreground transition-colors duration-150">
+                              <input id={`dlg-${art.id}-${f.id}-${n}`} type="checkbox" value={o} class="accent-[#c8a96e]" />
+                              {o}
+                            </label>
+                          ))}
+                        </div>
+                      ) : f.art === 'notiz' ? (
+                        <textarea
+                          id={`dlg-${art.id}-${f.id}`}
+                          data-detail-feld={f.id}
+                          data-pflicht={f.pflicht ? 'ja' : null}
+                          rows="3"
+                          placeholder={f.platzhalter}
+                          class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary resize-y"
+                        ></textarea>
+                      ) : (
+                        <input
+                          id={`dlg-${art.id}-${f.id}`}
+                          type={f.art === 'number' ? 'number' : f.art}
+                          min={f.art === 'number' ? '0' : null}
+                          data-detail-feld={f.id}
+                          data-pflicht={f.pflicht ? 'ja' : null}
+                          placeholder={f.platzhalter}
+                          class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+                        />
+                      )}
+
+                      <p class="text-red-400 text-sm mt-1.5" hidden data-detail-fehler={f.id}></p>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Schritt 3: Zusammenfassung ──────────────────────────── */}
+        <div class="space-y-6" data-schritt="3" hidden>
+          <h3 class="text-lg font-semibold text-foreground">Zusammenfassung</h3>
+          <div class="border border-border divide-y divide-border">
+            <div class="grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5"><span class="text-muted-foreground text-sm">Abholung</span><span class="text-foreground text-sm font-medium" data-zus="pickup">—</span></div>
+            <div class="grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5"><span class="text-muted-foreground text-sm">Ziel</span><span class="text-foreground text-sm font-medium" data-zus="destination">—</span></div>
+            <div class="grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5"><span class="text-muted-foreground text-sm">Leistung</span><span class="text-foreground text-sm font-medium" data-zus="service">—</span></div>
+            <div class="grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5"><span class="text-muted-foreground text-sm">Zeitpunkt</span><span class="text-foreground text-sm font-medium" data-zus="timing">—</span></div>
+            {/* Zusatzangaben der Spezialfahrten - nur die ausgefuellten. */}
+            <div data-zus-details></div>
+          </div>
+          <div class="border border-border bg-secondary/60 px-5 py-4">
+            <p class="text-sm text-muted-foreground leading-relaxed">
+              Im nächsten Schritt öffnet sich WhatsApp mit dieser Anfrage als
+              vorbereiteter Nachricht. <strong class="text-foreground font-medium">Gesendet ist sie erst,
+              wenn Sie dort auf Senden tippen.</strong> Eine Fahrt ist damit noch nicht
+              bestätigt – wir melden uns bei Ihnen zurück.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between mt-8 pt-6 border-t border-border">
+          <button type="button" class="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm transition-colors duration-150" data-anfrage-zurueck>
+            <Symbol name="zurueck" class="w-4 h-4" />
+            <span data-zurueck-text>Schließen</span>
+          </button>
+          <button type="button" class="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-[#d4b87d] tg-press" data-anfrage-weiter>
+            <span data-weiter-text>Weiter</span>
+            <Symbol name="pfeil" class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* ══ Abschluss ══════════════════════════════════════════════════ */}
+      <div class="text-center py-6" data-anfrage-abschluss hidden>
+        <div class="w-14 h-14 rounded-full border border-primary/50 bg-primary/10 flex items-center justify-center mx-auto mb-6">
+          <Symbol name="whatsapp" class="w-6 h-6 text-primary" />
+        </div>
+        <h3 class="text-xl font-semibold mb-3">WhatsApp wurde geöffnet</h3>
+        <p class="text-muted-foreground text-sm mb-2 max-w-sm mx-auto leading-relaxed">
+          Ihre Angaben stehen dort als vorbereitete Nachricht. Bitte tippen Sie in
+          WhatsApp auf Senden – erst dann erreicht uns die Anfrage.
+        </p>
+        <p class="text-muted-foreground text-sm mb-7 max-w-sm mx-auto leading-relaxed">
+          Hat sich WhatsApp nicht geöffnet? Rufen Sie uns einfach an.
+        </p>
+        <div class="flex gap-3 justify-center flex-wrap">
+          <a href={FIRMA.telefonLink} class="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold tg-press">
+            <Symbol name="telefon" class="w-4 h-4" />
+            {FIRMA.telefon}
+          </a>
+          <button type="button" class="px-5 py-2.5 border border-border text-foreground text-sm hover:border-foreground/40 transition-colors duration-150" data-anfrage-nochmal>
+            Nachricht erneut öffnen
+          </button>
+          <button type="button" class="px-5 py-2.5 border border-border text-muted-foreground text-sm hover:text-foreground hover:border-foreground/40 transition-colors duration-150" data-anfrage-neu>
+            Neue Anfrage
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { LEISTUNGEN, FIRMA, FAHRTARTEN } from '../inhalte';
+
+  type Feld = 'pickup' | 'destination' | 'date' | 'time';
+
+  const dialog = document.querySelector<HTMLElement>('[data-anfrage-dialog]')!;
+  const blatt = dialog.querySelector<HTMLElement>('[data-anfrage-blatt]')!;
+  const formular = dialog.querySelector<HTMLElement>('[data-anfrage-formular]')!;
+  const abschluss = dialog.querySelector<HTMLElement>('[data-anfrage-abschluss]')!;
+
+  const daten = { pickup: '', destination: '', service: 'Taxi', timing: 'now', date: '', time: '' };
+  let schritt = 1;
+  let offen = false;
+
+  // ── Zusatzangaben der Spezialfahrten ──────────────────────────────────
+  //
+  // `detailBlock` ist auf der Startseite gar nicht vorhanden; alles hier
+  // prueft deshalb auf null und tut sonst nichts.
+  //
+  // Die Werte werden NICHT in einem eigenen Zwischenspeicher gehalten,
+  // sondern bleiben in den Feldern selbst stehen. Genau daran hing im
+  // Bestand ein Fehler, der hier nicht wiederholt wird: Wer schliesst und
+  // erneut oeffnet, findet seine Eingaben wieder, weil sie nie irgendwo
+  // hinkopiert und zurueckgeschrieben werden.
+  /** Von der Seite gesetzt: sollen die Pflichtangaben durchgesetzt werden? */
+  const PFLICHT_DETAILS = dialog.dataset.pflichtDetails === 'ja';
+
+  const detailBlock = dialog.querySelector<HTMLElement>('[data-detail-block]');
+  const detailHinweis = dialog.querySelector<HTMLElement>('[data-detail-hinweis]');
+  const detailZusammenfassung = dialog.querySelector<HTMLElement>('[data-zus-details]');
+  /** Schluessel der aktiven Fahrtart, oder leer. */
+  let fahrtart = '';
+
+  const artVon = (id: string) => FAHRTARTEN.find((a) => a.id === id) || null;
+  const aktiverSatz = () =>
+    fahrtart ? dialog.querySelector<HTMLElement>(`[data-detail-satz="${fahrtart}"]`) : null;
+
+  /** Alle Eingabeelemente eines Satzes, in der Reihenfolge der Felder. */
+  function detailFelder(satz: HTMLElement) {
+    return [...satz.querySelectorAll<HTMLElement>('[data-detail-feld]')];
+  }
+
+  /** Alle Zusatzangaben leeren - nur fuer „Neue Anfrage". */
+  function detailsLeeren() {
+    if (!detailBlock) return;
+    for (const el of detailBlock.querySelectorAll<HTMLElement>('[data-detail-feld]')) {
+      if (el.hasAttribute('data-mehrfach')) {
+        for (const box of el.querySelectorAll<HTMLInputElement>('input')) box.checked = false;
+      } else {
+        (el as HTMLInputElement).value = '';
+      }
+      el.removeAttribute('aria-invalid');
+    }
+    for (const m of detailBlock.querySelectorAll<HTMLElement>('[data-detail-fehler]')) {
+      m.textContent = '';
+      m.hidden = true;
+    }
+    // Die Fahrtart selbst bleibt stehen: Wer auf der Kurierseite eine neue
+    // Anfrage beginnt, will wieder eine Kurierfahrt - nur mit leeren Feldern.
+    if (fahrtart) fahrtartSetzen(fahrtart);
+  }
+
+  function detailWert(el: HTMLElement): string {
+    if (el.hasAttribute('data-mehrfach')) {
+      return [...el.querySelectorAll<HTMLInputElement>('input:checked')].map((i) => i.value).join(', ');
+    }
+    return ((el as HTMLInputElement).value || '').trim();
+  }
+
+  /**
+   * Fahrtart setzen: den passenden Feldsatz zeigen, die uebrigen verbergen.
+   *
+   * Hat die Fahrtart eine freigegebene Leistung, wird sie mitgesetzt. Ist
+   * sie `null` - das gilt fuer Serienfahrten und Firmenkunden -, bleibt die
+   * Leistungswahl beim Nutzer; die Fahrtart selbst steht spaeter als eigene
+   * Zeile in der Nachricht, damit die Angabe nicht verlorengeht.
+   */
+  function fahrtartSetzen(id: string) {
+    if (!detailBlock) return;
+    const art = artVon(id);
+    fahrtart = art ? art.id : '';
+
+    for (const s of dialog.querySelectorAll<HTMLElement>('[data-detail-satz]')) {
+      s.hidden = s.dataset.detailSatz !== fahrtart;
+    }
+    detailBlock.hidden = !fahrtart;
+    if (detailHinweis) detailHinweis.textContent = art ? art.hinweis : '';
+
+    if (art) {
+      // Hat die Fahrtart eine freigegebene Leistung, wird sie gesetzt.
+      // Hat sie KEINE, wird eine vorher gesetzte ausdruecklich
+      // weggenommen - siehe den Befund am Anzeigebanner oben.
+      leistungSetzen(art.leistung || '');
+      const anzeige = dialog.querySelector<HTMLElement>('[data-fahrtart-anzeige]');
+      if (anzeige) anzeige.textContent = art.titel;
+      flughafenVerbinden();
+      // Vorbelegung wie im Bestand - aber nur, solange das Feld leer ist.
+      // Sonst ueberschriebe ein Wechsel der Fahrtart eine eigene Eingabe.
+      const satz = aktiverSatz();
+      if (satz && art.vorbelegt) {
+        for (const [feld, wert] of Object.entries(art.vorbelegt)) {
+          const el = satz.querySelector<HTMLInputElement>(`[data-detail-feld="${feld}"]`);
+          if (el && !el.value) el.value = wert;
+        }
+      }
+    }
+  }
+
+  // ── Adressen: eine Quelle fuer Seite und Dialog ────────────────────────
+  // Jedes Feld auf der Seite traegt data-anfrage-feld. Aendert sich eines,
+  // aendern sich alle - es wird nichts kopiert und nichts uebergestuelpt.
+  const felder = () => document.querySelectorAll<HTMLInputElement>('[data-anfrage-feld]');
+
+  function feldSetzen(name: Feld, wert: string) {
+    daten[name] = wert;
+    for (const el of felder()) {
+      if (el.dataset.anfrageFeld === name && el.value !== wert) el.value = wert;
+    }
+    fehlerZeigen(name, false);
+    markenAktualisieren();
+  }
+
+  for (const el of felder()) {
+    el.addEventListener('input', () => feldSetzen(el.dataset.anfrageFeld as Feld, el.value));
+  }
+
+  /** „wird benötigt" / „✓ ausgefüllt" an den Feldern im Einstieg. */
+  function markenAktualisieren() {
+    for (const marke of document.querySelectorAll<HTMLElement>('[data-feldmarke]')) {
+      const gefuellt = daten[marke.dataset.feldmarke as Feld].trim().length > 0;
+      marke.textContent = gefuellt ? '✓ ausgefüllt' : 'wird benötigt';
+      marke.classList.toggle('text-[#5d7a52]', gefuellt);
+      marke.classList.toggle('text-[#8a8175]', !gefuellt);
+    }
+  }
+
+  function fehlerZeigen(name: string, an: boolean) {
+    const p = dialog.querySelector<HTMLElement>(`[data-fehler="${name}"]`);
+    if (p) p.hidden = !an;
+    const feld = dialog.querySelector<HTMLInputElement>(`[data-anfrage-feld="${name}"]`);
+    if (feld) {
+      feld.classList.toggle('border-red-500/80', an);
+      feld.classList.toggle('border-border', !an);
+      if (an) feld.setAttribute('aria-invalid', 'true');
+      else feld.removeAttribute('aria-invalid');
+    }
+  }
+
+  /*
+    ── Flughafen und Zieladresse zusammenbringen ────────────────────────
+
+    GEMESSENER BEFUND (Schritt 024): Bei einer Flughafenanfrage standen
+    zwei Ortsangaben unverbunden nebeneinander in der Nachricht:
+
+        Zieladresse: Testziel 2
+        ...
+        Flughafen: Frankfurt Airport FRA
+
+    Welche gilt? Das musste die Zentrale raten. Wer oben "Mannheim"
+    eintippt und unten "Frankfurt Airport FRA" auswaehlt, hat zwei
+    verschiedene Ziele angegeben, ohne es zu merken.
+
+    Behoben ohne neues Pflichtfeld: Waehlt jemand einen Flughafen und das
+    Zielfeld ist noch LEER, wird der Flughafen dort eingetragen. Ein
+    bereits ausgefuelltes Zielfeld wird nie ueberschrieben - sonst ginge
+    eine bewusste Eingabe verloren.
+
+    OFFEN und als Vorschlag im Bericht: Eine Fahrt VOM Flughafen hat ihn
+    als Abhol-, nicht als Zieladresse. Dafuer braeuchte es ein Feld
+    "Fahrtrichtung". Das ist eine neue Pflichtangabe und damit eine
+    Entscheidung des Auftraggebers, keine stille Aenderung.
+  */
+  function flughafenVerbinden() {
+    const satz = aktiverSatz();
+    if (!satz) return;
+    const wahl = satz.querySelector<HTMLSelectElement>('[data-detail-feld="airport"]');
+    if (!wahl || wahl.dataset.verbunden === 'ja') return;
+    wahl.dataset.verbunden = 'ja';
+
+    const uebernehmen = () => {
+      const flughafen = wahl.value.trim();
+      // Nur ein echter Flughafen, nicht "Weiterer Flughafen auf Anfrage".
+      if (!flughafen || /auf Anfrage/i.test(flughafen)) return;
+      if (daten.destination.trim()) return;   // nie ueberschreiben
+      feldSetzen('destination', flughafen);
+      for (const el of felder()) {
+        if (el.dataset.anfrageFeld === 'destination') el.value = flughafen;
+      }
+      fehlerZeigen('destination', false);
+    };
+
+    wahl.addEventListener('change', uebernehmen);
+    uebernehmen();
+  }
+
+  // ── Leistung ───────────────────────────────────────────────────────────
+  /**
+   * Die Leistung setzen - oder sie ausdruecklich wegnehmen.
+   *
+   * `id === ''` bedeutet: Diese Anfrage hat KEINE der sieben Leistungen.
+   * Das ist bei Serienfahrten und Firmenkonten der richtige Zustand, und
+   * er muss herstellbar sein. Vorher konnte man eine einmal gesetzte
+   * Leistung nicht mehr loswerden.
+   */
+  function leistungSetzen(id: string) {
+    if (id !== '' && !LEISTUNGEN.some((l) => l.id === id)) return;
+    daten.service = id;
+
+    // Banner: sichtbar ab Schritt 1.
+    for (const s of dialog.querySelectorAll<HTMLElement>('[data-leistungsanzeige]')) {
+      s.hidden = s.dataset.leistungsanzeige !== id;
+    }
+    // Auswahl in Schritt 2.
+    for (const b of dialog.querySelectorAll<HTMLElement>('[data-leistung-waehlen]')) {
+      const aktiv = b.dataset.leistungWaehlen === id;
+      b.setAttribute('aria-pressed', String(aktiv));
+      b.classList.toggle('border-primary', aktiv);
+      b.classList.toggle('bg-primary/8', aktiv);
+      b.classList.toggle('text-foreground', aktiv);
+      b.classList.toggle('border-border', !aktiv);
+      b.classList.toggle('text-muted-foreground', !aktiv);
+    }
+    // Leiste im Einstieg mitfuehren, falls die Leistung dort vorkommt.
+    document.dispatchEvent(new CustomEvent('tg:leistung-gewaehlt', { detail: { id } }));
+  }
+
+  for (const b of dialog.querySelectorAll<HTMLElement>('[data-leistung-waehlen]')) {
+    b.addEventListener('click', () => leistungSetzen(b.dataset.leistungWaehlen!));
+  }
+
+  // ── Zeitpunkt ──────────────────────────────────────────────────────────
+  const termin = dialog.querySelector<HTMLElement>('[data-termin]')!;
+  for (const b of dialog.querySelectorAll<HTMLElement>('[data-zeitpunkt]')) {
+    b.addEventListener('click', () => {
+      daten.timing = b.dataset.zeitpunkt!;
+      for (const x of dialog.querySelectorAll<HTMLElement>('[data-zeitpunkt]')) {
+        const aktiv = x.dataset.zeitpunkt === daten.timing;
+        x.setAttribute('aria-pressed', String(aktiv));
+        x.classList.toggle('border-primary', aktiv);
+        x.classList.toggle('bg-primary/8', aktiv);
+        x.classList.toggle('text-foreground', aktiv);
+        x.classList.toggle('border-border', !aktiv);
+        x.classList.toggle('text-muted-foreground', !aktiv);
+      }
+      termin.hidden = daten.timing !== 'later';
+    });
+  }
+
+  // Termine nur ab heute.
+  const datumFeld = dialog.querySelector<HTMLInputElement>('#dlg-date')!;
+  datumFeld.min = new Date().toISOString().split('T')[0];
+
+  // ── Schrittanzeige ─────────────────────────────────────────────────────
+  const NAMEN = ['Adressen', 'Leistung & Zeit', 'Bestätigung'];
+
+  function schrittZeichnen() {
+    for (const el of dialog.querySelectorAll<HTMLElement>('[data-schritt]')) {
+      el.hidden = Number(el.dataset.schritt) !== schritt;
+    }
+    for (const m of dialog.querySelectorAll<HTMLElement>('[data-schrittmarke]')) {
+      const i = Number(m.dataset.schrittmarke);
+      const erledigt = i < schritt;
+      const jetzt = i === schritt;
+      m.classList.toggle('bg-primary', erledigt);
+      m.classList.toggle('border-primary', erledigt || jetzt);
+      m.classList.toggle('text-primary-foreground', erledigt);
+      m.classList.toggle('text-primary', jetzt);
+      m.classList.toggle('border-border', !erledigt && !jetzt);
+      m.classList.toggle('text-muted-foreground', !erledigt && !jetzt);
+      m.querySelector<HTMLElement>('[data-schrittzahl]')!.hidden = erledigt;
+      m.querySelector<HTMLElement>('[data-schritthaken]')!.hidden = !erledigt;
+    }
+    for (const l of dialog.querySelectorAll<HTMLElement>('[data-schrittlinie]')) {
+      const fertig = Number(l.dataset.schrittlinie) < schritt;
+      l.classList.toggle('bg-primary', fertig);
+      l.classList.toggle('bg-border', !fertig);
+    }
+    dialog.querySelector<HTMLElement>('[data-schrittname]')!.textContent = NAMEN[schritt - 1];
+    dialog.querySelector<HTMLElement>('[data-zurueck-text]')!.textContent = schritt === 1 ? 'Schließen' : 'Zurück';
+    dialog.querySelector<HTMLElement>('[data-weiter-text]')!.textContent =
+      schritt === 3 ? 'Anfrage über WhatsApp senden' : 'Weiter';
+    if (schritt === 3) zusammenfassungZeichnen();
+  }
+
+  const datumDeutsch = (v: string) => (v ? v.split('-').reverse().join('.') : '');
+
+  function zeitpunktText() {
+    if (daten.timing === 'now') return 'So bald wie möglich';
+    return `${datumDeutsch(daten.date)} um ${daten.time} Uhr`;
+  }
+
+  function zusammenfassungZeichnen() {
+    const L = LEISTUNGEN.find((l) => l.id === daten.service);
+    const art = fahrtart ? artVon(fahrtart) : null;
+    const werte: Record<string, string> = {
+      pickup: daten.pickup,
+      destination: daten.destination,
+      // Ohne Leistung steht hier die Fahrtart - und wenn es auch die
+      // nicht gibt, ein Strich. Nie eine Leistung, die niemand waehlte.
+      service: L ? L.label : (art ? art.titel : '—'),
+      timing: zeitpunktText(),
+    };
+    for (const el of dialog.querySelectorAll<HTMLElement>('[data-zus]')) {
+      el.textContent = werte[el.dataset.zus!] || '—';
+    }
+
+    // Zusatzangaben: nur die AUSGEFUELLTEN. Leere Zeilen in einer
+    // Zusammenfassung sind Rauschen.
+    if (detailZusammenfassung) {
+      detailZusammenfassung.innerHTML = '';
+      const art = fahrtart ? artVon(fahrtart) : null;
+      const satz = aktiverSatz();
+      if (art && satz) {
+        const zeile = (name: string, wert: string) => {
+          const d = document.createElement('div');
+          d.className = 'grid grid-cols-[110px_1fr] gap-4 px-5 py-3.5 border-t border-border';
+          const a = document.createElement('span');
+          a.className = 'text-muted-foreground text-sm';
+          a.textContent = name;
+          const b = document.createElement('span');
+          b.className = 'text-foreground text-sm font-medium';
+          b.textContent = wert;
+          d.append(a, b);
+          detailZusammenfassung.appendChild(d);
+        };
+
+        zeile('Fahrtart', art.titel);
+        for (const el of detailFelder(satz)) {
+          const wert = detailWert(el);
+          if (!wert) continue;
+          const id = el.dataset.detailFeld!;
+          const feld = art.felder.find((f) => f.id === id);
+          zeile(feld ? feld.label : id, wert);
+        }
+      }
+    }
+  }
+
+  function pruefen(): boolean {
+    let gut = true;
+    if (schritt === 1) {
+      const a = daten.pickup.trim().length > 0;
+      const z = daten.destination.trim().length > 0;
+      fehlerZeigen('pickup', !a);
+      fehlerZeigen('destination', !z);
+      gut = a && z;
+    }
+    if (schritt === 2 && daten.timing === 'later') {
+      fehlerZeigen('date', !daten.date);
+      fehlerZeigen('time', !daten.time);
+      gut = Boolean(daten.date && daten.time);
+    }
+    if (schritt === 2 && !detailsPruefen()) gut = false;
+    return gut;
+  }
+
+  /**
+   * Die Zusatzangaben pruefen - mit denselben Regeln wie das Bestandsformular:
+   * Pflichtfeld nicht leer, E-Mail enthaelt ein @, Telefonnummer mindestens
+   * sechs Zeichen, bei Mehrfachauswahl mindestens eine Option.
+   *
+   * Greift nur, wenn die Seite `pflichtDetails` gesetzt hat. Auf der
+   * Startseite gibt es diesen Block nicht.
+   */
+  function detailsPruefen(): boolean {
+    const satz = aktiverSatz();
+    if (!satz || !PFLICHT_DETAILS) return true;
+
+    let gut = true;
+    for (const el of detailFelder(satz)) {
+      const id = el.dataset.detailFeld!;
+      const meldung = satz.querySelector<HTMLElement>(`[data-detail-fehler="${id}"]`);
+      const wert = detailWert(el);
+      let text = '';
+
+      if (el.dataset.pflicht === 'ja' && !wert) {
+        text = el.hasAttribute('data-mehrfach')
+          ? 'Bitte mindestens eine Option wählen.'
+          : 'Bitte dieses Pflichtfeld ausfüllen.';
+      } else if (wert && (el as HTMLInputElement).type === 'email' && !wert.includes('@')) {
+        text = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+      } else if (wert && (el as HTMLInputElement).type === 'tel' && wert.length < 6) {
+        text = 'Bitte eine gültige Telefonnummer eingeben.';
+      }
+
+      if (meldung) {
+        meldung.textContent = text;
+        meldung.hidden = !text;
+      }
+      if (text) {
+        gut = false;
+        el.setAttribute('aria-invalid', 'true');
+      } else {
+        el.removeAttribute('aria-invalid');
+      }
+    }
+
+    if (!gut) {
+      const erstes = satz.querySelector<HTMLElement>('[aria-invalid="true"]');
+      erstes?.focus();
+    }
+    return gut;
+  }
+
+  // ── WhatsApp-Uebergabe ─────────────────────────────────────────────────
+  //
+  // Alle erfassten Angaben, unveraendert und vollstaendig. KEINE Entfernung,
+  // KEIN Preis, KEINE Bestaetigung - nichts davon ist bekannt, also steht
+  // nichts davon in der Nachricht.
+  function nachricht(): string {
+    const L = LEISTUNGEN.find((l) => l.id === daten.service);
+    const zeilen = [
+      'Fahrtanfrage über die Website',
+      '',
+    ];
+
+    // Die Leistungszeile steht NUR da, wenn es wirklich eine gibt.
+    // Serienfahrt und Firmenkonto haben keine - dort traegt die Zeile
+    // "Fahrtart" weiter unten die Angabe. Eine leere oder erfundene
+    // Leistung waere eine Angabe, die der Kunde nie gemacht hat.
+    if (daten.service && L) zeilen.push(`Leistung: ${L.label}`);
+
+    zeilen.push(
+      `Abholadresse: ${daten.pickup}`,
+      `Zieladresse: ${daten.destination}`,
+      `Zeitpunkt: ${zeitpunktText()}`,
+    );
+
+    // Zusatzangaben der Spezialfahrten, in der Reihenfolge der Felder. Die
+    // Fahrtart steht immer dabei - auch und gerade dann, wenn sie keiner der
+    // sieben Leistungen entspricht (Serienfahrt, Firmenkonto). Sonst ginge
+    // genau die Angabe verloren, wegen der die Anfrage gestellt wird.
+    const art = fahrtart ? artVon(fahrtart) : null;
+    const satz = aktiverSatz();
+    if (art && satz) {
+      zeilen.push('', `Fahrtart: ${art.titel}`);
+      for (const el of detailFelder(satz)) {
+        const wert = detailWert(el);
+        if (!wert) continue;
+        const feld = art.felder.find((f) => f.id === el.dataset.detailFeld);
+        zeilen.push(`${feld ? feld.label : el.dataset.detailFeld}: ${wert}`);
+      }
+    }
+
+    zeilen.push('', 'Bitte bestätigen Sie mir die Fahrt.');
+    return zeilen.join('\n');
+  }
+
+  function whatsappOeffnen() {
+    const url = `https://wa.me/${FIRMA.whatsappNummer}?text=${encodeURIComponent(nachricht())}`;
+    window.open(url, '_blank', 'noopener');
+  }
+
+  function abschlussZeigen(an: boolean) {
+    formular.hidden = an;
+    abschluss.hidden = !an;
+  }
+
+  // ── Bedienung ──────────────────────────────────────────────────────────
+  dialog.querySelector('[data-anfrage-weiter]')!.addEventListener('click', () => {
+    if (!pruefen()) return;
+    if (schritt < 3) {
+      schritt += 1;
+      schrittZeichnen();
+      return;
+    }
+    whatsappOeffnen();
+    abschlussZeigen(true);
+  });
+
+  dialog.querySelector('[data-anfrage-zurueck]')!.addEventListener('click', () => {
+    if (schritt === 1) { schliessen(); return; }
+    schritt -= 1;
+    for (const n of ['pickup', 'destination', 'date', 'time']) fehlerZeigen(n, false);
+    schrittZeichnen();
+  });
+
+  dialog.querySelector('[data-anfrage-nochmal]')!.addEventListener('click', whatsappOeffnen);
+
+  dialog.querySelector('[data-anfrage-neu]')!.addEventListener('click', () => {
+    feldSetzen('pickup', '');
+    feldSetzen('destination', '');
+    feldSetzen('date', '');
+    feldSetzen('time', '');
+    daten.timing = 'now';
+    termin.hidden = true;
+    leistungSetzen('Taxi');
+    detailsLeeren();
+    schritt = 1;
+    abschlussZeigen(false);
+    schrittZeichnen();
+  });
+
+  // ── Die Seite hinter dem Dialog festhalten ─────────────────────────────
+  //
+  // `document.body.style.overflow = 'hidden'` allein genuegt NICHT: Gemessen
+  // am 20.09.2026 verschob der Browser dabei die Bildlaufposition — bei drei
+  // der sieben Anfrageknoepfe sprang die Seite um rund 480 Punkte, der
+  // angeklickte Knopf rutschte von 487 auf 0. Hinter dem halbdurchsichtigen
+  // Hintergrund ist das zu sehen, und nach dem Schliessen stuende man
+  // woanders.
+  //
+  // Deshalb wird die Seite mit `position: fixed` und einem negativen `top`
+  // genau dort festgehalten, wo sie steht, und beim Schliessen wieder
+  // freigegeben.
+  let gemerkteHoehe = 0;
+
+  function seiteFesthalten() {
+    gemerkteHoehe = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${gemerkteHoehe}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+  }
+
+  function seiteFreigeben() {
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    // Ausdruecklich OHNE Bildlauf-Animation: Die Seite traegt
+    // `scroll-behavior: smooth`, und damit faehrt ein einfaches scrollTo die
+    // ganze Strecke sichtbar ab - gemessen bis zu 1298 Punkte, die nach dem
+    // Schliessen noch unter dem Finger wegliefen. Eine Wiederherstellung ist
+    // keine Bewegung, sie ist ein Zustand.
+    window.scrollTo({ top: gemerkteHoehe, left: 0, behavior: 'instant' as ScrollBehavior });
+  }
+
+  // ── Oeffnen und Schliessen ─────────────────────────────────────────────
+  function oeffnen(leistung?: string, art?: string) {
+    // Reihenfolge beachten: Erst die Fahrtart, denn sie setzt die Leistung
+    // mit. Eine ausdruecklich uebergebene Leistung gilt danach.
+    if (art) fahrtartSetzen(art);
+    if (leistung) leistungSetzen(leistung);
+    // Eingaben bleiben erhalten: `daten` wird beim Oeffnen NICHT zurueckgesetzt.
+    schritt = 1;
+    abschlussZeigen(false);
+    for (const n of ['pickup', 'destination', 'date', 'time']) fehlerZeigen(n, false);
+    schrittZeichnen();
+
+    dialog.hidden = false;
+    offen = true;
+    seiteFesthalten();
+    // Erst im naechsten Bild einblenden, sonst laeuft der Uebergang nicht.
+    requestAnimationFrame(() => {
+      dialog.classList.remove('opacity-0', 'pointer-events-none');
+      dialog.classList.add('opacity-100', 'pointer-events-auto');
+      blatt.classList.remove('translate-y-full');
+      blatt.classList.add('translate-y-0', 'md:translate-y-0');
+      // Der Fokus gehoert IN den Dialog. Siehe den Block unten.
+      ersterFokus();
+    });
+  }
+
+  /*
+    ── Der Fokus und der Dialog ─────────────────────────────────────────
+
+    GEMESSENER BEFUND (Schritt 024): Der Dialog traegt role="dialog" und
+    aria-modal="true", aber der Fokus blieb beim Oeffnen ausserhalb -
+    gemessen stand er noch auf der Sprungmarke am Seitenanfang. Fuer
+    jemanden, der mit der Tastatur arbeitet, heisst das: Der Dialog ist
+    offen, die Tabulatortaste laeuft aber durch die Seite DAHINTER.
+    aria-modal="true" verspricht genau das Gegenteil.
+
+    Behoben in drei Teilen:
+      1. Beim Oeffnen faehrt der Fokus ins erste Feld.
+      2. Die Tabulatortaste bleibt im Dialog (Umlauf vorne/hinten).
+      3. Beim Schliessen kehrt er auf den Knopf zurueck, der geoeffnet
+         hat - sonst beginnt die Tastaturbedienung wieder von vorn.
+  */
+  let ausloeser: HTMLElement | null = null;
+
+  function fokussierbare(): HTMLElement[] {
+    return [...blatt.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    )].filter((e) => {
+      if (e.closest('[hidden]')) return false;
+      const k = e.getBoundingClientRect();
+      return k.width > 0 && k.height > 0;
+    });
+  }
+
+  function ersterFokus() {
+    const liste = fokussierbare();
+    // Das erste Eingabefeld, sonst der erste Bedienpunkt ueberhaupt.
+    const ziel = liste.find((e) => e.matches('input, select, textarea')) || liste[0];
+    if (ziel) ziel.focus();
+  }
+
+  dialog.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab' || !offen) return;
+    const liste = fokussierbare();
+    if (!liste.length) return;
+    const erster = liste[0];
+    const letzter = liste[liste.length - 1];
+    if (e.shiftKey && document.activeElement === erster) {
+      e.preventDefault();
+      letzter.focus();
+    } else if (!e.shiftKey && document.activeElement === letzter) {
+      e.preventDefault();
+      erster.focus();
+    }
+  });
+
+  function schliessen() {
+    offen = false;
+    // Zurueck auf den Knopf, der geoeffnet hat.
+    if (ausloeser && document.contains(ausloeser)) {
+      ausloeser.focus({ preventScroll: true });
+      ausloeser = null;
+    }
+    dialog.classList.add('opacity-0', 'pointer-events-none');
+    dialog.classList.remove('opacity-100', 'pointer-events-auto');
+    blatt.classList.add('translate-y-full');
+    blatt.classList.remove('translate-y-0');
+    seiteFreigeben();
+    window.setTimeout(() => { if (!offen) dialog.hidden = true; }, 300);
+  }
+
+  dialog.querySelector('[data-anfrage-schliessen]')!.addEventListener('click', schliessen);
+  dialog.querySelector('[data-anfrage-hintergrund]')!.addEventListener('click', schliessen);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && offen) schliessen(); });
+
+  // Jede Schaltflaeche auf der Seite oeffnet denselben Dialog - im Kopf, im
+  // Einstieg, an jedem der sieben Leistungsbloecke. Ohne Scrollen.
+  for (const b of document.querySelectorAll<HTMLElement>('[data-anfrage-oeffnen]')) {
+    b.addEventListener('click', () => {
+      // Merken, wohin der Fokus beim Schliessen zurueckkehrt.
+      ausloeser = b;
+      oeffnen(b.dataset.leistung || undefined, b.dataset.fahrtart || undefined);
+    });
+  }
+
+  document.addEventListener('tg:anfrage-oeffnen', (e) => {
+    const d = (e as CustomEvent).detail || {};
+    oeffnen(d.leistung, d.fahrtart);
+  });
+
+  // Die Leiste im Einstieg meldet ihre Wahl hierher - eine Quelle, auch fuer
+  // die Leistung.
+  document.addEventListener('tg:leistung-setzen', (e) => {
+    leistungSetzen((e as CustomEvent).detail.id);
+  });
+
+  leistungSetzen('Taxi');
+  schrittZeichnen();
+  markenAktualisieren();
+</script>

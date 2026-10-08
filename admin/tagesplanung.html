@@ -5,14 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Tagesplanung</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
   <script src="personal-shared.js"></script>
   <script src="planung-v25-shared.js"></script>
-  <link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="management.css">
   <link rel="stylesheet" href="termin-cockpit.css">
   <link rel="stylesheet" href="tagesplanung.css">
-</head>
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -32,17 +34,17 @@
       <header class="admin-topbar tp-topbar">
         <div class="admin-topbar-title">
           <h1>Tagesplanung</h1>
-          <p>Ruhiger Dispositionsarbeitsplatz für Termine, Fahrer, Fahrzeuge, Planung und telefonische Avisierung.</p>
+          <p>Ruhiger Dispositionsarbeitsplatz fÃƒÂ¼r Termine, Fahrer, Fahrzeuge, Planung und telefonische Avisierung.</p>
         </div>
         <div class="admin-topbar-actions tp-toolbar-actions">
           <button class="admin-btn admin-btn-secondary" type="button" data-day-shortcut="today">Heute</button>
           <button class="admin-btn" type="button" data-day-shortcut="tomorrow">Morgen</button>
-          <button class="admin-btn admin-btn-secondary" type="button" data-day-shortcut="dayAfter">Übermorgen</button>
+          <button class="admin-btn admin-btn-secondary" type="button" data-day-shortcut="dayAfter">ÃƒÅ“bermorgen</button>
           <button class="admin-btn" type="button" data-tp-mode-toggle>Morgen vorbereiten</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-plan-toggle-map>Karte anzeigen</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-plan-recalculate>Planung neu berechnen</button>
           <button class="admin-btn admin-btn-secondary" type="button" data-plan-save>Plan speichern</button>
-          <button class="admin-btn" type="button" data-plan-confirm>Tagesplan bestätigen</button>
+          <button class="admin-btn" type="button" data-plan-confirm>Tagesplan bestÃƒÂ¤tigen</button>
         </div>
       </header>
 
@@ -58,8 +60,8 @@
             <span class="tp-step">4. Planung</span>
           </div>
           <div class="tp-toolbar-inline">
-            <button class="admin-btn admin-btn-secondary" type="button" data-plan-reset>Tagesplanung zurücksetzen</button>
-            <button class="admin-btn admin-btn-secondary" type="button" data-route-reset>Routen- und Standort-Demo zurücksetzen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-plan-reset>Tagesplanung zurÃƒÂ¼cksetzen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-route-reset>Routen- und Standort-Demo zurÃƒÂ¼cksetzen</button>
             <small data-plan-state>Standardansicht: Morgen</small>
           </div>
         </div>
@@ -68,7 +70,7 @@
       <section class="admin-panel tp-service-panel" aria-label="Heute im Dienst">
         <div class="admin-panel-head">
           <h2>Heute im Dienst</h2>
-          <small>Kompakte Einsatzsicht für Disposition und Telefonzentrale.</small>
+          <small>Kompakte Einsatzsicht fÃƒÂ¼r Disposition und Telefonzentrale.</small>
         </div>
         <div class="tp-service-kpis" data-tp-service-kpis></div>
         <div class="tp-service-list" data-tp-service-list></div>
@@ -81,9 +83,9 @@
             <small data-tp-tomorrow-date>Datum: -</small>
           </div>
           <div class="tp-inline-actions">
-            <button class="admin-btn admin-btn-secondary" type="button" data-tp-suggest-open>Vorschläge erstellen</button>
-            <button class="admin-btn admin-btn-secondary" type="button" data-tp-apply-conflictfree>Alle konfliktfreien Vorschläge übernehmen</button>
-            <button class="admin-btn" type="button" data-plan-publish>Plan für morgen veröffentlichen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-tp-suggest-open>VorschlÃƒÂ¤ge erstellen</button>
+            <button class="admin-btn admin-btn-secondary" type="button" data-tp-apply-conflictfree>Alle konfliktfreien VorschlÃƒÂ¤ge ÃƒÂ¼bernehmen</button>
+            <button class="admin-btn" type="button" data-plan-publish>Plan fÃƒÂ¼r morgen verÃƒÂ¶ffentlichen</button>
             <button class="admin-btn admin-btn-secondary" type="button" data-tp-mode-close>Zur Tagesplanung</button>
           </div>
         </div>
@@ -106,7 +108,7 @@
       <section class="admin-panel tp-intake-panel" aria-label="Minimale Terminaufnahme" data-tp-day-workspace>
         <div class="admin-panel-head">
           <h2>Terminaufnahme</h2>
-          <small>Pflichtfelder für eine Erfassung in unter 20 Sekunden, weitere Angaben nur bei Bedarf.</small>
+          <small>Pflichtfelder fÃƒÂ¼r eine Erfassung in unter 20 Sekunden, weitere Angaben nur bei Bedarf.</small>
         </div>
         <form class="tp-intake-form" data-quick-appointment-form>
           <label>Name oder Kurzbezeichnung<input name="name" required></label>
@@ -127,7 +129,7 @@
                   <option>Firmenfahrt</option>
                 </select>
               </label>
-              <label>Rückfahrt
+              <label>RÃƒÂ¼ckfahrt
                 <select name="returnTrip">
                   <option value="Nein">Nein</option>
                   <option value="Ja">Ja</option>
@@ -146,14 +148,14 @@
           <div class="tp-intake-actions">
             <button class="admin-btn" type="submit">Termin avisieren</button>
             <button class="admin-btn admin-btn-secondary" type="button" data-spontaneous-ride>Spontane Fahrt</button>
-            <small data-intake-feedback>Neue Termine werden direkt in die Tagesliste übernommen.</small>
+            <small data-intake-feedback>Neue Termine werden direkt in die Tagesliste ÃƒÂ¼bernommen.</small>
           </div>
         </form>
       </section>
 
       <section class="tp-layout" aria-label="Tagesplanung Arbeitsbereich" data-tp-day-workspace>
         <section class="tp-column tp-column-left">
-          <section class="admin-panel" aria-label="Termine des ausgewählten Tages">
+          <section class="admin-panel" aria-label="Termine des ausgewÃƒÂ¤hlten Tages">
             <div class="admin-panel-head">
               <h2>Termine</h2>
               <div class="tp-inline-actions">
@@ -161,7 +163,7 @@
                 <button class="tp-filter-chip" type="button" data-appointment-filter="ungeplant">ungeplant</button>
                 <button class="tp-filter-chip" type="button" data-appointment-filter="Krankenfahrten">Krankenfahrten</button>
                 <button class="tp-filter-chip" type="button" data-appointment-filter="Rollstuhl">Rollstuhl</button>
-                <button class="tp-filter-chip" type="button" data-appointment-filter="Rückfahrten">Rückfahrten</button>
+                <button class="tp-filter-chip" type="button" data-appointment-filter="RÃƒÂ¼ckfahrten">RÃƒÂ¼ckfahrten</button>
                 <button class="tp-filter-chip" type="button" data-appointment-filter="Flughafen">Flughafen</button>
                 <button class="tp-filter-chip" type="button" data-appointment-filter="Konflikte">Konflikte</button>
               </div>
@@ -183,13 +185,13 @@
         </section>
 
         <section class="tp-column tp-column-center">
-          <section class="admin-panel" aria-label="Planvarianten und Fahrerpläne">
+          <section class="admin-panel" aria-label="Planvarianten und FahrerplÃƒÂ¤ne">
             <div class="admin-panel-head">
               <h2>Planung</h2>
               <div class="tp-inline-actions">
                 <button class="tp-variant-chip is-active" type="button" data-plan-variant="balanced">Ausgeglichen</button>
                 <button class="tp-variant-chip" type="button" data-plan-variant="empty">Wenig Leerfahrt</button>
-                <button class="tp-variant-chip" type="button" data-plan-variant="punctual">Maximale Pünktlichkeit</button>
+                <button class="tp-variant-chip" type="button" data-plan-variant="punctual">Maximale PÃƒÂ¼nktlichkeit</button>
                 <button class="tp-variant-chip" type="button" data-plan-variant="fewChanges">Wenig Fahrzeugwechsel</button>
               </div>
             </div>
@@ -200,7 +202,7 @@
           <section class="admin-panel" aria-label="Optionale Kartenansicht" data-route-map-panel hidden>
             <div class="admin-panel-head">
               <h2>Kartenansicht</h2>
-              <button class="admin-btn admin-btn-secondary" type="button" data-plan-close-map>Karte schließen</button>
+              <button class="admin-btn admin-btn-secondary" type="button" data-plan-close-map>Karte schlieÃƒÅ¸en</button>
             </div>
             <div class="tp-map-panel" data-route-map></div>
           </section>
@@ -208,25 +210,25 @@
           <section class="admin-panel" aria-label="Druckansicht Fahrerzettel">
             <div class="admin-panel-head">
               <h2>Druck- und Teilansicht</h2>
-              <small>Demo-Tageszettel je Fahrer ohne unnötige sensible Daten.</small>
+              <small>Demo-Tageszettel je Fahrer ohne unnÃƒÂ¶tige sensible Daten.</small>
             </div>
             <div class="tp-print-list" data-print-list></div>
           </section>
         </section>
 
         <aside class="tp-column tp-column-right">
-          <section class="admin-panel" aria-label="Planungsvorschläge">
+          <section class="admin-panel" aria-label="PlanungsvorschlÃƒÂ¤ge">
             <div class="admin-panel-head">
-              <h2>Vorschläge</h2>
+              <h2>VorschlÃƒÂ¤ge</h2>
               <small>Maximal drei nachvollziehbare Optionen pro Termin.</small>
             </div>
             <div class="tp-suggestion-list" data-suggestion-list></div>
           </section>
 
-          <section class="admin-panel" aria-label="Fahrzeuge für den Tag">
+          <section class="admin-panel" aria-label="Fahrzeuge fÃƒÂ¼r den Tag">
             <div class="admin-panel-head">
               <h2>Fahrzeuge</h2>
-              <small>Verfügbarkeit, Werkstatt, TÜV, Service und PAJ-Demo-Status</small>
+              <small>VerfÃƒÂ¼gbarkeit, Werkstatt, TÃƒÅ“V, Service und PAJ-Demo-Status</small>
             </div>
             <div class="tp-vehicle-list" data-vehicle-list></div>
           </section>
@@ -242,7 +244,7 @@
           <section class="admin-panel" aria-label="Fahrer avisieren">
             <div class="admin-panel-head">
               <h2>Fahrer avisieren</h2>
-              <small>Nach Bestätigung direkt telefonisch dokumentieren.</small>
+              <small>Nach BestÃƒÂ¤tigung direkt telefonisch dokumentieren.</small>
             </div>
             <div class="tp-avisierung-list" data-avisierung-list></div>
           </section>
@@ -250,12 +252,12 @@
           <section class="admin-panel" aria-label="Spontane Barfahrten optional">
             <div class="admin-panel-head">
               <h2>Spontane Barfahrten</h2>
-              <small>Optional nur als Zeitblock erfassen, wenn die Planung betroffen sein könnte.</small>
+              <small>Optional nur als Zeitblock erfassen, wenn die Planung betroffen sein kÃƒÂ¶nnte.</small>
             </div>
             <form class="tp-block-form" data-block-form>
               <label>Fahrer<input name="driver" placeholder="optional"></label>
               <label>Fahrzeug<input name="vehicle" placeholder="optional"></label>
-              <label>ungefähr bis<input type="time" name="until"></label>
+              <label>ungefÃƒÂ¤hr bis<input type="time" name="until"></label>
               <label>Standort<input name="location" placeholder="optional"></label>
               <button class="admin-btn admin-btn-secondary" type="submit">Zeitblock speichern</button>
             </form>
@@ -268,7 +270,7 @@
         <button class="tp-mobile-tab is-active" type="button" data-mobile-tab="appointments">Termine</button>
         <button class="tp-mobile-tab" type="button" data-mobile-tab="drivers">Fahrer</button>
         <button class="tp-mobile-tab" type="button" data-mobile-tab="plan">Fahrerplan</button>
-        <button class="tp-mobile-tab" type="button" data-mobile-tab="suggestions">Vorschläge</button>
+        <button class="tp-mobile-tab" type="button" data-mobile-tab="suggestions">VorschlÃƒÂ¤ge</button>
         <button class="tp-mobile-tab" type="button" data-mobile-tab="conflicts">Konflikte</button>
         <button class="tp-mobile-tab" type="button" data-mobile-tab="map">Karte</button>
       </nav>
@@ -278,3 +280,7 @@
   <script src="tagesplanung.js"></script>
 </body>
 </html>
+
+
+
+

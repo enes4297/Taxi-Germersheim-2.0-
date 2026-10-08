@@ -1,0 +1,379 @@
+---
+/**
+ * Der gemeinsame Rahmen aller Kontoseiten.
+ *
+ * ═══════════════════════════════════════════════════════════════════════
+ * EINE SCHUTZPRUEFUNG, NICHT SECHS
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * Die fuenf geschuetzten Kontoseiten machen dasselbe: Sitzung herstellen,
+ * Zugang pruefen, bei fehlender Anmeldung sperren, sonst den Inhalt
+ * zeigen. Im Bestand stand diese Abfolge fuenfmal nebeneinander, jedes Mal
+ * ein wenig anders formuliert. Hier steht sie einmal.
+ *
+ * Die Pruefung selbst kommt unveraendert aus `customer-auth.js`:
+ * `hydrateSession()` und `requireLogin()`. Es gibt weiterhin genau eine
+ * Anmeldelogik im Projekt. Diese Datei ruft sie, sie ersetzt sie nicht.
+ *
+ * Die Seite bekommt das Ergebnis ueber `window.tgKontoBereit`:
+ *
+ *     const { gesperrt } = await window.tgKontoBereit;
+ *     if (gesperrt) return;              // nichts laden, nichts zeigen
+ *
+ * ── DREI DINGE, DIE IM BESTAND NICHT STIMMTEN ────────────────────────
+ *
+ * 1. GESPERRTER BROWSERSPEICHER LIESS DIE SEITE HAENGEN. Gemessen: Vier
+ *    von fuenf Kontoseiten blieben dauerhaft auf "Konto wird geladen …"
+ *    stehen, weil `hydrateSession()` an `localStorage` scheiterte und die
+ *    Ausnahme das Seitenskript abriss. Behoben in `customer-auth.js`;
+ *    hier kommt der verstaendliche Hinweis dazu.
+ *
+ * 2. GESCHUETZTER INHALT BLIEB SICHTBAR. `auth-demo.css` legte nur
+ *    `filter: blur(2px)` darueber - gemessen `visibility: visible`,
+ *    `opacity: 1`, Text im Dokument und markierbar. Das ist keine Sperre.
+ *    Hier wird der Bereich wirklich ausgeblendet.
+ *
+ * 3. DIE ABMELDUNG LIESS DIE ANZEIGEN STEHEN. Sie verliess sich darauf,
+ *    dass die Weiterleitung schneller ist. Hier werden die persoenlichen
+ *    Felder zuerst geleert, dann abgemeldet, dann weitergeleitet.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from './Kopfbereich.astro';
+import Fusszeile from './Fusszeile.astro';
+import Sprungmarken from './Sprungmarken.astro';
+import Unterseitenkopf from './Unterseitenkopf.astro';
+
+interface Props {
+  titel: string;
+  beschreibung: string;
+  pfad: string;
+  label: string;
+  ueberschrift: string;
+  text?: string;
+  zurueck?: string;
+  zurueckZiel?: string;
+  /** Kennung des geschuetzten Bereichs - dieselbe wie im Bestand. */
+  bereichId: string;
+  /** Name des Bereichs in der Sperrmeldung, wie im Bestand. */
+  bereichName: string;
+  /** Satz in der Sperrmeldung, wie im Bestand. */
+  sperrtext?: string;
+}
+const {
+  titel, beschreibung, pfad, label, ueberschrift, text,
+  zurueck = 'Mein Konto', zurueckZiel = 'meinkonto.html',
+  bereichId, bereichName,
+  sperrtext = 'Melden Sie sich an, um diesen Bereich zu sehen.',
+} = Astro.props;
+---
+
+<Grundlage titel={titel} beschreibung={beschreibung} pfad={pfad} nichtIndexieren>
+  <Sprungmarken />
+  <Kopfbereich startseite={false} />
+
+  <main id="inhalt" class="pt-16 lg:pt-20">
+    <section id={bereichId} aria-label={bereichName}>
+      <Unterseitenkopf
+        label={label}
+        titel={ueberschrift}
+        text={text}
+        zurueck={zurueck}
+        zurueckZiel={zurueckZiel}
+      />
+      <slot />
+    </section>
+  </main>
+
+  <Fusszeile startseite={false} />
+
+  {/*
+    Bis die Sitzung bekannt ist, liegt ein Vorhang ueber der Seite. Sonst
+    blitzt der geschuetzte Bereich kurz auf, bevor die Sperre greift.
+
+    WICHTIG: Der Vorhang wird IMMER weggenommen - auch wenn die Pruefung
+    scheitert. Genau daran hing der gemessene Fehler im Bestand.
+  */}
+  <div
+    id="kontoVorhang"
+    class="fixed inset-0 z-[120] grid place-items-center bg-background text-sm text-muted-foreground"
+    role="status"
+    aria-live="polite"
+  >
+    Konto wird geladen …
+  </div>
+
+  {/*
+    Der Hinweis auf gesperrten Browserspeicher. Er erscheint nur, wenn der
+    Speicher tatsaechlich geklemmt hat - `CustomerAuth.speicherGesperrt()`
+    meldet das. Kein erfundener Grund, keine Vermutung.
+  */}
+  <div
+    id="kontoSpeicherhinweis"
+    class="fixed inset-x-0 bottom-0 z-[110] border-t border-primary/30 bg-card/95 px-5 py-4 text-sm text-foreground backdrop-blur"
+    hidden
+  >
+    <div class="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-4 gap-y-2">
+      <strong class="font-semibold text-primary">Der Browserspeicher ist gesperrt.</strong>
+      <span class="text-muted-foreground">
+        Ihre Anmeldung gilt deshalb nur für diesen Besuch und wird beim Schließen des
+        Fensters vergessen. Prüfen Sie die Einstellungen für Cookies und Websitedaten,
+        wenn Sie angemeldet bleiben möchten.
+      </span>
+      <button
+        type="button"
+        id="kontoSpeicherhinweisZu"
+        class="ml-auto shrink-0 rounded-sm border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground"
+      >
+        Verstanden
+      </button>
+    </div>
+  </div>
+
+  <style is:global>
+    /*
+      Die Sperre von `customer-auth.js`.
+
+      Die Klassennamen kommen aus `requireLogin()` und sind dort fest
+      verdrahtet: `auth-gated-content` am geschuetzten Bereich, dazu ein
+      `<section class="auth-gate">` an <body>. Sie werden hier gestaltet,
+      nicht umbenannt - umbenennen hiesse, die Anmeldelogik anzufassen.
+
+      `auth-demo.css` wird von diesen Seiten NICHT mehr geladen. Dort
+      stand `filter: blur(2px)` - der Inhalt blieb lesbar. Hier ist er
+      weg: kein Platz, keine Groesse, nicht im Tastaturlauf, nicht in der
+      Vorlesereihenfolge.
+    */
+    .auth-gated-content {
+      display: none !important;
+    }
+
+    /*
+      Die Sperre liegt UNTER dem Seitenkopf (der hat z-40).
+
+      Mit einem hoeheren Wert deckte sie auch die Navigation zu - dann
+      kaeme ein abgemeldeter Besucher nirgendwo mehr hin ausser ueber die
+      drei Knoepfe in der Karte. Der Seitenkopf bleibt deshalb sichtbar
+      und bedienbar; der geschuetzte Inhalt ist davon unabhaengig weg
+      (display: none, siehe oben).
+
+      Das obere Polster haelt die Karte aus dem Kopfbereich heraus, auch
+      auf flachen Bildschirmen.
+    */
+    .auth-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: grid;
+      place-items: center;
+      padding: 7rem 1.25rem 2rem;
+      overflow-y: auto;
+      background: var(--color-background);
+    }
+
+    .auth-gate-card {
+      width: 100%;
+      max-width: 28rem;
+      border: 1px solid var(--color-border);
+      background: var(--color-card);
+      padding: 2.25rem 1.75rem;
+      text-align: center;
+    }
+
+    .auth-gate-card img {
+      width: 28px;
+      height: 28px;
+      margin: 0 auto 1.25rem;
+      opacity: 0.7;
+    }
+
+    .auth-gate-card h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--color-foreground);
+    }
+
+    .auth-gate-card p {
+      margin-top: 0.75rem;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      color: var(--color-muted-foreground);
+    }
+
+    .auth-gate-actions {
+      margin-top: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+
+    .auth-gate-actions .auth-btn {
+      display: block;
+      padding: 0.75rem 1.25rem;
+      border: 1px solid var(--color-border);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-foreground);
+      text-decoration: none;
+      transition: border-color 150ms, color 150ms;
+    }
+
+    .auth-gate-actions .auth-btn:first-child {
+      border-color: var(--color-primary);
+      background: var(--color-primary);
+      color: var(--color-primary-foreground);
+    }
+
+    .auth-gate-actions .auth-btn:hover {
+      border-color: var(--color-primary);
+    }
+
+    .auth-gate-actions .auth-btn:focus-visible {
+      outline: 2px solid var(--color-ring);
+      outline-offset: 3px;
+    }
+  </style>
+
+  <script is:inline src="/customer-auth.js"></script>
+
+  <script is:inline define:vars={{ bereichId, bereichName, sperrtext }}>
+    /*
+      Ein Versprechen, auf das jede Kontoseite wartet.
+
+      Es loest IMMER auf - auch wenn die Sitzungsabfrage scheitert. Ein
+      haengendes Versprechen waere genau der Fehler, der hier behoben
+      wurde: Die Seite bliebe fuer immer auf "Konto wird geladen …".
+    */
+    window.tgKontoBereit = (async function () {
+      const auth = window.CustomerAuth || null;
+      const vorhang = document.getElementById('kontoVorhang');
+
+      let fehler = null;
+      try {
+        if (auth && typeof auth.hydrateSession === 'function') {
+          await auth.hydrateSession();
+        }
+      } catch (e) {
+        // Die Sitzung ist nicht feststellbar. Das ist KEIN Beweis dafuer,
+        // dass niemand angemeldet ist - aber ohne nachgewiesene Sitzung
+        // wird gesperrt. Im Zweifel zu, nie auf.
+        fehler = e;
+      }
+
+      let gesperrt = true;
+      try {
+        gesperrt = !auth || typeof auth.requireLogin !== 'function' || auth.requireLogin({
+          targetSelector: '#' + bereichId,
+          pageTitle: bereichName,
+          gateDescription: sperrtext,
+        });
+      } catch (e) {
+        fehler = fehler || e;
+        gesperrt = true;
+      }
+
+      // Der Vorhang geht in jedem Fall weg.
+      if (vorhang) vorhang.remove();
+
+      // Hat der Browserspeicher geklemmt, wird das gesagt - und zwar nur
+      // dann. `speicherGesperrt()` ist eine Messung, keine Vermutung.
+      try {
+        if (auth && typeof auth.speicherGesperrt === 'function' && auth.speicherGesperrt()) {
+          const hinweis = document.getElementById('kontoSpeicherhinweis');
+          const zu = document.getElementById('kontoSpeicherhinweisZu');
+          if (hinweis) hinweis.hidden = false;
+          if (zu) zu.addEventListener('click', () => { hinweis.hidden = true; });
+        }
+      } catch (_e) { /* Der Hinweis ist Beiwerk. */ }
+
+      return { gesperrt, auth, fehler };
+    })();
+
+    /*
+      Abmelden - einmal fuer alle Seiten.
+
+      Zuerst werden die persoenlichen Anzeigen geleert, dann wird
+      abgemeldet, dann weitergeleitet. Im Bestand geschah das Leeren gar
+      nicht; man verliess sich darauf, dass die Weiterleitung schneller
+      ist als das Auge. Bleibt sie aus - kein Netz, ein Fehler -, standen
+      Name, Telefon und E-Mail weiter auf dem Bildschirm.
+    */
+    /*
+      DER SITZUNGSSTAND — gegen verspaetete Antworten.
+
+      GEMESSENER BEFUND (Schritt 024): `display: none` schuetzt nur die
+      Darstellung. Laeuft beim Abmelden noch eine Abfrage, kommt ihre
+      Antwort DANACH an und schreibt die persoenlichen Angaben wieder auf
+      den Bildschirm. Gemessen an wallet-gutscheine.html: Der
+      Gutscheincode stand nach dem Abmelden wieder da.
+
+      Deshalb zaehlt dieser Stand bei jeder Abmeldung eins hoch. Jede
+      Seite merkt sich den Stand VOR ihrer Abfrage und verwirft die
+      Antwort, wenn er sich inzwischen geaendert hat:
+
+          const stand = window.tgKontoStand();
+          const antwort = await irgendeineAbfrage();
+          if (stand !== window.tgKontoStand()) return;   // verwerfen
+
+      Das ersetzt keine Rechtepruefung auf dem Server - es verhindert
+      nur, dass der Browser Daten zeigt, die niemand mehr sehen soll.
+    */
+    let sitzungsstand = 1;
+    window.tgKontoStand = function () { return sitzungsstand; };
+
+    /**
+     * Alles Persoenliche vom Bildschirm nehmen und laufende Antworten
+     * ungueltig machen.
+     *
+     * Eine benannte Funktion und nicht drei Zeilen im Abmeldeknopf:
+     * So laesst sie sich pruefen, und eine spaetere Stelle - etwa eine
+     * abgelaufene Sitzung - kann dasselbe tun, ohne es nachzubauen.
+     */
+    window.tgKontoRaeumen = function () {
+      sitzungsstand += 1;
+      document.querySelectorAll('[data-konto-persoenlich]').forEach((el) => {
+        el.textContent = '—';
+      });
+      // Ganze Listen - etwa die Gutscheine - werden ausgeraeumt, nicht
+      // nur auf einen Strich gesetzt.
+      document.querySelectorAll('[data-konto-liste]').forEach((el) => {
+        el.replaceChildren();
+        el.setAttribute('aria-busy', 'false');
+      });
+    };
+
+    window.tgKontoAbmelden = function (knopf) {
+      if (!knopf) return;
+      knopf.addEventListener('click', async function () {
+        if (knopf.disabled) return;
+        const vorher = knopf.textContent;
+        knopf.disabled = true;
+        knopf.textContent = 'Wird abgemeldet …';
+
+        // ZUERST aufraeumen. Ab hier ist jede noch laufende Antwort
+        // ungueltig - auch die, die in dieser Millisekunde ankommt.
+        window.tgKontoRaeumen();
+
+        try {
+          const auth = window.CustomerAuth;
+          if (!auth || typeof auth.signOut !== 'function') throw new Error('kein Abmelden');
+          await auth.signOut();
+          window.location.href = 'anmelden.html?loggedOut=1';
+        } catch (_e) {
+          knopf.disabled = false;
+          knopf.textContent = vorher;
+          const meldung = document.getElementById('kontoAbmeldefehler');
+          if (meldung) {
+            meldung.hidden = false;
+            meldung.textContent =
+              'Das Abmelden konnte nicht abgeschlossen werden. Ihre persönlichen Angaben '
+              + 'sind auf dieser Seite bereits ausgeblendet. Bitte schließen Sie das Fenster '
+              + 'oder versuchen Sie es erneut.';
+          }
+        }
+      });
+    };
+  </script>
+
+  <slot name="skript" />
+</Grundlage>

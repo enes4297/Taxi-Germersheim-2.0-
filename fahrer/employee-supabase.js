@@ -1,7 +1,16 @@
 (() => {
   "use strict";
 
-  const SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+  /*
+    Die Bibliothek kommt aus dem eigenen Bestand, nicht von einem fremden
+    Netz. Gemessen wurde vorher ein Aufruf an
+    cdn.jsdelivr.net/npm/@supabase/supabase-js@2 - ohne feste Version.
+
+    Zwei Gruende: Das Portal haengt sonst an der Erreichbarkeit eines
+    Dritten, und "@2" laedt jede kuenftige Nebenversion ungeprueft nach.
+    Dieselbe Datei liefert die oeffentliche Webseite seit Schritt 017 mit.
+  */
+  const SUPABASE_LIB = "../vendor/supabase-js-2.117.0.js";
 
   let _client = null;
   let _clientReady = false;
@@ -28,7 +37,7 @@
         return;
       }
       const s = document.createElement("script");
-      s.src = SUPABASE_CDN;
+      s.src = SUPABASE_LIB;
       s.async = false;
       s.onload = () => resolve(window.supabase);
       s.onerror = () => resolve(null);
@@ -88,10 +97,25 @@
 
     const { data, error } = await cl.auth.signInWithPassword({ email, password });
     if (error) {
+      /*
+        Der Wortlaut des Dienstes darf NICHT auf den Bildschirm.
+
+        Vorher wurde alles ausser "Invalid login credentials" unveraendert
+        durchgereicht. Meldungen wie "Email not confirmed" oder "User is
+        banned" verraten damit den Zustand eines Kontos - wer eine Adresse
+        durchprobiert, erfaehrt, ob es sie gibt.
+
+        Jetzt gibt es genau zwei Auskuenfte: zu viele Versuche (das muss
+        man wissen, sonst probiert man weiter) und "falsch". Die Kennung
+        des Dienstes bleibt fuer die Fehlersuche im Protokoll.
+      */
+      const kennung = String(error.code || error.status || "").toLowerCase();
+      const zuViele = /429|rate|too_many/.test(kennung);
+      console.error("Anmeldung fehlgeschlagen.", kennung || "unbekannt");
       throw new Error(
-        error.message === "Invalid login credentials"
-          ? "E-Mail-Adresse oder Passwort ist falsch."
-          : (error.message || "Anmeldung fehlgeschlagen.")
+        zuViele
+          ? "Zu viele Versuche. Bitte warte einen Moment und versuche es erneut."
+          : "E-Mail-Adresse oder Passwort ist falsch."
       );
     }
 
@@ -127,10 +151,38 @@
 
   /**
    * Abmelden.
+   *
+   * Geprueft werden BEIDE Wege, auf denen ein Fehlschlag ankommen kann:
+   * eine geworfene Ausnahme UND ein zurueckgegebenes { error }. Der
+   * Supabase-Client meldet Fehler als Rueckgabewert; wer nur auf eine
+   * Ausnahme wartet, haelt jeden Fehlschlag fuer einen Erfolg. Genau das
+   * stand hier vorher.
+   *
+   * Der Geltungsbereich ist der Vorgabewert 'global' - alle Refresh-Tokens
+   * des Kontos verfallen. Ein bereits ausgestellter Access-Token bleibt bis
+   * zu seinem Ablauf gueltig; ein signiertes JWT laesst sich nicht
+   * zurueckholen.
+   *
+   * @returns {Promise<true>} wenn der Dienst den Widerruf bestaetigt hat
+   * @throws {Error} wenn nicht. Die aufrufende Seite raeumt oertlich
+   *                 trotzdem auf und sagt es dem Mitarbeiter.
    */
   async function signOut() {
     const cl = await client();
-    if (cl) await cl.auth.signOut();
+    if (!cl) {
+      /* Ohne Client gibt es auf dem Server nichts zu widerrufen. Das ist
+         kein Erfolg, sondern eine unbeantwortete Frage. */
+      throw new Error("ABMELDUNG_NICHT_BESTAETIGT");
+    }
+    let fehler = null;
+    try {
+      const ergebnis = await cl.auth.signOut();
+      if (ergebnis && ergebnis.error) fehler = ergebnis.error;
+    } catch (ausnahme) {
+      fehler = ausnahme;
+    }
+    if (fehler) throw new Error("ABMELDUNG_NICHT_BESTAETIGT");
+    return true;
   }
 
   /**
@@ -225,6 +277,263 @@
     return { ok: true, data };
   }
 
+  const DOC_BUCKET = "employee-documents";
+  const DOC_MAX_BYTES = 10 * 1024 * 1024;
+  const DOC_MIME = ["application/pdf", "image/jpeg", "image/png"];
+
+  /**
+   * Dokumenttypen aus der Datenbank.
+   */
+  async function getDocumentTypes() {
+    const cl = await client();
+    if (!cl) return [];
+    const { data, error } = await cl
+      .from("document_types")
+      .select("id, key, label")
+      .order("label", { ascending: true });
+    if (error) {
+      console.error("Dokumenttypen konnten nicht geladen werden.", error.code);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Eigene Einreichungen laden.
+   * RLS (document_submissions_select_self) beschraenkt auf den eigenen
+   * Mitarbeiter.
+   */
+  async function getMyDocumentSubmissions() {
+    const cl = await client();
+    if (!cl) return [];
+    const { data, error } = await cl
+      .from("document_submissions")
+      .select("id, employee_id, document_type_id, file_path, file_name, mime_type, status, note, submitted_at, document_types(label)")
+      .order("submitted_at", { ascending: false });
+    if (error) {
+      console.error("Einreichungen konnten nicht geladen werden.", error.code);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Datei hochladen UND den zugehoerigen Datensatz anlegen.
+   *
+   * Ablauf und Fehlerbehandlung
+   *   1. Datei in den privaten Bucket, Pfad <auth.uid()>/<jahr>/<uuid>.<ext>.
+   *      Die Policy erzwingt serverseitig, dass der erste Ordner die eigene
+   *      auth.uid() ist - ein fremder Pfad ist nicht moeglich.
+   *   2. Datensatz in document_submissions mit genau diesem Pfad.
+   *   3. Scheitert Schritt 2, wird die soeben hochgeladene Datei wieder
+   *      entfernt, damit keine verwaiste Datei zurueckbleibt. Die Loeschung
+   *      ist durch die Policy auf den eigenen Ordner begrenzt.
+   *
+   * Rueckgabe { ok, data } nur, wenn BEIDES gespeichert ist.
+   */
+  async function uploadDocumentSubmission({ file, documentTypeId, note }) {
+    if (!file) return { ok: false, error: "NO_FILE" };
+    if (file.size > DOC_MAX_BYTES) return { ok: false, error: "FILE_TOO_LARGE" };
+    if (!DOC_MIME.includes(file.type)) return { ok: false, error: "FILE_TYPE_NOT_ALLOWED" };
+
+    const cl = await client();
+    if (!cl) return { ok: false, error: "SUPABASE_NOT_CONFIGURED" };
+
+    const session = await checkSession();
+    if (!session?.employeeId || !session?.user?.id) {
+      return { ok: false, error: "NO_EMPLOYEE_PROFILE" };
+    }
+
+    const ext = ({
+      "application/pdf": "pdf",
+      "image/jpeg": "jpg",
+      "image/png": "png"
+    })[file.type] || "bin";
+
+    /* Eindeutiger Name: kein Ueberschreiben, auch nicht eigener Dateien. */
+    const unique = (crypto?.randomUUID && crypto.randomUUID()) ||
+      `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const path = `${session.user.id}/${new Date().getFullYear()}/${unique}.${ext}`;
+
+    const uploaded = await cl.storage.from(DOC_BUCKET).upload(path, file, {
+      contentType: file.type,
+      upsert: false
+    });
+    if (uploaded.error) {
+      console.error("Datei konnte nicht hochgeladen werden.", uploaded.error.message);
+      return { ok: false, error: uploaded.error.message || "UPLOAD_FAILED", stage: "upload" };
+    }
+
+    const { data, error } = await cl
+      .from("document_submissions")
+      .insert({
+        employee_id: session.employeeId,
+        document_type_id: documentTypeId || null,
+        file_path: path,
+        file_name: file.name,
+        mime_type: file.type,
+        status: "submitted",
+        note: note ? String(note).trim() : null
+      })
+      .select("id, employee_id, document_type_id, file_path, file_name, mime_type, status, note, submitted_at")
+      .single();
+
+    if (error || !data?.id) {
+      /* Bereinigung ueber die Storage-API. Nur sie entfernt auch das Objekt
+         im Speicher - ein SQL-DELETE wuerde nur den Katalogeintrag loeschen.
+         Die Storage-API wertet dabei die RLS aus: Die DELETE-Policy erlaubt
+         nur den eigenen Ordner, nur aktiven Mitarbeitern und nur fuer
+         unverknuepfte Dateien; der BEFORE-DELETE-Trigger prueft das
+         verbindlich unter Zeilensperre. */
+      let cleaned = false;
+      const cleanup = await cl.storage.from(DOC_BUCKET).remove([path]);
+      if (cleanup.error) {
+        console.error("Verwaiste Datei konnte nicht entfernt werden.", cleanup.error.message);
+      } else {
+        cleaned = Array.isArray(cleanup.data) && cleanup.data.length > 0;
+      }
+      console.error("Einreichung konnte nicht gespeichert werden.", error?.message);
+      return {
+        ok: false,
+        error: error?.message || "INSERT_FAILED",
+        stage: "record",
+        cleaned
+      };
+    }
+
+    return { ok: true, data };
+  }
+
+  /**
+   * Kurz gueltige signierte URL fuer eine eigene Datei.
+   * Der Bucket ist privat; es gibt keine oeffentlichen URLs.
+   */
+  async function getSignedDocumentUrl(filePath, expiresInSeconds = 60) {
+    if (!filePath) return null;
+    const cl = await client();
+    if (!cl) return null;
+    const { data, error } = await cl.storage
+      .from(DOC_BUCKET)
+      .createSignedUrl(filePath, expiresInSeconds);
+    if (error) {
+      console.error("Signierte URL konnte nicht erzeugt werden.", error.message);
+      return null;
+    }
+    return data?.signedUrl || null;
+  }
+
+  /**
+   * Eigene Krankmeldungen laden.
+   * RLS (sickness_reports_select_self) beschränkt auf den eigenen Mitarbeiter.
+   * Es werden bewusst keine medizinischen Angaben geführt - die Tabelle
+   * enthält nur Zeitraum, Notiz, Quelle und Status.
+   */
+  async function getMySicknessReports() {
+    const cl = await client();
+    if (!cl) return [];
+    const { data, error } = await cl
+      .from("sickness_reports")
+      .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at, document_submission_id")
+      .order("start_date", { ascending: false });
+    if (error) {
+      console.error("Krankmeldungen konnten nicht geladen werden.", error.code);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Neue Krankmeldung für den aktuell angemeldeten Mitarbeiter.
+   * employee_id wird aus dem Profil des eingeloggten Benutzers abgeleitet,
+   * nicht aus dem Formular - die Policy sickness_reports_employee_insert
+   * verlangt genau das und zusätzlich status = 'submitted'.
+   *
+   * Dateianhänge werden bewusst NICHT übertragen: document_submission_id
+   * bleibt null, solange es keinen Upload-Weg gibt.
+   */
+  /* Inhaltsvergleich fuer den Wiederholungsfall. Ein Konflikt gilt nur dann
+     als Erfolg, wenn der vorhandene Datensatz zum selben Vorgang UND zum
+     selben Inhalt gehoert - inklusive Dokumentverknuepfung. */
+  function sicknessMatches(row, payload) {
+    const gleich = (a, b) => (a == null ? null : String(a)) === (b == null ? null : String(b));
+    return gleich(row.start_date, payload.start_date)
+      && gleich(row.expected_end_date, payload.expected_end_date)
+      && gleich(row.note, payload.note)
+      && gleich(row.document_submission_id, payload.document_submission_id);
+  }
+
+  async function createSicknessReport({ startDate, expectedEndDate, note, documentSubmissionId, clientRequestId }) {
+    const cl = await client();
+    if (!cl) {
+      return { ok: false, error: "SUPABASE_NOT_CONFIGURED" };
+    }
+
+    const session = await checkSession();
+    if (!session?.employeeId) {
+      return { ok: false, error: "NO_EMPLOYEE_PROFILE" };
+    }
+
+    const payload = {
+      employee_id: session.employeeId,
+      start_date: startDate,
+      expected_end_date: expectedEndDate || null,
+      note: note ? String(note).trim() : null,
+      submission_source: "Mitarbeiterportal",
+      /* Falls ein Nachweis eingereicht wurde, wird er hier verknuepft.
+         Die Policy prueft serverseitig, dass die Einreichung dem eigenen
+         Mitarbeiter gehoert - fremde IDs werden abgelehnt. */
+      document_submission_id: documentSubmissionId || null,
+      /* Technischer Vorgangsschluessel: bleibt ueber Wiederholungen gleich. */
+      client_request_id: clientRequestId || null,
+      status: "submitted"
+    };
+
+    if (!payload.client_request_id) {
+      return { ok: false, error: "MISSING_REQUEST_ID" };
+    }
+
+    const { data, error } = await cl
+      .from("sickness_reports")
+      .insert(payload)
+      .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at, document_submission_id")
+      .single();
+
+    if (error) {
+      /* Wiederholung nach verlorener Antwort.
+         NUR der Konflikt auf genau unserem Vorgangsschluessel darf als
+         Erfolg gelten - ein beliebiger 23505 nicht. Zusaetzlich muss der
+         vorhandene Datensatz inhaltlich passen, sonst waere es eine
+         stillschweigend geschluckte Aenderung. */
+      const istVorgangskonflikt =
+        error.code === "23505" &&
+        String(error.message || "").includes("uq_sickness_reports_client_request");
+
+      if (istVorgangskonflikt) {
+        const existing = await cl
+          .from("sickness_reports")
+          .select("id, employee_id, start_date, expected_end_date, note, submission_source, status, created_at, document_submission_id, client_request_id")
+          .eq("employee_id", session.employeeId)
+          .eq("client_request_id", payload.client_request_id)
+          .maybeSingle();
+
+        if (existing.error || !existing.data?.id) {
+          return { ok: false, error: "ALREADY_SUBMITTED" };
+        }
+        if (!sicknessMatches(existing.data, payload)) {
+          /* Gleicher Vorgang, anderer Inhalt: NICHT still als Erfolg
+             durchwinken. */
+          return { ok: false, error: "REQUEST_ID_CONTENT_MISMATCH", data: existing.data };
+        }
+        return { ok: true, data: existing.data, deduplicated: true };
+      }
+
+      console.error("Krankmeldung konnte nicht gespeichert werden.", error.message || error.code);
+      return { ok: false, error: error.message || "INSERT_FAILED" };
+    }
+
+    return { ok: true, data };
+  }
+
   /**
    * Fahrzeug für eine Schicht laden (nur name, Kennzeichen, Fahrzeugtyp).
    * RLS erlaubt nur Fahrzeuge, die dem eigenen Mitarbeiter in einer veröffentlichten Schicht zugewiesen sind.
@@ -271,6 +580,12 @@
     getMyPublishedShifts,
     getMyVacationRequests,
     createVacationRequest,
+    getMySicknessReports,
+    createSicknessReport,
+    getDocumentTypes,
+    getMyDocumentSubmissions,
+    uploadDocumentSubmission,
+    getSignedDocumentUrl,
     getVehicle,
     isPlanPublished
   };

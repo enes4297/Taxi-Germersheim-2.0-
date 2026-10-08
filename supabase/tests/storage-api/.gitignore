@@ -1,0 +1,11 @@
+# Enthaelt Zugangsdaten zum Testprojekt (Kennwoerter der Testkonten).
+# Der Publishable-Key allein ist kein Geheimnis, die Kennwoerter sind es.
+konfiguration.json
+
+# Die Freigabe nennt die einzige Projektkennung, gegen die gelaufen werden
+# darf. Sie bleibt bewusst lokal - so kann kein Zweig und kein Merge sie
+# unbemerkt auf ein anderes Projekt umbiegen.
+projekt-freigabe.txt
+
+# Laufprotokolle koennen Pfade und Konto-IDs enthalten.
+ergebnis-*.txt

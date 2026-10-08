@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Designprobe Glücksrad · Taxi Germersheim</title>
+
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+  DESIGNPROBE - NICHT TEIL DER AUSLIEFERUNG
+  ═══════════════════════════════════════════════════════════════════════
+
+  Diese Datei liegt in sichtproben/ und damit ausserhalb von src/pages/
+  und public/. Sie wird NICHT gebaut und NICHT in den Ausgabeordner
+  kopiert; `npm run ausgabe-pruefen` stellt das ausdruecklich fest.
+
+  Zweck: das Aussehen und die Drehbewegung des Glücksrads bedienbar
+  vorfuehren, OHNE dass irgendetwas Echtes geschieht.
+
+  WAS HIER ANDERS IST ALS IM KUNDENBETRIEB:
+  Die Auswahlliste "Test-Ergebnis" gibt es nur hier. Im Kundenbetrieb
+  bestimmt der Server das Ergebnis, niemals der Browser - deshalb steht
+  diese Liste in spiele.js nicht und darf dort auch nie stehen.
+
+  Es werden keine Drehs verbraucht, keine Punkte gebucht und keine
+  Gutscheine erzeugt. Es gibt hier keine Anmeldung und keine Verbindung
+  zur Datenbank.
+-->
+
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="../public-system.css">
+<link rel="stylesheet" href="../spiele.css">
+
+<style>
+  body {
+    margin: 0;
+    background: radial-gradient(ellipse at 72% 40%, #242117 0, #111310 32%, #090b0a 70%);
+    color: #f6f3ea;
+    font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  }
+
+  .probe-shell {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 28px clamp(18px, 6vw, 60px) 60px;
+  }
+
+  .probe-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid rgba(221, 199, 140, 0.11);
+  }
+
+  .probe-marke {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+
+  .probe-marke img { width: 26px; height: 33px; object-fit: contain; }
+
+  /* Der Warnstreifen. Er steht ueber allem und ist nicht zu uebersehen -
+     genau das ist seine Aufgabe. */
+  .probe-warnung {
+    margin: 22px 0 0;
+    padding: 14px 18px;
+    border: 1px solid rgba(233, 122, 105, 0.55);
+    background: rgba(233, 122, 105, 0.1);
+    color: #ffd9d0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .probe-warnung span {
+    display: block;
+    margin-top: 5px;
+    color: rgba(255, 217, 208, 0.8);
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.6;
+  }
+
+  .probe-raster {
+    margin-top: 34px;
+    display: grid;
+    gap: clamp(28px, 5vw, 64px);
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  @media (min-width: 1000px) {
+    .probe-raster { grid-template-columns: minmax(0, 1fr) minmax(0, 24rem); }
+  }
+
+  .probe-bedienung {
+    padding: 22px;
+    border: 1px solid rgba(240, 217, 149, 0.2);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .probe-bedienung h2 {
+    margin: 0 0 4px;
+    font-size: 1rem;
+  }
+
+  .probe-bedienung p.hint {
+    margin: 0 0 18px;
+    color: rgba(243, 240, 232, 0.55);
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .probe-feld { margin-bottom: 16px; }
+
+  .probe-feld label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(243, 240, 232, 0.7);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+  }
+
+  .probe-feld select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid rgba(240, 217, 149, 0.3);
+    background: #12140f;
+    color: #f6f3ea;
+    font: inherit;
+    font-size: 16px;
+  }
+
+  .probe-knopf {
+    width: 100%;
+    padding: 14px 18px;
+    border: 1px solid #f2d697;
+    background: linear-gradient(110deg, #af843e 0, #f4dfa4 32%, #e1bd70 60%, #c69b4d);
+    color: #1a1407;
+    font: inherit;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 3px 0 #705425;
+    transition: filter 0.2s, transform 0.2s;
+  }
+
+  .probe-knopf:hover:not(:disabled) { filter: brightness(1.08); }
+  .probe-knopf:active:not(:disabled) { transform: translateY(2px); }
+  .probe-knopf:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .probe-stand {
+    margin: 16px 0 0;
+    padding: 12px 14px;
+    border: 1px solid rgba(240, 217, 149, 0.18);
+    background: rgba(0, 0, 0, 0.25);
+    color: rgba(243, 240, 232, 0.86);
+    font-size: 0.86rem;
+    line-height: 1.6;
+  }
+
+  .probe-liste {
+    margin: 20px 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .probe-liste li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    font-size: 0.82rem;
+  }
+
+  .probe-liste b { color: rgba(243, 240, 232, 0.65); font-weight: 600; }
+  .probe-liste span { color: #e8bd61; font-variant-numeric: tabular-nums; }
+
+  button:focus-visible,
+  select:focus-visible,
+  a:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 4px;
+  }
+</style>
+</head>
+
+<body>
+<div class="probe-shell">
+  <header class="probe-kopf">
+    <div class="probe-marke">
+      <img src="../public/assets/brand/tg-bildzeichen.svg" alt="" width="26" height="33">
+      <span>TAXI GERMERSHEIM</span>
+    </div>
+    <span style="font-size:11px;letter-spacing:2px;color:#c6b994">DESIGNPROBE · SCHRITT 022</span>
+  </header>
+
+  <p class="probe-warnung" role="status">
+    Demo – keine echten Gewinne
+    <span>
+      Hier wird ausschließlich das Aussehen und die Drehbewegung vorgeführt.
+      Es werden keine Drehs verbraucht, keine Punkte gebucht und keine Gutscheine
+      erzeugt. Die Auswahl rechts bestimmt das Testergebnis – im echten Betrieb
+      bestimmt das ausschließlich der Server.
+    </span>
+  </p>
+
+  <div class="probe-raster">
+    <!-- Dieselbe Szene wie in spiele.html, damit die Probe zeigt, was dort steht. -->
+    <div class="gw-wheel-visual">
+      <div class="gw-wheel-shell">
+        <span class="gw-wheel-pointer" aria-hidden="true"></span>
+        <div class="gw-wheel-rim" aria-hidden="true">
+          <svg class="gw-wheel-svg" data-gw-wheel-svg viewBox="0 0 500 500" role="img"
+               aria-label="Glücksrad mit sieben Feldern: 5, 10, 20, 30 und 50 Punkte, 20 Euro Gutschein und Yumaks Box"></svg>
+        </div>
+        <div class="gw-wheel-hub" aria-hidden="true">
+          <img src="../public/assets/brand/tg-bildzeichen.svg" alt="" width="335" height="422" draggable="false">
+        </div>
+      </div>
+    </div>
+
+    <aside class="probe-bedienung">
+      <h2>Bedienung</h2>
+      <p class="hint">
+        Wählen Sie ein Testergebnis und starten Sie den Probedreh. Das Rad bleibt
+        genau auf dem gewählten Feld stehen.
+      </p>
+
+      <div class="probe-feld">
+        <label for="probe-ergebnis">Test-Ergebnis</label>
+        <select id="probe-ergebnis"></select>
+      </div>
+
+      <button type="button" class="probe-knopf" id="probe-start">Probedreh starten</button>
+
+      <p class="probe-stand" id="probe-stand" role="status" aria-live="polite">
+        Bereit für den Probedreh.
+      </p>
+
+      <ul class="probe-liste">
+        <li><b>Felder</b><span id="probe-anzahl">–</span></li>
+        <li><b>Feldbreite</b><span id="probe-breite">–</span></li>
+        <li><b>Raddrehung</b><span id="probe-drehung">–</span></li>
+        <li><b>Zeiger steht auf</b><span id="probe-treffer">–</span></li>
+      </ul>
+
+      <p class="hint" style="margin-top:18px">
+        Alle sieben Felder sind gleich groß dargestellt. Die Feldgröße sagt nichts
+        über die Gewinnchance: Die hinterlegten Wahrscheinlichkeiten sind
+        35 / 25 / 18 / 10 / 7 / 4 / 1 Prozent.
+      </p>
+    </aside>
+  </div>
+</div>
+
+<script src="../gluecksrad.js"></script>
+<script>
+/*
+  Diese Probe benutzt DIESELBE Zeichnung und DIESELBE Drehung wie die
+  Spielewelt. Kopiert wird nichts: spiele.js legt sie unter
+  window.TaxiGluecksrad ab, und von dort holt die Probe sie sich.
+
+  Eine zweite, eigene Radlogik neben der echten waere genau die Art von
+  Doppelung, bei der eine von beiden irgendwann anders rechnet.
+*/
+(function () {
+  'use strict';
+
+  var rad = window.TaxiGluecksrad;
+  var auswahl = document.getElementById('probe-ergebnis');
+  var knopf = document.getElementById('probe-start');
+  var stand = document.getElementById('probe-stand');
+
+  if (!rad) {
+    stand.textContent = 'spiele.js wurde nicht geladen – die Probe kann das Rad nicht zeichnen.';
+    knopf.disabled = true;
+    return;
+  }
+
+  rad.segmente.forEach(function (segment, i) {
+    var option = document.createElement('option');
+    option.value = segment.prize;
+    option.textContent = segment.title;
+    if (i === 2) option.selected = true;
+    auswahl.appendChild(option);
+  });
+
+  document.getElementById('probe-anzahl').textContent = String(rad.segmente.length);
+  document.getElementById('probe-breite').textContent = (360 / rad.segmente.length).toFixed(2) + '°';
+
+  rad.zeichne();
+
+  knopf.addEventListener('click', function () {
+    // Wiederholte Klicks: Solange sich das Rad dreht, passiert nichts.
+    if (rad.dreht()) return;
+
+    knopf.disabled = true;
+    auswahl.disabled = true;
+    stand.textContent = 'Das Rad dreht sich …';
+    document.getElementById('probe-treffer').textContent = '–';
+
+    rad.stoppeAuf(auswahl.value).then(function (feld) {
+      knopf.disabled = false;
+      auswahl.disabled = false;
+      knopf.textContent = 'Noch einmal drehen';
+
+      if (!feld) {
+        stand.textContent = 'Kein gültiges Testergebnis – das Rad wurde nicht gedreht.';
+        return;
+      }
+
+      stand.textContent = 'Testergebnis: ' + feld.title + ' · Demo, kein echter Gewinn.';
+      document.getElementById('probe-treffer').textContent = feld.title;
+
+      var svg = document.querySelector('[data-gw-wheel-svg]');
+      var dreh = (svg.style.transform || '').match(/rotate\(([-\d.]+)deg\)/);
+      document.getElementById('probe-drehung').textContent = dreh ? Math.round(Number(dreh[1])) + '°' : '–';
+    });
+  });
+})();
+</script>
+</body>
+</html>

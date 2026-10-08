@@ -5,9 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Taxi Germersheim - Statistiken</title>
   <meta name="robots" content="noindex,nofollow">
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
   <script src="auth.js"></script>
-  <link rel="stylesheet" href="admin.css">
-</head>
+  <script src="sidebar.js"></script>
+<link rel="stylesheet" href="admin.css">
+      </head>
 <body>
   <div class="admin-shell">
     <aside class="admin-sidebar" aria-label="Interne Navigation">
@@ -19,18 +22,7 @@
         </div>
       </div>
 
-      <nav class="admin-nav">
-        <a class="admin-nav-item" href="index.html#dashboard">Dashboard</a>
-        <a class="admin-nav-item" href="index.html">Fahrten</a>
-        <a class="admin-nav-item" href="fahrer.html">Fahrer</a>
-        <a class="admin-nav-item" href="fahrzeuge.html">Fahrzeuge</a>
-        <a class="admin-nav-item" href="kunden.html">Kunden</a>
-        <a class="admin-nav-item" href="rechnungen.html">Rechnungen</a>
-        <a class="admin-nav-item" href="schichtplanung.html">Schichtplanung</a>
-        <a class="admin-nav-item is-active" href="statistiken.html" aria-current="page">Statistiken</a>
-        <a class="admin-nav-item" href="einstellungen.html">Einstellungen</a>
-        <button class="admin-nav-item admin-logout-btn" type="button" data-admin-logout>Logout</button>
-      </nav>
+      <nav class="admin-nav" data-admin-sidebar></nav>
     </aside>
 
     <main class="admin-main">
@@ -183,3 +175,7 @@
   <script src="statistiken.js"></script>
 </body>
 </html>
+
+
+
+

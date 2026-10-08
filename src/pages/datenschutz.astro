@@ -1,0 +1,66 @@
+---
+/**
+ * Datenschutzerklaerung — unter derselben Adresse wie bisher
+ * (datenschutz.html).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DER TEXT IST UNVERAENDERT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Alle acht Abschnitte stehen wortgleich so in der bisherigen
+ * datenschutz.html und liegen in inhalte.ts unter DATENSCHUTZ. Neu ist
+ * ausschliesslich die Gestaltung.
+ *
+ * Bekannte Luecken - intern festgehalten in
+ * ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md, Abschnitt 2.7, und dem Auftraggeber
+ * als Entscheidung E6 genannt: Die Erklaerung nennt WhatsApp als Hauptweg
+ * der Fahrtanfrage nicht, ebenso wenig Supabase, das Kundenkonto, das
+ * Rewards-Programm, den Gewinnverlauf, die im Browser gespeicherten Daten
+ * und das Beschwerderecht bei der Aufsichtsbehoerde.
+ *
+ * Diese Luecken werden hier NICHT gefuellt. Eine selbst hinzugeschriebene
+ * Datenschutzangabe saehe aus, als haette sie jemand geprueft - und niemand
+ * hat sie geprueft. Die Bewertung gehoert zu einem Rechtsbeistand.
+ *
+ * ZUSTIMMUNGSBANNER: bewusst nicht uebernommen. Es steuerte genau einen
+ * Dienst - Google-Maps-Einbettungen - und der kommt im ausgelieferten Stand
+ * auf keiner einzigen Seite mehr vor. Ein Schalter ohne Wirkung waere eine
+ * Behauptung ueber eine Einwilligung, die gar nichts einwilligt. Die
+ * vollstaendige Untersuchung steht in ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md,
+ * Abschnitt 9.2.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
+import Unterseitenkopf from '../components/Unterseitenkopf.astro';
+import Rechtskarten from '../components/Rechtskarten.astro';
+import Enthuellen from '../components/Enthuellen.astro';
+import { DATENSCHUTZ, IMPRESSUM } from '../inhalte';
+---
+
+<Grundlage
+  titel="Datenschutz | Taxi Germersheim GmbH"
+  beschreibung="Informationen zum Umgang mit personenbezogenen Daten bei der Taxi Germersheim GmbH: erhobene Daten, Zweck, Rechtsgrundlage, Speicherdauer und Ihre Rechte."
+  pfad="datenschutz.html"
+>
+  <Sprungmarken />
+  <Kopfbereich startseite={false} />
+
+  <main id="inhalt" class="pt-16 lg:pt-20">
+    <Unterseitenkopf label={DATENSCHUTZ.label} titel={DATENSCHUTZ.titel} text={DATENSCHUTZ.text} />
+
+    <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pb-20 lg:pb-28">
+      <Rechtskarten karten={DATENSCHUTZ.karten} />
+
+      <Enthuellen verzoegerung={120}>
+        <p class="mt-10 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          Angaben zum Unternehmen, zur Vertretung und zur Genehmigungsbehörde stehen im
+          <a href="impressum.html" class="text-foreground hover:text-primary transition-colors duration-150 underline underline-offset-4 decoration-border">{IMPRESSUM.titel}</a>.
+        </p>
+      </Enthuellen>
+    </div>
+  </main>
+
+  <Fusszeile startseite={false} />
+</Grundlage>

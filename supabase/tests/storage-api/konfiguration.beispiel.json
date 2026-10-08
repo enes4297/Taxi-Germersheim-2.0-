@@ -1,0 +1,15 @@
+{
+  "_hinweis": "Kopie als konfiguration.json anlegen und ausfuellen. NUR das Testprojekt eintragen, niemals die Produktivinstanz. Die Datei konfiguration.json ist per .gitignore ausgeschlossen.",
+
+  "projektUrl": "https://HIER_TESTPROJEKT_REF_EINTRAGEN.supabase.co",
+  "publishableKey": "sb_publishable_HIER_EINTRAGEN",
+
+  "konten": {
+    "mitarbeiterA": { "email": "tg-test-a@example.invalid", "passwort": "HIER_EINTRAGEN" },
+    "mitarbeiterB": { "email": "tg-test-b@example.invalid", "passwort": "HIER_EINTRAGEN" },
+    "admin":        { "email": "tg-test-admin@example.invalid", "passwort": "HIER_EINTRAGEN" },
+    "inaktiv":      { "email": "tg-test-inaktiv@example.invalid", "passwort": "HIER_EINTRAGEN" }
+  },
+
+  "dokumenttypSchluessel": "tg-test-nachweis"
+}

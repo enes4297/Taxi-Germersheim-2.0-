@@ -1,0 +1,350 @@
+---
+/**
+ * Hero-Buehne mit dem freigegebenen Videoverhalten.
+ *
+ * Eins zu eins uebernommen aus HeroMedia() der Vorschau (site-ui.tsx,
+ * Commit 113a73e), hier ohne React. Jede Eigenschaft unten stammt aus einer
+ * Vorgabe oder aus einer Messung; die Begruendungen sind mituebernommen,
+ * damit sie beim naechsten Umbau nicht verloren gehen.
+ *
+ * ABLAUF
+ *   Der Film laeuft genau EINMAL, stumm, ohne Loop und ohne Neustart beim
+ *   Scrollen. Danach bleibt das Logo dauerhaft als Schlussbild stehen.
+ *
+ * RUECKFALL
+ *   Reduzierte Bewegung  -> der Film wird nicht geladen (preload="none",
+ *                           kein Autoplay). Standbild steht. Wer will, kann
+ *                           ihn ueber die Schaltflaeche starten.
+ *   Autoplay abgelehnt   -> Standbild steht, Schaltflaeche bietet "Abspielen".
+ *   Ladefehler           -> Standbild steht, keine Schaltflaeche.
+ *
+ * BANDBREITE
+ *   Der Film haengt sich erst ein, wenn die Seite geladen ist. Gemessen am
+ *   18.09.2026: Ohne diese Bremse war die Buchung bei langsamem DSL erst nach
+ *   13 Sekunden beschreibbar, im 3G-Netz erst nach 27. Der Film ist Beiwerk.
+ */
+
+interface Props {
+  /** Fuer welche Breite diese Buehne gedacht ist. Siehe `aktiv` im Skript. */
+  fuer: 'desktop' | 'mobil';
+  /** Alternativtext des Standbildes. */
+  alt: string;
+  /** Bildausschnitt des Films auf dieser Buehne. */
+  videoPosition?: string;
+  /** Wohin das Logo nach dem Filmende rueckt. */
+  endAusrichtung?: 'mitte' | 'rechts';
+  /** Wo die Bedienung sitzt - sie darf nichts Wichtiges verdecken. */
+  bedienungKlasse?: string;
+  class?: string;
+}
+
+const {
+  fuer,
+  alt,
+  videoPosition = '50% 50%',
+  endAusrichtung = 'mitte',
+  bedienungKlasse = 'absolute bottom-5 right-5 z-30',
+  class: klasse = '',
+} = Astro.props;
+
+const mobil = fuer === 'mobil';
+
+const MEDIEN = {
+  mp4: mobil ? '/assets/hero/hero-720.mp4' : '/assets/hero/hero-1080.mp4',
+  webm: mobil ? '/assets/hero/hero-720.webm' : '/assets/hero/hero-1080.webm',
+  standbild: mobil ? '/assets/hero/hero-standbild-mobil.jpg' : '/assets/hero/hero-standbild.jpg',
+  schlussbild: mobil ? '/assets/hero/hero-schlussbild-mobil.png' : '/assets/hero/hero-schlussbild.png',
+};
+---
+
+{/* Dasselbe Schwarz wie im Film (gemessen: 1,1,0). Nur so bleibt beim Ruecken
+    des Schlussbildes kein heller Rand stehen. */}
+<div
+  class={`overflow-hidden ${klasse}`}
+  style="background-color: #010100"
+  data-hero-buehne
+  data-fuer={fuer}
+  data-mp4={MEDIEN.mp4}
+  data-webm={MEDIEN.webm}
+  data-schlussbild={MEDIEN.schlussbild}
+  data-video-position={videoPosition}
+  data-end-ausrichtung={endAusrichtung}
+>
+  {/* Ebene 1: Standbild. Traegt den Rueckfall fuer reduzierte Bewegung,
+      abgelehntes Autoplay und Ladefehler. */}
+  <img
+    src={MEDIEN.standbild}
+    alt={alt}
+    width={mobil ? 1280 : 1920}
+    height={mobil ? 720 : 1080}
+    decoding="async"
+    fetchpriority="high"
+    class="absolute inset-0 w-full h-full object-cover"
+    style={`object-position: ${videoPosition}`}
+    data-hero-standbild
+  />
+
+  {/* Ebenen 2 und 3 - Film und Schlussbild - haengt das Skript ein, sobald
+      die Seite steht. Bis dahin traegt das Standbild die Buehne. */}
+
+  <div class={bedienungKlasse} data-hero-bedienung hidden>
+    <button
+      type="button"
+      class="inline-flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md ring-1 ring-white/20 px-3.5 py-2 text-white/85 hover:text-white hover:bg-black/75 transition-colors duration-150"
+      data-hero-knopf
+    >
+      <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" aria-hidden="true" data-hero-symbol></svg>
+      <span class="text-xs font-medium" data-hero-knopftext></span>
+    </button>
+  </div>
+</div>
+
+<script>
+  /** Wo das Logo im Film liegt - am Schlussbild ausgemessen, 1920 x 1080. */
+  const LOGO_IM_FILM = { x0: 0.2995, x1: 0.7036, y0: 0.3028, y1: 0.7046 };
+
+  const PFAD_PLAY = 'M8 5v14l11-7z';
+  const PFAD_PAUSE = 'M6 5h4v14H6zM14 5h4v14h-4z';
+
+  type Zustand = 'ruhe' | 'laeuft' | 'pausiert' | 'ende' | 'fehler';
+
+  /** Anteil aus einer Angabe wie "50% 62%" holen. */
+  function anteil(position: string, achse: 0 | 1): number {
+    const teile = position.trim().split(/\s+/);
+    const wert = parseFloat(teile[achse] ?? '50');
+    return Number.isFinite(wert) ? Math.min(1, Math.max(0, wert / 100)) : 0.5;
+  }
+
+  /**
+   * Wohin das Schlussbild rueckt. Rechnung fuer `object-fit: cover`:
+   * Das 1920 x 1080 grosse Bild wird so skaliert, dass es die Buehne fuellt,
+   * und nach `object-position` verschoben. Daraus folgt die Lage des Logos in
+   * Bildschirmpunkten - und daraus der noetige Versatz.
+   */
+  function endLage(breite: number, hoehe: number, position: string, ausrichtung: string) {
+    if (ausrichtung === 'mitte' || breite === 0 || hoehe === 0) {
+      return { transform: 'none', transformOrigin: '50% 50%' };
+    }
+    const s = Math.max(breite / 1920, hoehe / 1080);
+    const bw = 1920 * s;
+    const bh = 1080 * s;
+    const ox = (breite - bw) * anteil(position, 0);
+    const oy = (hoehe - bh) * anteil(position, 1);
+
+    const logoX = ox + ((LOGO_IM_FILM.x0 + LOGO_IM_FILM.x1) / 2) * bw;
+    const logoY = oy + ((LOGO_IM_FILM.y0 + LOGO_IM_FILM.y1) / 2) * bh;
+    const logoBreite = (LOGO_IM_FILM.x1 - LOGO_IM_FILM.x0) * bw;
+
+    // Zielgroesse und Zielort in der freien rechten Flaeche. Beide Werte sind
+    // an 1280, 1440 und 1920 Punkten Breite nachgemessen: Das Logo bleibt
+    // dabei rechts von der Ueberschrift und ueber der Buchungsleiste.
+    const zielBreite = Math.max(170, Math.min(380, breite * 0.25));
+    const k = zielBreite / logoBreite;
+    const zielX = breite * 0.815;
+    const zielY = hoehe * 0.4;
+
+    return {
+      transform: `translate(${Math.round(zielX - logoX)}px, ${Math.round(zielY - logoY)}px) scale(${k.toFixed(4)})`,
+      transformOrigin: `${Math.round(logoX)}px ${Math.round(logoY)}px`,
+    };
+  }
+
+  function buehneAufsetzen(buehne: HTMLElement) {
+    const ruhig = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const schmal = window.matchMedia('(max-width: 767px)');
+
+    // Die Seite haelt BEIDE Buehnen im Markup - die Desktopfassung in
+    // "hidden md:block", die Mobilfassung in "md:hidden". Sichtbar ist immer
+    // nur eine. Ohne diese Unterscheidung wuerde die unsichtbare den Film
+    // ebenfalls laden und abspielen: zwei Stroeme, doppelte Last, und der
+    // Endzustand der falschen Buehne.
+    const istMobilFassung = buehne.dataset.fuer === 'mobil';
+    if (istMobilFassung !== schmal.matches) return;
+
+    const standbild = buehne.querySelector<HTMLImageElement>('[data-hero-standbild]')!;
+    const bedienung = buehne.querySelector<HTMLElement>('[data-hero-bedienung]')!;
+    const knopf = buehne.querySelector<HTMLButtonElement>('[data-hero-knopf]')!;
+    const knopftext = buehne.querySelector<HTMLElement>('[data-hero-knopftext]')!;
+    const symbol = buehne.querySelector<SVGElement>('[data-hero-symbol]')!;
+
+    const vPos = buehne.dataset.videoPosition || '50% 50%';
+    const ausrichtung = schmal.matches ? 'mitte' : buehne.dataset.endAusrichtung || 'mitte';
+
+    let zustand: Zustand = 'ruhe';
+    let jeGelaufen = false;
+    let gerueckt = false;
+    let lage = { transform: 'none', transformOrigin: '50% 50%' };
+
+    // ── Film und Schlussbild einhaengen ───────────────────────────────────
+    const video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.preload = ruhig.matches ? 'none' : 'auto';
+    video.poster = standbild.src;
+    video.setAttribute('aria-label', `Werbefilm: ${standbild.alt}`);
+    video.className = 'absolute inset-0 w-full h-full object-cover pointer-events-none';
+    video.style.objectPosition = vPos;
+    video.style.opacity = '0';
+    if (buehne.dataset.webm) {
+      const q = document.createElement('source');
+      q.src = buehne.dataset.webm;
+      q.type = 'video/webm';
+      video.appendChild(q);
+    }
+    const q2 = document.createElement('source');
+    q2.src = buehne.dataset.mp4!;
+    q2.type = 'video/mp4';
+    video.appendChild(q2);
+
+    const schluss = document.createElement('img');
+    schluss.src = buehne.dataset.schlussbild!;
+    schluss.alt = '';
+    schluss.setAttribute('aria-hidden', 'true');
+    schluss.decoding = 'async';
+    schluss.className = 'absolute inset-0 w-full h-full object-cover pointer-events-none';
+    schluss.style.objectPosition = vPos;
+    schluss.style.opacity = '0';
+
+    // ACHTUNG: Hier wird noch nichts eingehaengt. Ein <video> mit Quellen und
+    // preload="auto" beginnt zu laden, sobald es im Dokument steht - genau
+    // das soll die Bremse weiter unten verhindern. Dasselbe gilt fuer das
+    // Schlussbild: Gebraucht wird es erst 23 Sekunden spaeter, und auf einer
+    // langsamen Leitung soll es der Buchung keine Bandbreite wegnehmen.
+    let eingehaengt = false;
+    function einhaengen() {
+      if (eingehaengt) return;
+      eingehaengt = true;
+      buehne.insertBefore(video, bedienung);
+      buehne.insertBefore(schluss, bedienung);
+      zeichnen();
+    }
+
+    // ── Anzeige nachfuehren ───────────────────────────────────────────────
+    function zeichnen() {
+      // Der Film wird erst sichtbar, wenn er tatsaechlich einmal Bilder
+      // geliefert hat. Verweigert der Browser das Abspielen, bleibt dadurch
+      // das Standbild stehen - und nicht eine schwarze Videoflaeche.
+      const zeigtFilm = jeGelaufen && zustand !== 'fehler';
+
+      standbild.style.opacity = zeigtFilm ? '0' : '1';
+      standbild.style.transition = ruhig.matches ? 'none' : 'opacity 420ms ease-out';
+
+      // Sobald das Schlussbild deckend darueberliegt und zu ruecken beginnt,
+      // wird der Film ausgeblendet. Ohne das bliebe SEIN Logo in der Mitte
+      // stehen, waehrend das Schlussbild nach rechts zieht - es waeren zwei
+      // Logos zu sehen. Der Wechsel ist unsichtbar, weil das Schlussbild in
+      // diesem Moment die ganze Flaeche deckt. Und ohne Ueberblendung: Ein
+      // 420-ms-Verlauf liesse das mittige Logo durchscheinen.
+      const filmWeg = zustand === 'ende' && gerueckt;
+      video.style.opacity = zeigtFilm && !filmWeg ? '1' : '0';
+      video.style.transition = ruhig.matches || filmWeg ? 'none' : 'opacity 420ms ease-out';
+
+      schluss.style.opacity = zustand === 'ende' ? '1' : '0';
+      schluss.style.transform = gerueckt ? lage.transform : 'none';
+      schluss.style.transformOrigin = lage.transformOrigin;
+      schluss.style.transition = ruhig.matches
+        ? 'none'
+        : 'opacity 200ms linear, transform 900ms cubic-bezier(0.22, 1, 0.36, 1)';
+
+      // Bedienung: Pause waehrend des Laufs, "Erneut ansehen" danach,
+      // "Abspielen", wenn nichts laeuft. Bei einem Ladefehler gibt es nichts
+      // zu bedienen.
+      if (zustand === 'fehler' || !eingehaengt) {
+        bedienung.hidden = true;
+        return;
+      }
+      bedienung.hidden = false;
+      const text = zustand === 'laeuft' ? 'Pause' : zustand === 'ende' ? 'Erneut ansehen' : 'Abspielen';
+      knopftext.textContent = text;
+      knopf.setAttribute('aria-label', `${text} – Werbefilm`);
+      symbol.innerHTML = `<path d="${zustand === 'laeuft' ? PFAD_PAUSE : PFAD_PLAY}" fill="currentColor"/>`;
+    }
+
+    function setzen(neu: Zustand) {
+      zustand = neu;
+      zeichnen();
+    }
+
+    // ── Endlage berechnen und bei Groessenaenderung nachfuehren ───────────
+    // Sonst sitzt das Logo nach dem Drehen des Geraets falsch.
+    const rechnen = () => {
+      lage = endLage(buehne.clientWidth, buehne.clientHeight, vPos, ausrichtung);
+      if (zustand === 'ende') zeichnen();
+    };
+    new ResizeObserver(rechnen).observe(buehne);
+
+    // ── Ereignisse ────────────────────────────────────────────────────────
+    // Auf die Ereignisse des Elements hoeren, nicht nur auf das Ergebnis von
+    // play(). Sonst kann der angezeigte Zustand von dem abweichen, was das
+    // Element tatsaechlich tut - etwa wenn der Browser von sich aus anhaelt.
+    video.addEventListener('playing', () => {
+      jeGelaufen = true;
+      if (zustand !== 'ende') setzen('laeuft');
+      else zeichnen();
+    });
+    video.addEventListener('pause', () => setzen(video.ended ? 'ende' : 'pausiert'));
+    video.addEventListener('error', () => setzen('fehler'));
+    video.addEventListener('ended', () => {
+      rechnen();
+      gerueckt = false;
+      setzen('ende');
+      // Erst danach ruecken - so liegt das Schlussbild zuerst genau auf dem
+      // letzten Filmbild, und die Bewegung ist als Bewegung zu sehen.
+      window.setTimeout(() => {
+        gerueckt = true;
+        zeichnen();
+      }, 420);
+    });
+
+    knopf.addEventListener('click', () => {
+      einhaengen();
+      if (zustand === 'laeuft') {
+        video.pause();
+        return;
+      }
+      if (zustand === 'ende') {
+        gerueckt = false;
+        video.currentTime = 0;
+      }
+      video.play().then(
+        () => setzen('laeuft'),
+        // Abgelehntes Autoplay ist kein Fehlerfall: Das Standbild steht, und
+        // die Schaltflaeche bietet das Abspielen an.
+        () => setzen('ruhe'),
+      );
+    });
+
+    // ── Einmal starten - und nur einmal ───────────────────────────────────
+    // Bei reduzierter Bewegung sofort einhaengen, aber mit preload="none":
+    // Das kostet keine Daten und haelt "Abspielen" verfuegbar. Es wird nichts
+    // von selbst gestartet.
+    if (ruhig.matches) {
+      einhaengen();
+    } else {
+      const frei = () => {
+        const leerlauf =
+          window.requestIdleCallback ?? ((f: () => void) => window.setTimeout(f, 300));
+        leerlauf(
+          () => {
+            einhaengen();
+            video.play().then(
+              () => setzen('laeuft'),
+              () => setzen('ruhe'),
+            );
+          },
+          { timeout: 2500 },
+        );
+      };
+      if (document.readyState === 'complete') frei();
+      else window.addEventListener('load', frei, { once: true });
+    }
+
+    rechnen();
+    zeichnen();
+  }
+
+  for (const b of document.querySelectorAll<HTMLElement>('[data-hero-buehne]')) {
+    buehneAufsetzen(b);
+  }
+</script>

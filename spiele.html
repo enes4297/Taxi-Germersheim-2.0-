@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <title>Yumaks Spielewelt | Taxi Germersheim GmbH</title>
+  <meta name="description" content="Yumaks Spielewelt: die exklusive Rewards-Erfahrung für Kunden von Taxi Germersheim.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="spiele.html">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:site_name" content="Taxi Germersheim GmbH">
+  <meta property="og:title" content="Yumaks Spielewelt | Taxi Germersheim GmbH">
+  <meta property="og:description" content="Exklusive Rewards-Spiele und Überraschungen für Taxi-Germersheim-Kunden.">
+  <meta property="og:url" content="spiele.html">
+  <meta property="og:image" content="logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="public-visual-repair.css">
+  <link rel="stylesheet" href="spiele.css">
+  <link rel="stylesheet" href="taxi-rush.css">
+  <link rel="stylesheet" href="public-system.css">
+  <script src="public-system.js" defer></script>
+</head>
+<body class="tg-public gameworld-body" data-tg-page="rewards">
+  <header class="topbar">
+    <a href="index.html" aria-label="Taxi Germersheim Startseite">Taxi Germersheim</a>
+    <nav aria-label="Hauptnavigation">
+      <a href="index.html">Startseite</a>
+      <a href="rewards.html" aria-current="page">Rewards</a>
+    </nav>
+  </header>
+
+  <main class="gameworld-main">
+    <section class="gw-hero" aria-labelledby="gameworldTitle">
+      <div class="gw-hero-copy" data-tg-reveal>
+        <p class="gw-eyebrow">Taxi Germersheim Rewards</p>
+        <p class="gw-wordmark">Yumaks Spielewelt</p>
+        <h1 id="gameworldTitle"><span>Fahren.</span><span>Sammeln.</span><span>Spielen.</span></h1>
+        <p class="gw-hero-subline">Entdecke exklusive Rewards-Spiele und Überraschungen.</p>
+        <div class="gw-hero-actions">
+          <a class="gw-button gw-button-primary" href="#deine-spiele">Spiele entdecken</a>
+          <a class="gw-text-link" href="rewards.html">Rewards ansehen</a>
+        </div>
+      </div>
+      <div class="gw-hero-index" aria-hidden="true">
+        <span>01</span>
+        <i></i>
+        <span>Rewards Experience</span>
+      </div>
+    </section>
+
+    <section class="gw-status" aria-label="Ihr Rewards-Status" data-tg-reveal>
+      <div class="gw-status-heading">
+        <span>Ihr Status</span>
+        <a href="wallet-gutscheine.html" data-gw-voucher-link hidden>Gutscheine ansehen</a>
+      </div>
+
+      <div class="gw-status-loading" data-gw-status-loading role="status" aria-label="Rewards-Status wird geladen">
+        <span></span><span></span><span></span>
+      </div>
+
+      <div class="gw-status-guest" data-gw-status-guest hidden>
+        <p>Ihre echten Punkte, Ihr Level und Ihre verfügbaren Drehs erscheinen nach der Anmeldung.</p>
+        <a class="gw-button gw-button-small" href="anmelden.html">Anmelden und spielen</a>
+      </div>
+
+      <dl class="gw-status-values" data-gw-status-content hidden>
+        <div><dt>Punkte</dt><dd data-gw-points>—</dd></div>
+        <div><dt>Level</dt><dd data-gw-level>—</dd></div>
+        <div><dt>Verfügbare Drehs</dt><dd data-gw-spins>—</dd></div>
+      </dl>
+
+      <div class="gw-status-error" data-gw-status-error hidden role="status">
+        <strong>Ihr Rewards-Status ist gerade nicht verfügbar.</strong>
+        <span>Bitte versuche es später erneut.</span>
+      </div>
+    </section>
+
+    <section id="deine-spiele" class="gw-games" aria-labelledby="gamesTitle">
+      <header class="gw-section-head" data-tg-reveal>
+        <div>
+          <p class="gw-eyebrow">Yumaks Auswahl</p>
+          <h2 id="gamesTitle">Ihre Spiele</h2>
+        </div>
+      </header>
+
+      <article class="gw-wheel-feature" aria-labelledby="wheelTitle" data-gw-wheel-state="loading" data-tg-reveal>
+        <div class="gw-wheel-visual">
+          <div class="gw-wheel-shell">
+            <span class="gw-wheel-pointer" aria-hidden="true"></span>
+            <!-- Der Goldring liegt fest; nur das SVG darin dreht sich. -->
+            <div class="gw-wheel-rim" aria-hidden="true">
+              <svg class="gw-wheel-svg" data-gw-wheel-svg viewBox="0 0 500 500" role="img" aria-label="Glücksrad mit den im Rewards-Backend hinterlegten Gewinnarten"></svg>
+            </div>
+            <div class="gw-wheel-hub" aria-hidden="true">
+              <img src="assets/brand/tg-bildzeichen.svg" alt="" width="335" height="422" draggable="false" />
+            </div>
+          </div>
+        </div>
+
+        <div class="gw-wheel-copy">
+          <p class="gw-game-number">Hauptspiel · 01</p>
+          <h3 id="wheelTitle">Glücksrad</h3>
+          <p class="gw-game-lead">Ein präzises Rewards-Instrument für Ihre echten Taxi-Germersheim-Drehs.</p>
+
+          <div class="gw-wheel-state" aria-live="polite">
+            <strong data-gw-wheel-status>Rewards-Status wird geprüft.</strong>
+            <span data-gw-wheel-detail>Ihre Kontodaten werden sicher geladen.</span>
+          </div>
+
+          <div class="gw-wheel-actions">
+            <a class="gw-button gw-button-primary" href="anmelden.html" data-gw-wheel-login hidden>Anmelden und spielen</a>
+            <button class="gw-button gw-button-primary" type="button" data-gw-wheel-action disabled hidden>Bald verfügbar</button>
+          </div>
+
+          <p class="gw-contract-note">Das Ergebnis echter Rewards wird ausschließlich im Backend festgelegt.</p>
+          <!--
+            ABWEICHUNG DER DESIGNVORLAGE, ausdruecklich benannt: Die sieben
+            Felder sind gleich gross, die hinterlegten Wahrscheinlichkeiten
+            sind es nicht (35 / 25 / 18 / 10 / 7 / 4 / 1 Prozent, siehe
+            public.rewards_wheel_rules(), Migration 007). Gleich grosse
+            Felder legen Gleichverteilung nahe - deshalb steht es hier
+            ausdruecklich anders da, mit Verweis auf die Seite, die die
+            Werte nennt.
+          -->
+          <p class="gw-wheel-oddsnote">Alle sieben Felder sind gleich groß dargestellt. Die Feldgröße sagt nichts über die Gewinnchance – die tatsächlichen Wahrscheinlichkeiten stehen unter <a href="rewards.html">Rewards</a>.</p>
+        </div>
+
+        <div class="gw-win-reveal" data-gw-win-reveal hidden role="status" aria-live="assertive">
+          <span>Ihr Gewinn</span>
+          <strong data-gw-win-text></strong>
+        </div>
+      </article>
+
+      <article class="gw-rush-game" aria-labelledby="taxiRushTitle" data-taxi-rush data-tg-reveal>
+        <header class="gw-rush-header">
+          <div>
+            <p class="gw-game-number">Spiel · 02</p>
+            <h3 id="taxiRushTitle">Taxi Rush</h3>
+            <p class="gw-rush-name">Germersheim Run</p>
+          </div>
+          <div class="gw-rush-brief">
+            <p>Holen Sie Ihren Fahrgast ab und bringen Sie ihn sicher ans Ziel.</p>
+            <span>Die Straße läuft automatisch. Sie steuern links und rechts.</span>
+          </div>
+        </header>
+
+        <!--
+          Ab hier die freigegebene Vorlage. Die Kennungen sind data-tr statt
+          id: Das Spiel sucht seine Elemente nur innerhalb von
+          [data-taxi-rush] und fasst nichts ausserhalb an.
+        -->
+        <div class="tr-app">
+          <header class="tr-top">
+            <div class="tr-brand">
+              <img data-tr="brandLogo" alt="" width="29" height="35">
+              <span>TAXI GERMERSHEIM</span>
+            </div>
+            <span class="tr-edition">LOCAL STREETS. BIG MOMENTS.</span>
+            <span class="tr-tag">NUR SPIELSCORE · KEINE REWARDS</span>
+          </header>
+
+          <div class="tr-game">
+            <canvas class="tr-canvas" data-tr="canvas" tabindex="0"
+              aria-label="Taxi Rush: Steuern Sie mit den Pfeiltasten oder A und D. Sammeln Sie den Fahrgast auf der goldenen Spur ein und erreichen Sie das grüne Ziel. Leertaste aktiviert den Boost, P pausiert."></canvas>
+
+            <div class="tr-hud">
+              <div class="tr-panel tr-stats">
+                <div>
+                  <span class="tr-label">Punkte</span>
+                  <b class="tr-num tr-gold" data-tr="score">0</b>
+                </div>
+                <div>
+                  <span class="tr-label">Zeit</span>
+                  <b class="tr-num" data-tr="time">75</b>
+                </div>
+              </div>
+              <div class="tr-hud-right">
+                <div class="tr-panel">
+                  <span class="tr-label">Taxi</span>
+                  <b data-tr="health" class="tr-gold tr-health" aria-label="3 Leben">● ● ●</b>
+                </div>
+                <button class="tr-small-btn" type="button" data-tr="sound" aria-label="Ton einschalten" aria-pressed="false">Ton aus</button>
+                <button class="tr-small-btn" type="button" data-tr="pause" aria-label="Spiel pausieren">Ⅱ</button>
+              </div>
+            </div>
+
+            <div class="tr-mission">
+              <small data-tr="missionTag">GERMERSHEIM · NACHTSCHICHT</small>
+              <b data-tr="missionText">Ihre nächste Fahrt wartet.</b>
+              <span class="tr-route-line" data-tr="routeLine">Germersheim · Sondernheim · Lingenfeld</span>
+              <div class="tr-track"><i data-tr="progress"></i></div>
+            </div>
+
+            <div class="tr-toast" data-tr="toast" role="status" aria-live="polite"></div>
+
+            <div class="tr-controls">
+              <div class="tr-directions">
+                <button class="tr-drive" type="button" data-tr="left" aria-label="Eine Spur nach links">←</button>
+                <button class="tr-drive" type="button" data-tr="right" aria-label="Eine Spur nach rechts">→</button>
+              </div>
+              <button class="tr-boost" type="button" data-tr="boost">
+                <span>BOOST ↗</span><i data-tr="boostFill"></i>
+              </button>
+            </div>
+
+            <span class="tr-speed" data-tr="speed">GERMERSHEIM AFTER DARK</span>
+            <div class="tr-flash" data-tr="flash"></div>
+
+            <section class="tr-overlay" data-tr="overlay">
+              <div class="tr-hero" data-tr="hero">
+                <div class="tr-eyebrow">GERMERSHEIM · AFTER DARK</div>
+                <h4 class="tr-h1">TAXI<span>RUSH.</span></h4>
+                <p>Ihre Stadt. Ihre Nachtschicht.<br>Holen Sie Fahrgäste ab, finden Sie die Lücke und bringen Sie sie ans Ziel.</p>
+                <div class="tr-cars" role="group" aria-label="Fahrzeug auswählen">
+                  <button class="tr-car-choice" type="button" data-car="sedan" aria-pressed="true">
+                    <strong>Limousine</strong><small>Gelber Lack · Limousine</small>
+                  </button>
+                  <button class="tr-car-choice" type="button" data-car="van" aria-pressed="false">
+                    <strong>Großraum</strong><small>Schwarzer Lack · Großraum</small>
+                  </button>
+                </div>
+                <button class="tr-primary" type="button" data-tr="start">SCHICHT STARTEN ↗</button>
+                <div class="tr-best">Ihr Rekord <b data-tr="best">0</b></div>
+                <p class="tr-help">← → / A D lenken · Leertaste Boost · P Pause<br>Am Handy: Pfeile tippen oder seitlich wischen.<br>75 Sekunden · 3 Leben · jede Fahrt bringt +12 Sekunden<br>18 Haltepunkte · das Tempo steigt mit Ihrer Schicht</p>
+                <p class="tr-oldbest" data-tr="oldBest" hidden></p>
+              </div>
+
+              <div class="tr-hero" data-tr="pauseHero" hidden>
+                <div class="tr-eyebrow">KURZ DURCHATMEN</div>
+                <h4 class="tr-h2">Ihr Taxi wartet.</h4>
+                <p>Die Zeit steht still. Bereit für die nächste Lücke?</p>
+                <button class="tr-primary" type="button" data-tr="resume">WEITERFAHREN ↗</button>
+                <button class="tr-secondary" type="button" data-tr="restartPause">Schicht neu starten</button>
+              </div>
+
+              <div class="tr-hero" data-tr="endHero" hidden>
+                <div class="tr-eyebrow" data-tr="endTag">SCHICHT GESCHAFFT</div>
+                <h4 class="tr-h2" data-tr="endTitle">Gute Fahrt, Germersheim.</h4>
+                <div class="tr-scorecard">
+                  <div><b data-tr="endScore">0</b><small>Punkte</small></div>
+                  <div><b data-tr="endTrips">0</b><small>Fahrten</small></div>
+                </div>
+                <p data-tr="endCopy"></p>
+                <button class="tr-primary" type="button" data-tr="again">NOCH EINE SCHICHT ↗</button>
+                <button class="tr-secondary" type="button" data-tr="garage">Zur Fahrzeugauswahl</button>
+              </div>
+            </section>
+          </div>
+
+          <footer class="tr-footer">
+            <span>Echte Ortsnamen · frei gestaltete Spielstrecke</span>
+            <span>Lokaler Spielstand · keine Rewards-Punkte</span>
+          </footer>
+        </div>
+      </article>
+
+      <article class="gw-box-game" aria-labelledby="boxTitle" data-gw-box-mode="loading" data-tg-reveal>
+        <div class="gw-box-visual" aria-hidden="true">
+          <div class="gw-box-aura"></div>
+          <div class="gw-box-object">
+            <div class="gw-box-lid">
+              <span class="gw-box-lid-top"></span>
+              <span class="gw-box-lid-front"></span>
+            </div>
+            <div class="gw-box-case">
+              <span class="gw-box-ribbon"></span>
+              <span class="gw-box-emblem">Y</span>
+              <span class="gw-box-signature">Yumaks</span>
+            </div>
+          </div>
+          <div class="gw-box-plinth"></div>
+        </div>
+        <div class="gw-box-copy">
+          <p class="gw-game-number">Reward · 03</p>
+          <h3 id="boxTitle">Yumaks Box</h3>
+          <p>Eine besondere Überraschung aus der Taxi-Germersheim-Spielwelt.</p>
+          <div class="gw-box-state" role="status">
+            <strong data-gw-box-state>Status wird geprüft</strong>
+            <span data-gw-box-detail>Ihr sicher gespeicherter Box-Status wird geladen.</span>
+          </div>
+          <button class="gw-button gw-button-small gw-box-action" type="button" data-gw-box-action disabled hidden>Box öffnen</button>
+          <p class="gw-contract-note">Boxen erscheinen ausschließlich nach einem serverseitig bestätigten Gewinn.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="gw-history" aria-labelledby="historyTitle" data-tg-reveal>
+      <header class="gw-section-head gw-section-head-compact">
+        <div>
+          <p class="gw-eyebrow">Ihre letzten Gewinne</p>
+          <h2 id="historyTitle">Gewinnchronik</h2>
+        </div>
+        <a class="gw-history-link" href="rewards.html">Alle Rewards ansehen <span aria-hidden="true">→</span></a>
+      </header>
+
+      <div class="gw-history-guest" data-gw-history-guest>
+        <p>Ihre nächsten Gewinne erscheinen hier nach der Anmeldung.</p>
+      </div>
+      <div class="gw-history-loading" data-gw-history-loading hidden role="status" aria-label="Gewinnverlauf wird geladen">
+        <span></span><span></span><span></span>
+      </div>
+      <ol class="gw-history-list" data-gw-history-list hidden></ol>
+      <p class="gw-history-empty" data-gw-history-empty hidden>Ihre nächsten Gewinne erscheinen hier.</p>
+      <p class="gw-history-error" data-gw-history-error hidden>Ihr Gewinnverlauf ist gerade nicht verfügbar.</p>
+    </section>
+
+    <section class="gw-closing" aria-labelledby="closingTitle" data-tg-reveal>
+      <p class="gw-eyebrow">Taxi Germersheim</p>
+      <h2 id="closingTitle">Weiterfahren.<br>Weitersammeln.</h2>
+      <div class="gw-closing-actions">
+        <a class="gw-button gw-button-primary" href="index.html?page=booking">Fahrt buchen</a>
+        <a class="gw-text-link" href="rewards.html">Rewards ansehen</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 Taxi Germersheim GmbH</p>
+  </footer>
+
+  <script src="customer-auth.js"></script>
+  <script src="gluecksrad.js"></script>
+  <script src="spiele.js"></script>
+  <script src="taxi-rush.js"></script>
+</body>
+</html>

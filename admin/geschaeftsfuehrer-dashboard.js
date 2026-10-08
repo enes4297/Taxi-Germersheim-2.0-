@@ -40,7 +40,7 @@
     const node = document.querySelector("[data-gf-warnings]");
     if (!node) return;
     const rows = M.buildWarnings(state.data, source);
-    node.innerHTML = rows.length ? rows.map((w) => `<article class="m-item"><p>${pill(w.priority)}</p><p><strong>${w.cause}</strong></p><p>Auswirkung: ${w.impact}</p><p>Massnahme: ${w.action}</p><p>Zustaendig: ${w.area}</p><p><a class="admin-btn admin-btn-secondary" href="${w.link}">Direkt oeffnen</a></p></article>`).join("") : '<article class="m-item"><p>Keine Warnungen.</p></article>';
+    node.innerHTML = rows.length ? rows.map((w) => `<article class="m-item"><p>${pill(w.priority)}</p><p><strong>${w.cause}</strong></p><p>Auswirkung: ${w.impact}</p><p>Maßnahme: ${w.action}</p><p>Zuständig: ${w.area}</p><p><a class="admin-btn admin-btn-secondary" href="${w.link}">Direkt öffnen</a></p></article>`).join("") : '<article class="m-item"><p>Keine Warnungen.</p></article>';
   }
 
   function renderFavorites() {
@@ -63,7 +63,7 @@
   function bind() {
     document.addEventListener("click", (event) => {
       if (event.target.closest("[data-gf-reset]")) {
-        if (!window.confirm("Management-Demo wirklich zuruecksetzen?")) return;
+        if (!window.confirm("Management-Demo wirklich zurücksetzen?")) return;
         state.data = M.resetState();
         render();
         return;
@@ -74,7 +74,7 @@
         if (!main) return;
         const btn = event.target.closest("[data-gf-mode]");
         const compact = main.classList.toggle("m-compact");
-        if (btn) btn.textContent = compact ? "Details anzeigen" : "Geschaeftsleitungsansicht";
+        if (btn) btn.textContent = compact ? "Details anzeigen" : "Geschäftsleitungsansicht";
         state.data.filters.managementMode = compact ? "compact" : "detail";
         M.saveState(state.data);
         return;

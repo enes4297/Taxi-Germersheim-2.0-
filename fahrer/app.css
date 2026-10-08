@@ -1,264 +1,843 @@
-:root {
-  --bg: #07080d;
-  --bg-elevated: #11141e;
-  --line: rgba(255,255,255,0.1);
-  --text: #f6f7fb;
-  --muted: #97a0b7;
-  --gold: #f0c96b;
-  --gold-strong: #ffdb7a;
-  --ok: #7fe3a5;
-  --warn: #ffb770;
-  --danger: #ff8d8d;
-  --blue: #7eb4ff;
-  --shadow: 0 18px 50px rgba(0,0,0,0.28);
+/* ═══════════════════════════════════════════════════════════════════════════
+   Mitarbeiterportal — Gestaltung
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Dieselbe Bildsprache wie die öffentliche Webseite: dunkler Grund, ein
+   einziges Gold als Akzent, gerade Kanten, Outfit für Fließtext und Lora
+   für die großen Zeilen.
+
+   ───────────────────────────────────────────────────────────────────────────
+   WORAUF ES HIER BESONDERS ANKOMMT
+   ───────────────────────────────────────────────────────────────────────────
+
+   Das Portal wird im Stehen bedient, oft mit einer Hand, oft bei Sonne,
+   und von Menschen, die nicht jeden Tag mit einem Smartphone arbeiten.
+   Daraus folgt:
+
+     - Eingabefelder mindestens 16 px. Darunter zoomt iOS beim Antippen
+       hinein, und die Seite springt.
+     - Bedienflächen mindestens 44 px hoch.
+     - Kein Grau auf Grau: Fließtext hat mindestens 4,5:1 gegen den Grund.
+     - Der Tastaturfokus ist immer sichtbar, in Gold, mit Abstand.
+     - Ab 320 px Breite bricht nichts um und nichts läuft seitlich hinaus.
+
+   ───────────────────────────────────────────────────────────────────────────
+   DIE KLASSENNAMEN BLEIBEN
+   ───────────────────────────────────────────────────────────────────────────
+
+   mitarbeiter.js erzeugt einen Teil des Markups zur Laufzeit und setzt
+   dabei feste Klassennamen. Umbenennen würde Anzeigen still leeren.
+   Deshalb wurde hier NUR das Aussehen ausgetauscht, kein Name.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Schriften ──────────────────────────────────────────────────────────────
+   Aus dem eigenen Bestand, nicht von einem fremden Netz. Dieselben Dateien,
+   die auch die öffentliche Webseite lädt.
+   `font-display: swap`: Lieber sofort lesbar in der Systemschrift als eine
+   leere Fläche — im Portal zählt die erste Sekunde. */
+@font-face {
+  font-family: "Outfit";
+  src: url("../schriften/outfit-400-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
+@font-face {
+  font-family: "Outfit";
+  src: url("../schriften/outfit-500-latin.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("../schriften/outfit-600-latin.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("../schriften/outfit-700-latin.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Lora";
+  src: url("../schriften/lora-600-latin.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Dieselben Werte wie im Design der öffentlichen Webseite. */
+  --bg: #18181b;
+  --bg-elevated: #1f1f23;
+  --bg-sunken: #141417;
+  --line: #2e2e32;
+  --line-stark: #3c3c42;
+  --text: #f0ebe0;
+  --muted: #a9a59c;          /* heller als im Design: 5,6:1 statt 3,8:1 */
+  --gold: #c8a96e;
+  --gold-hell: #d9bf8a;
+  --gold-dunkel: #a98d55;
+  --auf-gold: #18181b;
+
+  /* Zustandsfarben. Bewusst gedeckt, damit sie neben dem Gold nicht
+     schreien - aber deutlich genug, um sie zu unterscheiden. */
+  --ok: #8fce9c;
+  --warn: #e0b877;
+  --danger: #e59a92;
+  --info: #9fb8cf;
+
+  --schatten: 0 24px 60px -24px rgba(0, 0, 0, 0.9);
+  --serif: "Lora", Georgia, "Times New Roman", serif;
+  --sans: "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
 * { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(135deg, #090b12 0%, #0f1320 55%, #121723 100%);
+  background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", "Inter", "Trebuchet MS", sans-serif;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
   overflow-x: hidden;
-}
-button, input, select { font: inherit; }
-button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 3px solid rgba(240,201,107,0.45);
-  outline-offset: 2px;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Ladestate: Portalinhalt erst nach Auth-Prüfung sichtbar */
+/* Schrift erben, damit Felder und Schaltflächen nicht in die Systemschrift
+   zurückfallen. 16 px als Untergrenze - siehe Kopf der Datei. */
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.4;
+  color: inherit;
+}
+
+/* Der Tastaturfokus ist im Portal wichtiger als anderswo: Wer mit
+   Handschuhen oder am Laptop arbeitet, muss sehen, wo er steht. */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 0;
+}
+
+h1, h2, h3 {
+  font-family: var(--serif);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+/* ── Ladezustand ────────────────────────────────────────────────────────────
+   Der Inhalt bleibt verborgen, bis die Sitzung geprüft ist. `visibility`
+   statt `display`, damit die Seite ihre Höhe behält und nicht springt. */
 body[data-portal-loading] .portal-shell { visibility: hidden; }
 body[data-portal-loading]::before {
   content: "Mitarbeiterportal wird geladen …";
   display: block;
   text-align: center;
-  padding: 80px 24px;
+  padding: 96px 24px;
   color: var(--muted);
-  font-size: 15px;
+  font-size: 16px;
+  letter-spacing: 0.01em;
 }
 
-.driver-app, .portal-shell {
+/* ═══ Gerüst ═══════════════════════════════════════════════════════════════ */
+
+.driver-app,
+.portal-shell {
   width: min(1120px, 100%);
   margin: 0 auto;
-  padding: 20px 16px;
+  padding: 0 16px;
 }
-.demo-note {
-  margin: 0;
-  font-size: 13px;
-  color: var(--muted);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: rgba(255,255,255,0.03);
-}
+
 .portal-shell {
   display: grid;
-  gap: 18px;
-  padding-bottom: 40px;
+  gap: 20px;
+  padding-bottom: 56px;
 }
+
+/* ── Kopfzeile ──────────────────────────────────────────────────────────────
+   Aufbau wie auf der öffentlichen Webseite: Marke links, Bedienung rechts,
+   darunter die Begrüßung. Sie klebt oben, damit Abmelden und Mitteilungen
+   auch nach langem Scrollen erreichbar bleiben. */
 .portal-header {
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 28px;
-  background: radial-gradient(circle at top left, rgba(240,201,107,0.18), transparent 38%), linear-gradient(145deg, rgba(18,22,33,0.98), rgba(11,14,22,0.94));
-  padding: 16px 18px 14px;
+  position: sticky;
+  top: 0;
+  z-index: 60;
   display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px 16px;
+  margin: 0 -16px;
+  padding: 12px 16px;
+  background: rgba(24, 24, 27, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.portal-brand {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  box-shadow: var(--shadow);
+  min-width: 0;
 }
-.portal-brand { display: flex; align-items: center; gap: 12px; }
+
+.portal-brand img {
+  height: 40px;
+  width: auto;
+  display: block;
+  flex: 0 0 auto;
+}
+
+/* Das Ersatzzeichen, falls kein Bild geladen werden kann. */
 .portal-brand-mark {
-  width: 56px; height: 56px; border-radius: 18px;
-  display: grid; place-items: center;
-  background: linear-gradient(135deg, rgba(240,201,107,0.28), rgba(255,255,255,0.08)); color: var(--gold-strong); border: 1px solid rgba(240,201,107,0.22); font-weight: 800; font-size: 18px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--gold);
+  color: var(--auf-gold);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.04em;
 }
-.portal-brand h1 { margin: 0; font-size: 28px; line-height: 1.1; }
-.portal-eyebrow { margin: 0 0 4px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.18em; font-size: 12px; font-weight: 700; }
-.portal-header-actions { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
-.icon-btn {
-  position: relative; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05); border-radius: 18px; color: var(--text); width: 52px; height: 52px; display: grid; place-items: center;
+
+.portal-eyebrow {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
 }
-.badge {
-  position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; border-radius: 999px; background: var(--gold); color: #111; font-size: 11px; font-weight: 800; display: grid; place-items: center; padding: 0 4px;
+
+.portal-header h1 {
+  margin: 0;
+  font-size: 17px;
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+.portal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.portal-welcome {
+  grid-column: 1 / -1;
+  padding-top: 2px;
+  border-top: 1px solid var(--line);
+  margin-top: 2px;
+}
+
+.portal-greeting {
+  margin: 8px 0 0;
+  font-family: var(--serif);
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.portal-date {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ── Schaltflächen in der Kopfzeile ───────────────────────────────────────── */
+.icon-btn,
 .portal-avatar {
-  width: 52px; height: 52px; border-radius: 50%; background: rgba(240,201,107,0.16); color: var(--gold); border: 1px solid rgba(240,201,107,0.22); display: grid; place-items: center; font-weight: 800;
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
-.portal-welcome { display: grid; gap: 2px; }
-.portal-greeting { margin: 0; font-size: 28px; font-weight: 800; line-height: 1.1; }
-.portal-date { margin: 0; color: #c2cadc; font-size: 15px; }
-.portal-content { display: grid; gap: 18px; }
-.portal-home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-.panel-card, .portal-section {
-  border: 1px solid rgba(255,255,255,0.07); border-radius: 24px; background: linear-gradient(180deg, rgba(20,24,37,0.98), rgba(12,15,24,0.96)); padding: 22px; box-shadow: var(--shadow); display: grid; gap: 14px;
+
+.icon-btn:hover,
+.portal-avatar:hover { border-color: var(--gold); }
+
+.icon-btn .icon { display: grid; place-items: center; }
+.icon-btn svg { display: block; width: 20px; height: 20px; }
+
+.portal-avatar {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--gold);
 }
-.hero-card { min-height: 250px; align-content: start; }
-.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.panel-kicker { margin: 0 0 6px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.18em; font-size: 11px; font-weight: 700; }
-.panel-head h2 { margin: 0; font-size: 24px; line-height: 1.15; }
-.hero-title { font-size: 15px; color: #c2cadc; margin: 0; }
-.hero-time { font-size: clamp(28px, 4vw, 40px); font-weight: 800; margin: 0; color: var(--gold-strong); line-height: 1.05; }
-.hero-meta-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; color: #c2cadc; font-size: 15px; }
-.hero-meta-row strong { color: var(--text); text-align: right; }
-.hero-vehicle { display: grid; gap: 8px; padding: 14px 16px; border-radius: 18px; background: rgba(255,255,255,0.04); }
-.status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700; width: fit-content; }
-.status-pill.active { background: rgba(127,227,165,0.16); color: var(--ok); }
-.status-pill.warn { background: rgba(255,183,112,0.16); color: var(--warn); }
-.status-pill.danger { background: rgba(255,141,141,0.16); color: var(--danger); }
-.status-pill.info { background: rgba(126,180,255,0.16); color: var(--blue); }
-.status-pill.neutral { background: rgba(255,255,255,0.06); color: var(--muted); }
-.quick-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  background: var(--gold);
+  color: var(--auf-gold);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.portal-avatar-wrap { position: relative; }
+
+.portal-user-menu[hidden] { display: none; }
+.portal-user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 70;
+  min-width: 232px;
+  padding: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line-stark);
+  box-shadow: var(--schatten);
+}
+
+.portal-user-menu-name {
+  margin: 0;
+  padding: 8px 10px;
+  font-weight: 600;
+  font-size: 15px;
+  word-break: break-word;
+}
+
+.portal-user-menu-divider {
+  margin: 6px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.portal-user-menu-btn {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--gold);
+  font-weight: 600;
+  cursor: pointer;
+}
+.portal-user-menu-btn:hover { background: rgba(200, 169, 110, 0.12); }
+.portal-user-menu-btn-neutral { color: var(--text); font-weight: 500; }
+
+/* ═══ Flächen ══════════════════════════════════════════════════════════════ */
+
+.panel-card,
+.portal-section {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  padding: 20px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.panel-kicker {
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.panel-head h2 {
+  font-size: clamp(19px, 4.4vw, 24px);
+}
+
+/* ── Heute und Morgen ───────────────────────────────────────────────────────
+   Die zwei wichtigsten Karten. Sie stehen nebeneinander, sobald Platz da
+   ist, und untereinander, sobald nicht — bei 390 px passten vorher zwei
+   Spalten nicht, und die Marke rechts oben wurde angeschnitten. */
+.portal-home-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .portal-home-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.hero-card { border-color: var(--gold); }
+
+.hero-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.hero-title h2,
+.hero-title strong {
+  font-family: var(--serif);
+  font-size: clamp(19px, 4.6vw, 23px);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+/* Die Schichtzeit ist die Angabe, die im Vorbeigehen erfasst werden muss. */
+.hero-time {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(26px, 7.5vw, 38px);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--gold);
+  letter-spacing: -0.01em;
+  margin: 6px 0 2px;
+  overflow-wrap: anywhere;
+}
+
+.hero-vehicle {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.hero-meta-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.hero-meta-row span { color: var(--muted); font-size: 13px; }
+.hero-meta-row strong { font-weight: 600; font-size: 15px; text-align: right; overflow-wrap: anywhere; }
+
+/* ── Zustandsmarken ─────────────────────────────────────────────────────────
+   Dienstplan und Veröffentlichungszustand dürfen nicht verwechselt werden:
+   Der geplante Dienst steht in Gold, die Veröffentlichung schlicht in
+   Grau mit Rand. */
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 1px solid var(--line-stark);
+  background: var(--bg-sunken);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.status-pill.active { border-color: var(--gold); background: var(--gold); color: var(--auf-gold); }
+.status-pill.info { border-color: var(--line-stark); color: var(--info); }
+.status-pill.warn,
+.status-pill.warning { border-color: var(--warn); color: var(--warn); }
+.status-pill.neutral { color: var(--muted); }
+
+/* ── Schnellaktionen ────────────────────────────────────────────────────────
+   Vier große Flächen. Ab 320 px zwei nebeneinander; jede bleibt dabei
+   breiter als 140 px und damit sicher zu treffen. */
+.quick-actions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 720px) {
+  .quick-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
 .quick-action-card {
-  border: 1px solid rgba(255,255,255,0.06); border-radius: 22px; background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); color: var(--text); padding: 18px 16px; min-height: 158px; display: grid; gap: 10px; align-content: start; justify-items: start; text-align: left; cursor: pointer; transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  min-height: 116px;
+  padding: 14px;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--bg-sunken);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
-.quick-action-card strong { font-size: 20px; line-height: 1.15; }
-.quick-action-card span { color: #c2cadc; font-size: 15px; line-height: 1.35; }
-@media (hover: hover) and (pointer: fine) {
-  .quick-action-card:hover {
-    transform: translateY(-1px);
-    border-color: rgba(240,201,107,0.24);
-    background: linear-gradient(180deg, rgba(240,201,107,0.08), rgba(255,255,255,0.03));
-  }
+.quick-action-card:hover { border-color: var(--gold); background: rgba(200, 169, 110, 0.06); }
+.quick-action-card strong { font-size: 16px; font-weight: 600; }
+.quick-action-card span:not(.quick-icon) { color: var(--muted); font-size: 13px; line-height: 1.4; }
+
+.quick-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 6px;
+  color: var(--gold);
 }
-.quick-icon { font-size: 30px; }
-.section-toggle {
-  border: 0; background: transparent; color: var(--text); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0; text-align: left; cursor: pointer;
-}
-.section-toggle span { font-size: 16px; font-weight: 700; }
-.section-toggle small { color: var(--gold); font-size: 12px; }
-.section-body { display: grid; gap: 12px; }
-.portal-section.is-open { border-color: rgba(240,201,107,0.28); }
-.summary-row { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
-.summary-chip {
-  border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 14px; background: rgba(255,255,255,0.03); display: grid; gap: 4px;
-}
-.summary-chip strong { font-size: 15px; }
-.summary-chip p { margin: 0; color: #c2cadc; font-size: 14px; }
-.section-feedback {
-  border: 1px solid rgba(127,227,165,0.28); border-radius: 16px; background: rgba(127,227,165,0.12); color: var(--ok); padding: 14px 16px; font-size: 18px; font-weight: 700;
-}
-.section-feedback.is-error {
-  border-color: rgba(255,141,141,0.32);
-  background: rgba(255,141,141,0.12);
-  color: var(--danger);
-}
-.portal-form { display: grid; gap: 10px; }
-.portal-form label { display: grid; gap: 6px; }
-.portal-form span { color: #d7dceb; font-size: 14px; font-weight: 600; }
-.portal-form input, .portal-form select, .portal-form textarea {
-  border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; background: rgba(7,9,14,0.95); color: var(--text); min-height: 56px; padding: 0 16px; font-size: 17px;
-}
-.portal-form textarea { padding: 14px 16px; min-height: 120px; }
-.portal-form select { appearance: auto; color-scheme: dark; }
-.portal-form select option { background: #11141e; color: var(--text); }
-.field-hint { color: #aeb7cb; font-size: 13px; margin-top: 0; }
-.btn {
-  border: 0; border-radius: 18px; min-height: 56px; padding: 0 18px; color: var(--text); font-weight: 800; cursor: pointer; font-size: 16px;
-}
-.btn-ghost {
-  background: rgba(255,255,255,0.04); color: var(--muted); border: 1px solid rgba(255,255,255,0.08);
-}
-.btn-primary { background: linear-gradient(135deg, rgba(240,201,107,0.25), rgba(255,219,122,0.14)); color: var(--gold-strong); border: 1px solid rgba(240,201,107,0.3); }
-.btn-warning { background: rgba(255,183,112,0.16); color: var(--warn); border: 1px solid rgba(255,183,112,0.24); }
-.btn-compact { min-height: 48px; padding: 0 16px; font-size: 15px; }
-.doc-type-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
-.doc-type-card {
-  border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; background: rgba(255,255,255,0.03); color: var(--text); padding: 18px 16px; min-height: 132px; display: grid; gap: 8px; align-content: start; justify-items: start; cursor: pointer;
-}
-.doc-type-card.is-selected { border-color: rgba(240,201,107,0.4); background: rgba(240,201,107,0.12); }
-.doc-type-card span { font-size: 24px; }
-.doc-type-card strong { font-size: 16px; line-height: 1.2; }
-.upload-shell { display: grid; gap: 12px; border: 1px dashed rgba(255,255,255,0.18); border-radius: 20px; padding: 14px; background: rgba(255,255,255,0.03); }
-.upload-input { display: none; }
-.upload-trigger { border: 0; border-radius: 16px; background: rgba(240,201,107,0.16); color: var(--gold-strong); min-height: 56px; cursor: pointer; font-weight: 700; font-size: 16px; }
-.upload-preview { border-radius: 12px; background: rgba(10,12,18,0.8); padding: 8px; min-height: 80px; display: grid; place-items: center; }
-.upload-preview img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; }
-.upload-file-pill { color: var(--text); font-size: 15px; }
-.upload-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #c2cadc; font-size: 14px; }
-.upload-remove { border: 0; background: transparent; color: var(--danger); cursor: pointer; padding: 0; min-height: 44px; }
-.driver-list { display: grid; gap: 8px; }
-.driver-item, .doc-card {
-  border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 14px; display: grid; gap: 8px; background: rgba(255,255,255,0.03);
-}
-.driver-item strong, .doc-card strong { font-size: 15px; }
-.driver-item p, .driver-item small { margin: 0; color: #c2cadc; font-size: 14px; }
-.driver-item-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.driver-item-actions .driver-btn { min-height: 42px; border-radius: 999px; font-size: 13px; }
-.doc-card { gap: 10px; }
-.doc-card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.compact-item { gap: 6px; }
-.profile-card { display: grid; gap: 12px; padding: 4px 0; }
-.profile-card strong { font-size: 24px; }
-.profile-card p { margin: 0; color: #c2cadc; font-size: 15px; }
-.profile-label { color: var(--gold); text-transform: uppercase; letter-spacing: 0.16em; font-size: 11px; }
-.week-panel { gap: 16px; }
-.week-list { display: grid; gap: 10px; }
+.quick-icon svg { display: block; width: 22px; height: 22px; }
+
+/* ── Dienstplanwoche ────────────────────────────────────────────────────────
+   Eine Zeile je Tag. Links Tag und Zeit, rechts Fahrzeug und Zustand. */
+.week-list { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+
+/*
+  Zwei feste Spalten: links Tag und Zeit, rechts Fahrzeug und Zustand.
+
+  Vorher war das eine umbrechende Flexbox. Bei 390 px rutschte dadurch das
+  Fahrzeug neben das Datum und die Uhrzeit darunter - gemessen und im Bild
+  gesehen. Mit einem Gitter bleibt die Zuordnung in jeder Breite gleich.
+*/
 .week-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 14px;
+  align-items: start;
+  gap: 4px 12px;
   padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.04);
+  background: var(--bg-elevated);
 }
-.week-row.is-working {
-  background: linear-gradient(135deg, rgba(240,201,107,0.12), rgba(255,255,255,0.04));
-  border-color: rgba(240,201,107,0.16);
-}
-.week-row.is-today {
-  box-shadow: inset 0 0 0 1px rgba(240,201,107,0.18);
-}
-.week-row-main,
-.week-row-side {
-  display: grid;
-  gap: 4px;
-}
-.week-row-main strong { font-size: 16px; }
-.week-row-main p,
-.week-row-side span,
-.week-row-side small {
-  margin: 0;
-  font-size: 14px;
-  color: #c2cadc;
-}
-.week-row-side {
-  justify-items: end;
-  text-align: right;
-}
-.week-row-side span { color: var(--text); font-weight: 700; }
-.compact-info-card { gap: 12px; }
+.week-row.active { background: rgba(200, 169, 110, 0.08); }
+
+.week-row-main { display: grid; gap: 2px; min-width: 0; }
+.week-row-main strong { font-weight: 600; font-size: 15px; }
+.week-row-main span { color: var(--muted); font-size: 14px; }
+
+.week-row-side { display: grid; gap: 2px; justify-items: end; text-align: right; min-width: 0; }
+.week-row-side strong { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+.week-row-side span { color: var(--muted); font-size: 13px; }
+
+/* ── Mitteilungen ───────────────────────────────────────────────────────── */
+.compact-info-card .panel-head { margin-bottom: 12px; }
+
 .message-summary-card {
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--bg-sunken);
+}
+.message-summary-card strong { display: block; font-weight: 600; margin-bottom: 4px; }
+.message-summary-card span,
+.message-summary-card p { color: var(--muted); font-size: 14px; margin: 0; }
+
+.compact-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.compact-item:last-child { border-bottom: 0; }
+.compact-item.is-new strong { color: var(--gold); }
+
+.summary-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.summary-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 1px solid var(--line-stark);
+  background: var(--bg-sunken);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ═══ Schaltflächen ════════════════════════════════════════════════════════ */
+
+.btn,
+.driver-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 20px;
+  border: 1px solid var(--line-stark);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.btn:hover,
+.driver-btn:hover { border-color: var(--gold); }
+
+.btn-primary,
+.driver-btn.primary {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--auf-gold);
+}
+.btn-primary:hover,
+.driver-btn.primary:hover { background: var(--gold-hell); border-color: var(--gold-hell); }
+
+.btn-ghost,
+.driver-btn.ghost { background: transparent; }
+
+.btn-warning { border-color: var(--warn); color: var(--warn); }
+
+/* Auch die kompakte Schaltflaeche bleibt bei 44 px - gemessen war sie
+   mit 40 px die einzige Flaeche unter dem Mindestmass. */
+.btn-compact { min-height: 44px; padding: 8px 16px; font-size: 14px; }
+
+.btn:disabled,
+.driver-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-close { min-width: 120px; }
+
+/* ═══ Formulare ════════════════════════════════════════════════════════════ */
+
+.portal-form { display: grid; gap: 16px; }
+
+.portal-form label,
+.driver-login-field {
   display: grid;
   gap: 6px;
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: rgba(255,255,255,0.03);
+  font-size: 14px;
+  color: var(--muted);
 }
-.message-summary-card.is-new {
-  background: linear-gradient(135deg, rgba(126,180,255,0.14), rgba(255,255,255,0.04));
+.portal-form label > span,
+.driver-login-field > span { font-weight: 500; color: var(--text); }
+
+.driver-input,
+.portal-form input,
+.portal-form select,
+.portal-form textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  /* 16 px ist Pflicht, nicht Geschmack: Darunter zoomt iOS beim Antippen. */
+  font-size: 16px;
+  color: var(--text);
+  background: var(--bg-sunken);
+  border: 1px solid var(--line-stark);
+  border-radius: 0;
+  appearance: none;
 }
-.message-summary-card strong { font-size: 18px; }
-.message-summary-card p,
-.message-summary-card small {
+.portal-form textarea { min-height: 96px; resize: vertical; }
+
+.driver-input::placeholder,
+.portal-form input::placeholder,
+.portal-form textarea::placeholder { color: #7d7a73; }
+
+.driver-input:focus-visible,
+.portal-form input:focus-visible,
+.portal-form select:focus-visible,
+.portal-form textarea:focus-visible { border-color: var(--gold); }
+
+.field-hint { color: var(--muted); font-size: 13px; margin: 0; }
+
+/* ── Rückmeldungen ──────────────────────────────────────────────────────────
+   Ein Zustand, eine Farbe: Erfolg in Gold, Fehler in Rot, Warnung in
+   Bernstein. Immer mit Rand, damit es auch ohne Farbwahrnehmung auffällt. */
+.section-feedback,
+.demo-note,
+.driver-login-message {
   margin: 0;
-  color: #c2cadc;
+  padding: 12px 14px;
+  border: 1px solid var(--line-stark);
+  background: var(--bg-sunken);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.section-feedback.is-ok,
+.demo-note.is-ok { border-color: var(--gold); color: var(--text); }
+.section-feedback.is-error,
+.demo-note.is-error,
+.driver-login-message.is-error { border-color: var(--danger); color: var(--danger); }
+.section-feedback.is-warn,
+.demo-note.is-warn { border-color: var(--warn); color: var(--warn); }
+.section-feedback[hidden],
+.demo-note[hidden] { display: none; }
+
+/* ═══ Listen ═══════════════════════════════════════════════════════════════ */
+
+.driver-list { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+
+.driver-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px;
+  background: var(--bg-elevated);
+}
+.driver-item strong { font-weight: 600; }
+.driver-item p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+.driver-item-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Dokumente ──────────────────────────────────────────────────────────── */
+.doc-type-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.doc-type-card {
+  display: grid;
+  gap: 4px;
+  min-height: 64px;
+  padding: 12px 14px;
+  text-align: left;
+  border: 1px solid var(--line-stark);
+  background: var(--bg-sunken);
+  color: var(--text);
   font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
 }
+.doc-type-card:hover { border-color: var(--gold); }
+.doc-type-card[aria-pressed="true"],
+.doc-type-card.active {
+  border-color: var(--gold);
+  background: rgba(200, 169, 110, 0.12);
+}
+
+.doc-card { padding: 14px; border: 1px solid var(--line); background: var(--bg-sunken); }
+.doc-card-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+
+/* ── Datei auswählen und hochladen ──────────────────────────────────────────
+   Drei Dinge müssen jederzeit ablesbar sein: WAS ausgewählt ist, DASS
+   gerade hochgeladen wird, und OB es geklappt hat. */
+.upload-shell { display: grid; gap: 12px; }
+
+.upload-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.upload-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 12px 20px;
+  border: 1px dashed var(--line-stark);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.upload-trigger:hover { border-color: var(--gold); }
+/* Das Feld ist versteckt; der sichtbare Auslöser muss den Fokus zeigen. */
+.upload-input:focus-visible + .upload-trigger,
+.upload-input:focus-visible ~ .upload-trigger {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.upload-file-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--gold);
+  background: rgba(200, 169, 110, 0.1);
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.upload-remove {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line-stark);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.upload-remove:hover { border-color: var(--danger); color: var(--danger); }
+
+.upload-meta { color: var(--muted); font-size: 13px; margin: 0; }
+.upload-preview { max-width: 100%; border: 1px solid var(--line); display: block; }
+
+/* ── Profil ─────────────────────────────────────────────────────────────── */
+.profile-card { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line); background: var(--bg-sunken); }
+.profile-label { color: var(--muted); font-size: 13px; }
+
+/* ═══ Abschnitte, Schublade, Dialog ════════════════════════════════════════ */
+
+.section-titlebar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.section-titlebar h2 { font-size: clamp(21px, 5.5vw, 28px); }
+
+.section-body { display: grid; gap: 16px; }
+
+.section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-stark);
+  background: var(--bg-sunken);
+  color: var(--text);
+  cursor: pointer;
+}
+.section-toggle span { font-size: 16px; font-weight: 600; }
+.section-toggle small { color: var(--gold); font-size: 12px; }
+
+.portal-section.is-open { border-color: var(--gold); }
+
 .portal-overlay[hidden] { display: none; }
-.portal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 120;
-}
+.portal-overlay { position: fixed; inset: 0; z-index: 120; }
+
 .portal-drawer[hidden] { display: none !important; }
+
 .portal-overlay-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(4, 6, 10, 0.74);
-  backdrop-filter: blur(10px);
+  background: rgba(10, 10, 12, 0.82);
+  backdrop-filter: blur(8px);
 }
+
 .portal-drawer-shell {
   position: relative;
   z-index: 1;
@@ -266,273 +845,130 @@ body[data-portal-loading]::before {
   margin: 16px auto;
   max-height: calc(100vh - 32px);
   overflow: auto;
+  overscroll-behavior: contain;
 }
-.portal-drawer {
-  gap: 18px;
-}
-.section-titlebar {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 12px;
-}
-.section-titlebar h2 {
-  margin: 0;
-  font-size: 30px;
-  line-height: 1.1;
-}
-.btn-close { min-width: 120px; }
+
+.portal-drawer { gap: 18px; }
+
 .portal-overlay-open { overflow: hidden; }
+
 .driver-modal[hidden] { display: none; }
 .driver-modal { position: fixed; inset: 0; z-index: 140; }
-.driver-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.7); }
-.driver-modal-dialog { position: relative; z-index: 1; margin: 20px auto; width: min(940px, calc(100% - 20px)); max-height: calc(100vh - 40px); border: 1px solid rgba(240,201,107,0.24); border-radius: 20px; background: #0e121c; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; box-shadow: var(--shadow); }
-.driver-modal-head, .driver-modal-foot { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+.driver-modal-backdrop { position: absolute; inset: 0; background: rgba(10, 10, 12, 0.82); }
+.driver-modal-dialog {
+  position: relative;
+  z-index: 1;
+  margin: 20px auto;
+  width: min(940px, calc(100% - 20px));
+  max-height: calc(100vh - 40px);
+  border: 1px solid var(--line-stark);
+  background: var(--bg-elevated);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  box-shadow: var(--schatten);
+}
+.driver-modal-head,
+.driver-modal-foot {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.driver-modal-head h3 { font-size: 18px; }
 .driver-modal-foot { border-top: 1px solid var(--line); border-bottom: 0; }
-.driver-modal-body { padding: 14px; overflow: auto; display: grid; gap: 12px; }
-.driver-btn { min-height: 42px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--text); cursor: pointer; font-weight: 600; }
-.driver-btn.ghost { background: rgba(255,255,255,0.03); color: var(--muted); }
-.driver-btn.primary { background: rgba(240,201,107,0.16); color: var(--gold); border-color: rgba(240,201,107,0.28); }
-.driver-btn.warning { background: rgba(255,183,112,0.16); color: var(--warn); border-color: rgba(255,183,112,0.24); }
-.driver-btn.danger { background: rgba(255,141,141,0.16); color: var(--danger); border-color: rgba(255,141,141,0.24); }
+.driver-modal-body { padding: 16px; overflow: auto; }
 
-/* ----------------------------------------------------------------- *//* Inaktivitäts-Warnung                                             */
-/* ----------------------------------------------------------------- */
+.portal-idle-warning[hidden] { display: none; }
 .portal-idle-warning {
   position: fixed;
-  bottom: 20px;
   left: 50%;
+  bottom: 20px;
   transform: translateX(-50%);
-  z-index: 300;
-  background: rgba(255,183,112,0.18);
-  border: 1px solid rgba(255,183,112,0.45);
-  border-radius: 14px;
-  padding: 12px 20px;
-  color: var(--warn);
-  font-size: 14px;
-  font-weight: 600;
-  text-align: center;
-  box-shadow: var(--shadow);
-  max-width: min(480px, calc(100% - 32px));
-}
-.portal-idle-warning[hidden] { display: none; }
-.portal-idle-warning p { margin: 0; }
-
-/* ----------------------------------------------------------------- *//* Avatar-Benutzermen\u00fc                                               */
-/* ----------------------------------------------------------------- */
-.portal-avatar-wrap {
-  position: relative;
+  z-index: 150;
+  width: min(520px, calc(100% - 24px));
+  padding: 14px 16px;
+  border: 1px solid var(--warn);
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: var(--schatten);
 }
 
-.portal-avatar {
-  /* bestehende Stile beibehalten, als Button */
-  border: 0;
-  cursor: pointer;
-  font: inherit;
-}
+/* ═══ Anmeldung ════════════════════════════════════════════════════════════ */
 
-.portal-user-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  min-width: 180px;
-  border: 1px solid rgba(240,201,107,0.28);
-  border-radius: 16px;
-  background: #0e121c;
-  box-shadow: var(--shadow);
-  padding: 12px;
+.driver-app {
   display: grid;
-  gap: 8px;
-  z-index: 200;
-}
-
-.portal-user-menu[hidden] { display: none; }
-
-.portal-user-menu-name {
-  margin: 0;
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--text);
-  padding: 2px 4px;
-}
-
-.portal-user-menu-divider {
-  border: 0;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  margin: 0;
-}
-
-.portal-user-menu-btn {
-  border: 1px solid rgba(255,141,141,0.28);
-  border-radius: 10px;
-  background: rgba(255,141,141,0.1);
-  color: var(--danger);
-  min-height: 38px;
-  padding: 0 12px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  text-align: left;
-  width: 100%;
-}
-
-.portal-user-menu-btn-neutral {
-  border-color: rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.04);
-  color: var(--text);
-}
-
-.portal-user-menu-btn:hover {
-  background: rgba(255,141,141,0.18);
-}
-
-/* ----------------------------------------------------------------- */
-/* Login-Seite (fahrer/index.html)                                   */
-/* ----------------------------------------------------------------- */
-.driver-login {
+  place-items: center;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  min-height: 100dvh;
   padding: 24px 16px;
 }
 
-.driver-login-head {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
-  text-align: center;
+.driver-login {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 20px;
+  padding: 28px 24px;
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  box-shadow: var(--schatten);
 }
 
-.driver-login-head img {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-}
-
-.driver-login-head h1 {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-}
-
+.driver-login-head { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.driver-login-head img { height: 56px; width: auto; display: block; }
+.driver-login-head h1 { font-size: 24px; }
 .driver-login-head p {
   margin: 0;
-  color: var(--gold);
-  letter-spacing: 0.18em;
   font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
+  color: var(--gold);
 }
 
-.driver-login-form {
-  width: 100%;
-  max-width: 380px;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: rgba(17,20,30,0.94);
-  padding: 28px 24px;
-  display: grid;
-  gap: 16px;
-  box-shadow: var(--shadow);
-}
+.driver-login-form { display: grid; gap: 16px; }
 
-.driver-login-form .driver-btn.primary {
-  width: 100%;
-  min-height: 50px;
-  font-size: 15px;
-}
+/* ═══ Schmale Geräte ═══════════════════════════════════════════════════════
+   Geprüft bei 320, 390 und 430 px. Unter 380 px wird nur enger gesetzt -
+   nichts wird kleiner als 16 px und nichts fällt weg. */
 
-.driver-login-field {
-  display: grid;
-  gap: 6px;
-}
-
-.driver-login-field span {
-  color: var(--muted);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.driver-input {
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
-  background: rgba(10,12,18,0.95);
-  color: var(--text);
-  min-height: 48px;
-  padding: 0 14px;
-  font-size: 15px;
-  width: 100%;
-  transition: border-color 0.15s;
-}
-
-.driver-input:focus {
-  outline: none;
-  border-color: rgba(240,201,107,0.45);
-}
-
-.driver-login-message.is-error {
-  color: var(--danger);
-  font-size: 13px;
-  text-align: center;
-}
-
-/* ----------------------------------------------------------------- */
-/* Responsive                                                         */
-/* ----------------------------------------------------------------- */
-@media (max-width: 920px) {
-  .portal-home-grid { grid-template-columns: 1fr; }
-  .quick-actions { grid-template-columns: repeat(2, minmax(0,1fr)); }
-  .summary-row { grid-template-columns: 1fr; }
-  .doc-type-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 720px) {
-  .driver-app, .portal-shell { padding: 12px 12px 24px; }
-  .portal-header { padding: 14px 14px 12px; border-radius: 22px; }
-  .portal-brand h1 { font-size: 22px; }
-  .portal-greeting { font-size: 24px; }
-  .portal-date { font-size: 15px; }
-  .hero-time { font-size: 30px; }
-  .panel-card, .portal-section { border-radius: 18px; padding: 18px; }
-  .quick-action-card { min-height: 144px; padding: 16px 14px; }
-  .quick-action-card strong { font-size: 18px; }
-  .quick-action-card span { font-size: 14px; }
-  .week-row { grid-template-columns: 1fr; }
-  .week-row-side { justify-items: start; text-align: left; }
+@media (max-width: 560px) {
+  .panel-card,
+  .portal-section { padding: 16px; }
   .portal-drawer-shell { width: calc(100% - 12px); margin: 6px auto; max-height: calc(100vh - 12px); }
-  .section-titlebar { grid-template-columns: 1fr; display: grid; }
-  .section-titlebar h2 { font-size: 26px; }
+  .section-titlebar { flex-direction: column; align-items: stretch; }
   .btn-close { width: 100%; }
 }
 
-@media (max-width: 430px) {
-  .portal-shell {
-    gap: 14px;
-    overflow-x: hidden;
+@media (max-width: 380px) {
+  .portal-shell,
+  .driver-app { padding-left: 12px; padding-right: 12px; }
+  .portal-header { margin: 0 -12px; padding-left: 12px; padding-right: 12px; }
+  .panel-card,
+  .portal-section { padding: 14px; }
+  .quick-action-card { min-height: 108px; padding: 12px; }
+  /* Unter 380 px ist neben Logo und Bedienknoepfen kein Platz mehr fuer
+     den Schriftzug - er stand angeschnitten da. Das Logo traegt den Namen
+     ohnehin; fuer Vorleseprogramme bleibt die Ueberschrift erhalten. */
+  .portal-header h1 {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
-  .portal-home-grid,
-  .quick-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .portal-header { gap: 10px; }
-  .portal-brand { align-items: flex-start; }
-  .portal-brand-mark { width: 46px; height: 46px; border-radius: 14px; }
-  .portal-eyebrow { letter-spacing: 0.12em; }
-  .portal-greeting { font-size: 22px; }
-  .portal-date { font-size: 14px; }
-  .icon-btn, .portal-avatar { width: 46px; height: 46px; }
-  .quick-action-card { min-height: 132px; }
-  .quick-action-card strong { font-size: 17px; }
-  .quick-action-card span { font-size: 13px; }
-  .quick-icon { font-size: 24px; }
-  .week-row { padding: 10px 12px; }
-  .week-row-main strong,
-  .week-row-side span { font-size: 14px; }
-  .week-row-main p,
-  .week-row-side small { font-size: 12px; }
-  .hero-time { font-size: 26px; }
-  .portal-content { gap: 14px; }
+  .portal-brand img { height: 34px; }
+  .portal-brand-mark { width: 34px; height: 34px; font-size: 13px; }
+  /* Die Zeile bleibt lesbar, statt am Rand abzuschneiden. */
+  .hero-time { font-size: clamp(24px, 9vw, 30px); }
+  /* Unter 380 px ist fuer zwei Spalten kein Platz mehr. */
+  .week-row { grid-template-columns: minmax(0, 1fr); }
+  .week-row-side { justify-items: start; text-align: left; }
+}
+
+/* Wer Bewegung reduziert haben will, bekommt keine. */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
 }

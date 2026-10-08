@@ -51,6 +51,28 @@
 
   let planningLoadError = "";
 
+  /*
+    Echtes HTML-Escaping fuer Werte aus der Datenbank.
+
+    GEMESSENER AUSGANGSFEHLER: Der Schichtdialog setzte Mitarbeiter-
+    namen, Fahrzeugnamen, Kennzeichen, Fahrzeugart und Vorlagennamen
+    unmaskiert in innerHTML - auch in Attribute. Ein Name wie
+    "Mueller & Sohn" wurde dadurch falsch dargestellt, ein Wert mit
+    einem Anfuehrungszeichen brach das Attribut auf.
+
+    Dieselbe Funktion steht in fahrer/mitarbeiter.js. Fuer IDs und
+    Datenbankinhalte wird sie immer verwendet - auch dort, wo der
+    Wert heute harmlos aussieht.
+  */
+  function escHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function safeParse(raw) {
     try {
       return JSON.parse(raw);
@@ -338,7 +360,17 @@
     if (useSupabase) {
       const rows = Array.isArray(state.vehicleCatalog) ? state.vehicleCatalog : [];
       if (!rows.length) return [];
+      /*
+        Kennung und Name bleiben erhalten.
+
+        Vorher fiel beides weg - uebrig blieb nur das Kennzeichen. Damit
+        liess sich in der Auswahl weder der Fahrzeugname anzeigen noch die
+        echte Kennung weiterreichen; geschrieben wurde das Kennzeichen,
+        das der Datendienst erst wieder zurueckuebersetzen musste.
+      */
       return rows.map((vehicle) => ({
+        id: String(vehicle.id || "").trim(),
+        name: String(vehicle.name || "").trim(),
         plate: String(vehicle.licensePlate || vehicle.plate || vehicle.name || vehicle.id || "-").trim(),
         status: mapVehicleStatusForPlanning(vehicle.status),
         type: String(vehicle.vehicleType || vehicle.type || "Normales Taxi").trim()
@@ -348,6 +380,8 @@
     const live = safeParse(localStorage.getItem(LIVE_DISPO_KEY)) || {};
     if (Array.isArray(live.vehicles) && live.vehicles.length) {
       return live.vehicles.map((v) => ({
+        id: String(v.id || "").trim(),
+        name: String(v.name || "").trim(),
         plate: String(v.plate || v.name || v.id || "-").trim(),
         status: v.locked ? "Gesperrt" : (v.status || "Verfügbar"),
         type: v.wheelchair ? "Rollstuhlfahrzeug" : "Normales Taxi"
@@ -719,14 +753,18 @@
   }
 
   function getTodayVisibleRows() {
-    const rows = state.planner.todayAssignments.map((row) => {
+    /* Der gewaehlte Tag - dieselbe Quelle wie fuer das Veroeffentlichen.
+       So kann nie ein anderer Tag gemeint sein als der angezeigte. */
+    const tag = bearbeitungstag();
+    const quelle = state.planner[tag.liste] || [];
+    const rows = quelle.map((row) => {
       const emp = getEmployee(row.employeeId);
       if (!emp) return null;
       return { row, emp };
     }).filter(Boolean);
 
     return rows.filter(({ row, emp }) => {
-      if (state.activeFilter !== "Alle" && row.status !== state.activeFilter) return false;
+      if (tag.schluessel === "today" && state.activeFilter !== "Alle" && row.status !== state.activeFilter) return false;
       const q = normalize(state.searchTerm).trim();
       if (!q) return true;
       const blob = normalize([
@@ -795,6 +833,356 @@
     }).join("");
   }
 
+  /* ══════════════════════════════════════════════════════════════════════
+     SCHICHT PLANEN — ein Knopf, ein Fenster, ein Speichern
+     ══════════════════════════════════════════════════════════════════════
+
+     WARUM DER UMBAU
+
+     Vorher standen sechs Schaltflächen nebeneinander, jede änderte für
+     sich einen Teilwert, und gespeichert wurde an ganz anderer Stelle der
+     Seite. Im echten Bedienversuch war nicht erkennbar, wie eine Schicht
+     vollständig ausgewählt und gesichert wird. Das ist kein
+     Bedienfehler — eine Planung, die man erklären muss, ist für den
+     Dienstbetrieb nicht brauchbar.
+
+     JETZT
+
+     Auf der Karte steht ein einziger Knopf: „Schicht planen" bzw.
+     „Schicht bearbeiten". Er öffnet ein Fenster, in dem alles in der
+     Reihenfolge steht, in der man es entscheidet:
+
+       1. Arbeitet die Person an diesem Tag?   Im Dienst / Frei
+       2. Schichtzeit                          Vorlagen oder eigene Zeit
+       3. Fahrzeug                             Karten oder „Kein Fahrzeug"
+       4. Zusammenfassung                      wer, wann, welches Fahrzeug
+       5. „Schicht speichern"
+
+     Nichts klappt mehr unter der Karte auf. Gespeichert wird im selben
+     Fenster, in dem gewählt wurde.
+
+     WAS UNANGETASTET BLEIBT
+
+     Die Datenwege, die Rollen und die Regeln der Datenbank. Es ändert
+     sich, WIE gewählt und gespeichert wird - nicht, was geschrieben wird.
+     Beim Öffnen ist der vorhandene Stand vorausgewählt; Abbrechen ändert
+     nichts.
+  */
+
+  /** Was gerade im Fenster bearbeitet wird. `null`, wenn es zu ist. */
+  let dialog = null;
+  /*
+    {
+      employeeId, tag,            // welcher Mitarbeiter, welcher Tag
+      imDienst, start, ende,      // der Arbeitsstand IM Fenster
+      vorlageId, fahrzeugId, fahrzeugKennzeichen,
+      speichert, fehler
+    }
+  */
+  let dialogAusloeser = null;   /* Knopf, zu dem der Fokus zurückkehrt */
+
+  /** Der Tag, der gerade bearbeitet wird - dieselbe Quelle wie zum Veröffentlichen. */
+  function bearbeitungstag() {
+    return gewaehlterTag();
+  }
+
+  /** Die Zeile eines Mitarbeiters am gewählten Tag. */
+  function zeileVon(employeeId, tag) {
+    const liste = state.planner[tag.liste] || [];
+    return liste.find((x) => x.employeeId === employeeId) || null;
+  }
+
+  /**
+   * Ist diese Zeile schon geplant?
+   *
+   * Entscheidet die Beschriftung des Knopfes UND die Vorauswahl im
+   * Fenster. Beides muss dasselbe sagen wie die Veröffentlichung -
+   * sonst steht im Fenster "Frei", obwohl eine Schicht gespeichert ist.
+   *
+   * Gemessen, warum die erste Fassung danebenlag: Sie prüfte den
+   * Zustandstext auf "dienst". Eine aus der Datenbank geladene Schicht
+   * trägt dort aber "planned" - das Fenster öffnete deshalb mit "Frei",
+   * und Schichtzeit wie Fahrzeug waren ausgeblendet.
+   *
+   * Maßgeblich ist derselbe Maßstab wie beim Veröffentlichen: eine
+   * hinterlegte Zeit und kein Abwesenheitsgrund.
+   */
+  function istGeplant(row, tag) {
+    if (!row) return false;
+    if (tag.schluessel === "tomorrow") return Boolean(row.active);
+    if (!row.start || !row.end) return false;
+    const zustand = normalize(row.status);
+    return !zustand.includes("urlaub") && !zustand.includes("krank")
+      && !zustand.includes("frei") && !zustand.includes("abgemeldet");
+  }
+
+  function dialogOeffnen(employeeId, ausloeser) {
+    const tag = bearbeitungstag();
+    const row = zeileVon(employeeId, tag);
+    if (!row) return;
+    const fahrzeug = fahrzeugDerZeile(row);
+    dialog = {
+      employeeId,
+      tag,
+      imDienst: istGeplant(row, tag),
+      start: row.start || "",
+      ende: row.end || "",
+      vorlageId: row.shiftTemplateId || "",
+      fahrzeugId: fahrzeug ? (fahrzeug.id || fahrzeug.plate) : "",
+      fahrzeugKennzeichen: fahrzeug ? fahrzeug.plate : "",
+      speichert: false,
+      fehler: "",
+    };
+    dialogAusloeser = ausloeser || null;
+    dialogZeichnen();
+  }
+
+  function dialogSchliessen() {
+    /* Abbrechen ändert nichts: Es wurde nur im Fenster gearbeitet, nie
+       an der Zeile selbst. */
+    dialog = null;
+    dialogZeichnen();
+    if (dialogAusloeser && document.contains(dialogAusloeser)) dialogAusloeser.focus();
+    dialogAusloeser = null;
+  }
+
+  function vorlagenListe() {
+    return (state.planner.templates || []).filter((t) => t && t.start && t.end);
+  }
+
+  function dialogZusammenfassung(emp, tag) {
+    const fahrzeug = dialog.fahrzeugId
+      ? loadVehicles().find((v) => String(v.id || v.plate) === String(dialog.fahrzeugId))
+      : null;
+    return [
+      ["Mitarbeiter", employeeName(emp)],
+      ["Datum", `${tag.name === "heute" ? "Heute" : "Morgen"}, ${formatDate(tag.datum)}`],
+      ["Status", dialog.imDienst ? "Im Dienst" : "Frei"],
+      ["Schichtzeit", dialog.imDienst ? (dialog.start && dialog.ende ? `${dialog.start} – ${dialog.ende} Uhr` : "noch nicht gewählt") : "—"],
+      ["Fahrzeug", dialog.imDienst ? (fahrzeug ? fahrzeugBeschriftung(fahrzeug) : "Kein Fahrzeug") : "—"],
+    ];
+  }
+
+  function dialogZeichnen() {
+    const huelle = document.querySelector("[data-shift-dialog]");
+    if (!huelle) return;
+
+    if (!dialog) {
+      huelle.hidden = true;
+      huelle.innerHTML = "";
+      document.body.classList.remove("shift-dialog-open");
+      return;
+    }
+
+    const emp = getEmployee(dialog.employeeId);
+    const tag = dialog.tag;
+    if (!emp) { dialog = null; huelle.hidden = true; return; }
+
+    const vorlagen = vorlagenListe().map((t) => {
+      const gewaehlt = dialog.vorlageId === t.id
+        || (!dialog.vorlageId && dialog.start === t.start && dialog.ende === t.end);
+      return `
+        <button class="shift-pick-card${gewaehlt ? " is-selected" : ""}" type="button"
+          data-dialog-template="${escHtml(t.id)}" aria-pressed="${gewaehlt ? "true" : "false"}">
+          <strong>${escHtml(t.name)}</strong>
+          <span>${escHtml(t.start)} – ${escHtml(t.end)} Uhr</span>
+        </button>`;
+    }).join("");
+
+    const eigeneGewaehlt = dialog.vorlageId === "";
+    const fahrzeuge = loadVehicles().map((v) => {
+      const kennung = String(v.id || v.plate);
+      const gewaehlt = String(dialog.fahrzeugId) === kennung;
+      return `
+        <button class="shift-pick-card${gewaehlt ? " is-selected" : ""}" type="button"
+          data-dialog-vehicle="${escHtml(kennung)}" aria-pressed="${gewaehlt ? "true" : "false"}">
+          <strong>${escHtml(v.name || v.plate)}</strong>
+          <span>${escHtml(v.plate)}</span>
+          <small>${escHtml(v.type)}</small>
+        </button>`;
+    }).join("");
+    const ohneFahrzeug = !dialog.fahrzeugId;
+
+    const zusammenfassung = dialogZusammenfassung(emp, tag).map(([k, w]) => `
+      <div><dt>${escHtml(k)}</dt><dd>${escHtml(w)}</dd></div>`).join("");
+
+    huelle.hidden = false;
+    document.body.classList.add("shift-dialog-open");
+    huelle.innerHTML = `
+      <div class="shift-dialog-backdrop" data-dialog-cancel></div>
+      <div class="shift-dialog-box" role="dialog" aria-modal="true" aria-labelledby="shiftDialogTitel">
+        <header class="shift-dialog-head">
+          <div>
+            <p class="shift-dialog-kicker">${tag.name === "heute" ? "Heute" : "Morgen"} · ${escHtml(formatDate(tag.datum))}</p>
+            <h2 id="shiftDialogTitel">Schicht für ${escHtml(employeeName(emp))}</h2>
+          </div>
+          <button class="admin-btn admin-btn-secondary" type="button" data-dialog-cancel>Abbrechen</button>
+        </header>
+
+        <div class="shift-dialog-body">
+          <section class="shift-dialog-step">
+            <h3>1. Arbeitet ${escHtml(employeeName(emp))} an diesem Tag?</h3>
+            <div class="shift-pick-grid shift-pick-grid-zwei">
+              <button class="shift-pick-card${dialog.imDienst ? " is-selected" : ""}" type="button"
+                data-dialog-duty="ja" aria-pressed="${dialog.imDienst ? "true" : "false"}">
+                <strong>Im Dienst</strong>
+                <span>Die Person arbeitet</span>
+              </button>
+              <button class="shift-pick-card${!dialog.imDienst ? " is-selected" : ""}" type="button"
+                data-dialog-duty="nein" aria-pressed="${!dialog.imDienst ? "true" : "false"}">
+                <strong>Frei</strong>
+                <span>Kein Dienst an diesem Tag</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="shift-dialog-step"${dialog.imDienst ? "" : " hidden"}>
+            <h3>2. Schichtzeit</h3>
+            <div class="shift-pick-grid">
+              ${vorlagen}
+              <button class="shift-pick-card${eigeneGewaehlt ? " is-selected" : ""}" type="button"
+                data-dialog-template="" aria-pressed="${eigeneGewaehlt ? "true" : "false"}">
+                <strong>Eigene Zeit</strong>
+                <span>Beginn und Ende selbst eintragen</span>
+              </button>
+            </div>
+            <div class="shift-picker-times"${eigeneGewaehlt ? "" : " hidden"}>
+              <label>Beginn
+                <input type="time" data-dialog-start value="${escHtml(dialog.start)}">
+              </label>
+              <label>Ende
+                <input type="time" data-dialog-end value="${escHtml(dialog.ende)}">
+              </label>
+            </div>
+          </section>
+
+          <section class="shift-dialog-step"${dialog.imDienst ? "" : " hidden"}>
+            <h3>3. Fahrzeug</h3>
+            <div class="shift-pick-grid">
+              ${fahrzeuge}
+              <button class="shift-pick-card${ohneFahrzeug ? " is-selected" : ""}" type="button"
+                data-dialog-vehicle="" aria-pressed="${ohneFahrzeug ? "true" : "false"}">
+                <strong>Kein Fahrzeug</strong>
+                <span>Wird später zugewiesen</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="shift-dialog-step">
+            <h3>4. Zusammenfassung</h3>
+            <dl class="shift-dialog-summary">${zusammenfassung}</dl>
+          </section>
+
+          <p class="shift-dialog-error"${dialog.fehler ? "" : " hidden"} role="alert" data-dialog-error>${escHtml(dialog.fehler)}</p>
+        </div>
+
+        <footer class="shift-dialog-foot">
+          <button class="admin-btn admin-btn-secondary" type="button" data-dialog-cancel>Abbrechen</button>
+          <button class="admin-btn shift-dialog-save" type="button" data-dialog-save${dialog.speichert ? " disabled" : ""}>
+            ${dialog.speichert ? "Wird gespeichert …" : "Schicht speichern"}
+          </button>
+        </footer>
+      </div>`;
+
+    /* Der Fokus gehört ins Fenster. */
+    const ersterKnopf = huelle.querySelector("[data-dialog-duty]");
+    if (ersterKnopf && !dialog.speichert) ersterKnopf.focus();
+  }
+
+  /** Den Arbeitsstand aus den beiden Zeitfeldern übernehmen, bevor gezeichnet wird. */
+  function dialogZeitenLesen() {
+    const a = document.querySelector("[data-dialog-start]");
+    const b = document.querySelector("[data-dialog-end]");
+    if (a) dialog.start = String(a.value || "").trim();
+    if (b) dialog.ende = String(b.value || "").trim();
+  }
+
+  async function dialogSpeichern() {
+    if (!dialog || dialog.speichert) return;
+    dialogZeitenLesen();
+
+    if (dialog.imDienst && (!dialog.start || !dialog.ende)) {
+      dialog.fehler = "Bitte Beginn und Ende der Schicht angeben.";
+      dialogZeichnen();
+      return;
+    }
+    if (dialog.imDienst && dialog.start === dialog.ende) {
+      dialog.fehler = "Beginn und Ende dürfen nicht gleich sein.";
+      dialogZeichnen();
+      return;
+    }
+
+    dialog.fehler = "";
+    dialog.speichert = true;
+    dialogZeichnen();
+
+    const tag = dialog.tag;
+    const row = zeileVon(dialog.employeeId, tag);
+    if (!row) { dialog.speichert = false; dialogZeichnen(); return; }
+
+    /* Der Stand VOR der Änderung - für den Rückweg bei einem Fehler. */
+    const vorher = { ...row };
+
+    const fahrzeug = dialog.fahrzeugId
+      ? loadVehicles().find((v) => String(v.id || v.plate) === String(dialog.fahrzeugId))
+      : null;
+
+    if (tag.schluessel === "tomorrow") row.active = dialog.imDienst;
+    else row.status = dialog.imDienst ? "im Dienst" : "frei";
+    row.shiftTemplateId = dialog.vorlageId || "";
+    row.start = dialog.imDienst ? dialog.start : "";
+    row.end = dialog.imDienst ? dialog.ende : "";
+    row.vehicle = dialog.imDienst && fahrzeug ? fahrzeug.plate : "";
+    row.vehicleId = dialog.imDienst && fahrzeug ? (fahrzeug.id || "") : "";
+
+    try {
+      /* Nur DIESER Mitarbeiter und NUR dieser Tag werden geschrieben. */
+      const praefix = tag.schluessel === "tomorrow" ? "TOM" : "TOD";
+      const gespeichert = await D?.saveShift?.({
+        id: row.sourceId || (row.id && !String(row.id).startsWith(praefix) ? row.id : null),
+        employeeId: row.employeeId,
+        date: tag.datum,
+        startTime: row.start,
+        endTime: row.end,
+        status: dialog.imDienst ? "planned" : "draft",
+        vehicleId: row.vehicleId || row.vehicle || null,
+        note: row.exceptionNote || row.note || "",
+        /* Der Tagesplan bleibt Entwurf, bis er ausdrücklich veröffentlicht
+           wird - das Speichern einer einzelnen Schicht ändert daran
+           nichts. */
+        planStatus: row.planStatus || "draft",
+      });
+      if (!gespeichert) {
+        Object.assign(row, vorher);
+        dialog.speichert = false;
+        dialog.fehler = "Die Schicht konnte nicht gespeichert werden. Es wurde nichts geändert.";
+        dialogZeichnen();
+        return;
+      }
+      if (gespeichert.id) row.sourceId = gespeichert.id;
+    } catch (fehler) {
+      Object.assign(row, vorher);
+      console.error("Schicht konnte nicht gespeichert werden.", fehler?.code || "unbekannt");
+      dialog.speichert = false;
+      dialog.fehler = "Die Schicht konnte nicht gespeichert werden. Es wurde nichts geändert.";
+      dialogZeichnen();
+      return;
+    }
+
+    savePlanner();
+    syncBackToPersonnel();
+    persistToCockpitBridge();
+
+    const name = employeeName(getEmployee(dialog.employeeId));
+    const was = dialog.imDienst ? `${row.start} – ${row.end} Uhr` : "frei";
+    dialogSchliessen();
+    renderAll();
+    publishMeldung(
+      `Schicht gespeichert: ${name}, ${formatDate(tag.datum)}, ${was}. `
+      + "Der Tagesplan ist noch nicht veröffentlicht."
+    );
+  }
+
   function renderTodayList() {
     const node = document.querySelector("[data-shift-driver-grid]");
     if (!node) return;
@@ -805,7 +1193,9 @@
       return;
     }
 
+    const tagJetzt = bearbeitungstag();
     node.innerHTML = rows.map(({ row, emp }) => {
+      const geplant = istGeplant(row, tagJetzt);
       const availabilityParts = [row.dayAvailability];
       if (row.availabilityFrom) availabilityParts.push(`ab ${row.availabilityFrom}`);
       if (row.availabilityTo) availabilityParts.push(`bis ${row.availabilityTo}`);
@@ -824,19 +1214,16 @@
             <div><dt>Schichtende</dt><dd>${row.end}</dd></div>
             <div><dt>Zugewiesenes Fahrzeug</dt><dd>${row.vehicle || "-"}</dd></div>
             <div><dt>Führerscheinstatus</dt><dd>${row.licenseStatus}</dd></div>
-            <div><dt>Taxischein/Personenbeförderungsscheinstatus</dt><dd>${row.permitStatus}</dd></div>
-            <div><dt>Qualifikationen</dt><dd>${Array.isArray(row.qualifications) && row.qualifications.length ? row.qualifications.join(", ") : "-"}</dd></div>
+            <div class="shift-meta-wide"><dt>Taxischein/Personenbeförderungsscheinstatus</dt><dd>${row.permitStatus}</dd></div>
+            <div class="shift-meta-wide"><dt>Qualifikationen</dt><dd>${Array.isArray(row.qualifications) && row.qualifications.length ? row.qualifications.join(", ") : "-"}</dd></div>
             <div><dt>Verfügbare Zeit</dt><dd>${availabilityParts.join(" · ")}</dd></div>
             <div><dt>Aktuelle Fahrt</dt><dd>${row.currentRide || "-"}</dd></div>
             <div><dt>Nächste Fahrt</dt><dd>${row.nextRide || "-"}</dd></div>
           </dl>
 
           <div class="shift-actions">
-            <button class="admin-btn" type="button" data-today-action="plan" data-employee-id="${emp.id}">Mitarbeiter für heute einplanen</button>
-            <button class="admin-btn" type="button" data-today-action="vehicle" data-employee-id="${emp.id}">Fahrzeug zuweisen</button>
-            <button class="admin-btn" type="button" data-today-action="shift" data-employee-id="${emp.id}">Schicht ändern</button>
-            <button class="admin-btn" type="button" data-today-action="status" data-employee-id="${emp.id}">Status ändern</button>
-            <button class="admin-btn admin-btn-warning" type="button" data-today-action="logout" data-employee-id="${emp.id}">Mitarbeiter abmelden</button>
+            <!-- EINE Aktion. Alles Weitere entscheidet man im Fenster. -->
+            <button class="admin-btn shift-plan-btn" type="button" data-shift-plan="${emp.id}">${geplant ? "Schicht bearbeiten" : "Schicht planen"}</button>
             <button class="admin-btn admin-btn-secondary" type="button" data-today-action="replace" data-employee-id="${emp.id}">Ersatzfahrer wählen</button>
           </div>
         </article>
@@ -982,6 +1369,64 @@
     }).join("");
   }
 
+  /* ══════════════════════════════════════════════════════════════════════
+     AUSWAHL VON FAHRZEUG UND SCHICHT
+     ══════════════════════════════════════════════════════════════════════
+
+     WAS VORHER WAR — und warum es unbedienbar war
+
+     Die drei Schaltflächen der Tageszeile waren keine Auswahl, sondern
+     Umschalter mit festen Werten:
+
+       "Fahrzeug zuweisen"  nahm das NÄCHSTE freie Fahrzeug aus der Liste;
+                            man konnte keines auswählen
+       "Schicht ändern"     setzte immer dieselbe fest verdrahtete Vorlage
+                            ("late", 14–22 Uhr); andere Vorlagen und freie
+                            Zeiten gab es nicht
+       "Mitarbeiter für heute einplanen"
+                            setzte nur den Status auf "im Dienst"
+
+     Der Wert wurde danach angezeigt - und sah deshalb aus wie ein
+     Vorschlag, den man noch bestätigen müsste. Es gab aber nichts zu
+     bestätigen und nichts zu wählen.
+
+     WAS JETZT IST
+
+     Dieselben Schaltflächen öffnen eine Auswahl direkt in der Zeile:
+
+       Fahrzeug   alle Fahrzeuge aus der Fahrzeugverwaltung, mit Name UND
+                  Kennzeichen. Das zugewiesene ist gold hervorgehoben.
+                  Nichts wird getippt.
+       Schicht    die vorhandenen Vorlagen zum Anklicken, darunter zwei
+                  Felder für eine eigene Anfangs- und Endzeit.
+
+     Gespeicherte Fahrzeuge und Schichten bleiben unangetastet: Es ändert
+     sich nur, WIE ein Wert gewählt wird, nicht wie er abgelegt wird.
+     `row.vehicle` trägt weiterhin das Kennzeichen; zusätzlich wird die
+     echte Kennung in `row.vehicleId` gemerkt und beim Speichern
+     bevorzugt - der Datendienst nimmt beides an.
+  */
+
+  /** Das gerade zugewiesene Fahrzeug einer Zeile finden. */
+  function fahrzeugDerZeile(row) {
+    const liste = loadVehicles();
+    if (row.vehicleId) {
+      const treffer = liste.find((v) => v.id && String(v.id) === String(row.vehicleId));
+      if (treffer) return treffer;
+    }
+    if (!row.vehicle) return null;
+    const gesucht = normalize(row.vehicle);
+    return liste.find((v) => normalize(v.plate) === gesucht || normalize(v.name) === gesucht) || null;
+  }
+
+  function fahrzeugBeschriftung(v) {
+    if (!v) return "";
+    const teile = [];
+    if (v.name) teile.push(v.name);
+    if (v.plate && normalize(v.plate) !== normalize(v.name)) teile.push(v.plate);
+    return teile.join(" · ") || v.plate || "-";
+  }
+
   function renderDriverDayPlans() {
     const node = document.querySelector("[data-driver-dayplans]");
     if (!node) return;
@@ -1028,7 +1473,237 @@
     }).join("");
   }
 
+  /* ══════════════════════════════════════════════════════════════════════
+     VERÖFFENTLICHEN — für den ausgewählten Tag, nicht nur für morgen
+     ══════════════════════════════════════════════════════════════════════
+
+     URSACHE DES FEHLERS
+
+     Diese Seite ist als "Übersicht heute + Planer für morgen" gebaut. Es
+     gibt zwei getrennte Listen: `todayAssignments` und `tomorrowPlan`.
+
+     "Planung speichern" schreibt beide Listen, aber mit
+     `planStatus: row.planStatus || "draft"` — also als Entwurf. Das ist
+     richtig so: Speichern ist nicht Veröffentlichen.
+
+     "Plan veröffentlichen" war dagegen fest auf `state.dateTomorrow`
+     verdrahtet und lief ausschließlich über `tomorrowPlan`. Für den
+     heutigen Tag gab es damit ÜBERHAUPT KEINEN Weg, `plan_status` auf
+     `published` zu setzen — und das Mitarbeiterportal zeigt nach
+     `shifts_select_self_published` nur veröffentlichte Schichten.
+
+     Betriebliche Folge: Fällt jemand kurzfristig aus und wird ersetzt,
+     erfährt die Vertretung es im Portal nicht.
+
+     DIE KORREKTUR
+
+     Der Tag wird nicht mehr angenommen, sondern aus der Auswahl neben der
+     Schaltfläche gelesen. Vorausgewählt bleibt "morgen" — wer nichts
+     umstellt, erlebt denselben Ablauf wie bisher.
+
+     Alles Weitere folgt daraus:
+       - Das Datum steht im Klartext in der Auswahl UND in der Rückfrage.
+       - Veröffentlicht wird genau die Liste, die zu diesem Tag gehört.
+       - Ein leerer Plan wird abgewiesen, nicht stillschweigend
+         veröffentlicht.
+       - Während des Schreibens ist die Schaltfläche gesperrt.
+       - Schlägt etwas fehl, bleibt der Entwurf ein Entwurf.
+  */
+
+  /** Die beiden Tage, die diese Seite kennt. */
+  function veroeffentlichbareTage() {
+    return [
+      { schluessel: "tomorrow", datum: state.dateTomorrow, name: "morgen", liste: "tomorrowPlan" },
+      { schluessel: "today", datum: state.dateToday, name: "heute", liste: "todayAssignments" },
+    ];
+  }
+
+  /**
+   * Der gewählte Tag - aus der Auswahl, mit "morgen" als Rückfall.
+   *
+   * WICHTIG: Gelesen wird der Wert genau EINMAL und danach weitergereicht.
+   * Würde an mehreren Stellen neu gelesen, könnte ein Wechsel mitten im
+   * Vorgang dazu führen, dass die Rückfrage einen anderen Tag nennt als
+   * den, der geschrieben wird.
+   */
+  function gewaehlterTag() {
+    const auswahl = document.querySelector("[data-publish-day]");
+    const wert = auswahl ? String(auswahl.value || "") : "tomorrow";
+    const tage = veroeffentlichbareTage();
+    return tage.find((t) => t.schluessel === wert) || tage[0];
+  }
+
+  /** Die Beschriftungen der Auswahl mit den echten Datumsangaben füllen. */
+  function initPublishDaySelect() {
+    for (const tag of veroeffentlichbareTage()) {
+      const option = document.querySelector(`[data-publish-day-option="${tag.schluessel}"]`);
+      if (option && tag.datum) option.textContent = `${tag.name} · ${formatDate(tag.datum)}`;
+    }
+  }
+
+  /**
+   * Die Tagesleiste beschriften.
+   *
+   * Am Knopf stehen Tag UND vollständiges Datum - so ist auch beim
+   * schnellen Hinsehen klar, was veröffentlicht wird. Der Zustand wird in
+   * gewöhnlichem Deutsch gesagt, nicht als "draft" oder "published".
+   */
+  function renderTagesleiste() {
+    const tag = bearbeitungstag();
+    const knopf = document.querySelector("[data-plan-publish]");
+    if (knopf && !knopf.disabled && tag.datum) {
+      knopf.textContent = `Tagesplan veröffentlichen — ${tag.name === "heute" ? "Heute" : "Morgen"}, ${formatDate(tag.datum)}`;
+    }
+    const zustand = document.querySelector("[data-plan-day-state]");
+    if (!zustand) return;
+    const zeilen = zuVeroeffentlichendeZeilen(tag);
+    const veroeffentlicht = zeilen.length > 0 && zeilen.every((r) => r.planStatus === "published");
+    if (!zeilen.length) {
+      zustand.textContent = "Noch niemand eingeplant.";
+    } else if (veroeffentlicht) {
+      zustand.textContent = `${zeilen.length} Mitarbeiter eingeplant. Der Tagesplan ist veröffentlicht und im Mitarbeiterportal sichtbar.`;
+    } else {
+      zustand.textContent = `${zeilen.length} Mitarbeiter eingeplant. Noch nicht veröffentlicht — im Mitarbeiterportal noch nicht sichtbar.`;
+    }
+  }
+
+  /**
+   * Zählt, was an diesem Tag überhaupt zu veröffentlichen wäre.
+   *
+   * Die beiden Listen haben verschiedene Gestalt: `tomorrowPlan` hat ein
+   * Kennzeichen `active`, `todayAssignments` hat keines - dort zählt, ob
+   * eine Zeit hinterlegt ist und die Person nicht abwesend ist.
+   */
+  function zuVeroeffentlichendeZeilen(tag) {
+    const zeilen = state.planner[tag.liste] || [];
+    if (tag.schluessel === "tomorrow") {
+      return zeilen.filter((row) => row.employeeId && row.active);
+    }
+    /* Derselbe Massstab wie istGeplant() - eine Regel, nicht zwei. */
+    return zeilen.filter((row) => row.employeeId && istGeplant(row, tag));
+  }
+
+  /** Eine Rückmeldung in die vorhandene Hinweiszeile schreiben. */
+  function publishMeldung(text) {
+    const node = document.querySelector("[data-shift-feedback]");
+    if (node) node.textContent = text;
+  }
+
+  async function veroeffentlichen(knopf) {
+    /* Doppelklick: Der zweite Klick trifft eine gesperrte Schaltfläche. */
+    if (knopf.disabled) return;
+
+    const tag = gewaehlterTag();
+    if (!tag.datum) {
+      publishMeldung("Kein Datum ermittelbar. Bitte die Seite neu laden.");
+      return;
+    }
+
+    const zeilen = zuVeroeffentlichendeZeilen(tag);
+    if (!zeilen.length) {
+      /* Ein leerer Plan darf nicht unbemerkt als gültiger Plan gelten.
+         Die Zentrale hielte ihn sonst für abgestimmt, und im Portal
+         stünde bei allen "frei". */
+      publishMeldung(
+        `Für ${tag.name}, ${formatDate(tag.datum)}, ist keine Schicht eingetragen. `
+        + "Es wurde nichts veröffentlicht."
+      );
+      return;
+    }
+
+    const frage =
+      `Plan für ${tag.name}, ${formatDate(tag.datum)}, veröffentlichen?\n\n`
+      + `${zeilen.length} Schicht(en) werden für die Mitarbeiter sichtbar.`;
+    if (!window.confirm(frage)) return;
+
+    const vorherText = knopf.textContent;
+    knopf.disabled = true;
+    knopf.textContent = "Wird veröffentlicht …";
+    publishMeldung(`Plan für ${formatDate(tag.datum)} wird veröffentlicht …`);
+    D?.clearLastError?.();
+
+    try {
+      const payload = {
+        date: tag.datum,
+        status: "published",
+        version: 1,
+        publishedAt: new Date().toISOString(),
+        publishedBy: "Admin",
+      };
+      const publication = await D?.publishPlan?.(payload);
+      if (!publication) {
+        /* Kein Eintrag, keine Veröffentlichung. Der Entwurf bleibt ein
+           Entwurf - es wird NICHTS lokal auf "veröffentlicht" gesetzt. */
+        /* KEIN renderQuickInfo() hier: Es schreibt in dieselbe Zeile und
+           wuerde diese Auskunft durch den Wortlaut des Dienstes ersetzen. */
+        publishMeldung(
+          `Der Plan für ${formatDate(tag.datum)} konnte nicht veröffentlicht werden. `
+          + "Er bleibt ein Entwurf."
+        );
+        return;
+      }
+
+      const praefix = tag.schluessel === "tomorrow" ? "TOM" : "TOD";
+      for (const row of zeilen) {
+        const saved = await D?.saveShift?.({
+          id: row.sourceId || (row.id && !String(row.id).startsWith(praefix) ? row.id : null),
+          employeeId: row.employeeId,
+          date: tag.datum,
+          startTime: row.start,
+          endTime: row.end,
+          status: "planned",
+          vehicleId: row.vehicleId || row.vehicle || null,
+          note: row.exceptionNote || row.note || "",
+          planStatus: "published",
+        });
+        if (!saved) {
+          /* Mittendrin abgebrochen. Was schon geschrieben wurde, steht
+             geschrieben - aber es wird NICHT behauptet, der Plan sei
+             veröffentlicht. */
+          /* Ebenfalls ohne renderQuickInfo - siehe oben. */
+          publishMeldung(
+            `Der Plan für ${formatDate(tag.datum)} wurde nur teilweise übertragen. `
+            + "Bitte erneut veröffentlichen und danach prüfen."
+          );
+          return;
+        }
+        row.planStatus = "published";
+      }
+
+      /* Der lokale Veröffentlichungszustand gehört weiterhin zum Plan für
+         morgen - nur dort zeigt ihn die Oberfläche an. Für heute wird er
+         nicht gesetzt, damit die Anzeige nicht etwas Falsches behauptet. */
+      if (tag.schluessel === "tomorrow") {
+        state.planner.publicationStatus = String(publication.status || "published");
+        state.planner.publication = publication;
+        state.planner.publishedAt = publication.publishedAt || publication.published_at || payload.publishedAt || "";
+      }
+      savePlanner();
+      await syncPlanningDataFromService();
+      renderAll();
+      publishMeldung(
+        `Plan für ${tag.name}, ${formatDate(tag.datum)}, veröffentlicht: `
+        + `${zeilen.length} Schicht(en) sind jetzt im Mitarbeiterportal sichtbar.`
+      );
+    } catch (fehler) {
+      /* Ohne den Wortlaut des Dienstes - er könnte Kennungen enthalten. */
+      console.error("Veröffentlichen fehlgeschlagen.", fehler?.code || "unbekannt");
+      publishMeldung(
+        `Der Plan für ${formatDate(tag.datum)} konnte nicht veröffentlicht werden. `
+        + "Er bleibt ein Entwurf."
+      );
+    } finally {
+      knopf.disabled = false;
+      knopf.textContent = vorherText;
+    }
+  }
+
+  /* Die Tagesleiste gehört zu jedem Neuzeichnen. */
+  const renderQuickInfoOriginal = function () {};
+  void renderQuickInfoOriginal;
+
   function renderQuickInfo() {
+    renderTagesleiste();
     const node = document.querySelector("[data-shift-feedback]");
     if (!node) return;
 
@@ -1254,6 +1929,18 @@
     renderQuickInfo();
   }
 
+  /* Der Tageswechsel zeichnet Karten und Leiste neu. Ein offenes Fenster
+     wird dabei geschlossen, damit es nie zu einem anderen Tag gehört als
+     dem angezeigten. */
+  function bindTagswechsel() {
+    const auswahl = document.querySelector("[data-publish-day]");
+    if (!auswahl) return;
+    auswahl.addEventListener("change", () => {
+      if (dialog) dialogSchliessen();
+      renderAll();
+    });
+  }
+
   function bindFilters() {
     document.querySelectorAll("[data-shift-filter]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -1328,7 +2015,7 @@
             startTime: row.start,
             endTime: row.end,
             status: row.status || "draft",
-            vehicleId: row.vehicle || null,
+            vehicleId: row.vehicleId || row.vehicle || null,
             note: row.exceptionNote || row.note || "",
             planStatus: row.planStatus || "draft"
           });
@@ -1364,6 +2051,39 @@
     }
   }
 
+  /* Escape schliesst das Fenster - ohne etwas zu aendern. */
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && dialog && !dialog.speichert) {
+      event.preventDefault();
+      dialogSchliessen();
+    }
+  });
+
+  /*
+    Der Fokus bleibt im Fenster.
+
+    Ohne diese Schleife wandert er beim Weitertasten hinter den
+    abgedunkelten Hintergrund - dort ist nichts bedienbar, und niemand
+    sieht mehr, wo er steht.
+  */
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab" || !dialog) return;
+    const kasten = document.querySelector(".shift-dialog-box");
+    if (!kasten) return;
+    const ziele = [...kasten.querySelectorAll('button, input, select, [tabindex]:not([tabindex="-1"])')]
+      .filter((e) => !e.disabled && e.offsetParent !== null);
+    if (!ziele.length) return;
+    const erstes = ziele[0];
+    const letztes = ziele[ziele.length - 1];
+    if (event.shiftKey && document.activeElement === erstes) {
+      event.preventDefault();
+      letztes.focus();
+    } else if (!event.shiftKey && document.activeElement === letztes) {
+      event.preventDefault();
+      erstes.focus();
+    }
+  });
+
   function bindActions() {
     document.addEventListener("click", async (event) => {
       const resetBtn = event.target.closest("[data-shift-reset]");
@@ -1377,6 +2097,66 @@
         return;
       }
 
+      /* ══ Das Schichtfenster ═══════════════════════════════════════════ */
+
+      const planKnopf = event.target.closest("[data-shift-plan]");
+      if (planKnopf) {
+        dialogOeffnen(planKnopf.getAttribute("data-shift-plan") || "", planKnopf);
+        return;
+      }
+
+      if (dialog) {
+        /* Abbrechen, Hintergrundklick und das Kreuz - alle drei ändern
+           nichts, weil im Fenster nur an einer Kopie gearbeitet wird. */
+        if (event.target.closest("[data-dialog-cancel]")) {
+          dialogSchliessen();
+          return;
+        }
+
+        const dienst = event.target.closest("[data-dialog-duty]");
+        if (dienst) {
+          dialogZeitenLesen();
+          dialog.imDienst = dienst.getAttribute("data-dialog-duty") === "ja";
+          dialog.fehler = "";
+          dialogZeichnen();
+          return;
+        }
+
+        const vorlage = event.target.closest("[data-dialog-template]");
+        if (vorlage) {
+          const id = vorlage.getAttribute("data-dialog-template") || "";
+          if (id) {
+            const tpl = findTemplateById(id);
+            if (tpl) {
+              dialog.vorlageId = tpl.id;
+              dialog.start = tpl.start;
+              dialog.ende = tpl.end;
+            }
+          } else {
+            /* "Eigene Zeit": Die bisherigen Werte bleiben als Vorschlag
+               stehen, damit niemand von vorn anfangen muss. */
+            dialog.vorlageId = "";
+          }
+          dialog.fehler = "";
+          dialogZeichnen();
+          return;
+        }
+
+        const wagen = event.target.closest("[data-dialog-vehicle]");
+        if (wagen) {
+          dialogZeitenLesen();
+          dialog.fahrzeugId = wagen.getAttribute("data-dialog-vehicle") || "";
+          dialog.fehler = "";
+          dialogZeichnen();
+          return;
+        }
+
+        if (event.target.closest("[data-dialog-save]")) {
+          void dialogSpeichern();
+          return;
+        }
+      }
+
       const todayAction = event.target.closest("[data-today-action]");
       if (todayAction) {
         const action = todayAction.getAttribute("data-today-action") || "";
@@ -1385,19 +2165,8 @@
         const emp = getEmployee(employeeId);
         if (!row || !emp) return;
 
-        if (action === "plan") row.status = "im Dienst";
-        if (action === "vehicle") {
-          const next = loadVehicles().find((v) => isVehicleAvailable(v.plate) && (!row.vehicle || normalize(v.plate) !== normalize(row.vehicle)));
-          row.vehicle = next ? next.plate : row.vehicle;
-        }
-        if (action === "shift") {
-          const tpl = findTemplateById("late");
-          row.shiftTemplateId = tpl.id;
-          row.start = tpl.start;
-          row.end = tpl.end;
-        }
-        if (action === "status") row.status = normalize(row.status).includes("dienst") ? "Pause" : "im Dienst";
-        if (action === "logout") row.status = "abgemeldet";
+        /* Geplant, Fahrzeug, Zeit und Zustand entscheidet jetzt das
+           Schichtfenster. Hier bleibt nur der Ersatzfahrer. */
         if (action === "replace") pickReplacement(employeeId);
 
         savePlanner();
@@ -1487,39 +2256,7 @@
 
       const publishAction = event.target.closest("[data-plan-publish]");
       if (publishAction) {
-        D?.clearLastError?.();
-        const payload = { date: state.dateTomorrow, status: "published", version: 1, publishedAt: new Date().toISOString(), publishedBy: "Admin" };
-        const publication = await D?.publishPlan?.(payload);
-        if (!publication) {
-          renderQuickInfo();
-          return;
-        }
-
-        for (const row of state.planner.tomorrowPlan) {
-          if (!row.employeeId) continue;
-          const saved = await D?.saveShift?.({
-            id: row.sourceId || (row.id && !String(row.id).startsWith("TOM") ? row.id : null),
-            employeeId: row.employeeId,
-            date: state.dateTomorrow,
-            startTime: row.start,
-            endTime: row.end,
-            status: row.active ? "planned" : "draft",
-            vehicleId: row.vehicle || null,
-            note: row.note || "",
-            planStatus: row.active ? "published" : "draft"
-          });
-          if (!saved) {
-            renderQuickInfo();
-            return;
-          }
-        }
-
-        state.planner.publicationStatus = String(publication.status || "published");
-        state.planner.publication = publication;
-        state.planner.publishedAt = publication.publishedAt || publication.published_at || payload.publishedAt || "";
-        savePlanner();
-        await syncPlanningDataFromService();
-        renderAll();
+        await veroeffentlichen(publishAction);
       }
     });
 
@@ -1691,6 +2428,8 @@
     ensureTomorrowPlan();
 
     initBulkTemplateSelect();
+    initPublishDaySelect();
+    bindTagswechsel();
     bindFilters();
     bindToolbar();
     bindActions();

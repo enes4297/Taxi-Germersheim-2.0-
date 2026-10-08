@@ -1,0 +1,54 @@
+---
+/**
+ * Passwortfeld mit Anzeigen-/Verbergen-Schalter.
+ *
+ * Drei der vier Anmeldeseiten brauchen es; im Bestand stand die Umschaltung
+ * dreimal fast gleich da. Der Schalter traegt dieselbe Klasse
+ * `auth-pass-toggle` und dasselbe `data-target` wie bisher - die Seiten
+ * haengen ihre Umschaltung genauso ein wie zuvor.
+ *
+ * WICHTIG FUER PASSWORTMANAGER UND MOBILE TASTATUR:
+ *   - `autocomplete` wird durchgereicht: `current-password` beim Anmelden,
+ *     `new-password` beim Vergeben. Danach entscheidet der Passwortmanager,
+ *     ob er ein gespeichertes Passwort anbietet oder ein neues vorschlaegt.
+ *   - `minlength` bleibt am Feld, nicht nur im Skript.
+ *   - Der Schalter ist `type="button"`, sonst schickte er das Formular ab.
+ *   - `aria-pressed` sagt Vorlesewerkzeugen, ob das Passwort gerade sichtbar
+ *     ist.
+ */
+interface Props {
+  id: string;
+  name: string;
+  label: string;
+  autocomplete: 'current-password' | 'new-password';
+  /** Beschriftung fuer den Schalter, etwa „Neues Passwort". */
+  schalterLabel?: string;
+}
+const { id, name, label, autocomplete, schalterLabel } = Astro.props;
+const bezeichnung = schalterLabel ?? 'Passwort';
+---
+
+<div>
+  <label for={id} class="block text-sm font-medium text-muted-foreground mb-1.5">{label}</label>
+  <div class="relative">
+    <input
+      id={id}
+      name={name}
+      type="password"
+      autocomplete={autocomplete}
+      minlength="8"
+      required
+      class="w-full bg-secondary border border-border pl-4 pr-[6.5rem] py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+    />
+    <button
+      type="button"
+      class="auth-pass-toggle absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-150"
+      data-target={id}
+      data-label={bezeichnung}
+      aria-label={`${bezeichnung} anzeigen`}
+      aria-pressed="false"
+    >
+      Anzeigen
+    </button>
+  </div>
+</div>

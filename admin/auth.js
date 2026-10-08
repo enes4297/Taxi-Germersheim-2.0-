@@ -7,6 +7,120 @@
   const KEY_NOTICE = "demoAdminPermissionNotice";
   const KEY_DEMO_NOTIFICATIONS = "adminDemoNotificationsReadState";
   const KEY_DEMO_NOTIFICATIONS_LEGACY = "demoAdminNotificationsState";
+  const DEMO_AUTH_KEYS = ["demoAdminLoggedIn", "demoAdminUser", "demoAdminRole", "demo-auth-v2", "taxiAdminDemoSession", "demoAdminRememberLogin", "demoAdminPermissionNotice"];
+  const REDIRECT_LOCK_KEY = "__adminAuthRedirectLock";
+
+  function setLoadingState(show) {
+    const shell = document.querySelector(".admin-shell");
+    const loader = document.getElementById("admin-auth-loading");
+    if (shell) {
+      shell.hidden = show;
+    }
+    if (!show) {
+      if (loader) loader.remove();
+      return;
+    }
+    if (!loader) {
+      const node = document.createElement("div");
+      node.id = "admin-auth-loading";
+      node.textContent = "Anmeldung wird geprüft …";
+      node.style.cssText = "display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;color:#f3d18d;font-family:inherit;font-size:1.05rem;letter-spacing:.02em;";
+      document.body.appendChild(node);
+    }
+  }
+
+  function safeRedirect(target, reason = null) {
+    const currentPath = (window.location.pathname || "").toLowerCase();
+    const normalizedTarget = String(target || "").toLowerCase();
+    const isSameTarget = currentPath.endsWith(normalizedTarget) || currentPath.endsWith("/" + normalizedTarget);
+
+    if (window[REDIRECT_LOCK_KEY] === true || isSameTarget) return;
+    window[REDIRECT_LOCK_KEY] = true;
+
+    const finalTarget = reason ? `${target}?auth_reason=${encodeURIComponent(reason)}` : target;
+    window.location.replace(finalTarget);
+  }
+
+  function cleanupLegacyDemoAuthKeys() {
+    DEMO_AUTH_KEYS.forEach((key) => localStorage.removeItem(key));
+  }
+
+  async function verifySupabaseAdminAccess() {
+    const bridge = window.TaxiSupabaseAuth && typeof window.TaxiSupabaseAuth.getClient === "function" ? window.TaxiSupabaseAuth : null;
+    if (!bridge) {
+      return false;
+    }
+
+    setLoadingState(true);
+
+    const client = await bridge.getClient();
+    if (!client) {
+      setLoadingState(false);
+      safeRedirect("login.html", "no_client");
+      return false;
+    }
+
+    const { data, error } = await client.auth.getSession();
+    if (error) {
+      cleanupLegacyDemoAuthKeys();
+      setLoadingState(false);
+      safeRedirect("login.html", "no_session");
+      return false;
+    }
+
+    if (!data?.session?.user) {
+      cleanupLegacyDemoAuthKeys();
+      setLoadingState(false);
+      safeRedirect("login.html", "no_user");
+      return false;
+    }
+
+    const { data: profileData, error: profileError } = await client
+      .from("profiles")
+      .select("role, active, display_name")
+      .eq("auth_user_id", data.session.user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      cleanupLegacyDemoAuthKeys();
+      setLoadingState(false);
+      safeRedirect("login.html", "profile_error");
+      return false;
+    }
+
+    if (!profileData) {
+      cleanupLegacyDemoAuthKeys();
+      setLoadingState(false);
+      safeRedirect("login.html", "profile_missing");
+      return false;
+    }
+
+    if (profileData.active !== true) {
+      cleanupLegacyDemoAuthKeys();
+      setLoadingState(false);
+      safeRedirect("login.html", "inactive");
+      return false;
+    }
+
+    if (!["admin", "dispatcher"].includes(profileData.role)) {
+      cleanupLegacyDemoAuthKeys();
+      setLoadingState(false);
+      safeRedirect("login.html", "wrong_role");
+      return false;
+    }
+
+    setLoadingState(false);
+
+    return { user: data.session.user, profile: profileData };
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      verifySupabaseAdminAccess();
+    }, { once: true });
+  } else {
+    verifySupabaseAdminAccess();
+  }
   const DEMO_NOTIFICATION_LIMIT = 3;
   const V20_SHORTCUT = "k";
   const V20_SEARCH_LIMIT = 8;
@@ -1939,25 +2053,11 @@
     });
   }
 
-  function protectCurrentPage() {
-    const fileName = normalizePath(window.location.pathname);
-    if (fileName === "login.html") return { role: null, user: null, protected: false };
-
-    const session = readSession();
-    if (!isValidSession(session)) {
-      redirectToLogin();
-      return { role: null, user: null, protected: true };
-    }
-
-    if (!canAccessPage(session.role, fileName)) {
-      redirectToDashboardWithNotice(fileName);
-      return { role: session.role, user: session.user, protected: true };
-    }
-
-    return { role: session.role, user: session.user, protected: true };
-  }
-
-  const protectionState = protectCurrentPage();
+  const protectionState = {
+    role: null,
+    user: null,
+    protected: false
+  };
 
   document.addEventListener("DOMContentLoaded", () => {
     if (!protectionState.protected) return;

@@ -1,0 +1,767 @@
+(function () {
+  const STORE_KEYS = {
+    profile: "tg_customer_profile",
+    preferences: "tg_customer_preferences"
+  };
+
+  let clientPromise = null;
+  let cachedUser = null;
+  let cachedProfile = null;
+
+  function safeParse(value, fallback) {
+    try {
+      return JSON.parse(value);
+    } catch (_error) {
+      return fallback;
+    }
+  }
+
+  /* ═════════════════════════════════════════════════════════════════════
+     Der Browserspeicher darf die Anmeldung nicht aufhalten
+     ═════════════════════════════════════════════════════════════════════
+
+     GEMESSENER BEFUND (Schritt 021): Ist localStorage gesperrt, wirft
+     schon der Zugriff - nicht erst das Schreiben. Das geschah in
+     persistProfile(), das aus syncSessionState() und damit aus
+     hydrateSession() heraus lief. Die Ausnahme riss hydrateSession() ab,
+     und weil die Kontoseiten darauf warten, wurde
+     `document.body.classList.remove('auth-pending')` nie erreicht.
+
+     Ergebnis: Vier von fuenf Kontoseiten blieben DAUERHAFT auf
+     "Konto wird geladen …" stehen - ein schwarzer Bildschirm mit einem
+     Satz, zwei unbehandelte Fehler in der Konsole, und kein Weg weiter.
+
+     Gesperrt ist der Speicher zum Beispiel, wenn Cookies und Websitedaten
+     blockiert sind, in manchen privaten Fenstern, bei strengen
+     Unternehmenseinstellungen - oder wenn er schlicht voll ist.
+
+     Deshalb geht ab hier JEDER Zugriff ueber diese drei Funktionen. Sie
+     werfen nie. Schlaegt der Speicher fehl, merkt sich die Seite den
+     Stand nur fuer diesen Besuch (`cachedProfile`, `speicherErsatz`) -
+     die Anmeldung funktioniert, sie ueberlebt nur kein Neuladen.
+
+     `speicherGesperrt` haelt fest, ob es einmal geklemmt hat. Die
+     Kontoseiten fragen das ueber `CustomerAuth.speicherGesperrt()` ab
+     und sagen dem Kunden verstaendlich, was los ist - statt ihn vor
+     einer haengenden Seite sitzen zu lassen.
+  */
+  let speicherFehlgeschlagen = false;
+  /** Ersatzablage fuer diesen Besuch, wenn der echte Speicher nicht geht. */
+  const speicherErsatz = new Map();
+
+  function speicherLesen(schluessel) {
+    try {
+      return localStorage.getItem(schluessel);
+    } catch (_error) {
+      speicherFehlgeschlagen = true;
+      return speicherErsatz.has(schluessel) ? speicherErsatz.get(schluessel) : null;
+    }
+  }
+
+  function speicherSchreiben(schluessel, wert) {
+    speicherErsatz.set(schluessel, wert);
+    try {
+      localStorage.setItem(schluessel, wert);
+      return true;
+    } catch (_error) {
+      speicherFehlgeschlagen = true;
+      return false;
+    }
+  }
+
+  function speicherLoeschen(schluessel) {
+    speicherErsatz.delete(schluessel);
+    try {
+      localStorage.removeItem(schluessel);
+      return true;
+    } catch (_error) {
+      speicherFehlgeschlagen = true;
+      return false;
+    }
+  }
+
+  /** Hat der Browserspeicher in diesem Besuch geklemmt? */
+  function speicherGesperrt() {
+    return speicherFehlgeschlagen;
+  }
+
+  function normalizeConfigFromWindow() {
+    if (window.TaxiSupabaseConfig && typeof window.TaxiSupabaseConfig === "object") {
+      return window.TaxiSupabaseConfig;
+    }
+    return null;
+  }
+
+  function ensureConfigScript() {
+    return new Promise((resolve) => {
+      const existingConfig = normalizeConfigFromWindow();
+      if (existingConfig) {
+        resolve(existingConfig);
+        return;
+      }
+
+      const configScript = document.querySelector('script[src="admin/supabase-config.js"]');
+      if (configScript) {
+        configScript.addEventListener("load", () => resolve(normalizeConfigFromWindow()), { once: true });
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "admin/supabase-config.js";
+      script.async = false;
+      script.onload = () => resolve(normalizeConfigFromWindow());
+      script.onerror = () => resolve(null);
+      document.head.appendChild(script);
+    });
+  }
+
+  function ensureSupabaseScript() {
+    return new Promise((resolve) => {
+      if (window.supabase && typeof window.supabase.createClient === "function") {
+        resolve(window.supabase);
+        return;
+      }
+
+      // Die Bibliothek wird SELBST MITGELIEFERT, fest auf eine Version
+      // genagelt - kein Aufruf an ein fremdes CDN. Herkunft, Version und
+      // Pruefsumme stehen in vendor/HERKUNFT.md.
+      //
+      // Warum: Bis Schritt 017 kam sie von jsdelivr unter "@2", also jeweils
+      // der neuesten 2.x. Bei gesperrtem CDN meldeten 19 von 20 oeffentlichen
+      // Seiten Skriptfehler und die Anmeldung war nicht bedienbar. Dazu ging
+      // die IP-Adresse jedes Besuchers an einen Dritten.
+      const BIBLIOTHEK = "vendor/supabase-js-2.117.0.js";
+
+      const existingScript = document.querySelector(
+        'script[src*="@supabase/supabase-js"], script[src*="supabase-js-"]'
+      );
+      if (existingScript) {
+        existingScript.addEventListener("load", () => resolve(window.supabase), { once: true });
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = BIBLIOTHEK;
+      script.async = false;
+      script.onload = () => resolve(window.supabase);
+      script.onerror = () => resolve(null);
+      document.head.appendChild(script);
+    });
+  }
+
+  async function getClient() {
+    if (window.TaxiCustomerSupabaseClient) {
+      return window.TaxiCustomerSupabaseClient;
+    }
+
+    if (clientPromise) {
+      return clientPromise;
+    }
+
+    clientPromise = (async () => {
+      const config = await ensureConfigScript();
+      if (!config || !config.isConfigured) {
+        return null;
+      }
+
+      const supabaseLib = await ensureSupabaseScript();
+      if (!supabaseLib || typeof supabaseLib.createClient !== "function") {
+        return null;
+      }
+
+      const client = supabaseLib.createClient(config.url, config.publishableKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
+        }
+      });
+
+      window.TaxiCustomerSupabaseClient = client;
+      return client;
+    })();
+
+    return clientPromise;
+  }
+
+  function persistProfile(profile) {
+    cachedProfile = profile || null;
+    if (profile) {
+      speicherSchreiben(STORE_KEYS.profile, JSON.stringify(profile));
+    } else {
+      speicherLoeschen(STORE_KEYS.profile);
+    }
+  }
+
+  function readStoredProfile() {
+    if (cachedProfile) {
+      return cachedProfile;
+    }
+    const stored = speicherLesen(STORE_KEYS.profile);
+    const parsed = safeParse(stored, null);
+    cachedProfile = parsed || null;
+    return cachedProfile;
+  }
+
+  function persistPreferences(preferences) {
+    const previous = safeParse(speicherLesen(STORE_KEYS.preferences) || "{}", {});
+    const merged = Object.assign({}, previous, preferences || {});
+    speicherSchreiben(STORE_KEYS.preferences, JSON.stringify(merged));
+  }
+
+  function readStoredPreferences() {
+    return safeParse(speicherLesen(STORE_KEYS.preferences) || "{}", {});
+  }
+
+  function getSessionSnapshot() {
+    const session = window.__tgCustomerSession || null;
+    return session ? {
+      session: session.session || null,
+      user: session.user || null,
+      profile: session.profile || null,
+      customerId: session.customerId || null,
+      linked: Boolean(session.linked)
+    } : null;
+  }
+
+  function hasRealCustomerSession() {
+    const snapshot = getSessionSnapshot();
+    if (!snapshot || !snapshot.session || !snapshot.user || !snapshot.user.id) {
+      return false;
+    }
+    if (snapshot.user.is_anonymous === true) {
+      return false;
+    }
+    if (snapshot.linked === true || Boolean(snapshot.customerId)) {
+      return true;
+    }
+    return false;
+  }
+
+  function syncSessionState(sessionData) {
+    const safeSession = sessionData || null;
+    window.__tgCustomerSession = safeSession;
+    if (safeSession && safeSession.user) {
+      persistProfile({
+        fullName: safeSession.profile?.fullName || safeSession.user.user_metadata?.full_name || safeSession.user.email || "Kunde",
+        firstName: safeSession.profile?.firstName || safeSession.user.user_metadata?.first_name || "",
+        lastName: safeSession.profile?.lastName || safeSession.user.user_metadata?.last_name || "",
+        email: safeSession.user.email || "",
+        phone: safeSession.profile?.phone || safeSession.user.user_metadata?.phone || "",
+        customerId: safeSession.customerId || null,
+        linked: Boolean(safeSession.linked),
+        registeredAt: safeSession.user.created_at || Date.now()
+      });
+    } else {
+      persistProfile(null);
+      speicherLoeschen(STORE_KEYS.preferences);
+    }
+  }
+
+  async function hydrateSession() {
+    const client = await getClient();
+    if (!client) {
+      syncSessionState(null);
+      return null;
+    }
+
+    const { data, error } = await client.auth.getSession();
+    if (error || !data.session?.user) {
+      syncSessionState(null);
+      return null;
+    }
+
+    const sessionUser = data.session.user;
+    const customerId = sessionUser?.user_metadata?.customer_id || null;
+
+    const sessionState = {
+      session: data.session,
+      user: sessionUser,
+      customerId,
+      linked: Boolean(customerId),
+      profile: {
+        fullName: sessionUser.user_metadata?.full_name || sessionUser.email || "Kunde",
+        firstName: sessionUser.user_metadata?.first_name || "",
+        lastName: sessionUser.user_metadata?.last_name || "",
+        email: sessionUser.email || "",
+        phone: sessionUser.user_metadata?.phone || "",
+        registeredAt: sessionUser.created_at || Date.now()
+      }
+    };
+
+    syncSessionState(sessionState);
+
+    try {
+      if (sessionUser && sessionUser.is_anonymous !== true && !sessionState.linked) {
+        const claimResult = await claimCustomerAccount();
+        if (claimResult && claimResult.customer_id) {
+          const updated = getSessionSnapshot();
+          if (updated && updated.user) {
+            syncSessionState({
+              ...updated,
+              linked: true,
+              customerId: claimResult.customer_id,
+              profile: {
+                ...((updated.profile && typeof updated.profile === "object") ? updated.profile : {}),
+                customerId: claimResult.customer_id,
+                fullName: updated.profile?.fullName || updated.user.email || "Kunde",
+                email: updated.user.email || "",
+                phone: updated.profile?.phone || ""
+              }
+            });
+          }
+        }
+      }
+    } catch (_claimError) {
+      // keep existing Supabase session; do not auto-redirect or sign out on failed claim
+    }
+
+    return data.session;
+  }
+
+  async function claimCustomerAccount() {
+    const client = await getClient();
+    if (!client) {
+      throw new Error("Supabase ist noch nicht konfiguriert.");
+    }
+
+    const { data, error } = await client.rpc("claim_customer_account");
+    if (error) {
+      if (error.message === "CUSTOMER_EMAIL_NOT_VERIFIED") {
+        throw new Error("Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.");
+      }
+      if (error.message === "CUSTOMER_NOT_FOUND") {
+        throw new Error("Ihr Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte wenden Sie sich an uns.");
+      }
+      if (error.message === "CUSTOMER_EMAIL_AMBIGUOUS") {
+        throw new Error("Ihr Kundenkonto konnte nicht automatisch zugeordnet werden. Bitte wenden Sie sich an uns.");
+      }
+      if (error.message === "CUSTOMER_ALREADY_LINKED" || error.message === "AUTH_USER_ALREADY_LINKED") {
+        throw new Error("Ihr Kundenkonto konnte nicht automatisch zugeordnet werden. Bitte wenden Sie sich an uns.");
+      }
+      throw new Error("E-Mail oder Passwort ist falsch.");
+    }
+
+    const linkedCustomerId = data?.customer_id || null;
+    const session = window.__tgCustomerSession || null;
+    if (session && session.user) {
+      syncSessionState({
+        ...session,
+        linked: Boolean(linkedCustomerId),
+        customerId: linkedCustomerId,
+        profile: {
+          ...((session.profile && typeof session.profile === "object") ? session.profile : {}),
+          customerId: linkedCustomerId,
+          fullName: (session.profile && session.profile.fullName) || session.user.email || "Kunde",
+          email: session.user.email || "",
+          firstName: (session.profile && session.profile.firstName) || "",
+          lastName: (session.profile && session.profile.lastName) || ""
+        }
+      });
+    }
+
+    return data || { linked: true };
+  }
+
+  async function signInWithPassword(email, password) {
+    const client = await getClient();
+    if (!client) {
+      throw new Error("Supabase ist noch nicht konfiguriert.");
+    }
+
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) {
+      throw new Error("E-Mail oder Passwort ist falsch.");
+    }
+
+    const session = data.session;
+    const user = data.user;
+
+    syncSessionState({
+      session,
+      user,
+      linked: false,
+      customerId: null,
+      profile: {
+        fullName: user.user_metadata?.full_name || user.email || "Kunde",
+        firstName: user.user_metadata?.first_name || "",
+        lastName: user.user_metadata?.last_name || "",
+        email: user.email || "",
+        phone: user.user_metadata?.phone || "",
+        registeredAt: user.created_at || Date.now()
+      }
+    });
+
+    try {
+      const claimResult = await claimCustomerAccount();
+      if (claimResult?.customer_id) {
+        const state = getSessionSnapshot();
+        if (state && state.user) {
+          syncSessionState({
+            ...state,
+            linked: true,
+            customerId: claimResult.customer_id,
+            profile: {
+              ...((state.profile && typeof state.profile === "object") ? state.profile : {}),
+              customerId: claimResult.customer_id,
+              fullName: state.profile?.fullName || state.user.email || "Kunde",
+              email: state.user.email || "",
+              phone: state.profile?.phone || ""
+            }
+          });
+        }
+      }
+      return claimResult;
+    } catch (claimError) {
+      if (claimError && claimError.message) {
+        throw claimError;
+      }
+      throw new Error("Ihr Kundenkonto konnte noch nicht mit Taxi Germersheim verknüpft werden. Bitte wenden Sie sich an uns.");
+    }
+  }
+
+  /**
+   * Wohin die Bestaetigungsmail zurueckfuehren soll.
+   *
+   * Dieselbe Bauart wie beim Passwort-Reset: die eigene Herkunft plus die
+   * vorgesehene Seite. Damit stimmt das Ziel in jeder Umgebung - lokal, im
+   * WLAN und spaeter unter der echten Domain -, ohne dass irgendwo eine
+   * Adresse fest eingetragen werden muesste.
+   *
+   * Bei `file://` gibt es keine brauchbare Herkunft. Dann wird KEIN Ziel
+   * mitgegeben; die Registrierung selbst bleibt moeglich.
+   */
+  function bestaetigungsAdresse() {
+    try {
+      const schema = window.location.protocol;
+      if (schema !== "http:" && schema !== "https:") return null;
+      return new URL("/anmelden.html?bestaetigt=1", window.location.origin).href;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  async function signUp(email, password, metadata = {}) {
+    const client = await getClient();
+    if (!client) {
+      throw new Error("Supabase ist noch nicht konfiguriert.");
+    }
+
+    /*
+      Das Ziel der Bestaetigungsmail wird MITGEGEBEN.
+
+      Ohne `emailRedirectTo` nimmt Supabase die im Projekt hinterlegte
+      "Site URL". Die ist projektweit und kann nur auf EINEN Weg zeigen -
+      gemessen am 28.09.2026 zeigte sie auf die Anmeldeseite der
+      Verwaltung, weil diese ebenfalls eine Recovery-Landeseite ist. Ein
+      Kunde waere nach dem Klick in der Bestaetigungsmail also dort
+      gelandet, nicht im eigenen Konto.
+
+      Mit einem eigenen Ziel ist die Site URL fuer diesen Weg gleichgueltig.
+      Voraussetzung: Die Adresse steht in der Erlaubnisliste des Projekts
+      ("Redirect URLs"). Steht sie nicht dort, faellt Supabase weiterhin auf
+      die Site URL zurueck - das ist eine Projekteinstellung und laesst sich
+      von hier aus nicht erzwingen.
+
+      Ziel ist `anmelden.html?bestaetigt=1`: Die Seite wertet diesen Wert
+      aus und nimmt auch eine Sitzung entgegen, die beim Bestaetigen
+      entstanden ist.
+    */
+    const options = {
+      data: {
+        first_name: metadata.firstName || "",
+        last_name: metadata.lastName || "",
+        full_name: metadata.fullName || "",
+        phone: metadata.phone || ""
+      }
+    };
+
+    const rueckkehr = bestaetigungsAdresse();
+    if (rueckkehr) options.emailRedirectTo = rueckkehr;
+
+    const { data, error } = await client.auth.signUp({
+      email,
+      password,
+      options: options
+    });
+
+    if (error) {
+      throw new Error(error.message || "Registrierung fehlgeschlagen.");
+    }
+
+    // KEIN Fehler, wenn noch keine Sitzung entstanden ist.
+    //
+    // Verlangt das Supabase-Projekt eine Bestaetigung per E-Mail, liefert
+    // signUp einen Benutzer OHNE Sitzung zurueck. Die Registrierung ist
+    // damit GEGLUECKT - sie wartet nur noch auf den Klick in der Mail.
+    // Bis Schritt 017 wurde hier geworfen, und registrieren.html schrieb
+    // den Text in den roten Fehlerkasten: Der Kunde hielt eine geglueckte
+    // Registrierung fuer gescheitert.
+    //
+    // Die Entscheidung, was angezeigt wird, gehoert an die Seite. Sie
+    // erkennt den Fall an data.session === null.
+    return data;
+  }
+
+  /**
+   * Abmelden - und zwar ehrlich.
+   *
+   * ───────────────────────────────────────────────────────────────────────
+   * WAS HIER FRUEHER FALSCH WAR
+   * ───────────────────────────────────────────────────────────────────────
+   *
+   * Der Aufruf stand in einem try/catch, das den Fehler verschluckte, und
+   * die Funktion meldete anschliessend in jedem Fall Erfolg. Die Oberflaeche
+   * sagte dann "abgemeldet", obwohl der Dienst die Sitzung gar nicht
+   * widerrufen hatte. Fuer eine Sicherheitshandlung ist das die falsche
+   * Auskunft: Auf anderen Geraeten waere die Anmeldung weiter gueltig
+   * gewesen, ohne dass es jemand erfahren haette.
+   *
+   * Der mitgelieferte Client verschluckt zudem selbst die Antworten 401,
+   * 403 und 404 vom Abmelde-Endpunkt und raeumt trotzdem lokal auf. Ein
+   * ausbleibender Ausnahmefehler ist also KEIN Beleg fuer einen Widerruf.
+   *
+   * ───────────────────────────────────────────────────────────────────────
+   * WIE ES JETZT LAEUFT
+   * ───────────────────────────────────────────────────────────────────────
+   *
+   * Geprueft werden BEIDE Wege, auf denen ein Fehlschlag ankommen kann:
+   * eine geworfene Ausnahme UND ein zurueckgegebenes `{ error }`.
+   *
+   * Oertlich aufgeraeumt wird IMMER - niemand soll hier angemeldet
+   * aussehen, wenn er es nicht mehr sein will. Erst danach wird der Fehler
+   * weitergereicht, damit die Seite ihn anzeigen kann.
+   *
+   * Der Geltungsbereich bleibt der Vorgabewert 'global': Der Client setzt
+   * ihn selbst (nachgesehen in vendor/supabase-js-2.117.0.js:
+   * `signOut(e = {scope:'global'})`), und die offizielle Dokumentation
+   * nennt ihn ebenfalls als Vorgabe. Damit verfallen ALLE Refresh-Tokens
+   * des Kontos.
+   *
+   * ACHTUNG, GRENZE: Ein bereits ausgestellter Access-Token bleibt bis zu
+   * seinem Ablauf gueltig - ein signiertes JWT laesst sich nicht
+   * zurueckholen. Der Widerruf trifft die Refresh-Tokens.
+   *
+   * @returns {Promise<true>} bei erfolgreichem Widerruf
+   * @throws {Error} wenn der Dienst den Widerruf NICHT bestaetigt hat.
+   *                 Oertlich ist dann trotzdem aufgeraeumt.
+   */
+  async function signOut() {
+    const client = await getClient();
+    let fehler = null;
+
+    if (client && client.auth && typeof client.auth.signOut === "function") {
+      try {
+        const ergebnis = await client.auth.signOut();
+        // Der Client meldet Fehler als Rueckgabewert, nicht als Ausnahme.
+        if (ergebnis && ergebnis.error) fehler = ergebnis.error;
+      } catch (ausnahme) {
+        fehler = ausnahme;
+      }
+    } else {
+      fehler = new Error("Abmelden ist nicht verfuegbar.");
+    }
+
+    // Immer zuerst: hier soll nichts Persoenliches stehen bleiben.
+    syncSessionState(null);
+
+    if (fehler) {
+      const text = (fehler && fehler.message) || "";
+      const weiter = new Error(
+        "Die Abmeldung wurde vom Dienst nicht bestaetigt. Oertlich ist die "
+        + "Sitzung beendet; auf anderen Geraeten kann sie noch gelten."
+      );
+      // Der urspruengliche Grund bleibt fuer die Fehlersuche erhalten,
+      // wandert aber nicht in die Oberflaeche.
+      weiter.grund = text;
+      throw weiter;
+    }
+
+    return true;
+  }
+
+  function normalizeText(value) {
+    return (value || "").toString().trim();
+  }
+
+  function patchNav() {
+    const session = getSessionSnapshot();
+    const loggedIn = Boolean(session && session.session && session.user);
+
+    document.querySelectorAll("a[href='kundenkonto.html']").forEach((anchor) => {
+      anchor.setAttribute("href", "meinkonto.html");
+      if (anchor.textContent && anchor.textContent.trim() === "Kundenkonto") {
+        anchor.textContent = "Mein Konto";
+      }
+    });
+
+    document.querySelectorAll("a[href='meinkonto.html'], a[href='anmelden.html'], a[href='kundenkonto.html']").forEach((anchor) => {
+      const href = (anchor.getAttribute("href") || "").trim();
+      if (!href) return;
+      const accountLink = href === "meinkonto.html" || href === "anmelden.html" || href === "kundenkonto.html";
+      if (!accountLink) return;
+
+      if (!loggedIn) {
+        anchor.setAttribute("href", "anmelden.html");
+        if (anchor.textContent && /konto|anmelden/i.test(anchor.textContent)) {
+          anchor.textContent = "Anmelden";
+        }
+      } else {
+        anchor.setAttribute("href", "meinkonto.html");
+        if (anchor.textContent && /anmelden|konto/i.test(anchor.textContent)) {
+          anchor.textContent = "Mein Konto";
+        }
+      }
+    });
+  }
+
+  function isLoggedIn() {
+    return hasRealCustomerSession();
+  }
+
+  function getProfile() {
+    const session = getSessionSnapshot();
+    if (session && session.profile) {
+      return session.profile;
+    }
+    return readStoredProfile() || {};
+  }
+
+  function setProfile(profile) {
+    const nextProfile = profile || {};
+    const session = getSessionSnapshot();
+    if (session && session.user) {
+      syncSessionState({
+        ...session,
+        profile: nextProfile
+      });
+      return;
+    }
+    persistProfile(nextProfile);
+  }
+
+  function setPreferences(preferences) {
+    persistPreferences(preferences || {});
+  }
+
+  function getPreferences() {
+    return readStoredPreferences();
+  }
+
+  function requireLogin(options) {
+    const loggedIn = isLoggedIn();
+    patchNav();
+
+    if (loggedIn) {
+      return false;
+    }
+
+    const targetSelector = options && options.targetSelector ? options.targetSelector : "main";
+    const pageTitle = options && options.pageTitle ? options.pageTitle : "Kundenbereich";
+    const gateTitle = options && options.gateTitle ? options.gateTitle : "Bitte zuerst anmelden";
+    const gateDescription = options && options.gateDescription
+      ? options.gateDescription
+      : 'Der Bereich "' + pageTitle + '" ist nur nach erfolgreicher Anmeldung sichtbar.';
+    const defaultButtons = [
+      { label: "Zur Anmeldung", href: "anmelden.html" },
+      { label: "Jetzt registrieren", href: "registrieren.html" },
+      { label: "Zur Startseite", href: "index.html" }
+    ];
+    const gateButtons = Array.isArray(options && options.gateButtons) && options.gateButtons.length
+      ? options.gateButtons
+      : defaultButtons;
+    const existing = document.getElementById("customerAuthGate");
+    if (existing) return true;
+
+    const target = document.querySelector(targetSelector);
+    if (target) {
+      target.classList.add("auth-gated-content");
+      target.setAttribute("aria-hidden", "true");
+    }
+
+    document.body.classList.add("auth-gated");
+
+    const buttonsHtml = gateButtons.map(function (button) {
+      const label = button && button.label ? button.label : "Weiter";
+      const href = button && button.href ? button.href : "anmelden.html";
+      return '<a class="auth-btn" href="' + href + '">' + label + '</a>';
+    }).join("");
+
+    const gate = document.createElement("section");
+    gate.id = "customerAuthGate";
+    gate.className = "auth-gate";
+    gate.innerHTML = (
+      '<article class="auth-gate-card" role="region" aria-label="Login erforderlich">' +
+      '<img src="assets/icons/Profile.svg" alt="" width="28" height="28" />' +
+      '<h2>' + gateTitle + '</h2>' +
+      '<p>' + gateDescription + '</p>' +
+      '<div class="auth-gate-actions">' + buttonsHtml + '</div>' +
+      '</article>'
+    );
+
+    document.body.appendChild(gate);
+    return true;
+  }
+
+  async function requireLoginAsync(options) {
+    try {
+      await hydrateSession();
+    } catch (_error) {
+      // keep the page available until the real auth state is known
+    }
+    return requireLogin(options);
+  }
+
+  async function bootstrap() {
+    // Nie unbehandelt scheitern lassen. Schlaegt die Sitzungsabfrage fehl
+    // - kein Netz, gesperrter Speicher, fehlende Konfiguration -, soll die
+    // Navigation trotzdem in einen ehrlichen Zustand kommen: abgemeldet.
+    try {
+      await hydrateSession();
+    } catch (_error) {
+      /* Der Aufrufer der Seite entscheidet, was er anzeigt. */
+    }
+    try {
+      patchNav();
+    } catch (_error) {
+      /* Navigation ist Beiwerk; sie darf nichts abreissen. */
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      bootstrap();
+    }, { once: true });
+  } else {
+    bootstrap();
+  }
+
+  window.CustomerAuth = {
+    hydrateSession,
+    getClient,
+    signInWithPassword,
+    signUp,
+    signOut,
+    claimCustomerAccount,
+    getSessionSnapshot,
+    readStoredProfile,
+    getProfile,
+    isLoggedIn,
+    requireLogin,
+    requireLoginAsync,
+    patchNav,
+    getPreferences,
+    setPreferences,
+    setProfile,
+    logout: signOut,
+    normalizeText,
+    persistProfile,
+    persistPreferences,
+    // Neu in Schritt 021: Die Kontoseiten fragen damit ab, ob der
+    // Browserspeicher geklemmt hat, und sagen es dem Kunden.
+    speicherGesperrt
+  };
+
+  window.CustomerAuthDemo = window.CustomerAuth;
+  window.CustomerAuthV2 = window.CustomerAuth;
+})();

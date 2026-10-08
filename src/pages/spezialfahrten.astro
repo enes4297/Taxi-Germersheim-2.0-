@@ -1,0 +1,141 @@
+---
+/**
+ * Spezialfahrten — Übersicht, unter derselben Adresse wie bisher
+ * (spezialfahrten.html).
+ *
+ * Die vier Bereiche und die neun Fahrtarten des Bestands, wortgleich. Jede
+ * Karte hat wie bisher zwei Wege:
+ *   „Mehr erfahren"  → spezial-anfrage.html?service=<schluessel>
+ *   „Anfrage starten" → oeffnet den gemeinsamen Dialog an Ort und Stelle,
+ *                       mit vorgewaehlter Fahrtart
+ *
+ * Im Bestand fuehrte „Anfrage starten" ebenfalls erst auf
+ * spezial-anfrage.html. Der Weg bleibt erhalten - er ist nur nicht mehr der
+ * einzige: Wer hier steht, kann sofort anfragen.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
+import Unterseitenkopf from '../components/Unterseitenkopf.astro';
+import Anfragedialog from '../components/Anfragedialog.astro';
+import Enthuellen from '../components/Enthuellen.astro';
+import Symbol from '../components/Symbol.astro';
+import { FAHRTARTEN, SPEZIAL_SEITE, TRANSPORTSCHEIN } from '../inhalte';
+
+const artVon = (id: string) => FAHRTARTEN.find((a) => a.id === id)!;
+---
+
+<Grundlage
+  titel="Spezialfahrten | Taxi Germersheim GmbH"
+  beschreibung="Krankenfahrten, Dialyse, Chemo- und Strahlentherapie, Rollstuhlfahrten, Serienfahrten, Flughafentransfers, Schülerfahrten, Firmenkunden und Kurierfahrten der Taxi Germersheim GmbH."
+  pfad="spezialfahrten.html"
+>
+  <Sprungmarken />
+  <Kopfbereich startseite={false} />
+
+  <main id="inhalt" class="pt-16 lg:pt-20">
+    <Unterseitenkopf
+      label={SPEZIAL_SEITE.label}
+      titel={SPEZIAL_SEITE.titel}
+      text={SPEZIAL_SEITE.text}
+    />
+
+    <div class="mx-auto w-full max-w-[1400px] px-5 lg:px-10 pb-20 lg:pb-28">
+      <Enthuellen>
+        <div class="mt-12 max-w-3xl">
+          <p class="text-[11px] font-semibold tracking-[0.3em] uppercase text-primary">{SPEZIAL_SEITE.bereichLabel}</p>
+          <h2 class="mt-3 font-semibold tracking-[-0.02em] text-foreground leading-tight" style="font-size: clamp(1.5rem, 2.6vw, 2.25rem)">
+            {SPEZIAL_SEITE.bereichTitel}
+          </h2>
+        </div>
+      </Enthuellen>
+
+      {SPEZIAL_SEITE.gruppen.map((gruppe, gi) => (
+        <section class="mt-14 lg:mt-20" aria-labelledby={`gruppe-${gi}`}>
+          <Enthuellen>
+            <div class="max-w-2xl">
+              <h3 id={`gruppe-${gi}`} class="text-[20px] lg:text-[24px] font-semibold text-foreground leading-snug">{gruppe.titel}</h3>
+              <p class="mt-2 text-[15px] leading-relaxed text-muted-foreground">{gruppe.text}</p>
+            </div>
+          </Enthuellen>
+
+          <div class="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {gruppe.arten.map((id, i) => {
+              const art = artVon(id);
+              return (
+                <Enthuellen verzoegerung={Math.min(i, 4) * 60} class="h-full">
+                  <article class="h-full bg-card border border-border p-6 flex flex-col" id={`fahrtart-${art.id}`} style="scroll-margin-top: 6rem">
+                    <h4 class="text-[17px] font-semibold text-foreground leading-snug">{art.titel}</h4>
+                    <p class="mt-2.5 text-sm leading-relaxed text-muted-foreground">{art.beschreibung}</p>
+
+                    <ul class="mt-4 space-y-2 flex-1">
+                      {art.vorteile.map((v) => (
+                        <li class="flex items-start gap-2.5 text-sm text-muted-foreground">
+                          <Symbol name="haken" class="w-4 h-4 shrink-0 mt-0.5 text-primary" />
+                          <span>{v}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+                      <button
+                        type="button"
+                        class="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 text-sm font-semibold hover:bg-[#d4b87d] transition-colors duration-150 tg-press"
+                        data-anfrage-oeffnen
+                        data-fahrtart={art.id}
+                      >
+                        Anfrage starten
+                        <Symbol name="pfeil" class="w-4 h-4" />
+                      </button>
+                      <a
+                        href={`spezial-anfrage.html?service=${art.id}`}
+                        class="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-150"
+                      >
+                        Mehr erfahren
+                        <Symbol name="pfeil" class="w-4 h-4" />
+                      </a>
+                    </div>
+                  </article>
+                </Enthuellen>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+
+      {/* ── Transportschein ───────────────────────────────────────────
+          Freigegebener Text der Geschaeftsfuehrung vom 19.09.2026,
+          wortgleich wie auf der Startseite. Er sagt, WAS WIR ANNEHMEN -
+          nicht, dass eine Kasse zahlt oder genehmigt. */}
+      <Enthuellen verzoegerung={100}>
+        <section class="mt-16 lg:mt-24 bg-secondary/50 border border-border p-7 lg:p-10" aria-labelledby="transportschein">
+          <h3 id="transportschein" class="text-[20px] lg:text-[24px] font-semibold text-foreground leading-snug">
+            {TRANSPORTSCHEIN.titel}
+          </h3>
+          {/* Die Breitenbegrenzung gehoert an den ABSATZ, nicht an die
+              Huelle: Die Huelle rechnet em gegen ihre eigene Schriftgroesse
+              (16 px), der Absatz steht auf 15 px - dieselbe Breite waere
+              dort 49 statt 46 em. Gemessen, nicht geschaetzt. */}
+          <div class="mt-4 space-y-3.5">
+            {TRANSPORTSCHEIN.absaetze.map((a) => (
+              <p class="max-w-[46em] text-[15px] leading-relaxed text-muted-foreground">{a}</p>
+            ))}
+          </div>
+          <button
+            type="button"
+            class="mt-6 inline-flex items-center gap-2 border border-border px-5 py-3 text-sm font-medium text-foreground hover:border-primary hover:text-primary transition-colors duration-150 tg-press"
+            data-anfrage-oeffnen
+            data-fahrtart="medical"
+          >
+            {TRANSPORTSCHEIN.aktion}
+            <Symbol name="pfeil" class="w-4 h-4" />
+          </button>
+        </section>
+      </Enthuellen>
+    </div>
+  </main>
+
+  <Fusszeile startseite={false} />
+  <Anfragedialog arten={FAHRTARTEN} pflichtDetails />
+</Grundlage>

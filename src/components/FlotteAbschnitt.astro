@@ -1,0 +1,127 @@
+---
+/**
+ * Fahrzeugflotte. Uebernommen aus sections.tsx der Vorschau.
+ *
+ * Fahrzeuge OHNE Foto bekommen keinen grauen Platzhalter: Dort stand frueher
+ * ein Kasten mit „Foto folgt" — eine leere Flaeche, die dem Fahrgast nichts
+ * sagt. Die Karte steht jetzt ohne Bild, die Kennung wandert in den Textteil.
+ * Und sie streckt sich nicht auf Zeilenhoehe, sonst bliebe unter ihrem Text
+ * genau die weisse Flaeche zurueck, die hier verschwinden sollte.
+ */
+import { FLOTTE, FLOTTE_FILTER, FLOTTE_KOPF } from '../inhalte';
+import Abschnitt from './Abschnitt.astro';
+import AbschnittKopf from './AbschnittKopf.astro';
+import Enthuellen from './Enthuellen.astro';
+import Symbol from './Symbol.astro';
+
+const anzahl = (f: string) => (f === 'Alle' ? FLOTTE.length : FLOTTE.filter((v) => v.kategorie === f).length);
+---
+
+<Abschnitt id="flotte" hell>
+  <Enthuellen>
+    <AbschnittKopf hell label={FLOTTE_KOPF.label} titel={FLOTTE_KOPF.titel} text={FLOTTE_KOPF.text} />
+  </Enthuellen>
+
+  <Enthuellen verzoegerung={80}>
+    <div class="mt-10 flex flex-wrap gap-2" role="group" aria-label="Flotte filtern" data-flotte-filter>
+      {FLOTTE_FILTER.map((f, i) => (
+        <button
+          type="button"
+          data-filter={f}
+          aria-pressed={i === 0 ? 'true' : 'false'}
+          class={`px-4 py-2 rounded-full text-sm font-medium border tg-press ${
+            i === 0
+              ? 'bg-[#17171a] border-[#17171a] text-[#f2ede2]'
+              : 'bg-transparent border-black/15 text-[#5c554a] hover:border-black/35 hover:text-[#17171a]'
+          }`}
+        >
+          {f}
+          <span class={`ml-2 tabular-nums ${i === 0 ? 'text-[#c8a96e]' : 'text-[#9a9184]'}`} data-filter-zahl>{anzahl(f)}</span>
+        </button>
+      ))}
+    </div>
+  </Enthuellen>
+
+  <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-flotte-liste>
+    {FLOTTE.map((v, i) => (
+      <Enthuellen verzoegerung={Math.min(i, 5) * 60} class={v.bild ? 'h-full' : 'self-start'}>
+        <article class={`group bg-white/70 border border-black/10 overflow-hidden flex flex-col ${v.bild ? 'h-full' : ''}`} data-kategorie={v.kategorie}>
+          {v.bild && (
+            <div class="relative aspect-[4/3] overflow-hidden bg-[#e3ddd0]">
+              <img
+                src={v.bild}
+                srcset={v.bildMobil ? `${v.bildMobil} 900w, ${v.bild} 1600w` : undefined}
+                sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
+                alt={`${v.name}${v.kennzeichen ? `, Kennzeichen ${v.kennzeichen}` : ''}, Fahrzeug der Taxi Germersheim GmbH`}
+                loading="lazy"
+                decoding="async"
+                class="absolute inset-0 w-full h-full object-cover motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.22,0.61,0.36,1)] motion-safe:group-hover:scale-[1.04]"
+                style="object-position: 50% 62%"
+              />
+              <span class="absolute top-3 left-3 bg-[#17171a]/85 text-[#f2ede2] text-[11px] font-medium px-2.5 py-1 rounded-full backdrop-blur-sm">{v.typ}</span>
+            </div>
+          )}
+
+          <div class="p-5 lg:p-6 flex-1 flex flex-col">
+            {!v.bild && (
+              <span class="self-start mb-3 bg-[#17171a] text-[#f2ede2] text-[11px] font-medium px-2.5 py-1 rounded-full">{v.typ}</span>
+            )}
+            <h3 class="text-[17px] font-semibold text-[#17171a] leading-snug">{v.name}</h3>
+            {v.kennzeichen && <p class="mt-1 text-xs tabular-nums tracking-wider text-[#8a7a52]">{v.kennzeichen}</p>}
+
+            <dl class="mt-4 space-y-2 text-sm flex-1">
+              {v.sitzplaetze !== null && (
+                <div class="flex items-center gap-2 text-[#5c554a]">
+                  <Symbol name="sitz" class="w-4 h-4 shrink-0 text-[#8a8175]" />
+                  <dt class="sr-only">Sitzplätze</dt>
+                  <dd>{v.sitzplaetze} Sitzplätze</dd>
+                </div>
+              )}
+              <div class="text-[#5c554a]">
+                <dt class="text-[11px] uppercase tracking-[0.16em] text-[#9a9184]">Einsatzbereich</dt>
+                <dd class="mt-0.5">{v.einsatz}</dd>
+              </div>
+              <div class="text-[#5c554a]">
+                <dt class="text-[11px] uppercase tracking-[0.16em] text-[#9a9184]">Besonderheit</dt>
+                <dd class="mt-0.5">{v.besonderheit}</dd>
+              </div>
+            </dl>
+          </div>
+        </article>
+      </Enthuellen>
+    ))}
+  </div>
+</Abschnitt>
+
+<script>
+  const leiste = document.querySelector<HTMLElement>('[data-flotte-filter]');
+  const liste = document.querySelector<HTMLElement>('[data-flotte-liste]');
+  if (leiste && liste) {
+    // Gefiltert wird der aeussere Rahmen, nicht die Karte: Sonst bliebe die
+    // Enthuellungshuelle als leere Zelle im Raster stehen.
+    const huellen = [...liste.children] as HTMLElement[];
+
+    for (const b of leiste.querySelectorAll<HTMLButtonElement>('[data-filter]')) {
+      b.addEventListener('click', () => {
+        const f = b.dataset.filter!;
+        for (const x of leiste.querySelectorAll<HTMLButtonElement>('[data-filter]')) {
+          const aktiv = x === b;
+          x.setAttribute('aria-pressed', String(aktiv));
+          x.classList.toggle('bg-[#17171a]', aktiv);
+          x.classList.toggle('border-[#17171a]', aktiv);
+          x.classList.toggle('text-[#f2ede2]', aktiv);
+          x.classList.toggle('bg-transparent', !aktiv);
+          x.classList.toggle('border-black/15', !aktiv);
+          x.classList.toggle('text-[#5c554a]', !aktiv);
+          const zahl = x.querySelector<HTMLElement>('[data-filter-zahl]')!;
+          zahl.classList.toggle('text-[#c8a96e]', aktiv);
+          zahl.classList.toggle('text-[#9a9184]', !aktiv);
+        }
+        for (const h of huellen) {
+          const k = h.querySelector<HTMLElement>('[data-kategorie]')?.dataset.kategorie;
+          h.hidden = f !== 'Alle' && k !== f;
+        }
+      });
+    }
+  }
+</script>

@@ -1,0 +1,2904 @@
+/* Embedded public pages in index.html. The homepage remains owned by home-luxury.css. */
+body.public-home {
+  --ps-surface: #0b0c0e;
+  --ps-surface-raised: #111214;
+  --ps-text: #f3f1eb;
+  --ps-muted: rgba(243, 241, 235, 0.62);
+  --ps-faint: rgba(243, 241, 235, 0.4);
+  --ps-line: rgba(255, 255, 255, 0.1);
+  --ps-line-strong: rgba(231, 189, 85, 0.3);
+  --ps-gold: #e7bd55;
+  --ps-gold-light: #f4d786;
+  --ps-gold-wash: rgba(231, 189, 85, 0.08);
+  --ps-display: "Segoe UI Variable Display", "Aptos Display", "Helvetica Neue", sans-serif;
+  --ps-sans: "Segoe UI Variable Text", Aptos, "Helvetica Neue", sans-serif;
+}
+
+body.public-home #booking.booking-premium {
+  width: min(1240px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 34px 0 112px;
+  color: var(--ps-text);
+  font-family: var(--ps-sans);
+}
+
+body.public-home #booking [hidden] {
+  display: none !important;
+}
+
+body.public-home #booking section,
+body.public-home #booking article {
+  margin-bottom: 0 !important;
+}
+
+body.public-home #booking .page-head {
+  min-height: 58px;
+  margin: 0 !important;
+  padding-bottom: 14px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  border-bottom: 1px solid var(--ps-line);
+}
+
+body.public-home #booking .page-head button {
+  width: 44px;
+  min-height: 44px !important;
+  height: 44px;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px !important;
+  background: transparent;
+  color: var(--ps-muted);
+  font-size: 1.7rem !important;
+}
+
+body.public-home #booking .page-head h2 {
+  color: var(--ps-text);
+  font-family: var(--ps-sans) !important;
+  font-size: 0.76rem;
+  font-weight: 720;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase;
+}
+
+body.public-home #booking .panel,
+body.public-home #booking .selected,
+body.public-home #booking .extra,
+body.public-home #booking .input,
+body.public-home #booking textarea,
+body.public-home #booking .map-container {
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+body.public-home #booking > .intro {
+  padding: 42px 0 30px !important;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+}
+
+body.public-home #booking > .intro small,
+body.public-home #booking .pb-summary > small,
+body.public-home #booking .pb-step > small,
+body.public-home #booking .pb-route-panel > small,
+body.public-home #booking .pb-vehicle-panel > small,
+body.public-home #booking .pb-fare-overview > small,
+body.public-home #booking .request-prep > small {
+  margin: 0 0 14px;
+  color: var(--ps-gold) !important;
+  font-size: 0.67rem;
+  font-weight: 760;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase;
+}
+
+body.public-home #booking > .intro h1 {
+  max-width: 820px;
+  margin: 0;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 3.65rem;
+  font-weight: 290;
+  line-height: 0.96 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #booking > .intro p {
+  max-width: 620px;
+  margin: 14px 0 0;
+  color: var(--ps-muted) !important;
+  font-size: 1rem;
+  line-height: 1.7 !important;
+}
+
+body.public-home #booking .pb-progress {
+  margin: 0;
+  padding: 16px 0 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+body.public-home #booking .pb-progress-head p,
+body.public-home #booking .pb-progress-head b {
+  margin: 0;
+  color: var(--ps-muted) !important;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.3 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #booking .pb-progress-head b {
+  color: var(--ps-gold-light) !important;
+}
+
+body.public-home #booking .pb-progress-track {
+  height: 2px;
+  margin-top: 12px;
+  border-radius: 0;
+  background: var(--ps-line);
+}
+
+body.public-home #booking .pb-progress-track u {
+  background: var(--ps-gold);
+}
+
+body.public-home #booking .pb-stepper {
+  margin: 0 0 26px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(96px, 1fr));
+  gap: 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ps-line);
+  counter-reset: ps-booking-step;
+}
+
+body.public-home #booking .pb-stepper button {
+  position: relative;
+  min-width: 96px;
+  min-height: 64px !important;
+  height: 64px;
+  padding: 9px 10px 10px !important;
+  display: grid !important;
+  grid-template-rows: 11px 18px;
+  align-content: center;
+  justify-items: start;
+  gap: 7px;
+  border: 0;
+  border-radius: 0 !important;
+  background: transparent;
+  color: var(--ps-faint);
+  font-weight: 670 !important;
+  text-align: left;
+  white-space: nowrap;
+  counter-increment: ps-booking-step;
+}
+
+body.public-home #booking .pb-stepper button::before {
+  content: counter(ps-booking-step, decimal-leading-zero);
+  position: static;
+  display: block;
+  color: var(--ps-faint);
+  font-size: 0.66rem;
+  font-weight: 670;
+  line-height: 1;
+}
+
+body.public-home #booking .pb-stepper .pb-step-label {
+  display: block;
+  color: inherit;
+  font-size: 0.84rem;
+  font-weight: 670;
+  line-height: 1.25;
+}
+
+body.public-home #booking .pb-stepper button::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: var(--ps-gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease;
+}
+
+body.public-home #booking .pb-stepper button.active,
+body.public-home #booking .pb-stepper button:hover,
+body.public-home #booking .pb-stepper button:focus-visible {
+  background: transparent;
+  color: var(--ps-gold-light);
+}
+
+body.public-home #booking .pb-stepper button.active::before {
+  color: var(--ps-gold);
+}
+
+body.public-home #booking .pb-stepper button.active::after {
+  transform: scaleX(1);
+}
+
+body.public-home #booking .pb-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 32px;
+  align-items: start;
+}
+
+body.public-home #booking .pb-flow {
+  min-width: 0;
+}
+
+body.public-home #booking .pb-step {
+  min-width: 0;
+  padding: 30px !important;
+  border: 1px solid var(--ps-line);
+  border-radius: 8px !important;
+  background: var(--ps-surface);
+  box-shadow: none !important;
+}
+
+body.public-home #booking .pb-step h3,
+body.public-home #booking .pb-route-panel h4,
+body.public-home #booking .pb-vehicle-panel h4,
+body.public-home #booking .pb-fare-overview h4,
+body.public-home #booking .request-prep h3,
+body.public-home #booking .pb-summary h3 {
+  margin: 0 0 18px;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 2.35rem;
+  font-weight: 320;
+  line-height: 1.05 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #booking label {
+  margin: 20px 0 8px;
+  color: var(--ps-muted) !important;
+  font-size: 0.66rem;
+  font-weight: 720;
+  line-height: 1.3 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #booking .input,
+body.public-home #booking .extra input,
+body.public-home #booking textarea,
+body.public-home #booking .request-grid input,
+body.public-home #booking .request-grid textarea,
+body.public-home #booking .request-date-field {
+  width: 100%;
+  min-height: 56px;
+  margin: 0;
+  border: 1px solid var(--ps-line);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+body.public-home #booking .input {
+  height: 58px;
+  padding: 0 14px;
+  grid-template-columns: 34px minmax(0, 1fr);
+}
+
+body.public-home #booking .input i {
+  width: 20px;
+  height: 20px;
+  color: var(--ps-gold);
+}
+
+body.public-home #booking input,
+body.public-home #booking textarea,
+body.public-home #booking .pb-date-display {
+  color: var(--ps-text);
+  font-size: 0.92rem !important;
+  font-weight: 520;
+  letter-spacing: 0;
+}
+
+body.public-home #booking.booking-premium .pb-date-display,
+body.public-home #booking.booking-premium #bookingTime {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ps-text);
+  font-family: inherit;
+  font-size: 0.92rem !important;
+  font-weight: 520 !important;
+  line-height: 1.4;
+  text-align: left;
+}
+
+body.public-home #booking input::placeholder,
+body.public-home #booking textarea::placeholder {
+  color: var(--ps-faint);
+}
+
+body.public-home #booking .input:focus-within,
+body.public-home #booking textarea:focus,
+body.public-home #booking .request-grid input:focus,
+body.public-home #booking .request-grid textarea:focus {
+  border-color: rgba(244, 215, 134, 0.52) !important;
+  outline: 2px solid rgba(231, 189, 85, 0.12);
+  outline-offset: 2px;
+  box-shadow: none !important;
+}
+
+body.public-home #booking .outline,
+body.public-home #booking .button,
+body.public-home #booking .actions a,
+body.public-home #booking .actions button,
+body.public-home #booking .request-actions button {
+  min-height: 50px !important;
+  padding: 0 18px;
+  border: 1px solid var(--ps-line-strong);
+  border-radius: 6px !important;
+  background: transparent;
+  color: var(--ps-gold-light);
+  font-size: 0.72rem !important;
+  font-weight: 720 !important;
+  letter-spacing: 0;
+  box-shadow: none;
+}
+
+body.public-home #booking .pb-nav {
+  margin-top: 22px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+body.public-home #booking .pb-nav .button:last-child,
+body.public-home #booking .request-actions .button {
+  border-color: rgba(244, 215, 134, 0.48);
+  background: linear-gradient(180deg, var(--ps-gold-light), var(--ps-gold));
+  color: #171207;
+}
+
+body.public-home #booking .pb-nav .button:hover,
+body.public-home #booking .outline:hover,
+body.public-home #booking .actions a:hover {
+  border-color: rgba(244, 215, 134, 0.58);
+  background: var(--ps-gold-wash);
+  color: var(--ps-gold-light);
+}
+
+body.public-home #booking .pb-nav .button:last-child:hover,
+body.public-home #booking .request-actions .button:hover {
+  background: linear-gradient(180deg, #ffe5a2, var(--ps-gold-light));
+  color: #171207;
+}
+
+body.public-home #booking .trip-grid,
+body.public-home #booking .type-grid,
+body.public-home #booking .pb-option-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body.public-home #booking .trip-grid button,
+body.public-home #booking .type-grid button,
+body.public-home #booking .details button,
+body.public-home #booking .small-toggle button,
+body.public-home #booking .toggle button,
+body.public-home #booking .chips button {
+  min-height: 54px !important;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px !important;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--ps-muted);
+  font-size: 0.75rem !important;
+  font-weight: 670 !important;
+  letter-spacing: 0;
+  box-shadow: none;
+}
+
+body.public-home #booking .trip-grid button,
+body.public-home #booking .type-grid button {
+  height: auto;
+  padding: 12px;
+  grid-template-columns: 26px minmax(0, 1fr);
+}
+
+body.public-home #booking .trip-grid i,
+body.public-home #booking .type-grid i,
+body.public-home #booking .details i {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 0 !important;
+  background: transparent;
+  color: var(--ps-gold);
+}
+
+body.public-home #booking .trip-grid button.active,
+body.public-home #booking .type-grid button.active,
+body.public-home #booking .details button.active,
+body.public-home #booking .small-toggle button.active,
+body.public-home #booking .toggle button.active {
+  border-color: rgba(244, 215, 134, 0.48);
+  background: var(--ps-gold-wash);
+  color: var(--ps-gold-light);
+}
+
+body.public-home #booking .selected {
+  margin: 0 0 18px !important;
+  padding: 14px 0 14px 18px !important;
+  border: 0;
+  border-left: 2px solid var(--ps-gold);
+  border-radius: 0 !important;
+  background: transparent;
+}
+
+body.public-home #booking .selected h2 {
+  margin: 0;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 1.55rem;
+  font-weight: 350;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #booking .service-label {
+  width: max-content;
+  max-width: 100%;
+  height: auto;
+  min-height: 30px;
+  margin: 0 0 18px;
+  padding: 6px 10px;
+  border: 1px solid var(--ps-line-strong);
+  border-radius: 4px;
+  background: var(--ps-gold-wash);
+  color: var(--ps-gold-light);
+  font-size: 0.62rem;
+  font-weight: 720;
+  letter-spacing: 0;
+}
+
+body.public-home #booking .toggle {
+  height: auto;
+  margin: 0 0 22px;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--ps-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+body.public-home #booking .toggle button {
+  border-color: transparent;
+}
+
+body.public-home #booking .details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body.public-home #booking .details button {
+  justify-content: flex-start;
+  padding: 0 12px;
+}
+
+body.public-home #booking .pb-route-panel,
+body.public-home #booking .pb-vehicle-panel,
+body.public-home #booking .pb-fare-overview,
+body.public-home #booking .request-prep,
+body.public-home #booking .extra {
+  margin-top: 24px !important;
+  padding: 22px 0 0 !important;
+  border: 0;
+  border-top: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+}
+
+body.public-home #booking .pb-route-panel h4,
+body.public-home #booking .pb-vehicle-panel h4,
+body.public-home #booking .pb-fare-overview h4,
+body.public-home #booking .request-prep h3 {
+  margin-bottom: 12px;
+  font-size: 1.7rem;
+}
+
+body.public-home #booking .pb-route-note,
+body.public-home #booking .request-prep-note,
+body.public-home #booking .pb-step-feedback,
+body.public-home #booking .pb-yumak-route-card p {
+  color: var(--ps-muted) !important;
+  font-size: 0.78rem;
+  line-height: 1.6 !important;
+}
+
+body.public-home #booking .map-container {
+  border: 1px solid var(--ps-line);
+  background: #08090a;
+}
+
+body.public-home #booking .pb-route-stats,
+body.public-home #booking .pb-yumak-route-card,
+body.public-home #booking .pb-fare-price-box,
+body.public-home #booking .pb-favorites {
+  border: 1px solid var(--ps-line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.025);
+  box-shadow: none;
+}
+
+body.public-home #booking .pb-favorite-button {
+  height: auto !important;
+  min-height: 88px !important;
+  padding: 17px 16px !important;
+  align-content: start;
+  justify-items: start;
+  gap: 7px;
+  text-align: left;
+}
+
+body.public-home #booking .pb-favorite-button .pb-favorite-label,
+body.public-home #booking .pb-favorite-button .pb-favorite-value {
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  display: block;
+  position: static;
+  transform: none;
+  text-align: left;
+}
+
+body.public-home #booking .pb-route-stats p,
+body.public-home #booking .pb-summary li,
+body.public-home #booking .pb-fare-grid p {
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+body.public-home #booking .pb-route-stats p:last-child,
+body.public-home #booking .pb-summary li:last-child {
+  border-bottom: 0;
+}
+
+body.public-home #booking .pb-vehicle-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body.public-home #booking .pb-vehicle-card {
+  padding: 14px;
+  gap: 10px;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.025);
+  box-shadow: none;
+}
+
+body.public-home #booking .pb-vehicle-card.is-selected {
+  border-color: rgba(244, 215, 134, 0.52);
+  background: var(--ps-gold-wash);
+  box-shadow: none;
+}
+
+body.public-home #booking .pb-vehicle-head h5 {
+  font-family: var(--ps-display);
+  font-size: 1.15rem;
+  font-weight: 420;
+}
+
+body.public-home #booking .pb-vehicle-head span,
+body.public-home #booking .pb-vehicle-features li,
+body.public-home #booking .pb-fare-grid span,
+body.public-home #booking .pb-summary li span {
+  color: var(--ps-muted) !important;
+  font-size: 0.7rem;
+  line-height: 1.5 !important;
+  letter-spacing: 0;
+}
+
+body.public-home #booking .pb-fare-grid {
+  gap: 0 20px;
+}
+
+body.public-home #booking .pb-fare-grid p {
+  padding: 13px 0;
+}
+
+body.public-home #booking .pb-fare-price-box {
+  padding: 18px;
+  border-color: var(--ps-line-strong);
+  background: var(--ps-gold-wash);
+}
+
+body.public-home #booking .pb-fare-price-box strong {
+  color: var(--ps-gold-light);
+  font-family: var(--ps-display);
+  font-size: 2rem;
+  font-weight: 350;
+  line-height: 1.2;
+}
+
+body.public-home #booking .pb-summary {
+  position: sticky;
+  top: 144px;
+  padding: 22px !important;
+  border: 1px solid var(--ps-line);
+  border-radius: 8px !important;
+  background: var(--ps-surface-raised);
+  box-shadow: none !important;
+}
+
+body.public-home #booking .pb-summary h3 {
+  margin-bottom: 18px;
+  font-size: 1.7rem;
+}
+
+body.public-home #booking .pb-summary ul {
+  gap: 0;
+}
+
+body.public-home #booking .pb-summary li {
+  padding: 11px 0;
+  grid-template-columns: 105px minmax(0, 1fr);
+}
+
+body.public-home #booking .pb-summary li b {
+  color: var(--ps-text);
+  font-size: 0.76rem;
+  font-weight: 580;
+}
+
+body.public-home #booking textarea {
+  min-height: 120px;
+  padding: 14px;
+}
+
+body.public-home #booking .request-grid {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 10px 20px;
+  align-items: center;
+}
+
+body.public-home #booking .request-grid label {
+  margin: 0;
+}
+
+body.public-home #booking .request-grid input,
+body.public-home #booking .request-grid textarea,
+body.public-home #booking .request-date-field {
+  padding: 0 14px;
+  border-radius: 6px !important;
+  color: var(--ps-text);
+}
+
+body.public-home #booking .request-grid textarea {
+  padding-block: 14px;
+}
+
+body.public-home #booking .request-consent {
+  margin-top: 20px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+body.public-home #booking .request-actions {
+  margin-top: 18px;
+}
+
+body.public-home #booking .yumak-info {
+  height: auto;
+  min-height: 76px;
+  margin-bottom: 26px;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px;
+  background: var(--ps-gold-wash);
+}
+
+body.public-home #booking .pb-final-intro {
+  margin: -6px 0 22px;
+  color: var(--ps-muted) !important;
+  font-size: 0.82rem;
+  line-height: 1.65 !important;
+}
+
+body.public-home #booking .pb-final-summary {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--ps-line);
+}
+
+body.public-home #booking .pb-final-summary > div {
+  min-width: 0;
+  padding: 13px 0;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 12px;
+  border-bottom: 1px solid var(--ps-line);
+}
+
+body.public-home #booking .pb-final-summary > div:nth-child(odd) {
+  padding-right: 20px;
+}
+
+body.public-home #booking .pb-final-summary > div:nth-child(even) {
+  padding-left: 20px;
+}
+
+body.public-home #booking .pb-final-summary dt {
+  color: var(--ps-muted);
+  font-size: 0.68rem;
+  font-weight: 680;
+  line-height: 1.5;
+}
+
+body.public-home #booking .pb-final-summary dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--ps-text);
+  font-size: 0.76rem;
+  font-weight: 580;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+body.public-home #booking .request-consent a {
+  color: var(--ps-gold-light);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+body.public-home #booking .request-handoff {
+  margin-top: 22px;
+  padding: 22px 0 0;
+  border-top: 1px solid var(--ps-line);
+}
+
+body.public-home #booking .request-handoff h4 {
+  margin: 0 0 8px;
+  color: var(--ps-text);
+  font-family: var(--ps-display);
+  font-size: 1.35rem;
+  font-weight: 390;
+}
+
+body.public-home #booking .request-handoff p {
+  margin: 0;
+  color: var(--ps-muted) !important;
+  font-size: 0.78rem;
+  line-height: 1.6 !important;
+}
+
+body.public-home #booking .request-handoff-actions {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body.public-home #booking .request-handoff-actions .button {
+  width: 100%;
+}
+
+@media (max-width: 1080px) {
+  body.public-home #booking .pb-shell {
+    grid-template-columns: 1fr;
+  }
+
+  body.public-home #booking .pb-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 820px) {
+  body.public-home #booking.booking-premium {
+    width: calc(100% - 16px);
+    padding: 18px 0 80px;
+  }
+
+  body.public-home #booking > .intro {
+    padding: 30px 0 24px !important;
+  }
+
+  body.public-home #booking > .intro h1 {
+    font-size: 2.45rem;
+  }
+
+  body.public-home #booking.booking-premium .pb-stepper {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-auto-flow: initial;
+    grid-auto-columns: auto;
+    margin-bottom: 18px;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+
+  body.public-home #booking.booking-premium .pb-stepper button {
+    min-width: 0;
+    min-height: 46px !important;
+    height: 46px;
+    padding: 0 !important;
+    grid-template-rows: 1fr;
+    place-items: center;
+    scroll-snap-align: none;
+  }
+
+  body.public-home #booking.booking-premium .pb-stepper button::before {
+    content: counter(ps-booking-step);
+    font-size: 0.78rem;
+  }
+
+  body.public-home #booking.booking-premium .pb-step-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  body.public-home #booking .pb-step {
+    padding: 20px !important;
+  }
+
+  body.public-home #booking .pb-step h3 {
+    font-size: 1.85rem;
+  }
+
+  body.public-home #booking .trip-grid,
+  body.public-home #booking .type-grid,
+  body.public-home #booking .details,
+  body.public-home #booking .pb-option-grid,
+  body.public-home #booking .pb-favorites-list,
+  body.public-home #booking .pb-vehicle-grid,
+  body.public-home #booking .pb-fare-grid,
+  body.public-home #booking .request-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.public-home #booking .request-grid {
+    gap: 8px;
+  }
+
+  body.public-home #booking .request-grid label:not(:first-child) {
+    margin-top: 10px;
+  }
+
+  body.public-home #booking .pb-nav {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  body.public-home #booking .pb-nav .button {
+    width: 100%;
+  }
+
+  body.public-home #booking .pb-summary {
+    display: none;
+    padding: 18px !important;
+  }
+
+  body.public-home #booking[data-current-step="7"] .pb-summary {
+    display: block;
+  }
+
+  body.public-home #booking .pb-summary li {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+
+  body.public-home #booking .pb-final-summary,
+  body.public-home #booking .request-handoff-actions {
+    grid-template-columns: 1fr;
+  }
+
+  body.public-home #booking .pb-final-summary > div,
+  body.public-home #booking .pb-final-summary > div:nth-child(odd),
+  body.public-home #booking .pb-final-summary > div:nth-child(even) {
+    padding: 12px 0;
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+}
+
+/* FAQ, Yumak, reviews and current ride */
+body.public-home #faq.faq-page,
+body.public-home #yumak,
+body.public-home #reviews,
+body.public-home #ride-status.ride-status-page {
+  width: min(1240px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 34px 0 112px;
+  color: var(--ps-text);
+  font-family: var(--ps-sans);
+}
+
+body.public-home #faq section,
+body.public-home #faq article,
+body.public-home #yumak section,
+body.public-home #yumak article,
+body.public-home #reviews section,
+body.public-home #reviews article,
+body.public-home #ride-status section,
+body.public-home #ride-status article {
+  margin-bottom: 0 !important;
+}
+
+body.public-home #faq .page-head,
+body.public-home #yumak .page-head,
+body.public-home #ride-status .page-head {
+  min-height: 58px;
+  margin: 0 !important;
+  padding-bottom: 14px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  border-bottom: 1px solid var(--ps-line);
+}
+
+body.public-home #faq .page-head button,
+body.public-home #yumak .page-head button,
+body.public-home #ride-status .page-head button {
+  width: 44px;
+  min-height: 44px !important;
+  height: 44px;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px !important;
+  background: transparent;
+  color: var(--ps-muted);
+  font-size: 1.7rem !important;
+}
+
+body.public-home #faq .page-head h2,
+body.public-home #yumak .page-head h2,
+body.public-home #ride-status .page-head h2 {
+  color: var(--ps-text);
+  font-family: var(--ps-sans) !important;
+  font-size: 0.76rem;
+  font-weight: 720;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase;
+}
+
+body.public-home #faq .faq-hero,
+body.public-home #ride-status .ride-track-hero {
+  padding: 78px 0 56px !important;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+body.public-home #faq .faq-hero small,
+body.public-home #faq .faq-contact-card small,
+body.public-home #ride-status .ride-track-hero small,
+body.public-home #ride-status .ride-track-panel small,
+body.public-home #ride-status .ride-track-side > small {
+  display: block;
+  margin: 0 0 16px;
+  color: var(--ps-gold) !important;
+  font-size: 0.67rem;
+  font-weight: 760;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase;
+}
+
+body.public-home #faq .faq-hero h1,
+body.public-home #ride-status .ride-track-hero h1,
+body.public-home #reviews h1 {
+  max-width: 880px;
+  margin: 0;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 4.8rem;
+  font-weight: 290;
+  line-height: 0.98 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #faq .faq-hero p,
+body.public-home #ride-status .ride-track-hero p,
+body.public-home #reviews p {
+  max-width: 690px;
+  margin: 22px 0 0;
+  color: var(--ps-muted) !important;
+  font-size: 0.95rem;
+  line-height: 1.75 !important;
+}
+
+body.public-home #faq .faq-search-wrap {
+  max-width: 760px;
+  margin: 0 !important;
+  padding: 54px 0 30px;
+}
+
+body.public-home #faq .faq-search-wrap label {
+  margin: 0 0 9px;
+  color: var(--ps-muted) !important;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #faq .faq-search-input {
+  min-height: 58px;
+  padding: 0 15px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.025);
+  box-shadow: none;
+}
+
+body.public-home #faq .faq-search-input i {
+  width: 19px;
+  height: 19px;
+  color: var(--ps-gold);
+}
+
+body.public-home #faq .faq-search-input input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ps-text);
+  font-size: 0.9rem !important;
+  outline: 0;
+}
+
+body.public-home #faq .faq-categories {
+  margin: 0 0 24px !important;
+  padding: 0;
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ps-line);
+  scrollbar-width: none;
+}
+
+body.public-home #faq .faq-category {
+  position: relative;
+  min-width: max-content;
+  min-height: 52px !important;
+  padding: 0 0 14px;
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  border-radius: 0 !important;
+  background: transparent;
+  color: var(--ps-faint);
+  box-shadow: none;
+}
+
+body.public-home #faq .faq-category span {
+  display: none;
+}
+
+body.public-home #faq .faq-category b {
+  font-size: 0.72rem;
+  font-weight: 680;
+  letter-spacing: 0;
+}
+
+body.public-home #faq .faq-category::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: var(--ps-gold);
+  transform: scaleX(0);
+}
+
+body.public-home #faq .faq-category.active,
+body.public-home #faq .faq-category:hover,
+body.public-home #faq .faq-category:focus-visible {
+  background: transparent;
+  color: var(--ps-gold-light);
+}
+
+body.public-home #faq .faq-category.active::after {
+  transform: scaleX(1);
+}
+
+body.public-home #faq .faq-accordion {
+  max-width: 960px;
+  margin: 0 !important;
+  border-top: 1px solid var(--ps-line);
+}
+
+body.public-home #faq .faq-item {
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+body.public-home #faq .faq-question {
+  width: 100%;
+  min-height: 82px !important;
+  padding: 18px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  gap: 18px;
+  align-items: center;
+  border: 0;
+  border-radius: 0 !important;
+  background: transparent;
+  color: var(--ps-text);
+  text-align: left;
+  box-shadow: none;
+}
+
+body.public-home #faq .faq-question span {
+  font-family: var(--ps-display);
+  font-size: 1.2rem;
+  font-weight: 380;
+  line-height: 1.35;
+}
+
+body.public-home #faq .faq-question b {
+  color: var(--ps-gold);
+  font-size: 1.4rem;
+  font-weight: 350;
+  text-align: center;
+}
+
+body.public-home #faq .faq-answer-inner {
+  max-width: 760px;
+  padding: 0 42px 24px 0;
+  color: var(--ps-muted) !important;
+  font-size: 0.82rem;
+  line-height: 1.75;
+}
+
+body.public-home #faq .faq-empty {
+  padding: 24px 0;
+  color: var(--ps-muted) !important;
+}
+
+body.public-home #faq .faq-contact-card {
+  margin-top: 78px !important;
+  padding: 68px 0 !important;
+  border: 0;
+  border-top: 1px solid var(--ps-line);
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+body.public-home #faq .faq-contact-card h3 {
+  margin: 0;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 3.3rem;
+  font-weight: 300;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #faq .faq-contact-actions {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body.public-home #faq .faq-contact-actions .button,
+body.public-home #yumak .yumak-card-action,
+body.public-home #reviews .button,
+body.public-home #ride-status .button {
+  width: auto;
+  min-width: 156px;
+  min-height: 50px !important;
+  height: auto;
+  padding: 0 18px;
+  border: 1px solid var(--ps-line-strong);
+  border-radius: 6px !important;
+  background: transparent;
+  color: var(--ps-gold-light);
+  font-size: 0.72rem !important;
+  font-weight: 720 !important;
+  line-height: 1.2;
+  letter-spacing: 0;
+  box-shadow: none;
+}
+
+body.public-home #faq .faq-contact-actions .button:first-child,
+body.public-home #reviews .button,
+body.public-home #ride-status .ride-track-side-actions .button:first-child {
+  border-color: rgba(244, 215, 134, 0.48);
+  background: linear-gradient(180deg, var(--ps-gold-light), var(--ps-gold));
+  color: #171207;
+}
+
+/* Yumak */
+body.public-home #yumak .yumak-greeting {
+  min-height: 430px;
+  padding: 72px 0 !important;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 16px 54px;
+  align-content: center;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line) !important;
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+  text-align: left !important;
+}
+
+body.public-home #yumak .yumak-greeting .yumak-img {
+  width: 210px;
+  height: 210px;
+  margin: 0 !important;
+  padding: 8px;
+  grid-row: 1 / -1;
+  border: 1px solid var(--ps-line-strong) !important;
+  border-radius: 8px !important;
+  background: var(--ps-gold-wash);
+  box-shadow: none;
+}
+
+body.public-home #yumak .yumak-greeting h1 {
+  align-self: end;
+  margin: 0 !important;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 4.2rem;
+  font-weight: 300;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #yumak .yumak-greeting p {
+  align-self: start;
+  max-width: 660px;
+  margin: 0 !important;
+  color: var(--ps-muted) !important;
+  font-size: 0.95rem;
+  line-height: 1.75 !important;
+}
+
+body.public-home #yumak .yumak-features {
+  margin: 0 !important;
+  padding: 54px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+body.public-home #yumak .yumak-card {
+  min-height: 260px;
+  padding: 26px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 22px;
+  border: 1px solid var(--ps-line);
+  border-radius: 8px !important;
+  background: var(--ps-surface);
+  color: var(--ps-text);
+  box-shadow: none;
+}
+
+body.public-home #yumak .yumak-card:hover,
+body.public-home #yumak .yumak-card:focus-visible {
+  border-color: var(--ps-line-strong);
+  background: var(--ps-surface-raised);
+}
+
+body.public-home #yumak .yumak-card i {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ps-gold);
+}
+
+body.public-home #yumak .yumak-card-body {
+  gap: 10px;
+}
+
+body.public-home #yumak .yumak-card b {
+  color: var(--ps-text);
+  font-family: var(--ps-display);
+  font-size: 1.45rem;
+  font-weight: 380;
+  line-height: 1.2;
+}
+
+body.public-home #yumak .yumak-card small {
+  color: var(--ps-muted) !important;
+  font-size: 0.78rem;
+  font-weight: 520;
+  line-height: 1.65 !important;
+}
+
+body.public-home #yumak .yumak-card-action {
+  min-width: 0;
+  justify-self: start;
+}
+
+/* Reviews */
+body.public-home #reviews {
+  min-height: 700px;
+  display: none;
+  place-items: center;
+}
+
+body.public-home #reviews.active {
+  display: grid;
+}
+
+body.public-home #reviews .reviews-panel-main {
+  width: 100%;
+  min-height: 540px;
+  padding: 76px 0 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  border: 0;
+  border-top: 1px solid var(--ps-line);
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+  text-align: left;
+}
+
+body.public-home #reviews .stars {
+  margin: 0 0 28px;
+  color: var(--ps-gold);
+  font-size: 1.4rem;
+  letter-spacing: 8px;
+}
+
+body.public-home #reviews .button {
+  margin-top: 32px;
+}
+
+/* Current ride */
+body.public-home #ride-status .ride-track-layout {
+  padding-top: 44px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+body.public-home #ride-status .ride-track-panel,
+body.public-home #ride-status .ride-track-side {
+  padding: 30px !important;
+  border: 1px solid var(--ps-line);
+  border-radius: 8px !important;
+  background: var(--ps-surface);
+  box-shadow: none !important;
+}
+
+body.public-home #ride-status .ride-track-panel-head h3,
+body.public-home #ride-status .ride-track-side h3 {
+  margin: 0;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 1.75rem;
+  font-weight: 350;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #ride-status .ride-track-badge {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ps-line-strong);
+  border-radius: 4px;
+  background: var(--ps-gold-wash);
+  color: var(--ps-gold-light);
+  font-size: 0.58rem;
+  font-weight: 720;
+  letter-spacing: 0;
+}
+
+body.public-home #ride-status .ride-track-timeline {
+  margin-top: 16px;
+  gap: 0;
+}
+
+body.public-home #ride-status .ride-track-timeline li {
+  min-height: 74px;
+  padding-bottom: 14px;
+}
+
+body.public-home #ride-status .ride-track-timeline li:not(:last-child)::after {
+  width: 1px;
+  background: var(--ps-line);
+}
+
+body.public-home #ride-status .ride-track-dot {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--ps-line-strong);
+  background: var(--ps-surface-raised);
+  box-shadow: none;
+}
+
+body.public-home #ride-status .ride-track-step {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+body.public-home #ride-status .ride-track-step strong {
+  color: var(--ps-text);
+  font-size: 0.82rem;
+  font-weight: 620;
+}
+
+body.public-home #ride-status .ride-track-step small {
+  margin: 4px 0 0;
+  color: var(--ps-muted) !important;
+  font-size: 0.7rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+body.public-home #ride-status .ride-track-timeline li.is-active .ride-track-step,
+body.public-home #ride-status .ride-track-timeline li.is-complete .ride-track-step {
+  border: 0;
+  background: transparent;
+}
+
+body.public-home #ride-status .ride-track-driver-list {
+  margin-top: 14px;
+  gap: 0;
+  border-top: 1px solid var(--ps-line);
+}
+
+body.public-home #ride-status .ride-track-driver-list li {
+  min-height: 54px;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+body.public-home #ride-status .ride-track-driver-list span,
+body.public-home #ride-status .ride-track-driver-list b {
+  color: var(--ps-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+body.public-home #ride-status .ride-track-driver-list b {
+  color: var(--ps-text);
+}
+
+body.public-home #ride-status .ride-track-side-actions,
+body.public-home #ride-status .ride-track-complete-actions {
+  margin-top: 8px;
+  gap: 8px;
+}
+
+body.public-home #ride-status .ride-track-side-actions .button,
+body.public-home #ride-status .ride-track-complete-actions .button {
+  min-width: 0;
+}
+
+@media (max-width: 980px) {
+  body.public-home #ride-status .ride-track-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  body.public-home #faq.faq-page,
+  body.public-home #yumak,
+  body.public-home #reviews,
+  body.public-home #ride-status.ride-status-page {
+    width: calc(100% - 16px);
+    padding: 18px 0 80px;
+  }
+
+  body.public-home #faq .faq-hero h1,
+  body.public-home #ride-status .ride-track-hero h1,
+  body.public-home #reviews h1,
+  body.public-home #yumak .yumak-greeting h1 {
+    font-size: 3.15rem;
+  }
+
+  body.public-home #faq .faq-contact-card h3 {
+    font-size: 2.55rem;
+  }
+
+  body.public-home #faq .faq-contact-actions,
+  body.public-home #ride-status .ride-track-side-actions,
+  body.public-home #ride-status .ride-track-complete-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  body.public-home #faq .faq-contact-actions .button,
+  body.public-home #reviews .button,
+  body.public-home #ride-status .button {
+    width: 100%;
+  }
+
+  body.public-home #yumak .yumak-greeting {
+    min-height: 0;
+    padding: 54px 0 !important;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 20px;
+  }
+
+  body.public-home #yumak .yumak-greeting .yumak-img {
+    width: 132px;
+    height: 132px;
+    grid-row: auto;
+  }
+
+  body.public-home #yumak .yumak-features {
+    grid-template-columns: 1fr;
+  }
+
+  body.public-home #yumak .yumak-card {
+    min-height: 220px;
+  }
+
+  body.public-home #reviews {
+    min-height: 580px;
+  }
+
+  body.public-home #reviews .reviews-panel-main {
+    min-height: 460px;
+  }
+
+  body.public-home #ride-status .ride-track-panel,
+  body.public-home #ride-status .ride-track-side {
+    padding: 22px !important;
+  }
+}
+
+/* Medical rides and guided request */
+body.public-home #medical.medical-page {
+  width: min(1240px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 34px 0 112px;
+  color: var(--ps-text);
+  font-family: var(--ps-sans);
+}
+
+body.public-home #medical section,
+body.public-home #medical article {
+  margin-bottom: 0 !important;
+}
+
+body.public-home #medical .page-head {
+  min-height: 58px;
+  margin: 0 !important;
+  padding-bottom: 14px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  border-bottom: 1px solid var(--ps-line);
+}
+
+body.public-home #medical .page-head button {
+  width: 44px;
+  min-height: 44px !important;
+  height: 44px;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px !important;
+  background: transparent;
+  color: var(--ps-muted);
+  font-size: 1.7rem !important;
+}
+
+body.public-home #medical .page-head h2 {
+  color: var(--ps-text);
+  font-family: var(--ps-sans) !important;
+  font-size: 0.76rem;
+  font-weight: 720;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase;
+}
+
+body.public-home #medical .medical-hero {
+  min-height: 560px;
+  padding: 72px 0 52px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) 260px;
+  grid-template-areas:
+    "copy visual"
+    "trust trust"
+    "actions actions";
+  gap: 38px 58px;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.public-home #medical .medical-hero-copy {
+  grid-area: copy;
+}
+
+body.public-home #medical .medical-kicker,
+body.public-home #medical .medical-booking-head::before {
+  display: block;
+  margin: 0 0 18px;
+  color: var(--ps-gold) !important;
+  font-size: 0.68rem;
+  font-weight: 760;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase;
+}
+
+body.public-home #medical .medical-hero-copy h1 {
+  max-width: 850px;
+  margin: 0;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 4.7rem;
+  font-weight: 290;
+  line-height: 0.98 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #medical .medical-hero-copy p {
+  max-width: 720px;
+  margin: 24px 0 0;
+  color: var(--ps-muted) !important;
+  font-size: 1rem;
+  line-height: 1.75 !important;
+}
+
+body.public-home #medical .medical-hero-visual {
+  grid-area: visual;
+}
+
+body.public-home #medical .medical-symbol {
+  width: 210px;
+  height: 210px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ps-line-strong);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+body.public-home #medical .medical-symbol i {
+  width: 74px;
+  height: 74px;
+  color: var(--ps-gold);
+}
+
+body.public-home #medical .medical-trust-strip {
+  grid-area: trust;
+  padding-top: 22px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--ps-line);
+}
+
+body.public-home #medical .medical-trust-strip span {
+  min-height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-right: 1px solid var(--ps-line);
+  color: var(--ps-muted);
+  font-size: 0.72rem;
+  font-weight: 620;
+}
+
+body.public-home #medical .medical-trust-strip span:first-child {
+  padding-left: 0;
+}
+
+body.public-home #medical .medical-trust-strip span:last-child {
+  border-right: 0;
+}
+
+body.public-home #medical .medical-trust-strip i {
+  width: 19px;
+  height: 19px;
+  color: var(--ps-gold);
+}
+
+body.public-home #medical .medical-hero-actions {
+  grid-area: actions;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body.public-home #medical .medical-hero-actions .button,
+body.public-home #medical .medical-help-actions .button,
+body.public-home #medical .nova-confirm,
+body.public-home #medical .nova-picker-trigger,
+body.public-home #medical .assistant-edit,
+body.public-home #medical .medical-submit {
+  width: auto;
+  min-width: 156px;
+  min-height: 50px !important;
+  height: auto;
+  padding: 0 18px;
+  border: 1px solid var(--ps-line-strong);
+  border-radius: 6px !important;
+  background: transparent;
+  color: var(--ps-gold-light);
+  font-size: 0.72rem !important;
+  font-weight: 720 !important;
+  line-height: 1.2;
+  letter-spacing: 0 !important;
+  box-shadow: none;
+}
+
+body.public-home #medical .medical-hero-actions .button:first-child,
+body.public-home #medical .medical-submit,
+body.public-home #medical .nova-confirm {
+  border-color: rgba(244, 215, 134, 0.48);
+  background: linear-gradient(180deg, var(--ps-gold-light), var(--ps-gold));
+  color: #171207;
+}
+
+body.public-home #medical .medical-section,
+body.public-home #medical .medical-help {
+  margin: 0 !important;
+  padding: 86px 0 !important;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+body.public-home #medical .medical-section > h3,
+body.public-home #medical .medical-help h3,
+body.public-home #medical .medical-booking-head h3 {
+  max-width: 820px;
+  margin: 0 0 42px;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 3.65rem;
+  font-weight: 300;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #medical .medical-explainer {
+  max-width: 900px;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+body.public-home #medical .medical-explainer p {
+  margin: 0;
+  color: var(--ps-muted) !important;
+  font-family: var(--ps-display);
+  font-size: 1.8rem;
+  font-weight: 300;
+  line-height: 1.5 !important;
+}
+
+body.public-home #medical .medical-explainer strong {
+  color: var(--ps-text);
+  font-weight: 500;
+}
+
+body.public-home #medical .medical-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+
+body.public-home #medical .medical-steps li {
+  min-height: 230px;
+  padding: 24px 0 0 !important;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-areas:
+    "num icon"
+    "num title"
+    "num text";
+  gap: 12px;
+  align-content: start;
+  border: 0;
+  border-top: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+body.public-home #medical .medical-steps .step-number {
+  width: auto;
+  height: auto;
+  display: block;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ps-gold);
+  font-size: 0.62rem;
+  font-weight: 760;
+}
+
+body.public-home #medical .medical-steps i {
+  width: 24px;
+  height: 24px;
+  color: var(--ps-gold);
+}
+
+body.public-home #medical .medical-steps b {
+  color: var(--ps-text);
+  font-family: var(--ps-display);
+  font-size: 1.3rem;
+  font-weight: 380;
+  line-height: 1.25;
+}
+
+body.public-home #medical .medical-steps p,
+body.public-home #medical .medical-card p,
+body.public-home #medical .medical-help p,
+body.public-home #medical .medical-booking-head p,
+body.public-home #medical .yumak-assistant-card p {
+  margin: 0;
+  color: var(--ps-muted) !important;
+  font-size: 0.78rem;
+  line-height: 1.7 !important;
+}
+
+body.public-home #medical .medical-booking {
+  margin: 0 !important;
+  padding: 52px !important;
+  border: 1px solid var(--ps-line);
+  border-radius: 8px !important;
+  background: var(--ps-surface);
+  box-shadow: none !important;
+}
+
+body.public-home #medical .medical-booking-head::before {
+  content: "Krankenfahrt anfragen";
+}
+
+body.public-home #medical .medical-booking-head {
+  margin-bottom: 34px;
+}
+
+body.public-home #medical .medical-booking-head h3 {
+  margin-bottom: 18px;
+}
+
+body.public-home #medical .yumak-assistant-card {
+  margin: 0 0 28px !important;
+  padding: 18px 0 !important;
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 18px;
+  border: 0;
+  border-top: 1px solid var(--ps-line);
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.public-home #medical .yumak-assistant-card img {
+  width: 62px;
+  height: 62px;
+  padding: 3px;
+  border: 1px solid var(--ps-line-strong);
+  border-radius: 6px;
+  background: transparent;
+}
+
+body.public-home #medical .yumak-assistant-card h4 {
+  margin: 0 0 5px;
+  color: var(--ps-text);
+  font-family: var(--ps-display);
+  font-size: 1.35rem;
+  font-weight: 380;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+body.public-home #medical .nova-assistant {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--ps-line);
+}
+
+body.public-home #medical .nova-status {
+  padding: 18px 0 !important;
+  display: grid;
+  gap: 10px;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+body.public-home #medical .nova-status strong,
+body.public-home #medical .nova-hint {
+  color: var(--ps-muted) !important;
+  font-size: 0.7rem;
+  font-weight: 680;
+  letter-spacing: 0;
+}
+
+body.public-home #medical .nova-progress-track {
+  height: 2px;
+  border-radius: 0;
+  background: var(--ps-line);
+}
+
+body.public-home #medical .nova-progress-track span {
+  background: var(--ps-gold);
+}
+
+body.public-home #medical .nova-step {
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+  opacity: 1;
+}
+
+body.public-home #medical .nova-step.is-closed {
+  opacity: 0.62;
+}
+
+body.public-home #medical .nova-step.is-open,
+body.public-home #medical .nova-step.is-complete {
+  border-color: var(--ps-line);
+  box-shadow: none !important;
+}
+
+body.public-home #medical .nova-step-head {
+  min-height: 72px;
+  padding: 16px 0;
+  grid-template-columns: 34px minmax(0, 1fr) 24px;
+}
+
+body.public-home #medical .nova-step-index {
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ps-gold);
+  font-size: 0.62rem;
+  font-weight: 760;
+}
+
+body.public-home #medical .nova-step-head b {
+  color: var(--ps-text);
+  font-family: var(--ps-display);
+  font-size: 1.12rem;
+  font-weight: 390;
+  letter-spacing: 0;
+}
+
+body.public-home #medical .nova-step-body {
+  padding: 0 0 28px 34px;
+  gap: 12px;
+}
+
+body.public-home #medical .nova-choice-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body.public-home #medical .nova-choice,
+body.public-home #medical .nova-time-option,
+body.public-home #medical .nova-calendar-day,
+body.public-home #medical .nova-time-btn {
+  min-height: 50px !important;
+  padding: 0 12px;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px !important;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--ps-muted);
+  font-size: 0.76rem !important;
+  font-weight: 640 !important;
+  letter-spacing: 0;
+  box-shadow: none;
+}
+
+body.public-home #medical .nova-choice.is-selected,
+body.public-home #medical .nova-time-option.is-selected,
+body.public-home #medical .nova-calendar-day.is-selected,
+body.public-home #medical .nova-time-btn.is-selected {
+  border-color: rgba(244, 215, 134, 0.5);
+  background: var(--ps-gold-wash);
+  color: var(--ps-gold-light);
+}
+
+body.public-home #medical .nova-step-body input,
+body.public-home #medical .nova-step-body textarea {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 14px;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px !important;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--ps-text);
+  font-size: 0.9rem !important;
+  font-weight: 520;
+  letter-spacing: 0;
+  box-shadow: none !important;
+}
+
+body.public-home #medical .nova-step-body textarea {
+  min-height: 120px;
+  padding-block: 14px;
+}
+
+body.public-home #medical .nova-step-body input:focus,
+body.public-home #medical .nova-step-body textarea:focus {
+  border-color: rgba(244, 215, 134, 0.52) !important;
+  outline: 2px solid rgba(231, 189, 85, 0.12);
+  outline-offset: 2px;
+  box-shadow: none !important;
+}
+
+body.public-home #medical .nova-confirm {
+  justify-self: start;
+}
+
+body.public-home #medical .nova-error {
+  color: #ffb7ad !important;
+  font-size: 0.7rem;
+}
+
+body.public-home #medical .nova-time-list {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+}
+
+body.public-home #medical #novaDateOverlay .nova-overlay-panel {
+  padding: 18px;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px;
+  background: #101113;
+  box-shadow: none;
+}
+
+body.public-home #medical .nova-overlay-head h4 {
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 1.55rem !important;
+  font-weight: 370;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #medical .nova-weekdays span,
+body.public-home #medical .nova-time-label {
+  color: var(--ps-faint) !important;
+  font-size: 0.62rem;
+  letter-spacing: 0;
+}
+
+body.public-home #medical .nova-calendar-grid {
+  gap: 6px;
+}
+
+body.public-home #medical .nova-summary-grid {
+  gap: 0;
+  border-top: 1px solid var(--ps-line);
+}
+
+body.public-home #medical .nova-summary-item {
+  padding: 13px 0 !important;
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 12px;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+body.public-home #medical .nova-summary-item span {
+  color: var(--ps-faint) !important;
+  font-size: 0.62rem;
+  letter-spacing: 0;
+}
+
+body.public-home #medical .nova-summary-item b {
+  color: var(--ps-text);
+  font-size: 0.78rem;
+  font-weight: 580;
+}
+
+body.public-home #medical .nova-summary-actions {
+  margin-top: 12px;
+  gap: 8px;
+}
+
+body.public-home #medical .medical-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+body.public-home #medical .medical-card {
+  min-height: 180px;
+  padding: 24px 0 0 !important;
+  display: grid;
+  gap: 10px;
+  border: 0;
+  border-top: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+body.public-home #medical .medical-card i {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ps-gold);
+}
+
+body.public-home #medical .medical-card b {
+  color: var(--ps-text);
+  font-family: var(--ps-display);
+  font-size: 1.35rem;
+  font-weight: 380;
+  line-height: 1.2;
+}
+
+body.public-home #medical .medical-checklist {
+  padding: 0 !important;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 28px;
+  border: 0;
+  border-top: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+body.public-home #medical .medical-checklist li {
+  min-height: 62px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--ps-line);
+  color: var(--ps-muted) !important;
+  font-size: 0.8rem;
+}
+
+body.public-home #medical .medical-help h3 {
+  margin-bottom: 22px;
+}
+
+body.public-home #medical .medical-help-actions {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 980px) {
+  body.public-home #medical .medical-hero {
+    grid-template-columns: minmax(0, 1fr) 190px;
+  }
+
+  body.public-home #medical .medical-symbol {
+    width: 170px;
+    height: 170px;
+  }
+
+  body.public-home #medical .medical-steps,
+  body.public-home #medical .medical-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  body.public-home #medical.medical-page {
+    width: calc(100% - 16px);
+    padding: 18px 0 80px;
+  }
+
+  body.public-home #medical .medical-hero {
+    min-height: 0;
+    padding: 54px 0 44px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "copy"
+      "visual"
+      "trust"
+      "actions";
+    gap: 32px;
+  }
+
+  body.public-home #medical .medical-hero-copy h1 {
+    font-size: 3.1rem;
+  }
+
+  body.public-home #medical .medical-hero-visual {
+    justify-items: start;
+  }
+
+  body.public-home #medical .medical-symbol {
+    width: 132px;
+    height: 132px;
+  }
+
+  body.public-home #medical .medical-symbol i {
+    width: 52px;
+    height: 52px;
+  }
+
+  body.public-home #medical .medical-trust-strip,
+  body.public-home #medical .medical-steps,
+  body.public-home #medical .medical-cards,
+  body.public-home #medical .medical-checklist {
+    grid-template-columns: 1fr;
+  }
+
+  body.public-home #medical .medical-trust-strip span {
+    padding: 12px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--ps-line);
+  }
+
+  body.public-home #medical .medical-hero-actions,
+  body.public-home #medical .medical-help-actions,
+  body.public-home #medical .nova-summary-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  body.public-home #medical .medical-hero-actions .button,
+  body.public-home #medical .medical-help-actions .button,
+  body.public-home #medical .nova-summary-actions button {
+    width: 100%;
+  }
+
+  body.public-home #medical .medical-section,
+  body.public-home #medical .medical-help {
+    padding: 68px 0 !important;
+  }
+
+  body.public-home #medical .medical-section > h3,
+  body.public-home #medical .medical-help h3,
+  body.public-home #medical .medical-booking-head h3 {
+    font-size: 2.7rem;
+  }
+
+  body.public-home #medical .medical-explainer p {
+    font-size: 1.4rem;
+  }
+
+  body.public-home #medical .medical-steps li,
+  body.public-home #medical .medical-card {
+    min-height: 0;
+  }
+
+  body.public-home #medical .medical-booking {
+    padding: 22px !important;
+  }
+
+  body.public-home #medical .yumak-assistant-card {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  body.public-home #medical .yumak-assistant-card img {
+    width: 48px;
+    height: 48px;
+  }
+
+  body.public-home #medical .nova-step-body {
+    padding-left: 0;
+  }
+
+  body.public-home #medical .nova-choice-grid,
+  body.public-home #medical .nova-time-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.public-home #medical .nova-summary-item {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.public-home #booking *,
+  body.public-home #booking *::before,
+  body.public-home #booking *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Services overview */
+body.public-home #services.services-page,
+body.public-home #why.about-page {
+  width: min(1240px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 34px 0 112px;
+  color: var(--ps-text);
+  font-family: var(--ps-sans);
+}
+
+body.public-home #services section,
+body.public-home #services article,
+body.public-home #why section,
+body.public-home #why article {
+  margin-bottom: 0 !important;
+}
+
+body.public-home #services .page-head,
+body.public-home #why .page-head {
+  min-height: 58px;
+  margin: 0 !important;
+  padding-bottom: 14px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  border-bottom: 1px solid var(--ps-line);
+}
+
+body.public-home #services .page-head button,
+body.public-home #why .page-head button {
+  width: 44px;
+  min-height: 44px !important;
+  height: 44px;
+  border: 1px solid var(--ps-line);
+  border-radius: 6px !important;
+  background: transparent;
+  color: var(--ps-muted);
+  font-size: 1.7rem !important;
+}
+
+body.public-home #services .page-head h2,
+body.public-home #why .page-head h2 {
+  color: var(--ps-text);
+  font-family: var(--ps-sans) !important;
+  font-size: 0.76rem;
+  font-weight: 720;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase;
+}
+
+body.public-home #services .services-hero {
+  margin: 0 !important;
+  padding: 82px 0 62px;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.public-home #services .services-hero small,
+body.public-home #why .about-hero small,
+body.public-home #why .about-section-head small,
+body.public-home #why .about-cta small {
+  display: block;
+  margin: 0 0 18px;
+  color: var(--ps-gold) !important;
+  font-size: 0.68rem;
+  font-weight: 760;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase;
+}
+
+body.public-home #services .services-hero h1 {
+  max-width: 920px;
+  margin: 0;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 4.9rem;
+  font-weight: 290;
+  line-height: 0.98 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #services .services-hero p {
+  max-width: 720px;
+  margin: 24px 0 0;
+  color: var(--ps-muted) !important;
+  font-size: 1rem;
+  line-height: 1.75 !important;
+}
+
+body.public-home #services .services-intro {
+  padding: 28px 0 !important;
+  border-bottom: 1px solid var(--ps-line);
+}
+
+body.public-home #services .services-intro p {
+  margin: 0;
+  color: var(--ps-muted) !important;
+  font-size: 0.84rem;
+  line-height: 1.7 !important;
+}
+
+body.public-home #services .services-cta-strip {
+  margin: 0 !important;
+  padding: 22px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--ps-line);
+}
+
+body.public-home #services .services-cta-strip .button,
+body.public-home #services .services-cta {
+  width: auto;
+  min-width: 154px;
+  min-height: 50px !important;
+  padding: 0 18px;
+  border: 1px solid var(--ps-line-strong);
+  border-radius: 6px !important;
+  background: transparent;
+  color: var(--ps-gold-light);
+  font-size: 0.7rem !important;
+  font-weight: 720 !important;
+  line-height: 1.2;
+  letter-spacing: 0 !important;
+  text-transform: none;
+  box-shadow: none;
+}
+
+body.public-home #services .services-cta-strip .button:first-child,
+body.public-home #services .service-premium-card:first-child .services-cta {
+  border-color: rgba(244, 215, 134, 0.48);
+  background: linear-gradient(180deg, var(--ps-gold-light), var(--ps-gold));
+  color: #171207;
+}
+
+body.public-home #services .services-cards {
+  padding: 58px 0 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  counter-reset: ps-service;
+}
+
+body.public-home #services .service-premium-card {
+  min-height: 164px;
+  padding: 28px 0;
+  display: grid;
+  grid-template-columns: 42px 34px minmax(190px, 0.72fr) minmax(260px, 1fr) auto;
+  gap: 22px;
+  align-items: center;
+  border: 0;
+  border-top: 1px solid var(--ps-line);
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+  counter-increment: ps-service;
+  transition: padding 180ms ease, background-color 180ms ease;
+}
+
+body.public-home #services .service-premium-card:last-child {
+  border-bottom: 1px solid var(--ps-line);
+}
+
+body.public-home #services .service-premium-card::before {
+  content: counter(ps-service, decimal-leading-zero);
+  align-self: start;
+  padding-top: 6px;
+  color: var(--ps-gold);
+  font-size: 0.62rem;
+  font-weight: 760;
+}
+
+body.public-home #services .service-premium-card:hover,
+body.public-home #services .service-premium-card:focus-within {
+  padding-inline: 12px;
+  background: linear-gradient(90deg, var(--ps-gold-wash), transparent 76%);
+}
+
+body.public-home #services .service-premium-card i {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ps-gold);
+}
+
+body.public-home #services .service-premium-card h3 {
+  margin: 0;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 2.1rem;
+  font-weight: 330;
+  line-height: 1.05 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #services .service-premium-card p {
+  max-width: 48ch;
+  margin: 0;
+  color: var(--ps-muted) !important;
+  font-size: 0.8rem;
+  line-height: 1.65 !important;
+}
+
+body.public-home #services .services-cta {
+  justify-self: end;
+}
+
+/* About */
+body.public-home #why.about-page {
+  display: none !important;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+body.public-home #why.about-page.active {
+  display: grid !important;
+}
+
+body.public-home #why .about-surface,
+body.public-home #why .about-card,
+body.public-home #why .about-section,
+body.public-home #why .about-company-surface {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+body.public-home #why > *,
+body.public-home #why .about-values,
+body.public-home #why .about-company-grid,
+body.public-home #why .about-trust-grid,
+body.public-home #why .about-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.public-home #why .about-hero {
+  min-height: 620px;
+  padding: 72px 64px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  background:
+    linear-gradient(90deg, rgba(4, 5, 6, 0.96) 0%, rgba(4, 5, 6, 0.72) 42%, rgba(4, 5, 6, 0.08) 76%),
+    linear-gradient(0deg, rgba(4, 5, 6, 0.9), transparent 54%),
+    url("admin/images/mercedes-e-klasse-ger-tx-100-premium.jpg.png") center 58% / cover no-repeat;
+}
+
+body.public-home #why .about-hero h1 {
+  max-width: 700px;
+  margin: 0;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 4.8rem;
+  font-weight: 290;
+  line-height: 0.96 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #why .about-hero p {
+  max-width: 570px;
+  margin: 24px 0 0;
+  color: rgba(243, 241, 235, 0.78) !important;
+  font-size: 1rem;
+  line-height: 1.7 !important;
+}
+
+body.public-home #why .about-section {
+  padding: 94px 0 !important;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  background: transparent;
+}
+
+body.public-home #why .about-section-head {
+  max-width: 760px;
+  margin: 0 0 48px;
+}
+
+body.public-home #why .about-section-head h3,
+body.public-home #why .about-cta h3 {
+  margin: 0;
+  color: var(--ps-text);
+  font-family: var(--ps-display) !important;
+  font-size: 3.8rem;
+  font-weight: 300;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+body.public-home #why .about-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 34px;
+}
+
+body.public-home #why .about-value-card,
+body.public-home #why .about-trust-card {
+  padding: 26px 0 0 !important;
+  display: grid;
+  gap: 12px;
+  border: 0;
+  border-top: 1px solid var(--ps-line);
+  background: transparent;
+}
+
+body.public-home #why .about-value-card i {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ps-gold);
+}
+
+body.public-home #why .about-value-card b,
+body.public-home #why .about-trust-card b {
+  color: var(--ps-text);
+  font-family: var(--ps-display);
+  font-size: 1.45rem;
+  font-weight: 380;
+  line-height: 1.2;
+}
+
+body.public-home #why .about-card p,
+body.public-home #why .about-company-copy p {
+  margin: 0;
+  color: var(--ps-muted) !important;
+  font-size: 0.8rem;
+  line-height: 1.7 !important;
+}
+
+body.public-home #why .about-company-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 64px;
+}
+
+body.public-home #why .about-company-copy {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+body.public-home #why .about-company-copy p {
+  color: var(--ps-text) !important;
+  font-family: var(--ps-display);
+  font-size: 1.65rem;
+  font-weight: 320;
+  line-height: 1.45 !important;
+}
+
+body.public-home #why .about-features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+  counter-reset: ps-feature;
+}
+
+body.public-home #why .about-features li {
+  min-height: 62px;
+  padding: 18px 0;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ps-text) !important;
+  font-size: 0.78rem;
+  font-weight: 620;
+  counter-increment: ps-feature;
+}
+
+body.public-home #why .about-features li::before {
+  content: counter(ps-feature, decimal-leading-zero);
+  color: var(--ps-gold);
+  font-size: 0.58rem;
+}
+
+body.public-home #why .about-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+
+body.public-home #why .about-cta {
+  padding: 92px 0 !important;
+  display: grid;
+  gap: 16px;
+  border: 0;
+  border-bottom: 1px solid var(--ps-line);
+  background: transparent;
+}
+
+body.public-home #why .about-cta-actions {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body.public-home #why .about-primary-cta,
+body.public-home #why .about-secondary-cta {
+  width: auto;
+  min-width: 158px;
+  min-height: 50px !important;
+  height: auto;
+  padding: 0 18px;
+  border: 1px solid var(--ps-line-strong);
+  border-radius: 6px !important;
+  background: transparent;
+  color: var(--ps-gold-light);
+  font-size: 0.72rem !important;
+  font-weight: 720 !important;
+  letter-spacing: 0;
+  box-shadow: none;
+}
+
+body.public-home #why .about-primary-cta {
+  border-color: rgba(244, 215, 134, 0.48);
+  background: linear-gradient(180deg, var(--ps-gold-light), var(--ps-gold));
+  color: #171207;
+}
+
+@media (max-width: 980px) {
+  body.public-home #services .service-premium-card {
+    grid-template-columns: 38px 28px minmax(190px, 0.75fr) minmax(240px, 1fr);
+  }
+
+  body.public-home #services .services-cta {
+    grid-column: 3 / -1;
+    justify-self: start;
+  }
+
+  body.public-home #why .about-values,
+  body.public-home #why .about-trust-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  body.public-home #services.services-page,
+  body.public-home #why.about-page {
+    width: calc(100% - 16px);
+    padding: 18px 0 80px;
+  }
+
+  body.public-home #services .services-hero {
+    padding: 54px 0 44px;
+  }
+
+  body.public-home #services .services-hero h1,
+  body.public-home #why .about-hero h1 {
+    font-size: 3.15rem;
+  }
+
+  body.public-home #services .services-cta-strip,
+  body.public-home #why .about-cta-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  body.public-home #services .services-cta-strip .button,
+  body.public-home #services .services-cta,
+  body.public-home #why .about-primary-cta,
+  body.public-home #why .about-secondary-cta {
+    width: 100%;
+  }
+
+  body.public-home #services .services-cards {
+    padding-top: 38px;
+  }
+
+  body.public-home #services .service-premium-card {
+    min-height: 0;
+    padding: 28px 0;
+    grid-template-columns: 28px 24px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  body.public-home #services .service-premium-card:hover,
+  body.public-home #services .service-premium-card:focus-within {
+    padding-inline: 0;
+  }
+
+  body.public-home #services .service-premium-card h3,
+  body.public-home #services .service-premium-card p,
+  body.public-home #services .services-cta {
+    grid-column: 3;
+  }
+
+  body.public-home #services .service-premium-card h3 {
+    font-size: 1.75rem;
+  }
+
+  body.public-home #why .about-hero {
+    min-height: 590px;
+    padding: 42px 24px !important;
+    background-position: 62% 58%;
+  }
+
+  body.public-home #why .about-section,
+  body.public-home #why .about-cta {
+    padding: 68px 0 !important;
+  }
+
+  body.public-home #why .about-section-head h3,
+  body.public-home #why .about-cta h3 {
+    font-size: 2.75rem;
+  }
+
+  body.public-home #why .about-values,
+  body.public-home #why .about-trust-grid,
+  body.public-home #why .about-company-grid,
+  body.public-home #why .about-features {
+    grid-template-columns: 1fr;
+  }
+
+  body.public-home #why .about-company-grid {
+    gap: 38px;
+  }
+}

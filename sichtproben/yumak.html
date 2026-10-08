@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Yumak-Sichtprobe</title>
+<!--
+  ═══════════════════════════════════════════════════════════════════════════
+  Yumak-Sichtprobe — NUR OERTLICH
+  ═══════════════════════════════════════════════════════════════════════════
+
+  Diese Seite liegt in sichtproben/ und damit ausserhalb von src/pages/ und
+  public/. Sie wird nicht gebaut und nicht ausgeliefert. tools/ausgabe-pruefen.mjs
+  prueft das nach.
+
+  Sie dient einer Entscheidung: Taugen die acht Clips so, wie sie sind, fuer
+  eine Figur auf der Rewards-Seite? Dafuer zeigt sie dieselben Medien auf
+  demselben Hintergrund, den der Rewards-Abschnitt tatsaechlich hat.
+
+  REGELN, DIE HIER EINGEHALTEN WERDEN
+    - Es haengt immer nur EIN Video im Dokument. Beim Wechsel kurzzeitig zwei,
+      damit die Blende ohne Flackern laeuft; danach wird das alte entfernt.
+    - Nichts wird vorgeladen, was nicht gebraucht wird (preload="none").
+    - Kein harter Dauerlauf: Gemessen springt JEDER Clip am Uebergang vom Ende
+      zum Anfang. idle laeuft deshalb mit einer kurzen Blende neu an.
+    - Bei reduzierter Bewegung, abgelehntem Autoplay und Ladefehler steht das
+      Standbild. Ein laufendes idle waere dafuer kein Rueckfall.
+-->
+<style>
+  :root {
+    --grund: #18181b;
+    --schrift: #f0ebe0;
+    --gold: #c8a96e;
+    --gedaempft: #8d8a82;
+    --rahmen: #2e2e32;
+    --karte: #1f1f23;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--grund);
+    color: var(--schrift);
+    font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .bahn { max-width: 1100px; margin-inline: auto; padding: 2.5rem 1.25rem 5rem; }
+  h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); letter-spacing: -0.02em; margin: 0 0 .4rem; }
+  h2 { font-size: 1.2rem; margin: 3.5rem 0 .5rem; letter-spacing: -0.01em; }
+  h2:first-of-type { margin-top: 2.5rem; }
+  .label { font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+  p { color: var(--gedaempft); max-width: 62ch; }
+  p.hell { color: var(--schrift); }
+  code { background: rgba(255,255,255,.07); padding: .1em .35em; font-size: .9em; }
+
+  /* Der echte Hintergrund des Rewards-Abschnitts, aus RewardsAbschnitt.astro. */
+  .rewards-grund {
+    background:
+      radial-gradient(120% 90% at 82% 8%, rgba(200,169,110,0.16) 0%, rgba(200,169,110,0.05) 38%, rgba(31,31,35,0) 70%),
+      linear-gradient(160deg, #221f1a 0%, #1b1b1f 52%, #18181b 100%);
+    border: 1px solid rgba(200,169,110,.25);
+    padding: 1.5rem;
+  }
+
+  .reihe { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: flex-start; }
+  .knopfreihe { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+  button {
+    font: inherit; font-size: 14px; cursor: pointer;
+    background: transparent; color: var(--gedaempft);
+    border: 1px solid var(--rahmen); padding: .55rem 1rem;
+    transition: border-color .15s, color .15s, background-color .15s;
+  }
+  button:hover { color: var(--schrift); border-color: rgba(240,235,224,.4); }
+  button[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #18181b; font-weight: 600; }
+  button.haupt { background: var(--gold); border-color: var(--gold); color: #18181b; font-weight: 600; }
+
+  /* ── Die Buehne ──────────────────────────────────────────────────────── */
+  .buehne {
+    position: relative;
+    width: 360px; height: 320px;
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+  .buehne.klein { width: 225px; height: 200px; }
+  .buehne video, .buehne img {
+    position: absolute;
+    display: block;
+    /* Lage setzt das Skript je Zustand. */
+  }
+  /* Originaldarstellung: Clip einfach einpassen, nichts ausrichten. */
+  .buehne.roh video, .buehne.roh img {
+    inset: 0; width: 100%; height: 100%;
+    object-fit: contain;
+  }
+  .grundlinie {
+    position: absolute; left: 0; right: 0; top: 88%;
+    border-top: 1px dashed rgba(200,169,110,.55);
+    pointer-events: none;
+  }
+  .mittellinie {
+    position: absolute; top: 0; bottom: 0; left: 50%;
+    border-left: 1px dashed rgba(200,169,110,.35);
+    pointer-events: none;
+  }
+
+  /* ── Randbehandlung ─────────────────────────────────────────────────── */
+  .buehne.maske video, .buehne.maske img {
+    -webkit-mask-image: radial-gradient(85% 78% at 50% 62%, #000 58%, transparent 100%);
+    mask-image: radial-gradient(85% 78% at 50% 62%, #000 58%, transparent 100%);
+  }
+  .buehne.aufhellen video, .buehne.aufhellen img { mix-blend-mode: lighten; }
+
+  .karte { background: var(--karte); border: 1px solid var(--rahmen); padding: 1rem 1.15rem; }
+  .karte h3 { margin: 0 0 .35rem; font-size: 1rem; }
+  .karte p { margin: 0; font-size: 14px; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14px; margin-top: .75rem; }
+  th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid var(--rahmen); vertical-align: top; }
+  th { font-weight: 600; }
+  td.zahl { font-variant-numeric: tabular-nums; }
+
+  .warnung { border-left: 3px solid var(--gold); padding: .2rem 0 .2rem .9rem; }
+  .protokoll {
+    font-family: ui-monospace, Consolas, monospace; font-size: 12.5px;
+    background: #121215; border: 1px solid var(--rahmen); padding: .75rem .9rem;
+    max-height: 9rem; overflow-y: auto; white-space: pre-wrap; color: var(--gedaempft);
+  }
+  .bildpaar { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .bildpaar figure { margin: 0; }
+  .bildpaar img { display: block; width: 300px; max-width: 100%; border: 1px solid var(--rahmen); }
+  .bildpaar figcaption { font-size: 13px; color: var(--gedaempft); margin-top: .4rem; }
+
+  /* Auf schmalen Geraeten schrumpft die Buehne mit. Das Skript rechnet den
+     Massstab aus der tatsaechlichen Buehnenbreite, die Figur geht also mit -
+     sie wird kleiner, nicht angeschnitten. */
+  @media (max-width: 470px) {
+    .rewards-grund { padding: .9rem; }
+    .buehne { width: min(360px, calc(100vw - 3.6rem)); height: calc(min(360px, 100vw - 3.6rem) * 0.889); }
+    .buehne.klein { width: min(225px, calc(100vw - 3.6rem)); height: calc(min(225px, 100vw - 3.6rem) * 0.889); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="bahn">
+
+  <p class="label">Sichtprobe · örtlich</p>
+  <h1>Yumak auf dem echten Rewards-Hintergrund</h1>
+  <p class="hell">
+    Acht Zustände, aufbereitet aus den Originalen. Diese Seite wird nicht
+    gebaut und nicht veröffentlicht. Sie soll eine Frage beantworten:
+    <strong>Taugen die Clips so, wie sie sind?</strong>
+  </p>
+  <p>
+    Der Kasten unten trägt genau den Hintergrund, den der Rewards-Abschnitt
+    heute hat. Die gestrichelten Linien zeigen Grundlinie und Mitte der Bühne.
+  </p>
+
+  <!-- ══ 1. Original gegen abgestimmt ══════════════════════════════════ -->
+  <h2>1. Originaldarstellung – so kommen die Clips</h2>
+  <p>
+    Jeder Clip einfach in die Bühne eingepasst, sonst nichts. Drei
+    Seitenverhältnisse, drei verschiedene Grundlinien. Wechseln Sie zwischen
+    den Zuständen: <strong>Die Figur springt in Größe und Standhöhe.</strong>
+  </p>
+  <div class="knopfreihe" data-knoepfe="roh"></div>
+  <div class="reihe">
+    <div class="rewards-grund">
+      <div class="buehne roh" data-buehne="roh">
+        <span class="grundlinie"></span><span class="mittellinie"></span>
+      </div>
+    </div>
+    <div class="karte" style="flex:1 1 18rem">
+      <h3>Was hier zu sehen ist</h3>
+      <p id="roh-info">Zustand wählen.</p>
+    </div>
+  </div>
+
+  <h2>2. Abgestimmte Darstellung</h2>
+  <p>
+    Dieselben Clips, aber vermessen und ausgerichtet: ein einheitlicher
+    Maßstab Quellpunkt → Bühnenpunkt, dazu je Zustand ein Versatz, der
+    Standlinie und Figurmitte auf denselben Punkt legt.
+    <strong>Die Figur bleibt beim Wechsel an ihrem Platz.</strong>
+  </p>
+  <div class="knopfreihe" data-knoepfe="fein"></div>
+  <div class="knopfreihe">
+    <button type="button" data-linien aria-pressed="true">Hilfslinien</button>
+    <button type="button" data-groesse="gross" aria-pressed="true">Desktop 360×320</button>
+    <button type="button" data-groesse="klein" aria-pressed="false">Mobil 225×200</button>
+  </div>
+  <div class="reihe">
+    <div class="rewards-grund">
+      <div class="buehne" data-buehne="fein">
+        <span class="grundlinie"></span><span class="mittellinie"></span>
+      </div>
+    </div>
+    <div class="karte" style="flex:1 1 18rem">
+      <h3>Messwerte</h3>
+      <table><tbody id="fein-messwerte"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ══ 3. Randbehandlung ═════════════════════════════════════════════ -->
+  <h2>3. Randbehandlung – der sichtbare Videokasten</h2>
+  <p class="warnung">
+    Die Clips haben <strong>keinen Alphakanal</strong>. Der Hintergrund ist ein
+    Fotostudio mit Boden und Spiegelung: gemessen 8–17 Helligkeit oben,
+    23–75 unten. Der Seitengrund liegt bei 24. Die Kante ist also real.
+  </p>
+  <p>
+    Drei Behandlungen im direkten Vergleich. Achten Sie besonders auf die
+    <strong>dunklen Fellpartien am Rücken und die Kontur</strong> – wenn eine
+    Behandlung die verschluckt, ist sie unbrauchbar.
+  </p>
+  <div class="knopfreihe" data-knoepfe="rand"></div>
+  <div class="reihe">
+    <div>
+      <div class="rewards-grund"><div class="buehne" data-buehne="rand-ohne"><span class="grundlinie"></span></div></div>
+      <p style="font-size:13px;margin-top:.5rem">ohne Behandlung</p>
+    </div>
+    <div>
+      <div class="rewards-grund"><div class="buehne maske" data-buehne="rand-maske"><span class="grundlinie"></span></div></div>
+      <p style="font-size:13px;margin-top:.5rem">weiche Randmaske</p>
+    </div>
+    <div>
+      <div class="rewards-grund"><div class="buehne aufhellen" data-buehne="rand-hell"><span class="grundlinie"></span></div></div>
+      <p style="font-size:13px;margin-top:.5rem"><code>mix-blend-mode: lighten</code></p>
+    </div>
+  </div>
+  <div class="karte" style="margin-top:1rem">
+    <h3>Worauf es ankommt</h3>
+    <p>
+      <strong>Maske:</strong> löst die Kante weich auf, kostet aber am Rand
+      auch Figur – bei <code>walk-right</code> reicht die Katze bis an den
+      Bildrand, dort schneidet die Maske sichtbar an.<br>
+      <strong>Aufhellen:</strong> der Videogrund ist dunkler als der
+      Seitengrund, deshalb verschwindet die Kante fast vollständig. Dafür
+      werden <em>alle</em> dunklen Bildteile durchsichtig – also auch dunkles
+      Fell und die Kontur. Genau das bitte hier beurteilen.
+    </p>
+  </div>
+
+  <!-- ══ 4. Übergänge ══════════════════════════════════════════════════ -->
+  <h2>4. Übergänge</h2>
+  <p>
+    Kein harter Dauerlauf: Gemessen springt <em>jeder</em> Clip vom Ende zum
+    Anfang (mittlere Abweichung 11,8 bis 25,7 von 255). <code>idle</code> läuft
+    deshalb mit einer kurzen Blende neu an statt hart zu schleifen. Alle
+    anderen laufen einmal und kehren zu <code>idle</code> zurück.
+  </p>
+  <div class="knopfreihe">
+    <button type="button" class="haupt" data-folge="wave">wave → idle</button>
+    <button type="button" class="haupt" data-folge="curious">curious → idle</button>
+    <button type="button" class="haupt" data-folge="sleep">idle → sleep</button>
+    <button type="button" data-folge="stop">Zurück auf idle</button>
+  </div>
+  <div class="reihe">
+    <div class="rewards-grund"><div class="buehne" data-buehne="folge"><span class="grundlinie"></span></div></div>
+    <div style="flex:1 1 20rem">
+      <div class="protokoll" id="folge-protokoll">bereit</div>
+      <p style="font-size:13px;margin-top:.5rem">
+        Im Protokoll steht, wie viele Videoelemente gerade im Dokument hängen.
+        Während einer Blende sind es kurz zwei, sonst genau eines.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══ 5. Laufclip ═══════════════════════════════════════════════════ -->
+  <h2>5. Der Laufclip – getrennt beurteilt</h2>
+  <p>
+    <code>walk-right</code> läuft <strong>auf der Stelle</strong>: Anfang und
+    Ende zeigen die Figur bei Bildmitte 0,50 beziehungsweise 0,51. Das ist
+    kein Fehler – ein Laufzyklus auf der Stelle ist brauchbar, wenn die Bühne
+    die Bewegung übernimmt. Hier beides im Vergleich.
+  </p>
+  <div class="knopfreihe">
+    <button type="button" data-lauf="ohne" aria-pressed="true">ohne Verschiebung</button>
+    <button type="button" data-lauf="mit" aria-pressed="false">mit Verschiebung in der Bühne</button>
+  </div>
+  <div class="reihe">
+    <div class="rewards-grund" style="width:min(100%,560px)">
+      <div class="buehne" data-buehne="lauf" style="width:100%"><span class="grundlinie"></span></div>
+    </div>
+  </div>
+  <p class="warnung" style="margin-top:1rem">
+    Zusätzlich zu prüfen: <strong>Die Figur verändert sich innerhalb des
+    Clips.</strong> Am Anfang trägt sie eine Fliege am Hals, am Ende ein
+    Halsband; auch die Fellzeichnung wandert. Anfangs- und Endbild
+    nebeneinander:
+  </p>
+  <div class="bildpaar">
+    <figure><img src="walk-anfang.jpg" alt="Erstes Bild des Laufclips"><figcaption>erstes Bild – Fliege am Hals</figcaption></figure>
+    <figure><img src="walk-ende.jpg" alt="Letztes Bild des Laufclips"><figcaption>letztes Bild – Halsband, andere Zeichnung</figcaption></figure>
+  </div>
+
+  <!-- ══ 6. Rückfall ═══════════════════════════════════════════════════ -->
+  <h2>6. Rückfall – wenn kein Video läuft</h2>
+  <p>
+    Bei reduzierter Bewegung, abgelehntem Autoplay oder Ladefehler steht ein
+    <strong>Standbild</strong>. Ein laufendes <code>idle</code> wäre dafür kein
+    Rückfall – es ist selbst Bewegung.
+  </p>
+  <div class="knopfreihe">
+    <button type="button" data-rueckfall="normal" aria-pressed="true">normal</button>
+    <button type="button" data-rueckfall="ruhig" aria-pressed="false">reduzierte Bewegung</button>
+    <button type="button" data-rueckfall="autoplay" aria-pressed="false">Autoplay abgelehnt</button>
+    <button type="button" data-rueckfall="fehler" aria-pressed="false">Ladefehler</button>
+  </div>
+  <div class="reihe">
+    <div class="rewards-grund"><div class="buehne" data-buehne="rueckfall"><span class="grundlinie"></span></div></div>
+    <div class="karte" style="flex:1 1 18rem">
+      <h3>Zustand</h3>
+      <p id="rueckfall-info">Video läuft.</p>
+      <p style="margin-top:.6rem">
+        Ihr Gerät meldet gerade:
+        <strong id="rueckfall-system">–</strong>
+      </p>
+    </div>
+  </div>
+
+  <h2>7. Sprechblase</h2>
+  <p>
+    Text kommt <strong>nie</strong> aus dem Video, sondern als HTML darüber –
+    so bleibt er änderbar, übersetzbar und vorlesbar. Ein Beispiel, damit die
+    Lage über der Figur beurteilbar ist.
+  </p>
+  <div class="reihe">
+    <div class="rewards-grund" style="position:relative">
+      <div class="buehne" data-buehne="blase"><span class="grundlinie"></span></div>
+      <div style="position:absolute;left:50%;top:.75rem;transform:translateX(-50%);background:#1f1f23;border:1px solid rgba(200,169,110,.4);padding:.6rem .9rem;font-size:14px;max-width:16rem">
+        Beispieltext. Später HTML, nie im Video.
+      </div>
+    </div>
+  </div>
+  <p class="warnung" style="margin-top:1rem">
+    Eine Ausnahme bleibt: In <code>box</code> ist „TAXI GERMERSHEIM · Yumaks
+    Box" auf die Schachtel gedruckt. Das ist Markenbeschriftung im Bild und
+    später nicht änderbar – vorerst so angenommen.
+  </p>
+
+</div>
+
+<script type="module">
+// ═══════════════════════════════════════════════════════════════════════════
+// Sichtprobe: Steuerung
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Grundregel: Es haengt immer nur EIN Video je Buehne im Dokument. Beim
+// Wechsel kurz zwei, damit die Blende sauber laeuft - danach wird das alte
+// entfernt und seine Quelle geleert, damit der Browser den Strom fallen laesst.
+
+const lage = await fetch('yumak-lage.json').then((r) => r.json());
+const BUEHNE = lage.__buehne;
+const ZUSTAENDE = Object.keys(lage).filter((k) => !k.startsWith('__'));
+
+/** Springt dieser Clip am Schleifenpunkt? Gemessen, siehe Bericht. */
+const SPRUNG = {
+  idle: 12.2, wave: 14.6, curious: 13.2, happy: 21.2,
+  reach: 16.1, box: 22.0, sleep: 11.8, 'walk-right': 25.7,
+};
+
+let groesse = 'gross';
+let linienAn = true;
+
+function quelle(id) { return `/assets/yumak/${id}-${groesse}.mp4`; }
+function standbild(id) { return `/assets/yumak/${id}-standbild.jpg`; }
+
+/** Lage eines Clips in einer Buehne, skaliert auf deren tatsaechliche Groesse. */
+function lageFuer(id, buehne) {
+  const m = lage[id];
+  const bb = buehne.clientWidth || BUEHNE.breite;
+  const bh = buehne.clientHeight || BUEHNE.hoehe;
+  // Der gemessene Faktor gilt fuer 360x320. Kleinere Buehnen bekommen ihn
+  // anteilig, damit die Figur mitschrumpft statt beschnitten zu werden.
+  const f = BUEHNE.faktor * Math.min(bb / BUEHNE.breite, bh / BUEHNE.hoehe);
+  const br = m.quelle.breite * f;
+  const hr = m.quelle.hoehe * f;
+  return {
+    width: `${Math.round(br)}px`,
+    height: `${Math.round(hr)}px`,
+    left: `${Math.round(bb * BUEHNE.ankerX - m.mitte * br)}px`,
+    top: `${Math.round(bh * BUEHNE.ankerY - m.grund * hr)}px`,
+  };
+}
+
+function alteMedienEntfernen(buehne, ausser) {
+  for (const el of [...buehne.querySelectorAll('video, img.yumak')]) {
+    if (el === ausser) continue;
+    if (el.tagName === 'VIDEO') { el.pause(); el.removeAttribute('src'); el.load(); }
+    el.remove();
+  }
+}
+
+/**
+ * Zeigt einen Zustand in einer Buehne.
+ * `roh` = ohne Ausrichtung (Abschnitt 1).
+ */
+function zeige(buehne, id, { roh = false, blende = true, danach = null, schleife = false } = {}) {
+  const v = document.createElement('video');
+  v.muted = true;
+  v.playsInline = true;
+  v.setAttribute('playsinline', '');
+  v.preload = 'none';           // nichts laden, was nicht gebraucht wird
+  v.poster = standbild(id);
+  v.src = quelle(id);
+  v.loop = schleife;
+  v.style.opacity = blende ? '0' : '1';
+  v.style.transition = blende ? 'opacity 260ms ease-out' : 'none';
+  if (!roh) Object.assign(v.style, lageFuer(id, buehne));
+
+  buehne.appendChild(v);
+  const marke = buehne.querySelector('.grundlinie');
+  if (marke) buehne.appendChild(marke);           // Hilfslinien nach oben
+  const mitte = buehne.querySelector('.mittellinie');
+  if (mitte) buehne.appendChild(mitte);
+
+  const fertig = () => {
+    v.style.opacity = '1';
+    // Das alte Video erst wegnehmen, wenn das neue wirklich Bilder zeigt.
+    window.setTimeout(() => alteMedienEntfernen(buehne, v), blende ? 280 : 0);
+  };
+  v.addEventListener('playing', fertig, { once: true });
+  v.addEventListener('error', () => rueckfallBild(buehne, id, 'Ladefehler'), { once: true });
+  if (danach) v.addEventListener('ended', danach, { once: true });
+
+  v.play().catch(() => rueckfallBild(buehne, id, 'Autoplay abgelehnt'));
+  return v;
+}
+
+/** Standbild statt Video - der einzige echte Rueckfall. */
+function rueckfallBild(buehne, id, grund) {
+  const img = document.createElement('img');
+  img.className = 'yumak';
+  img.src = standbild(id);
+  img.alt = `Yumak, Zustand ${id}`;
+  Object.assign(img.style, lageFuer(id, buehne));
+  buehne.appendChild(img);
+  alteMedienEntfernen(buehne, img);
+  const marke = buehne.querySelector('.grundlinie');
+  if (marke) buehne.appendChild(marke);
+  const info = document.getElementById('rueckfall-info');
+  if (info && buehne.dataset.buehne === 'rueckfall') info.textContent = `Standbild, weil: ${grund}.`;
+  return img;
+}
+
+// ── Abschnitt 1: Originaldarstellung ──────────────────────────────────────
+const rohBuehne = document.querySelector('[data-buehne="roh"]');
+const rohInfo = document.getElementById('roh-info');
+function knoepfeBauen(wohin, beiKlick, start = 'idle') {
+  const leiste = document.querySelector(`[data-knoepfe="${wohin}"]`);
+  for (const id of ZUSTAENDE) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = id;
+    b.setAttribute('aria-pressed', String(id === start));
+    b.addEventListener('click', () => {
+      for (const x of leiste.children) x.setAttribute('aria-pressed', String(x === b));
+      beiKlick(id);
+    });
+    leiste.appendChild(b);
+  }
+}
+knoepfeBauen('roh', (id) => {
+  zeige(rohBuehne, id, { roh: true, schleife: false });
+  const m = lage[id];
+  rohInfo.textContent =
+    `${id}: Quelle ${m.quelle.breite}×${m.quelle.hoehe}, Standlinie bei ${(m.grund * 100).toFixed(0)} % der Bildhöhe, ` +
+    `Figur ${(m.figurhoehe * 100).toFixed(0)} % hoch. Eingepasst heißt: jede Quelle wird anders skaliert – daher der Sprung.`;
+});
+
+// ── Abschnitt 2: abgestimmt ───────────────────────────────────────────────
+const feinBuehne = document.querySelector('[data-buehne="fein"]');
+let feinZustand = 'idle';
+knoepfeBauen('fein', (id) => { feinZustand = id; zeige(feinBuehne, id); messwerte(id); });
+
+function messwerte(id) {
+  const m = lage[id];
+  document.getElementById('fein-messwerte').innerHTML = `
+    <tr><th>Quelle</th><td class="zahl">${m.quelle.breite}×${m.quelle.hoehe}</td></tr>
+    <tr><th>Standlinie</th><td class="zahl">${(m.grund * 100).toFixed(0)} %</td></tr>
+    <tr><th>Figurmitte</th><td class="zahl">${(m.mitte * 100).toFixed(0)} %</td></tr>
+    <tr><th>Figur-Diagonale</th><td class="zahl">${m.diagonale} Quellpunkte</td></tr>
+    <tr><th>Katze in der Bühne</th><td class="zahl">${m.darstellung.katzeRendert} Punkte</td></tr>
+    <tr><th>Sprung bei Schleife</th><td class="zahl">${SPRUNG[id]} von 255</td></tr>`;
+}
+
+document.querySelector('[data-linien]').addEventListener('click', (e) => {
+  linienAn = !linienAn;
+  e.currentTarget.setAttribute('aria-pressed', String(linienAn));
+  for (const l of document.querySelectorAll('.grundlinie, .mittellinie')) {
+    l.style.display = linienAn ? '' : 'none';
+  }
+});
+
+for (const b of document.querySelectorAll('[data-groesse]')) {
+  b.addEventListener('click', () => {
+    groesse = b.dataset.groesse;
+    for (const x of document.querySelectorAll('[data-groesse]')) {
+      x.setAttribute('aria-pressed', String(x === b));
+    }
+    feinBuehne.classList.toggle('klein', groesse === 'klein');
+    zeige(feinBuehne, feinZustand);
+  });
+}
+
+// ── Abschnitt 3: Randbehandlung ───────────────────────────────────────────
+const randBuehnen = ['rand-ohne', 'rand-maske', 'rand-hell'].map((n) =>
+  document.querySelector(`[data-buehne="${n}"]`),
+);
+knoepfeBauen('rand', (id) => { for (const b of randBuehnen) zeige(b, id); });
+
+// ── Abschnitt 4: Uebergaenge ──────────────────────────────────────────────
+const folgeBuehne = document.querySelector('[data-buehne="folge"]');
+const protokoll = document.getElementById('folge-protokoll');
+function notiz(text) {
+  const n = document.querySelectorAll('video').length;
+  protokoll.textContent = `${new Date().toLocaleTimeString('de-DE')}  ${text}   (Videoelemente im Dokument: ${n})\n` + protokoll.textContent;
+}
+
+/** idle laeuft NICHT hart in der Schleife - siehe Sprungmessung. */
+function idleLaufen() {
+  const v = zeige(folgeBuehne, 'idle', { schleife: false, danach: () => { notiz('idle zu Ende, blendet neu an'); idleLaufen(); } });
+  return v;
+}
+for (const b of document.querySelectorAll('[data-folge]')) {
+  b.addEventListener('click', () => {
+    const was = b.dataset.folge;
+    if (was === 'stop') { notiz('zurück auf idle'); idleLaufen(); return; }
+    if (was === 'sleep') {
+      notiz('idle läuft, danach sleep');
+      zeige(folgeBuehne, 'idle', { danach: () => { notiz('→ sleep'); zeige(folgeBuehne, 'sleep', { danach: () => { notiz('sleep zu Ende → idle'); idleLaufen(); } }); } });
+      return;
+    }
+    notiz(`${was} läuft einmal, danach idle`);
+    zeige(folgeBuehne, was, { danach: () => { notiz(`${was} zu Ende → idle`); idleLaufen(); } });
+  });
+}
+
+// ── Abschnitt 5: Laufclip ─────────────────────────────────────────────────
+const laufBuehne = document.querySelector('[data-buehne="lauf"]');
+let laufMit = false;
+function laufZeigen() {
+  const v = zeige(laufBuehne, 'walk-right', { schleife: true });
+  v.style.transition = 'opacity 260ms ease-out, transform 5s linear';
+  if (laufMit) {
+    // Der Clip laeuft auf der Stelle. Die Buehne uebernimmt die Strecke:
+    // von links nach rechts, so lang wie der Clip.
+    v.style.transform = 'translateX(-38%)';
+    requestAnimationFrame(() => { v.style.transform = 'translateX(38%)'; });
+    v.addEventListener('timeupdate', () => {
+      if (v.currentTime < 0.15) {
+        v.style.transition = 'none';
+        v.style.transform = 'translateX(-38%)';
+        requestAnimationFrame(() => {
+          v.style.transition = 'opacity 260ms ease-out, transform 5s linear';
+          v.style.transform = 'translateX(38%)';
+        });
+      }
+    });
+  } else {
+    v.style.transform = 'none';
+  }
+}
+for (const b of document.querySelectorAll('[data-lauf]')) {
+  b.addEventListener('click', () => {
+    laufMit = b.dataset.lauf === 'mit';
+    for (const x of document.querySelectorAll('[data-lauf]')) x.setAttribute('aria-pressed', String(x === b));
+    laufZeigen();
+  });
+}
+
+// ── Abschnitt 6: Rueckfall ────────────────────────────────────────────────
+const rfBuehne = document.querySelector('[data-buehne="rueckfall"]');
+const rfInfo = document.getElementById('rueckfall-info');
+document.getElementById('rueckfall-system').textContent =
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? 'Bewegung reduzieren ist eingeschaltet'
+    : 'Bewegung reduzieren ist ausgeschaltet';
+
+for (const b of document.querySelectorAll('[data-rueckfall]')) {
+  b.addEventListener('click', () => {
+    for (const x of document.querySelectorAll('[data-rueckfall]')) x.setAttribute('aria-pressed', String(x === b));
+    const fall = b.dataset.rueckfall;
+    if (fall === 'normal') { rfInfo.textContent = 'Video läuft.'; zeige(rfBuehne, 'idle'); return; }
+    if (fall === 'ruhig') { rueckfallBild(rfBuehne, 'idle', 'reduzierte Bewegung'); return; }
+    if (fall === 'autoplay') { rueckfallBild(rfBuehne, 'idle', 'Autoplay abgelehnt'); return; }
+    // Ladefehler: absichtlich eine Quelle, die es nicht gibt.
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'auto';
+    v.src = '/assets/yumak/gibt-es-nicht.mp4';
+    Object.assign(v.style, lageFuer('idle', rfBuehne));
+    rfBuehne.appendChild(v);
+    alteMedienEntfernen(rfBuehne, v);
+    v.addEventListener('error', () => rueckfallBild(rfBuehne, 'idle', 'Ladefehler'), { once: true });
+    v.load();
+  });
+}
+
+// ── Abschnitt 7 ───────────────────────────────────────────────────────────
+zeige(document.querySelector('[data-buehne="blase"]'), 'idle');
+
+// ── Startzustand: jede Buehne erst, wenn sie im Bild ist ─────────────────
+//
+// Ohne das laufen sieben Videos gleichzeitig. Auf dem Telefon ist das
+// unzumutbar, und es widerspraeche der Vorgabe, nicht alles gleichzeitig zu
+// laden. Verlaesst eine Buehne das Bild, wird ihr Video angehalten.
+messwerte('idle');
+
+const anlaufen = new Map([
+  [rohBuehne, () => zeige(rohBuehne, 'idle', { roh: true })],
+  [feinBuehne, () => zeige(feinBuehne, 'idle')],
+  [randBuehnen[0], () => zeige(randBuehnen[0], 'idle')],
+  [randBuehnen[1], () => zeige(randBuehnen[1], 'idle')],
+  [randBuehnen[2], () => zeige(randBuehnen[2], 'idle')],
+  [folgeBuehne, () => idleLaufen()],
+  [laufBuehne, () => laufZeigen()],
+  [rfBuehne, () => zeige(rfBuehne, 'idle')],
+  [document.querySelector('[data-buehne="blase"]'), () => zeige(document.querySelector('[data-buehne="blase"]'), 'idle')],
+]);
+
+const beobachter = new IntersectionObserver((eintraege) => {
+  for (const e of eintraege) {
+    const buehne = e.target;
+    if (e.isIntersecting) {
+      if (!buehne.dataset.gestartet) {
+        buehne.dataset.gestartet = '1';
+        anlaufen.get(buehne)?.();
+      } else {
+        for (const v of buehne.querySelectorAll('video')) v.play().catch(() => {});
+      }
+    } else {
+      for (const v of buehne.querySelectorAll('video')) v.pause();
+    }
+  }
+}, { rootMargin: '120px' });
+
+for (const b of anlaufen.keys()) if (b) beobachter.observe(b);
+</script>
+</body>
+</html>

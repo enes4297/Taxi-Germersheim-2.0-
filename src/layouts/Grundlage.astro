@@ -1,0 +1,89 @@
+---
+/**
+ * Seitenrahmen der oeffentlichen Webseite.
+ *
+ * Traegt die freigegebene Design-Grundlage, den Seitenkopf fuer Suchmaschinen
+ * und das Teilen, die Seitensymbole - und sonst nichts. Navigation und
+ * Fusszeile kommen mit der jeweiligen Seite.
+ *
+ * SCHRITT 017: canonical, Open Graph, Symbole und strukturierte Daten.
+ * Vorher hatte die neue Startseite davon nichts, waehrend sieben
+ * Bestandsseiten schon ein canonical trugen.
+ */
+import '../styles/design.css';
+
+interface Props {
+  titel: string;
+  beschreibung?: string;
+  /** Dateiname im Ausgabeordner, z. B. 'rewards.html'. Leer = Startseite. */
+  pfad?: string;
+  /** Auf Probeseiten gesetzt: haelt sie aus den Suchmaschinen. */
+  nichtIndexieren?: boolean;
+}
+
+const { titel, beschreibung, pfad = '', nichtIndexieren = false } = Astro.props;
+
+// Vollstaendige Adresse dieser Seite. Astro.site kommt aus astro.config.mjs.
+// Die Startseite bekommt bewusst die blanke Wurzel und NICHT '/index.html' -
+// sonst stuenden zwei Adressen fuer dieselbe Seite im Index.
+const wurzel = Astro.site ?? new URL('https://taxigermersheim.de');
+const adresse = new URL(pfad, wurzel).href;
+const teilbild = new URL('/teilen-vorschau.jpg', wurzel).href;
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titel}</title>
+    {beschreibung && <meta name="description" content={beschreibung} />}
+
+    {/* Eine Adresse je Seite - sonst konkurrieren index.html und / miteinander. */}
+    <link rel="canonical" href={adresse} />
+    {nichtIndexieren
+      ? <meta name="robots" content="noindex,nofollow" />
+      : <meta name="robots" content="index,follow" />}
+
+    {/*
+      Vorschaukarte beim Teilen. WhatsApp ist der Kanal, ueber den die
+      Fahrtanfragen laufen - ohne diese Angaben entsteht dort beim Teilen
+      eines Links gar keine Karte. Das Bild ist ein Ausschnitt einer echten
+      Aufnahme unseres eigenen Fahrzeugs, keine Montage.
+    */}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Taxi Germersheim GmbH" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:title" content={titel} />
+    {beschreibung && <meta property="og:description" content={beschreibung} />}
+    <meta property="og:url" content={adresse} />
+    <meta property="og:image" content={teilbild} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Taxi der Taxi Germersheim GmbH, Mercedes-Benz E-Klasse T-Modell mit Kennzeichen GER TX 100" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {/*
+      Seitensymbole aus dem vorhandenen Markenzeichen, erzeugt von
+      tools/marke-symbole.mjs. Quelle ist tg-icon-original.png.
+    */}
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192" />
+    <link rel="icon" href="/favicon-512.png" type="image/png" sizes="512x512" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    {/*
+      Die beiden Schriftschnitte, die auf jeder Seite ueber der Falz stehen,
+      werden vorgeladen. Die uebrigen 16 holt der Browser nach Bedarf.
+      Oertlich ausgeliefert - kein Aufruf an ein fremdes CDN.
+    */}
+    <link rel="preload" href="/schriften/outfit-400-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/schriften/outfit-600-latin.woff2" as="font" type="font/woff2" crossorigin />
+
+    <meta name="theme-color" content="#18181b" />
+    <slot name="kopf" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

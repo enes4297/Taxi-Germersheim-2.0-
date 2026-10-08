@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Yumak im Rewards-Ausschnitt</title>
+<!--
+  ═══════════════════════════════════════════════════════════════════════════
+  Yumak im Rewards-Ausschnitt — NUR OERTLICH
+  ═══════════════════════════════════════════════════════════════════════════
+
+  Der Ausschnitt unten ist so gebaut, wie der Rewards-Abschnitt aussehen
+  soll: gleicher Hintergrund, gleiche Schriftgroessen, gleiche Schaltflaechen
+  wie in src/components/RewardsAbschnitt.astro. KEINE Hilfslinien, KEINE
+  Pruefkarten, KEINE Messwerte darin - die stehen auf yumak.html.
+
+  Die Bedienung sitzt ausserhalb des Ausschnitts und gehoert nicht dazu.
+
+  WAS HIER NICHT PASSIERT
+    Keine Anbindung an Rewards oder Supabase. Kein Punktestand, kein Gewinn,
+    keine Zahl aus einer Datenbank. Die Sprechblase sagt nichts ueber Punkte -
+    sie ist HTML und spaeter frei aenderbar.
+
+  ZUSTAENDE: wave, idle, curious. Der Laufclip bleibt vorerst draussen, weil
+  sich darin Fliege und Fellzeichnung sichtbar aendern. Geloescht ist er nicht.
+-->
+<style>
+  :root {
+    --grund: #18181b; --schrift: #f0ebe0; --gold: #c8a96e;
+    --gedaempft: #8d8a82; --rahmen: #2e2e32; --karte: #1f1f23;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--grund); color: var(--schrift);
+         font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .bahn { max-width: 1100px; margin-inline: auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ── Bedienung, ausserhalb des Ausschnitts ───────────────────────────── */
+  .steuerung { border: 1px dashed var(--rahmen); padding: 1rem 1.15rem; margin-bottom: 2.5rem; }
+  .steuerung p { margin: 0 0 .75rem; font-size: 13px; color: var(--gedaempft); }
+  .steuerung .zeile { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .steuerung .zeile + .zeile { margin-top: .6rem; }
+  .steuerung span.was { font-size: 12px; color: var(--gedaempft); min-width: 7.5rem; }
+  .steuerung button {
+    font: inherit; font-size: 13px; cursor: pointer; background: transparent;
+    color: var(--gedaempft); border: 1px solid var(--rahmen); padding: .4rem .85rem;
+  }
+  .steuerung button[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #18181b; font-weight: 600; }
+
+  /* ══ Der Ausschnitt ═══════════════════════════════════════════════════ */
+  .rewards {
+    position: relative; overflow: hidden;
+    border: 1px solid rgba(200,169,110,.25);
+    background:
+      radial-gradient(120% 90% at 82% 8%, rgba(200,169,110,0.16) 0%, rgba(200,169,110,0.05) 38%, rgba(31,31,35,0) 70%),
+      linear-gradient(160deg, #221f1a 0%, #1b1b1f 52%, #18181b 100%);
+  }
+  .rewards-innen {
+    padding: 1.75rem; display: grid; gap: 2rem;
+    grid-template-columns: minmax(0,1fr);
+  }
+  @media (min-width: 820px) {
+    .rewards-innen { padding: 3.5rem; grid-template-columns: minmax(0,1fr) minmax(0,22rem); gap: 3.5rem; align-items: center; }
+  }
+  .label { font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin: 0; }
+  .rewards h2 {
+    margin: 1.25rem 0 0; font-weight: 600; letter-spacing: -.03em; line-height: 1.04;
+    font-size: clamp(2rem, 4.4vw, 3.5rem);
+  }
+  .rewards .fliess { margin: 1.25rem 0 0; font-size: 17px; line-height: 1.7; color: var(--gedaempft); max-width: 34rem; }
+  .aktionen { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
+  .knopf {
+    display: inline-flex; align-items: center; gap: .6rem; font: inherit; font-size: 15px;
+    font-weight: 600; padding: 1rem 1.75rem; cursor: pointer;
+    background: var(--gold); border: 1px solid var(--gold); color: #18181b;
+    transition: background-color .12s, transform .12s;
+  }
+  .knopf:hover { background: #d4b87d; }
+  .knopf:active { transform: scale(.98); }
+  .knopf.zweit { background: transparent; border-color: var(--rahmen); color: var(--schrift); font-weight: 500; }
+  .knopf.zweit:hover { background: transparent; border-color: rgba(200,169,110,.5); }
+  .knopf.hervor { box-shadow: 0 0 0 3px rgba(200,169,110,.28); }
+
+  /* ── Yumaks Bühne ───────────────────────────────────────────────────── */
+  .szene { position: relative; display: flex; flex-direction: column; align-items: center; }
+  .buehne { position: relative; width: 320px; height: 285px; }
+  @media (max-width: 470px) {
+    .buehne { width: min(320px, calc(100vw - 5rem)); height: calc(min(320px, 100vw - 5rem) * 0.889); }
+  }
+  .buehne video, .buehne img.yumak {
+    position: absolute; display: block;
+    /* lighten loest den dunklen Videokasten auf dem dunklen Grund auf. */
+    mix-blend-mode: lighten;
+  }
+
+  /* Sprechblase: HTML, nie im Video. */
+  .blase {
+    position: relative; max-width: 17rem; margin-bottom: .35rem;
+    background: var(--karte); border: 1px solid rgba(200,169,110,.4);
+    padding: .7rem 1rem; font-size: 14.5px; line-height: 1.5;
+    opacity: 0; transform: translateY(6px);
+    transition: opacity .28s ease-out, transform .28s ease-out;
+  }
+  .blase[data-sichtbar="ja"] { opacity: 1; transform: translateY(0); }
+  .blase::after {
+    content: ""; position: absolute; left: 50%; bottom: -6px; width: 10px; height: 10px;
+    transform: translateX(-50%) rotate(45deg);
+    background: var(--karte);
+    border-right: 1px solid rgba(200,169,110,.4);
+    border-bottom: 1px solid rgba(200,169,110,.4);
+  }
+
+  .fuss { margin-top: 3rem; font-size: 13px; color: var(--gedaempft); }
+  .fuss code { background: rgba(255,255,255,.07); padding: .1em .35em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blase { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="bahn">
+
+  <!-- ══ Bedienung — gehört NICHT zum Ausschnitt ═══════════════════════ -->
+  <div class="steuerung">
+    <p>Bedienung der Sichtprobe. Sie steht außerhalb des Entwurfs und wäre später nicht da.</p>
+    <div class="zeile">
+      <span class="was">Zustand</span>
+      <button type="button" data-zustand="wave" aria-pressed="false">wave</button>
+      <button type="button" data-zustand="idle" aria-pressed="true">idle</button>
+      <button type="button" data-zustand="curious" aria-pressed="false">curious</button>
+    </div>
+    <div class="zeile">
+      <span class="was">Fellfarbe</span>
+      <button type="button" data-fell="warm" aria-pressed="false">vorher (warm)</button>
+      <button type="button" data-fell="grau" aria-pressed="true">nachher (grau)</button>
+    </div>
+    <div class="zeile">
+      <span class="was">Bodenübergang</span>
+      <button type="button" data-boden="ohne" aria-pressed="false">ohne Maske</button>
+      <button type="button" data-boden="mit" aria-pressed="true">mit Maske</button>
+    </div>
+  </div>
+
+  <!-- ══ Der Ausschnitt ════════════════════════════════════════════════ -->
+  <section class="rewards">
+    <div class="rewards-innen">
+      <div>
+        <p class="label">Rewards</p>
+        <h2>Was steckt in Yumaks Box?</h2>
+        <p class="fliess">
+          Yumak führt durch unsere Spielewelt. Dort gibt es ein Glücksrad, eine
+          Box und ein Fahrspiel – und für Fahrgäste, die regelmäßig mit uns
+          fahren, das Rewards-Programm.
+        </p>
+        <div class="aktionen">
+          <button type="button" class="knopf" data-aktion="spiele">
+            Spiele entdecken
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+          <button type="button" class="knopf zweit">
+            So funktionieren Rewards
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="szene">
+        <div class="blase" data-blase role="status"></div>
+        <div class="buehne" data-buehne></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="fuss">
+    Örtliche Sichtprobe. Keine Anbindung an Rewards oder Supabase, keine
+    Punktestände, keine Gewinne. Die Sprechblase ist HTML und sagt nichts über
+    Punkte. Der Laufclip bleibt vorerst draußen – in ihm ändern sich Fliege und
+    Fellzeichnung sichtbar. Die technische Sichtprobe mit allen acht Zuständen
+    und den Messwerten steht auf <code>yumak.html</code>.
+  </p>
+
+</div>
+
+<script type="module">
+const lage = await fetch('yumak-lage.json').then((r) => r.json());
+const BUEHNE = lage.__buehne;
+
+const buehne = document.querySelector('[data-buehne]');
+const blase = document.querySelector('[data-blase]');
+const spieleKnopf = document.querySelector('[data-aktion="spiele"]');
+
+let zustand = 'idle';
+let fell = 'grau';      // 'warm' = Originalfarbe, 'grau' = entbraeunt
+let boden = 'mit';      // Bodenmaske an oder aus
+
+/** Nur diese drei Zustaende in diesem Entwurf. */
+const TEXTE = {
+  wave: 'Schön, dass Sie da sind.',
+  idle: '',
+  curious: 'Hier gibt es etwas zu entdecken.',
+};
+
+/** Fuer welche Zustaende liegt schon eine entbraeunte Fassung vor? */
+const GRAU_FERTIG = new Set(Object.keys(lage).filter(() => false));
+// wird unten aus der Datei-Verfuegbarkeit gefuellt
+
+function datei(id, art) {
+  const teil = art === 'grau' && GRAU_FERTIG.has(id) ? `${id}-grau` : id;
+  return { video: `/assets/yumak/${teil}-gross.mp4`, bild: `/assets/yumak/${teil}-standbild.jpg` };
+}
+
+/** Lage in der Buehne: Standlinie und Figurmitte auf den Anker legen. */
+function lageFuer(id) {
+  const m = lage[id];
+  const bb = buehne.clientWidth, bh = buehne.clientHeight;
+  const f = BUEHNE.faktor * Math.min(bb / BUEHNE.breite, bh / BUEHNE.hoehe);
+  const br = m.quelle.breite * f, hr = m.quelle.hoehe * f;
+  return {
+    width: `${Math.round(br)}px`,
+    height: `${Math.round(hr)}px`,
+    left: `${Math.round(bb * BUEHNE.ankerX - m.mitte * br)}px`,
+    top: `${Math.round(bh * BUEHNE.ankerY - m.grund * hr)}px`,
+  };
+}
+
+/**
+ * Bodenmaske.
+ *
+ * Unter den Pfoten bleibt sonst ein Rest Studioboden mit Spiegelung stehen -
+ * als Rechteck sichtbar, weil er heller ist als der Seitengrund und deshalb
+ * von "lighten" nicht geschluckt wird.
+ *
+ * Die Maske greift AUSSCHLIESSLICH unterhalb der gemessenen Standlinie und
+ * laesst darueber alles unangetastet: Pfoten, Schwanz und Fellkonturen
+ * bleiben vollstaendig.
+ *
+ * WICHTIG ZUM ENDE DES VERLAUFS: Es muss INNERHALB des Videoelements liegen.
+ * Erster Versuch setzte es auf Standlinie plus 10,5 Prozent - bei idle also
+ * auf 102,5 Prozent der Videohoehe und damit ausserhalb. Der Verlauf wurde
+ * dadurch nie ganz durchsichtig; gemessen blieb unter den Pfoten ein
+ * Bodenrest von 8 statt 12 Helligkeitsstufen ueber dem Seitengrund stehen.
+ * Deshalb wird das Ende jetzt auf hoechstens 100 Prozent geklemmt.
+ */
+function bodenmaske(id) {
+  if (boden === 'ohne') return 'none';
+  const g = lage[id].grund * 100;
+  const ende = Math.min(100, g + 12);
+  return `linear-gradient(to bottom, #000 0%, #000 ${(g + 1).toFixed(1)}%, transparent ${ende.toFixed(1)}%)`;
+}
+
+function altesWeg(ausser) {
+  for (const el of [...buehne.querySelectorAll('video, img.yumak')]) {
+    if (el === ausser) continue;
+    if (el.tagName === 'VIDEO') { el.pause(); el.removeAttribute('src'); el.load(); }
+    el.remove();
+  }
+}
+
+function blaseSetzen(text) {
+  if (!text) { blase.dataset.sichtbar = 'nein'; blase.textContent = ''; return; }
+  blase.textContent = text;
+  blase.dataset.sichtbar = 'ja';
+}
+
+function standbild(id, grund) {
+  const img = document.createElement('img');
+  img.className = 'yumak';
+  img.src = datei(id, fell).bild;
+  img.alt = 'Yumak, das Maskottchen von Taxi Germersheim';
+  Object.assign(img.style, lageFuer(id));
+  img.style.maskImage = bodenmaske(id);
+  img.style.webkitMaskImage = bodenmaske(id);
+  buehne.appendChild(img);
+  altesWeg(img);
+  return img;
+}
+
+function zeige(id, { danach = null } = {}) {
+  const ruhig = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (ruhig) { standbild(id, 'reduzierte Bewegung'); blaseSetzen(TEXTE[id]); return; }
+
+  const v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.setAttribute('playsinline', '');
+  v.preload = 'none';
+  v.poster = datei(id, fell).bild;
+  v.src = datei(id, fell).video;
+  v.style.opacity = '0';
+  v.style.transition = 'opacity 260ms ease-out';
+  Object.assign(v.style, lageFuer(id));
+  v.style.maskImage = bodenmaske(id);
+  v.style.webkitMaskImage = bodenmaske(id);
+  buehne.appendChild(v);
+
+  v.addEventListener('playing', () => {
+    v.style.opacity = '1';
+    window.setTimeout(() => altesWeg(v), 280);
+  }, { once: true });
+  v.addEventListener('error', () => standbild(id, 'Ladefehler'), { once: true });
+  if (danach) v.addEventListener('ended', danach, { once: true });
+
+  v.play().catch(() => standbild(id, 'Autoplay abgelehnt'));
+  blaseSetzen(TEXTE[id]);
+}
+
+/** idle laeuft nicht hart in der Schleife - der Clip springt am Ende. */
+function idleLaufen() { zustand = 'idle'; zeige('idle', { danach: idleLaufen }); }
+
+function einmal(id) {
+  zustand = id;
+  zeige(id, { danach: idleLaufen });
+  // curious zeigt auf die Hauptaktion - deshalb hebt sie sich kurz hervor.
+  if (id === 'curious') {
+    spieleKnopf.classList.add('hervor');
+    window.setTimeout(() => spieleKnopf.classList.remove('hervor'), 5200);
+  }
+}
+
+for (const b of document.querySelectorAll('[data-zustand]')) {
+  b.addEventListener('click', () => {
+    for (const x of document.querySelectorAll('[data-zustand]')) x.setAttribute('aria-pressed', String(x === b));
+    const id = b.dataset.zustand;
+    if (id === 'idle') idleLaufen(); else einmal(id);
+  });
+}
+for (const b of document.querySelectorAll('[data-fell]')) {
+  b.addEventListener('click', () => {
+    for (const x of document.querySelectorAll('[data-fell]')) x.setAttribute('aria-pressed', String(x === b));
+    fell = b.dataset.fell;
+    zeige(zustand, zustand === 'idle' ? { danach: idleLaufen } : { danach: idleLaufen });
+  });
+}
+for (const b of document.querySelectorAll('[data-boden]')) {
+  b.addEventListener('click', () => {
+    for (const x of document.querySelectorAll('[data-boden]')) x.setAttribute('aria-pressed', String(x === b));
+    boden = b.dataset.boden;
+    for (const el of buehne.querySelectorAll('video, img.yumak')) {
+      el.style.maskImage = bodenmaske(zustand);
+      el.style.webkitMaskImage = bodenmaske(zustand);
+    }
+  });
+}
+
+// Welche entbraeunten Fassungen gibt es wirklich? Nur die anbieten.
+for (const id of ['idle', 'wave', 'curious']) {
+  const r = await fetch(`/assets/yumak/${id}-grau-gross.mp4`, { method: 'HEAD' }).catch(() => null);
+  if (r && r.ok) GRAU_FERTIG.add(id);
+}
+const offen = ['wave', 'curious'].filter((id) => !GRAU_FERTIG.has(id));
+if (offen.length) {
+  const hinweis = document.createElement('p');
+  hinweis.style.cssText = 'margin:.75rem 0 0;font-size:12px;color:#8d8a82';
+  hinweis.textContent =
+    `Noch ohne Fellkorrektur, deshalb weiterhin warm: ${offen.join(', ')}. ` +
+    `Erst nach Ihrer Freigabe an idle wird die Korrektur auf die übrigen Clips übertragen.`;
+  document.querySelector('.steuerung').appendChild(hinweis);
+}
+
+// Beim Erscheinen einmal gruessen, danach idle - wie spaeter auf der Seite.
+const start = new IntersectionObserver((e) => {
+  if (!e[0].isIntersecting) return;
+  start.disconnect();
+  einmal('wave');
+  for (const x of document.querySelectorAll('[data-zustand]')) {
+    x.setAttribute('aria-pressed', String(x.dataset.zustand === 'wave'));
+  }
+}, { rootMargin: '80px' });
+start.observe(buehne);
+</script>
+</body>
+</html>

@@ -1,0 +1,1447 @@
+:root {
+  --gw-ink: #050505;
+  --gw-anthracite: #101214;
+  --gw-surface: #151719;
+  --gw-surface-soft: #1b1e20;
+  --gw-paper: #f3f0e8;
+  --gw-muted: #aaa9a3;
+  --gw-faint: #737570;
+  --gw-gold: #d5b45f;
+  --gw-gold-soft: #f0d995;
+  --gw-teal: #759c92;
+  --gw-bronze: #9d7045;
+  --gw-line: rgba(243, 240, 232, 0.13);
+  --gw-line-strong: rgba(213, 180, 95, 0.38);
+}
+
+body.gameworld-body {
+  --gw-header-shield-layer: 99;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(213, 180, 95, 0.08), transparent 25rem),
+    radial-gradient(circle at 15% 70%, rgba(117, 156, 146, 0.055), transparent 30rem),
+    var(--gw-ink);
+  color: var(--gw-paper);
+}
+
+body.gameworld-body::after {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: var(--gw-header-shield-layer);
+  height: calc(var(--tg-header-height, 114px) + 22px);
+  pointer-events: none;
+  background: linear-gradient(180deg, #050505 0%, #050505 calc(100% - 12px), rgba(5, 5, 5, 0));
+}
+
+.gameworld-main {
+  width: min(1440px, calc(100% - 24px));
+  margin: 0 auto;
+  font-family: var(--tg-sans, "Avenir Next", "Segoe UI", sans-serif);
+}
+
+.gameworld-main *,
+.gameworld-main *::before,
+.gameworld-main *::after {
+  box-sizing: border-box;
+}
+
+.gw-hero {
+  position: relative;
+  min-height: clamp(540px, 68vh, 700px);
+  padding: clamp(72px, 9vw, 132px) clamp(28px, 7vw, 104px) clamp(56px, 7vw, 92px);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  isolation: isolate;
+  border-bottom: 1px solid var(--gw-line);
+  background:
+    linear-gradient(90deg, rgba(5, 5, 5, 0.98) 0%, rgba(5, 5, 5, 0.78) 42%, rgba(5, 5, 5, 0.1) 78%),
+    linear-gradient(0deg, rgba(5, 5, 5, 0.94) 0%, rgba(5, 5, 5, 0.1) 45%, rgba(5, 5, 5, 0.34) 100%),
+    url("assets/spielewelt/ger-tx-800-hintergrund.webp") 76% 48% / min(880px, 68vw) auto no-repeat,
+    #080909;
+}
+
+.gw-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: repeating-linear-gradient(90deg, transparent 0, transparent calc(25% - 1px), rgba(255, 255, 255, 0.025) 25%);
+  pointer-events: none;
+}
+
+.gw-hero-copy {
+  width: min(680px, 100%);
+  position: relative;
+  z-index: 1;
+}
+
+.gw-eyebrow,
+.gw-game-number {
+  margin: 0;
+  color: var(--gw-gold-soft);
+  font-size: 0.68rem;
+  font-weight: 760;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.gw-wordmark {
+  margin: 18px 0 0;
+  color: var(--gw-paper);
+  font-size: clamp(0.8rem, 1vw, 0.95rem);
+  font-weight: 780;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.gw-hero h1 {
+  margin: 18px 0 0;
+  display: grid;
+  color: var(--gw-paper);
+  font-family: var(--tg-display, Georgia, serif);
+  font-size: clamp(4rem, 8vw, 8.2rem);
+  font-weight: 300;
+  line-height: 0.78;
+  letter-spacing: 0;
+}
+
+.gw-hero h1 span:nth-child(2) {
+  color: var(--gw-gold-soft);
+}
+
+.gw-hero-subline {
+  max-width: 470px;
+  margin: 34px 0 0;
+  color: rgba(243, 240, 232, 0.74);
+  font-size: clamp(0.88rem, 1.3vw, 1rem);
+  line-height: 1.65;
+}
+
+.gw-hero-actions,
+.gw-closing-actions,
+.gw-wheel-actions {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+}
+
+.gw-button,
+.gw-text-link {
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-family: var(--tg-sans, "Avenir Next", "Segoe UI", sans-serif);
+  font-size: 0.74rem;
+  font-weight: 760;
+  letter-spacing: 0;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.gw-button {
+  padding: 0 20px;
+  border: 1px solid var(--gw-line-strong);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--gw-gold-soft);
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.gw-button-primary {
+  background: var(--gw-gold-soft);
+  border-color: var(--gw-gold-soft);
+  color: #17130b;
+}
+
+.gw-button-small {
+  min-height: 42px;
+  padding-inline: 16px;
+}
+
+.gw-button:hover,
+.gw-button:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--gw-gold-soft);
+}
+
+/* Die beiden Selektoren der alten Spielfassung sind hier entfallen; das
+   neue Taxi Rush bringt seine Fokusringe in taxi-rush.css selbst mit. */
+.gw-button:focus-visible,
+.gw-text-link:focus-visible {
+  outline: 2px solid var(--gw-gold-soft);
+  outline-offset: 4px;
+}
+
+.gw-button:disabled {
+  cursor: not-allowed;
+  border-color: var(--gw-line);
+  background: transparent;
+  color: var(--gw-faint);
+  transform: none;
+}
+
+.gw-text-link {
+  min-height: 42px;
+  padding: 0 2px;
+  border-bottom: 1px solid var(--gw-line-strong);
+  color: var(--gw-paper);
+}
+
+.gw-hero-index {
+  position: absolute;
+  right: clamp(24px, 4vw, 64px);
+  bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(243, 240, 232, 0.46);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+.gw-hero-index i {
+  width: 56px;
+  height: 1px;
+  background: rgba(243, 240, 232, 0.3);
+}
+
+.gw-status {
+  min-height: 118px;
+  padding: 24px clamp(22px, 4vw, 56px);
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: 26px;
+  border-bottom: 1px solid var(--gw-line);
+  background: rgba(16, 18, 20, 0.76);
+}
+
+.gw-status-heading {
+  display: grid;
+  gap: 9px;
+  color: var(--gw-muted);
+  font-size: 0.68rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.gw-status-heading a {
+  color: var(--gw-gold-soft);
+  font-size: 0.68rem;
+  text-decoration: none;
+  text-transform: none;
+}
+
+.gw-status-loading,
+.gw-history-loading {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.gw-status-loading span,
+.gw-history-loading span {
+  min-height: 45px;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.035) 20%, rgba(255, 255, 255, 0.09) 42%, rgba(255, 255, 255, 0.035) 64%);
+  background-size: 240% 100%;
+  animation: gw-skeleton 1.8s linear infinite;
+}
+
+.gw-status-values {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gw-status-values > div {
+  min-width: 0;
+  padding: 0 28px;
+  border-left: 1px solid var(--gw-line);
+}
+
+.gw-status-values dt {
+  color: var(--gw-muted);
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+.gw-status-values dd {
+  margin: 7px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--gw-paper);
+  font-family: var(--tg-display, Georgia, serif);
+  font-size: clamp(1.45rem, 2.4vw, 2.2rem);
+  line-height: 1;
+}
+
+.gw-status-guest,
+.gw-status-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.gw-status-guest p,
+.gw-status-error span,
+.gw-history-guest p,
+.gw-history-empty,
+.gw-history-error {
+  margin: 0;
+  color: var(--gw-muted);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.gw-status-error {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gw-status-error strong {
+  font-size: 0.82rem;
+}
+
+.gw-games,
+.gw-history,
+.gw-closing {
+  padding: clamp(88px, 10vw, 148px) clamp(22px, 5vw, 72px);
+}
+
+#deine-spiele,
+.gw-rush-game {
+  scroll-margin-top: calc(var(--tg-header-height, 104px) + 36px);
+}
+
+.gw-section-head {
+  margin-bottom: clamp(42px, 6vw, 76px);
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.gw-section-head h2,
+.gw-closing h2 {
+  margin: 12px 0 0;
+  color: var(--gw-paper);
+  font-family: var(--tg-display, Georgia, serif);
+  font-size: clamp(3rem, 6vw, 6rem);
+  font-weight: 300;
+  line-height: 0.94;
+  letter-spacing: 0;
+}
+
+.gw-section-head > p {
+  max-width: 260px;
+  margin: 0;
+  color: var(--gw-muted);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.gw-wheel-feature {
+  position: relative;
+  min-height: 690px;
+  display: grid;
+  grid-template-columns: minmax(420px, 1.1fr) minmax(320px, 0.9fr);
+  align-items: center;
+  gap: clamp(48px, 7vw, 110px);
+  border-top: 1px solid var(--gw-line);
+  border-bottom: 1px solid var(--gw-line);
+  background: radial-gradient(circle at 25% 50%, rgba(213, 180, 95, 0.09), transparent 30rem);
+}
+
+.gw-wheel-visual,
+.gw-wheel-copy {
+  min-width: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Glücksrad — Gestaltung nach der freigegebenen Vorlage
+   design-vorlagen/Taxi-Germersheim-Gluecksrad.html
+   ═══════════════════════════════════════════════════════════════════════
+
+   Die Klassennamen bleiben, wie sie waren (gw-wheel-*), damit spiele.js
+   unverändert weiterarbeitet. Getauscht ist allein das Aussehen.
+
+   Aufbau, von außen nach innen:
+
+     .gw-wheel-shell     Bühne, quadratisch
+       .gw-wheel-pointer Zeiger, oben, fest
+       .gw-wheel-rim     Goldring, FEST - dreht sich nicht mit
+         .gw-wheel-svg   die Scheibe, DAS EINZIGE, was sich dreht
+       .gw-wheel-hub     Nabe mit dem Bildzeichen, fest
+
+   Warum nur die Scheibe rotiert: Ein mitdrehender Ring sähe aus wie ein
+   Fehler, und der Zeiger muss stehen bleiben, sonst zeigt er nirgendwohin.
+   In der Vorlage ist es genauso gelöst ("one animated rotor").
+*/
+
+/* Der klebende Seitenkopf ist 88 px hoch. Ohne diesen Abstand liegt der
+   Zeiger dahinter, sobald jemand den Radbereich anspringt - gemessen:
+   Der Zeiger sitzt 31 px unter dem Anfang des Bereichs. */
+.gw-wheel-feature {
+  scroll-margin-top: 104px;
+}
+
+.gw-wheel-visual {
+  padding: 48px 0;
+  display: grid;
+  place-items: center;
+}
+
+.gw-wheel-shell {
+  position: relative;
+  width: min(100%, 540px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+/* Warmer Schein hinter dem Rad. */
+.gw-wheel-shell::before {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(211, 168, 74, 0.12) 0, rgba(186, 138, 49, 0.06) 45%, transparent 68%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Feiner Außenkreis. */
+.gw-wheel-shell::after {
+  content: "";
+  position: absolute;
+  inset: -17px;
+  border: 1px solid rgba(192, 161, 91, 0.15);
+  border-radius: 50%;
+  box-shadow: 0 0 0 8px rgba(209, 173, 89, 0.015);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── Der Goldring ────────────────────────────────────────────────────
+   Ein Kegelverlauf mit hellen und dunklen Stellen erzeugt den Eindruck
+   von poliertem Metall - ohne Bild, ohne Filter. */
+/*
+   WARUM DER RING ABSOLUT LIEGT UND KEIN EIGENES SEITENVERHAELTNIS HAT
+
+   Vorher stand hier `width: 100%; aspect-ratio: 1` - der Ring war ein
+   Gitterelement der Buehne und rechnete sich seine Hoehe selbst aus.
+   Damit haengen zwei Groessen voneinander ab: Die Zeilenhoehe des
+   Gitters richtet sich nach dem Element, und die Hoehe des Elements
+   richtet sich nach dem Gitter. Wie ein Browser diesen Ringschluss
+   aufloest, ist nicht ueberall gleich - auf einem iPhone wurde das Rad
+   dadurch oval, waehrend es in der Messung hier rund blieb.
+
+   Jetzt liegt der Ring absolut auf der Buehne (`inset: 0`) und
+   uebernimmt deren Kasten unveraendert. Die Buehne ist quadratisch
+   (`width: min(100%, 540px); aspect-ratio: 1`), und weil ausser ihr
+   kein Element mehr im Fluss steht, kann nichts mehr auf ihre Hoehe
+   zurueckwirken. Rund bleibt rund - unabhaengig vom Browser.
+
+   Zeiger und Nabe lagen ohnehin schon absolut; am Aussehen aendert
+   sich nichts.
+*/
+.gw-wheel-rim {
+  position: absolute;
+  inset: 0;
+  padding: 25px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 10deg,
+    #624820 0deg, #e2c27b 24deg, #fff4ce 45deg, #a9803b 75deg,
+    #4c3619 112deg, #b59558 142deg, #f7e2a5 180deg, #a57d36 216deg,
+    #44321b 255deg, #e1bc6e 305deg, #fce9b4 332deg, #624820 360deg
+  );
+  box-shadow:
+    0 32px 50px rgba(0, 0, 0, 0.67),
+    0 4px 0 #695329,
+    0 8px 0 #292218,
+    inset 0 0 0 1px #ffe6a9,
+    inset 0 0 0 5px #171813,
+    inset 0 0 0 6px #af9560,
+    inset 0 0 0 11px rgba(16, 15, 9, 0.4),
+    inset 0 0 0 12px rgba(245, 219, 154, 0.4);
+}
+
+/* Feine Riffelung auf dem Ring. */
+.gw-wheel-rim::before {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 238, 174, 0.53) 0deg 0.18deg, transparent 0.18deg 2deg);
+  -webkit-mask: radial-gradient(transparent 68.9%, #000 69.3%);
+  mask: radial-gradient(transparent 68.9%, #000 69.3%);
+  pointer-events: none;
+}
+
+/* Innere Fassung. */
+.gw-wheel-rim::after {
+  content: "";
+  position: absolute;
+  inset: 24px;
+  border: 2px solid #e4c582;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 4px #0a0d0b, inset 0 0 20px rgba(0, 0, 0, 0.67);
+  pointer-events: none;
+}
+
+/* ── Die Scheibe: das Einzige, was sich dreht ──────────────────────── */
+.gw-wheel-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 4px solid #171b14;
+  border-radius: 50%;
+  background: #151a15;
+  overflow: hidden;
+}
+
+.gw-wheel-segment {
+  stroke: #b8a06b;
+  stroke-opacity: 0.35;
+  stroke-width: 1;
+  fill: url(#gwSegmentDark);
+}
+
+.gw-wheel-segment.is-bright { fill: url(#gwSegmentBright); }
+.gw-wheel-segment.is-featured { fill: url(#gwSegmentSpecial); }
+.gw-wheel-segment.is-box { fill: url(#gwSegmentSpecial); }
+
+.gw-wheel-label {
+  fill: #f4e7c7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 39px;
+  text-anchor: middle;
+}
+
+/* Yumaks Box steht als Wort da und braucht deshalb weniger Größe. */
+.gw-wheel-label.is-word { font-size: 29px; }
+.gw-wheel-label.on-special { fill: #ffedba; }
+
+.gw-wheel-label-unit {
+  fill: #d7c9a8;
+  font-family: var(--tg-sans, Arial, sans-serif);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-anchor: middle;
+}
+
+.gw-wheel-dot {
+  fill: #f2dca5;
+  fill-opacity: 0.85;
+}
+
+/* ── Die Nabe mit dem Bildzeichen ──────────────────────────────────── */
+.gw-wheel-hub {
+  position: absolute;
+  inset: 37.5%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  padding: 11px;
+  border: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 35deg, #fff0b7, #84632f 22%, #e5cc8e 40%, #fff4c8 49%, #6a4d25 71%, #d1b576 90%, #fff0b7);
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.67), inset 0 0 0 1px #fff0c4;
+  isolation: isolate;
+}
+
+.gw-wheel-hub::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 32% 13%, #373c2e, #131a14 65%, #090e0b);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), inset 0 0 0 2px #272d21;
+  z-index: -1;
+}
+
+.gw-wheel-hub img {
+  width: 69%;
+  height: 86%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.53));
+}
+
+/* ── Der Zeiger ────────────────────────────────────────────────────── */
+.gw-wheel-pointer {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  z-index: 4;
+  width: 35px;
+  height: 57px;
+  transform: translateX(-50%);
+  background: linear-gradient(100deg, #7a5727 0%, #ecd397 33%, #fff3c2 49%, #b79651 51%, #e9ce8e 100%);
+  clip-path: polygon(10% 0, 90% 0, 100% 28%, 88% 50%, 50% 100%, 12% 50%, 0 28%);
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.5));
+}
+
+/* ── Auf dem Handy ─────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .gw-wheel-visual { padding: 32px 0; }
+  .gw-wheel-rim { padding: 17px; }
+  .gw-wheel-rim::after { inset: 16px; }
+  .gw-wheel-rim::before { inset: 10px; }
+  .gw-wheel-shell::after { inset: -10px; }
+  .gw-wheel-rim {
+    box-shadow:
+      0 20px 35px rgba(0, 0, 0, 0.67),
+      0 3px 0 #695329,
+      0 5px 0 #292218,
+      inset 0 0 0 1px #ffe6a9,
+      inset 0 0 0 4px #171813,
+      inset 0 0 0 5px #af9560;
+  }
+  .gw-wheel-svg { border-width: 2px; }
+  .gw-wheel-hub { padding: 8px; }
+  .gw-wheel-hub::before { inset: 5px; }
+  .gw-wheel-pointer { width: 25px; height: 41px; top: -11px; }
+}
+
+/* ── Reduzierte Bewegung ───────────────────────────────────────────────
+   Die Drehung selbst wird in spiele.js auf die Dauer 0 gesetzt: Das
+   Ergebnis erscheint dann sofort am richtigen Feld, statt dass jemand
+   eine Bewegung sieht, die er abgestellt hat. Hier bleibt nur, was
+   sonst noch liefe. */
+@media (prefers-reduced-motion: reduce) {
+  .gw-wheel-svg { transition: none !important; }
+}
+
+
+.gw-wheel-copy {
+  padding: 64px clamp(18px, 4vw, 58px) 64px 0;
+}
+
+.gw-wheel-copy h3,
+.gw-rush-header h3,
+.gw-box-copy h3 {
+  margin: 14px 0 0;
+  color: var(--gw-paper);
+  font-family: var(--tg-display, Georgia, serif);
+  font-size: clamp(2.4rem, 4.5vw, 4.8rem);
+  font-weight: 300;
+  line-height: 0.96;
+  letter-spacing: 0;
+}
+
+.gw-game-lead,
+.gw-box-copy > p {
+  margin: 24px 0 0;
+  color: var(--gw-muted);
+  font-size: 0.86rem;
+  line-height: 1.75;
+}
+
+.gw-wheel-state {
+  margin-top: 34px;
+  padding: 20px 0;
+  display: grid;
+  gap: 7px;
+  border-top: 1px solid var(--gw-line);
+  border-bottom: 1px solid var(--gw-line);
+}
+
+.gw-wheel-state strong {
+  color: var(--gw-paper);
+  font-size: 0.96rem;
+  font-weight: 680;
+}
+
+.gw-wheel-state span,
+.gw-contract-note {
+  color: var(--gw-muted);
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+
+.gw-contract-note {
+  margin: 18px 0 0;
+}
+
+.gw-win-reveal {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  background: rgba(5, 5, 5, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.gw-win-reveal span {
+  color: var(--gw-muted);
+  font-size: 0.68rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.gw-win-reveal strong {
+  margin-top: 12px;
+  color: var(--gw-gold-soft);
+  font-family: var(--tg-display, Georgia, serif);
+  font-size: clamp(3rem, 8vw, 7rem);
+  font-weight: 300;
+  animation: gw-win-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.gw-rush-game {
+  margin-top: clamp(88px, 10vw, 138px);
+  padding: clamp(42px, 6vw, 78px) 0;
+  border-top: 1px solid var(--gw-line);
+  border-bottom: 1px solid var(--gw-line);
+  background:
+    radial-gradient(circle at 78% 46%, rgba(117, 156, 146, 0.07), transparent 34rem),
+    radial-gradient(circle at 22% 72%, rgba(213, 180, 95, 0.045), transparent 28rem);
+}
+
+.gw-rush-header {
+  margin-bottom: clamp(34px, 5vw, 58px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.58fr);
+  align-items: end;
+  gap: clamp(32px, 7vw, 100px);
+}
+
+.gw-rush-header h3,
+.gw-box-copy h3 {
+  font-size: clamp(3.3rem, 6vw, 6.4rem);
+}
+
+.gw-rush-name {
+  margin: 12px 0 0;
+  color: var(--gw-gold-soft);
+  font-size: 0.72rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.gw-rush-brief {
+  display: grid;
+  gap: 10px;
+}
+
+.gw-rush-brief p,
+.gw-rush-brief span,
+.gw-rush-description {
+  margin: 0;
+  color: var(--gw-muted);
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+.gw-rush-brief p {
+  color: var(--gw-paper);
+  font-size: 0.92rem;
+}
+
+.gw-rush-game .gw-button:active {
+  transform: translateY(0) scale(0.985);
+}
+
+@keyframes gw-rush-crash-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  55% { transform: translateX(5px); }
+  80% { transform: translateX(-2px); }
+}
+
+@keyframes gw-rush-impact-flash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes gw-rush-light-flicker {
+  0%, 100% { filter: brightness(1); }
+  35% { filter: brightness(1.2); }
+  62% { filter: brightness(0.82); }
+}
+
+@keyframes gw-rush-event-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes gw-rush-stage-focus {
+  from { opacity: 0.46; transform: translateY(10px) scale(0.965); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes gw-rush-countdown-step {
+  0% { opacity: 0; transform: scale(1.08); }
+  28% { opacity: 1; transform: scale(1); }
+  78% { opacity: 1; transform: scale(0.98); }
+  100% { opacity: 0; transform: scale(0.94); }
+}
+
+.gw-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.gw-box-game {
+  min-height: 680px;
+  margin-top: clamp(96px, 12vw, 166px);
+  display: grid;
+  grid-template-columns: minmax(470px, 1.18fr) minmax(340px, 0.82fr);
+  overflow: hidden;
+  border-top: 1px solid var(--gw-line);
+  border-bottom: 1px solid var(--gw-line);
+  background: linear-gradient(115deg, #0a0b0c 0%, #121416 56%, #0b0c0d 100%);
+}
+
+.gw-box-visual {
+  position: relative;
+  min-height: 680px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  perspective: 1000px;
+  background:
+    radial-gradient(ellipse at 50% 70%, rgba(213, 180, 95, 0.19), transparent 36%),
+    radial-gradient(circle at 50% 47%, rgba(240, 217, 149, 0.045), transparent 31%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 50%);
+}
+
+.gw-box-aura {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  width: min(72%, 500px);
+  height: 25%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(213, 180, 95, 0.24), rgba(213, 180, 95, 0.035) 50%, transparent 74%);
+  filter: blur(22px);
+  opacity: 0.52;
+}
+
+.gw-box-plinth {
+  position: absolute;
+  left: 50%;
+  bottom: 19%;
+  width: min(60%, 410px);
+  height: 22px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #030303;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.74), 0 0 38px rgba(213, 180, 95, 0.12);
+}
+
+.gw-box-object {
+  --gw-box-scale: 1.24;
+  position: relative;
+  z-index: 2;
+  width: 280px;
+  height: 250px;
+  transform: rotateX(3deg) rotateY(-7deg) scale(var(--gw-box-scale));
+  transform-style: preserve-3d;
+  transition: transform 420ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.gw-box-game:hover .gw-box-object {
+  transform: rotateX(1deg) rotateY(-2deg) translateY(-5px) scale(var(--gw-box-scale));
+}
+
+.gw-box-case {
+  position: absolute;
+  left: 26px;
+  right: 26px;
+  bottom: 18px;
+  height: 164px;
+  overflow: hidden;
+  border-radius: 4px 4px 8px 8px;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.12), transparent 17%, transparent 72%, rgba(213, 180, 95, 0.1)),
+    linear-gradient(155deg, #25272a 0%, #0b0c0d 42%, #17191b 72%, #050505 100%);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.13),
+    inset 18px 0 32px rgba(255, 255, 255, 0.025),
+    inset -24px -20px 38px rgba(0, 0, 0, 0.72),
+    0 30px 44px rgba(0, 0, 0, 0.58);
+}
+
+.gw-box-case::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 50%;
+  width: 34px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #6e5524, #e4c46d 42%, #9a7835 72%, #4e3b1b);
+  box-shadow: 0 0 18px rgba(213, 180, 95, 0.12);
+}
+
+.gw-box-case::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 49%;
+  height: 22px;
+  background: linear-gradient(180deg, #8b6d31, #d8b85f 42%, #665021);
+  box-shadow: 0 1px rgba(255, 255, 255, 0.22), 0 5px 12px rgba(0, 0, 0, 0.42);
+}
+
+.gw-box-lid {
+  position: absolute;
+  z-index: 4;
+  top: 34px;
+  left: 13px;
+  width: 254px;
+  height: 70px;
+  transform-origin: 50% 100%;
+  transform-style: preserve-3d;
+  transition: transform 680ms cubic-bezier(0.2, 0.75, 0.2, 1);
+}
+
+.gw-box-lid-front {
+  position: absolute;
+  inset: 19px 0 0;
+  border-radius: 5px;
+  background:
+    linear-gradient(105deg, rgba(255, 255, 255, 0.14), transparent 22%, transparent 76%, rgba(213, 180, 95, 0.12)),
+    linear-gradient(160deg, #2a2c2e, #090a0b 58%, #171819);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.16), inset 0 -10px 18px rgba(0, 0, 0, 0.55), 0 10px 18px rgba(0, 0, 0, 0.36);
+}
+
+.gw-box-lid-front::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 38px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #6a5123, #e2c26b 48%, #6a5123);
+}
+
+.gw-box-lid-top {
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 32px;
+  transform: skewX(-28deg);
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(135deg, #333537, #111214 58%, #282a2c);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.gw-box-ribbon {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gw-box-emblem {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  left: 50%;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(240, 217, 149, 0.8);
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #282318, #080808 65%);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6), inset 0 0 16px rgba(213, 180, 95, 0.12);
+  color: var(--gw-gold-soft);
+  font-family: var(--tg-display, Georgia, serif);
+  font-size: 2.5rem;
+  font-weight: 300;
+}
+
+.gw-box-signature {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  color: rgba(243, 240, 232, 0.48);
+  font-size: 0.5rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.gw-box-game[data-gw-box-mode="available"] .gw-box-object {
+  animation: gw-box-float 5.5s ease-in-out infinite;
+}
+
+.gw-box-game[data-gw-box-mode="available"] .gw-box-aura {
+  animation: gw-box-aura 4.5s ease-in-out infinite;
+}
+
+.gw-box-game[data-gw-box-mode="opening"] .gw-box-lid,
+.gw-box-game[data-gw-box-mode="open"] .gw-box-lid {
+  transform: translateY(-38px) rotateX(-24deg);
+}
+
+.gw-box-copy {
+  padding: clamp(42px, 7vw, 92px);
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  border-left: 1px solid var(--gw-line);
+}
+
+.gw-box-state {
+  margin-top: 28px;
+  padding: 20px 0;
+  display: grid;
+  gap: 7px;
+  border-top: 1px solid var(--gw-line);
+  border-bottom: 1px solid var(--gw-line);
+}
+
+.gw-box-state strong {
+  color: var(--gw-paper);
+  font-size: 0.76rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.gw-box-state span {
+  color: var(--gw-muted);
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+
+.gw-box-game[data-gw-box-mode="available"] .gw-box-state strong {
+  color: var(--gw-gold-soft);
+}
+
+.gw-box-action {
+  align-self: flex-start;
+  margin-top: 20px;
+}
+
+.gw-box-game[data-gw-box-mode="available"] .gw-box-action:disabled {
+  border-color: rgba(240, 217, 149, 0.46);
+  color: var(--gw-gold-soft);
+  opacity: 0.7;
+}
+
+.gw-history {
+  background:
+    linear-gradient(90deg, rgba(213, 180, 95, 0.025), transparent 34%),
+    rgba(9, 11, 12, 0.5);
+}
+
+.gw-section-head-compact {
+  margin-bottom: 38px;
+}
+
+.gw-section-head-compact h2 {
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.gw-history-link {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(240, 217, 149, 0.3);
+  color: var(--gw-paper);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.gw-history-link span {
+  color: var(--gw-gold-soft);
+  font-size: 1rem;
+}
+
+.gw-history-guest,
+.gw-history-empty,
+.gw-history-error {
+  position: relative;
+  max-width: 680px;
+  padding: 18px 0 18px 24px;
+}
+
+.gw-history-guest::before,
+.gw-history-empty::before,
+.gw-history-error::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--gw-gold);
+  box-shadow: 0 0 12px rgba(213, 180, 95, 0.4);
+}
+
+.gw-history-list {
+  max-width: 920px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gw-history-list li {
+  min-height: 92px;
+  padding: 22px 0;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  border-bottom: 1px solid var(--gw-line);
+}
+
+.gw-history-list li::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gw-gold);
+  box-shadow: 0 0 12px rgba(213, 180, 95, 0.34);
+}
+
+.gw-history-list strong {
+  display: inline-block;
+  margin-bottom: 7px;
+  color: var(--gw-paper);
+  font-family: var(--tg-display, Georgia, serif);
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-weight: 400;
+}
+
+.gw-history-list time,
+.gw-history-list span {
+  color: var(--gw-muted);
+  font-size: 0.68rem;
+}
+
+.gw-history-list span {
+  color: rgba(240, 217, 149, 0.72);
+  font-size: 0.58rem;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.gw-closing {
+  min-height: 480px;
+  display: grid;
+  align-content: center;
+  border-top: 1px solid var(--gw-line);
+  background:
+    linear-gradient(90deg, rgba(5, 5, 5, 0.98), rgba(5, 5, 5, 0.54)),
+    url("assets/spielewelt/ger-tx-100-hintergrund.webp") 84% 52% / min(640px, 52vw) auto no-repeat,
+    #080909;
+}
+
+.gw-closing h2 {
+  max-width: 740px;
+}
+
+@keyframes gw-skeleton {
+  to { background-position: -240% 0; }
+}
+
+@keyframes gw-box-float {
+  0%, 100% { transform: rotateX(3deg) rotateY(-7deg) translateY(0) scale(var(--gw-box-scale)); }
+  50% { transform: rotateX(2deg) rotateY(-4deg) translateY(-8px) scale(var(--gw-box-scale)); }
+}
+
+@keyframes gw-box-aura {
+  0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(0.92); }
+  50% { opacity: 0.72; transform: translateX(-50%) scale(1.04); }
+}
+
+@keyframes gw-win-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 1024px) {
+  .gw-hero {
+    min-height: 620px;
+    background:
+      linear-gradient(90deg, rgba(5, 5, 5, 0.98), rgba(5, 5, 5, 0.65) 58%, rgba(5, 5, 5, 0.2)),
+      linear-gradient(0deg, rgba(5, 5, 5, 0.96), transparent 54%),
+      url("assets/spielewelt/ger-tx-800-hintergrund.webp") 82% 36% / min(760px, 82vw) auto no-repeat,
+      #080909;
+  }
+
+  .gw-wheel-feature {
+    grid-template-columns: minmax(360px, 1fr) minmax(290px, 0.82fr);
+    gap: 34px;
+  }
+
+  .gw-rush-header {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.72fr);
+    gap: 44px;
+  }
+
+  .gw-box-game {
+    grid-template-columns: minmax(340px, 0.95fr) minmax(0, 1.05fr);
+  }
+}
+
+@media (min-width: 761px) and (max-height: 900px) {
+  .gw-hero {
+    min-height: clamp(540px, calc(100vh - 205px), 650px);
+    padding-top: 64px;
+    padding-bottom: 52px;
+  }
+
+  .gw-wordmark,
+  .gw-hero h1 {
+    margin-top: 14px;
+  }
+
+  .gw-hero h1 {
+    font-size: clamp(4rem, 6.5vw, 6.2rem);
+    line-height: 0.82;
+  }
+
+  .gw-hero-subline {
+    margin-top: 24px;
+  }
+
+  .gw-hero-actions {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 760px) {
+  body.gameworld-body::after {
+    height: 108px;
+  }
+
+  .gameworld-main {
+    width: min(100% - 16px, 1440px);
+  }
+
+  .gw-hero {
+    min-height: 500px;
+    padding: 46px 20px 34px;
+    align-items: flex-end;
+    background:
+      linear-gradient(0deg, rgba(5, 5, 5, 0.98) 0%, rgba(5, 5, 5, 0.78) 48%, rgba(5, 5, 5, 0.22) 100%),
+      url("assets/spielewelt/ger-tx-800-hintergrund.webp") 54% 18% / 620px auto no-repeat,
+      #080909;
+  }
+
+  .gw-hero h1 {
+    margin-top: 12px;
+    font-size: clamp(3.2rem, 15.5vw, 4.5rem);
+    line-height: 0.84;
+  }
+
+  .gw-wordmark {
+    margin-top: 12px;
+  }
+
+  .gw-hero-subline {
+    margin-top: 20px;
+    line-height: 1.5;
+  }
+
+  .gw-hero-actions {
+    margin-top: 18px;
+  }
+
+  .gw-hero-index {
+    display: none;
+  }
+
+  .gw-status {
+    padding: 24px 18px;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .gw-status-heading {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+
+  .gw-status-values > div {
+    padding: 0 14px;
+  }
+
+  .gw-status-values > div:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .gw-status-values dd {
+    font-size: 1.45rem;
+  }
+
+  .gw-status-guest {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .gw-games,
+  .gw-history,
+  .gw-closing {
+    padding: 76px 16px;
+  }
+
+  .gw-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .gw-wheel-feature {
+    min-height: 0;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .gw-wheel-visual {
+    padding: 42px 8px 24px;
+  }
+
+  .gw-wheel-shell {
+    width: min(100%, 430px);
+  }
+
+  .gw-wheel-copy {
+    padding: 34px 4px 48px;
+  }
+
+  .gw-rush-game {
+    margin-top: 72px;
+    padding: 46px 0;
+  }
+
+  .gw-rush-header {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .gw-box-game {
+    min-height: 0;
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(430px, 118vw) auto;
+  }
+
+  .gw-box-copy {
+    padding: 42px 22px 52px;
+    border-top: 1px solid var(--gw-line);
+    border-left: 0;
+  }
+
+  .gw-box-visual {
+    min-height: 0;
+  }
+
+  .gw-box-object {
+    --gw-box-scale: 1.06;
+  }
+
+  .gw-closing {
+    min-height: 540px;
+    background:
+      linear-gradient(0deg, rgba(5, 5, 5, 0.98), rgba(5, 5, 5, 0.5)),
+      url("assets/spielewelt/ger-tx-100-hintergrund.webp") 64% 20% / 560px auto no-repeat,
+      #080909;
+  }
+}
+
+@media (max-width: 430px) {
+  .gw-hero {
+    min-height: 500px;
+  }
+
+  .gw-closing-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .gw-closing-actions .gw-button,
+  .gw-closing-actions .gw-text-link {
+    width: 100%;
+  }
+
+  .gw-status-values {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .gw-status-values > div,
+  .gw-status-values > div:first-child {
+    padding: 0 0 14px;
+    border-left: 0;
+    border-bottom: 1px solid var(--gw-line);
+  }
+
+  .gw-status-loading,
+  .gw-history-loading {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .gw-history-list li {
+    grid-template-columns: 14px minmax(0, 1fr);
+    gap: 8px 12px;
+  }
+
+  .gw-history-list li > span {
+    grid-column: 2;
+  }
+
+  .gw-history-link {
+    margin-top: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gameworld-main *,
+  .gameworld-main *::before,
+  .gameworld-main *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Hinweis zu den Feldgroessen - siehe die Begruendung in spiele.html. */
+.gw-wheel-oddsnote {
+  margin: 10px 0 0;
+  max-width: 46em;
+  color: rgba(243, 240, 232, 0.55);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.gw-wheel-oddsnote a {
+  color: var(--gw-gold-soft, #e8bd61);
+  text-underline-offset: 3px;
+}

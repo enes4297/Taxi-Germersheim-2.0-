@@ -300,8 +300,44 @@ button svg,button [data-icon] svg,.outline svg,#locationBtn svg{width:22px!impor
 
 
 /* V4.0.2 – Detail Chips + 2s Splash */
-.splash{
-  transition:opacity .35s ease, visibility .35s ease!important;
+:root{
+  --tg-layer-home-intro:300;
+}
+html.home-intro-active,
+html.home-intro-active body{
+  width:100%;
+  height:100%;
+  overflow:hidden!important;
+  overscroll-behavior:none;
+}
+html.home-intro-active{
+  scrollbar-gutter:auto!important;
+}
+html.home-intro-active body > :not(#splash):not(script){
+  visibility:hidden!important;
+}
+#splash.splash{
+  display:none;
+}
+html.home-intro-active #splash.splash{
+  position:fixed;
+  inset:0;
+  z-index:var(--tg-layer-home-intro);
+  display:grid;
+  width:100vw;
+  min-height:100vh;
+  height:100vh;
+  height:100dvh;
+  overflow:hidden;
+  place-items:center;
+  opacity:1;
+  visibility:visible;
+  background:#000;
+  transition:opacity .35s ease!important;
+}
+html.home-intro-active #splash.splash.splash-hide{
+  opacity:0;
+  pointer-events:none;
 }
 
 /* Fahrdetails wirklich sichtbar klickbar */
@@ -1260,30 +1296,30 @@ body.nav-open #home .menu-bars i:nth-child(3){transform:translateY(-6px) rotate(
 
 html,body{background:var(--ds-black)!important;color:var(--ds-text)!important}
 
-h1,.hero-copy h1,.panel h1,.selected h2{
+h1:not(.hl-hero-title),.hero-copy h1,.panel h1,.selected h2{
   font-family:var(--serif)!important;
   line-height:1.02!important;
   letter-spacing:-.03em!important;
 }
 
-h2,.page-head h2{
+h2:not(.hl-title),.page-head h2{
   font-family:var(--serif)!important;
   line-height:1.06!important;
   letter-spacing:-.02em!important;
 }
 
-h3,.extra h3,.medical-section h3{
+h3:not(.hl-vehicle-title),.extra h3,.medical-section h3{
   font-family:var(--serif)!important;
   line-height:1.12!important;
   letter-spacing:-.015em!important;
 }
 
-p,li,small,label{
+p:not(.hl-eyebrow),li,small,label{
   color:var(--ds-gray)!important;
   line-height:1.6!important;
 }
 
-section{margin-bottom:var(--ds-section-gap)!important}
+section:not(.hl-scene):not(.hl-hero){margin-bottom:var(--ds-section-gap)!important}
 
 .panel,.selected,.extra,.service,.wide,.reward,.yumak-home,.medical-card,.about-card,.about-surface,.about-section,.about-company-surface,
 #medical.medical-page .nova-step,#medical.medical-page .nova-status,#medical.medical-page .nova-summary-item,

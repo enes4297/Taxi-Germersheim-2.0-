@@ -1,0 +1,62 @@
+---
+/**
+ * Die drei Passwortregeln und die Staerkeanzeige.
+ *
+ * Wortgleich aus dem Bestand: „8 Zeichen", „Großbuchstabe", „Zahl" - und
+ * dieselben `data-rule`-Schluessel `len`, `upper`, `number`, auf die beide
+ * Seiten ihre Auswertung stuetzen.
+ *
+ * Die Regeln stehen im Dokument, bevor jemand tippt. Wer erst nach der
+ * ersten Eingabe erfaehrt, was verlangt wird, tippt zweimal.
+ *
+ * `aria-live="polite"` an der Liste: Wird eine Regel erfuellt, sagt das
+ * Vorlesewerkzeug es, ohne den Schreibfluss zu unterbrechen.
+ */
+interface Props {
+  /** Die Staerkeanzeige hat auf der Reset-Seite eine eigene Huelle mit ID. */
+  huelleId?: string;
+}
+const { huelleId } = Astro.props;
+---
+
+<div class="mt-3" id={huelleId} hidden={huelleId ? true : undefined}>
+  <div class="flex items-center gap-3">
+    <div class="h-1 flex-1 bg-border overflow-hidden">
+      <div
+        id="passwordStrengthBar"
+        class="h-full bg-primary transition-[width] duration-200"
+        style="width: var(--auth-strength, 0%)"
+      ></div>
+    </div>
+    <span id="passwordStrengthText" class="text-xs font-medium tabular-nums text-muted-foreground w-14 text-right"></span>
+  </div>
+
+  <ul id="passwordRules" class="mt-3 flex flex-wrap gap-x-4 gap-y-1.5" aria-live="polite">
+    <li data-rule="len" class="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <span aria-hidden="true" class="tg-regel-zeichen">○</span> 8 Zeichen
+    </li>
+    <li data-rule="upper" class="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <span aria-hidden="true" class="tg-regel-zeichen">○</span> Großbuchstabe
+    </li>
+    <li data-rule="number" class="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <span aria-hidden="true" class="tg-regel-zeichen">○</span> Zahl
+    </li>
+  </ul>
+</div>
+
+<style>
+  /* Erfuellte Regel: Haken und Farbe. Die Klasse `is-ok` setzen beide
+     Seiten genauso wie im Bestand - der Name bleibt deshalb. */
+  #passwordRules li.is-ok {
+    color: var(--color-primary);
+  }
+  #passwordRules li.is-ok .tg-regel-zeichen::before {
+    content: '✓';
+  }
+  #passwordRules li.is-ok .tg-regel-zeichen {
+    font-size: 0;
+  }
+  #passwordRules li.is-ok .tg-regel-zeichen::before {
+    font-size: 0.75rem;
+  }
+</style>

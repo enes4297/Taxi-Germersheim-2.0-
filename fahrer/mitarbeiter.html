@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Taxi Germersheim Mitarbeiter">
   <meta name="theme-color" content="#090b12">
   <script src="../admin/supabase-config.js"></script>
-  <script src="../admin/personal-shared.js"></script>
+  <!-- admin/personal-shared.js entfernt: Das Portal benutzte davon nur loadState und getEmployee, beide ohne Wirkung. Siehe mitarbeiter.js. -->
   <script src="../admin/qualitaet-shared.js"></script>
   <link rel="stylesheet" href="app.css">
 </head>
@@ -21,7 +21,8 @@
   <div class="portal-shell">
     <header class="portal-header">
       <div class="portal-brand">
-        <div class="portal-brand-mark">TG</div>
+        <img src="../assets/brand/taxi-germersheim-logo.svg" alt="Taxi Germersheim" width="107" height="52"
+                          onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'portal-brand-mark',textContent:'TG'}))">
         <div>
           <p class="portal-eyebrow">Mitarbeiter</p>
           <h1>Taxi Germersheim</h1>
@@ -29,7 +30,7 @@
       </div>
       <div class="portal-header-actions">
           <button class="icon-btn" type="button" data-portal-open-messages aria-label="Mitteilungen öffnen">
-            <span class="icon">🔔</span>
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
             <span class="badge" data-portal-message-badge>0</span>
           </button>
           <div class="portal-avatar-wrap">
@@ -63,22 +64,22 @@
         </div>
         <div class="quick-actions" aria-label="Schnellaktionen">
           <button class="quick-action-card" type="button" data-portal-quick-action="dienstplan">
-            <span class="quick-icon">🗓️</span>
+            <span class="quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="1"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>
             <strong>Dienstplan</strong>
             <span>Meine Woche ansehen</span>
           </button>
           <button class="quick-action-card" type="button" data-portal-quick-action="urlaub">
-            <span class="quick-icon">🌴</span>
+            <span class="quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="M12 9c0-3 3-5 6-4-2-2-5-2-6 1-1-3-4-3-6-1 3-1 6 1 6 4Z"/><path d="M4 21h16"/></svg></span>
             <strong>Urlaub</strong>
             <span>Urlaub beantragen</span>
           </button>
           <button class="quick-action-card" type="button" data-portal-quick-action="krank">
-            <span class="quick-icon">🩺</span>
+            <span class="quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a5 5 0 0 0 10 0V3"/><path d="M4 3h3M14 3h3"/><path d="M11 14v2a4 4 0 0 0 8 0v-2"/><circle cx="19" cy="12" r="2"/></svg></span>
             <strong>Krank melden</strong>
             <span>Krankmeldung senden</span>
           </button>
           <button class="quick-action-card" type="button" data-portal-quick-action="dokumente">
-            <span class="quick-icon">📄</span>
+            <span class="quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7Z"/><path d="M14 3v4h4M9 13h6M9 17h4"/></svg></span>
             <strong>Dokument senden</strong>
             <span>Foto oder Datei senden</span>
           </button>
@@ -153,6 +154,9 @@
           <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
         </div>
         <div class="section-body">
+          <div class="section-feedback is-warning" data-portal-absence-notice>
+            Die Krankmeldung wird an die Zentrale übermittelt. Ein Krankenschein kann optional als PDF, JPEG oder PNG angehängt werden – höchstens 10 MB.
+          </div>
           <div class="section-feedback" data-portal-absence-feedback hidden></div>
           <form class="portal-form" data-portal-absence-form>
             <label>
@@ -167,8 +171,8 @@
             </label>
             <label>
               <span>Krankenschein / AU</span>
-              <div class="upload-shell">
-                <input class="upload-input" type="file" name="demoFile" accept="image/jpeg,image/png,application/pdf" capture="environment" data-portal-doc-input>
+              <div class="upload-shell" data-portal-absence-upload>
+                <input class="upload-input" type="file" name="proofFile" accept="image/jpeg,image/png,application/pdf" capture="environment" data-portal-doc-input>
                 <button class="upload-trigger" type="button" data-portal-upload-trigger>📷 Foto oder Datei auswählen</button>
                 <div class="upload-preview" data-portal-upload-preview hidden></div>
                 <div class="upload-meta">
@@ -176,10 +180,12 @@
                   <button class="upload-remove" type="button" data-portal-upload-remove>Entfernen</button>
                 </div>
               </div>
+              <small class="field-hint" data-portal-absence-upload-hint>Optional. PDF, JPEG oder PNG, höchstens 10 MB.</small>
             </label>
             <label>
               <span>Notiz</span>
-              <input type="text" name="note" placeholder="Optional">
+              <input type="text" name="note" placeholder="Optional, z. B. Erreichbarkeit">
+              <small class="field-hint">Bitte keine Diagnosen oder medizinischen Angaben eintragen.</small>
             </label>
             <button class="btn btn-warning" type="submit">Krankmeldung senden</button>
           </form>
@@ -196,6 +202,9 @@
           <button class="btn btn-ghost btn-close" type="button" data-portal-close-drawer>Schließen</button>
         </div>
         <div class="section-body">
+          <div class="section-feedback" data-portal-doc-notice>
+            Dokumente werden verschlüsselt an die Zentrale übermittelt und sind nur für dich und die Verwaltung sichtbar. PDF, JPEG oder PNG, höchstens 10 MB.
+          </div>
           <div class="section-feedback" data-portal-doc-feedback hidden></div>
           <form class="portal-form" data-portal-doc-form>
             <div class="doc-type-grid" role="radiogroup" aria-label="Dokumentart">

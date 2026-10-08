@@ -1,0 +1,350 @@
+---
+/**
+ * Registrierung — unter derselben Adresse wie bisher (registrieren.html).
+ *
+ * `customer-auth.js` wird eingebunden, nicht ersetzt. Diese Seite ruft
+ * `CustomerAuth.signUp(email, passwort, { firstName, lastName, fullName,
+ * phone })` auf - derselbe Aufruf wie bisher.
+ *
+ * UNVERAENDERT UEBERNOMMEN: die Kennungen registerForm, regFirstName,
+ * regLastName, regEmail, regPhone, regPassword, regPasswordConfirm,
+ * regTerms, registerError, registerHinweis, passwordRules,
+ * passwordStrengthBar, passwordStrengthText - dazu alle Feldnamen, alle
+ * Pruefungen und alle Meldungstexte.
+ *
+ * AUS SCHRITT 017 UEBERNOMMEN: Wartet das Konto auf die Bestaetigung per
+ * E-Mail, ist die Registrierung GEGLUECKT. Sie erscheint als gruener
+ * Hinweis mit der Zieladresse, nicht im roten Fehlerkasten, und die Seite
+ * bleibt stehen.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * OFFENES VEROEFFENTLICHUNGSHINDERNIS - NICHT VON MIR ZU LOESEN
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Das Haekchen verlangt die Zustimmung zu „Nutzungsbedingungen". Ein
+ * solches Dokument gibt es im Projekt NICHT - der Verweis zeigt seit jeher
+ * auf datenschutz.html, also auf etwas anderes.
+ *
+ * Hier wird KEIN Text erfunden. Eine selbst geschriebene Nutzungsbedingung
+ * saehe aus, als haette sie jemand geprueft, und niemand hat sie geprueft.
+ * Der Verweis bleibt deshalb genau so stehen, wie er ist, und der Fall ist
+ * als Entscheidung E4 in ABSCHLUSS-OEFFENTLICHE-WEBSEITE.md festgehalten -
+ * ausdruecklich als Hindernis VOR der Veroeffentlichung.
+ */
+import Grundlage from '../layouts/Grundlage.astro';
+import Kopfbereich from '../components/Kopfbereich.astro';
+import Fusszeile from '../components/Fusszeile.astro';
+import Sprungmarken from '../components/Sprungmarken.astro';
+import Anmeldekarte from '../components/Anmeldekarte.astro';
+import Passwortfeld from '../components/Passwortfeld.astro';
+import Passwortregeln from '../components/Passwortregeln.astro';
+---
+
+<Grundlage
+  titel="Registrieren | Taxi Germersheim GmbH"
+  beschreibung="Erstellen Sie Ihr Taxi-Germersheim-Konto, um Fahrten, Rewards und Gutscheine zu verwalten."
+  pfad="registrieren.html"
+  nichtIndexieren
+>
+  <Sprungmarken />
+  <Kopfbereich startseite={false} />
+
+  <main id="inhalt" class="pt-16 lg:pt-20">
+    <Anmeldekarte
+      label="Ihr Taxi-Germersheim-Konto"
+      titel="Konto erstellen"
+      text="Erstellen Sie Ihr Taxi-Germersheim-Konto in wenigen Schritten."
+      formularTitel="Konto erstellen"
+      formularText="In weniger als einer Minute startklar."
+      schmal={false}
+      hinweis="Sie haben bereits ein Konto?"
+      hinweisZiel="anmelden.html"
+      hinweisText="Anmelden"
+      fusstext="Ihr Konto. Ihre Daten. Sicher verwaltet."
+    >
+      <form id="registerForm" novalidate class="space-y-7">
+        {/* ── Persönliche Daten ─────────────────────────────────────── */}
+        {/*
+          Die Legende steht NICHT im space-y der Felder: Ein <legend> ist ein
+          Kind des <fieldset>, also haette der Abstandshelfer sie wie ein
+          Feld behandelt und ihren eigenen Abstand ueberschrieben. Gemessen:
+          Die Beschriftung klebte am Feld darueber. Deshalb liegen die
+          Felder in einer eigenen Huelle.
+        */}
+        {/*
+          `mx-0` statt `m-0`: Ein Browser gibt einem <fieldset> von sich aus
+          einen seitlichen Rand, den es hier nicht braucht. `m-0` haette
+          aber auch den Abstand nach oben genullt, den der Abstandshelfer
+          des Formulars setzt - gemessen: margin-top 0px, die Legende klebte
+          am Feld darueber.
+        */}
+        <fieldset class="border-0 p-0 mx-0">
+          <legend class="text-[11px] font-semibold tracking-[0.22em] uppercase text-primary mb-5">
+            Persönliche Daten
+          </legend>
+
+          <div class="space-y-5">
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="regFirstName" class="block text-sm font-medium text-muted-foreground mb-1.5">Vorname</label>
+              <input
+                id="regFirstName" name="firstName" type="text" autocomplete="given-name" required
+                class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label for="regLastName" class="block text-sm font-medium text-muted-foreground mb-1.5">Nachname</label>
+              <input
+                id="regLastName" name="lastName" type="text" autocomplete="family-name" required
+                class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="regEmail" class="block text-sm font-medium text-muted-foreground mb-1.5">E-Mail-Adresse</label>
+            <input
+              id="regEmail" name="email" type="email" autocomplete="email"
+              inputmode="email" autocapitalize="off" spellcheck="false" required
+              class="w-full bg-secondary border border-border px-4 py-3 text-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label for="regPhone" class="block text-sm font-medium text-muted-foreground mb-1.5">Telefon</label>
+            <input
+              id="regPhone" name="phone" type="tel" autocomplete="tel" inputmode="tel"
+              placeholder="z. B. +49 123 456789" required
+              class="w-full bg-secondary border border-border px-4 py-3 text-foreground placeholder-muted-foreground text-base transition-colors duration-150 outline-none focus:border-primary"
+            />
+          </div>
+          </div>
+        </fieldset>
+
+        {/* ── Sicherheit ────────────────────────────────────────────── */}
+        <fieldset class="border-0 p-0 mx-0">
+          <legend class="text-[11px] font-semibold tracking-[0.22em] uppercase text-primary mb-5">
+            Sicherheit
+          </legend>
+
+          <div class="space-y-5">
+          <div>
+            <Passwortfeld id="regPassword" name="password" label="Passwort" autocomplete="new-password" />
+            <Passwortregeln />
+          </div>
+
+          <Passwortfeld
+            id="regPasswordConfirm" name="passwordConfirm"
+            label="Passwort bestätigen" autocomplete="new-password"
+            schalterLabel="Bestätigung"
+          />
+          </div>
+        </fieldset>
+
+        {/*
+          Der Verweis zeigt auf datenschutz.html - so steht er im Bestand.
+          Nutzungsbedingungen als eigenes Dokument gibt es nicht. Siehe den
+          Hinweis im Kopf dieser Datei: Hier wird nichts erfunden.
+        */}
+        <label for="regTerms" class="flex items-start gap-3 cursor-pointer">
+          <input
+            id="regTerms" name="termsAccepted" type="checkbox" required
+            class="mt-0.5 w-4 h-4 shrink-0 accent-[#c8a96e]"
+          />
+          <span class="text-sm leading-relaxed text-muted-foreground">
+            Ich akzeptiere die <a href="datenschutz.html" class="text-foreground hover:text-primary transition-colors duration-150 underline underline-offset-4 decoration-border">Nutzungsbedingungen</a> und <a href="datenschutz.html" class="text-foreground hover:text-primary transition-colors duration-150 underline underline-offset-4 decoration-border">Datenschutzhinweise</a>.
+          </span>
+        </label>
+
+        <p id="registerError" class="tg-fehler text-sm text-red-400" role="alert" aria-live="assertive"></p>
+        <p id="registerHinweis" class="tg-hinweis border border-primary/30 bg-primary/[0.06] px-4 py-3 text-sm leading-relaxed text-foreground" role="status" aria-live="polite"></p>
+
+        <button
+          type="submit"
+          class="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 text-[15px] font-semibold hover:bg-[#d4b87d] transition-colors duration-150 tg-press disabled:opacity-60"
+        >
+          <span data-knopf-text>Konto erstellen</span>
+        </button>
+      </form>
+    </Anmeldekarte>
+  </main>
+
+  <Fusszeile startseite={false} />
+  <script is:inline src="/customer-auth.js"></script>
+</Grundlage>
+
+<style>
+  .tg-hinweis:empty,
+  .tg-fehler:empty {
+    display: none;
+  }
+</style>
+
+<script>
+  const form = document.getElementById('registerForm') as HTMLFormElement;
+  const error = document.getElementById('registerError')!;
+  const hinweis = document.getElementById('registerHinweis')!;
+  const knopf = form.querySelector<HTMLButtonElement>('[type="submit"]')!;
+  const knopfText = knopf.querySelector<HTMLElement>('[data-knopf-text]')!;
+  const passwortFeld = document.getElementById('regPassword') as HTMLInputElement;
+  const regelnListe = document.getElementById('passwordRules')!;
+  const staerkeHuelle = regelnListe.parentElement as HTMLElement;
+  const staerkeBalken = document.getElementById('passwordStrengthBar')!;
+  const staerkeText = document.getElementById('passwordStrengthText')!;
+
+  // ── Passwort anzeigen und verbergen ────────────────────────────────────
+  for (const schalter of document.querySelectorAll<HTMLButtonElement>('.auth-pass-toggle')) {
+    schalter.addEventListener('click', () => {
+      const feld = document.getElementById(schalter.dataset.target || '') as HTMLInputElement | null;
+      if (!feld) return;
+      const sichtbar = feld.type === 'text';
+      const name = schalter.dataset.label || 'Passwort';
+      feld.type = sichtbar ? 'password' : 'text';
+      schalter.textContent = sichtbar ? 'Anzeigen' : 'Verbergen';
+      schalter.setAttribute('aria-label', `${name} ${sichtbar ? 'anzeigen' : 'verbergen'}`);
+      schalter.setAttribute('aria-pressed', sichtbar ? 'false' : 'true');
+    });
+  }
+
+  // ── Passwortstaerke ────────────────────────────────────────────────────
+  //
+  // Dieselben drei Regeln und dieselbe Gewichtung wie im Bestand:
+  // 8 Zeichen, ein Grossbuchstabe, eine Zahl.
+  function regelnPruefen(passwort: string) {
+    return {
+      len: passwort.length >= 8,
+      upper: /[A-Z]/.test(passwort),
+      number: /\d/.test(passwort),
+    };
+  }
+
+  function staerkeZeichnen() {
+    const passwort = passwortFeld.value || '';
+    const regeln = regelnPruefen(passwort);
+    const erfuellt = Object.values(regeln).filter(Boolean).length;
+    const anteil = Math.round((erfuellt / 3) * 100);
+
+    staerkeHuelle.hidden = passwort.length === 0;
+    staerkeBalken.style.width = `${anteil}%`;
+    staerkeText.textContent = !passwort ? '' : erfuellt < 2 ? 'Schwach' : erfuellt < 3 ? 'Mittel' : 'Stark';
+    // Farbe wie im Bestand.
+    staerkeBalken.style.backgroundColor = erfuellt < 2 ? '#e97a69' : erfuellt < 3 ? '#f0b35c' : '#7bc47f';
+    staerkeText.style.color = erfuellt < 2 ? '#e97a69' : erfuellt < 3 ? '#f0b35c' : '#7bc47f';
+
+    for (const [schluessel, gut] of Object.entries(regeln)) {
+      regelnListe.querySelector(`[data-rule="${schluessel}"]`)?.classList.toggle('is-ok', gut);
+    }
+    return regeln;
+  }
+
+  staerkeHuelle.hidden = true;
+  passwortFeld.addEventListener('input', staerkeZeichnen);
+
+  // ── Wer schon angemeldet ist, hat hier nichts verloren ─────────────────
+  async function weiterWennAngemeldet() {
+    const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
+    if (!auth || typeof auth.hydrateSession !== 'function') return;
+    try {
+      await auth.hydrateSession();
+    } catch {
+      return;
+    }
+    const stand = typeof auth.getSessionSnapshot === 'function' ? auth.getSessionSnapshot() : null;
+    if (stand && stand.session && stand.user && stand.customerId) {
+      window.location.replace('meinkonto.html');
+    }
+  }
+
+  // ── Absenden ───────────────────────────────────────────────────────────
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (form.getAttribute('aria-busy') === 'true') return;
+    error.textContent = '';
+    hinweis.textContent = '';
+
+    const feld = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
+    const vorname = (feld('firstName').value || '').trim();
+    const nachname = (feld('lastName').value || '').trim();
+    const email = (feld('email').value || '').trim();
+    const telefon = (feld('phone').value || '').trim();
+    const passwort = feld('password').value || '';
+    const bestaetigung = feld('passwordConfirm').value || '';
+    const bedingungen = (feld('termsAccepted') as unknown as HTMLInputElement).checked;
+
+    if (!vorname || !nachname) {
+      error.textContent = 'Bitte Vor- und Nachnamen angeben.';
+      feld('firstName').focus();
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      error.textContent = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+      feld('email').focus();
+      return;
+    }
+    if (telefon.replace(/[^\d]/g, '').length < 6) {
+      error.textContent = 'Bitte eine gültige Telefonnummer eingeben.';
+      feld('phone').focus();
+      return;
+    }
+    const regeln = staerkeZeichnen();
+    if (!Object.values(regeln).every(Boolean)) {
+      error.textContent = 'Das Passwort erfüllt noch nicht alle Regeln.';
+      feld('password').focus();
+      return;
+    }
+    if (passwort !== bestaetigung) {
+      error.textContent = 'Passwort und Bestätigung stimmen nicht überein.';
+      feld('passwordConfirm').focus();
+      return;
+    }
+    if (!bedingungen) {
+      error.textContent = 'Bitte die Nutzungsbedingungen akzeptieren.';
+      feld('termsAccepted').focus();
+      return;
+    }
+
+    const auth = (window as unknown as { CustomerAuth?: any }).CustomerAuth;
+    if (!auth || typeof auth.signUp !== 'function') {
+      error.textContent = 'Registrierung ist derzeit nicht verfügbar.';
+      return;
+    }
+
+    form.setAttribute('aria-busy', 'true');
+    knopf.disabled = true;
+    knopfText.textContent = 'Konto wird erstellt …';
+
+    try {
+      const ergebnis = await auth.signUp(email, passwort, {
+        firstName: vorname,
+        lastName: nachname,
+        fullName: `${vorname} ${nachname}`,
+        phone: telefon,
+      });
+
+      // Verlangt das Projekt eine Bestaetigung per E-Mail, gibt es noch
+      // keine Sitzung. Das ist KEIN Fehler - das Konto ist angelegt und
+      // wartet auf den Klick in der Mail.
+      if (!ergebnis || !ergebnis.session) {
+        hinweis.textContent =
+          `Fast geschafft: Ihr Konto wurde angelegt. Wir haben Ihnen eine E-Mail an ${email} ` +
+          'geschickt. Bitte bestätigen Sie darin Ihre Adresse – danach können Sie sich anmelden.';
+        knopfText.textContent = 'Konto erstellt';
+        return; // Knopf bleibt gesperrt: ein zweites Konto waere falsch.
+      }
+
+      window.location.href = 'anmelden.html?registered=1';
+    } catch (fehler: any) {
+      hinweis.textContent = '';
+      error.textContent = fehler && fehler.message ? fehler.message : 'Registrierung fehlgeschlagen.';
+      form.setAttribute('aria-busy', 'false');
+      knopf.disabled = false;
+      knopfText.textContent = 'Konto erstellen';
+    }
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', weiterWennAngemeldet, { once: true });
+  } else {
+    weiterWennAngemeldet();
+  }
+</script>
